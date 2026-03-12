@@ -278,3 +278,93 @@ tbody tr:hover { background: var(--bg-hover); }
 
 .layout-preview .port-cell { cursor: default; }
 .layout-preview .port-cell:hover { transform: none; }
+
+.port-edit-inline {
+  margin-top: .9rem;
+}
+
+.port-edit-panel {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  border-radius: 12px;
+  border: 1px solid var(--border-default);
+  overflow: auto;
+  padding: 1.25rem;
+}
+
+.port-edit-panel--modal {
+  width: 100%;
+}
+
+.port-subtitle {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: .92rem;
+}
+
+.port-status-headline {
+  margin-top: -.25rem;
+  padding: .45rem .6rem;
+  border-radius: 8px;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-default);
+}
+
+.port-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: grid;
+  gap: .8rem;
+}
+
+.field {
+  display: grid;
+  gap: .35rem;
+}
+
+.field span {
+  font-size: .85rem;
+  color: var(--text-secondary);
+}
+
+.field :is(input, select, textarea) {
+  width: 100%;
+}
+
+.field--full {
+  grid-column: 1 / -1;
+}
+
+.field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding-top: 1.2rem;
+}
+
+.field-checkbox input {
+  width: auto;
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: .78rem;
+}
+
+.port-row-selected {
+  background: var(--bg-selected) !important;
+}
+
+.port-row-selected td {
+  color: var(--text-primary);
+}
+
+tbody tr.port-row-selected:hover {
+  background: var(--bg-selected) !important;
+}
+
+@media (max-width: 959px) {
+  .port-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
