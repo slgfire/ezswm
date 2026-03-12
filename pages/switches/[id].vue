@@ -7,6 +7,7 @@ const { data: layouts } = await useFetch<LayoutTemplate[]>('/api/layouts')
 
 const selected = ref<Port>()
 const selectedPortNumber = ref<number>()
+const portPanelOpen = ref(false)
 
 const activeLayout = computed(() => {
   if (!sw.value) return undefined
@@ -20,12 +21,31 @@ async function saveSwitch() {
   await refresh()
 }
 
-async function savePort(port: Port) {
+function onSelectPort(port: Port | undefined, fallback: number) {
+  selected.value = port
+  selectedPortNumber.value = fallback
+  portPanelOpen.value = true
+}
+
+function closePortPanel() {
+  portPanelOpen.value = false
+}
+
+async function savePortChanges(payload: Port) {
   if (!sw.value) return
-  const idx = sw.value.ports.findIndex((p) => p.portNumber === port.portNumber)
-  if (idx >= 0) sw.value.ports[idx] = port
-  await $fetch(`/api/switches/${sw.value.id}`, { method: 'PUT', body: sw.value })
+  const updated = await $fetch<Port>(`/api/switches/${sw.value.id}/ports/${payload.portNumber}`, {
+    method: 'PUT',
+    body: payload
+  })
+
+  const idx = sw.value.ports.findIndex((port) => port.portNumber === updated.portNumber)
+  if (idx >= 0) {
+    sw.value.ports[idx] = updated
+  }
+
+  selected.value = updated
   await refresh()
+  closePortPanel()
 }
 </script>
 
@@ -50,10 +70,22 @@ async function savePort(port: Port) {
         <PortBadge status="disabled" />
         <PortBadge status="error" />
       </div>
-      <SwitchPortGrid :layout="activeLayout" :ports="sw.ports" @select="(port, fallback) => { selected = port; selectedPortNumber = fallback }" />
+      <SwitchPortGrid
+        :layout="activeLayout"
+        :ports="sw.ports"
+        :selected-port-number="selectedPortNumber"
+        @select="onSelectPort"
+      />
     </div>
 
-    <PortDetailsModal :port="selected" :fallback-port-number="selectedPortNumber" @close="selected = undefined; selectedPortNumber = undefined" />
+    <PortEditPanel
+      :open="portPanelOpen"
+      :port="selected"
+      :fallback-port-number="selectedPortNumber"
+      :switch-name="sw.name"
+      @close="closePortPanel"
+      @save="savePortChanges"
+    />
 
     <div class="panel stack">
       <h3>Port-Liste</h3>
@@ -63,19 +95,17 @@ async function savePort(port: Port) {
             <tr><th>#</th><th>Label</th><th>Status</th><th>VLAN</th><th>Gerät</th></tr>
           </thead>
           <tbody>
-            <tr v-for="port in sw.ports" :key="port.portNumber">
+            <tr
+              v-for="port in sw.ports"
+              :key="port.portNumber"
+              :class="{ 'port-row-selected': selectedPortNumber === port.portNumber }"
+              @click="onSelectPort(port, port.portNumber)"
+            >
               <td>{{ port.portNumber }}</td>
-              <td><input v-model="port.label" placeholder="Label" @blur="savePort(port)"></td>
-              <td>
-                <select v-model="port.status" @change="savePort(port)">
-                  <option value="free">free</option>
-                  <option value="used">used</option>
-                  <option value="disabled">disabled</option>
-                  <option value="error">error</option>
-                </select>
-              </td>
-              <td><input v-model="port.vlan" placeholder="VLAN" @blur="savePort(port)"></td>
-              <td><input v-model="port.connectedDevice" placeholder="Gerät" @blur="savePort(port)"></td>
+              <td>{{ port.label || '-' }}</td>
+              <td><PortBadge :status="port.status" /></td>
+              <td>{{ port.vlan || '-' }}</td>
+              <td>{{ port.connectedDevice || '-' }}</td>
             </tr>
           </tbody>
         </table>

@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import type { LayoutTemplate, Port } from '~/types/models'
 
-const props = defineProps<{ layout: LayoutTemplate; ports: Port[] }>()
+const props = defineProps<{ layout: LayoutTemplate; ports: Port[]; selectedPortNumber?: number }>()
 const emit = defineEmits<{ select: [Port | undefined, number] }>()
-
-const activePort = ref<number>()
 
 const map = computed(() => {
   const m = new Map<number, Port>()
@@ -20,7 +18,6 @@ function cls(status?: string) {
 }
 
 function selectPort(portNumber: number) {
-  activePort.value = portNumber
   emit('select', map.value.get(portNumber), portNumber)
 }
 </script>
@@ -31,7 +28,7 @@ function selectPort(portNumber: number) {
       v-for="cell in layout.cells"
       :key="`${cell.row}-${cell.col}`"
       :style="{ gridColumn: String(cell.col), gridRow: String(cell.row) }"
-      :class="['port-cell', cls(map.get(cell.portNumber)?.status), { 'port-selected': activePort === cell.portNumber }]"
+      :class="['port-cell', cls(map.get(cell.portNumber)?.status), { 'port-selected': selectedPortNumber === cell.portNumber }]"
       :aria-label="`Port ${cell.portNumber}: ${map.get(cell.portNumber)?.status || 'free'}`"
       @click="selectPort(cell.portNumber)"
     >
