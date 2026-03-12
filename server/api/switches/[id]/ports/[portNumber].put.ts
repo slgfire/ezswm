@@ -22,19 +22,41 @@ function cleanedValue(value?: string) {
   return trimmed.length > 0 ? trimmed : undefined
 }
 
-function hasOwnField(payload: Partial<Port>, field: keyof Port) {
+type PortPayload = Partial<Port> & { hostname?: string; device?: string; mac?: string; patch_target?: string }
+
+function hasOwnField(payload: PortPayload, field: keyof Port | 'hostname' | 'device' | 'mac' | 'patch_target') {
   return Object.prototype.hasOwnProperty.call(payload, field)
 }
 
-function resolveTextField(payload: Partial<Port>, current: string | undefined, field: keyof Port) {
+function resolveTextField(payload: PortPayload, current: string | undefined, field: keyof Port) {
   if (!hasOwnField(payload, field)) return current
   return cleanedValue(payload[field] as string | undefined)
+}
+
+
+function resolveConnectedDevice(payload: PortPayload, current: string | undefined) {
+  if (hasOwnField(payload, 'connectedDevice')) return cleanedValue(payload.connectedDevice)
+  if (hasOwnField(payload, 'hostname')) return cleanedValue(payload.hostname)
+  if (hasOwnField(payload, 'device')) return cleanedValue(payload.device)
+  return current
+}
+
+function resolvePatchTarget(payload: PortPayload, current: string | undefined) {
+  if (hasOwnField(payload, 'patchTarget')) return cleanedValue(payload.patchTarget)
+  if (hasOwnField(payload, 'patch_target')) return cleanedValue(payload.patch_target)
+  return current
+}
+
+function resolveMacAddress(payload: PortPayload, current: string | undefined) {
+  if (hasOwnField(payload, 'macAddress')) return cleanedValue(payload.macAddress)
+  if (hasOwnField(payload, 'mac')) return cleanedValue(payload.mac)
+  return current
 }
 
 export default defineEventHandler(async (event) => {
   const switchId = getRouterParam(event, 'id')
   const portNumber = Number(getRouterParam(event, 'portNumber'))
-  const body = await readBody<Partial<Port>>(event)
+  const body = await readBody<PortPayload>(event)
 
   if (!switchId || Number.isNaN(portNumber)) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid switch or port ID.' })
@@ -49,7 +71,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const vlan = resolveTextField(body, undefined, 'vlan')
-  const macAddress = resolveTextField(body, undefined, 'macAddress')
+  const macAddress = resolveMacAddress(body, undefined)
 
   if (!isValidVlan(vlan)) {
     throw createError({ statusCode: 400, statusMessage: 'VLAN must be between 1 and 4094.' })
@@ -74,19 +96,20 @@ export default defineEventHandler(async (event) => {
 
   const updatedPort: Port = {
     ...current,
-    ...body,
     switchId,
     portNumber,
     status: body.status ?? current.status,
     mediaType: body.mediaType ?? current.mediaType,
     vlan: resolveTextField(body, current.vlan, 'vlan'),
-    macAddress: resolveTextField(body, current.macAddress, 'macAddress'),
+    macAddress: resolveMacAddress(body, current.macAddress),
     label: resolveTextField(body, current.label, 'label'),
-    connectedDevice: resolveTextField(body, current.connectedDevice, 'connectedDevice'),
+    connectedDevice: resolveConnectedDevice(body, current.connectedDevice),
     description: resolveTextField(body, current.description, 'description'),
     speed: resolveTextField(body, current.speed, 'speed'),
-    patchTarget: resolveTextField(body, current.patchTarget, 'patchTarget'),
-    duplex: hasOwnField(body, 'duplex') ? body.duplex : current.duplex,
+    patchTarget: resolvePatchTarget(body, current.patchTarget),
+    duplex: hasOwnField(body, 'duplex')
+      ? (body.duplex === 'full' || body.duplex === 'half' || body.duplex === 'auto' ? body.duplex : 'auto')
+      : current.duplex || 'auto',
     poe: hasOwnField(body, 'poe') ? Boolean(body.poe) : Boolean(current.poe)
   }
 

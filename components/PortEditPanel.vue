@@ -10,7 +10,7 @@ interface PortForm {
   mediaType: MediaType
   description: string
   speed: string
-  duplex: '' | 'half' | 'full' | 'auto'
+  duplex: 'half' | 'full' | 'auto'
   poe: boolean
   patchTarget: string
 }
@@ -38,7 +38,7 @@ const form = reactive<PortForm>({
   mediaType: 'RJ45',
   description: '',
   speed: '',
-  duplex: '',
+  duplex: 'auto',
   poe: false,
   patchTarget: ''
 })
@@ -62,7 +62,7 @@ function applyPort(port?: Port) {
   form.mediaType = port?.mediaType ?? 'RJ45'
   form.description = port?.description ?? ''
   form.speed = port?.speed ?? ''
-  form.duplex = port?.duplex ?? ''
+  form.duplex = port?.duplex ?? 'auto'
   form.poe = port?.poe ?? false
   form.patchTarget = port?.patchTarget ?? ''
   errors.value = {}
@@ -117,7 +117,7 @@ async function onSave() {
       mediaType: form.mediaType,
       description: form.description.trim() || undefined,
       speed: form.speed.trim() || undefined,
-      duplex: form.duplex || undefined,
+      duplex: form.duplex || 'auto',
       poe: form.poe,
       patchTarget: form.patchTarget.trim() || undefined
     }
@@ -216,7 +216,6 @@ watch(() => props.open, (isOpen) => {
           <label class="field">
             <span>Duplex</span>
             <select v-model="form.duplex">
-              <option value="">-</option>
               <option value="auto">Auto</option>
               <option value="full">Full</option>
               <option value="half">Half</option>
