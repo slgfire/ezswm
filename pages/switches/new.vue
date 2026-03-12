@@ -33,7 +33,7 @@ async function submit() {
 </script>
 
 <template>
-  <form class="panel" @submit.prevent="submit">
+  <form class="panel stack" @submit.prevent="submit">
     <h1>Switch anlegen</h1>
     <div class="row">
       <input v-model="form.name" required placeholder="Name">
@@ -62,7 +62,7 @@ async function submit() {
       <input v-model="form.serialNumber" placeholder="Seriennummer">
       <input v-model="form.tags" placeholder="Tags (csv)">
     </div>
-    <textarea v-model="form.description" placeholder="Beschreibung" rows="4" style="width:100%"/>
+    <textarea v-model="form.description" placeholder="Beschreibung" rows="4"/>
     <div class="row">
       <button type="submit">Speichern</button>
     </div>

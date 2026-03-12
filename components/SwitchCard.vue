@@ -4,7 +4,7 @@ defineProps<{ title: string; value: string | number }>()
 
 <template>
   <div class="stat">
-    <div>{{ title }}</div>
-    <h2>{{ value }}</h2>
+    <div class="stat-label">{{ title }}</div>
+    <h2 class="stat-value">{{ value }}</h2>
   </div>
 </template>

@@ -26,7 +26,7 @@ function generateGridMapping() {
 </script>
 
 <template>
-  <form class="panel" @submit.prevent="emit('submit', form)">
+  <form class="panel stack" @submit.prevent="emit('submit', form)">
     <h3>Layout bearbeiten</h3>
     <div class="row">
       <input v-model="form.name" placeholder="Name" required>

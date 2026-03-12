@@ -4,6 +4,8 @@ import type { LayoutTemplate, Port } from '~/types/models'
 const props = defineProps<{ layout: LayoutTemplate; ports: Port[] }>()
 const emit = defineEmits<{ select: [Port | undefined, number] }>()
 
+const activePort = ref<number>()
+
 const map = computed(() => {
   const m = new Map<number, Port>()
   props.ports.forEach((p) => m.set(p.portNumber, p))
@@ -16,6 +18,11 @@ function cls(status?: string) {
   if (status === 'error') return 'port-error'
   return 'port-free'
 }
+
+function selectPort(portNumber: number) {
+  activePort.value = portNumber
+  emit('select', map.value.get(portNumber), portNumber)
+}
 </script>
 
 <template>
@@ -24,8 +31,9 @@ function cls(status?: string) {
       v-for="cell in layout.cells"
       :key="`${cell.row}-${cell.col}`"
       :style="{ gridColumn: String(cell.col), gridRow: String(cell.row) }"
-      :class="['port-cell', cls(map.get(cell.portNumber)?.status)]"
-      @click="emit('select', map.get(cell.portNumber), cell.portNumber)"
+      :class="['port-cell', cls(map.get(cell.portNumber)?.status), { 'port-selected': activePort === cell.portNumber }]"
+      :aria-label="`Port ${cell.portNumber}: ${map.get(cell.portNumber)?.status || 'free'}`"
+      @click="selectPort(cell.portNumber)"
     >
       <div>P{{ cell.portNumber }}</div>
       <small>{{ map.get(cell.portNumber)?.label || cell.label || '-' }}</small>

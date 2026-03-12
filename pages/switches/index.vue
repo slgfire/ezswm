@@ -32,7 +32,7 @@ async function removeSwitch(id: string) {
 
 <template>
   <div>
-    <div class="row" style="justify-content: space-between">
+    <div class="row row-between">
       <h1>Switch-Liste</h1>
       <NuxtLink to="/switches/new"><button>Neuer Switch</button></NuxtLink>
     </div>
@@ -59,7 +59,7 @@ async function removeSwitch(id: string) {
 
     <div class="panel">
       <SwitchTable :items="pageItems" @delete="removeSwitch" />
-      <div class="row" style="justify-content: flex-end; margin-top: .75rem;">
+      <div class="row row-end" style="margin-top: .75rem;">
         <button class="secondary" :disabled="query.page <= 1" @click="query.page--">Zurück</button>
         <span>Seite {{ query.page }} / {{ totalPages }}</span>
         <button class="secondary" :disabled="query.page >= totalPages" @click="query.page++">Weiter</button>

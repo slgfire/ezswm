@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import type { Port } from '~/types/models'
 
-const props = defineProps<{ port?: Port; fallbackPortNumber?: number }>()
+defineProps<{ port?: Port; fallbackPortNumber?: number }>()
 const emit = defineEmits<{ close: [] }>()
 </script>
 
 <template>
-  <div v-if="port || fallbackPortNumber" class="panel">
-    <div class="row" style="justify-content: space-between;">
-      <h3>Port {{ port?.portNumber || fallbackPortNumber }}</h3>
+  <div v-if="port || fallbackPortNumber" class="panel stack">
+    <div class="row row-between">
+      <h3 class="section-title">Port {{ port?.portNumber || fallbackPortNumber }}</h3>
       <button class="secondary" @click="emit('close')">Schließen</button>
     </div>
     <p><strong>Status:</strong> <PortBadge :status="port?.status || 'free'" /></p>
