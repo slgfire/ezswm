@@ -4,6 +4,21 @@ import type { LayoutTemplate, Port, Switch } from '~/types/models'
 const route = useRoute()
 const { data: sw, refresh } = await useFetch<Switch>(`/api/switches/${route.params.id}`)
 const { data: layouts } = await useFetch<LayoutTemplate[]>('/api/layouts')
+const { data: meta } = await useFetch('/api/meta')
+
+const editForm = reactive({
+  name: '',
+  vendor: '',
+  model: '',
+  managementIp: '',
+  serialNumber: '',
+  rackPosition: '',
+  status: 'planned',
+  description: '',
+  tags: '',
+  locationName: '',
+  rackName: ''
+})
 
 const selected = ref<Port>()
 const selectedPortNumber = ref<number>()
@@ -17,9 +32,65 @@ const activeLayout = computed(() => {
 
 async function saveSwitch() {
   if (!sw.value) return
-  await $fetch(`/api/switches/${sw.value.id}`, { method: 'PUT', body: sw.value })
+  await $fetch(`/api/switches/${sw.value.id}`, {
+    method: 'PUT',
+    body: {
+      ...sw.value,
+      ...editForm,
+      locationName: normalized(editForm.locationName),
+      rackName: normalized(editForm.rackName),
+      tags: editForm.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
+    }
+  })
   await refresh()
 }
+
+const normalized = (value: string) => value.trim().replace(/\s+/g, ' ')
+
+const locationOptions = computed(() => ((meta.value as any)?.locations || []).map((location: any) => location.name))
+
+const selectedLocationId = computed(() => {
+  const value = normalized(editForm.locationName).toLocaleLowerCase()
+  if (!value) return ''
+  const location = ((meta.value as any)?.locations || []).find((entry: any) => entry.name.trim().toLocaleLowerCase() === value)
+  return location?.id || ''
+})
+
+const rackOptions = computed(() => {
+  const racks = (meta.value as any)?.racks || []
+  if (!selectedLocationId.value) {
+    return racks.map((rack: any) => rack.name)
+  }
+
+  return racks
+    .filter((rack: any) => rack.locationId === selectedLocationId.value)
+    .map((rack: any) => rack.name)
+})
+
+watch(selectedLocationId, () => {
+  editForm.rackName = ''
+})
+
+watch([sw, meta], () => {
+  if (!sw.value) return
+
+  const locations = (meta.value as any)?.locations || []
+  const racks = (meta.value as any)?.racks || []
+  const location = locations.find((entry: any) => entry.id === sw.value?.locationId)
+  const rack = racks.find((entry: any) => entry.id === sw.value?.rackId)
+
+  editForm.name = sw.value.name
+  editForm.vendor = sw.value.vendor
+  editForm.model = sw.value.model
+  editForm.managementIp = sw.value.managementIp
+  editForm.serialNumber = sw.value.serialNumber || ''
+  editForm.rackPosition = sw.value.rackPosition || ''
+  editForm.status = sw.value.status
+  editForm.description = sw.value.description || ''
+  editForm.tags = (sw.value.tags || []).join(', ')
+  editForm.locationName = location?.name || ''
+  editForm.rackName = rack?.name || ''
+}, { immediate: true })
 
 function onSelectPort(port: Port | undefined, fallback: number) {
   selected.value = port
@@ -61,6 +132,36 @@ async function savePortChanges(payload: Port) {
         </select>
       </div>
     </div>
+
+    <form class="panel stack" @submit.prevent="saveSwitch">
+      <h3>Switch bearbeiten</h3>
+      <div class="row">
+        <input v-model="editForm.name" required placeholder="Name">
+        <input v-model="editForm.vendor" required placeholder="Hersteller">
+        <input v-model="editForm.model" required placeholder="Modell">
+        <input v-model="editForm.managementIp" required placeholder="Management-IP">
+        <input v-model="editForm.locationName" list="location-options" placeholder="Standort auswählen oder neu anlegen">
+        <datalist id="location-options">
+          <option v-for="location in locationOptions" :key="location" :value="location" />
+        </datalist>
+        <input v-model="editForm.rackName" list="rack-options" placeholder="Rack auswählen oder neu anlegen">
+        <datalist id="rack-options">
+          <option v-for="rack in rackOptions" :key="rack" :value="rack" />
+        </datalist>
+        <input v-model="editForm.rackPosition" placeholder="Rack-Position">
+        <input v-model="editForm.serialNumber" placeholder="Seriennummer">
+        <input v-model="editForm.tags" placeholder="Tags (csv)">
+        <select v-model="editForm.status">
+          <option value="active">active</option>
+          <option value="planned">planned</option>
+          <option value="retired">retired</option>
+        </select>
+      </div>
+      <textarea v-model="editForm.description" placeholder="Beschreibung" rows="3" />
+      <div class="row">
+        <button type="submit">Switch speichern</button>
+      </div>
+    </form>
 
     <div v-if="activeLayout" class="panel stack">
       <h3>Port-Darstellung</h3>
