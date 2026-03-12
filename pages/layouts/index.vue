@@ -12,7 +12,7 @@ async function removeLayout(id: string) {
 
 <template>
   <div>
-    <div class="row" style="justify-content: space-between">
+    <div class="row row-between">
       <h1>Layout-Templates</h1>
       <NuxtLink to="/layouts/new"><button>Neues Layout</button></NuxtLink>
     </div>

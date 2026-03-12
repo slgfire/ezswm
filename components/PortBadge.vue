@@ -9,8 +9,15 @@ const statusLabel: Record<PortStatus, string> = {
   disabled: 'Deaktiviert',
   error: 'Fehler'
 }
+
+const statusClass: Record<PortStatus, string> = {
+  free: 'badge badge--neutral',
+  used: 'badge badge--success',
+  disabled: 'badge badge--warning',
+  error: 'badge badge--danger'
+}
 </script>
 
 <template>
-  <span>{{ statusLabel[props.status] }}</span>
+  <span :class="statusClass[props.status]">{{ statusLabel[props.status] }}</span>
 </template>

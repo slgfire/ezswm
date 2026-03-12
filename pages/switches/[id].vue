@@ -42,36 +42,44 @@ async function savePort(port: Port) {
       </div>
     </div>
 
-    <div class="panel" v-if="activeLayout">
+    <div v-if="activeLayout" class="panel stack">
       <h3>Port-Darstellung</h3>
+      <div class="row">
+        <PortBadge status="free" />
+        <PortBadge status="used" />
+        <PortBadge status="disabled" />
+        <PortBadge status="error" />
+      </div>
       <SwitchPortGrid :layout="activeLayout" :ports="sw.ports" @select="(port, fallback) => { selected = port; selectedPortNumber = fallback }" />
     </div>
 
     <PortDetailsModal :port="selected" :fallback-port-number="selectedPortNumber" @close="selected = undefined; selectedPortNumber = undefined" />
 
-    <div class="panel">
+    <div class="panel stack">
       <h3>Port-Liste</h3>
-      <table>
-        <thead>
-          <tr><th>#</th><th>Label</th><th>Status</th><th>VLAN</th><th>Gerät</th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="port in sw.ports" :key="port.portNumber">
-            <td>{{ port.portNumber }}</td>
-            <td><input v-model="port.label" placeholder="Label" @blur="savePort(port)" ></td>
-            <td>
-              <select v-model="port.status" @change="savePort(port)">
-                <option value="free">free</option>
-                <option value="used">used</option>
-                <option value="disabled">disabled</option>
-                <option value="error">error</option>
-              </select>
-            </td>
-            <td><input v-model="port.vlan" placeholder="VLAN" @blur="savePort(port)"></td>
-            <td><input v-model="port.connectedDevice" placeholder="Gerät" @blur="savePort(port)"></td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Label</th><th>Status</th><th>VLAN</th><th>Gerät</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="port in sw.ports" :key="port.portNumber">
+              <td>{{ port.portNumber }}</td>
+              <td><input v-model="port.label" placeholder="Label" @blur="savePort(port)"></td>
+              <td>
+                <select v-model="port.status" @change="savePort(port)">
+                  <option value="free">free</option>
+                  <option value="used">used</option>
+                  <option value="disabled">disabled</option>
+                  <option value="error">error</option>
+                </select>
+              </td>
+              <td><input v-model="port.vlan" placeholder="VLAN" @blur="savePort(port)"></td>
+              <td><input v-model="port.connectedDevice" placeholder="Gerät" @blur="savePort(port)"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>
