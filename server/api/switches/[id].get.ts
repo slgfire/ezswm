@@ -1,11 +1,10 @@
-import { readStore } from '~/server/utils/storage'
+import { useStorage } from '~/server/storage'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
-  const store = await readStore()
-  const item = store.switches.find((sw) => sw.id === id)
+  const item = id ? await useStorage().switches.getById(id) : undefined
   if (!item) {
-    throw createError({ statusCode: 404, statusMessage: 'Switch nicht gefunden.' })
+    throw createError({ statusCode: 404, statusMessage: 'Switch not found.' })
   }
   return item
 })

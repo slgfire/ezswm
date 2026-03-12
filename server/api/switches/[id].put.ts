@@ -1,71 +1,67 @@
 import type { Switch } from '~/types/models'
-import { newId, readStore, withTimestamps, writeStore } from '~/server/utils/storage'
+import { useStorage } from '~/server/storage'
+import { normalizeName } from '~/server/storage/shared/utils'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
+  if (!id) {
+    throw createError({ statusCode: 400, statusMessage: 'Switch ID is required.' })
+  }
+
   const body = await readBody<Partial<Switch> & { locationName?: string; rackName?: string }>(event)
-  const store = await readStore()
-  const idx = store.switches.findIndex((sw) => sw.id === id)
-  if (idx < 0) {
-    throw createError({ statusCode: 404, statusMessage: 'Switch nicht gefunden.' })
+  const storage = useStorage()
+  const current = await storage.switches.getById(id)
+
+  if (!current) {
+    throw createError({ statusCode: 404, statusMessage: 'Switch not found.' })
   }
 
-  const current = store.switches[idx]
-  const normalize = (value: string) => value.trim().replace(/\s+/g, ' ')
-  const matchByName = <T extends { name: string }>(items: T[], name: string) => {
-    const normalized = normalize(name).toLocaleLowerCase()
-    return items.find((item) => normalize(item.name).toLocaleLowerCase() === normalized)
-  }
-
-  const locationName = body.locationName ? normalize(body.locationName) : ''
+  const locationName = body.locationName ? normalizeName(body.locationName) : ''
   let locationId = body.locationId ?? current.locationId ?? ''
 
   if (locationName) {
-    const found = matchByName(store.locations, locationName)
+    const found = await storage.locations.getByName(locationName)
     if (found) {
       locationId = found.id
     } else {
-      locationId = newId('loc')
-      store.locations.push({ id: locationId, name: locationName })
+      const created = await storage.locations.create({ name: locationName })
+      locationId = created.id
     }
   }
 
-  const rackName = body.rackName ? normalize(body.rackName) : ''
+  const rackName = body.rackName ? normalizeName(body.rackName) : ''
   let rackId = body.rackId ?? current.rackId ?? ''
 
   if (rackName) {
     if (!locationId) {
-      throw createError({ statusCode: 400, statusMessage: 'Für ein Rack muss zuerst ein Standort angegeben werden.' })
+      throw createError({ statusCode: 400, statusMessage: 'A location must be selected before creating or choosing a rack.' })
     }
 
-    const rackInLocation = store.racks.find((rack) => rack.locationId === locationId
-      && normalize(rack.name).toLocaleLowerCase() === rackName.toLocaleLowerCase())
-
+    const rackInLocation = await storage.racks.getByNameInLocation(locationId, rackName)
     if (rackInLocation) {
       rackId = rackInLocation.id
     } else {
-      rackId = newId('rack')
-      store.racks.push({ id: rackId, name: rackName, locationId })
+      const created = await storage.racks.create({ name: rackName, locationId })
+      rackId = created.id
     }
   }
 
   if (locationId && rackId) {
-    const rack = store.racks.find((entry) => entry.id === rackId)
+    const rack = await storage.racks.getById(rackId)
     if (rack && rack.locationId !== locationId) {
       rackId = ''
     }
   }
 
-  const merged = withTimestamps(current, {
-    ...current,
+  const updated = await storage.switches.update(id, {
     ...body,
-    id: current.id,
     locationId: locationId || undefined,
-    rackId: rackId || undefined,
-    ports: (body.ports || current.ports).map((port) => ({ ...port, switchId: current.id }))
+    rackId: rackId || undefined
   })
 
-  store.switches[idx] = merged
-  await writeStore(store)
-  return merged
+  if (!updated) {
+    throw createError({ statusCode: 404, statusMessage: 'Switch not found.' })
+  }
+
+  return updated
 })

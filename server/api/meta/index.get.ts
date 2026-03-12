@@ -1,7 +1,7 @@
-import { readStore } from '~/server/utils/storage'
+import { useStorage } from '~/server/storage'
 
 export default defineEventHandler(async () => {
-  const store = await readStore()
+  const store = await useStorage().readRawStore()
   return {
     locations: store.locations,
     racks: store.racks,

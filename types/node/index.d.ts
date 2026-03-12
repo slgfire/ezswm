@@ -3,6 +3,8 @@ declare module 'node:fs' {
     readFile(path: string, encoding: BufferEncoding): Promise<string>
     writeFile(path: string, data: string, encoding: BufferEncoding): Promise<void>
     mkdir(path: string, options?: { recursive?: boolean }): Promise<void>
+    access(path: string): Promise<void>
+    rename(oldPath: string, newPath: string): Promise<void>
   }
 }
 
