@@ -1,5 +1,5 @@
 import type { MediaType, Port, PortStatus } from '~/types/models'
-import { readStore, writeStore } from '~/server/utils/storage'
+import { useStorage } from '~/server/storage'
 
 const ALLOWED_STATUS: PortStatus[] = ['free', 'used', 'disabled', 'error']
 const ALLOWED_MEDIA: MediaType[] = ['RJ45', 'SFP', 'SFP+', 'QSFP']
@@ -37,42 +37,40 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<Partial<Port>>(event)
 
   if (!switchId || Number.isNaN(portNumber)) {
-    throw createError({ statusCode: 400, statusMessage: 'Ungültige Switch- oder Port-ID.' })
+    throw createError({ statusCode: 400, statusMessage: 'Invalid switch or port ID.' })
   }
 
   if (body.status && !ALLOWED_STATUS.includes(body.status)) {
-    throw createError({ statusCode: 400, statusMessage: 'Ungültiger Port-Status.' })
+    throw createError({ statusCode: 400, statusMessage: 'Invalid port status.' })
   }
 
   if (body.mediaType && !ALLOWED_MEDIA.includes(body.mediaType)) {
-    throw createError({ statusCode: 400, statusMessage: 'Ungültiger Port-Typ.' })
+    throw createError({ statusCode: 400, statusMessage: 'Invalid port media type.' })
   }
 
   const vlan = resolveTextField(body, undefined, 'vlan')
   const macAddress = resolveTextField(body, undefined, 'macAddress')
 
   if (!isValidVlan(vlan)) {
-    throw createError({ statusCode: 400, statusMessage: 'VLAN muss zwischen 1 und 4094 liegen.' })
+    throw createError({ statusCode: 400, statusMessage: 'VLAN must be between 1 and 4094.' })
   }
 
   if (!isValidMac(macAddress)) {
-    throw createError({ statusCode: 400, statusMessage: 'Ungültige MAC-Adresse.' })
+    throw createError({ statusCode: 400, statusMessage: 'Invalid MAC address.' })
   }
 
-  const store = await readStore()
-  const switchEntry = store.switches.find((item) => item.id === switchId)
+  const storage = useStorage()
+  const switchEntry = await storage.switches.getById(switchId)
 
   if (!switchEntry) {
-    throw createError({ statusCode: 404, statusMessage: 'Switch nicht gefunden.' })
+    throw createError({ statusCode: 404, statusMessage: 'Switch not found.' })
   }
 
-  const portIndex = switchEntry.ports.findIndex((port) => port.portNumber === portNumber)
+  const current = switchEntry.ports.find((port) => port.portNumber === portNumber)
 
-  if (portIndex < 0) {
-    throw createError({ statusCode: 404, statusMessage: 'Port nicht gefunden.' })
+  if (!current) {
+    throw createError({ statusCode: 404, statusMessage: 'Port not found.' })
   }
-
-  const current = switchEntry.ports[portIndex]
 
   const updatedPort: Port = {
     ...current,
@@ -93,17 +91,17 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!isValidVlan(updatedPort.vlan)) {
-    throw createError({ statusCode: 400, statusMessage: 'VLAN muss zwischen 1 und 4094 liegen.' })
+    throw createError({ statusCode: 400, statusMessage: 'VLAN must be between 1 and 4094.' })
   }
 
   if (!isValidMac(updatedPort.macAddress)) {
-    throw createError({ statusCode: 400, statusMessage: 'Ungültige MAC-Adresse.' })
+    throw createError({ statusCode: 400, statusMessage: 'Invalid MAC address.' })
   }
 
-  switchEntry.ports[portIndex] = updatedPort
-  switchEntry.updatedAt = new Date().toISOString()
+  const updated = await storage.ports.updateBySwitchAndNumber(switchId, portNumber, updatedPort)
+  if (!updated) {
+    throw createError({ statusCode: 404, statusMessage: 'Port not found.' })
+  }
 
-  await writeStore(store)
-
-  return updatedPort
+  return updated
 })

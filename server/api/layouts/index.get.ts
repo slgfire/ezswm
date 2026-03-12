@@ -1,6 +1,5 @@
-import { readStore } from '~/server/utils/storage'
+import { useStorage } from '~/server/storage'
 
 export default defineEventHandler(async () => {
-  const store = await readStore()
-  return store.layoutTemplates
+  return useStorage().layouts.list()
 })

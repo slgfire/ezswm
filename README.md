@@ -1,77 +1,63 @@
 # Switch Manager (Nuxt 3)
 
-Webanwendung zur Verwaltung und Visualisierung von Netzwerk-Switches mit konfigurierbaren Port-Layouts.
+A self-hosted Nuxt 3 application for managing and visualizing network switches with configurable port layouts.
 
-## Architekturvorschlag
+## Highlights
 
-- **Nuxt 3 Fullstack**: Pages für UI, server/api für serverseitige CRUD-Operationen.
-- **Dateibasierte Persistenz**: Eine robuste JSON-Datenzugriffsschicht (`server/utils/storage.ts`) schreibt/liest `data/store.json`.
-- **Kein separates Backend**: Alles läuft innerhalb von Nuxt/Nitro.
-- **Layout-System**: Port-Rendering basiert ausschließlich auf `LayoutTemplate.cells` (row/col → portNumber Mapping).
+- Nuxt 3 full-stack app with TypeScript.
+- JSON storage today, storage abstraction ready for SQLite later.
+- Docker-ready and open-source friendly.
+- Persistent data mounted from `./data` into `/app/data`.
 
-## Ordnerstruktur
+## Storage Architecture
 
-- `types/models.ts` – TypeScript-Interfaces
-- `server/utils/storage.ts` – JSON-Speicher, Seeds, IDs, Initialisierung
-- `server/api/**` – CRUD-Endpunkte innerhalb Nuxt
-- `pages/**` – Dashboard, Listen, Detail- und Formularseiten
-- `components/**` – UI-Bausteine inkl. `SwitchPortGrid`, `LayoutTemplateEditor`
-- `data/` – persistente JSON-Daten
+The application now uses a repository + storage engine architecture so API routes and business logic do not depend on JSON files directly.
 
-## Datenmodell (Kurz)
+### Structure
 
-- `Location`, `Rack`, `Vendor`, `SwitchModel`
-- `LayoutTemplate` + `LayoutCell`
-- `Switch` + eingebettete `Port[]`
+- `server/storage/interfaces/` – repository and storage contracts.
+- `server/storage/repositories/` – repository implementations (`SwitchRepository`, `PortRepository`, `LayoutRepository`, `LocationRepository`, `RackRepository`).
+- `server/storage/json/` – JSON engine and seed handling.
+- `server/storage/index.ts` – central storage context factory used by API routes.
 
-### Layout-Konzept
+### Current storage backend
 
-- Ein `Switch` referenziert `layoutTemplateId`.
-- Optional kann `layoutOverride` gesetzt werden.
-- Das UI rendert Ports streng anhand `cells`-Mapping:
-  - row + col bestimmen Position
-  - `portNumber` verbindet visuelle Zelle mit Portdaten
+- Active implementation: JSON (`store.json`).
+- Data directory: `data` locally, `/app/data` in Docker.
+- Missing JSON file is created automatically.
+- Seed/demo data is generated automatically on first startup when no data exists.
+- Writes use a temp file + rename strategy for robust, atomic-like updates.
+- IDs are stable and generated once.
+- JSON is written with indentation for readability.
 
-## JSON-Speicherkonzept
+## Data Path
 
-Beim ersten Start wird automatisch Seed-Datenmaterial erzeugt, falls `data/store.json` fehlt.
+The runtime config resolves `DATA_DIR`:
 
-Beispielstruktur:
+- Local default: `data`
+- Docker default: `/app/data`
 
-```json
-{
-  "locations": [],
-  "racks": [],
-  "vendors": [],
-  "switchModels": [],
-  "layoutTemplates": [],
-  "switches": []
-}
-```
-
-## Seed-Daten enthalten
-
-1. 24-Port-Demo-Switch
-2. 48-Port oben 1–24 / unten 25–48
-3. 48-Port oben ungerade / unten gerade
-4. 48+4 Uplink (SFP+) Beispiel
-
-Mit gemischten Port-Statuswerten: `free`, `used`, `disabled`, `error`.
-
-## Lokale Entwicklung
+## Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Produktion mit Docker Compose
+## Docker Compose
+
+```yaml
+services:
+  switch-manager:
+    volumes:
+      - ./data:/app/data
+```
+
+Start with:
 
 ```bash
 cp .env.example .env
 docker compose up -d --build
 ```
 
-Danach erreichbar unter `http://localhost:3000` (oder `APP_PORT`).
-
-Persistenz erfolgt über Bind-Mount `./data:/app/data`.
+Then open `http://localhost:3000` (or `APP_PORT`).

@@ -1,59 +1,46 @@
 import type { Switch } from '~/types/models'
-import { newId, readStore, withTimestamps, writeStore } from '~/server/utils/storage'
+import { useStorage } from '~/server/storage'
+import { normalizeName } from '~/server/storage/shared/utils'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<Partial<Switch> & { locationName?: string; rackName?: string }>(event)
   if (!body.name || !body.vendor || !body.model || !body.managementIp || !body.portCount) {
-    throw createError({ statusCode: 400, statusMessage: 'Pflichtfelder fehlen.' })
+    throw createError({ statusCode: 400, statusMessage: 'Required fields are missing.' })
   }
 
-  const store = await readStore()
+  const storage = useStorage()
 
-  const normalize = (value: string) => value.trim().replace(/\s+/g, ' ')
-  const matchByName = <T extends { name: string }>(items: T[], name: string) => {
-    const normalized = normalize(name).toLocaleLowerCase()
-    return items.find((item) => normalize(item.name).toLocaleLowerCase() === normalized)
-  }
-
-  const locationName = body.locationName ? normalize(body.locationName) : ''
+  const locationName = body.locationName ? normalizeName(body.locationName) : ''
   let locationId = body.locationId || ''
 
   if (locationName) {
-    const found = matchByName(store.locations, locationName)
+    const found = await storage.locations.getByName(locationName)
     if (found) {
       locationId = found.id
     } else {
-      locationId = newId('loc')
-      store.locations.push({ id: locationId, name: locationName })
+      const created = await storage.locations.create({ name: locationName })
+      locationId = created.id
     }
   }
 
-  const rackName = body.rackName ? normalize(body.rackName) : ''
+  const rackName = body.rackName ? normalizeName(body.rackName) : ''
   let rackId = body.rackId || ''
 
   if (rackName) {
     if (!locationId) {
-      throw createError({ statusCode: 400, statusMessage: 'Für ein Rack muss zuerst ein Standort angegeben werden.' })
+      throw createError({ statusCode: 400, statusMessage: 'A location must be selected before creating or choosing a rack.' })
     }
 
-    const rackInLocation = store.racks.find((rack) => rack.locationId === locationId
-      && normalize(rack.name).toLocaleLowerCase() === rackName.toLocaleLowerCase())
-
+    const rackInLocation = await storage.racks.getByNameInLocation(locationId, rackName)
     if (rackInLocation) {
       rackId = rackInLocation.id
     } else {
-      rackId = newId('rack')
-      store.racks.push({ id: rackId, name: rackName, locationId })
+      const created = await storage.racks.create({ name: rackName, locationId })
+      rackId = created.id
     }
   }
 
-  const id = newId('sw')
-  const ports = body.ports?.length
-    ? body.ports.map((port) => ({ ...port, switchId: id }))
-    : Array.from({ length: body.portCount }, (_, i) => ({ switchId: id, portNumber: i + 1, status: 'free' as const, mediaType: 'RJ45' as const }))
-
-  const created = withTimestamps(undefined, {
-    id,
+  const created = await storage.switches.create({
     name: body.name,
     vendor: body.vendor,
     model: body.model,
@@ -69,10 +56,10 @@ export default defineEventHandler(async (event) => {
     tags: body.tags || [],
     layoutTemplateId: body.layoutTemplateId,
     layoutOverride: body.layoutOverride,
-    ports
+    ports: body.ports || [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   })
 
-  store.switches.push(created)
-  await writeStore(store)
   return created
 })
