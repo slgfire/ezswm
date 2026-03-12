@@ -1,37 +1,43 @@
-import type { Switch } from '~/types/models'
+import type { DuplexMode, Port, Switch } from '~/types/models'
 import type { StorageEngine } from '~/server/storage/interfaces/storage-engine'
 import type { SwitchRepository } from '~/server/storage/interfaces/repositories'
 import { newId, withTimestamps } from '~/server/storage/shared/utils'
+
+const ALLOWED_DUPLEX: DuplexMode[] = ['full', 'half', 'auto']
+
+function normalizeText(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : undefined
+}
+
+function normalizeDuplex(value: unknown): DuplexMode {
+  return ALLOWED_DUPLEX.includes(value as DuplexMode) ? (value as DuplexMode) : 'auto'
+}
 
 export class JsonSwitchRepository implements SwitchRepository {
   constructor(private readonly storageEngine: StorageEngine) {}
 
   private normalizePort(switchId: string, port: Switch['ports'][number] & Record<string, unknown>): Switch['ports'][number] {
-    const connectedDevice = typeof port.connectedDevice === 'string'
-      ? port.connectedDevice
-      : typeof port.hostname === 'string'
-        ? port.hostname
-        : typeof port.device === 'string'
-          ? port.device
-          : undefined
-    const macAddress = typeof port.macAddress === 'string'
-      ? port.macAddress
-      : typeof port.mac === 'string'
-        ? port.mac
-        : undefined
-    const patchTarget = typeof port.patchTarget === 'string'
-      ? port.patchTarget
-      : typeof port.patch_target === 'string'
-        ? port.patch_target
-        : undefined
+    const connectedDevice = normalizeText(port.connectedDevice)
+      ?? normalizeText(port.hostname)
+      ?? normalizeText(port.device)
+    const macAddress = normalizeText(port.macAddress)
+      ?? normalizeText(port.mac)
+    const patchTarget = normalizeText(port.patchTarget)
+      ?? normalizeText(port.patch_target)
 
     return {
       ...port,
       switchId,
+      label: normalizeText(port.label),
+      description: normalizeText(port.description),
+      vlan: normalizeText(port.vlan),
+      speed: normalizeText(port.speed),
       connectedDevice,
       macAddress,
       patchTarget,
-      duplex: port.duplex === 'full' || port.duplex === 'half' || port.duplex === 'auto' ? port.duplex : 'auto'
+      duplex: normalizeDuplex(port.duplex)
     }
   }
 
@@ -98,7 +104,7 @@ export class JsonSwitchRepository implements SwitchRepository {
     })
   }
 
-  async updatePort(switchId: string, portNumber: number, payload: Partial<Switch['ports'][number]>): Promise<Switch['ports'][number] | undefined> {
+  async updatePort(switchId: string, portNumber: number, payload: Partial<Port>): Promise<Port | undefined> {
     return this.storageEngine.update((store) => {
       const switchEntry = store.switches.find((entry) => entry.id === switchId)
       if (!switchEntry) return undefined
@@ -107,19 +113,16 @@ export class JsonSwitchRepository implements SwitchRepository {
       if (portIndex < 0) return undefined
 
       const current = switchEntry.ports[portIndex]
-      const updatedPort = {
+      const normalizedPayload = this.normalizePort(switchId, {
         ...current,
         ...payload,
         switchId,
-        portNumber,
-        duplex: payload.duplex === 'full' || payload.duplex === 'half' || payload.duplex === 'auto'
-          ? payload.duplex
-          : current.duplex || 'auto'
-      }
+        portNumber
+      } as Switch['ports'][number] & Record<string, unknown>)
 
-      switchEntry.ports[portIndex] = updatedPort
+      switchEntry.ports[portIndex] = normalizedPayload
       switchEntry.updatedAt = new Date().toISOString()
-      return updatedPort
+      return normalizedPayload
     })
   }
 }

@@ -1,6 +1,7 @@
 export type SwitchStatus = 'active' | 'planned' | 'retired'
 export type PortStatus = 'free' | 'used' | 'disabled' | 'error'
 export type MediaType = 'RJ45' | 'SFP' | 'SFP+' | 'QSFP'
+export type DuplexMode = 'half' | 'full' | 'auto'
 
 export interface Location {
   id: string
@@ -62,11 +63,25 @@ export interface Port {
   vlan?: string
   status: PortStatus
   speed?: string
-  duplex?: 'half' | 'full' | 'auto'
+  duplex?: DuplexMode
   poe?: boolean
   connectedDevice?: string
   macAddress?: string
   patchTarget?: string
+  mediaType?: MediaType
+}
+
+export interface PortUpdatePayload {
+  status: PortStatus
+  label: string
+  description: string
+  vlan: string
+  speed: string
+  duplex: DuplexMode
+  poe: boolean
+  connectedDevice: string
+  macAddress: string
+  patchTarget: string
   mediaType?: MediaType
 }
 
