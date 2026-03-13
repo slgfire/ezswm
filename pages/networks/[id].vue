@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { IpAllocation, IpAllocationStatus, IpRange, IpRangeType, Network } from '~/types/models'
-import { compareIpAddresses, ipRangeSize, isIpWithinRange } from '~/utils/ip'
+import { compareIpAddresses, ipRangeSize, isIpWithinRange, prefixToNetmask } from '~/utils/ip'
 
 const route = useRoute()
 const networkId = computed(() => String(route.params.id))
@@ -26,10 +26,16 @@ const sortState = ref<{ key: AllocationSortKey, direction: SortDirection }>({
 })
 
 const networkForm = reactive<Partial<Network>>({})
+const derivedNetmask = computed(() => prefixToNetmask(networkForm.prefix))
+
 watchEffect(() => {
   if (!network.value) return
   Object.assign(networkForm, network.value)
 })
+
+watch(derivedNetmask, (value) => {
+  networkForm.netmask = value || ''
+}, { immediate: true })
 
 const allocationForm = reactive<Partial<IpAllocation>>({ ipAddress: '', hostname: '', serviceName: '', deviceName: '', status: 'used', description: '', notes: '' })
 const editingAllocationId = ref<string | null>(null)
@@ -134,7 +140,8 @@ async function saveNetwork() {
     body: {
       ...networkForm,
       vlanId: networkForm.vlanId ? Number(networkForm.vlanId) : undefined,
-      prefix: Number(networkForm.prefix)
+      prefix: Number(networkForm.prefix),
+      netmask: derivedNetmask.value || undefined
     }
   })
   await refresh()
@@ -216,18 +223,67 @@ function rangeBadgeClass(type: IpRangeType) {
 
     <div class="panel">
       <h3 class="section-title">Network details</h3>
-      <div class="row">
-        <input v-model="networkForm.vlanId" placeholder="VLAN ID">
-        <input v-model="networkForm.name" placeholder="Name">
-        <input v-model="networkForm.subnet" placeholder="Subnet">
-        <input v-model="networkForm.prefix" type="number" min="0" max="32" placeholder="Prefix">
-        <input v-model="networkForm.netmask" placeholder="Netmask">
-        <input v-model="networkForm.gateway" placeholder="Gateway">
-        <input v-model="networkForm.routing" placeholder="Routing">
+      <div class="network-form-grid">
+        <label class="network-field">
+          <span class="network-field__label">VLAN ID</span>
+          <input v-model="networkForm.vlanId" type="number" min="1" max="4094" placeholder="Optional VLAN ID">
+          <small class="network-field__hint">Optional VLAN identifier for this network</small>
+        </label>
+
+        <label class="network-field">
+          <span class="network-field__label">Network name</span>
+          <input v-model="networkForm.name" placeholder="e.g. Production LAN">
+        </label>
+
+        <label class="network-field">
+          <span class="network-field__label">Subnet</span>
+          <input v-model="networkForm.subnet" placeholder="e.g. 10.10.10.0">
+          <small class="network-field__hint">Base network address</small>
+        </label>
+
+        <label class="network-field">
+          <span class="network-field__label">Prefix</span>
+          <input v-model="networkForm.prefix" type="number" min="0" max="32" placeholder="e.g. 24">
+          <small class="network-field__hint">CIDR prefix length, e.g. 24</small>
+        </label>
+
+        <label class="network-field">
+          <span class="network-field__label">Netmask</span>
+          <input :value="derivedNetmask || 'Invalid prefix'" readonly disabled>
+          <small class="network-field__hint">Automatically derived from prefix</small>
+        </label>
+
+        <label class="network-field">
+          <span class="network-field__label">Gateway</span>
+          <input v-model="networkForm.gateway" placeholder="e.g. 10.10.10.1">
+          <small class="network-field__hint">Default gateway address within this subnet</small>
+        </label>
+
+        <label class="network-field">
+          <span class="network-field__label">Category</span>
+          <input v-model="networkForm.category" placeholder="e.g. service">
+          <small class="network-field__hint">Logical usage such as service, management, user, or storage</small>
+        </label>
+
+        <label class="network-field">
+          <span class="network-field__label">Routing</span>
+          <input v-model="networkForm.routing" placeholder="Routing information">
+        </label>
+
+        <label class="network-field network-form-grid__full">
+          <span class="network-field__label">Description</span>
+          <input v-model="networkForm.description" placeholder="Short description">
+          <small class="network-field__hint">Short purpose of this network</small>
+        </label>
+
+        <label class="network-field network-form-grid__full">
+          <span class="network-field__label">Notes</span>
+          <input v-model="networkForm.notes" placeholder="Optional notes">
+          <small class="network-field__hint">Optional internal notes</small>
+        </label>
       </div>
-      <div class="row" style="margin-top: .6rem;">
-        <input v-model="networkForm.description" placeholder="Description">
-        <input v-model="networkForm.notes" placeholder="Notes">
+
+      <div class="row" style="margin-top: .8rem;">
         <button @click="saveNetwork">Save network</button>
       </div>
     </div>
