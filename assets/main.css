@@ -352,3 +352,62 @@ tbody tr:hover { background: var(--bg-hover); }
   .topbar-search { min-width: 100%; }
   .port-form-grid { grid-template-columns: 1fr; }
 }
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in oklab, #020813 62%, transparent);
+  z-index: 40;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  max-width: 100vw;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border-default);
+  box-shadow: -10px 0 32px color-mix(in oklab, #020a14 32%, transparent);
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer--md { width: min(620px, 100vw); }
+.drawer--lg { width: min(860px, 100vw); }
+
+.drawer__header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  justify-content: space-between;
+  gap: .8rem;
+  align-items: start;
+}
+
+.drawer__title { font-size: 1.1rem; }
+.drawer__description { color: var(--text-muted); }
+
+.drawer__body {
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.drawer-fade-enter-active,
+.drawer-fade-leave-active,
+.drawer-slide-enter-active,
+.drawer-slide-leave-active {
+  transition: all .2s ease;
+}
+
+.drawer-fade-enter-from,
+.drawer-fade-leave-to {
+  opacity: 0;
+}
+
+.drawer-slide-enter-from,
+.drawer-slide-leave-to {
+  transform: translateX(24px);
+  opacity: 0;
+}
