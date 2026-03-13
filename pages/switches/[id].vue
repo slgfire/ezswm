@@ -23,6 +23,7 @@ const editForm = reactive({
 const selected = ref<Port>()
 const selectedPortNumber = ref<number>()
 const portPanelOpen = ref(false)
+const editDrawerOpen = ref(false)
 const portSaveState = ref<'idle' | 'saving' | 'success' | 'error'>('idle')
 const portSaveMessage = ref('')
 
@@ -148,8 +149,19 @@ async function savePortChanges(payload: PortUpdatePayload) {
       </div>
     </div>
 
-    <form class="panel stack" @submit.prevent="saveSwitch">
-      <h3>Edit switch</h3>
+    <div class="panel row row-between">
+      <h3>Switch configuration</h3>
+      <button class="secondary" @click="editDrawerOpen = true">Edit switch</button>
+    </div>
+
+    <FormDrawer
+      :open="editDrawerOpen"
+      title="Edit switch"
+      description="Update switch metadata and placement details."
+      @close="editDrawerOpen = false"
+    >
+      <form class="stack" @submit.prevent="saveSwitch(); editDrawerOpen = false">
+
       <div class="row">
         <input v-model="editForm.name" required placeholder="Name">
         <input v-model="editForm.vendor" required placeholder="Vendor">
@@ -173,10 +185,12 @@ async function savePortChanges(payload: PortUpdatePayload) {
         </select>
       </div>
       <textarea v-model="editForm.description" placeholder="Description" rows="3" />
-      <div class="row">
+      <div class="row row-end">
+        <button type="button" class="secondary" @click="editDrawerOpen = false">Cancel</button>
         <button type="submit">Save switch</button>
       </div>
-    </form>
+      </form>
+    </FormDrawer>
 
     <div v-if="activeLayout" class="panel stack">
       <h3>Port grid</h3>

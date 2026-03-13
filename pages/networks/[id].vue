@@ -20,12 +20,10 @@ const textCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 
 
 const { data: network, refresh } = await useFetch<NetworkDetail>(() => `/api/networks/${networkId.value}`)
 
-const sortState = ref<{ key: AllocationSortKey, direction: SortDirection }>({
-  key: 'ipAddress',
-  direction: 'asc'
-})
+const sortState = ref<{ key: AllocationSortKey, direction: SortDirection }>({ key: 'ipAddress', direction: 'asc' })
 
 const networkForm = reactive<Partial<Network>>({})
+const isNetworkDrawerOpen = ref(false)
 const derivedNetmask = computed(() => prefixToNetmask(networkForm.prefix))
 
 watchEffect(() => {
@@ -39,10 +37,36 @@ watch(derivedNetmask, (value) => {
 
 const allocationForm = reactive<Partial<IpAllocation>>({ ipAddress: '', hostname: '', serviceName: '', deviceName: '', status: 'used', description: '', notes: '' })
 const editingAllocationId = ref<string | null>(null)
+const isAllocationDrawerOpen = ref(false)
 
 const rangeForm = reactive<Partial<IpRange>>({ name: '', type: 'dhcp', startIp: '', endIp: '', description: '', notes: '' })
 const editingRangeId = ref<string | null>(null)
+const isRangeDrawerOpen = ref(false)
 const rangeTypes: IpRangeType[] = ['dhcp', 'reserved', 'static', 'infrastructure', 'guest', 'management', 'service']
+
+const networkFormDirty = computed(() => {
+  if (!network.value) return false
+  return JSON.stringify({ ...networkForm, netmask: derivedNetmask.value || '' }) !== JSON.stringify({ ...network.value, netmask: network.value.netmask || '' })
+})
+
+const allocationFormDirty = computed(() => Boolean(
+  allocationForm.ipAddress
+  || allocationForm.hostname
+  || allocationForm.serviceName
+  || allocationForm.deviceName
+  || allocationForm.description
+  || allocationForm.notes
+  || allocationForm.status !== 'used'
+))
+
+const rangeFormDirty = computed(() => Boolean(
+  rangeForm.name
+  || rangeForm.startIp
+  || rangeForm.endIp
+  || rangeForm.description
+  || rangeForm.notes
+  || rangeForm.type !== 'dhcp'
+))
 
 const sortedAllocations = computed(() => {
   if (!network.value) return []
@@ -53,10 +77,7 @@ const sortedAllocations = computed(() => {
 
   rows.sort((left, right) => {
     const comparison = compareAllocationRows(left.item, right.item, key)
-    if (comparison !== 0) {
-      return comparison * directionFactor
-    }
-
+    if (comparison !== 0) return comparison * directionFactor
     return left.index - right.index
   })
 
@@ -95,21 +116,10 @@ function findRangeForIp(ipAddress: string): IpRange | null {
 }
 
 function compareAllocationRows(left: IpAllocation, right: IpAllocation, key: AllocationSortKey): number {
-  if (key === 'ipAddress') {
-    return compareIpAddresses(left.ipAddress, right.ipAddress)
-  }
-
-  if (key === 'label') {
-    return textCollator.compare(allocationLabel(left), allocationLabel(right))
-  }
-
-  if (key === 'status') {
-    return STATUS_SORT_ORDER[left.status] - STATUS_SORT_ORDER[right.status]
-  }
-
-  if (key === 'networkName') {
-    return textCollator.compare(network.value?.name || '', network.value?.name || '')
-  }
+  if (key === 'ipAddress') return compareIpAddresses(left.ipAddress, right.ipAddress)
+  if (key === 'label') return textCollator.compare(allocationLabel(left), allocationLabel(right))
+  if (key === 'status') return STATUS_SORT_ORDER[left.status] - STATUS_SORT_ORDER[right.status]
+  if (key === 'networkName') return textCollator.compare(network.value?.name || '', network.value?.name || '')
 
   const leftVlan = network.value?.vlanId ?? Number.POSITIVE_INFINITY
   const rightVlan = network.value?.vlanId ?? Number.POSITIVE_INFINITY
@@ -121,7 +131,6 @@ function setSort(key: AllocationSortKey) {
     sortState.value.direction = sortState.value.direction === 'asc' ? 'desc' : 'asc'
     return
   }
-
   sortState.value = { key, direction: 'asc' }
 }
 
@@ -144,12 +153,19 @@ async function saveNetwork() {
       netmask: derivedNetmask.value || undefined
     }
   })
+  isNetworkDrawerOpen.value = false
   await refresh()
 }
 
 function beginEditAllocation(item: IpAllocation) {
   editingAllocationId.value = item.id
   Object.assign(allocationForm, item)
+  isAllocationDrawerOpen.value = true
+}
+
+function beginCreateAllocation() {
+  resetAllocationForm()
+  isAllocationDrawerOpen.value = true
 }
 
 function resetAllocationForm() {
@@ -164,6 +180,7 @@ async function saveAllocation() {
     await $fetch(`/api/networks/${networkId.value}/allocations`, { method: 'POST', body: allocationForm })
   }
   resetAllocationForm()
+  isAllocationDrawerOpen.value = false
   await refresh()
 }
 
@@ -175,6 +192,12 @@ async function removeAllocation(id: string) {
 function beginEditRange(item: IpRange) {
   editingRangeId.value = item.id
   Object.assign(rangeForm, item)
+  isRangeDrawerOpen.value = true
+}
+
+function beginCreateRange() {
+  resetRangeForm()
+  isRangeDrawerOpen.value = true
 }
 
 function resetRangeForm() {
@@ -190,6 +213,7 @@ async function saveRange() {
   }
 
   resetRangeForm()
+  isRangeDrawerOpen.value = false
   await refresh()
 }
 
@@ -218,73 +242,19 @@ function rangeBadgeClass(type: IpRangeType) {
   <div v-if="network" class="stack">
     <div class="row row-between">
       <h1>{{ network.name }}</h1>
-      <NuxtLink to="/networks"><button class="secondary">Back to networks</button></NuxtLink>
+      <div class="row">
+        <button class="secondary" @click="isNetworkDrawerOpen = true">Edit network</button>
+        <NuxtLink to="/networks"><button class="secondary">Back to networks</button></NuxtLink>
+      </div>
     </div>
 
     <div class="panel">
-      <h3 class="section-title">Network details</h3>
-      <div class="network-form-grid">
-        <label class="network-field">
-          <span class="network-field__label">VLAN ID</span>
-          <input v-model="networkForm.vlanId" type="number" min="1" max="4094" placeholder="Optional VLAN ID">
-          <small class="network-field__hint">Optional VLAN identifier for this network</small>
-        </label>
-
-        <label class="network-field">
-          <span class="network-field__label">Network name</span>
-          <input v-model="networkForm.name" placeholder="e.g. Production LAN">
-        </label>
-
-        <label class="network-field">
-          <span class="network-field__label">Subnet</span>
-          <input v-model="networkForm.subnet" placeholder="e.g. 10.10.10.0">
-          <small class="network-field__hint">Base network address</small>
-        </label>
-
-        <label class="network-field">
-          <span class="network-field__label">Prefix</span>
-          <input v-model="networkForm.prefix" type="number" min="0" max="32" placeholder="e.g. 24">
-          <small class="network-field__hint">CIDR prefix length, e.g. 24</small>
-        </label>
-
-        <label class="network-field">
-          <span class="network-field__label">Netmask</span>
-          <input :value="derivedNetmask || 'Invalid prefix'" readonly disabled>
-          <small class="network-field__hint">Automatically derived from prefix</small>
-        </label>
-
-        <label class="network-field">
-          <span class="network-field__label">Gateway</span>
-          <input v-model="networkForm.gateway" placeholder="e.g. 10.10.10.1">
-          <small class="network-field__hint">Default gateway address within this subnet</small>
-        </label>
-
-        <label class="network-field">
-          <span class="network-field__label">Category</span>
-          <input v-model="networkForm.category" placeholder="e.g. service">
-          <small class="network-field__hint">Logical usage such as service, management, user, or storage</small>
-        </label>
-
-        <label class="network-field">
-          <span class="network-field__label">Routing</span>
-          <input v-model="networkForm.routing" placeholder="Routing information">
-        </label>
-
-        <label class="network-field network-form-grid__full">
-          <span class="network-field__label">Description</span>
-          <input v-model="networkForm.description" placeholder="Short description">
-          <small class="network-field__hint">Short purpose of this network</small>
-        </label>
-
-        <label class="network-field network-form-grid__full">
-          <span class="network-field__label">Notes</span>
-          <input v-model="networkForm.notes" placeholder="Optional notes">
-          <small class="network-field__hint">Optional internal notes</small>
-        </label>
-      </div>
-
-      <div class="row" style="margin-top: .8rem;">
-        <button @click="saveNetwork">Save network</button>
+      <h3 class="section-title">Network overview</h3>
+      <div class="stats">
+        <SwitchCard title="VLAN" :value="network.vlanId ?? '—'" />
+        <SwitchCard title="Subnet" :value="`${network.subnet}/${network.prefix}`" />
+        <SwitchCard title="Gateway" :value="network.gateway || '—'" />
+        <SwitchCard title="Category" :value="network.category || '—'" />
       </div>
     </div>
 
@@ -303,26 +273,11 @@ function rangeBadgeClass(type: IpRangeType) {
       <small>{{ summary.utilization }}% utilization</small>
     </div>
 
-    <div class="panel">
-      <h3 class="section-title">IP range editor</h3>
-      <div class="row">
-        <input v-model="rangeForm.name" placeholder="Range name">
-        <select v-model="rangeForm.type">
-          <option v-for="item in rangeTypes" :key="item" :value="item">{{ item }}</option>
-        </select>
-        <input v-model="rangeForm.startIp" placeholder="Start IP">
-        <input v-model="rangeForm.endIp" placeholder="End IP">
-      </div>
-      <div class="row" style="margin-top: .6rem;">
-        <input v-model="rangeForm.description" placeholder="Description">
-        <input v-model="rangeForm.notes" placeholder="Notes">
-        <button @click="saveRange">{{ editingRangeId ? 'Update range' : 'Add range' }}</button>
-        <button v-if="editingRangeId" class="secondary" @click="resetRangeForm">Cancel</button>
-      </div>
-    </div>
-
     <div class="panel table-wrap">
-      <h3 class="section-title">IP ranges</h3>
+      <div class="row row-between" style="padding: .75rem;">
+        <h3>IP ranges</h3>
+        <button @click="beginCreateRange">Add range</button>
+      </div>
       <table>
         <thead>
           <tr>
@@ -354,29 +309,11 @@ function rangeBadgeClass(type: IpRangeType) {
       </table>
     </div>
 
-    <div class="panel">
-      <h3 class="section-title">Allocation editor</h3>
-      <div class="row">
-        <input v-model="allocationForm.ipAddress" placeholder="IP address">
-        <input v-model="allocationForm.hostname" placeholder="Hostname">
-        <input v-model="allocationForm.serviceName" placeholder="Service name">
-        <input v-model="allocationForm.deviceName" placeholder="Device name">
-        <select v-model="allocationForm.status">
-          <option value="used">used</option>
-          <option value="reserved">reserved</option>
-          <option value="free">free</option>
-          <option value="gateway">gateway</option>
-        </select>
-      </div>
-      <div class="row" style="margin-top: .6rem;">
-        <input v-model="allocationForm.description" placeholder="Description">
-        <input v-model="allocationForm.notes" placeholder="Notes">
-        <button @click="saveAllocation">{{ editingAllocationId ? 'Update allocation' : 'Add allocation' }}</button>
-        <button v-if="editingAllocationId" class="secondary" @click="resetAllocationForm">Cancel</button>
-      </div>
-    </div>
-
     <div class="panel table-wrap">
+      <div class="row row-between" style="padding: .75rem;">
+        <h3>IP allocations</h3>
+        <button @click="beginCreateAllocation">Add allocation</button>
+      </div>
       <table>
         <thead>
           <tr>
@@ -419,9 +356,7 @@ function rangeBadgeClass(type: IpRangeType) {
               <template v-if="findRangeForIp(item.ipAddress)">
                 <span class="badge" :class="rangeBadgeClass(findRangeForIp(item.ipAddress)!.type)">{{ findRangeForIp(item.ipAddress)!.name }} ({{ findRangeForIp(item.ipAddress)!.type }})</span>
               </template>
-              <template v-else>
-                —
-              </template>
+              <template v-else>—</template>
             </td>
             <td><span class="badge" :class="badgeClass(item.status)">{{ item.status }}</span></td>
             <td>{{ network.name }}</td>
@@ -436,5 +371,81 @@ function rangeBadgeClass(type: IpRangeType) {
         </tbody>
       </table>
     </div>
+
+    <FormDrawer
+      :open="isNetworkDrawerOpen"
+      title="Edit network"
+      description="Update network settings and metadata."
+      :has-unsaved-changes="networkFormDirty"
+      @close="isNetworkDrawerOpen = false"
+    >
+      <form class="stack" @submit.prevent="saveNetwork">
+        <div class="network-form-grid">
+          <label class="network-field"><span class="network-field__label">VLAN ID</span><input v-model="networkForm.vlanId" type="number" min="1" max="4094"></label>
+          <label class="network-field"><span class="network-field__label">Network name</span><input v-model="networkForm.name"></label>
+          <label class="network-field"><span class="network-field__label">Subnet</span><input v-model="networkForm.subnet"></label>
+          <label class="network-field"><span class="network-field__label">Prefix</span><input v-model="networkForm.prefix" type="number" min="0" max="32"></label>
+          <label class="network-field"><span class="network-field__label">Netmask</span><input :value="derivedNetmask || 'Invalid prefix'" readonly disabled></label>
+          <label class="network-field"><span class="network-field__label">Gateway</span><input v-model="networkForm.gateway"></label>
+          <label class="network-field"><span class="network-field__label">Category</span><input v-model="networkForm.category"></label>
+          <label class="network-field"><span class="network-field__label">Routing</span><input v-model="networkForm.routing"></label>
+          <label class="network-field network-form-grid__full"><span class="network-field__label">Description</span><input v-model="networkForm.description"></label>
+          <label class="network-field network-form-grid__full"><span class="network-field__label">Notes</span><input v-model="networkForm.notes"></label>
+        </div>
+        <div class="row row-end">
+          <button type="button" class="secondary" @click="isNetworkDrawerOpen = false">Cancel</button>
+          <button type="submit">Save network</button>
+        </div>
+      </form>
+    </FormDrawer>
+
+    <FormDrawer
+      :open="isRangeDrawerOpen"
+      :title="editingRangeId ? 'Edit IP range' : 'Add IP range'"
+      description="Manage DHCP, reserved, and service ranges."
+      :has-unsaved-changes="rangeFormDirty"
+      width="md"
+      @close="isRangeDrawerOpen = false"
+    >
+      <form class="stack" @submit.prevent="saveRange">
+        <div class="network-form-grid">
+          <label class="network-field"><span class="network-field__label">Range name</span><input v-model="rangeForm.name" required></label>
+          <label class="network-field"><span class="network-field__label">Type</span><select v-model="rangeForm.type"><option v-for="item in rangeTypes" :key="item" :value="item">{{ item }}</option></select></label>
+          <label class="network-field"><span class="network-field__label">Start IP</span><input v-model="rangeForm.startIp" required></label>
+          <label class="network-field"><span class="network-field__label">End IP</span><input v-model="rangeForm.endIp" required></label>
+          <label class="network-field network-form-grid__full"><span class="network-field__label">Description</span><input v-model="rangeForm.description"></label>
+          <label class="network-field network-form-grid__full"><span class="network-field__label">Notes</span><input v-model="rangeForm.notes"></label>
+        </div>
+        <div class="row row-end">
+          <button type="button" class="secondary" @click="resetRangeForm(); isRangeDrawerOpen = false">Cancel</button>
+          <button type="submit">{{ editingRangeId ? 'Update range' : 'Add range' }}</button>
+        </div>
+      </form>
+    </FormDrawer>
+
+    <FormDrawer
+      :open="isAllocationDrawerOpen"
+      :title="editingAllocationId ? 'Edit IP allocation' : 'Add IP allocation'"
+      description="Assign addresses to devices and services."
+      :has-unsaved-changes="allocationFormDirty"
+      width="md"
+      @close="isAllocationDrawerOpen = false"
+    >
+      <form class="stack" @submit.prevent="saveAllocation">
+        <div class="network-form-grid">
+          <label class="network-field"><span class="network-field__label">IP address</span><input v-model="allocationForm.ipAddress" required></label>
+          <label class="network-field"><span class="network-field__label">Hostname</span><input v-model="allocationForm.hostname"></label>
+          <label class="network-field"><span class="network-field__label">Service name</span><input v-model="allocationForm.serviceName"></label>
+          <label class="network-field"><span class="network-field__label">Device name</span><input v-model="allocationForm.deviceName"></label>
+          <label class="network-field"><span class="network-field__label">Status</span><select v-model="allocationForm.status"><option value="used">used</option><option value="reserved">reserved</option><option value="free">free</option><option value="gateway">gateway</option></select></label>
+          <label class="network-field network-form-grid__full"><span class="network-field__label">Description</span><input v-model="allocationForm.description"></label>
+          <label class="network-field network-form-grid__full"><span class="network-field__label">Notes</span><input v-model="allocationForm.notes"></label>
+        </div>
+        <div class="row row-end">
+          <button type="button" class="secondary" @click="resetAllocationForm(); isAllocationDrawerOpen = false">Cancel</button>
+          <button type="submit">{{ editingAllocationId ? 'Update allocation' : 'Add allocation' }}</button>
+        </div>
+      </form>
+    </FormDrawer>
   </div>
 </template>
