@@ -1,0 +1,30 @@
+export function ipv4ToNumber(ipAddress: string): number | null {
+  const octets = ipAddress.trim().split('.')
+  if (octets.length !== 4) return null
+
+  let numericValue = 0
+  for (const octet of octets) {
+    if (!/^\d+$/.test(octet)) return null
+
+    const octetValue = Number(octet)
+    if (!Number.isInteger(octetValue) || octetValue < 0 || octetValue > 255) return null
+
+    numericValue = (numericValue << 8) + octetValue
+  }
+
+  return numericValue >>> 0
+}
+
+export function compareIpAddresses(left: string, right: string): number {
+  const leftNumeric = ipv4ToNumber(left)
+  const rightNumeric = ipv4ToNumber(right)
+
+  if (leftNumeric !== null && rightNumeric !== null) {
+    return leftNumeric - rightNumeric
+  }
+
+  if (leftNumeric !== null) return -1
+  if (rightNumeric !== null) return 1
+
+  return left.localeCompare(right, undefined, { numeric: true, sensitivity: 'base' })
+}

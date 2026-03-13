@@ -417,3 +417,26 @@ tbody tr.port-row-selected:hover {
 .gateway-row {
   outline: 1px solid color-mix(in oklab, var(--danger) 50%, transparent);
 }
+
+.table-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font-weight: inherit;
+  text-align: left;
+}
+
+.table-sort:hover {
+  background: transparent;
+  color: var(--accent);
+}
+
+.table-sort--active {
+  color: var(--accent);
+}
