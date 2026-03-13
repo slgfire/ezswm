@@ -6,9 +6,16 @@ const ALLOWED_MEDIA: MediaType[] = ['RJ45', 'SFP', 'SFP+', 'QSFP']
 const ALLOWED_DUPLEX: DuplexMode[] = ['half', 'full', 'auto']
 
 function normalizeText(value: unknown): string | undefined {
-  if (typeof value !== 'string') return undefined
-  const trimmed = value.trim()
-  return trimmed.length > 0 ? trimmed : undefined
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? trimmed : undefined
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value)
+  }
+
+  return undefined
 }
 
 function coerceTextField(body: Record<string, unknown>, key: string, ...legacyKeys: string[]): string | undefined {
