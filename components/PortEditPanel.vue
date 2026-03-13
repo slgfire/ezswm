@@ -110,7 +110,7 @@ function validate() {
 }
 
 async function onSave() {
-  if (!props.port || !validate()) return
+  if (!validate()) return
   saving.value = true
   try {
     const normalized = {
@@ -173,7 +173,8 @@ watch(() => props.open, (isOpen) => {
         <strong>{{ statusLabel }}</strong>
       </div>
 
-      <div class="stack port-form-grid">
+      <form class="stack" @submit.prevent="onSave">
+        <div class="port-form-grid">
           <label class="field">
             <span>Status</span>
             <select v-model="form.status">
@@ -249,10 +250,11 @@ watch(() => props.open, (isOpen) => {
         </div>
 
       <div class="row row-end">
-        <button class="button--ghost" @click="resetForm">Zurücksetzen</button>
-        <button class="secondary" @click="close">Abbrechen</button>
-        <button :disabled="saving" @click="onSave">{{ saving ? 'Speichern…' : 'Speichern' }}</button>
+        <button type="button" class="button--ghost" @click="resetForm">Zurücksetzen</button>
+        <button type="button" class="secondary" @click="close">Abbrechen</button>
+        <button type="submit" :disabled="saving">{{ saving ? 'Saving...' : 'Save' }}</button>
       </div>
+      </form>
     </aside>
   </div>
 </template>

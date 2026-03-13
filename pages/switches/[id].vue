@@ -23,6 +23,8 @@ const editForm = reactive({
 const selected = ref<Port>()
 const selectedPortNumber = ref<number>()
 const portPanelOpen = ref(false)
+const portSaveState = ref<'idle' | 'saving' | 'success' | 'error'>('idle')
+const portSaveMessage = ref('')
 
 const activeLayout = computed(() => {
   if (!sw.value) return undefined
@@ -107,19 +109,29 @@ async function savePortChanges(payload: PortUpdatePayload) {
   const portNumber = selectedPortNumber.value
   if (!portNumber) return
 
-  const updated = await $fetch<Port>(`/api/switches/${sw.value.id}/ports/${portNumber}`, {
-    method: 'PUT',
-    body: payload
-  })
+  portSaveState.value = 'saving'
+  portSaveMessage.value = ''
 
-  const idx = sw.value.ports.findIndex((port) => port.portNumber === updated.portNumber)
-  if (idx >= 0) {
-    sw.value.ports[idx] = updated
+  try {
+    const updated = await $fetch<Port>(`/api/switches/${sw.value.id}/ports/${portNumber}`, {
+      method: 'PUT',
+      body: payload
+    })
+
+    const idx = sw.value.ports.findIndex((port) => port.portNumber === updated.portNumber)
+    if (idx >= 0) {
+      sw.value.ports[idx] = updated
+    }
+
+    selected.value = updated
+    await refresh()
+    closePortPanel()
+    portSaveState.value = 'success'
+    portSaveMessage.value = `Port ${updated.portNumber} saved.`
+  } catch (error: any) {
+    portSaveState.value = 'error'
+    portSaveMessage.value = error?.data?.statusMessage || error?.message || 'Saving port failed.'
   }
-
-  selected.value = updated
-  await refresh()
-  closePortPanel()
 }
 </script>
 
@@ -191,6 +203,9 @@ async function savePortChanges(payload: PortUpdatePayload) {
       @save="savePortChanges"
     />
 
+    <p v-if="portSaveState === 'success'" class="save-feedback save-feedback--success">{{ portSaveMessage }}</p>
+    <p v-if="portSaveState === 'error'" class="save-feedback save-feedback--error">{{ portSaveMessage }}</p>
+
     <div class="panel stack">
       <h3>Port-Liste</h3>
       <div class="table-wrap">
@@ -217,3 +232,25 @@ async function savePortChanges(payload: PortUpdatePayload) {
     </div>
   </div>
 </template>
+
+
+<style scoped>
+.save-feedback {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.save-feedback--success {
+  background: #e6f7ed;
+  color: #146c43;
+  border: 1px solid #9fd8b7;
+}
+
+.save-feedback--error {
+  background: #fdecec;
+  color: #9b1c1c;
+  border: 1px solid #f3b5b5;
+}
+</style>
