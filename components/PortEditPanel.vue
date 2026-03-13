@@ -4,7 +4,7 @@ import type { MediaType, Port, PortStatus, PortUpdatePayload } from '~/types/mod
 interface PortForm {
   status: PortStatus
   label: string
-  vlan: string
+  vlan: string | number
   connectedDevice: string
   macAddress: string
   mediaType: MediaType
@@ -82,16 +82,18 @@ const portNumber = computed(() => props.port?.portNumber ?? props.fallbackPortNu
 
 const statusLabel = computed(() => statusOptions.find((opt) => opt.value === form.status)?.label ?? form.status)
 
-function validVlan(value: string) {
-  if (!value.trim()) return true
-  if (!/^\d+$/.test(value.trim())) return false
-  const num = Number(value)
+function validVlan(value: unknown) {
+  const normalized = asTrimmedString(value)
+  if (!normalized) return true
+  if (!/^\d+$/.test(normalized)) return false
+  const num = Number(normalized)
   return num >= 1 && num <= 4094
 }
 
-function validMac(value: string) {
-  if (!value.trim()) return true
-  return /^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$/.test(value.trim())
+function validMac(value: unknown) {
+  const normalized = asTrimmedString(value)
+  if (!normalized) return true
+  return /^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$/.test(normalized)
 }
 
 function validate() {

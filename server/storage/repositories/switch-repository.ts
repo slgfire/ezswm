@@ -6,9 +6,16 @@ import { newId, withTimestamps } from '~/server/storage/shared/utils'
 const ALLOWED_DUPLEX: DuplexMode[] = ['full', 'half', 'auto']
 
 function normalizeText(value: unknown): string | undefined {
-  if (typeof value !== 'string') return undefined
-  const trimmed = value.trim()
-  return trimmed.length > 0 ? trimmed : undefined
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? trimmed : undefined
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value)
+  }
+
+  return undefined
 }
 
 function normalizeDuplex(value: unknown): DuplexMode {
