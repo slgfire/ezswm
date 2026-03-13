@@ -40,7 +40,7 @@ export function normalizeNetworkPayload(body: Partial<Network>): Omit<Network, '
     name: body.name!.trim(),
     subnet: body.subnet!.trim(),
     prefix,
-    netmask: body.netmask?.trim() || prefixToMask(prefix),
+    netmask: prefixToMask(prefix),
     gateway: body.gateway?.trim(),
     routing: body.routing?.trim(),
     description: body.description?.trim(),

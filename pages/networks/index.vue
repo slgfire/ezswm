@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { IpAllocation, Network } from '~/types/models'
+import { prefixToNetmask } from '~/utils/ip'
 
 type NetworkWithAllocations = Network & { allocations: IpAllocation[] }
 
 const query = reactive({ vlan: '', name: '', subnet: '', hostname: '', ip: '' })
-const form = reactive<Partial<Network>>({ name: '', subnet: '', prefix: 24, gateway: '', routing: '', description: '', notes: '', vlanId: undefined })
+const form = reactive<Partial<Network>>({ name: '', subnet: '', prefix: 24, gateway: '', routing: '', description: '', notes: '', vlanId: undefined, category: '' })
+const derivedNetmask = computed(() => prefixToNetmask(form.prefix))
 const { data: networks, refresh } = await useFetch<NetworkWithAllocations[]>('/api/networks')
 
 const filtered = computed(() => (networks.value || []).filter((network) => {
@@ -30,10 +32,11 @@ async function createNetwork() {
     body: {
       ...form,
       vlanId: form.vlanId ? Number(form.vlanId) : undefined,
-      prefix: Number(form.prefix)
+      prefix: Number(form.prefix),
+      netmask: derivedNetmask.value || undefined
     }
   })
-  Object.assign(form, { name: '', subnet: '', prefix: 24, gateway: '', routing: '', description: '', notes: '', vlanId: undefined })
+  Object.assign(form, { name: '', subnet: '', prefix: 24, gateway: '', routing: '', description: '', notes: '', vlanId: undefined, category: '' })
   await refresh()
 }
 
@@ -59,17 +62,57 @@ async function removeNetwork(id: string) {
 
     <div class="panel">
       <h3 class="section-title">Create network</h3>
-      <div class="row">
-        <input v-model="form.vlanId" placeholder="VLAN ID (optional)">
-        <input v-model="form.name" placeholder="Network name">
-        <input v-model="form.subnet" placeholder="Subnet (e.g. 10.10.10.0)">
-        <input v-model="form.prefix" type="number" min="0" max="32" placeholder="Prefix">
-        <input v-model="form.gateway" placeholder="Gateway">
-        <input v-model="form.routing" placeholder="Routing">
+      <div class="network-form-grid">
+        <label class="network-field">
+          <span class="network-field__label">VLAN ID</span>
+          <input v-model="form.vlanId" type="number" min="1" max="4094" placeholder="Optional VLAN ID">
+          <small class="network-field__hint">Optional VLAN identifier for this network</small>
+        </label>
+        <label class="network-field">
+          <span class="network-field__label">Network name</span>
+          <input v-model="form.name" placeholder="e.g. Production LAN">
+        </label>
+        <label class="network-field">
+          <span class="network-field__label">Subnet</span>
+          <input v-model="form.subnet" placeholder="e.g. 10.10.10.0">
+          <small class="network-field__hint">Base network address</small>
+        </label>
+        <label class="network-field">
+          <span class="network-field__label">Prefix</span>
+          <input v-model="form.prefix" type="number" min="0" max="32" placeholder="e.g. 24">
+          <small class="network-field__hint">CIDR prefix length, e.g. 24</small>
+        </label>
+        <label class="network-field">
+          <span class="network-field__label">Netmask</span>
+          <input :value="derivedNetmask || 'Invalid prefix'" readonly disabled>
+          <small class="network-field__hint">Automatically derived from prefix</small>
+        </label>
+        <label class="network-field">
+          <span class="network-field__label">Gateway</span>
+          <input v-model="form.gateway" placeholder="e.g. 10.10.10.1">
+          <small class="network-field__hint">Default gateway address within this subnet</small>
+        </label>
+        <label class="network-field">
+          <span class="network-field__label">Category</span>
+          <input v-model="form.category" placeholder="e.g. management">
+          <small class="network-field__hint">Logical usage such as service, management, user, or storage</small>
+        </label>
+        <label class="network-field">
+          <span class="network-field__label">Routing</span>
+          <input v-model="form.routing" placeholder="Routing information">
+        </label>
+        <label class="network-field network-form-grid__full">
+          <span class="network-field__label">Description</span>
+          <input v-model="form.description" placeholder="Short description">
+          <small class="network-field__hint">Short purpose of this network</small>
+        </label>
+        <label class="network-field network-form-grid__full">
+          <span class="network-field__label">Notes</span>
+          <input v-model="form.notes" placeholder="Optional notes">
+          <small class="network-field__hint">Optional internal notes</small>
+        </label>
       </div>
-      <div class="row" style="margin-top: .6rem;">
-        <input v-model="form.description" placeholder="Description">
-        <input v-model="form.notes" placeholder="Notes">
+      <div class="row" style="margin-top: .8rem;">
         <button @click="createNetwork">Create network</button>
       </div>
     </div>

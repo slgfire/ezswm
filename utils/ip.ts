@@ -29,6 +29,25 @@ export function compareIpAddresses(left: string, right: string): number {
   return left.localeCompare(right, undefined, { numeric: true, sensitivity: 'base' })
 }
 
+export function prefixToNetmask(prefix: number | string | null | undefined): string | null {
+  const normalizedPrefix = Number(prefix)
+  if (!Number.isInteger(normalizedPrefix) || normalizedPrefix < 0 || normalizedPrefix > 32) {
+    return null
+  }
+
+  const octets: number[] = []
+  let remainingBits = normalizedPrefix
+
+  for (let index = 0; index < 4; index += 1) {
+    const bitsInOctet = Math.max(0, Math.min(8, remainingBits))
+    const octet = bitsInOctet === 0 ? 0 : (256 - (2 ** (8 - bitsInOctet)))
+    octets.push(octet)
+    remainingBits -= 8
+  }
+
+  return octets.join('.')
+}
+
 
 export function isIpWithinRange(ipAddress: string, startIp: string, endIp: string): boolean {
   const ip = ipv4ToNumber(ipAddress)
