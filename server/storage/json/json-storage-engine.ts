@@ -28,15 +28,29 @@ export class JsonStorageEngine implements StorageEngine {
     await this.ensureStoreFile(storePath)
 
     const raw = await fs.readFile(storePath, 'utf8')
-    const parsed = JSON.parse(raw) as DataStore
+    const parsed = JSON.parse(raw) as Partial<DataStore>
+    const hydrated: DataStore = {
+      locations: parsed.locations || [],
+      racks: parsed.racks || [],
+      vendors: parsed.vendors || [],
+      switchModels: parsed.switchModels || [],
+      layoutTemplates: parsed.layoutTemplates || [],
+      switches: parsed.switches || [],
+      networks: parsed.networks || [],
+      ipAllocations: parsed.ipAllocations || []
+    }
 
-    if (!hasAnyData(parsed)) {
+    if (!hasAnyData(hydrated)) {
       const seedData = createSeedData()
       await this.write(seedData)
       return seedData
     }
 
-    return parsed
+    if (!parsed.networks || !parsed.ipAllocations) {
+      await this.write(hydrated)
+    }
+
+    return hydrated
   }
 
   async write(data: DataStore): Promise<void> {
@@ -44,8 +58,14 @@ export class JsonStorageEngine implements StorageEngine {
     const tempPath = `${storePath}.tmp`
     const payload = `${JSON.stringify(data, null, 2)}\n`
 
+    await fs.mkdir(dirname(storePath), { recursive: true })
     await fs.writeFile(tempPath, payload, 'utf8')
-    await fs.rename(tempPath, storePath)
+
+    try {
+      await fs.rename(tempPath, storePath)
+    } catch (error) {
+      await fs.writeFile(storePath, payload, 'utf8')
+    }
   }
 
   async update<T>(updater: (data: DataStore) => T | Promise<T>): Promise<T> {

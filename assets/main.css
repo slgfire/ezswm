@@ -399,3 +399,21 @@ tbody tr.port-row-selected:hover {
     grid-template-columns: 1fr;
   }
 }
+
+.util {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-default);
+  overflow: hidden;
+}
+
+.util-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+}
+
+.gateway-row {
+  outline: 1px solid color-mix(in oklab, var(--danger) 50%, transparent);
+}

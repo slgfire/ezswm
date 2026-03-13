@@ -2,6 +2,7 @@ export type SwitchStatus = 'active' | 'planned' | 'retired'
 export type PortStatus = 'free' | 'used' | 'disabled' | 'error'
 export type MediaType = 'RJ45' | 'SFP' | 'SFP+' | 'QSFP'
 export type DuplexMode = 'half' | 'full' | 'auto'
+export type IpAllocationStatus = 'used' | 'reserved' | 'free' | 'gateway'
 
 export interface Location {
   id: string
@@ -107,6 +108,34 @@ export interface Switch {
   updatedAt: string
 }
 
+export interface Network {
+  id: string
+  vlanId?: number
+  name: string
+  subnet: string
+  prefix: number
+  netmask: string
+  gateway?: string
+  routing?: string
+  description?: string
+  notes?: string
+  maxHosts: number
+  category?: string
+  tags?: string[]
+}
+
+export interface IpAllocation {
+  id: string
+  networkId: string
+  ipAddress: string
+  hostname?: string
+  serviceName?: string
+  deviceName?: string
+  status: IpAllocationStatus
+  description?: string
+  notes?: string
+}
+
 export interface DataStore {
   locations: Location[]
   racks: Rack[]
@@ -114,4 +143,6 @@ export interface DataStore {
   switchModels: SwitchModel[]
   layoutTemplates: LayoutTemplate[]
   switches: Switch[]
+  networks: Network[]
+  ipAllocations: IpAllocation[]
 }

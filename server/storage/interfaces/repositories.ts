@@ -1,4 +1,4 @@
-import type { LayoutTemplate, Location, Rack, Switch } from '~/types/models'
+import type { IpAllocation, LayoutTemplate, Location, Network, Rack, Switch } from '~/types/models'
 import type { CrudRepository } from './repository'
 
 export interface SwitchRepository extends CrudRepository<Switch> {
@@ -18,4 +18,10 @@ export interface RackRepository extends CrudRepository<Rack> {
 
 export interface PortRepository {
   updateBySwitchAndNumber(switchId: string, portNumber: number, payload: Partial<Switch['ports'][number]>): Promise<Switch['ports'][number] | undefined>
+}
+
+export interface NetworkRepository extends CrudRepository<Network> {}
+
+export interface IpAllocationRepository extends CrudRepository<IpAllocation> {
+  listByNetwork(networkId: string): Promise<IpAllocation[]>
 }
