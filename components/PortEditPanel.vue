@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MediaType, Port, PortStatus } from '~/types/models'
+import type { MediaType, Port, PortStatus, PortUpdatePayload } from '~/types/models'
 
 interface PortForm {
   status: PortStatus
@@ -24,7 +24,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  save: [payload: Port]
+  save: [payload: PortUpdatePayload]
 }>()
 
 const saving = ref(false)
@@ -107,19 +107,18 @@ async function onSave() {
   if (!props.port || !validate()) return
   saving.value = true
   try {
-    const payload: Port = {
-      ...props.port,
+    const payload: PortUpdatePayload = {
       status: form.status,
-      label: form.label.trim() || undefined,
-      vlan: form.vlan.trim() || undefined,
-      connectedDevice: form.connectedDevice.trim() || undefined,
-      macAddress: form.macAddress.trim() || undefined,
+      label: form.label.trim(),
+      vlan: form.vlan.trim(),
+      connectedDevice: form.connectedDevice.trim(),
+      macAddress: form.macAddress.trim(),
       mediaType: form.mediaType,
-      description: form.description.trim() || undefined,
-      speed: form.speed.trim() || undefined,
+      description: form.description.trim(),
+      speed: form.speed.trim(),
       duplex: form.duplex || 'auto',
       poe: form.poe,
-      patchTarget: form.patchTarget.trim() || undefined
+      patchTarget: form.patchTarget.trim()
     }
 
     emit('save', payload)

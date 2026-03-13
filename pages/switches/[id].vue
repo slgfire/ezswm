@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LayoutTemplate, Port, Switch } from '~/types/models'
+import type { LayoutTemplate, Port, PortUpdatePayload, Switch } from '~/types/models'
 
 const route = useRoute()
 const { data: sw, refresh } = await useFetch<Switch>(`/api/switches/${route.params.id}`)
@@ -102,9 +102,12 @@ function closePortPanel() {
   portPanelOpen.value = false
 }
 
-async function savePortChanges(payload: Port) {
+async function savePortChanges(payload: PortUpdatePayload) {
   if (!sw.value) return
-  const updated = await $fetch<Port>(`/api/switches/${sw.value.id}/ports/${payload.portNumber}`, {
+  const portNumber = selectedPortNumber.value
+  if (!portNumber) return
+
+  const updated = await $fetch<Port>(`/api/switches/${sw.value.id}/ports/${portNumber}`, {
     method: 'PUT',
     body: payload
   })
