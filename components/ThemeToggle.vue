@@ -10,7 +10,7 @@ onMounted(() => {
   <button
     class="button button--ghost button--icon"
     type="button"
-    :aria-label="`Aktuelles Theme: ${theme}. Theme wechseln`"
+    :aria-label="`Current theme: ${theme}. Toggle theme`"
     @click="toggleTheme"
   >
     <span v-if="theme === 'dark'">🌙</span>

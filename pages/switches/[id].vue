@@ -140,7 +140,7 @@ async function savePortChanges(payload: PortUpdatePayload) {
     <SwitchDetails :item="sw" :layout="activeLayout" />
 
     <div class="panel">
-      <h3>Layout-Zuweisung</h3>
+      <h3>Layout assignment</h3>
       <div class="row">
         <select v-model="sw.layoutTemplateId" @change="saveSwitch">
           <option v-for="layout in layouts || []" :key="layout.id" :value="layout.id">{{ layout.name }}</option>
@@ -149,22 +149,22 @@ async function savePortChanges(payload: PortUpdatePayload) {
     </div>
 
     <form class="panel stack" @submit.prevent="saveSwitch">
-      <h3>Switch bearbeiten</h3>
+      <h3>Edit switch</h3>
       <div class="row">
         <input v-model="editForm.name" required placeholder="Name">
-        <input v-model="editForm.vendor" required placeholder="Hersteller">
-        <input v-model="editForm.model" required placeholder="Modell">
-        <input v-model="editForm.managementIp" required placeholder="Management-IP">
-        <input v-model="editForm.locationName" list="location-options" placeholder="Standort auswählen oder neu anlegen">
+        <input v-model="editForm.vendor" required placeholder="Vendor">
+        <input v-model="editForm.model" required placeholder="Model">
+        <input v-model="editForm.managementIp" required placeholder="Management IP">
+        <input v-model="editForm.locationName" list="location-options" placeholder="Select existing location or create a new one">
         <datalist id="location-options">
           <option v-for="location in locationOptions" :key="location" :value="location" />
         </datalist>
-        <input v-model="editForm.rackName" list="rack-options" placeholder="Rack auswählen oder neu anlegen">
+        <input v-model="editForm.rackName" list="rack-options" placeholder="Select existing rack or create a new one">
         <datalist id="rack-options">
           <option v-for="rack in rackOptions" :key="rack" :value="rack" />
         </datalist>
-        <input v-model="editForm.rackPosition" placeholder="Rack-Position">
-        <input v-model="editForm.serialNumber" placeholder="Seriennummer">
+        <input v-model="editForm.rackPosition" placeholder="Rack position">
+        <input v-model="editForm.serialNumber" placeholder="Serial number">
         <input v-model="editForm.tags" placeholder="Tags (csv)">
         <select v-model="editForm.status">
           <option value="active">active</option>
@@ -172,14 +172,14 @@ async function savePortChanges(payload: PortUpdatePayload) {
           <option value="retired">retired</option>
         </select>
       </div>
-      <textarea v-model="editForm.description" placeholder="Beschreibung" rows="3" />
+      <textarea v-model="editForm.description" placeholder="Description" rows="3" />
       <div class="row">
-        <button type="submit">Switch speichern</button>
+        <button type="submit">Save switch</button>
       </div>
     </form>
 
     <div v-if="activeLayout" class="panel stack">
-      <h3>Port-Darstellung</h3>
+      <h3>Port grid</h3>
       <div class="row">
         <PortBadge status="free" />
         <PortBadge status="used" />
@@ -207,11 +207,11 @@ async function savePortChanges(payload: PortUpdatePayload) {
     <p v-if="portSaveState === 'error'" class="save-feedback save-feedback--error">{{ portSaveMessage }}</p>
 
     <div class="panel stack">
-      <h3>Port-Liste</h3>
+      <h3>Port list</h3>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>#</th><th>Label</th><th>Status</th><th>VLAN</th><th>Gerät</th></tr>
+            <tr><th>#</th><th>Label</th><th>Status</th><th>VLAN</th><th>Device</th></tr>
           </thead>
           <tbody>
             <tr

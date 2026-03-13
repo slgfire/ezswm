@@ -15,7 +15,7 @@ async function submit(payload: Partial<LayoutTemplate>) {
 
 <template>
   <div>
-    <h1>Layout bearbeiten</h1>
+    <h1>Edit layout</h1>
     <LayoutTemplateEditor v-if="current" :initial="current" @submit="submit" />
   </div>
 </template>

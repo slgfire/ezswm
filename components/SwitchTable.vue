@@ -18,11 +18,11 @@ function switchStatusClass(status: string) {
       <thead>
         <tr>
           <th>Name</th>
-          <th>Hersteller</th>
-          <th>Modell</th>
-          <th>Standort</th>
+          <th>Vendor</th>
+          <th>Model</th>
+          <th>Location</th>
           <th>Status</th>
-          <th>Mgmt-IP</th>
+          <th>Mgmt IP</th>
           <th></th>
         </tr>
       </thead>
@@ -34,7 +34,7 @@ function switchStatusClass(status: string) {
           <td>{{ sw.locationId || '-' }}</td>
           <td><span :class="switchStatusClass(sw.status)">{{ sw.status }}</span></td>
           <td>{{ sw.managementIp }}</td>
-          <td><button class="danger" @click="emit('delete', sw.id)">Löschen</button></td>
+          <td><button class="danger" @click="emit('delete', sw.id)">Delete</button></td>
         </tr>
       </tbody>
     </table>
