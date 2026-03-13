@@ -140,13 +140,17 @@ async function savePortChanges(payload: PortUpdatePayload) {
   <div v-if="sw">
     <SwitchDetails :item="sw" :layout="activeLayout" />
 
-    <div class="panel">
+    <div class="panel stack">
       <h3>Layout assignment</h3>
       <div class="row">
         <select v-model="sw.layoutTemplateId" @change="saveSwitch">
           <option v-for="layout in layouts || []" :key="layout.id" :value="layout.id">{{ layout.name }}</option>
         </select>
       </div>
+      <small>
+        Layout templates are managed centrally in
+        <NuxtLink class="inline-link" to="/settings/port-layouts">Settings → Port layouts</NuxtLink>.
+      </small>
     </div>
 
     <div class="panel row row-between">

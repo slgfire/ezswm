@@ -2,21 +2,21 @@
   --font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 
   --bg-app: #eef3fa;
-  --bg-sidebar: #eaf0f9;
-  --bg-sidebar-accent: #dce7f8;
+  --bg-sidebar: #dfe9f7;
+  --bg-sidebar-accent: #cfdff7;
   --bg-surface: #ffffff;
   --bg-surface-elevated: #f8fbff;
   --bg-muted: #eef3fb;
-  --bg-hover: #e1e9f6;
-  --bg-selected: #d8e7ff;
+  --bg-hover: #d4e2f5;
+  --bg-selected: #c9ddff;
 
-  --border-default: #d4deef;
+  --border-default: #c2d2e9;
   --border-strong: #a8b9d6;
   --border-panel: #c8d5eb;
 
   --text-primary: #10233f;
-  --text-secondary: #3e5678;
-  --text-muted: #667a99;
+  --text-secondary: #2b4264;
+  --text-muted: #4f6788;
   --text-inverse: #ecf4ff;
 
   --accent-primary: #1e67ff;
@@ -63,13 +63,13 @@
 
 :root[data-theme='dark'] {
   --bg-app: #050b17;
-  --bg-sidebar: #070f1f;
-  --bg-sidebar-accent: #0d1d37;
+  --bg-sidebar: #040b18;
+  --bg-sidebar-accent: #102445;
   --bg-surface: #0d1a31;
   --bg-surface-elevated: #122442;
   --bg-muted: #0e213d;
-  --bg-hover: #152a4a;
-  --bg-selected: #123563;
+  --bg-hover: #173159;
+  --bg-selected: #17427a;
 
   --border-default: #1f365c;
   --border-strong: #325383;
@@ -136,8 +136,8 @@ small { color: var(--text-muted); }
 }
 
 .sidebar {
-  border-right: 1px solid var(--border-default);
-  background: linear-gradient(180deg, color-mix(in oklab, var(--bg-sidebar) 92%, black), var(--bg-sidebar));
+  border-right: 1px solid color-mix(in oklab, var(--border-default) 90%, var(--accent-primary));
+  background: linear-gradient(180deg, color-mix(in oklab, var(--bg-sidebar) 94%, black), color-mix(in oklab, var(--bg-sidebar) 84%, black));
   padding: 1.1rem .95rem;
   position: sticky;
   top: 0;
@@ -152,7 +152,7 @@ small { color: var(--text-muted); }
 
 .sidebar-brand__title { font-size: 1.2rem; font-weight: 700; letter-spacing: .03em; color: var(--text-primary); }
 .sidebar-nav { display: grid; gap: 1rem; }
-.nav-group { display: grid; gap: .35rem; }
+.nav-group { display: grid; gap: .4rem; }
 .nav-group__title { text-transform: uppercase; font-size: .7rem; letter-spacing: .12em; color: var(--text-muted); font-weight: 700; padding: 0 .45rem; }
 .nav-item {
   display: flex;
@@ -162,14 +162,15 @@ small { color: var(--text-muted); }
   border-radius: 10px;
   border: 1px solid transparent;
   color: var(--text-secondary);
+  background: color-mix(in oklab, var(--bg-sidebar) 84%, transparent);
   transition: .15s ease;
 }
-.nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.nav-item:hover { background: var(--bg-hover); color: var(--text-primary); border-color: color-mix(in oklab, var(--accent-primary) 25%, var(--border-default)); }
 .nav-item.router-link-active {
-  background: linear-gradient(130deg, color-mix(in oklab, var(--accent-primary) 15%, var(--bg-selected)), var(--bg-selected));
+  background: linear-gradient(130deg, color-mix(in oklab, var(--accent-primary) 24%, var(--bg-selected)), var(--bg-selected));
   border-color: color-mix(in oklab, var(--accent-primary) 45%, var(--border-default));
   color: var(--text-primary);
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent-primary) 18%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent-primary) 22%, transparent), 0 0 0 1px color-mix(in oklab, var(--accent-primary) 20%, transparent);
 }
 .nav-item__icon { width: 1rem; display: inline-flex; justify-content: center; color: var(--accent-primary); }
 
@@ -410,4 +411,53 @@ tbody tr:hover { background: var(--bg-hover); }
 .drawer-slide-leave-to {
   transform: translateX(24px);
   opacity: 0;
+}
+
+
+.inline-link {
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: .7rem;
+}
+
+.settings-link {
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: .65rem .75rem;
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.settings-link:hover {
+  background: var(--bg-hover);
+  border-color: color-mix(in oklab, var(--accent-primary) 35%, var(--border-default));
+}
+
+.network-sections-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+
+.section-pill {
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  padding: .3rem .7rem;
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+  font-size: .82rem;
+  font-weight: 600;
+}
+
+.section-pill:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
