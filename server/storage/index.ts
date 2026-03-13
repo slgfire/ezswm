@@ -1,8 +1,10 @@
-import type { PortRepository, LayoutRepository, LocationRepository, RackRepository, SwitchRepository } from './interfaces/repositories'
+import type { IpAllocationRepository, NetworkRepository, PortRepository, LayoutRepository, LocationRepository, RackRepository, SwitchRepository } from './interfaces/repositories'
 import { JsonStorageEngine } from './json/json-storage-engine'
 import { JsonLayoutRepository } from './repositories/layout-repository'
 import { JsonLocationRepository } from './repositories/location-repository'
+import { JsonNetworkRepository } from './repositories/network-repository'
 import { JsonPortRepository } from './repositories/port-repository'
+import { JsonIpAllocationRepository } from './repositories/ip-allocation-repository'
 import { JsonRackRepository } from './repositories/rack-repository'
 import { JsonSwitchRepository } from './repositories/switch-repository'
 
@@ -12,6 +14,8 @@ export interface StorageContext {
   layouts: LayoutRepository
   locations: LocationRepository
   racks: RackRepository
+  networks: NetworkRepository
+  ipAllocations: IpAllocationRepository
   readRawStore: JsonStorageEngine['read']
 }
 
@@ -29,6 +33,8 @@ export function useStorage(): StorageContext {
     layouts: new JsonLayoutRepository(storageEngine),
     locations: new JsonLocationRepository(storageEngine),
     racks: new JsonRackRepository(storageEngine),
+    networks: new JsonNetworkRepository(storageEngine),
+    ipAllocations: new JsonIpAllocationRepository(storageEngine),
     readRawStore: storageEngine.read.bind(storageEngine)
   }
 

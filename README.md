@@ -1,16 +1,18 @@
 # ezSWM
 
-Open-source switch management tool for small networks.
+Open-source network documentation tool for small networks.
 
 ## Nuxt 3 Application
 
-A self-hosted Nuxt 3 application for managing and visualizing network switches with configurable port layouts.
+A self-hosted Nuxt 3 application for managing and visualizing network switches, port layouts, VLAN networks, and IP allocations.
 
 ## Highlights
 
 - Nuxt 3 full-stack app with TypeScript.
 - JSON storage today, storage abstraction ready for SQLite later.
 - Docker-ready and open-source friendly.
+- Network / VLAN overview with subnet utilization metrics.
+- IP allocation tracking with status and gateway highlighting.
 - Persistent data mounted from `./data` into `/app/data`.
 
 ## Storage Architecture
