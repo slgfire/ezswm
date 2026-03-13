@@ -3,6 +3,7 @@ export type PortStatus = 'free' | 'used' | 'disabled' | 'error'
 export type MediaType = 'RJ45' | 'SFP' | 'SFP+' | 'QSFP'
 export type DuplexMode = 'half' | 'full' | 'auto'
 export type IpAllocationStatus = 'used' | 'reserved' | 'free' | 'gateway'
+export type IpRangeType = 'dhcp' | 'reserved' | 'static' | 'infrastructure' | 'guest' | 'management' | 'service'
 
 export interface Location {
   id: string
@@ -136,6 +137,17 @@ export interface IpAllocation {
   notes?: string
 }
 
+export interface IpRange {
+  id: string
+  networkId: string
+  name: string
+  type: IpRangeType
+  startIp: string
+  endIp: string
+  description?: string
+  notes?: string
+}
+
 export interface DataStore {
   locations: Location[]
   racks: Rack[]
@@ -145,4 +157,5 @@ export interface DataStore {
   switches: Switch[]
   networks: Network[]
   ipAllocations: IpAllocation[]
+  ipRanges: IpRange[]
 }

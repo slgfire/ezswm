@@ -1,4 +1,4 @@
-import type { DataStore, IpAllocation, LayoutTemplate, Network, Port, Switch } from '~/types/models'
+import type { DataStore, IpAllocation, IpRange, LayoutTemplate, Network, Port, Switch } from '~/types/models'
 import { nowIso } from '~/server/storage/shared/utils'
 
 function createPort(switchId: string, portNumber: number, overrides: Partial<Port> = {}): Port {
@@ -198,6 +198,46 @@ export function createSeedData(): DataStore {
     { id: 'ip-rac-backup', networkId: 'net-rac', ipAddress: '10.10.254.30', hostname: 'backup', status: 'reserved' }
   ]
 
+
+  const ipRanges: IpRange[] = [
+    {
+      id: 'range-wlan-usr-infra',
+      networkId: 'net-wlan-usr',
+      name: 'Infrastructure',
+      type: 'infrastructure',
+      startIp: '10.10.20.1',
+      endIp: '10.10.20.20',
+      description: 'Infrastructure devices and network services'
+    },
+    {
+      id: 'range-wlan-usr-dhcp',
+      networkId: 'net-wlan-usr',
+      name: 'Client DHCP Pool',
+      type: 'dhcp',
+      startIp: '10.10.20.100',
+      endIp: '10.10.20.199',
+      description: 'Main DHCP pool for wireless clients'
+    },
+    {
+      id: 'range-wlan-usr-reserved',
+      networkId: 'net-wlan-usr',
+      name: 'Reserved Block',
+      type: 'reserved',
+      startIp: '10.10.20.200',
+      endIp: '10.10.20.220',
+      description: 'Reserved for temporary assignments and migrations'
+    },
+    {
+      id: 'range-mgmt-sw-static',
+      networkId: 'net-mgmt-sw',
+      name: 'Static Management',
+      type: 'static',
+      startIp: '10.10.90.10',
+      endIp: '10.10.90.40',
+      description: 'Switches, controllers and management hosts'
+    }
+  ]
+
   return {
     locations: [
       { id: 'loc-hq', name: 'HQ', room: 'DC-1' },
@@ -222,7 +262,8 @@ export function createSeedData(): DataStore {
     layoutTemplates: [layout24, layout48Sequential, layout48OddEven, layout48Uplink],
     switches,
     networks,
-    ipAllocations
+    ipAllocations,
+    ipRanges
   }
 }
 

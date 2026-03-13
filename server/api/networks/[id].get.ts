@@ -9,5 +9,6 @@ export default defineEventHandler(async (event) => {
   if (!network) throw createError({ statusCode: 404, statusMessage: 'Network not found.' })
 
   const allocations = await storage.ipAllocations.listByNetwork(id)
-  return { ...network, allocations }
+  const ranges = await storage.ipRanges.listByNetwork(id)
+  return { ...network, allocations, ranges }
 })

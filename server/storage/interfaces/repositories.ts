@@ -1,4 +1,4 @@
-import type { IpAllocation, LayoutTemplate, Location, Network, Rack, Switch } from '~/types/models'
+import type { IpAllocation, IpRange, LayoutTemplate, Location, Network, Rack, Switch } from '~/types/models'
 import type { CrudRepository } from './repository'
 
 export interface SwitchRepository extends CrudRepository<Switch> {
@@ -24,4 +24,9 @@ export interface NetworkRepository extends CrudRepository<Network> {}
 
 export interface IpAllocationRepository extends CrudRepository<IpAllocation> {
   listByNetwork(networkId: string): Promise<IpAllocation[]>
+}
+
+
+export interface IpRangeRepository extends CrudRepository<IpRange> {
+  listByNetwork(networkId: string): Promise<IpRange[]>
 }

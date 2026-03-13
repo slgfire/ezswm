@@ -28,3 +28,19 @@ export function compareIpAddresses(left: string, right: string): number {
 
   return left.localeCompare(right, undefined, { numeric: true, sensitivity: 'base' })
 }
+
+
+export function isIpWithinRange(ipAddress: string, startIp: string, endIp: string): boolean {
+  const ip = ipv4ToNumber(ipAddress)
+  const start = ipv4ToNumber(startIp)
+  const end = ipv4ToNumber(endIp)
+  if (ip === null || start === null || end === null) return false
+  return start <= ip && ip <= end
+}
+
+export function ipRangeSize(startIp: string, endIp: string): number {
+  const start = ipv4ToNumber(startIp)
+  const end = ipv4ToNumber(endIp)
+  if (start === null || end === null || start > end) return 0
+  return (end - start) + 1
+}

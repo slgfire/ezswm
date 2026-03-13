@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { IpAllocation, IpAllocationStatus, Network } from '~/types/models'
-import { compareIpAddresses } from '~/utils/ip'
+import type { IpAllocation, IpAllocationStatus, IpRange, IpRangeType, Network } from '~/types/models'
+import { compareIpAddresses, ipRangeSize, isIpWithinRange } from '~/utils/ip'
 
 const route = useRoute()
 const networkId = computed(() => String(route.params.id))
 
-type NetworkDetail = Network & { allocations: IpAllocation[] }
+type NetworkDetail = Network & { allocations: IpAllocation[]; ranges: IpRange[] }
 type AllocationSortKey = 'ipAddress' | 'label' | 'status' | 'networkName' | 'vlanId'
 type SortDirection = 'asc' | 'desc'
 
@@ -34,6 +34,10 @@ watchEffect(() => {
 const allocationForm = reactive<Partial<IpAllocation>>({ ipAddress: '', hostname: '', serviceName: '', deviceName: '', status: 'used', description: '', notes: '' })
 const editingAllocationId = ref<string | null>(null)
 
+const rangeForm = reactive<Partial<IpRange>>({ name: '', type: 'dhcp', startIp: '', endIp: '', description: '', notes: '' })
+const editingRangeId = ref<string | null>(null)
+const rangeTypes: IpRangeType[] = ['dhcp', 'reserved', 'static', 'infrastructure', 'guest', 'management', 'service']
+
 const sortedAllocations = computed(() => {
   if (!network.value) return []
 
@@ -53,17 +57,35 @@ const sortedAllocations = computed(() => {
   return rows.map((row) => row.item)
 })
 
+const sortedRanges = computed(() => {
+  if (!network.value) return []
+  return [...network.value.ranges].sort((left, right) => {
+    const startCompare = compareIpAddresses(left.startIp, right.startIp)
+    if (startCompare !== 0) return startCompare
+    return compareIpAddresses(left.endIp, right.endIp)
+  })
+})
+
 const summary = computed(() => {
-  if (!network.value) return { total: 0, used: 0, free: 0, reserved: 0, utilization: 0 }
+  if (!network.value) return { total: 0, used: 0, free: 0, reserved: 0, dhcp: 0, utilization: 0 }
   const used = network.value.allocations.filter((entry) => entry.status === 'used' || entry.status === 'gateway').length
-  const reserved = network.value.allocations.filter((entry) => entry.status === 'reserved').length
-  const free = Math.max(0, network.value.maxHosts - used - reserved)
-  const utilization = network.value.maxHosts > 0 ? Math.round(((used + reserved) / network.value.maxHosts) * 100) : 0
-  return { total: network.value.maxHosts, used, free, reserved, utilization }
+  const reservedAllocations = network.value.allocations.filter((entry) => entry.status === 'reserved').length
+  const dhcp = network.value.ranges.filter((entry) => entry.type === 'dhcp').reduce((sum, entry) => sum + ipRangeSize(entry.startIp, entry.endIp), 0)
+  const reservedRanges = network.value.ranges.filter((entry) => entry.type === 'reserved').reduce((sum, entry) => sum + ipRangeSize(entry.startIp, entry.endIp), 0)
+  const reserved = reservedAllocations + reservedRanges
+  const occupied = used + reserved + dhcp
+  const free = Math.max(0, network.value.maxHosts - occupied)
+  const utilization = network.value.maxHosts > 0 ? Math.round((occupied / network.value.maxHosts) * 100) : 0
+  return { total: network.value.maxHosts, used, free, reserved, dhcp, utilization }
 })
 
 function allocationLabel(allocation: IpAllocation) {
   return allocation.hostname || allocation.deviceName || allocation.serviceName || ''
+}
+
+function findRangeForIp(ipAddress: string): IpRange | null {
+  if (!network.value) return null
+  return network.value.ranges.find((range) => isIpWithinRange(ipAddress, range.startIp, range.endIp)) || null
 }
 
 function compareAllocationRows(left: IpAllocation, right: IpAllocation, key: AllocationSortKey): number {
@@ -143,10 +165,44 @@ async function removeAllocation(id: string) {
   await refresh()
 }
 
+function beginEditRange(item: IpRange) {
+  editingRangeId.value = item.id
+  Object.assign(rangeForm, item)
+}
+
+function resetRangeForm() {
+  editingRangeId.value = null
+  Object.assign(rangeForm, { name: '', type: 'dhcp', startIp: '', endIp: '', description: '', notes: '' })
+}
+
+async function saveRange() {
+  if (editingRangeId.value) {
+    await $fetch(`/api/ranges/${editingRangeId.value}`, { method: 'PUT', body: rangeForm })
+  } else {
+    await $fetch(`/api/networks/${networkId.value}/ranges`, { method: 'POST', body: rangeForm })
+  }
+
+  resetRangeForm()
+  await refresh()
+}
+
+async function removeRange(id: string) {
+  await $fetch(`/api/ranges/${id}`, { method: 'DELETE' })
+  await refresh()
+}
+
 function badgeClass(status: string) {
   if (status === 'used') return 'badge--success'
   if (status === 'reserved') return 'badge--warning'
   if (status === 'gateway') return 'badge--danger'
+  return 'badge--neutral'
+}
+
+function rangeBadgeClass(type: IpRangeType) {
+  if (type === 'dhcp') return 'badge--info'
+  if (type === 'infrastructure' || type === 'management') return 'badge--danger'
+  if (type === 'reserved') return 'badge--warning'
+  if (type === 'static') return 'badge--success'
   return 'badge--neutral'
 }
 </script>
@@ -182,12 +238,64 @@ function badgeClass(status: string) {
         <SwitchCard title="Total usable IPs" :value="summary.total" />
         <SwitchCard title="Used" :value="summary.used" />
         <SwitchCard title="Reserved" :value="summary.reserved" />
+        <SwitchCard title="DHCP pool" :value="summary.dhcp" />
         <SwitchCard title="Free" :value="summary.free" />
       </div>
       <div class="util" style="margin-top: .8rem;">
         <div class="util-bar" :style="{ width: `${summary.utilization}%` }" />
       </div>
       <small>{{ summary.utilization }}% utilization</small>
+    </div>
+
+    <div class="panel">
+      <h3 class="section-title">IP range editor</h3>
+      <div class="row">
+        <input v-model="rangeForm.name" placeholder="Range name">
+        <select v-model="rangeForm.type">
+          <option v-for="item in rangeTypes" :key="item" :value="item">{{ item }}</option>
+        </select>
+        <input v-model="rangeForm.startIp" placeholder="Start IP">
+        <input v-model="rangeForm.endIp" placeholder="End IP">
+      </div>
+      <div class="row" style="margin-top: .6rem;">
+        <input v-model="rangeForm.description" placeholder="Description">
+        <input v-model="rangeForm.notes" placeholder="Notes">
+        <button @click="saveRange">{{ editingRangeId ? 'Update range' : 'Add range' }}</button>
+        <button v-if="editingRangeId" class="secondary" @click="resetRangeForm">Cancel</button>
+      </div>
+    </div>
+
+    <div class="panel table-wrap">
+      <h3 class="section-title">IP ranges</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Start IP</th>
+            <th>End IP</th>
+            <th>Size</th>
+            <th>Description</th>
+            <th>Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in sortedRanges" :key="item.id">
+            <td>{{ item.name }}</td>
+            <td><span class="badge" :class="rangeBadgeClass(item.type)">{{ item.type }}</span></td>
+            <td>{{ item.startIp }}</td>
+            <td>{{ item.endIp }}</td>
+            <td>{{ ipRangeSize(item.startIp, item.endIp) }}</td>
+            <td>{{ item.description || '—' }}</td>
+            <td>{{ item.notes || '—' }}</td>
+            <td class="row">
+              <button class="secondary" @click="beginEditRange(item)">Edit</button>
+              <button class="danger" @click="removeRange(item.id)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <div class="panel">
@@ -226,6 +334,7 @@ function badgeClass(status: string) {
                 Hostname / Device / Service <span>{{ sortIndicator('label') }}</span>
               </button>
             </th>
+            <th>Range</th>
             <th>
               <button class="table-sort" :class="{ 'table-sort--active': isSortedBy('status') }" @click="setSort('status')">
                 Status <span>{{ sortIndicator('status') }}</span>
@@ -250,6 +359,14 @@ function badgeClass(status: string) {
           <tr v-for="item in sortedAllocations" :key="item.id" :class="{ 'gateway-row': item.status === 'gateway' }">
             <td>{{ item.ipAddress }}</td>
             <td>{{ item.hostname || item.deviceName || item.serviceName || '—' }}</td>
+            <td>
+              <template v-if="findRangeForIp(item.ipAddress)">
+                <span class="badge" :class="rangeBadgeClass(findRangeForIp(item.ipAddress)!.type)">{{ findRangeForIp(item.ipAddress)!.name }} ({{ findRangeForIp(item.ipAddress)!.type }})</span>
+              </template>
+              <template v-else>
+                —
+              </template>
+            </td>
             <td><span class="badge" :class="badgeClass(item.status)">{{ item.status }}</span></td>
             <td>{{ network.name }}</td>
             <td>{{ network.vlanId ?? '—' }}</td>

@@ -44,3 +44,29 @@ export function usableHostCount(prefix: number): number {
   if (prefix >= 31) return Math.max(0, 2 ** (32 - prefix))
   return Math.max(0, (2 ** (32 - prefix)) - 2)
 }
+
+
+export function isIpv4RangeValid(startIp: string, endIp: string): boolean {
+  if (!isValidIpv4(startIp) || !isValidIpv4(endIp)) return false
+  return ipv4ToInt(startIp) <= ipv4ToInt(endIp)
+}
+
+export function isIpInRange(ipAddress: string, startIp: string, endIp: string): boolean {
+  if (!isValidIpv4(ipAddress) || !isIpv4RangeValid(startIp, endIp)) return false
+  const value = ipv4ToInt(ipAddress)
+  return value >= ipv4ToInt(startIp) && value <= ipv4ToInt(endIp)
+}
+
+export function rangeSize(startIp: string, endIp: string): number {
+  if (!isIpv4RangeValid(startIp, endIp)) return 0
+  return (ipv4ToInt(endIp) - ipv4ToInt(startIp)) + 1
+}
+
+export function rangesOverlap(startA: string, endA: string, startB: string, endB: string): boolean {
+  if (!isIpv4RangeValid(startA, endA) || !isIpv4RangeValid(startB, endB)) return false
+  const leftStart = ipv4ToInt(startA)
+  const leftEnd = ipv4ToInt(endA)
+  const rightStart = ipv4ToInt(startB)
+  const rightEnd = ipv4ToInt(endB)
+  return leftStart <= rightEnd && rightStart <= leftEnd
+}

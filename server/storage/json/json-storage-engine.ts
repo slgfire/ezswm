@@ -37,7 +37,8 @@ export class JsonStorageEngine implements StorageEngine {
       layoutTemplates: parsed.layoutTemplates || [],
       switches: parsed.switches || [],
       networks: parsed.networks || [],
-      ipAllocations: parsed.ipAllocations || []
+      ipAllocations: parsed.ipAllocations || [],
+      ipRanges: parsed.ipRanges || []
     }
 
     if (!hasAnyData(hydrated)) {
@@ -46,7 +47,7 @@ export class JsonStorageEngine implements StorageEngine {
       return seedData
     }
 
-    if (!parsed.networks || !parsed.ipAllocations) {
+    if (!parsed.networks || !parsed.ipAllocations || !parsed.ipRanges) {
       await this.write(hydrated)
     }
 
