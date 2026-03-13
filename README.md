@@ -1,4 +1,8 @@
-# Switch Manager (Nuxt 3)
+# ezSWM
+
+Open-source switch management tool for small networks.
+
+## Nuxt 3 Application
 
 A self-hosted Nuxt 3 application for managing and visualizing network switches with configurable port layouts.
 
@@ -48,7 +52,7 @@ npm run dev
 
 ```yaml
 services:
-  switch-manager:
+  ezswm:
     volumes:
       - ./data:/app/data
 ```
