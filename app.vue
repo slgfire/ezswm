@@ -4,31 +4,31 @@ const route = useRoute()
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'Dashboard', subtitle: 'Network operations overview' },
   '/switches': { title: 'Switches', subtitle: 'Switch inventory and lifecycle' },
-  '/layouts': { title: 'Layouts', subtitle: 'Port templates and rack patterns' },
   '/networks': { title: 'Networks & IPAM', subtitle: 'Subnets, ranges, and allocations' },
-  '/settings': { title: 'Settings', subtitle: 'Global configuration' }
+  '/settings': { title: 'Settings', subtitle: 'System configuration and defaults' },
+  '/settings/general': { title: 'Settings · General', subtitle: 'Global system preferences' },
+  '/settings/switch-models': { title: 'Settings · Switch models', subtitle: 'Standardized model definitions' },
+  '/settings/port-layouts': { title: 'Settings · Port layouts', subtitle: 'Reusable port layout templates' },
+  '/settings/ipam-defaults': { title: 'Settings · IPAM defaults', subtitle: 'Default network allocation settings' },
+  '/settings/appearance': { title: 'Settings · Appearance', subtitle: 'Theme and visual preferences' }
 }
 
 const navigationGroups = [
   {
     title: 'Operations',
-    items: [
-      { label: 'Dashboard', to: '/', icon: '◉' },
-      { label: 'Switches', to: '/switches', icon: '⇆' },
-      { label: 'Layouts', to: '/layouts', icon: '▦' }
-    ]
+    items: [{ label: 'Dashboard', to: '/', icon: '◉' }]
+  },
+  {
+    title: 'Switching',
+    items: [{ label: 'Switches', to: '/switches', icon: '⇆' }]
   },
   {
     title: 'Network',
-    items: [
-      { label: 'Networks', to: '/networks', icon: '⌁' },
-      { label: 'IP allocations', to: '/networks', icon: '◌' },
-      { label: 'IP ranges', to: '/networks', icon: '▭' }
-    ]
+    items: [{ label: 'Networks', to: '/networks', icon: '⌁' }]
   },
   {
     title: 'System',
-    items: [{ label: 'Settings', to: '/layouts', icon: '⚙' }]
+    items: [{ label: 'Settings', to: '/settings', icon: '⚙' }]
   }
 ]
 

@@ -248,7 +248,17 @@ function rangeBadgeClass(type: IpRangeType) {
       </div>
     </div>
 
-    <div class="panel">
+
+    <div class="panel network-sections-nav">
+      <strong>Network</strong>
+      <div class="row">
+        <a href="#network-overview" class="section-pill">Overview</a>
+        <a href="#network-ip-allocations" class="section-pill">IP allocations</a>
+        <a href="#network-ip-ranges" class="section-pill">IP ranges</a>
+      </div>
+    </div>
+
+    <div class="panel" id="network-overview">
       <h3 class="section-title">Network overview</h3>
       <div class="stats">
         <SwitchCard title="VLAN" :value="network.vlanId ?? '—'" />
@@ -273,7 +283,7 @@ function rangeBadgeClass(type: IpRangeType) {
       <small>{{ summary.utilization }}% utilization</small>
     </div>
 
-    <div class="panel table-wrap">
+    <div class="panel table-wrap" id="network-ip-ranges">
       <div class="row row-between" style="padding: .75rem;">
         <h3>IP ranges</h3>
         <button @click="beginCreateRange">Add range</button>
@@ -309,7 +319,7 @@ function rangeBadgeClass(type: IpRangeType) {
       </table>
     </div>
 
-    <div class="panel table-wrap">
+    <div class="panel table-wrap" id="network-ip-allocations">
       <div class="row row-between" style="padding: .75rem;">
         <h3>IP allocations</h3>
         <button @click="beginCreateAllocation">Add allocation</button>
