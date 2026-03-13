@@ -15,6 +15,12 @@ interface PortForm {
   patchTarget: string
 }
 
+function asTrimmedString(value: unknown): string {
+  if (typeof value === 'string') return value.trim()
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  return ''
+}
+
 const props = defineProps<{
   open: boolean
   port?: Port
@@ -107,18 +113,28 @@ async function onSave() {
   if (!props.port || !validate()) return
   saving.value = true
   try {
+    const normalized = {
+      label: asTrimmedString(form.label),
+      vlan: asTrimmedString(form.vlan),
+      connectedDevice: asTrimmedString(form.connectedDevice),
+      macAddress: asTrimmedString(form.macAddress),
+      description: asTrimmedString(form.description),
+      speed: asTrimmedString(form.speed),
+      patchTarget: asTrimmedString(form.patchTarget)
+    }
+
     const payload: PortUpdatePayload = {
       status: form.status,
-      label: form.label.trim(),
-      vlan: form.vlan.trim(),
-      connectedDevice: form.connectedDevice.trim(),
-      macAddress: form.macAddress.trim(),
+      label: normalized.label,
+      vlan: normalized.vlan,
+      connectedDevice: normalized.connectedDevice,
+      macAddress: normalized.macAddress,
       mediaType: form.mediaType,
-      description: form.description.trim(),
-      speed: form.speed.trim(),
+      description: normalized.description,
+      speed: normalized.speed,
       duplex: form.duplex || 'auto',
       poe: form.poe,
-      patchTarget: form.patchTarget.trim()
+      patchTarget: normalized.patchTarget
     }
 
     emit('save', payload)
