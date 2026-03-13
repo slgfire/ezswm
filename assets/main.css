@@ -43,6 +43,9 @@
   --status-neutral-bg: #e2e8f0;
   --status-neutral-text: #0f172a;
 
+  --status-info-bg: #dbeafe;
+  --status-info-text: #1e3a8a;
+
   --port-free-bg: #e2e8f0;
   --port-free-border: #94a3b8;
   --port-free-text: #0f172a;
@@ -103,6 +106,9 @@
   --status-danger-text: #fda4af;
   --status-neutral-bg: #223248;
   --status-neutral-text: #e2e8f0;
+
+  --status-info-bg: #1e3a5f;
+  --status-info-text: #bfdbfe;
 
   --port-free-bg: #223248;
   --port-free-border: #64748b;
@@ -292,6 +298,7 @@ tbody tr:hover { background: var(--bg-hover); }
 .badge--success { background: var(--status-success-bg); color: var(--status-success-text); border-color: color-mix(in oklab, var(--status-success-text) 50%, transparent); }
 .badge--warning { background: var(--status-warning-bg); color: var(--status-warning-text); border-color: color-mix(in oklab, var(--status-warning-text) 50%, transparent); }
 .badge--danger { background: var(--status-danger-bg); color: var(--status-danger-text); border-color: color-mix(in oklab, var(--status-danger-text) 50%, transparent); }
+.badge--info { background: var(--status-info-bg); color: var(--status-info-text); border-color: color-mix(in oklab, var(--status-info-text) 45%, transparent); }
 
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
 .stat { background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 10px; padding: 1rem; }

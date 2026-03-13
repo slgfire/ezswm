@@ -1,6 +1,6 @@
 import type { IpAllocation } from '~/types/models'
 import { useStorage } from '~/server/storage'
-import { validateAllocationPayload } from '../networks/_shared/validation'
+import { validateAllocationAgainstRanges, validateAllocationPayload } from '../networks/_shared/validation'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
@@ -16,6 +16,8 @@ export default defineEventHandler(async (event) => {
 
   const existing = await storage.ipAllocations.listByNetwork(current.networkId)
   validateAllocationPayload({ ...body, id }, network, existing)
+  const ranges = await storage.ipRanges.listByNetwork(current.networkId)
+  validateAllocationAgainstRanges({ ...body, id }, ranges)
 
   const updated = await storage.ipAllocations.update(id, {
     ipAddress: body.ipAddress?.trim(),

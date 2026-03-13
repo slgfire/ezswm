@@ -13,6 +13,8 @@ A self-hosted Nuxt 3 application for managing and visualizing network switches, 
 - Docker-ready and open-source friendly.
 - Network / VLAN overview with subnet utilization metrics.
 - IP allocation tracking with status and gateway highlighting.
+- IP range management for DHCP, reserved, static, and infrastructure pools.
+- Network detail views include DHCP pool documentation and range-aware utilization.
 - Persistent data mounted from `./data` into `/app/data`.
 
 ## Storage Architecture

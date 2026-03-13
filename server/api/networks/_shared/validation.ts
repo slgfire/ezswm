@@ -1,5 +1,7 @@
-import type { IpAllocation, Network } from '~/types/models'
-import { isIpInSubnet, isValidIpv4, prefixToMask, usableHostCount } from '~/server/storage/shared/ipam'
+import type { IpAllocation, IpRange, IpRangeType, Network } from '~/types/models'
+import { isIpInRange, isIpInSubnet, isIpv4RangeValid, isValidIpv4, prefixToMask, rangesOverlap, usableHostCount } from '~/server/storage/shared/ipam'
+
+const RANGE_TYPES: IpRangeType[] = ['dhcp', 'reserved', 'static', 'infrastructure', 'guest', 'management', 'service']
 
 export function validateNetworkPayload(body: Partial<Network>): asserts body is Partial<Network> {
   if (!body.name || !body.subnet) {
@@ -77,5 +79,50 @@ export function validateAllocationPayload(body: Partial<IpAllocation>, network: 
     if (hasGateway) {
       throw createError({ statusCode: 409, statusMessage: 'Only one gateway allocation is allowed per network.' })
     }
+  }
+}
+
+export function validateIpRangePayload(body: Partial<IpRange>, network: Network, existing: IpRange[]): void {
+  if (!body.name?.trim()) {
+    throw createError({ statusCode: 400, statusMessage: 'Range name is required.' })
+  }
+
+  const type = body.type
+  if (!type || !RANGE_TYPES.includes(type)) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid IP range type.' })
+  }
+
+  if (!body.startIp || !body.endIp) {
+    throw createError({ statusCode: 400, statusMessage: 'Range start and end IP are required.' })
+  }
+
+  const startIp = body.startIp.trim()
+  const endIp = body.endIp.trim()
+
+  if (!isIpv4RangeValid(startIp, endIp)) {
+    throw createError({ statusCode: 400, statusMessage: 'Range start IP must be <= end IP and both must be valid IPv4.' })
+  }
+
+  if (!isIpInSubnet(startIp, network.subnet, network.prefix) || !isIpInSubnet(endIp, network.subnet, network.prefix)) {
+    throw createError({ statusCode: 400, statusMessage: 'Range start and end IP must belong to the selected subnet.' })
+  }
+
+  const overlapping = existing.find((entry) => entry.id !== body.id && rangesOverlap(startIp, endIp, entry.startIp, entry.endIp))
+  if (!overlapping) return
+
+  const restrictedTypes = new Set<IpRangeType>(['dhcp', 'reserved', 'static'])
+  const hasConflict = restrictedTypes.has(type) || restrictedTypes.has(overlapping.type)
+
+  if (hasConflict) {
+    throw createError({ statusCode: 409, statusMessage: `Range overlaps with ${overlapping.name} (${overlapping.type}), which is not allowed.` })
+  }
+}
+
+export function validateAllocationAgainstRanges(body: Partial<IpAllocation>, ranges: IpRange[]): void {
+  if (!body.ipAddress || !body.status || body.status !== 'gateway') return
+  const ipAddress = body.ipAddress.trim()
+  const conflictingRange = ranges.find((range) => range.type === 'dhcp' && isIpInRange(ipAddress, range.startIp, range.endIp))
+  if (conflictingRange) {
+    throw createError({ statusCode: 409, statusMessage: `Gateway allocation cannot be inside DHCP range ${conflictingRange.name}.` })
   }
 }
