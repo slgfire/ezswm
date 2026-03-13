@@ -66,10 +66,10 @@ async function submit() {
     <h1>Switch anlegen</h1>
     <div class="row">
       <input v-model="form.name" required placeholder="Name">
-      <input v-model="form.vendor" required placeholder="Hersteller">
-      <input v-model="form.model" required placeholder="Modell">
-      <input v-model="form.managementIp" required placeholder="Management-IP">
-      <input v-model.number="form.portCount" required type="number" min="1" placeholder="Portanzahl">
+      <input v-model="form.vendor" required placeholder="Vendor">
+      <input v-model="form.model" required placeholder="Model">
+      <input v-model="form.managementIp" required placeholder="Management IP">
+      <input v-model.number="form.portCount" required type="number" min="1" placeholder="Port count">
       <select v-model="form.status">
         <option value="active">active</option>
         <option value="planned">planned</option>
@@ -78,7 +78,7 @@ async function submit() {
       <input
         v-model="locationInput"
         list="location-options"
-        placeholder="Standort auswählen oder neu anlegen"
+        placeholder="Select existing location or create a new one"
       >
       <datalist id="location-options">
         <option v-for="location in locationOptions" :key="location" :value="location" />
@@ -86,7 +86,7 @@ async function submit() {
       <input
         v-model="rackInput"
         list="rack-options"
-        placeholder="Rack auswählen oder neu anlegen"
+        placeholder="Select existing rack or create a new one"
       >
       <datalist id="rack-options">
         <option v-for="rack in rackOptions" :key="rack" :value="rack" />
@@ -95,13 +95,13 @@ async function submit() {
         <option value="">Layout</option>
         <option v-for="layout in (meta as any)?.layoutTemplates || []" :key="layout.id" :value="layout.id">{{ layout.name }}</option>
       </select>
-      <input v-model="form.rackPosition" placeholder="Rack-Position">
-      <input v-model="form.serialNumber" placeholder="Seriennummer">
+      <input v-model="form.rackPosition" placeholder="Rack position">
+      <input v-model="form.serialNumber" placeholder="Serial number">
       <input v-model="form.tags" placeholder="Tags (csv)">
     </div>
-    <textarea v-model="form.description" placeholder="Beschreibung" rows="4"/>
+    <textarea v-model="form.description" placeholder="Description" rows="4"/>
     <div class="row">
-      <button type="submit">Speichern</button>
+      <button type="submit">Save</button>
     </div>
   </form>
 </template>

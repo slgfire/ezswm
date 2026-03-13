@@ -51,10 +51,10 @@ const form = reactive<PortForm>({
 
 
 const statusOptions: Array<{ value: PortStatus; label: string }> = [
-  { value: 'free', label: 'frei' },
-  { value: 'used', label: 'belegt' },
-  { value: 'disabled', label: 'deaktiviert' },
-  { value: 'error', label: 'fehlerhaft' }
+  { value: 'free', label: 'free' },
+  { value: 'used', label: 'used' },
+  { value: 'disabled', label: 'disabled' },
+  { value: 'error', label: 'error' }
 ]
 
 const mediaTypeOptions: MediaType[] = ['RJ45', 'SFP', 'SFP+', 'QSFP']
@@ -100,11 +100,11 @@ function validate() {
   const validationErrors: Record<string, string> = {}
 
   if (!validVlan(form.vlan)) {
-    validationErrors.vlan = 'VLAN muss zwischen 1 und 4094 liegen.'
+    validationErrors.vlan = 'VLAN must be between 1 and 4094.'
   }
 
   if (!validMac(form.macAddress)) {
-    validationErrors.macAddress = 'MAC-Format z. B. AA:BB:CC:DD:EE:FF verwenden.'
+    validationErrors.macAddress = 'Use MAC format AA:BB:CC:DD:EE:FF.'
   }
 
   errors.value = validationErrors
@@ -166,11 +166,11 @@ watch(() => props.open, (isOpen) => {
           <h3 class="section-title">Port {{ portNumber }}</h3>
           <p class="port-subtitle">Switch: {{ switchName }}</p>
         </div>
-        <button class="button--ghost" @click="close">Schließen</button>
+        <button class="button--ghost" @click="close">Close</button>
       </div>
 
       <div class="row port-status-headline">
-        <span>Aktueller Status:</span>
+        <span>Current status:</span>
         <PortBadge :status="form.status" />
         <strong>{{ statusLabel }}</strong>
       </div>
@@ -185,7 +185,7 @@ watch(() => props.open, (isOpen) => {
           </label>
 
           <label class="field">
-            <span>Typ</span>
+            <span>Type</span>
             <select v-model="form.mediaType">
               <option v-for="media in mediaTypeOptions" :key="media" :value="media">{{ media }}</option>
             </select>
@@ -193,7 +193,7 @@ watch(() => props.open, (isOpen) => {
 
           <label class="field">
             <span>Label</span>
-            <input v-model="form.label" type="text" placeholder="z. B. Arbeitsplatz A-12" />
+            <input v-model="form.label" type="text" placeholder="e.g. Workstation A-12" />
           </label>
 
           <label class="field">
@@ -203,8 +203,8 @@ watch(() => props.open, (isOpen) => {
           </label>
 
           <label class="field">
-            <span>Gerät</span>
-            <input v-model="form.connectedDevice" type="text" placeholder="Hostname / Gerät" />
+            <span>Device</span>
+            <input v-model="form.connectedDevice" type="text" placeholder="Hostname / Device" />
           </label>
 
           <label class="field">
@@ -214,12 +214,12 @@ watch(() => props.open, (isOpen) => {
           </label>
 
           <label class="field field--full">
-            <span>Beschreibung</span>
-            <textarea v-model="form.description" rows="3" placeholder="Optionale Beschreibung" />
+            <span>Description</span>
+            <textarea v-model="form.description" rows="3" placeholder="Optional description" />
           </label>
 
           <label class="field">
-            <span>Geschwindigkeit</span>
+            <span>Speed</span>
             <select v-model="form.speed">
               <option value="">-</option>
               <option value="10M">10M</option>
@@ -242,18 +242,18 @@ watch(() => props.open, (isOpen) => {
 
           <label class="field field-checkbox">
             <input v-model="form.poe" type="checkbox" />
-            <span>PoE aktiv</span>
+            <span>PoE enabled</span>
           </label>
 
           <label class="field">
-            <span>Patch-Ziel</span>
-            <input v-model="form.patchTarget" type="text" placeholder="z. B. Patchpanel PP-01/24" />
+            <span>Patch target</span>
+            <input v-model="form.patchTarget" type="text" placeholder="e.g. Patch panel PP-01/24" />
           </label>
         </div>
 
       <div class="row row-end">
-        <button type="button" class="button--ghost" @click="resetForm">Zurücksetzen</button>
-        <button type="button" class="secondary" @click="close">Abbrechen</button>
+        <button type="button" class="button--ghost" @click="resetForm">Reset</button>
+        <button type="button" class="secondary" @click="close">Cancel</button>
         <button type="submit" :disabled="saving">{{ saving ? 'Saving...' : 'Save' }}</button>
       </div>
       </form>

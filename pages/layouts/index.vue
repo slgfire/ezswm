@@ -13,15 +13,15 @@ async function removeLayout(id: string) {
 <template>
   <div>
     <div class="row row-between">
-      <h1>Layout-Templates</h1>
-      <NuxtLink to="/layouts/new"><button>Neues Layout</button></NuxtLink>
+      <h1>Layout templates</h1>
+      <NuxtLink to="/layouts/new"><button>New layout</button></NuxtLink>
     </div>
 
     <div v-for="layout in items || []" :key="layout.id">
       <LayoutPreview :layout="layout" />
       <div class="row" style="margin-bottom: 1rem;">
-        <button class="secondary" @click="router.push(`/layouts/${layout.id}`)">Bearbeiten</button>
-        <button class="danger" @click="removeLayout(layout.id)">Löschen</button>
+        <button class="secondary" @click="router.push(`/layouts/${layout.id}`)">Edit</button>
+        <button class="danger" @click="removeLayout(layout.id)">Delete</button>
       </div>
     </div>
   </div>

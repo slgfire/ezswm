@@ -13,12 +13,27 @@ function switchStatusClass(status: string) {
 
 <template>
   <div class="panel stack">
-    <h2>{{ item.name }}</h2>
-    <p>{{ item.vendor }} / {{ item.model }}</p>
-    <p><strong>Status:</strong> <span :class="switchStatusClass(item.status)">{{ item.status }}</span></p>
-    <p><strong>Management-IP:</strong> {{ item.managementIp }}</p>
-    <p><strong>Layout:</strong> {{ layout?.name || item.layoutTemplateId || 'Override' }}</p>
-    <p><strong>Rack:</strong> {{ item.rackId || '-' }} @ {{ item.rackPosition || '-' }}</p>
-    <p><strong>Beschreibung:</strong> {{ item.description || '-' }}</p>
+    <div class="row row-between">
+      <div>
+        <h2>{{ item.name }}</h2>
+        <p>{{ item.vendor }} / {{ item.model }}</p>
+      </div>
+      <span :class="switchStatusClass(item.status)">{{ item.status }}</span>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Management IP</div>
+        <div>{{ item.managementIp }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Layout</div>
+        <div>{{ layout?.name || item.layoutTemplateId || 'Override' }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Rack</div>
+        <div>{{ item.rackId || '-' }} @ {{ item.rackPosition || '-' }}</div>
+      </div>
+    </div>
+    <p><strong>Description:</strong> {{ item.description || '-' }}</p>
   </div>
 </template>

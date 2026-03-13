@@ -27,10 +27,10 @@ function generateGridMapping() {
 
 <template>
   <form class="panel stack" @submit.prevent="emit('submit', form)">
-    <h3>Layout bearbeiten</h3>
+    <h3>Edit layout</h3>
     <div class="row">
       <input v-model="form.name" placeholder="Name" required>
-      <input v-model="form.description" placeholder="Beschreibung">
+      <input v-model="form.description" placeholder="Description">
       <input v-model.number="form.rows" type="number" min="1" placeholder="Rows" required>
       <input v-model.number="form.cols" type="number" min="1" placeholder="Cols" required>
       <select v-model="form.type">
@@ -38,9 +38,9 @@ function generateGridMapping() {
         <option value="odd-even">odd-even</option>
         <option value="custom">custom</option>
       </select>
-      <button type="button" class="secondary" @click="generateGridMapping">Auto-Mapping</button>
-      <button type="submit">Speichern</button>
+      <button type="button" class="secondary" @click="generateGridMapping">Auto mapping</button>
+      <button type="submit">Save</button>
     </div>
-    <p>Aktuelle Zellen: {{ form.cells?.length || 0 }}</p>
+    <p>Current cells: {{ form.cells?.length || 0 }}</p>
   </form>
 </template>

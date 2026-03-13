@@ -10,7 +10,7 @@ async function submit(payload: Partial<LayoutTemplate>) {
 
 <template>
   <div>
-    <h1>Neues Layout</h1>
+    <h1>New layout</h1>
     <LayoutTemplateEditor @submit="submit" />
   </div>
 </template>

@@ -31,28 +31,28 @@ async function removeSwitch(id: string) {
 </script>
 
 <template>
-  <div>
+  <div class="stack">
     <div class="row row-between">
-      <h1>Switch-Liste</h1>
-      <NuxtLink to="/switches/new"><button>Neuer Switch</button></NuxtLink>
+      <h1>Switch inventory</h1>
+      <NuxtLink to="/switches/new"><button>Add switch</button></NuxtLink>
     </div>
 
     <div class="panel row">
-      <input v-model="query.search" placeholder="Suche">
+      <input v-model="query.search" placeholder="Search by name, model, or management IP">
       <select v-model="query.vendor">
-        <option value="">Alle Hersteller</option>
+        <option value="">All vendors</option>
         <option v-for="v in (meta as any)?.vendors || []" :key="v.id" :value="v.name">{{ v.name }}</option>
       </select>
       <select v-model="query.status">
-        <option value="">Alle Status</option>
+        <option value="">All status</option>
         <option value="active">active</option>
         <option value="planned">planned</option>
         <option value="retired">retired</option>
       </select>
       <select v-model="query.sortBy">
         <option value="name">Name</option>
-        <option value="vendor">Hersteller</option>
-        <option value="model">Modell</option>
+        <option value="vendor">Vendor</option>
+        <option value="model">Model</option>
         <option value="status">Status</option>
       </select>
     </div>
@@ -60,9 +60,9 @@ async function removeSwitch(id: string) {
     <div class="panel">
       <SwitchTable :items="pageItems" @delete="removeSwitch" />
       <div class="row row-end" style="margin-top: .75rem;">
-        <button class="secondary" :disabled="query.page <= 1" @click="query.page--">Zurück</button>
-        <span>Seite {{ query.page }} / {{ totalPages }}</span>
-        <button class="secondary" :disabled="query.page >= totalPages" @click="query.page++">Weiter</button>
+        <button class="secondary" :disabled="query.page <= 1" @click="query.page--">Previous</button>
+        <span>Page {{ query.page }} / {{ totalPages }}</span>
+        <button class="secondary" :disabled="query.page >= totalPages" @click="query.page++">Next</button>
       </div>
     </div>
   </div>
