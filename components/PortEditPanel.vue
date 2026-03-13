@@ -15,6 +15,12 @@ interface PortForm {
   patchTarget: string
 }
 
+function asTrimmedString(value: unknown): string {
+  if (typeof value === 'string') return value.trim()
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  return ''
+}
+
 const props = defineProps<{
   open: boolean
   port?: Port
@@ -104,21 +110,31 @@ function validate() {
 }
 
 async function onSave() {
-  if (!props.port || !validate()) return
+  if (!validate()) return
   saving.value = true
   try {
+    const normalized = {
+      label: asTrimmedString(form.label),
+      vlan: asTrimmedString(form.vlan),
+      connectedDevice: asTrimmedString(form.connectedDevice),
+      macAddress: asTrimmedString(form.macAddress),
+      description: asTrimmedString(form.description),
+      speed: asTrimmedString(form.speed),
+      patchTarget: asTrimmedString(form.patchTarget)
+    }
+
     const payload: PortUpdatePayload = {
       status: form.status,
-      label: form.label.trim(),
-      vlan: form.vlan.trim(),
-      connectedDevice: form.connectedDevice.trim(),
-      macAddress: form.macAddress.trim(),
+      label: normalized.label,
+      vlan: normalized.vlan,
+      connectedDevice: normalized.connectedDevice,
+      macAddress: normalized.macAddress,
       mediaType: form.mediaType,
-      description: form.description.trim(),
-      speed: form.speed.trim(),
+      description: normalized.description,
+      speed: normalized.speed,
       duplex: form.duplex || 'auto',
       poe: form.poe,
-      patchTarget: form.patchTarget.trim()
+      patchTarget: normalized.patchTarget
     }
 
     emit('save', payload)
@@ -157,7 +173,8 @@ watch(() => props.open, (isOpen) => {
         <strong>{{ statusLabel }}</strong>
       </div>
 
-      <div class="stack port-form-grid">
+      <form class="stack" @submit.prevent="onSave">
+        <div class="port-form-grid">
           <label class="field">
             <span>Status</span>
             <select v-model="form.status">
@@ -233,10 +250,11 @@ watch(() => props.open, (isOpen) => {
         </div>
 
       <div class="row row-end">
-        <button class="button--ghost" @click="resetForm">Zurücksetzen</button>
-        <button class="secondary" @click="close">Abbrechen</button>
-        <button :disabled="saving" @click="onSave">{{ saving ? 'Speichern…' : 'Speichern' }}</button>
+        <button type="button" class="button--ghost" @click="resetForm">Zurücksetzen</button>
+        <button type="button" class="secondary" @click="close">Abbrechen</button>
+        <button type="submit" :disabled="saving">{{ saving ? 'Saving...' : 'Save' }}</button>
       </div>
+      </form>
     </aside>
   </div>
 </template>

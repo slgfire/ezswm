@@ -110,9 +110,16 @@ export class JsonSwitchRepository implements SwitchRepository {
       if (!switchEntry) return undefined
 
       const portIndex = switchEntry.ports.findIndex((port) => port.portNumber === portNumber)
-      if (portIndex < 0) return undefined
+      const current = portIndex >= 0
+        ? switchEntry.ports[portIndex]
+        : ({
+            switchId,
+            portNumber,
+            status: 'free',
+            mediaType: 'RJ45',
+            duplex: 'auto'
+          } as Switch['ports'][number])
 
-      const current = switchEntry.ports[portIndex]
       const normalizedPayload = this.normalizePort(switchId, {
         ...current,
         ...payload,
@@ -120,7 +127,13 @@ export class JsonSwitchRepository implements SwitchRepository {
         portNumber
       } as Switch['ports'][number] & Record<string, unknown>)
 
-      switchEntry.ports[portIndex] = normalizedPayload
+      if (portIndex >= 0) {
+        switchEntry.ports[portIndex] = normalizedPayload
+      } else {
+        switchEntry.ports.push(normalizedPayload)
+        switchEntry.ports.sort((a, b) => a.portNumber - b.portNumber)
+      }
+
       switchEntry.updatedAt = new Date().toISOString()
       return normalizedPayload
     })
