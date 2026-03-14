@@ -8,7 +8,7 @@
 
       <div class="col-span-12 flex min-h-screen flex-col md:col-span-9 lg:col-span-10">
         <AppHeader />
-        <main class="flex-1 px-4 py-6">
+        <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <div class="mx-auto w-full max-w-7xl">
             <slot />
           </div>
