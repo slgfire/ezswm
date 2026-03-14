@@ -1,0 +1,44 @@
+{
+  "nav": {
+    "operations": "Betrieb",
+    "dashboard": "Dashboard",
+    "switching": "Switching",
+    "switches": "Switches",
+    "network": "Netzwerk",
+    "networks": "Netzwerke",
+    "system": "System",
+    "settings": "Einstellungen"
+  },
+  "pages": {
+    "dashboard": { "title": "Dashboard", "description": "Infrastrukturstatus und Auslastung" },
+    "switches": { "title": "Switches", "description": "Switch-Inventar und Hardwareprofile verwalten" },
+    "networks": { "title": "Netzwerke", "description": "VLANs, Subnetze und Adressierung verwalten" },
+    "settings": { "title": "Einstellungen", "description": "Plattform-Standards und wiederverwendbare Definitionen" }
+  },
+  "actions": {
+    "save": "Speichern",
+    "createSwitch": "Switch erstellen",
+    "editSwitch": "Switch bearbeiten",
+    "createNetwork": "Netzwerk erstellen",
+    "editNetwork": "Netzwerk bearbeiten"
+  },
+  "search": { "placeholder": "Seiten, Switches, VLANs, Subnetze, IPs suchen..." },
+  "network": {
+    "tabs": {
+      "overview": "Übersicht",
+      "allocations": "IP-Zuweisungen",
+      "ranges": "IP-Bereiche"
+    }
+  },
+  "kpi": {
+    "switches": "Switches",
+    "activeSwitches": "Aktive Switches",
+    "usedPorts": "Genutzte Ports",
+    "portUtilization": "Port-Auslastung",
+    "networks": "Netzwerke",
+    "assignedIps": "Zugewiesene IPs"
+  },
+  "dashboard": {
+    "topSubnets": "Am stärksten genutzte Subnetze"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "nav": {
+    "operations": "Operations",
+    "dashboard": "Dashboard",
+    "switching": "Switching",
+    "switches": "Switches",
+    "network": "Network",
+    "networks": "Networks",
+    "system": "System",
+    "settings": "Settings"
+  },
+  "pages": {
+    "dashboard": { "title": "Dashboard", "description": "Infrastructure health and utilization" },
+    "switches": { "title": "Switches", "description": "Manage switch inventory and hardware profiles" },
+    "networks": { "title": "Networks", "description": "Manage VLANs, subnets, and addressing" },
+    "settings": { "title": "Settings", "description": "Platform defaults and reusable definitions" }
+  },
+  "actions": {
+    "save": "Save",
+    "createSwitch": "Create switch",
+    "editSwitch": "Edit switch",
+    "createNetwork": "Create network",
+    "editNetwork": "Edit network"
+  },
+  "search": { "placeholder": "Search pages, switches, VLANs, subnets, IPs..." },
+  "network": {
+    "tabs": {
+      "overview": "Overview",
+      "allocations": "IP allocations",
+      "ranges": "IP ranges"
+    }
+  },
+  "kpi": {
+    "switches": "Switches",
+    "activeSwitches": "Active switches",
+    "usedPorts": "Used ports",
+    "portUtilization": "Port utilization",
+    "networks": "Networks",
+    "assignedIps": "Assigned IPs"
+  },
+  "dashboard": {
+    "topSubnets": "Top utilized subnets"
+  }
+}

@@ -1,0 +1,10 @@
+services:
+  ezswm:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - EZSWM_DATA_DIR=/app/data
+      - NUXT_PORT=3000
+    volumes:
+      - ./data:/app/data

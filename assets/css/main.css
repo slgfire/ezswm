@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+:root {
+  --ui-primary: var(--color-green-600);
+}
