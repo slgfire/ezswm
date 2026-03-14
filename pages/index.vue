@@ -16,6 +16,33 @@ const ipAllocationPercent = computed(() => {
 
   return Math.min(Math.round((assigned / total) * 100), 100)
 })
+
+const kpis = computed(() => [
+  {
+    label: t('kpi.switches'),
+    value: data.value?.switches ?? 0,
+    icon: 'i-lucide-server',
+    hint: t('dashboard.quickStatus')
+  },
+  {
+    label: t('kpi.activeSwitches'),
+    value: data.value?.activeSwitches ?? 0,
+    icon: 'i-lucide-activity',
+    hint: `${data.value?.activeSwitches ?? 0} / ${data.value?.switches ?? 0}`
+  },
+  {
+    label: t('kpi.usedPorts'),
+    value: data.value?.usedPorts ?? 0,
+    icon: 'i-lucide-ethernet-port',
+    hint: t('dashboard.infrastructureUtilization')
+  },
+  {
+    label: t('kpi.assignedIps'),
+    value: data.value?.assignedIps ?? 0,
+    icon: 'i-lucide-network',
+    hint: `${ipAllocationPercent.value}% ${t('dashboard.ipAllocation').toLowerCase()}`
+  }
+])
 </script>
 
 <template>
@@ -25,141 +52,132 @@ const ipAllocationPercent = computed(() => {
       :description="t('pages.dashboard.description')"
     >
       <template #actions>
-        <UButton
-          icon="i-lucide-refresh-cw"
-          :loading="pending"
-          label="Refresh"
-          @click="handleRefresh"
-        />
+        <div class="flex items-center gap-2">
+          <UButton
+            icon="i-lucide-download"
+            color="neutral"
+            variant="ghost"
+            label="Export"
+          />
+          <UButton
+            icon="i-lucide-refresh-cw"
+            :loading="pending"
+            label="Refresh"
+            @click="handleRefresh"
+          />
+        </div>
       </template>
     </PageHeader>
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <UCard>
-        <p class="text-sm text-muted">{{ t('kpi.switches') }}</p>
-        <p class="mt-1 text-3xl font-semibold">{{ data?.switches ?? 0 }}</p>
-      </UCard>
-
-      <UCard>
-        <div class="flex items-center justify-between gap-2">
-          <p class="text-sm text-muted">{{ t('kpi.activeSwitches') }}</p>
-          <UBadge color="success" variant="soft">{{ data?.activeSwitches ?? 0 }}</UBadge>
+      <UCard
+        v-for="kpi in kpis"
+        :key="kpi.label"
+        class="border border-default/80 bg-default/70"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-sm text-muted">{{ kpi.label }}</p>
+            <p class="mt-2 text-3xl font-semibold text-highlighted">{{ kpi.value }}</p>
+            <p class="mt-2 text-xs text-muted">{{ kpi.hint }}</p>
+          </div>
+          <span class="rounded-lg border border-default/80 bg-elevated/60 p-2 text-primary">
+            <UIcon :name="kpi.icon" class="size-5" />
+          </span>
         </div>
-        <p class="mt-1 text-3xl font-semibold">{{ data?.activeSwitches ?? 0 }}</p>
-      </UCard>
-
-      <UCard>
-        <p class="text-sm text-muted">{{ t('kpi.usedPorts') }}</p>
-        <p class="mt-1 text-3xl font-semibold">{{ data?.usedPorts ?? 0 }}</p>
-      </UCard>
-
-      <UCard>
-        <p class="text-sm text-muted">{{ t('kpi.portUtilization') }}</p>
-        <div class="mt-2 flex items-end justify-between">
-          <p class="text-3xl font-semibold">{{ data?.portUtilization ?? 0 }}%</p>
-          <UBadge color="primary" variant="soft">{{ t('dashboard.quickStatus') }}</UBadge>
-        </div>
-        <UProgress class="mt-3" :model-value="data?.portUtilization ?? 0" />
       </UCard>
     </div>
 
     <div class="grid gap-4 xl:grid-cols-12">
-      <UCard class="xl:col-span-7">
+      <UCard class="xl:col-span-8 border border-default/80 bg-default/70">
         <template #header>
-          <h2 class="text-base font-semibold">{{ t('dashboard.infrastructureUtilization') }}</h2>
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-base font-semibold">{{ t('dashboard.infrastructureUtilization') }}</h2>
+            <UBadge color="primary" variant="soft">Live</UBadge>
+          </div>
         </template>
 
         <div class="space-y-6">
-          <div>
-            <div class="mb-2 flex items-center justify-between text-sm">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-sm">
               <span>{{ t('kpi.portUtilization') }}</span>
-              <span>{{ data?.portUtilization ?? 0 }}%</span>
+              <span class="font-medium">{{ data?.portUtilization ?? 0 }}%</span>
             </div>
             <UProgress :model-value="data?.portUtilization ?? 0" />
           </div>
 
-          <div>
-            <div class="mb-2 flex items-center justify-between text-sm">
-              <span>{{ t('dashboard.ipAllocation') }}</span>
-              <span>{{ data?.assignedIps ?? 0 }} / {{ data?.networks ?? 0 }}</span>
-            </div>
-            <UProgress :model-value="ipAllocationPercent" />
-          </div>
-        </div>
-      </UCard>
-
-      <UCard class="xl:col-span-5">
-        <template #header>
-          <h2 class="text-base font-semibold">{{ t('dashboard.topSubnets') }}</h2>
-        </template>
-
-        <div class="space-y-4">
-          <div
-            v-for="entry in data?.subnetUsage || []"
-            :key="entry.networkId"
-            class="space-y-2"
-          >
+          <div class="space-y-2">
             <div class="flex items-center justify-between text-sm">
-              <span class="font-medium">{{ entry.name }}</span>
-              <span>{{ entry.used }} / {{ entry.capacity }}</span>
+              <span>{{ t('dashboard.ipAllocation') }}</span>
+              <span class="font-medium">{{ data?.assignedIps ?? 0 }} / {{ data?.networks ?? 0 }}</span>
             </div>
-            <UProgress :model-value="entry.percent" />
+            <UProgress :model-value="ipAllocationPercent" color="secondary" />
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-3">
+            <div class="rounded-lg border border-default/80 bg-elevated/30 p-3">
+              <p class="text-xs text-muted">{{ t('dashboard.totalSwitchPorts') }}</p>
+              <p class="mt-1 text-xl font-semibold">{{ data?.usedPorts ?? 0 }}</p>
+            </div>
+            <div class="rounded-lg border border-default/80 bg-elevated/30 p-3">
+              <p class="text-xs text-muted">{{ t('kpi.networks') }}</p>
+              <p class="mt-1 text-xl font-semibold">{{ data?.networks ?? 0 }}</p>
+            </div>
+            <div class="rounded-lg border border-default/80 bg-elevated/30 p-3">
+              <p class="text-xs text-muted">{{ t('kpi.activeSwitches') }}</p>
+              <p class="mt-1 text-xl font-semibold">{{ data?.activeSwitches ?? 0 }}</p>
+            </div>
           </div>
         </div>
       </UCard>
-    </div>
 
-    <div class="grid gap-4 xl:grid-cols-3">
-      <UCard>
-        <template #header>
-          <h2 class="text-base font-semibold">{{ t('dashboard.capacityOverview') }}</h2>
-        </template>
-
-        <dl class="space-y-3 text-sm">
-          <div class="flex items-center justify-between rounded-lg border border-default px-3 py-2">
-            <dt>{{ t('dashboard.totalSwitchPorts') }}</dt>
-            <dd class="font-semibold">{{ data?.usedPorts ?? 0 }}</dd>
-          </div>
-          <div class="flex items-center justify-between rounded-lg border border-default px-3 py-2">
-            <dt>{{ t('dashboard.availableNetworks') }}</dt>
-            <dd class="font-semibold">{{ data?.networks ?? 0 }}</dd>
-          </div>
-        </dl>
-      </UCard>
-
-      <UCard>
+      <UCard class="xl:col-span-4 border border-default/80 bg-default/70">
         <template #header>
           <h2 class="text-base font-semibold">{{ t('dashboard.quickStatus') }}</h2>
         </template>
 
         <ul class="space-y-3 text-sm">
-          <li class="flex items-center justify-between rounded-lg border border-default px-3 py-2">
+          <li class="flex items-center justify-between rounded-lg border border-default/80 bg-elevated/30 px-3 py-2">
             <span>{{ t('kpi.activeSwitches') }}</span>
-            <span class="font-semibold">{{ data?.activeSwitches ?? 0 }} / {{ data?.switches ?? 0 }}</span>
+            <UBadge color="success" variant="subtle">{{ data?.activeSwitches ?? 0 }}</UBadge>
           </li>
-          <li class="flex items-center justify-between rounded-lg border border-default px-3 py-2">
+          <li class="flex items-center justify-between rounded-lg border border-default/80 bg-elevated/30 px-3 py-2">
+            <span>{{ t('kpi.portUtilization') }}</span>
+            <span class="font-semibold">{{ data?.portUtilization ?? 0 }}%</span>
+          </li>
+          <li class="flex items-center justify-between rounded-lg border border-default/80 bg-elevated/30 px-3 py-2">
             <span>{{ t('kpi.assignedIps') }}</span>
             <span class="font-semibold">{{ data?.assignedIps ?? 0 }}</span>
           </li>
+          <li class="flex items-center justify-between rounded-lg border border-default/80 bg-elevated/30 px-3 py-2">
+            <span>{{ t('dashboard.availableNetworks') }}</span>
+            <span class="font-semibold">{{ data?.networks ?? 0 }}</span>
+          </li>
         </ul>
       </UCard>
-
-      <UCard>
-        <template #header>
-          <h2 class="text-base font-semibold">{{ t('kpi.networks') }}</h2>
-        </template>
-
-        <div class="space-y-3">
-          <div class="rounded-lg border border-default px-3 py-2">
-            <p class="text-sm text-muted">{{ t('kpi.networks') }}</p>
-            <p class="text-2xl font-semibold">{{ data?.networks ?? 0 }}</p>
-          </div>
-          <div class="rounded-lg border border-default px-3 py-2">
-            <p class="text-sm text-muted">{{ t('kpi.assignedIps') }}</p>
-            <p class="text-2xl font-semibold">{{ data?.assignedIps ?? 0 }}</p>
-          </div>
-        </div>
-      </UCard>
     </div>
+
+    <UCard class="border border-default/80 bg-default/70">
+      <template #header>
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-base font-semibold">{{ t('dashboard.topSubnets') }}</h2>
+          <UBadge color="neutral" variant="subtle">Top 5</UBadge>
+        </div>
+      </template>
+
+      <div class="space-y-4">
+        <div
+          v-for="entry in data?.subnetUsage || []"
+          :key="entry.networkId"
+          class="rounded-lg border border-default/80 bg-elevated/20 p-3"
+        >
+          <div class="mb-2 flex items-center justify-between text-sm">
+            <span class="font-medium">{{ entry.name }}</span>
+            <span>{{ entry.used }} / {{ entry.capacity }}</span>
+          </div>
+          <UProgress :model-value="entry.percent" />
+        </div>
+      </div>
+    </UCard>
   </div>
 </template>
