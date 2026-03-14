@@ -5,8 +5,11 @@ const query = reactive({ search: '', vendor: '', status: '', page: 1, pageSize: 
 const { data: items, refresh } = await useFetch<Switch[]>('/api/switches')
 const { data: meta } = await useFetch('/api/meta')
 
-const isFormOpen = ref(false)
+const panelOpen = ref(false)
 const editingSwitchId = ref<string | null>(null)
+const saveError = ref('')
+const saving = ref(false)
+
 const form = reactive({
   name: '',
   vendor: '',
@@ -50,18 +53,29 @@ const normalized = (value: string) => value.trim().replace(/\s+/g, ' ')
 
 function resetForm() {
   editingSwitchId.value = null
+  saveError.value = ''
   Object.assign(form, {
     name: '', vendor: '', model: '', managementIp: '', portCount: 24, status: 'planned', serialNumber: '', rackPosition: '', description: '', tags: '', layoutTemplateId: '', locationName: '', rackName: ''
   })
 }
 
+function closePanel() {
+  panelOpen.value = false
+  resetForm()
+}
+
+watch(panelOpen, (isOpen) => {
+  if (!isOpen) resetForm()
+})
+
 function beginCreate() {
   resetForm()
-  isFormOpen.value = true
+  panelOpen.value = true
 }
 
 function beginEdit(sw: Switch) {
   editingSwitchId.value = sw.id
+  saveError.value = ''
   const locations = (meta.value as any)?.locations || []
   const racks = (meta.value as any)?.racks || []
   const location = locations.find((entry: any) => entry.id === sw.locationId)
@@ -83,27 +97,34 @@ function beginEdit(sw: Switch) {
     rackName: rack?.name || ''
   })
 
-  isFormOpen.value = true
+  panelOpen.value = true
 }
 
 async function saveSwitch() {
-  const payload = {
-    ...form,
-    portCount: Number(form.portCount),
-    locationName: normalized(form.locationName),
-    rackName: normalized(form.rackName),
-    tags: form.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
-  }
+  saveError.value = ''
+  saving.value = true
+  try {
+    const payload = {
+      ...form,
+      portCount: Number(form.portCount),
+      locationName: normalized(form.locationName),
+      rackName: normalized(form.rackName),
+      tags: form.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
+    }
 
-  if (editingSwitchId.value) {
-    await $fetch(`/api/switches/${editingSwitchId.value}`, { method: 'PUT', body: payload })
-  } else {
-    await $fetch('/api/switches', { method: 'POST', body: payload })
-  }
+    if (editingSwitchId.value) {
+      await $fetch(`/api/switches/${editingSwitchId.value}`, { method: 'PUT', body: payload })
+    } else {
+      await $fetch('/api/switches', { method: 'POST', body: payload })
+    }
 
-  isFormOpen.value = false
-  resetForm()
-  await refresh()
+    await refresh()
+    closePanel()
+  } catch (error: any) {
+    saveError.value = error?.data?.statusMessage || error?.message || 'Failed to save switch.'
+  } finally {
+    saving.value = false
+  }
 }
 
 async function removeSwitch(id: string) {
@@ -137,33 +158,42 @@ async function removeSwitch(id: string) {
       </div>
     </UCard>
 
-    <FormDrawer
-      :open="isFormOpen"
-      :title="editingSwitchId ? 'Edit switch' : 'Add switch'"
-      description="Create or edit switch metadata without leaving the inventory."
-      @close="isFormOpen = false"
-    >
-      <UForm :state="form" class="stack" @submit.prevent="saveSwitch">
-        <div class="network-form-grid">
-          <UInput v-model="form.name" required placeholder="Name" />
-          <UInput v-model="form.vendor" required placeholder="Vendor" />
-          <UInput v-model="form.model" required placeholder="Model" />
-          <UInput v-model="form.managementIp" required placeholder="Management IP" />
-          <UInput v-model="form.locationName" placeholder="Location" />
-          <UInput v-model="form.rackName" placeholder="Rack" />
-          <UInput v-model="form.rackPosition" placeholder="Rack position" />
-          <UInput v-model="form.serialNumber" placeholder="Serial number" />
-          <UInput v-model="form.tags" placeholder="Tags (csv)" />
-          <USelect v-model="form.status" :items="['active', 'planned', 'retired']" />
-          <USelect v-model="form.layoutTemplateId" :items="[{ label: 'No layout', value: '' }, ...((meta as any)?.layoutTemplates || []).map((layout:any) => ({ label: layout.name, value: layout.id }))]" />
-          <UInput v-model="form.portCount" type="number" min="1" placeholder="Port count" />
-        </div>
-        <UTextarea v-model="form.description" :rows="3" placeholder="Description" />
-        <div class="row row-end">
-          <UButton type="button" color="neutral" variant="soft" label="Cancel" @click="isFormOpen = false" />
-          <UButton type="submit" :label="editingSwitchId ? 'Save switch' : 'Create switch'" />
-        </div>
-      </UForm>
-    </FormDrawer>
+    <USlideover v-model:open="panelOpen" :ui="{ content: 'max-w-4xl' }">
+      <UCard class="h-full rounded-none border-0">
+        <template #header>
+          <div class="row row-between">
+            <div>
+              <h3 class="section-title">{{ editingSwitchId ? 'Edit switch' : 'Add switch' }}</h3>
+              <small>Create or edit switch metadata without leaving the inventory.</small>
+            </div>
+            <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="closePanel" />
+          </div>
+        </template>
+
+        <UAlert v-if="saveError" color="error" variant="soft" :title="saveError" />
+
+        <UForm :state="form" class="stack" @submit.prevent="saveSwitch">
+          <div class="network-form-grid">
+            <UInput v-model="form.name" required placeholder="Name" />
+            <UInput v-model="form.vendor" required placeholder="Vendor" />
+            <UInput v-model="form.model" required placeholder="Model" />
+            <UInput v-model="form.managementIp" required placeholder="Management IP" />
+            <UInput v-model="form.locationName" placeholder="Location" />
+            <UInput v-model="form.rackName" placeholder="Rack" />
+            <UInput v-model="form.rackPosition" placeholder="Rack position" />
+            <UInput v-model="form.serialNumber" placeholder="Serial number" />
+            <UInput v-model="form.tags" placeholder="Tags (csv)" />
+            <USelect v-model="form.status" :items="['active', 'planned', 'retired']" />
+            <USelect v-model="form.layoutTemplateId" :items="[{ label: 'No layout', value: '' }, ...((meta as any)?.layoutTemplates || []).map((layout:any) => ({ label: layout.name, value: layout.id }))]" />
+            <UInput v-model="form.portCount" type="number" min="1" placeholder="Port count" />
+          </div>
+          <UTextarea v-model="form.description" :rows="3" placeholder="Description" />
+          <div class="row row-end">
+            <UButton type="button" color="neutral" variant="soft" label="Cancel" @click="closePanel" />
+            <UButton type="submit" :loading="saving" :label="editingSwitchId ? 'Save switch' : 'Create switch'" />
+          </div>
+        </UForm>
+      </UCard>
+    </USlideover>
   </div>
 </template>
