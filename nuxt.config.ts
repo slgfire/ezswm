@@ -1,10 +1,6 @@
 export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@nuxtjs/i18n'],
   css: ['~/assets/css/main.css'],
-  ui: {
-    global: true,
-    icons: ['heroicons']
-  },
   app: {
     head: {
       title: 'ezSWM'
