@@ -43,6 +43,9 @@ const rangeForm = reactive<Partial<IpRange>>({ name: '', type: 'dhcp', startIp: 
 const editingRangeId = ref<string | null>(null)
 const isRangeDrawerOpen = ref(false)
 const rangeTypes: IpRangeType[] = ['dhcp', 'reserved', 'static', 'infrastructure', 'guest', 'management', 'service']
+const networkSaveError = ref('')
+const allocationSaveError = ref('')
+const rangeSaveError = ref('')
 
 const networkFormDirty = computed(() => {
   if (!network.value) return false
@@ -144,7 +147,9 @@ function isSortedBy(key: AllocationSortKey) {
 }
 
 async function saveNetwork() {
-  await $fetch(`/api/networks/${networkId.value}`, {
+  networkSaveError.value = ''
+  try {
+    await $fetch(`/api/networks/${networkId.value}`, {
     method: 'PUT',
     body: {
       ...networkForm,
@@ -152,9 +157,12 @@ async function saveNetwork() {
       prefix: Number(networkForm.prefix),
       netmask: derivedNetmask.value || undefined
     }
-  })
-  isNetworkDrawerOpen.value = false
-  await refresh()
+    })
+    isNetworkDrawerOpen.value = false
+    await refresh()
+  } catch (error: any) {
+    networkSaveError.value = error?.data?.statusMessage || error?.message || 'Failed to save network.'
+  }
 }
 
 function beginEditAllocation(item: IpAllocation) {
@@ -174,14 +182,19 @@ function resetAllocationForm() {
 }
 
 async function saveAllocation() {
-  if (editingAllocationId.value) {
+  allocationSaveError.value = ''
+  try {
+    if (editingAllocationId.value) {
     await $fetch(`/api/allocations/${editingAllocationId.value}`, { method: 'PUT', body: allocationForm })
-  } else {
-    await $fetch(`/api/networks/${networkId.value}/allocations`, { method: 'POST', body: allocationForm })
+    } else {
+      await $fetch(`/api/networks/${networkId.value}/allocations`, { method: 'POST', body: allocationForm })
+    }
+    resetAllocationForm()
+    isAllocationDrawerOpen.value = false
+    await refresh()
+  } catch (error: any) {
+    allocationSaveError.value = error?.data?.statusMessage || error?.message || 'Failed to save allocation.'
   }
-  resetAllocationForm()
-  isAllocationDrawerOpen.value = false
-  await refresh()
 }
 
 async function removeAllocation(id: string) {
@@ -206,15 +219,20 @@ function resetRangeForm() {
 }
 
 async function saveRange() {
-  if (editingRangeId.value) {
+  rangeSaveError.value = ''
+  try {
+    if (editingRangeId.value) {
     await $fetch(`/api/ranges/${editingRangeId.value}`, { method: 'PUT', body: rangeForm })
-  } else {
-    await $fetch(`/api/networks/${networkId.value}/ranges`, { method: 'POST', body: rangeForm })
-  }
+    } else {
+      await $fetch(`/api/networks/${networkId.value}/ranges`, { method: 'POST', body: rangeForm })
+    }
 
-  resetRangeForm()
-  isRangeDrawerOpen.value = false
-  await refresh()
+    resetRangeForm()
+    isRangeDrawerOpen.value = false
+    await refresh()
+  } catch (error: any) {
+    rangeSaveError.value = error?.data?.statusMessage || error?.message || 'Failed to save range.'
+  }
 }
 
 async function removeRange(id: string) {
@@ -302,7 +320,7 @@ function rangeBadgeClass(type: IpRangeType) {
     <div class="panel table-wrap" id="network-ip-ranges">
       <div class="row row-between" style="padding: .75rem;">
         <h3>IP ranges</h3>
-        <button @click="beginCreateRange">Add range</button>
+        <button @click="beginCreateRange">Add IP range</button>
       </div>
       <table>
         <thead>
@@ -338,7 +356,7 @@ function rangeBadgeClass(type: IpRangeType) {
     <div class="panel table-wrap" id="network-ip-allocations">
       <div class="row row-between" style="padding: .75rem;">
         <h3>IP allocations</h3>
-        <button @click="beginCreateAllocation">Add allocation</button>
+        <button @click="beginCreateAllocation">Add IP allocation</button>
       </div>
       <table>
         <thead>
@@ -405,6 +423,7 @@ function rangeBadgeClass(type: IpRangeType) {
       :has-unsaved-changes="networkFormDirty"
       @close="closeNetworkDrawer"
     >
+      <UAlert v-if="networkSaveError" color="error" variant="soft" :title="networkSaveError" />
       <form class="stack" @submit.prevent="saveNetwork">
         <div class="network-form-grid">
           <label class="network-field"><span class="network-field__label">VLAN ID</span><input v-model="networkForm.vlanId" type="number" min="1" max="4094"></label>
@@ -433,6 +452,7 @@ function rangeBadgeClass(type: IpRangeType) {
       width="md"
       @close="closeRangeDrawer"
     >
+      <UAlert v-if="rangeSaveError" color="error" variant="soft" :title="rangeSaveError" />
       <form class="stack" @submit.prevent="saveRange">
         <div class="network-form-grid">
           <label class="network-field"><span class="network-field__label">Range name</span><input v-model="rangeForm.name" required></label>
@@ -444,7 +464,7 @@ function rangeBadgeClass(type: IpRangeType) {
         </div>
         <div class="row row-end">
           <button type="button" class="secondary" @click="closeRangeDrawer">Cancel</button>
-          <button type="submit">{{ editingRangeId ? 'Update range' : 'Add range' }}</button>
+          <button type="submit">{{ editingRangeId ? 'Update range' : 'Add IP range' }}</button>
         </div>
       </form>
     </FormDrawer>
@@ -457,6 +477,7 @@ function rangeBadgeClass(type: IpRangeType) {
       width="md"
       @close="closeAllocationDrawer"
     >
+      <UAlert v-if="allocationSaveError" color="error" variant="soft" :title="allocationSaveError" />
       <form class="stack" @submit.prevent="saveAllocation">
         <div class="network-form-grid">
           <label class="network-field"><span class="network-field__label">IP address</span><input v-model="allocationForm.ipAddress" required></label>
@@ -469,7 +490,7 @@ function rangeBadgeClass(type: IpRangeType) {
         </div>
         <div class="row row-end">
           <button type="button" class="secondary" @click="closeAllocationDrawer">Cancel</button>
-          <button type="submit">{{ editingAllocationId ? 'Update allocation' : 'Add allocation' }}</button>
+          <button type="submit">{{ editingAllocationId ? 'Update allocation' : 'Add IP allocation' }}</button>
         </div>
       </form>
     </FormDrawer>

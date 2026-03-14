@@ -36,7 +36,7 @@ function switchStatusColor(status: string) {
           <td>{{ sw.managementIp }}</td>
           <td class="text-right">
             <div class="row row-end">
-              <UButton color="neutral" variant="soft" size="xs" label="Edit" @click="emit('edit', sw)" />
+              <UButton color="neutral" variant="soft" size="xs" label="Edit switch" @click="emit('edit', sw)" />
               <UButton color="error" variant="soft" size="xs" label="Delete" @click="emit('delete', sw.id)" />
             </div>
           </td>

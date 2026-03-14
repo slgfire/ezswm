@@ -5,8 +5,12 @@ import { prefixToNetmask } from '~/utils/ip'
 type NetworkWithAllocations = Network & { allocations: IpAllocation[] }
 
 const query = reactive({ vlan: '', name: '', subnet: '', hostname: '', ip: '' })
+const panelOpen = ref(false)
+const editingNetworkId = ref<string | null>(null)
+const saveError = ref('')
+const saving = ref(false)
+
 const form = reactive<Partial<Network>>({ name: '', subnet: '', prefix: 24, gateway: '', routing: '', description: '', notes: '', vlanId: undefined, category: '' })
-const isAddDrawerOpen = ref(false)
 const derivedNetmask = computed(() => prefixToNetmask(form.prefix))
 const { data: networks, refresh } = await useFetch<NetworkWithAllocations[]>('/api/networks')
 
@@ -19,27 +23,41 @@ const filtered = computed(() => (networks.value || []).filter((network) => {
   return vlanMatch && nameMatch && subnetMatch && hostMatch && ipMatch
 }))
 
-const isNetworkFormDirty = computed(() => {
-  return Boolean(
-    form.name
-    || form.subnet
-    || form.gateway
-    || form.routing
-    || form.description
-    || form.notes
-    || form.category
-    || form.vlanId
-    || form.prefix !== 24
-  )
-})
-
 function resetForm() {
+  editingNetworkId.value = null
+  saveError.value = ''
   Object.assign(form, { name: '', subnet: '', prefix: 24, gateway: '', routing: '', description: '', notes: '', vlanId: undefined, category: '' })
 }
 
-function closeAddDrawer() {
-  isAddDrawerOpen.value = false
+function closePanel() {
+  panelOpen.value = false
   resetForm()
+}
+
+watch(panelOpen, (isOpen) => {
+  if (!isOpen) resetForm()
+})
+
+function beginCreate() {
+  resetForm()
+  panelOpen.value = true
+}
+
+function beginEdit(network: NetworkWithAllocations) {
+  editingNetworkId.value = network.id
+  saveError.value = ''
+  Object.assign(form, {
+    name: network.name,
+    subnet: network.subnet,
+    prefix: network.prefix,
+    gateway: network.gateway || '',
+    routing: network.routing || '',
+    description: network.description || '',
+    notes: network.notes || '',
+    vlanId: network.vlanId,
+    category: network.category || ''
+  })
+  panelOpen.value = true
 }
 
 function usage(network: NetworkWithAllocations) {
@@ -50,19 +68,30 @@ function usage(network: NetworkWithAllocations) {
   return { used, reserved, free, utilization }
 }
 
-async function createNetwork() {
-  await $fetch('/api/networks', {
-    method: 'POST',
-    body: {
+async function saveNetwork() {
+  saveError.value = ''
+  saving.value = true
+  try {
+    const payload = {
       ...form,
       vlanId: form.vlanId ? Number(form.vlanId) : undefined,
       prefix: Number(form.prefix),
       netmask: derivedNetmask.value || undefined
     }
-  })
-  resetForm()
-  isAddDrawerOpen.value = false
-  await refresh()
+
+    if (editingNetworkId.value) {
+      await $fetch(`/api/networks/${editingNetworkId.value}`, { method: 'PUT', body: payload })
+    } else {
+      await $fetch('/api/networks', { method: 'POST', body: payload })
+    }
+
+    await refresh()
+    closePanel()
+  } catch (error: any) {
+    saveError.value = error?.data?.statusMessage || error?.message || 'Failed to save network.'
+  } finally {
+    saving.value = false
+  }
 }
 
 async function removeNetwork(id: string) {
@@ -75,16 +104,18 @@ async function removeNetwork(id: string) {
   <div class="stack">
     <div class="row row-between">
       <h1>Networks</h1>
-      <button @click="isAddDrawerOpen = true">Add network</button>
+      <UButton icon="i-lucide-plus" label="Add network" @click="beginCreate" />
     </div>
 
-    <div class="panel row">
-      <input v-model="query.vlan" placeholder="Filter by VLAN ID">
-      <input v-model="query.name" placeholder="Filter by network name">
-      <input v-model="query.subnet" placeholder="Filter by subnet">
-      <input v-model="query.hostname" placeholder="Filter by hostname">
-      <input v-model="query.ip" placeholder="Filter by IP address">
-    </div>
+    <UCard>
+      <div class="row">
+        <UInput v-model="query.vlan" placeholder="Filter by VLAN ID" />
+        <UInput v-model="query.name" placeholder="Filter by network name" />
+        <UInput v-model="query.subnet" placeholder="Filter by subnet" />
+        <UInput v-model="query.hostname" placeholder="Filter by hostname" />
+        <UInput v-model="query.ip" placeholder="Filter by IP address" />
+      </div>
+    </UCard>
 
     <div class="panel table-wrap">
       <table>
@@ -115,77 +146,48 @@ async function removeNetwork(id: string) {
               <small>{{ usage(network).utilization }}%</small>
             </td>
             <td class="row">
-              <NuxtLink :to="`/networks/${network.id}`"><button class="secondary">Open</button></NuxtLink>
-              <button class="danger" @click="removeNetwork(network.id)">Delete</button>
+              <NuxtLink :to="`/networks/${network.id}`"><UButton color="neutral" variant="soft" label="Open" /></NuxtLink>
+              <UButton color="neutral" variant="soft" label="Edit network" @click="beginEdit(network)" />
+              <UButton color="error" variant="soft" label="Delete" @click="removeNetwork(network.id)" />
             </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <FormDrawer
-      :open="isAddDrawerOpen"
-      title="Add network"
-      description="Create a network without leaving the overview."
-      :has-unsaved-changes="isNetworkFormDirty"
-      @close="closeAddDrawer"
-    >
-      <form class="stack" @submit.prevent="createNetwork">
-        <div class="network-form-grid">
-          <label class="network-field">
-            <span class="network-field__label">VLAN ID</span>
-            <input v-model="form.vlanId" type="number" min="1" max="4094" placeholder="Optional VLAN ID">
-            <small class="network-field__hint">Optional VLAN identifier for this network</small>
-          </label>
-          <label class="network-field">
-            <span class="network-field__label">Network name</span>
-            <input v-model="form.name" placeholder="e.g. Production LAN">
-          </label>
-          <label class="network-field">
-            <span class="network-field__label">Subnet</span>
-            <input v-model="form.subnet" placeholder="e.g. 10.10.10.0">
-            <small class="network-field__hint">Base network address</small>
-          </label>
-          <label class="network-field">
-            <span class="network-field__label">Prefix</span>
-            <input v-model="form.prefix" type="number" min="0" max="32" placeholder="e.g. 24">
-            <small class="network-field__hint">CIDR prefix length, e.g. 24</small>
-          </label>
-          <label class="network-field">
-            <span class="network-field__label">Netmask</span>
-            <input :value="derivedNetmask || 'Invalid prefix'" readonly disabled>
-            <small class="network-field__hint">Automatically derived from prefix</small>
-          </label>
-          <label class="network-field">
-            <span class="network-field__label">Gateway</span>
-            <input v-model="form.gateway" placeholder="e.g. 10.10.10.1">
-            <small class="network-field__hint">Default gateway address within this subnet</small>
-          </label>
-          <label class="network-field">
-            <span class="network-field__label">Category</span>
-            <input v-model="form.category" placeholder="e.g. management">
-            <small class="network-field__hint">Logical usage such as service, management, user, or storage</small>
-          </label>
-          <label class="network-field">
-            <span class="network-field__label">Routing</span>
-            <input v-model="form.routing" placeholder="Routing information">
-          </label>
-          <label class="network-field network-form-grid__full">
-            <span class="network-field__label">Description</span>
-            <input v-model="form.description" placeholder="Short description">
-            <small class="network-field__hint">Short purpose of this network</small>
-          </label>
-          <label class="network-field network-form-grid__full">
-            <span class="network-field__label">Notes</span>
-            <input v-model="form.notes" placeholder="Optional notes">
-            <small class="network-field__hint">Optional internal notes</small>
-          </label>
-        </div>
-        <div class="row row-end">
-          <button type="button" class="secondary" @click="closeAddDrawer">Cancel</button>
-          <button type="submit">Create network</button>
-        </div>
-      </form>
-    </FormDrawer>
+    <USlideover v-model:open="panelOpen" :ui="{ content: 'max-w-4xl' }">
+      <UCard class="h-full rounded-none border-0">
+        <template #header>
+          <div class="row row-between">
+            <div>
+              <h2 class="text-lg font-semibold">{{ editingNetworkId ? 'Edit network' : 'Add network' }}</h2>
+              <p class="text-sm text-muted">Create or update network settings without leaving the overview.</p>
+            </div>
+            <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="closePanel" />
+          </div>
+        </template>
+
+        <UAlert v-if="saveError" color="error" variant="soft" :title="saveError" />
+
+        <UForm :state="form" class="stack" @submit.prevent="saveNetwork">
+          <div class="network-form-grid">
+            <UInput v-model="form.vlanId" type="number" min="1" max="4094" placeholder="Optional VLAN ID" />
+            <UInput v-model="form.name" placeholder="e.g. Production LAN" required />
+            <UInput v-model="form.subnet" placeholder="e.g. 10.10.10.0" required />
+            <UInput v-model="form.prefix" type="number" min="0" max="32" placeholder="e.g. 24" required />
+            <UInput :model-value="derivedNetmask || 'Invalid prefix'" disabled />
+            <UInput v-model="form.gateway" placeholder="e.g. 10.10.10.1" />
+            <UInput v-model="form.category" placeholder="e.g. management" />
+            <UInput v-model="form.routing" placeholder="Routing information" />
+            <UInput v-model="form.description" placeholder="Short description" class="network-form-grid__full" />
+            <UInput v-model="form.notes" placeholder="Optional notes" class="network-form-grid__full" />
+          </div>
+          <div class="row row-end">
+            <UButton type="button" color="neutral" variant="soft" label="Cancel" @click="closePanel" />
+            <UButton type="submit" :loading="saving" :label="editingNetworkId ? 'Save network' : 'Create network'" />
+          </div>
+        </UForm>
+      </UCard>
+    </USlideover>
   </div>
 </template>

@@ -24,6 +24,8 @@ const selected = ref<Port>()
 const selectedPortNumber = ref<number>()
 const portPanelOpen = ref(false)
 const editDrawerOpen = ref(false)
+const switchSaveState = ref<'idle' | 'saving' | 'error'>('idle')
+const switchSaveError = ref('')
 const portSaveState = ref<'idle' | 'saving' | 'success' | 'error'>('idle')
 const portSaveMessage = ref('')
 
@@ -32,21 +34,6 @@ const activeLayout = computed(() => {
   if (sw.value.layoutOverride) return sw.value.layoutOverride
   return layouts.value?.find((l) => l.id === sw.value?.layoutTemplateId)
 })
-
-async function saveSwitch() {
-  if (!sw.value) return
-  await $fetch(`/api/switches/${sw.value.id}`, {
-    method: 'PUT',
-    body: {
-      ...sw.value,
-      ...editForm,
-      locationName: normalized(editForm.locationName),
-      rackName: normalized(editForm.rackName),
-      tags: editForm.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
-    }
-  })
-  await refresh()
-}
 
 const normalized = (value: string) => value.trim().replace(/\s+/g, ' ')
 
@@ -70,13 +57,8 @@ const rackOptions = computed(() => {
     .map((rack: any) => rack.name)
 })
 
-watch(selectedLocationId, () => {
-  editForm.rackName = ''
-})
-
-watch([sw, meta], () => {
+function assignFormFromSwitch() {
   if (!sw.value) return
-
   const locations = (meta.value as any)?.locations || []
   const racks = (meta.value as any)?.racks || []
   const location = locations.find((entry: any) => entry.id === sw.value?.locationId)
@@ -93,6 +75,14 @@ watch([sw, meta], () => {
   editForm.tags = (sw.value.tags || []).join(', ')
   editForm.locationName = location?.name || ''
   editForm.rackName = rack?.name || ''
+}
+
+watch(selectedLocationId, () => {
+  editForm.rackName = ''
+})
+
+watch([sw, meta], () => {
+  assignFormFromSwitch()
 }, { immediate: true })
 
 function onSelectPort(port: Port | undefined, fallback: number) {
@@ -105,24 +95,47 @@ function closePortPanel() {
   portPanelOpen.value = false
 }
 
+function openEditDrawer() {
+  switchSaveError.value = ''
+  assignFormFromSwitch()
+  editDrawerOpen.value = true
+}
+
 function closeEditDrawer() {
   editDrawerOpen.value = false
+  switchSaveError.value = ''
+  assignFormFromSwitch()
+}
+
+watch(editDrawerOpen, (isOpen) => {
+  if (!isOpen) {
+    switchSaveError.value = ''
+  }
+})
+
+async function saveSwitch() {
   if (!sw.value) return
-  const locations = (meta.value as any)?.locations || []
-  const racks = (meta.value as any)?.racks || []
-  const location = locations.find((entry: any) => entry.id === sw.value?.locationId)
-  const rack = racks.find((entry: any) => entry.id === sw.value?.rackId)
-  editForm.name = sw.value.name
-  editForm.vendor = sw.value.vendor
-  editForm.model = sw.value.model
-  editForm.managementIp = sw.value.managementIp
-  editForm.serialNumber = sw.value.serialNumber || ''
-  editForm.rackPosition = sw.value.rackPosition || ''
-  editForm.status = sw.value.status
-  editForm.description = sw.value.description || ''
-  editForm.tags = (sw.value.tags || []).join(', ')
-  editForm.locationName = location?.name || ''
-  editForm.rackName = rack?.name || ''
+  switchSaveState.value = 'saving'
+  switchSaveError.value = ''
+
+  try {
+    await $fetch(`/api/switches/${sw.value.id}`, {
+      method: 'PUT',
+      body: {
+        ...sw.value,
+        ...editForm,
+        locationName: normalized(editForm.locationName),
+        rackName: normalized(editForm.rackName),
+        tags: editForm.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
+      }
+    })
+    await refresh()
+    closeEditDrawer()
+    switchSaveState.value = 'idle'
+  } catch (error: any) {
+    switchSaveState.value = 'error'
+    switchSaveError.value = error?.data?.statusMessage || error?.message || 'Saving switch failed.'
+  }
 }
 
 async function savePortChanges(payload: PortUpdatePayload) {
@@ -178,47 +191,49 @@ async function savePortChanges(payload: PortUpdatePayload) {
       <template #header>
         <div class="row row-between">
           <h3>Switch configuration</h3>
-          <UButton color="neutral" variant="soft" icon="i-lucide-pencil" label="Edit switch" @click="editDrawerOpen = true" />
+          <UButton color="neutral" variant="soft" icon="i-lucide-pencil" label="Edit switch" @click="openEditDrawer" />
         </div>
       </template>
     </UCard>
 
-    <FormDrawer
-      :open="editDrawerOpen"
-      title="Edit switch"
-      description="Update switch metadata and placement details."
-      @close="closeEditDrawer"
-    >
-      <form class="stack" @submit.prevent="saveSwitch(); closeEditDrawer()">
-        <div class="network-form-grid">
-          <input v-model="editForm.name" required placeholder="Name">
-          <input v-model="editForm.vendor" required placeholder="Vendor">
-          <input v-model="editForm.model" required placeholder="Model">
-          <input v-model="editForm.managementIp" required placeholder="Management IP">
-          <input v-model="editForm.locationName" list="location-options" placeholder="Select existing location or create a new one">
-          <datalist id="location-options">
-            <option v-for="location in locationOptions" :key="location" :value="location" />
-          </datalist>
-          <input v-model="editForm.rackName" list="rack-options" placeholder="Select existing rack or create a new one">
-          <datalist id="rack-options">
-            <option v-for="rack in rackOptions" :key="rack" :value="rack" />
-          </datalist>
-          <input v-model="editForm.rackPosition" placeholder="Rack position">
-          <input v-model="editForm.serialNumber" placeholder="Serial number">
-          <input v-model="editForm.tags" placeholder="Tags (csv)">
-          <select v-model="editForm.status">
-            <option value="active">active</option>
-            <option value="planned">planned</option>
-            <option value="retired">retired</option>
-          </select>
-        </div>
-        <textarea v-model="editForm.description" placeholder="Description" rows="3" />
-        <div class="row row-end">
-          <UButton type="button" color="neutral" variant="soft" label="Cancel" @click="closeEditDrawer" />
-          <UButton type="submit" icon="i-lucide-save" label="Save switch" />
-        </div>
-      </form>
-    </FormDrawer>
+    <USlideover v-model:open="editDrawerOpen" :ui="{ content: 'max-w-4xl' }">
+      <UCard class="h-full rounded-none border-0">
+        <template #header>
+          <div class="row row-between">
+            <h3 class="section-title">Edit switch</h3>
+            <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="closeEditDrawer" />
+          </div>
+        </template>
+
+        <UAlert v-if="switchSaveError" color="error" variant="soft" :title="switchSaveError" />
+
+        <UForm :state="editForm" class="stack" @submit.prevent="saveSwitch">
+          <div class="network-form-grid">
+            <UInput v-model="editForm.name" required placeholder="Name" />
+            <UInput v-model="editForm.vendor" required placeholder="Vendor" />
+            <UInput v-model="editForm.model" required placeholder="Model" />
+            <UInput v-model="editForm.managementIp" required placeholder="Management IP" />
+            <UInput v-model="editForm.locationName" list="location-options" placeholder="Select existing location or create a new one" />
+            <datalist id="location-options">
+              <option v-for="location in locationOptions" :key="location" :value="location" />
+            </datalist>
+            <UInput v-model="editForm.rackName" list="rack-options" placeholder="Select existing rack or create a new one" />
+            <datalist id="rack-options">
+              <option v-for="rack in rackOptions" :key="rack" :value="rack" />
+            </datalist>
+            <UInput v-model="editForm.rackPosition" placeholder="Rack position" />
+            <UInput v-model="editForm.serialNumber" placeholder="Serial number" />
+            <UInput v-model="editForm.tags" placeholder="Tags (csv)" />
+            <USelect v-model="editForm.status" :items="['active', 'planned', 'retired']" />
+          </div>
+          <UTextarea v-model="editForm.description" placeholder="Description" :rows="3" />
+          <div class="row row-end">
+            <UButton type="button" color="neutral" variant="soft" label="Cancel" @click="closeEditDrawer" />
+            <UButton type="submit" icon="i-lucide-save" :loading="switchSaveState === 'saving'" label="Save switch" />
+          </div>
+        </UForm>
+      </UCard>
+    </USlideover>
 
     <UCard v-if="activeLayout" class="stack">
       <template #header>
@@ -276,6 +291,3 @@ async function savePortChanges(payload: PortUpdatePayload) {
     </UCard>
   </div>
 </template>
-
-<style scoped>
-</style>
