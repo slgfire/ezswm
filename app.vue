@@ -133,7 +133,6 @@ const onSearchKeydown = async (event: KeyboardEvent) => {
             <p class="sidebar-brand__title">ezSWM Console</p>
             <small>Easy Switch and IP Management</small>
           </div>
-          <UBadge color="primary" variant="subtle" class="sidebar-brand__badge">Enterprise</UBadge>
         </UCard>
 
         <div class="sidebar-nav">

@@ -634,7 +634,7 @@ body {
 
 .sidebar-brand {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: .75rem;
   padding: .85rem .9rem;
@@ -678,6 +678,7 @@ body {
   border-radius: 11px;
   padding-inline: .7rem;
   color: var(--text-secondary);
+  justify-content: center;
 }
 
 .nav-link:hover {
