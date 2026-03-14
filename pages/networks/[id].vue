@@ -370,8 +370,8 @@ function closeNetworkDrawer() {
             <td>{{ item.description || '—' }}</td>
             <td>{{ item.notes || '—' }}</td>
             <td class="row">
-              <button class="secondary" @click="beginEditAllocation(item)">Edit</button>
-              <button class="danger" @click="removeAllocation(item.id)">Delete</button>
+              <UButton color="neutral" variant="soft" label="Edit" @click="beginEditAllocation(item)" />
+              <UButton color="error" variant="soft" label="Delete" @click="removeAllocation(item.id)" />
             </td>
           </tr>
         </tbody>
@@ -388,20 +388,20 @@ function closeNetworkDrawer() {
       <UAlert v-if="networkSaveError" color="error" variant="soft" :title="networkSaveError" />
       <form class="stack" @submit.prevent="saveNetwork">
         <div class="network-form-grid">
-          <label class="network-field"><span class="network-field__label">VLAN ID</span><input v-model="networkForm.vlanId" type="number" min="1" max="4094"></label>
-          <label class="network-field"><span class="network-field__label">Network name</span><input v-model="networkForm.name"></label>
-          <label class="network-field"><span class="network-field__label">Subnet</span><input v-model="networkForm.subnet"></label>
-          <label class="network-field"><span class="network-field__label">Prefix</span><input v-model="networkForm.prefix" type="number" min="0" max="32"></label>
-          <label class="network-field"><span class="network-field__label">Netmask</span><input :value="derivedNetmask || 'Invalid prefix'" readonly disabled></label>
-          <label class="network-field"><span class="network-field__label">Gateway</span><input v-model="networkForm.gateway"></label>
-          <label class="network-field"><span class="network-field__label">Category</span><input v-model="networkForm.category"></label>
-          <label class="network-field"><span class="network-field__label">Routing</span><input v-model="networkForm.routing"></label>
-          <label class="network-field network-form-grid__full"><span class="network-field__label">Description</span><input v-model="networkForm.description"></label>
-          <label class="network-field network-form-grid__full"><span class="network-field__label">Notes</span><input v-model="networkForm.notes"></label>
+          <UFormField class="network-field" label="VLAN ID"><UInput v-model="networkForm.vlanId" type="number" min="1" max="4094" /></UFormField>
+          <UFormField class="network-field" label="Network name"><UInput v-model="networkForm.name" /></UFormField>
+          <UFormField class="network-field" label="Subnet"><UInput v-model="networkForm.subnet" /></UFormField>
+          <UFormField class="network-field" label="Prefix"><UInput v-model="networkForm.prefix" type="number" min="0" max="32" /></UFormField>
+          <UFormField class="network-field" label="Netmask"><UInput :model-value="derivedNetmask || 'Invalid prefix'" readonly disabled /></UFormField>
+          <UFormField class="network-field" label="Gateway"><UInput v-model="networkForm.gateway" /></UFormField>
+          <UFormField class="network-field" label="Category"><UInput v-model="networkForm.category" /></UFormField>
+          <UFormField class="network-field" label="Routing"><UInput v-model="networkForm.routing" /></UFormField>
+          <UFormField class="network-field network-form-grid__full" label="Description"><UInput v-model="networkForm.description" /></UFormField>
+          <UFormField class="network-field network-form-grid__full" label="Notes"><UInput v-model="networkForm.notes" /></UFormField>
         </div>
         <div class="row row-end">
-          <button type="button" class="secondary" @click="closeNetworkDrawer">Cancel</button>
-          <button type="submit">Save network</button>
+          <UButton type="button" color="neutral" variant="soft" label="Cancel" @click="closeNetworkDrawer" />
+          <UButton type="submit" label="Save network" />
         </div>
       </form>
     </FormDrawer>
@@ -417,16 +417,16 @@ function closeNetworkDrawer() {
       <UAlert v-if="rangeSaveError" color="error" variant="soft" :title="rangeSaveError" />
       <form class="stack" @submit.prevent="saveRange">
         <div class="network-form-grid">
-          <label class="network-field"><span class="network-field__label">Range name</span><input v-model="rangeForm.name" required></label>
-          <label class="network-field"><span class="network-field__label">Type</span><select v-model="rangeForm.type"><option v-for="item in NETWORK_RANGE_TYPES" :key="item" :value="item">{{ item }}</option></select></label>
-          <label class="network-field"><span class="network-field__label">Start IP</span><input v-model="rangeForm.startIp" required></label>
-          <label class="network-field"><span class="network-field__label">End IP</span><input v-model="rangeForm.endIp" required></label>
-          <label class="network-field network-form-grid__full"><span class="network-field__label">Description</span><input v-model="rangeForm.description"></label>
-          <label class="network-field network-form-grid__full"><span class="network-field__label">Notes</span><input v-model="rangeForm.notes"></label>
+          <UFormField class="network-field" label="Range name"><UInput v-model="rangeForm.name" required /></UFormField>
+          <UFormField class="network-field" label="Type"><USelect v-model="rangeForm.type" :items="NETWORK_RANGE_TYPES" /></UFormField>
+          <UFormField class="network-field" label="Start IP"><UInput v-model="rangeForm.startIp" required /></UFormField>
+          <UFormField class="network-field" label="End IP"><UInput v-model="rangeForm.endIp" required /></UFormField>
+          <UFormField class="network-field network-form-grid__full" label="Description"><UInput v-model="rangeForm.description" /></UFormField>
+          <UFormField class="network-field network-form-grid__full" label="Notes"><UInput v-model="rangeForm.notes" /></UFormField>
         </div>
         <div class="row row-end">
-          <button type="button" class="secondary" @click="closeRangeDrawer">Cancel</button>
-          <button type="submit">{{ editingRangeId ? 'Update range' : 'Add IP range' }}</button>
+          <UButton type="button" color="neutral" variant="soft" label="Cancel" @click="closeRangeDrawer" />
+          <UButton type="submit" :label="editingRangeId ? 'Update range' : 'Add IP range'" />
         </div>
       </form>
     </FormDrawer>
@@ -442,17 +442,17 @@ function closeNetworkDrawer() {
       <UAlert v-if="allocationSaveError" color="error" variant="soft" :title="allocationSaveError" />
       <form class="stack" @submit.prevent="saveAllocation">
         <div class="network-form-grid">
-          <label class="network-field"><span class="network-field__label">IP address</span><input v-model="allocationForm.ipAddress" required></label>
-          <label class="network-field"><span class="network-field__label">Hostname</span><input v-model="allocationForm.hostname"></label>
-          <label class="network-field"><span class="network-field__label">Service name</span><input v-model="allocationForm.serviceName"></label>
-          <label class="network-field"><span class="network-field__label">Device name</span><input v-model="allocationForm.deviceName"></label>
-          <label class="network-field"><span class="network-field__label">Status</span><select v-model="allocationForm.status"><option value="used">used</option><option value="reserved">reserved</option><option value="free">free</option><option value="gateway">gateway</option></select></label>
-          <label class="network-field network-form-grid__full"><span class="network-field__label">Description</span><input v-model="allocationForm.description"></label>
-          <label class="network-field network-form-grid__full"><span class="network-field__label">Notes</span><input v-model="allocationForm.notes"></label>
+          <UFormField class="network-field" label="IP address"><UInput v-model="allocationForm.ipAddress" required /></UFormField>
+          <UFormField class="network-field" label="Hostname"><UInput v-model="allocationForm.hostname" /></UFormField>
+          <UFormField class="network-field" label="Service name"><UInput v-model="allocationForm.serviceName" /></UFormField>
+          <UFormField class="network-field" label="Device name"><UInput v-model="allocationForm.deviceName" /></UFormField>
+          <UFormField class="network-field" label="Status"><USelect v-model="allocationForm.status" :items="['used', 'reserved', 'free', 'gateway']" /></UFormField>
+          <UFormField class="network-field network-form-grid__full" label="Description"><UInput v-model="allocationForm.description" /></UFormField>
+          <UFormField class="network-field network-form-grid__full" label="Notes"><UInput v-model="allocationForm.notes" /></UFormField>
         </div>
         <div class="row row-end">
-          <button type="button" class="secondary" @click="closeAllocationDrawer">Cancel</button>
-          <button type="submit">{{ editingAllocationId ? 'Update allocation' : 'Add IP allocation' }}</button>
+          <UButton type="button" color="neutral" variant="soft" label="Cancel" @click="closeAllocationDrawer" />
+          <UButton type="submit" :label="editingAllocationId ? 'Update allocation' : 'Add IP allocation'" />
         </div>
       </form>
     </FormDrawer>
