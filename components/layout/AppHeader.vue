@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const emit = defineEmits<{ (e: 'toggle-sidebar'): void }>()
+
 const query = ref('')
 const open = ref(false)
 const { locale, locales, setLocale, t } = useI18n()
@@ -14,6 +16,7 @@ watchDebounced(query, async (value) => {
     open.value = false
     return
   }
+
   await refresh()
   open.value = true
 }, { debounce: 250, maxWait: 500 })
@@ -26,9 +29,35 @@ const go = async (to: string) => {
 </script>
 
 <template>
-  <header class="border-b border-default px-4 py-3">
-    <div class="flex items-center gap-3">
-      <UInput v-model="query" :placeholder="t('search.placeholder')" icon="i-lucide-search" class="flex-1" />
+  <header class="sticky top-0 z-30 border-b border-default bg-default/95 backdrop-blur">
+    <div class="mx-auto flex w-full max-w-[1400px] items-center gap-3 px-4 py-3 sm:px-6">
+      <UButton
+        icon="i-lucide-menu"
+        variant="ghost"
+        size="sm"
+        class="lg:hidden"
+        @click="emit('toggle-sidebar')"
+      />
+
+      <div class="relative flex-1">
+        <UInput v-model="query" :placeholder="t('search.placeholder')" icon="i-lucide-search" class="w-full" />
+
+        <UCard v-if="open" class="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20">
+          <div class="space-y-2">
+            <UButton
+              v-for="result in results || []"
+              :key="result.id"
+              variant="ghost"
+              class="w-full justify-between"
+              @click="go(result.to)"
+            >
+              <span>{{ result.title }}</span>
+              <UBadge color="neutral" variant="soft">{{ result.type }}</UBadge>
+            </UButton>
+          </div>
+        </UCard>
+      </div>
+
       <USelect
         :model-value="locale"
         :items="locales"
@@ -37,21 +66,8 @@ const go = async (to: string) => {
         class="w-36"
         @update:model-value="setLocale($event as string)"
       />
+
       <UColorModeButton />
     </div>
-    <UCard v-if="open" class="mt-2">
-      <div class="space-y-2">
-        <UButton
-          v-for="result in results || []"
-          :key="result.id"
-          variant="ghost"
-          class="w-full justify-between"
-          @click="go(result.to)"
-        >
-          <span>{{ result.title }}</span>
-          <UBadge color="neutral" variant="soft">{{ result.type }}</UBadge>
-        </UButton>
-      </div>
-    </UCard>
   </header>
 </template>
