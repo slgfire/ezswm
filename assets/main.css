@@ -295,6 +295,17 @@ tbody tr:hover { background: var(--bg-hover); }
 .port-disabled { background: var(--port-disabled-bg); border-color: var(--port-disabled-border); color: var(--port-disabled-text); }
 .port-error { background: var(--port-error-bg); border-color: var(--port-error-border); color: var(--port-error-text); }
 
+.port-cell--empty {
+  cursor: default;
+  border-style: dashed;
+  background: transparent;
+  opacity: .35;
+}
+.port-cell--sfp { border-color: color-mix(in oklab, var(--accent-success) 45%, var(--port-free-border)); }
+.port-cell--sfpplus { border-color: color-mix(in oklab, var(--accent-success) 60%, var(--port-free-border)); }
+.port-cell--qsfp { border-color: color-mix(in oklab, var(--accent-warning) 55%, var(--port-free-border)); }
+.port-cell--mgmt { border-color: color-mix(in oklab, var(--accent-danger) 55%, var(--port-free-border)); }
+
 
 .port-blocks {
   display: grid;

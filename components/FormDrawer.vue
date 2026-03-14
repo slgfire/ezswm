@@ -13,6 +13,15 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{ close: [] }>()
 
+const openProxy = computed({
+  get: () => props.open,
+  set: (value: boolean) => {
+    if (!value) {
+      requestClose()
+    }
+  }
+})
+
 function requestClose() {
   if (props.hasUnsavedChanges && !window.confirm('You have unsaved changes. Close anyway?')) {
     return
@@ -23,23 +32,25 @@ function requestClose() {
 </script>
 
 <template>
-  <USlideover :open="open" :dismissible="true" :ui="{ content: width === 'md' ? 'max-w-2xl' : 'max-w-4xl' }" @update:open="(v) => !v && requestClose()">
-    <template #content>
-      <UCard class="h-full rounded-none border-0">
-        <template #header>
-          <div class="flex items-start justify-between gap-3">
-            <div class="space-y-1">
-              <h2 class="text-lg font-semibold">{{ title }}</h2>
-              <p v-if="description" class="text-sm text-muted">{{ description }}</p>
-            </div>
-            <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="requestClose" />
+  <USlideover
+    v-model:open="openProxy"
+    :dismissible="true"
+    :ui="{ content: width === 'md' ? 'max-w-2xl' : 'max-w-4xl' }"
+  >
+    <UCard class="h-full rounded-none border-0">
+      <template #header>
+        <div class="flex items-start justify-between gap-3">
+          <div class="space-y-1">
+            <h2 class="text-lg font-semibold">{{ title }}</h2>
+            <p v-if="description" class="text-sm text-muted">{{ description }}</p>
           </div>
-        </template>
-
-        <div class="space-y-4">
-          <slot />
+          <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="requestClose" />
         </div>
-      </UCard>
-    </template>
+      </template>
+
+      <div v-if="open" class="space-y-4">
+        <slot />
+      </div>
+    </UCard>
   </USlideover>
 </template>

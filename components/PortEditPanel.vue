@@ -49,13 +49,14 @@ const form = reactive<PortForm>({
   patchTarget: ''
 })
 
+const openProxy = computed({
+  get: () => props.open,
+  set: (value: boolean) => {
+    if (!value) emit('close')
+  }
+})
 
-const statusOptions: Array<{ value: PortStatus; label: string }> = [
-  { value: 'free', label: 'free' },
-  { value: 'used', label: 'used' },
-  { value: 'disabled', label: 'disabled' },
-  { value: 'error', label: 'error' }
-]
+const statusOptions: PortStatus[] = ['free', 'used', 'disabled', 'error']
 
 const mediaTypeOptions: MediaType[] = ['RJ45', 'SFP', 'SFP+', 'QSFP']
 
@@ -79,8 +80,7 @@ function resetForm() {
 }
 
 const portNumber = computed(() => props.port?.portNumber ?? props.fallbackPortNumber)
-
-const statusLabel = computed(() => statusOptions.find((opt) => opt.value === form.status)?.label ?? form.status)
+const statusLabel = computed(() => form.status)
 
 function validVlan(value: unknown) {
   const normalized = asTrimmedString(value)
@@ -125,7 +125,7 @@ async function onSave() {
       patchTarget: asTrimmedString(form.patchTarget)
     }
 
-    const payload: PortUpdatePayload = {
+    emit('save', {
       status: form.status,
       label: normalized.label,
       vlan: normalized.vlan,
@@ -137,126 +137,60 @@ async function onSave() {
       duplex: form.duplex || 'auto',
       poe: form.poe,
       patchTarget: normalized.patchTarget
-    }
-
-    emit('save', payload)
+    })
   } finally {
     saving.value = false
   }
 }
 
-function close() {
-  emit('close')
-}
-
 watch(() => props.port, (port) => applyPort(port), { immediate: true })
 watch(() => props.open, (isOpen) => {
-  if (isOpen) {
-    applyPort(props.port)
-  }
+  if (isOpen) applyPort(props.port)
 })
-
 </script>
 
 <template>
-  <div v-if="open && (port || fallbackPortNumber)" class="port-edit-inline">
-    <aside class="port-edit-panel panel">
-      <div class="row row-between">
-        <div>
-          <h3 class="section-title">Port {{ portNumber }}</h3>
-          <p class="port-subtitle">Switch: {{ switchName }}</p>
+  <USlideover v-model:open="openProxy" :ui="{ content: 'max-w-3xl' }">
+    <UCard class="h-full rounded-none border-0">
+      <template #header>
+        <div class="row row-between">
+          <div>
+            <h3 class="section-title">Port {{ portNumber }}</h3>
+            <p class="port-subtitle">Switch: {{ switchName }}</p>
+          </div>
+          <UButton color="neutral" variant="ghost" label="Close" @click="emit('close')" />
         </div>
-        <button class="button--ghost" @click="close">Close</button>
-      </div>
+      </template>
 
-      <div class="row port-status-headline">
-        <span>Current status:</span>
-        <PortBadge :status="form.status" />
-        <strong>{{ statusLabel }}</strong>
-      </div>
-
-      <form class="stack" @submit.prevent="onSave">
-        <div class="port-form-grid">
-          <label class="field">
-            <span>Status</span>
-            <select v-model="form.status">
-              <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-            </select>
-          </label>
-
-          <label class="field">
-            <span>Type</span>
-            <select v-model="form.mediaType">
-              <option v-for="media in mediaTypeOptions" :key="media" :value="media">{{ media }}</option>
-            </select>
-          </label>
-
-          <label class="field">
-            <span>Label</span>
-            <input v-model="form.label" type="text" placeholder="e.g. Workstation A-12" />
-          </label>
-
-          <label class="field">
-            <span>VLAN</span>
-            <input v-model="form.vlan" type="number" min="1" max="4094" placeholder="1-4094" />
-            <small v-if="errors.vlan" class="field-error">{{ errors.vlan }}</small>
-          </label>
-
-          <label class="field">
-            <span>Device</span>
-            <input v-model="form.connectedDevice" type="text" placeholder="Hostname / Device" />
-          </label>
-
-          <label class="field">
-            <span>MAC</span>
-            <input v-model="form.macAddress" type="text" placeholder="AA:BB:CC:DD:EE:FF" />
-            <small v-if="errors.macAddress" class="field-error">{{ errors.macAddress }}</small>
-          </label>
-
-          <label class="field field--full">
-            <span>Description</span>
-            <textarea v-model="form.description" rows="3" placeholder="Optional description" />
-          </label>
-
-          <label class="field">
-            <span>Speed</span>
-            <select v-model="form.speed">
-              <option value="">-</option>
-              <option value="10M">10M</option>
-              <option value="100M">100M</option>
-              <option value="1G">1G</option>
-              <option value="2.5G">2.5G</option>
-              <option value="10G">10G</option>
-              <option value="40G">40G</option>
-            </select>
-          </label>
-
-          <label class="field">
-            <span>Duplex</span>
-            <select v-model="form.duplex">
-              <option value="auto">Auto</option>
-              <option value="full">Full</option>
-              <option value="half">Half</option>
-            </select>
-          </label>
-
-          <label class="field field-checkbox">
-            <input v-model="form.poe" type="checkbox" />
-            <span>PoE enabled</span>
-          </label>
-
-          <label class="field">
-            <span>Patch target</span>
-            <input v-model="form.patchTarget" type="text" placeholder="e.g. Patch panel PP-01/24" />
-          </label>
+      <div v-if="open && (port || fallbackPortNumber)" class="stack">
+        <div class="row port-status-headline">
+          <span>Current status:</span>
+          <PortBadge :status="form.status" />
+          <strong>{{ statusLabel }}</strong>
         </div>
 
-      <div class="row row-end">
-        <button type="button" class="button--ghost" @click="resetForm">Reset</button>
-        <button type="button" class="secondary" @click="close">Cancel</button>
-        <button type="submit" :disabled="saving">{{ saving ? 'Saving...' : 'Save' }}</button>
+        <UForm :state="form" class="stack" @submit.prevent="onSave">
+          <div class="port-form-grid">
+            <label class="field"><span>Status</span><USelect v-model="form.status" :items="statusOptions" /></label>
+            <label class="field"><span>Type</span><USelect v-model="form.mediaType" :items="mediaTypeOptions" /></label>
+            <label class="field"><span>Label</span><UInput v-model="form.label" placeholder="e.g. Workstation A-12" /></label>
+            <label class="field"><span>VLAN</span><UInput v-model="form.vlan" type="number" min="1" max="4094" placeholder="1-4094" /><small v-if="errors.vlan" class="field-error">{{ errors.vlan }}</small></label>
+            <label class="field"><span>Device</span><UInput v-model="form.connectedDevice" placeholder="Hostname / Device" /></label>
+            <label class="field"><span>MAC</span><UInput v-model="form.macAddress" placeholder="AA:BB:CC:DD:EE:FF" /><small v-if="errors.macAddress" class="field-error">{{ errors.macAddress }}</small></label>
+            <label class="field field--full"><span>Description</span><UTextarea v-model="form.description" :rows="3" placeholder="Optional description" /></label>
+            <label class="field"><span>Speed</span><USelect v-model="form.speed" :items="['', '10M', '100M', '1G', '2.5G', '10G', '40G']" /></label>
+            <label class="field"><span>Duplex</span><USelect v-model="form.duplex" :items="['auto', 'full', 'half']" /></label>
+            <label class="field field-checkbox"><UCheckbox v-model="form.poe" /><span>PoE enabled</span></label>
+            <label class="field"><span>Patch target</span><UInput v-model="form.patchTarget" placeholder="e.g. Patch panel PP-01/24" /></label>
+          </div>
+
+          <div class="row row-end">
+            <UButton type="button" color="neutral" variant="soft" label="Reset" @click="resetForm" />
+            <UButton type="button" color="neutral" variant="soft" label="Cancel" @click="emit('close')" />
+            <UButton type="submit" :loading="saving" :label="saving ? 'Saving...' : 'Save'" />
+          </div>
+        </UForm>
       </div>
-      </form>
-    </aside>
-  </div>
+    </UCard>
+  </USlideover>
 </template>

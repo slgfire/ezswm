@@ -44,6 +44,7 @@ export interface LayoutBlock {
   startPort?: number
   endPort?: number
   portNumbers?: number[]
+  ports?: number[]
 }
 
 export interface LayoutTemplate {

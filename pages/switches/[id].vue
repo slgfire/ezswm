@@ -105,6 +105,26 @@ function closePortPanel() {
   portPanelOpen.value = false
 }
 
+function closeEditDrawer() {
+  editDrawerOpen.value = false
+  if (!sw.value) return
+  const locations = (meta.value as any)?.locations || []
+  const racks = (meta.value as any)?.racks || []
+  const location = locations.find((entry: any) => entry.id === sw.value?.locationId)
+  const rack = racks.find((entry: any) => entry.id === sw.value?.rackId)
+  editForm.name = sw.value.name
+  editForm.vendor = sw.value.vendor
+  editForm.model = sw.value.model
+  editForm.managementIp = sw.value.managementIp
+  editForm.serialNumber = sw.value.serialNumber || ''
+  editForm.rackPosition = sw.value.rackPosition || ''
+  editForm.status = sw.value.status
+  editForm.description = sw.value.description || ''
+  editForm.tags = (sw.value.tags || []).join(', ')
+  editForm.locationName = location?.name || ''
+  editForm.rackName = rack?.name || ''
+}
+
 async function savePortChanges(payload: PortUpdatePayload) {
   if (!sw.value) return
   const portNumber = selectedPortNumber.value
@@ -167,9 +187,9 @@ async function savePortChanges(payload: PortUpdatePayload) {
       :open="editDrawerOpen"
       title="Edit switch"
       description="Update switch metadata and placement details."
-      @close="editDrawerOpen = false"
+      @close="closeEditDrawer"
     >
-      <form class="stack" @submit.prevent="saveSwitch(); editDrawerOpen = false">
+      <form class="stack" @submit.prevent="saveSwitch(); closeEditDrawer()">
         <div class="network-form-grid">
           <input v-model="editForm.name" required placeholder="Name">
           <input v-model="editForm.vendor" required placeholder="Vendor">
@@ -194,7 +214,7 @@ async function savePortChanges(payload: PortUpdatePayload) {
         </div>
         <textarea v-model="editForm.description" placeholder="Description" rows="3" />
         <div class="row row-end">
-          <UButton type="button" color="neutral" variant="soft" label="Cancel" @click="editDrawerOpen = false" />
+          <UButton type="button" color="neutral" variant="soft" label="Cancel" @click="closeEditDrawer" />
           <UButton type="submit" icon="i-lucide-save" label="Save switch" />
         </div>
       </form>
