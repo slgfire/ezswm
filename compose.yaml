@@ -1,5 +1,6 @@
 services:
   ezswm:
+    container_name: ezswm
     build: .
     ports:
       - "3000:3000"
