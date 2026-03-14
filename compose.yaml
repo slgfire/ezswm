@@ -4,7 +4,9 @@ services:
     ports:
       - "3000:3000"
     environment:
+      - NODE_ENV=production
+      - NITRO_HOST=0.0.0.0
+      - NITRO_PORT=3000
       - EZSWM_DATA_DIR=/app/data
-      - NUXT_PORT=3000
     volumes:
       - ./data:/app/data
