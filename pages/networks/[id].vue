@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import type { IpAllocation, IpAllocationStatus, IpRange, IpRangeType, Network } from '~/types/models'
+import type { IpAllocation, IpAllocationStatus, IpRange, Network } from '~/types/models'
+import { useEditableDrawer } from '~/composables/useEditableDrawer'
+import {
+  NETWORK_RANGE_TYPES,
+  calculateDetailedNetworkUsage,
+  getAllocationDisplayLabel,
+  getAllocationStatusBadgeClass,
+  getRangeTypeBadgeClass
+} from '~/utils/network'
 import { compareIpAddresses, ipRangeSize, isIpWithinRange, prefixToNetmask } from '~/utils/ip'
 
 const route = useRoute()
@@ -19,11 +27,14 @@ const STATUS_SORT_ORDER: Record<IpAllocationStatus, number> = {
 const textCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
 
 const { data: network, refresh } = await useFetch<NetworkDetail>(() => `/api/networks/${networkId.value}`)
-
 const sortState = ref<{ key: AllocationSortKey, direction: SortDirection }>({ key: 'ipAddress', direction: 'asc' })
 
 const networkForm = reactive<Partial<Network>>({})
 const isNetworkDrawerOpen = ref(false)
+const networkSaveError = ref('')
+const allocationSaveError = ref('')
+const rangeSaveError = ref('')
+
 const derivedNetmask = computed(() => prefixToNetmask(networkForm.prefix))
 
 watchEffect(() => {
@@ -35,17 +46,31 @@ watch(derivedNetmask, (value) => {
   networkForm.netmask = value || ''
 }, { immediate: true })
 
-const allocationForm = reactive<Partial<IpAllocation>>({ ipAddress: '', hostname: '', serviceName: '', deviceName: '', status: 'used', description: '', notes: '' })
-const editingAllocationId = ref<string | null>(null)
-const isAllocationDrawerOpen = ref(false)
+const {
+  isOpen: isAllocationDrawerOpen,
+  editingId: editingAllocationId,
+  form: allocationForm,
+  beginCreate: beginCreateAllocation,
+  beginEdit: beginEditAllocation,
+  closeDrawer: closeAllocationDrawer,
+  resetForm: resetAllocationForm
+} = useEditableDrawer(
+  () => ({ ipAddress: '', hostname: '', serviceName: '', deviceName: '', status: 'used', description: '', notes: '' } as Partial<IpAllocation>),
+  (item: IpAllocation) => item
+)
 
-const rangeForm = reactive<Partial<IpRange>>({ name: '', type: 'dhcp', startIp: '', endIp: '', description: '', notes: '' })
-const editingRangeId = ref<string | null>(null)
-const isRangeDrawerOpen = ref(false)
-const rangeTypes: IpRangeType[] = ['dhcp', 'reserved', 'static', 'infrastructure', 'guest', 'management', 'service']
-const networkSaveError = ref('')
-const allocationSaveError = ref('')
-const rangeSaveError = ref('')
+const {
+  isOpen: isRangeDrawerOpen,
+  editingId: editingRangeId,
+  form: rangeForm,
+  beginCreate: beginCreateRange,
+  beginEdit: beginEditRange,
+  closeDrawer: closeRangeDrawer,
+  resetForm: resetRangeForm
+} = useEditableDrawer(
+  () => ({ name: '', type: 'dhcp', startIp: '', endIp: '', description: '', notes: '' } as Partial<IpRange>),
+  (item: IpRange) => item
+)
 
 const networkFormDirty = computed(() => {
   if (!network.value) return false
@@ -98,31 +123,25 @@ const sortedRanges = computed(() => {
 
 const summary = computed(() => {
   if (!network.value) return { total: 0, used: 0, free: 0, reserved: 0, dhcp: 0, utilization: 0 }
-  const used = network.value.allocations.filter((entry) => entry.status === 'used' || entry.status === 'gateway').length
-  const reservedAllocations = network.value.allocations.filter((entry) => entry.status === 'reserved').length
-  const dhcp = network.value.ranges.filter((entry) => entry.type === 'dhcp').reduce((sum, entry) => sum + ipRangeSize(entry.startIp, entry.endIp), 0)
-  const reservedRanges = network.value.ranges.filter((entry) => entry.type === 'reserved').reduce((sum, entry) => sum + ipRangeSize(entry.startIp, entry.endIp), 0)
-  const reserved = reservedAllocations + reservedRanges
-  const occupied = used + reserved + dhcp
-  const free = Math.max(0, network.value.maxHosts - occupied)
-  const utilization = network.value.maxHosts > 0 ? Math.round((occupied / network.value.maxHosts) * 100) : 0
-  return { total: network.value.maxHosts, used, free, reserved, dhcp, utilization }
+  return calculateDetailedNetworkUsage(network.value.maxHosts, network.value.allocations, network.value.ranges)
 })
 
-function allocationLabel(allocation: IpAllocation) {
-  return allocation.hostname || allocation.deviceName || allocation.serviceName || ''
-}
+const allocationRangeByIp = computed<Record<string, IpRange | undefined>>(() => {
+  const rangeMap: Record<string, IpRange | undefined> = {}
+  if (!network.value) return rangeMap
 
-function findRangeForIp(ipAddress: string): IpRange | null {
-  if (!network.value) return null
-  return network.value.ranges.find((range) => isIpWithinRange(ipAddress, range.startIp, range.endIp)) || null
-}
+  for (const allocation of sortedAllocations.value) {
+    rangeMap[allocation.ipAddress] = network.value.ranges.find((range) => isIpWithinRange(allocation.ipAddress, range.startIp, range.endIp))
+  }
+
+  return rangeMap
+})
 
 function compareAllocationRows(left: IpAllocation, right: IpAllocation, key: AllocationSortKey): number {
   if (key === 'ipAddress') return compareIpAddresses(left.ipAddress, right.ipAddress)
-  if (key === 'label') return textCollator.compare(allocationLabel(left), allocationLabel(right))
+  if (key === 'label') return textCollator.compare(getAllocationDisplayLabel(left), getAllocationDisplayLabel(right))
   if (key === 'status') return STATUS_SORT_ORDER[left.status] - STATUS_SORT_ORDER[right.status]
-  if (key === 'networkName') return textCollator.compare(network.value?.name || '', network.value?.name || '')
+  if (key === 'networkName') return 0
 
   const leftVlan = network.value?.vlanId ?? Number.POSITIVE_INFINITY
   const rightVlan = network.value?.vlanId ?? Number.POSITIVE_INFINITY
@@ -150,13 +169,13 @@ async function saveNetwork() {
   networkSaveError.value = ''
   try {
     await $fetch(`/api/networks/${networkId.value}`, {
-    method: 'PUT',
-    body: {
-      ...networkForm,
-      vlanId: networkForm.vlanId ? Number(networkForm.vlanId) : undefined,
-      prefix: Number(networkForm.prefix),
-      netmask: derivedNetmask.value || undefined
-    }
+      method: 'PUT',
+      body: {
+        ...networkForm,
+        vlanId: networkForm.vlanId ? Number(networkForm.vlanId) : undefined,
+        prefix: Number(networkForm.prefix),
+        netmask: derivedNetmask.value || undefined
+      }
     })
     isNetworkDrawerOpen.value = false
     await refresh()
@@ -165,30 +184,15 @@ async function saveNetwork() {
   }
 }
 
-function beginEditAllocation(item: IpAllocation) {
-  editingAllocationId.value = item.id
-  Object.assign(allocationForm, item)
-  isAllocationDrawerOpen.value = true
-}
-
-function beginCreateAllocation() {
-  resetAllocationForm()
-  isAllocationDrawerOpen.value = true
-}
-
-function resetAllocationForm() {
-  editingAllocationId.value = null
-  Object.assign(allocationForm, { ipAddress: '', hostname: '', serviceName: '', deviceName: '', status: 'used', description: '', notes: '' })
-}
-
 async function saveAllocation() {
   allocationSaveError.value = ''
   try {
     if (editingAllocationId.value) {
-    await $fetch(`/api/allocations/${editingAllocationId.value}`, { method: 'PUT', body: allocationForm })
+      await $fetch(`/api/allocations/${editingAllocationId.value}`, { method: 'PUT', body: allocationForm })
     } else {
       await $fetch(`/api/networks/${networkId.value}/allocations`, { method: 'POST', body: allocationForm })
     }
+
     resetAllocationForm()
     isAllocationDrawerOpen.value = false
     await refresh()
@@ -202,27 +206,11 @@ async function removeAllocation(id: string) {
   await refresh()
 }
 
-function beginEditRange(item: IpRange) {
-  editingRangeId.value = item.id
-  Object.assign(rangeForm, item)
-  isRangeDrawerOpen.value = true
-}
-
-function beginCreateRange() {
-  resetRangeForm()
-  isRangeDrawerOpen.value = true
-}
-
-function resetRangeForm() {
-  editingRangeId.value = null
-  Object.assign(rangeForm, { name: '', type: 'dhcp', startIp: '', endIp: '', description: '', notes: '' })
-}
-
 async function saveRange() {
   rangeSaveError.value = ''
   try {
     if (editingRangeId.value) {
-    await $fetch(`/api/ranges/${editingRangeId.value}`, { method: 'PUT', body: rangeForm })
+      await $fetch(`/api/ranges/${editingRangeId.value}`, { method: 'PUT', body: rangeForm })
     } else {
       await $fetch(`/api/networks/${networkId.value}/ranges`, { method: 'POST', body: rangeForm })
     }
@@ -240,35 +228,9 @@ async function removeRange(id: string) {
   await refresh()
 }
 
-
 function closeNetworkDrawer() {
   isNetworkDrawerOpen.value = false
   if (network.value) Object.assign(networkForm, network.value)
-}
-
-function closeRangeDrawer() {
-  isRangeDrawerOpen.value = false
-  resetRangeForm()
-}
-
-function closeAllocationDrawer() {
-  isAllocationDrawerOpen.value = false
-  resetAllocationForm()
-}
-
-function badgeClass(status: string) {
-  if (status === 'used') return 'badge--success'
-  if (status === 'reserved') return 'badge--warning'
-  if (status === 'gateway') return 'badge--danger'
-  return 'badge--neutral'
-}
-
-function rangeBadgeClass(type: IpRangeType) {
-  if (type === 'dhcp') return 'badge--info'
-  if (type === 'infrastructure' || type === 'management') return 'badge--danger'
-  if (type === 'reserved') return 'badge--warning'
-  if (type === 'static') return 'badge--success'
-  return 'badge--neutral'
 }
 </script>
 
@@ -338,7 +300,7 @@ function rangeBadgeClass(type: IpRangeType) {
         <tbody>
           <tr v-for="item in sortedRanges" :key="item.id">
             <td>{{ item.name }}</td>
-            <td><span class="badge" :class="rangeBadgeClass(item.type)">{{ item.type }}</span></td>
+            <td><span class="badge" :class="getRangeTypeBadgeClass(item.type)">{{ item.type }}</span></td>
             <td>{{ item.startIp }}</td>
             <td>{{ item.endIp }}</td>
             <td>{{ ipRangeSize(item.startIp, item.endIp) }}</td>
@@ -397,12 +359,12 @@ function rangeBadgeClass(type: IpRangeType) {
             <td>{{ item.ipAddress }}</td>
             <td>{{ item.hostname || item.deviceName || item.serviceName || '—' }}</td>
             <td>
-              <template v-if="findRangeForIp(item.ipAddress)">
-                <span class="badge" :class="rangeBadgeClass(findRangeForIp(item.ipAddress)!.type)">{{ findRangeForIp(item.ipAddress)!.name }} ({{ findRangeForIp(item.ipAddress)!.type }})</span>
+              <template v-if="allocationRangeByIp[item.ipAddress]">
+                <span class="badge" :class="getRangeTypeBadgeClass(allocationRangeByIp[item.ipAddress]!.type)">{{ allocationRangeByIp[item.ipAddress]!.name }} ({{ allocationRangeByIp[item.ipAddress]!.type }})</span>
               </template>
               <template v-else>—</template>
             </td>
-            <td><span class="badge" :class="badgeClass(item.status)">{{ item.status }}</span></td>
+            <td><span class="badge" :class="getAllocationStatusBadgeClass(item.status)">{{ item.status }}</span></td>
             <td>{{ network.name }}</td>
             <td>{{ network.vlanId ?? '—' }}</td>
             <td>{{ item.description || '—' }}</td>
@@ -456,7 +418,7 @@ function rangeBadgeClass(type: IpRangeType) {
       <form class="stack" @submit.prevent="saveRange">
         <div class="network-form-grid">
           <label class="network-field"><span class="network-field__label">Range name</span><input v-model="rangeForm.name" required></label>
-          <label class="network-field"><span class="network-field__label">Type</span><select v-model="rangeForm.type"><option v-for="item in rangeTypes" :key="item" :value="item">{{ item }}</option></select></label>
+          <label class="network-field"><span class="network-field__label">Type</span><select v-model="rangeForm.type"><option v-for="item in NETWORK_RANGE_TYPES" :key="item" :value="item">{{ item }}</option></select></label>
           <label class="network-field"><span class="network-field__label">Start IP</span><input v-model="rangeForm.startIp" required></label>
           <label class="network-field"><span class="network-field__label">End IP</span><input v-model="rangeForm.endIp" required></label>
           <label class="network-field network-form-grid__full"><span class="network-field__label">Description</span><input v-model="rangeForm.description"></label>
