@@ -43,6 +43,10 @@ const isSearchOpen = ref(false)
 
 const { results, pending: isSearchLoading, error: searchError, refresh: refreshSearch } = useGlobalSearch(searchQuery)
 
+const handleRefreshSearch = async () => {
+  await refreshSearch()
+}
+
 const hasSearchQuery = computed(() => searchQuery.value.trim().length > 0)
 
 const indexedResults = computed(() => results.value.map((result, index) => ({ ...result, index })))
@@ -188,7 +192,13 @@ const onSearchKeydown = async (event: KeyboardEvent) => {
                 </div>
               </template>
             </UPopover>
-            <UButton color="neutral" variant="soft" icon="i-lucide-refresh-cw" label="Refresh" @click="refreshSearch" />
+            <UButton
+              color="neutral"
+              variant="soft"
+              icon="i-lucide-refresh-cw"
+              label="Refresh"
+              @click="handleRefreshSearch"
+            />
             <ThemeToggle />
           </div>
         </UCard>
