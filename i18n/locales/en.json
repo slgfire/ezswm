@@ -1,0 +1,9 @@
+{
+  "app": { "title": "ezSWM", "subtitle": "Easy Switch and IP Management" },
+  "nav": { "dashboard": "Dashboard", "switches": "Switches", "networks": "Networks", "settings": "Settings", "operations": "Operations", "switching": "Switching", "network": "Network", "system": "System" },
+  "common": { "create": "Create", "edit": "Edit", "save": "Save", "cancel": "Cancel", "delete": "Delete", "details": "Details" },
+  "dashboard": { "kpi": { "switches": "Switches", "activeSwitches": "Active switches", "usedPorts": "Used ports", "portUtilization": "Port utilization", "networks": "Networks", "assignedIps": "Assigned IPs" }, "infra": "Infrastructure utilization", "topSubnets": "Top utilized subnets" },
+  "switch": { "title": "Switches", "new": "New switch", "ports": "Ports", "layout": "Layout" },
+  "network": { "title": "Networks", "new": "New network", "allocations": "IP allocations", "ranges": "IP ranges" },
+  "settings": { "title": "Settings", "layouts": "Layout templates", "newLayout": "New layout template" }
+}
