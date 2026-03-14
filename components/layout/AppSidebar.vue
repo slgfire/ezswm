@@ -27,33 +27,30 @@ const isActive = (to: string) => {
 </script>
 
 <template>
-  <nav class="space-y-5">
-    <div
-      v-for="group in groups"
-      :key="group.label"
-      class="space-y-2"
-    >
-      <p class="px-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
+  <nav class="space-y-6">
+    <section v-for="group in groups" :key="group.label" class="space-y-2.5">
+      <p class="px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-toned">
         {{ group.label }}
       </p>
 
       <div class="space-y-1">
-        <UButton
+        <NuxtLink
           v-for="item in group.items"
           :key="item.to"
-          :label="item.label"
           :to="item.to"
-          :icon="item.icon"
-          :variant="isActive(item.to) ? 'soft' : 'ghost'"
-          :color="isActive(item.to) ? 'primary' : 'neutral'"
-          class="w-full justify-start rounded-lg px-3 py-2.5"
-          :ui="{
-            leadingIcon: 'size-4',
-            trailingIcon: 'size-4'
-          }"
-          trailing-icon="i-lucide-chevron-right"
-        />
+          class="group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition"
+          :class="isActive(item.to)
+            ? 'border-primary/40 bg-primary/15 text-primary shadow-sm shadow-primary/10'
+            : 'border-transparent text-muted hover:border-default/80 hover:bg-default/50 hover:text-highlighted'"
+        >
+          <UIcon :name="item.icon" class="size-4 shrink-0" />
+          <span class="flex-1 font-medium">{{ item.label }}</span>
+          <UIcon
+            name="i-lucide-chevron-right"
+            class="size-4 opacity-45 transition group-hover:translate-x-0.5 group-hover:opacity-80"
+          />
+        </NuxtLink>
       </div>
-    </div>
+    </section>
   </nav>
 </template>
