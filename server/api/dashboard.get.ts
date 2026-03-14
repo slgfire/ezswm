@@ -1,4 +1,4 @@
-import { repositories } from '../repositories'
+import { repositories } from '~/server/repositories'
 
 export default defineEventHandler(async () => {
   const [switches, ports, networks, allocations] = await Promise.all([
