@@ -1,6 +1,7 @@
 export type SwitchStatus = 'active' | 'planned' | 'retired'
 export type PortStatus = 'free' | 'used' | 'disabled' | 'error'
 export type MediaType = 'RJ45' | 'SFP' | 'SFP+' | 'QSFP'
+export type LayoutBlockType = 'rj45' | 'sfp' | 'sfp+' | 'qsfp' | 'mgmt'
 export type DuplexMode = 'half' | 'full' | 'auto'
 export type IpAllocationStatus = 'used' | 'reserved' | 'free' | 'gateway'
 export type IpRangeType = 'dhcp' | 'reserved' | 'static' | 'infrastructure' | 'guest' | 'management' | 'service'
@@ -34,6 +35,17 @@ export interface LayoutCell {
   special?: 'uplink' | 'stack' | 'management'
 }
 
+export interface LayoutBlock {
+  id: string
+  name: string
+  type: LayoutBlockType
+  rows: number
+  columns: number
+  startPort?: number
+  endPort?: number
+  portNumbers?: number[]
+}
+
 export interface LayoutTemplate {
   id: string
   name: string
@@ -43,6 +55,7 @@ export interface LayoutTemplate {
   type: 'sequential' | 'odd-even' | 'custom'
   meta?: Record<string, string>
   cells: LayoutCell[]
+  blocks?: LayoutBlock[]
   specialAreas?: {
     name: string
     cellRefs: Array<Pick<LayoutCell, 'row' | 'col'>>

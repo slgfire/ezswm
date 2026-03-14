@@ -9,8 +9,10 @@ async function submit(payload: Partial<LayoutTemplate>) {
 </script>
 
 <template>
-  <div>
-    <h1>New layout</h1>
+  <div class="stack">
+    <UCard>
+      <h1>New layout</h1>
+    </UCard>
     <LayoutTemplateEditor @submit="submit" />
   </div>
 </template>

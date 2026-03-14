@@ -23,7 +23,8 @@ export class JsonLayoutRepository implements LayoutRepository {
         id: payload.id || newId('layout'),
         cells: payload.cells || [],
         meta: payload.meta || {},
-        specialAreas: payload.specialAreas || []
+        specialAreas: payload.specialAreas || [],
+        blocks: payload.blocks || []
       }
       store.layoutTemplates.push(created)
       return created

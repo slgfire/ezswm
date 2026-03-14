@@ -137,26 +137,31 @@ async function savePortChanges(payload: PortUpdatePayload) {
 </script>
 
 <template>
-  <div v-if="sw">
+  <div v-if="sw" class="stack">
     <SwitchDetails :item="sw" :layout="activeLayout" />
 
-    <div class="panel stack">
-      <h3>Layout assignment</h3>
-      <div class="row">
-        <select v-model="sw.layoutTemplateId" @change="saveSwitch">
-          <option v-for="layout in layouts || []" :key="layout.id" :value="layout.id">{{ layout.name }}</option>
-        </select>
-      </div>
+    <UCard class="stack">
+      <template #header>
+        <div class="row row-between">
+          <h3>Layout assignment</h3>
+          <UBadge color="neutral" variant="subtle">{{ activeLayout?.name || 'No layout assigned' }}</UBadge>
+        </div>
+      </template>
+      <USelect v-model="sw.layoutTemplateId" :items="(layouts || []).map((layout) => ({ label: layout.name, value: layout.id }))" @update:model-value="saveSwitch" />
       <small>
         Layout templates are managed centrally in
         <NuxtLink class="inline-link" to="/settings/port-layouts">Settings → Port layouts</NuxtLink>.
       </small>
-    </div>
+    </UCard>
 
-    <div class="panel row row-between">
-      <h3>Switch configuration</h3>
-      <button class="secondary" @click="editDrawerOpen = true">Edit switch</button>
-    </div>
+    <UCard class="stack">
+      <template #header>
+        <div class="row row-between">
+          <h3>Switch configuration</h3>
+          <UButton color="neutral" variant="soft" icon="i-lucide-pencil" label="Edit switch" @click="editDrawerOpen = true" />
+        </div>
+      </template>
+    </UCard>
 
     <FormDrawer
       :open="editDrawerOpen"
@@ -165,39 +170,40 @@ async function savePortChanges(payload: PortUpdatePayload) {
       @close="editDrawerOpen = false"
     >
       <form class="stack" @submit.prevent="saveSwitch(); editDrawerOpen = false">
-
-      <div class="row">
-        <input v-model="editForm.name" required placeholder="Name">
-        <input v-model="editForm.vendor" required placeholder="Vendor">
-        <input v-model="editForm.model" required placeholder="Model">
-        <input v-model="editForm.managementIp" required placeholder="Management IP">
-        <input v-model="editForm.locationName" list="location-options" placeholder="Select existing location or create a new one">
-        <datalist id="location-options">
-          <option v-for="location in locationOptions" :key="location" :value="location" />
-        </datalist>
-        <input v-model="editForm.rackName" list="rack-options" placeholder="Select existing rack or create a new one">
-        <datalist id="rack-options">
-          <option v-for="rack in rackOptions" :key="rack" :value="rack" />
-        </datalist>
-        <input v-model="editForm.rackPosition" placeholder="Rack position">
-        <input v-model="editForm.serialNumber" placeholder="Serial number">
-        <input v-model="editForm.tags" placeholder="Tags (csv)">
-        <select v-model="editForm.status">
-          <option value="active">active</option>
-          <option value="planned">planned</option>
-          <option value="retired">retired</option>
-        </select>
-      </div>
-      <textarea v-model="editForm.description" placeholder="Description" rows="3" />
-      <div class="row row-end">
-        <button type="button" class="secondary" @click="editDrawerOpen = false">Cancel</button>
-        <button type="submit">Save switch</button>
-      </div>
+        <div class="network-form-grid">
+          <input v-model="editForm.name" required placeholder="Name">
+          <input v-model="editForm.vendor" required placeholder="Vendor">
+          <input v-model="editForm.model" required placeholder="Model">
+          <input v-model="editForm.managementIp" required placeholder="Management IP">
+          <input v-model="editForm.locationName" list="location-options" placeholder="Select existing location or create a new one">
+          <datalist id="location-options">
+            <option v-for="location in locationOptions" :key="location" :value="location" />
+          </datalist>
+          <input v-model="editForm.rackName" list="rack-options" placeholder="Select existing rack or create a new one">
+          <datalist id="rack-options">
+            <option v-for="rack in rackOptions" :key="rack" :value="rack" />
+          </datalist>
+          <input v-model="editForm.rackPosition" placeholder="Rack position">
+          <input v-model="editForm.serialNumber" placeholder="Serial number">
+          <input v-model="editForm.tags" placeholder="Tags (csv)">
+          <select v-model="editForm.status">
+            <option value="active">active</option>
+            <option value="planned">planned</option>
+            <option value="retired">retired</option>
+          </select>
+        </div>
+        <textarea v-model="editForm.description" placeholder="Description" rows="3" />
+        <div class="row row-end">
+          <UButton type="button" color="neutral" variant="soft" label="Cancel" @click="editDrawerOpen = false" />
+          <UButton type="submit" icon="i-lucide-save" label="Save switch" />
+        </div>
       </form>
     </FormDrawer>
 
-    <div v-if="activeLayout" class="panel stack">
-      <h3>Port grid</h3>
+    <UCard v-if="activeLayout" class="stack">
+      <template #header>
+        <h3>Port layout</h3>
+      </template>
       <div class="row">
         <PortBadge status="free" />
         <PortBadge status="used" />
@@ -210,7 +216,7 @@ async function savePortChanges(payload: PortUpdatePayload) {
         :selected-port-number="selectedPortNumber"
         @select="onSelectPort"
       />
-    </div>
+    </UCard>
 
     <PortEditPanel
       :open="portPanelOpen"
@@ -221,11 +227,11 @@ async function savePortChanges(payload: PortUpdatePayload) {
       @save="savePortChanges"
     />
 
-    <p v-if="portSaveState === 'success'" class="save-feedback save-feedback--success">{{ portSaveMessage }}</p>
-    <p v-if="portSaveState === 'error'" class="save-feedback save-feedback--error">{{ portSaveMessage }}</p>
+    <UAlert v-if="portSaveState === 'success'" color="success" variant="soft" :title="portSaveMessage" />
+    <UAlert v-if="portSaveState === 'error'" color="error" variant="soft" :title="portSaveMessage" />
 
-    <div class="panel stack">
-      <h3>Port list</h3>
+    <UCard class="stack">
+      <template #header><h3>Port list</h3></template>
       <div class="table-wrap">
         <table>
           <thead>
@@ -247,28 +253,9 @@ async function savePortChanges(payload: PortUpdatePayload) {
           </tbody>
         </table>
       </div>
-    </div>
+    </UCard>
   </div>
 </template>
 
-
 <style scoped>
-.save-feedback {
-  margin: 0 0 1rem;
-  padding: 0.6rem 0.8rem;
-  border-radius: 8px;
-  font-weight: 600;
-}
-
-.save-feedback--success {
-  background: #e6f7ed;
-  color: #146c43;
-  border: 1px solid #9fd8b7;
-}
-
-.save-feedback--error {
-  background: #fdecec;
-  color: #9b1c1c;
-  border: 1px solid #f3b5b5;
-}
 </style>
