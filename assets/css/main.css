@@ -3,3 +3,9 @@
 :root {
   --ui-primary: var(--color-green-600);
 }
+
+.dark body {
+  background:
+    radial-gradient(circle at top, color-mix(in oklab, var(--ui-primary) 14%, transparent), transparent 55%),
+    var(--ui-bg);
+}

@@ -7,15 +7,25 @@ const closeSidebar = () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-default">
+  <div class="min-h-screen bg-[var(--ui-bg)] text-[var(--ui-text)]">
     <div class="flex min-h-screen">
-      <aside class="hidden w-72 shrink-0 border-r border-default bg-default lg:flex lg:flex-col">
-        <div class="border-b border-default px-6 py-4">
-          <NuxtLink to="/" class="text-lg font-semibold text-highlighted">ezSWM</NuxtLink>
-          <p class="text-xs text-muted">Easy Switch and IP Management</p>
+      <aside class="hidden w-72 shrink-0 border-r border-default/80 bg-elevated/40 lg:flex lg:flex-col">
+        <div class="border-b border-default/80 p-4">
+          <NuxtLink
+            to="/"
+            class="flex items-center gap-3 rounded-lg border border-default/70 bg-default/70 px-3 py-2"
+          >
+            <span class="flex size-9 items-center justify-center rounded-md bg-primary/15 text-primary">
+              <UIcon name="i-lucide-network" class="size-5" />
+            </span>
+            <span>
+              <p class="text-sm font-semibold text-highlighted">ezSWM</p>
+              <p class="text-xs text-muted">Easy Switch and IP Management</p>
+            </span>
+          </NuxtLink>
         </div>
 
-        <div class="flex-1 overflow-y-auto px-4 py-5">
+        <div class="flex-1 overflow-y-auto p-4">
           <AppSidebar />
         </div>
       </aside>
@@ -28,26 +38,35 @@ const closeSidebar = () => {
         leave-from-class="opacity-100"
         leave-to-class="opacity-0"
       >
-        <div v-if="sidebarOpen" class="fixed inset-0 z-40 bg-black/50 lg:hidden" @click="closeSidebar" />
+        <div v-if="sidebarOpen" class="fixed inset-0 z-40 bg-black/60 lg:hidden" @click="closeSidebar" />
       </Transition>
 
       <aside
         :class="[
-          'fixed inset-y-0 left-0 z-50 w-72 border-r border-default bg-default transition-transform duration-200 lg:hidden',
+          'fixed inset-y-0 left-0 z-50 w-72 border-r border-default/80 bg-[var(--ui-bg)] transition-transform duration-200 lg:hidden',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         ]"
       >
-        <div class="border-b border-default px-6 py-4">
+        <div class="border-b border-default/80 p-4">
           <div class="flex items-start justify-between gap-2">
-            <div>
-              <NuxtLink to="/" class="text-lg font-semibold text-highlighted" @click="closeSidebar">ezSWM</NuxtLink>
-              <p class="text-xs text-muted">Easy Switch and IP Management</p>
-            </div>
+            <NuxtLink
+              to="/"
+              class="flex items-center gap-3 rounded-lg border border-default/70 bg-default/70 px-3 py-2"
+              @click="closeSidebar"
+            >
+              <span class="flex size-9 items-center justify-center rounded-md bg-primary/15 text-primary">
+                <UIcon name="i-lucide-network" class="size-5" />
+              </span>
+              <span>
+                <p class="text-sm font-semibold text-highlighted">ezSWM</p>
+                <p class="text-xs text-muted">Easy Switch and IP Management</p>
+              </span>
+            </NuxtLink>
             <UButton icon="i-lucide-x" variant="ghost" size="sm" @click="closeSidebar" />
           </div>
         </div>
 
-        <div class="h-[calc(100%-73px)] overflow-y-auto px-4 py-5" @click="closeSidebar">
+        <div class="h-[calc(100%-88px)] overflow-y-auto p-4" @click="closeSidebar">
           <AppSidebar />
         </div>
       </aside>
@@ -56,12 +75,12 @@ const closeSidebar = () => {
         <AppHeader @toggle-sidebar="sidebarOpen = true" />
 
         <main class="flex-1 p-4 sm:p-6">
-          <div class="mx-auto w-full max-w-[1400px]">
+          <div class="mx-auto w-full max-w-[1500px]">
             <slot />
           </div>
         </main>
 
-        <AppFooter class="mx-4 mb-4 mt-auto rounded-lg border border-default sm:mx-6" />
+        <AppFooter class="mx-4 mb-4 mt-auto rounded-xl border border-default/80 bg-default/40 sm:mx-6" />
       </div>
     </div>
   </div>

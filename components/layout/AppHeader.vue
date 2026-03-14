@@ -29,33 +29,46 @@ const go = async (to: string) => {
 </script>
 
 <template>
-  <header class="sticky top-0 z-30 border-b border-default bg-default/95 backdrop-blur">
-    <div class="mx-auto flex w-full max-w-[1400px] items-center gap-3 px-4 py-3 sm:px-6">
+  <header class="sticky top-0 z-30 border-b border-default/80 bg-[var(--ui-bg)]/95 backdrop-blur">
+    <div class="mx-auto flex w-full max-w-[1500px] items-center gap-3 px-4 py-3 sm:px-6">
       <UButton
         icon="i-lucide-menu"
         variant="ghost"
+        color="neutral"
         size="sm"
         class="lg:hidden"
         @click="emit('toggle-sidebar')"
       />
 
       <div class="relative flex-1">
-        <UInput v-model="query" :placeholder="t('search.placeholder')" icon="i-lucide-search" class="w-full" />
+        <UInput
+          v-model="query"
+          :placeholder="t('search.placeholder')"
+          icon="i-lucide-search"
+          size="md"
+          class="w-full"
+        />
 
-        <UCard v-if="open" class="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20">
-          <div class="space-y-2">
+        <UCard v-if="open" class="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 border border-default/90">
+          <div class="space-y-1">
             <UButton
               v-for="result in results || []"
               :key="result.id"
               variant="ghost"
+              color="neutral"
               class="w-full justify-between"
               @click="go(result.to)"
             >
               <span>{{ result.title }}</span>
-              <UBadge color="neutral" variant="soft">{{ result.type }}</UBadge>
+              <UBadge color="neutral" variant="subtle">{{ result.type }}</UBadge>
             </UButton>
           </div>
         </UCard>
+      </div>
+
+      <div class="hidden items-center gap-2 sm:flex">
+        <UButton icon="i-lucide-bell" variant="ghost" color="neutral" />
+        <UButton icon="i-lucide-circle-help" variant="ghost" color="neutral" />
       </div>
 
       <USelect
@@ -63,7 +76,7 @@ const go = async (to: string) => {
         :items="locales"
         value-key="code"
         label-key="name"
-        class="w-36"
+        class="w-32"
         @update:model-value="setLocale($event as string)"
       />
 
