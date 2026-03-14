@@ -28,5 +28,8 @@ export default defineNuxtConfig({
     theme: {
       colors: ['primary', 'neutral', 'error', 'warning', 'success', 'info']
     }
+  },
+  nitro: {
+    noExternals: true
   }
 })
