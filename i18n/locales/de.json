@@ -1,0 +1,121 @@
+{
+  "nav": {
+    "operations": "Operations",
+    "dashboard": "Dashboard",
+    "switching": "Switching",
+    "switches": "Switches",
+    "network": "Network",
+    "networks": "Networks",
+    "system": "System",
+    "settings": "Settings"
+  },
+  "common": {
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "open": "Open",
+    "refresh": "Refresh",
+    "description": "Description",
+    "status": "Status",
+    "name": "Name",
+    "type": "Type",
+    "enabled": "Enabled",
+    "disabled": "Disabled"
+  },
+  "search": {
+    "placeholder": "Search pages, switches, VLANs, networks, IPs...",
+    "results": "Search Results",
+    "helper": "Start typing to search across infrastructure objects"
+  },
+  "dashboard": {
+    "title": "Infrastructure Dashboard",
+    "subtitle": "Operations overview for switching and IP management",
+    "topUtilizedSubnets": "Top utilized subnets"
+  },
+  "kpi": {
+    "switches": "Switches",
+    "activeSwitches": "Active switches",
+    "usedPorts": "Used ports",
+    "portUtilization": "Port utilization",
+    "networks": "Networks",
+    "assignedIps": "Assigned IPs"
+  },
+  "switch": {
+    "titlePlural": "Switches",
+    "create": "Create switch",
+    "edit": "Edit switch",
+    "name": "Switch name",
+    "vendor": "Vendor",
+    "model": "Model",
+    "location": "Location",
+    "rack": "Rack",
+    "rackPosition": "Rack position",
+    "managementIp": "Management IP",
+    "serialNumber": "Serial number",
+    "layoutTemplate": "Layout template",
+    "portLayout": "Switch front panel",
+    "editPort": "Edit port"
+  },
+  "port": {
+    "label": "Port label",
+    "vlan": "VLAN",
+    "connectedDevice": "Connected device",
+    "macAddress": "MAC address",
+    "duplex": "Duplex",
+    "speed": "Speed"
+  },
+  "network": {
+    "titlePlural": "Networks",
+    "create": "Create network",
+    "edit": "Edit network",
+    "vlanId": "VLAN ID",
+    "name": "Name",
+    "subnet": "Subnet",
+    "subnetOnly": "Subnet address",
+    "prefix": "Prefix",
+    "gateway": "Gateway",
+    "routing": "Routing",
+    "category": "Category",
+    "overview": "Overview",
+    "ipAllocations": "IP allocations",
+    "ipRanges": "IP ranges",
+    "allocations": "Allocations"
+  },
+  "ipam": {
+    "createAllocation": "Create IP allocation",
+    "editAllocation": "Edit IP allocation",
+    "createRange": "Create IP range",
+    "editRange": "Edit IP range",
+    "ipAddress": "IP address",
+    "hostname": "Hostname",
+    "serviceName": "Service name",
+    "deviceName": "Device name",
+    "startIp": "Start IP",
+    "endIp": "End IP"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "switchModels": "Switch models",
+    "portLayouts": "Port layouts",
+    "ipamDefaults": "IPAM defaults",
+    "appearance": "Appearance",
+    "language": "Language",
+    "organization": "Organization",
+    "timezone": "Timezone",
+    "placeholderSwitchModels": "Switch model catalog management can be expanded here.",
+    "defaultPrefix": "Default prefix",
+    "compactTables": "Compact tables",
+    "defaultLanguage": "Default language",
+    "createLayout": "Create layout",
+    "editLayout": "Edit layout",
+    "blockName": "Block name",
+    "blockType": "Block type",
+    "rows": "Rows",
+    "columns": "Columns",
+    "startPort": "Start port",
+    "endPort": "End port",
+    "addBlock": "Add block"
+  }
+}
