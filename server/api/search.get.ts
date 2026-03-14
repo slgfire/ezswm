@@ -1,4 +1,4 @@
-import { repositories } from '../repositories'
+import { repositories } from '~/server/repositories'
 
 export default defineEventHandler(async (event) => {
   const q = (getQuery(event).q as string || '').toLowerCase().trim()

@@ -1,4 +1,4 @@
-import { repositories } from '../../../../../repositories'
+import { repositories } from '~/server/repositories'
 
 export default defineEventHandler(async (event) => {
   const networkId = getRouterParam(event, 'id')!
