@@ -51,6 +51,22 @@ export function createSeedData(): DataStore {
   const layout24 = buildSequentialLayout('layout-24-seq', '24 Port Standard', 1, 13, 12)
   const layout48Sequential = buildSequentialLayout('layout-48-seq', '48 Port Sequential Rows', 1, 25, 24)
   const layout48OddEven = buildOddEvenLayout('layout-48-odd-even', '48 Port Odd/Even', 24)
+
+  const layoutSfpAggregate: LayoutTemplate = {
+    id: 'layout-48-sfpplus-2qsfp-mgmt',
+    name: '48x SFP+ + 2x QSFP + 1x MGMT',
+    description: 'Block-based layout with separated access, uplink and management ports',
+    rows: 3,
+    cols: 24,
+    type: 'custom',
+    cells: [],
+    blocks: [
+      { id: 'sfpplus-access', name: 'SFP+ ports', type: 'sfp+', rows: 2, columns: 24, startPort: 1, endPort: 48 },
+      { id: 'qsfp-uplink', name: 'QSFP uplinks', type: 'qsfp', rows: 1, columns: 2, startPort: 49, endPort: 50 },
+      { id: 'mgmt', name: 'Management', type: 'mgmt', rows: 1, columns: 1, portNumbers: [51] }
+    ]
+  }
+
   const layout48Uplink: LayoutTemplate = {
     ...layout48Sequential,
     id: 'layout-48-uplink',
@@ -109,6 +125,31 @@ export function createSeedData(): DataStore {
       ports: Array.from({ length: 48 }, (_, index) => createPort('sw-02', index + 1, {
         status: index % 13 === 0 ? 'error' : index % 3 === 0 ? 'used' : 'free',
         connectedDevice: index % 3 === 0 ? `Client-${index + 1}` : undefined
+      })),
+      createdAt: nowIso(),
+      updatedAt: nowIso()
+    },
+
+    {
+      id: 'sw-03',
+      name: 'Agg-SFP-01',
+      vendor: 'Juniper',
+      model: 'QFX5120-48Y',
+      modelId: 'model-agg-sfp',
+      locationId: 'loc-hq',
+      rackId: 'rack-hq-b',
+      rackPosition: '18U',
+      managementIp: '10.0.0.31',
+      serialNumber: 'JNP-772199',
+      portCount: 51,
+      status: 'active',
+      tags: ['aggregation', 'sfp+'],
+      layoutTemplateId: layoutSfpAggregate.id,
+      ports: Array.from({ length: 51 }, (_, index) => createPort('sw-03', index + 1, {
+        status: index % 4 === 0 ? 'used' : 'free',
+        mediaType: index < 48 ? 'SFP+' : index < 50 ? 'QSFP' : 'RJ45',
+        connectedDevice: index < 50 && index % 4 === 0 ? `Leaf-${index + 1}` : undefined,
+        label: index === 50 ? 'MGMT0' : undefined
       })),
       createdAt: nowIso(),
       updatedAt: nowIso()
@@ -257,9 +298,10 @@ export function createSeedData(): DataStore {
       { id: 'model-24-cisco', vendorId: 'vendor-cisco', name: 'CBS250-24T-4G', defaultPortCount: 24, defaultLayoutTemplateId: layout24.id },
       { id: 'model-48-aruba', vendorId: 'vendor-aruba', name: '2930F-48G', defaultPortCount: 48, defaultLayoutTemplateId: layout48Sequential.id },
       { id: 'model-48-juniper', vendorId: 'vendor-juniper', name: 'EX3400-48P', defaultPortCount: 48, defaultLayoutTemplateId: layout48OddEven.id },
-      { id: 'model-48-uplink', vendorId: 'vendor-cisco', name: 'C9200L-48P-4X', defaultPortCount: 52, defaultLayoutTemplateId: layout48Uplink.id }
+      { id: 'model-48-uplink', vendorId: 'vendor-cisco', name: 'C9200L-48P-4X', defaultPortCount: 52, defaultLayoutTemplateId: layout48Uplink.id },
+      { id: 'model-agg-sfp', vendorId: 'vendor-juniper', name: 'QFX5120-48Y', defaultPortCount: 51, defaultLayoutTemplateId: layoutSfpAggregate.id }
     ],
-    layoutTemplates: [layout24, layout48Sequential, layout48OddEven, layout48Uplink],
+    layoutTemplates: [layout24, layout48Sequential, layout48OddEven, layout48Uplink, layoutSfpAggregate],
     switches,
     networks,
     ipAllocations,
