@@ -10,10 +10,22 @@
     "settings": "Settings"
   },
   "pages": {
-    "dashboard": { "title": "Dashboard", "description": "Infrastructure health and utilization" },
-    "switches": { "title": "Switches", "description": "Manage switch inventory and hardware profiles" },
-    "networks": { "title": "Networks", "description": "Manage VLANs, subnets, and addressing" },
-    "settings": { "title": "Settings", "description": "Platform defaults and reusable definitions" }
+    "dashboard": {
+      "title": "Dashboard",
+      "description": "Infrastructure health and utilization"
+    },
+    "switches": {
+      "title": "Switches",
+      "description": "Manage switch inventory and hardware profiles"
+    },
+    "networks": {
+      "title": "Networks",
+      "description": "Manage VLANs, subnets, and addressing"
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "Platform defaults and reusable definitions"
+    }
   },
   "actions": {
     "save": "Save",
@@ -22,7 +34,9 @@
     "createNetwork": "Create network",
     "editNetwork": "Edit network"
   },
-  "search": { "placeholder": "Search pages, switches, VLANs, subnets, IPs..." },
+  "search": {
+    "placeholder": "Search pages, switches, VLANs, subnets, IPs..."
+  },
   "network": {
     "tabs": {
       "overview": "Overview",
@@ -39,6 +53,14 @@
     "assignedIps": "Assigned IPs"
   },
   "dashboard": {
-    "topSubnets": "Top utilized subnets"
+    "topSubnets": "Top utilized subnets",
+    "infrastructureUtilization": "Infrastructure utilization",
+    "ipAllocation": "IP allocation usage",
+    "capacityOverview": "Capacity overview",
+    "totalSwitchPorts": "Used switch ports",
+    "availableNetworks": "Available networks",
+    "activeRatio": "Active switch ratio",
+    "addressPoolUse": "Assigned IP addresses",
+    "quickStatus": "Quick status"
   }
 }
