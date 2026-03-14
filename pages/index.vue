@@ -56,36 +56,32 @@ const ipamStats = computed(() => {
     </div>
 
     <div class="dashboard-grid">
-      <div class="panel stack">
-        <h3>Infrastructure utilization</h3>
+      <UCard class="stack">
+        <template #header><h3>Infrastructure utilization</h3></template>
         <div>
           <p>Port capacity</p>
-          <div class="util" style="margin-top: .45rem;">
-            <div class="util-bar" :style="{ width: `${stats.utilization}%` }" />
-          </div>
+          <UProgress :model-value="stats.utilization" class="mt-2" />
           <small>{{ stats.usedPorts }} of {{ stats.totalPorts || 0 }} ports in use</small>
         </div>
         <div>
           <p>IP capacity</p>
-          <div class="util" style="margin-top: .45rem;">
-            <div class="util-bar" :style="{ width: `${ipamStats.totalUtilization}%` }" />
-          </div>
+          <UProgress :model-value="ipamStats.totalUtilization" class="mt-2" color="success" />
           <small>{{ ipamStats.totalAssigned }} of {{ ipamStats.totalCapacity || 0 }} usable IPs assigned</small>
         </div>
-      </div>
+      </UCard>
 
-      <div class="panel stack">
-        <h3>Top utilized subnets</h3>
+      <UCard class="stack">
+        <template #header><h3>Top utilized subnets</h3></template>
         <div class="dashboard-list">
           <div v-for="item in ipamStats.topUtilized" :key="item.name" class="dashboard-list__item">
             <div>
               <strong>{{ item.name }}</strong>
               <small style="display:block;">VLAN {{ item.vlan ?? '—' }}</small>
             </div>
-            <span class="badge badge--neutral">{{ item.utilization }}%</span>
+            <UBadge color="neutral" variant="subtle">{{ item.utilization }}%</UBadge>
           </div>
         </div>
-      </div>
+      </UCard>
     </div>
   </div>
 </template>

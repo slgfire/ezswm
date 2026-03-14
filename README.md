@@ -17,6 +17,20 @@ A self-hosted Nuxt 3 application for managing and visualizing network switches, 
 - Network detail views include DHCP pool documentation and range-aware utilization.
 - Persistent data mounted from `./data` into `/app/data`.
 
+
+## UI Foundation
+
+The UI layer is standardized on **Nuxt UI**.
+
+- Nuxt module: `@nuxt/ui`
+- Color mode support is enabled via Nuxt config and drives light/dark theme handling.
+
+If dependencies are not installed yet, run:
+
+```bash
+npm install
+```
+
 ## Storage Architecture
 
 The application now uses a repository + storage engine architecture so API routes and business logic do not depend on JSON files directly.

@@ -24,6 +24,10 @@ const pageItems = computed(() => {
 
 const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / query.pageSize)))
 
+watch([() => query.search, () => query.vendor, () => query.status], () => {
+  query.page = 1
+})
+
 async function removeSwitch(id: string) {
   await $fetch(`/api/switches/${id}`, { method: 'DELETE' })
   await refresh()
@@ -34,36 +38,25 @@ async function removeSwitch(id: string) {
   <div class="stack">
     <div class="row row-between">
       <h1>Switch inventory</h1>
-      <NuxtLink to="/switches/new"><button>Add switch</button></NuxtLink>
+      <UButton to="/switches/new" icon="i-lucide-plus" label="Add switch" />
     </div>
 
-    <div class="panel row">
-      <input v-model="query.search" placeholder="Search by name, model, or management IP">
-      <select v-model="query.vendor">
-        <option value="">All vendors</option>
-        <option v-for="v in (meta as any)?.vendors || []" :key="v.id" :value="v.name">{{ v.name }}</option>
-      </select>
-      <select v-model="query.status">
-        <option value="">All status</option>
-        <option value="active">active</option>
-        <option value="planned">planned</option>
-        <option value="retired">retired</option>
-      </select>
-      <select v-model="query.sortBy">
-        <option value="name">Name</option>
-        <option value="vendor">Vendor</option>
-        <option value="model">Model</option>
-        <option value="status">Status</option>
-      </select>
-    </div>
-
-    <div class="panel">
-      <SwitchTable :items="pageItems" @delete="removeSwitch" />
-      <div class="row row-end" style="margin-top: .75rem;">
-        <button class="secondary" :disabled="query.page <= 1" @click="query.page--">Previous</button>
-        <span>Page {{ query.page }} / {{ totalPages }}</span>
-        <button class="secondary" :disabled="query.page >= totalPages" @click="query.page++">Next</button>
+    <UCard>
+      <div class="row">
+        <UInput v-model="query.search" icon="i-lucide-search" placeholder="Search by name, model, or management IP" class="flex-1 min-w-[250px]" />
+        <USelect v-model="query.vendor" :items="[{ label: 'All vendors', value: '' }, ...((meta as any)?.vendors || []).map((v:any)=>({label:v.name,value:v.name}))]" class="min-w-40" />
+        <USelect v-model="query.status" :items="[{label:'All status',value:''},{label:'active',value:'active'},{label:'planned',value:'planned'},{label:'retired',value:'retired'}]" class="min-w-40" />
+        <USelect v-model="query.sortBy" :items="[{label:'Name',value:'name'},{label:'Vendor',value:'vendor'},{label:'Model',value:'model'},{label:'Status',value:'status'}]" class="min-w-36" />
       </div>
-    </div>
+    </UCard>
+
+    <UCard>
+      <SwitchTable :items="pageItems" @delete="removeSwitch" />
+      <div class="row row-end mt-3">
+        <UButton color="neutral" variant="soft" :disabled="query.page <= 1" label="Previous" @click="query.page--" />
+        <span>Page {{ query.page }} / {{ totalPages }}</span>
+        <UButton color="neutral" variant="soft" :disabled="query.page >= totalPages" label="Next" @click="query.page++" />
+      </div>
+    </UCard>
   </div>
 </template>

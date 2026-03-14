@@ -4,11 +4,11 @@ import type { Switch } from '~/types/models'
 defineProps<{ items: Switch[] }>()
 const emit = defineEmits<{ delete: [string] }>()
 
-function switchStatusClass(status: string) {
-  if (status === 'active') return 'badge badge--success'
-  if (status === 'planned') return 'badge badge--warning'
-  if (status === 'retired') return 'badge badge--danger'
-  return 'badge badge--neutral'
+function switchStatusColor(status: string) {
+  if (status === 'active') return 'success'
+  if (status === 'planned') return 'warning'
+  if (status === 'retired') return 'error'
+  return 'neutral'
 }
 </script>
 
@@ -23,18 +23,18 @@ function switchStatusClass(status: string) {
           <th>Location</th>
           <th>Status</th>
           <th>Mgmt IP</th>
-          <th></th>
+          <th class="text-right">Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="sw in items" :key="sw.id">
-          <td><NuxtLink :to="`/switches/${sw.id}`">{{ sw.name }}</NuxtLink></td>
+          <td><NuxtLink :to="`/switches/${sw.id}`" class="inline-link">{{ sw.name }}</NuxtLink></td>
           <td>{{ sw.vendor }}</td>
           <td>{{ sw.model }}</td>
           <td>{{ sw.locationId || '-' }}</td>
-          <td><span :class="switchStatusClass(sw.status)">{{ sw.status }}</span></td>
+          <td><UBadge :color="switchStatusColor(sw.status)" variant="subtle">{{ sw.status }}</UBadge></td>
           <td>{{ sw.managementIp }}</td>
-          <td><button class="danger" @click="emit('delete', sw.id)">Delete</button></td>
+          <td class="text-right"><UButton color="error" variant="soft" size="xs" label="Delete" @click="emit('delete', sw.id)" /></td>
         </tr>
       </tbody>
     </table>
