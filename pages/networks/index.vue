@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { IpAllocation, Network } from '~/types/models'
+import { calculateNetworkUsage } from '~/utils/network'
 import { prefixToNetmask } from '~/utils/ip'
 
 type NetworkWithAllocations = Network & { allocations: IpAllocation[] }
@@ -22,6 +23,18 @@ const filtered = computed(() => (networks.value || []).filter((network) => {
   const ipMatch = !query.ip || network.allocations.some((entry) => entry.ipAddress.includes(query.ip))
   return vlanMatch && nameMatch && subnetMatch && hostMatch && ipMatch
 }))
+
+const usageByNetworkId = computed(() => {
+  const usageMap = new Map<string, ReturnType<typeof calculateNetworkUsage>>()
+  for (const network of filtered.value) {
+    usageMap.set(network.id, calculateNetworkUsage(network.maxHosts, network.allocations))
+  }
+  return usageMap
+})
+
+function getUsage(networkId: string) {
+  return usageByNetworkId.value.get(networkId) || { total: 0, used: 0, reserved: 0, free: 0, utilization: 0 }
+}
 
 function resetForm() {
   editingNetworkId.value = null
@@ -58,14 +71,6 @@ function beginEdit(network: NetworkWithAllocations) {
     category: network.category || ''
   })
   panelOpen.value = true
-}
-
-function usage(network: NetworkWithAllocations) {
-  const used = network.allocations.filter((entry) => entry.status === 'used' || entry.status === 'gateway').length
-  const reserved = network.allocations.filter((entry) => entry.status === 'reserved').length
-  const free = Math.max(0, network.maxHosts - used - reserved)
-  const utilization = network.maxHosts > 0 ? Math.round(((used + reserved) / network.maxHosts) * 100) : 0
-  return { used, reserved, free, utilization }
 }
 
 async function saveNetwork() {
@@ -137,13 +142,13 @@ async function removeNetwork(id: string) {
             <td>{{ network.subnet }}/{{ network.prefix }}</td>
             <td>{{ network.gateway || '—' }}</td>
             <td>
-              <span>{{ usage(network).used }} / {{ usage(network).reserved }} / {{ usage(network).free }}</span>
+              <span>{{ getUsage(network.id).used }} / {{ getUsage(network.id).reserved }} / {{ getUsage(network.id).free }}</span>
             </td>
             <td>
               <div class="util">
-                <div class="util-bar" :style="{ width: `${usage(network).utilization}%` }" />
+                <div class="util-bar" :style="{ width: `${getUsage(network.id).utilization}%` }" />
               </div>
-              <small>{{ usage(network).utilization }}%</small>
+              <small>{{ getUsage(network.id).utilization }}%</small>
             </td>
             <td class="row">
               <NuxtLink :to="`/networks/${network.id}`"><UButton color="neutral" variant="soft" label="Open" /></NuxtLink>
