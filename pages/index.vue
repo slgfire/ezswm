@@ -45,8 +45,8 @@ const ipamStats = computed(() => {
 </script>
 
 <template>
-  <div class="stack">
-    <div class="stats">
+  <div class="stack dashboard-stack">
+    <div class="stats kpi-grid">
       <SwitchCard title="Switches" :value="stats.totalSwitches" />
       <SwitchCard title="Active switches" :value="stats.activeSwitches" />
       <SwitchCard title="Used ports" :value="stats.usedPorts" />
@@ -55,28 +55,28 @@ const ipamStats = computed(() => {
       <SwitchCard title="Assigned IPs" :value="ipamStats.totalAssigned" />
     </div>
 
-    <div class="dashboard-grid">
-      <UCard class="stack">
-        <template #header><h3>Infrastructure utilization</h3></template>
+    <div class="dashboard-grid dashboard-grid--main">
+      <UCard class="stack dashboard-panel">
+        <template #header><h3 class="panel-title">Infrastructure utilization</h3></template>
         <div>
-          <p>Port capacity</p>
+          <p class="panel-label">Port capacity</p>
           <UProgress :model-value="stats.utilization" class="mt-2" />
-          <small>{{ stats.usedPorts }} of {{ stats.totalPorts || 0 }} ports in use</small>
+          <small class="panel-caption">{{ stats.usedPorts }} of {{ stats.totalPorts || 0 }} ports in use</small>
         </div>
         <div>
-          <p>IP capacity</p>
+          <p class="panel-label">IP capacity</p>
           <UProgress :model-value="ipamStats.totalUtilization" class="mt-2" color="success" />
-          <small>{{ ipamStats.totalAssigned }} of {{ ipamStats.totalCapacity || 0 }} usable IPs assigned</small>
+          <small class="panel-caption">{{ ipamStats.totalAssigned }} of {{ ipamStats.totalCapacity || 0 }} usable IPs assigned</small>
         </div>
       </UCard>
 
-      <UCard class="stack">
-        <template #header><h3>Top utilized subnets</h3></template>
+      <UCard class="stack dashboard-panel">
+        <template #header><h3 class="panel-title">Top utilized subnets</h3></template>
         <div class="dashboard-list">
-          <div v-for="item in ipamStats.topUtilized" :key="item.name" class="dashboard-list__item">
+          <div v-for="item in ipamStats.topUtilized" :key="item.name" class="dashboard-list__item subnet-list-item">
             <div>
               <strong>{{ item.name }}</strong>
-              <small style="display:block;">VLAN {{ item.vlan ?? '—' }}</small>
+              <small class="subnet-list-item__meta">VLAN {{ item.vlan ?? '—' }}</small>
             </div>
             <UBadge color="neutral" variant="subtle">{{ item.utilization }}%</UBadge>
           </div>

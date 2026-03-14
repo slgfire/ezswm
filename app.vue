@@ -126,8 +126,14 @@ const onSearchKeydown = async (event: KeyboardEvent) => {
     <div class="app-shell">
       <aside class="sidebar">
         <UCard class="sidebar-brand">
-          <p class="sidebar-brand__title">ezSWM</p>
-          <small>Easy Switch and IP Management</small>
+          <div class="sidebar-brand__logo">
+            <UIcon name="i-lucide-shield-check" />
+          </div>
+          <div>
+            <p class="sidebar-brand__title">ezSWM Console</p>
+            <small>Easy Switch and IP Management</small>
+          </div>
+          <UBadge color="primary" variant="subtle" class="sidebar-brand__badge">Enterprise</UBadge>
         </UCard>
 
         <div class="sidebar-nav">
@@ -151,9 +157,9 @@ const onSearchKeydown = async (event: KeyboardEvent) => {
 
       <div class="content-wrap">
         <UCard class="topbar">
-          <div>
+          <div class="topbar-meta">
             <h2 class="topbar-title">{{ headerMeta.title }}</h2>
-            <small>{{ headerMeta.subtitle }}</small>
+            <p class="topbar-subtitle">{{ headerMeta.subtitle }}</p>
           </div>
           <div class="row topbar-actions">
             <UPopover v-model:open="searchOpen">
@@ -192,14 +198,16 @@ const onSearchKeydown = async (event: KeyboardEvent) => {
                 </div>
               </template>
             </UPopover>
-            <UButton
-              color="neutral"
-              variant="soft"
-              icon="i-lucide-refresh-cw"
-              label="Refresh"
-              @click="handleRefreshClick"
-            />
-            <ThemeToggle />
+            <div class="topbar-controls">
+              <UButton
+                color="neutral"
+                variant="soft"
+                icon="i-lucide-refresh-cw"
+                label="Refresh"
+                @click="handleRefreshClick"
+              />
+              <ThemeToggle />
+            </div>
           </div>
         </UCard>
 

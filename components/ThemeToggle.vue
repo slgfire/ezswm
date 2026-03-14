@@ -9,7 +9,8 @@ onMounted(() => {
 <template>
   <UButton
     color="neutral"
-    variant="subtle"
+    variant="soft"
+    class="toolbar-btn"
     :icon="theme === 'dark' ? 'i-lucide-moon' : 'i-lucide-sun'"
     :label="theme === 'dark' ? 'Dark' : 'Light'"
     :aria-label="`Current theme: ${theme}. Toggle theme`"
