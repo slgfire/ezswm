@@ -7,30 +7,25 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'Dashboard', subtitle: 'Network operations overview' },
   '/switches': { title: 'Switches', subtitle: 'Switch inventory and lifecycle' },
   '/networks': { title: 'Networks & IPAM', subtitle: 'Subnets, ranges, and allocations' },
-  '/settings': { title: 'Settings', subtitle: 'System configuration and defaults' },
-  '/settings/general': { title: 'Settings · General', subtitle: 'Global system preferences' },
-  '/settings/switch-models': { title: 'Settings · Switch models', subtitle: 'Standardized model definitions' },
-  '/settings/port-layouts': { title: 'Settings · Port layouts', subtitle: 'Reusable port layout templates' },
-  '/settings/ipam-defaults': { title: 'Settings · IPAM defaults', subtitle: 'Default network allocation settings' },
-  '/settings/appearance': { title: 'Settings · Appearance', subtitle: 'Theme and visual preferences' }
+  '/settings': { title: 'Settings', subtitle: 'System configuration and defaults' }
 }
 
 const navigationGroups = [
   {
     title: 'Operations',
-    items: [{ label: 'Dashboard', to: '/', icon: '◉' }]
+    items: [{ label: 'Dashboard', to: '/', icon: 'i-lucide-layout-dashboard' }]
   },
   {
     title: 'Switching',
-    items: [{ label: 'Switches', to: '/switches', icon: '⇆' }]
+    items: [{ label: 'Switches', to: '/switches', icon: 'i-lucide-server' }]
   },
   {
     title: 'Network',
-    items: [{ label: 'Networks', to: '/networks', icon: '⌁' }]
+    items: [{ label: 'Networks', to: '/networks', icon: 'i-lucide-network' }]
   },
   {
     title: 'System',
-    items: [{ label: 'Settings', to: '/settings', icon: '⚙' }]
+    items: [{ label: 'Settings', to: '/settings', icon: 'i-lucide-settings' }]
   }
 ]
 
@@ -43,8 +38,8 @@ const headerMeta = computed(() => {
 })
 
 const searchQuery = ref('')
-const isSearchOpen = ref(false)
 const highlightedResultIndex = ref(-1)
+const isSearchOpen = ref(false)
 
 const { results, pending: isSearchLoading, error: searchError, refresh: refreshSearch } = useGlobalSearch(searchQuery)
 
@@ -62,23 +57,18 @@ const groupedIndexedResults = computed(() => {
   return Array.from(groups.entries()).map(([group, items]) => ({ group, items }))
 })
 
-const openSearch = () => {
-  isSearchOpen.value = true
-}
+const searchOpen = computed({
+  get: () => isSearchOpen.value,
+  set: (value: boolean) => {
+    isSearchOpen.value = value
+    if (!value) highlightedResultIndex.value = -1
+  }
+})
 
-const closeSearch = () => {
-  isSearchOpen.value = false
-  highlightedResultIndex.value = -1
-}
-
-const onSearchFocus = () => {
-  openSearch()
-}
-
-const onSearchBlur = () => {
-  setTimeout(() => {
-    closeSearch()
-  }, 120)
+const selectResult = async (result: GlobalSearchResult) => {
+  searchQuery.value = ''
+  searchOpen.value = false
+  await navigateTo(result.to)
 }
 
 const moveHighlightedIndex = (direction: 1 | -1) => {
@@ -101,17 +91,7 @@ const moveHighlightedIndex = (direction: 1 | -1) => {
   highlightedResultIndex.value = nextIndex % results.value.length
 }
 
-const selectResult = async (result: GlobalSearchResult) => {
-  searchQuery.value = ''
-  closeSearch()
-  await navigateTo(result.to)
-}
-
 const onSearchKeydown = async (event: KeyboardEvent) => {
-  if (!isSearchOpen.value && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
-    openSearch()
-  }
-
   if (event.key === 'ArrowDown') {
     event.preventDefault()
     moveHighlightedIndex(1)
@@ -132,101 +112,99 @@ const onSearchKeydown = async (event: KeyboardEvent) => {
   }
 
   if (event.key === 'Escape') {
-    closeSearch()
+    searchOpen.value = false
   }
-}
-
-const handleRefreshClick = async () => {
-  await refreshSearch()
 }
 </script>
 
 <template>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="sidebar-brand panel">
-        <p class="sidebar-brand__title">ezSWM</p>
-        <small>Easy Switch and IP Management</small>
-      </div>
+  <UApp>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <UCard class="sidebar-brand">
+          <p class="sidebar-brand__title">ezSWM</p>
+          <small>Easy Switch and IP Management</small>
+        </UCard>
 
-      <nav class="sidebar-nav">
-        <div v-for="group in navigationGroups" :key="group.title" class="nav-group">
-          <p class="nav-group__title">{{ group.title }}</p>
-          <NuxtLink v-for="item in group.items" :key="item.label" :to="item.to" class="nav-item">
-            <span class="nav-item__icon">{{ item.icon }}</span>
-            <span>{{ item.label }}</span>
-          </NuxtLink>
-        </div>
-      </nav>
-    </aside>
-
-    <div class="content">
-      <header class="topbar panel panel--flat">
-        <div>
-          <h2 class="topbar-title">{{ headerMeta.title }}</h2>
-          <small>{{ headerMeta.subtitle }}</small>
-        </div>
-        <div class="row topbar-actions">
-          <div class="topbar-search-wrap">
-            <input
-              v-model="searchQuery"
-              class="topbar-search"
-              placeholder="Search pages, switches, VLANs, IPs"
-              aria-label="Global app search"
-              role="combobox"
-              :aria-expanded="isSearchOpen"
-              :aria-controls="'global-search-results'"
-              :aria-activedescendant="highlightedResultIndex >= 0 ? `search-result-${highlightedResultIndex}` : undefined"
-              @focus="onSearchFocus"
-              @blur="onSearchBlur"
-              @keydown="onSearchKeydown"
+        <div class="sidebar-nav">
+          <section v-for="group in navigationGroups" :key="group.title" class="nav-group">
+            <p class="nav-group__title">{{ group.title }}</p>
+            <UButton
+              v-for="item in group.items"
+              :key="item.label"
+              :to="item.to"
+              :label="item.label"
+              :icon="item.icon"
+              variant="ghost"
+              color="neutral"
+              class="nav-link"
+              :class="{ 'nav-link--active': route.path === item.to || route.path.startsWith(`${item.to}/`) }"
+              block
             />
+          </section>
+        </div>
+      </aside>
 
-            <div v-if="isSearchOpen" id="global-search-results" class="search-dropdown panel" role="listbox">
-              <p v-if="isSearchLoading" class="search-status">Indexing global search data…</p>
-              <p v-else-if="searchError" class="search-status">Search index could not be loaded.</p>
-              <p v-else-if="!hasSearchQuery" class="search-status">Type to search across pages and records.</p>
-              <p v-else-if="!results.length" class="search-status">No results found.</p>
-
-              <template v-else>
-                <section v-for="group in groupedIndexedResults" :key="group.group" class="search-group">
-                  <p class="search-group__title">{{ group.group }}</p>
-
-                  <button
-                    v-for="result in group.items"
-                    :id="`search-result-${result.index}`"
-                    :key="result.id"
-                    type="button"
-                    class="search-result"
-                    :class="{ 'search-result--active': result.index === highlightedResultIndex }"
-                    role="option"
-                    :aria-selected="result.index === highlightedResultIndex"
-                    @mousedown.prevent
-                    @click="selectResult(result)"
-                  >
-                    <span class="search-result__title">{{ result.title }}</span>
-                    <small class="search-result__description">{{ result.description }}</small>
-                  </button>
-                </section>
-              </template>
-            </div>
+      <div class="content">
+        <UCard class="topbar">
+          <div>
+            <h2 class="topbar-title">{{ headerMeta.title }}</h2>
+            <small>{{ headerMeta.subtitle }}</small>
           </div>
-          <button type="button" class="button button--ghost" @click="handleRefreshClick">Refresh</button>
-          <ThemeToggle />
-        </div>
-      </header>
+          <div class="row topbar-actions">
+            <UPopover v-model:open="searchOpen">
+              <UInput
+                v-model="searchQuery"
+                icon="i-lucide-search"
+                placeholder="Search pages, switches, VLANs, IPs"
+                class="topbar-search"
+                @focus="searchOpen = true"
+                @keydown="onSearchKeydown"
+              />
+              <template #content>
+                <div class="search-dropdown">
+                  <p v-if="isSearchLoading" class="search-status">Indexing global search data…</p>
+                  <p v-else-if="searchError" class="search-status">Search index could not be loaded.</p>
+                  <p v-else-if="!hasSearchQuery" class="search-status">Type to search across pages and records.</p>
+                  <p v-else-if="!results.length" class="search-status">No results found.</p>
+                  <template v-else>
+                    <section v-for="group in groupedIndexedResults" :key="group.group" class="search-group">
+                      <p class="search-group__title">{{ group.group }}</p>
+                      <UButton
+                        v-for="result in group.items"
+                        :key="result.id"
+                        variant="ghost"
+                        color="neutral"
+                        block
+                        class="search-result"
+                        :class="{ 'search-result--active': result.index === highlightedResultIndex }"
+                        @click="selectResult(result)"
+                      >
+                        <div class="search-result__title">{{ result.title }}</div>
+                        <small class="search-result__description">{{ result.description }}</small>
+                      </UButton>
+                    </section>
+                  </template>
+                </div>
+              </template>
+            </UPopover>
+            <UButton color="neutral" variant="soft" icon="i-lucide-refresh-cw" label="Refresh" @click="refreshSearch" />
+            <ThemeToggle />
+          </div>
+        </UCard>
 
-      <main class="content-main">
-        <NuxtPage />
-      </main>
+        <main class="content-main">
+          <NuxtPage />
+        </main>
 
-      <footer class="app-footer">
-        <div class="app-footer__brand">
-          <strong>ezSWM</strong>
-          <small>Open-source network documentation</small>
-        </div>
-        <a href="https://github.com/slgfire/website-saarlan-eccm" target="_blank" rel="noopener noreferrer">GitHub</a>
-      </footer>
+        <footer class="app-footer">
+          <div class="app-footer__brand">
+            <strong>ezSWM</strong>
+            <small>Open-source network documentation</small>
+          </div>
+          <a href="https://github.com/slgfire/website-saarlan-eccm" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </footer>
+      </div>
     </div>
-  </div>
+  </UApp>
 </template>

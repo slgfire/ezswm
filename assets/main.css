@@ -61,7 +61,7 @@
   font-family: var(--font-family);
 }
 
-:root[data-theme='dark'] {
+:root[data-theme='dark'], .dark:root, .dark {
   --bg-app: #050b17;
   --bg-sidebar: #040b18;
   --bg-sidebar-accent: #102445;
@@ -530,4 +530,26 @@ tbody tr:hover { background: var(--bg-hover); }
 .search-result__description {
   color: var(--text-secondary);
   font-size: .8rem;
+}
+
+
+.stat-card {
+  background: linear-gradient(180deg, var(--bg-surface-elevated), var(--bg-surface));
+  border-color: var(--border-default);
+}
+
+.nav-link {
+  justify-content: flex-start;
+  border: 1px solid transparent;
+}
+
+.nav-link--active {
+  background: linear-gradient(130deg, color-mix(in oklab, var(--accent-primary) 24%, var(--bg-selected)), var(--bg-selected));
+  border-color: color-mix(in oklab, var(--accent-primary) 45%, var(--border-default));
+  color: var(--text-primary);
+}
+
+.topbar .search-result {
+  justify-content: flex-start;
+  align-items: flex-start;
 }

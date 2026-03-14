@@ -1,16 +1,13 @@
 type ThemeMode = 'light' | 'dark'
 
-const STORAGE_KEY = 'switch-manager-theme'
-
 export function useTheme() {
-  const theme = useState<ThemeMode>('theme-mode', () => 'light')
+  const colorMode = useColorMode()
+
+  const theme = computed<ThemeMode>(() => colorMode.value === 'dark' ? 'dark' : 'light')
 
   function applyTheme(mode: ThemeMode) {
-    if (import.meta.client) {
-      document.documentElement.setAttribute('data-theme', mode)
-      localStorage.setItem(STORAGE_KEY, mode)
-    }
-    theme.value = mode
+    colorMode.preference = mode
+    colorMode.value = mode
   }
 
   function toggleTheme() {
@@ -18,16 +15,9 @@ export function useTheme() {
   }
 
   function initTheme() {
-    if (!import.meta.client) return
-
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored === 'light' || stored === 'dark') {
-      applyTheme(stored)
-      return
+    if (colorMode.value === 'system') {
+      colorMode.preference = 'system'
     }
-
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    applyTheme(prefersDark ? 'dark' : 'light')
   }
 
   return {
