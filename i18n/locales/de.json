@@ -1,0 +1,85 @@
+{
+  "common": {
+    "appName": "Easy Switch and IP Management",
+    "create": "Erstellen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "save": "Speichern",
+    "cancel": "Abbrechen"
+  },
+  "navigation": {
+    "operations": "Betrieb",
+    "dashboard": "Dashboard",
+    "switching": "Switching",
+    "switches": "Switches",
+    "network": "Netzwerk",
+    "networks": "Netzwerke",
+    "system": "System",
+    "settings": "Einstellungen"
+  },
+  "dashboard": {
+    "title": "Infrastruktur Dashboard",
+    "kpis": {
+      "switches": "Switches",
+      "activeSwitches": "Aktive Switches",
+      "usedPorts": "Genutzte Ports",
+      "portUtilization": "Port-Auslastung",
+      "networks": "Netzwerke",
+      "assignedIps": "Vergebene IPs"
+    },
+    "infrastructureUtilization": "Infrastruktur-Auslastung",
+    "topSubnets": "Top Subnetze"
+  },
+  "switches": {
+    "title": "Switches",
+    "createSwitch": "Switch erstellen",
+    "editSwitch": "Switch bearbeiten",
+    "editPort": "Port bearbeiten",
+    "fields": {
+      "name": "Name",
+      "vendor": "Hersteller",
+      "model": "Modell",
+      "managementIp": "Management IP"
+    },
+    "portFields": {
+      "label": "Label",
+      "vlan": "VLAN",
+      "connectedDevice": "Verbundenes Gerät"
+    }
+  },
+  "networks": {
+    "title": "Netzwerke",
+    "createNetwork": "Netzwerk erstellen",
+    "editNetwork": "Netzwerk bearbeiten",
+    "fields": {
+      "vlanId": "VLAN ID",
+      "name": "Name",
+      "subnet": "Subnetz",
+      "prefix": "Präfix",
+      "gateway": "Gateway"
+    }
+  },
+  "ipam": {
+    "allocations": "IP-Zuweisungen",
+    "ranges": "IP-Bereiche",
+    "createAllocation": "IP-Zuweisung erstellen",
+    "createRange": "IP-Bereich erstellen",
+    "fields": {
+      "ipAddress": "IP-Adresse",
+      "hostname": "Hostname",
+      "serviceName": "Service",
+      "deviceName": "Gerät",
+      "name": "Name",
+      "startIp": "Start-IP",
+      "endIp": "End-IP"
+    }
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "createLayout": "Layout-Template erstellen",
+    "fields": {
+      "name": "Name",
+      "description": "Beschreibung"
+    }
+  }
+}

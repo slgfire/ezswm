@@ -1,0 +1,85 @@
+{
+  "common": {
+    "appName": "Easy Switch and IP Management",
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "navigation": {
+    "operations": "Operations",
+    "dashboard": "Dashboard",
+    "switching": "Switching",
+    "switches": "Switches",
+    "network": "Network",
+    "networks": "Networks",
+    "system": "System",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Infrastructure Dashboard",
+    "kpis": {
+      "switches": "Switches",
+      "activeSwitches": "Active switches",
+      "usedPorts": "Used ports",
+      "portUtilization": "Port utilization",
+      "networks": "Networks",
+      "assignedIps": "Assigned IPs"
+    },
+    "infrastructureUtilization": "Infrastructure utilization",
+    "topSubnets": "Top utilized subnets"
+  },
+  "switches": {
+    "title": "Switches",
+    "createSwitch": "Create switch",
+    "editSwitch": "Edit switch",
+    "editPort": "Edit port",
+    "fields": {
+      "name": "Name",
+      "vendor": "Vendor",
+      "model": "Model",
+      "managementIp": "Management IP"
+    },
+    "portFields": {
+      "label": "Label",
+      "vlan": "VLAN",
+      "connectedDevice": "Connected device"
+    }
+  },
+  "networks": {
+    "title": "Networks",
+    "createNetwork": "Create network",
+    "editNetwork": "Edit network",
+    "fields": {
+      "vlanId": "VLAN ID",
+      "name": "Name",
+      "subnet": "Subnet",
+      "prefix": "Prefix",
+      "gateway": "Gateway"
+    }
+  },
+  "ipam": {
+    "allocations": "IP allocations",
+    "ranges": "IP ranges",
+    "createAllocation": "Create IP allocation",
+    "createRange": "Create IP range",
+    "fields": {
+      "ipAddress": "IP address",
+      "hostname": "Hostname",
+      "serviceName": "Service",
+      "deviceName": "Device",
+      "name": "Name",
+      "startIp": "Start IP",
+      "endIp": "End IP"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "createLayout": "Create layout template",
+    "fields": {
+      "name": "Name",
+      "description": "Description"
+    }
+  }
+}
