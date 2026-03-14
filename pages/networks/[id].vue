@@ -222,6 +222,22 @@ async function removeRange(id: string) {
   await refresh()
 }
 
+
+function closeNetworkDrawer() {
+  isNetworkDrawerOpen.value = false
+  if (network.value) Object.assign(networkForm, network.value)
+}
+
+function closeRangeDrawer() {
+  isRangeDrawerOpen.value = false
+  resetRangeForm()
+}
+
+function closeAllocationDrawer() {
+  isAllocationDrawerOpen.value = false
+  resetAllocationForm()
+}
+
 function badgeClass(status: string) {
   if (status === 'used') return 'badge--success'
   if (status === 'reserved') return 'badge--warning'
@@ -387,7 +403,7 @@ function rangeBadgeClass(type: IpRangeType) {
       title="Edit network"
       description="Update network settings and metadata."
       :has-unsaved-changes="networkFormDirty"
-      @close="isNetworkDrawerOpen = false"
+      @close="closeNetworkDrawer"
     >
       <form class="stack" @submit.prevent="saveNetwork">
         <div class="network-form-grid">
@@ -403,7 +419,7 @@ function rangeBadgeClass(type: IpRangeType) {
           <label class="network-field network-form-grid__full"><span class="network-field__label">Notes</span><input v-model="networkForm.notes"></label>
         </div>
         <div class="row row-end">
-          <button type="button" class="secondary" @click="isNetworkDrawerOpen = false">Cancel</button>
+          <button type="button" class="secondary" @click="closeNetworkDrawer">Cancel</button>
           <button type="submit">Save network</button>
         </div>
       </form>
@@ -415,7 +431,7 @@ function rangeBadgeClass(type: IpRangeType) {
       description="Manage DHCP, reserved, and service ranges."
       :has-unsaved-changes="rangeFormDirty"
       width="md"
-      @close="isRangeDrawerOpen = false"
+      @close="closeRangeDrawer"
     >
       <form class="stack" @submit.prevent="saveRange">
         <div class="network-form-grid">
@@ -427,7 +443,7 @@ function rangeBadgeClass(type: IpRangeType) {
           <label class="network-field network-form-grid__full"><span class="network-field__label">Notes</span><input v-model="rangeForm.notes"></label>
         </div>
         <div class="row row-end">
-          <button type="button" class="secondary" @click="resetRangeForm(); isRangeDrawerOpen = false">Cancel</button>
+          <button type="button" class="secondary" @click="closeRangeDrawer">Cancel</button>
           <button type="submit">{{ editingRangeId ? 'Update range' : 'Add range' }}</button>
         </div>
       </form>
@@ -439,7 +455,7 @@ function rangeBadgeClass(type: IpRangeType) {
       description="Assign addresses to devices and services."
       :has-unsaved-changes="allocationFormDirty"
       width="md"
-      @close="isAllocationDrawerOpen = false"
+      @close="closeAllocationDrawer"
     >
       <form class="stack" @submit.prevent="saveAllocation">
         <div class="network-form-grid">
@@ -452,7 +468,7 @@ function rangeBadgeClass(type: IpRangeType) {
           <label class="network-field network-form-grid__full"><span class="network-field__label">Notes</span><input v-model="allocationForm.notes"></label>
         </div>
         <div class="row row-end">
-          <button type="button" class="secondary" @click="resetAllocationForm(); isAllocationDrawerOpen = false">Cancel</button>
+          <button type="button" class="secondary" @click="closeAllocationDrawer">Cancel</button>
           <button type="submit">{{ editingAllocationId ? 'Update allocation' : 'Add allocation' }}</button>
         </div>
       </form>

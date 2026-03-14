@@ -41,6 +41,23 @@ function addBlock() {
   form.blocks = blocks
 }
 
+
+function parsePorts(value: string): number[] {
+  return value
+    .split(',')
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isFinite(item) && item > 0)
+}
+
+function stringifyPorts(value?: number[]): string {
+  return (value || []).join(', ')
+}
+
+function updateBlockPorts(block: NonNullable<LayoutTemplate['blocks']>[number], event: Event) {
+  const target = event.target as HTMLInputElement | null
+  block.ports = parsePorts(target?.value || '')
+}
+
 function removeBlock(index: number) {
   if (!form.blocks) return
   form.blocks.splice(index, 1)
@@ -81,6 +98,7 @@ function removeBlock(index: number) {
           <input v-model.number="block.columns" type="number" min="1" placeholder="Columns" required>
           <input v-model.number="block.startPort" type="number" min="1" placeholder="Start port">
           <input v-model.number="block.endPort" type="number" min="1" placeholder="End port">
+          <input :value="stringifyPorts(block.ports || block.portNumbers)" placeholder="Explicit ports (1,2,3)" @input="updateBlockPorts(block, $event)">
         </div>
         <div class="row row-end">
           <UButton type="button" color="error" variant="soft" label="Remove block" @click="removeBlock(index)" />

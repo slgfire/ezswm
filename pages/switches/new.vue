@@ -63,7 +63,7 @@ async function submit() {
 
 <template>
   <form class="panel stack" @submit.prevent="submit">
-    <h1>Switch anlegen</h1>
+    <h1>Create switch</h1>
     <div class="row">
       <input v-model="form.name" required placeholder="Name">
       <input v-model="form.vendor" required placeholder="Vendor">

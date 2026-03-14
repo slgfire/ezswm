@@ -2,7 +2,7 @@
 import type { Switch } from '~/types/models'
 
 defineProps<{ items: Switch[] }>()
-const emit = defineEmits<{ delete: [string] }>()
+const emit = defineEmits<{ delete: [string], edit: [Switch] }>()
 
 function switchStatusColor(status: string) {
   if (status === 'active') return 'success'
@@ -34,7 +34,12 @@ function switchStatusColor(status: string) {
           <td>{{ sw.locationId || '-' }}</td>
           <td><UBadge :color="switchStatusColor(sw.status)" variant="subtle">{{ sw.status }}</UBadge></td>
           <td>{{ sw.managementIp }}</td>
-          <td class="text-right"><UButton color="error" variant="soft" size="xs" label="Delete" @click="emit('delete', sw.id)" /></td>
+          <td class="text-right">
+            <div class="row row-end">
+              <UButton color="neutral" variant="soft" size="xs" label="Edit" @click="emit('edit', sw)" />
+              <UButton color="error" variant="soft" size="xs" label="Delete" @click="emit('delete', sw.id)" />
+            </div>
+          </td>
         </tr>
       </tbody>
     </table>

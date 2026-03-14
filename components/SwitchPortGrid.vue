@@ -4,6 +4,11 @@ import type { LayoutBlock, LayoutTemplate, Port } from '~/types/models'
 const props = defineProps<{ layout: LayoutTemplate; ports: Port[]; selectedPortNumber?: number }>()
 const emit = defineEmits<{ select: [Port | undefined, number] }>()
 
+interface RenderedBlock extends LayoutBlock {
+  portNumbers: number[]
+  slots: Array<number | null>
+}
+
 const map = computed(() => {
   const m = new Map<number, Port>()
   props.ports.forEach((p) => m.set(p.portNumber, p))
@@ -12,15 +17,18 @@ const map = computed(() => {
 
 const hasBlocks = computed(() => Boolean(props.layout.blocks?.length))
 
-const renderedBlocks = computed(() => {
+const renderedBlocks = computed<RenderedBlock[]>(() => {
   if (!hasBlocks.value) return []
 
   return (props.layout.blocks || [])
     .map((block) => {
       const portNumbers = resolveBlockPorts(block)
+      const requiredSlots = Math.max(block.rows * block.columns, portNumbers.length)
+      const slots = Array.from({ length: requiredSlots }, (_, index) => portNumbers[index] ?? null)
       return {
         ...block,
-        portNumbers
+        portNumbers,
+        slots
       }
     })
     .filter((block) => block.portNumbers.length > 0)
@@ -28,7 +36,11 @@ const renderedBlocks = computed(() => {
 
 function resolveBlockPorts(block: LayoutBlock): number[] {
   if (block.portNumbers?.length) {
-    return block.portNumbers
+    return [...block.portNumbers]
+  }
+
+  if (block.ports?.length) {
+    return [...block.ports]
   }
 
   if (typeof block.startPort === 'number' && typeof block.endPort === 'number') {
@@ -49,8 +61,10 @@ function cls(status?: string) {
   return 'port-free'
 }
 
-function typeClass(type: LayoutBlock['type']) {
-  return `port-block--${type.replace('+', 'plus')}`
+function mediaClass(blockType: LayoutBlock['type'], portNumber: number) {
+  const media = map.value.get(portNumber)?.mediaType?.toLowerCase()
+  if (media) return `port-cell--${media.replace('+', 'plus')}`
+  return `port-cell--${blockType.replace('+', 'plus')}`
 }
 
 function selectPort(portNumber: number) {
@@ -64,7 +78,7 @@ function selectPort(portNumber: number) {
       v-for="block in renderedBlocks"
       :key="block.id"
       class="panel port-block"
-      :class="typeClass(block.type)"
+      :class="`port-block--${block.type.replace('+', 'plus')}`"
     >
       <div class="port-block__header">
         <div>
@@ -75,16 +89,18 @@ function selectPort(portNumber: number) {
       </div>
 
       <div class="grid" :style="{ gridTemplateColumns: `repeat(${block.columns}, minmax(36px, 1fr))` }">
-        <button
-          v-for="portNumber in block.portNumbers"
-          :key="`${block.id}-${portNumber}`"
-          :class="['port-cell', cls(map.get(portNumber)?.status), { 'port-selected': selectedPortNumber === portNumber }]"
-          :aria-label="`Port ${portNumber}: ${map.get(portNumber)?.status || 'free'}`"
-          @click="selectPort(portNumber)"
-        >
-          <div>P{{ portNumber }}</div>
-          <small>{{ map.get(portNumber)?.label || '-' }}</small>
-        </button>
+        <template v-for="(slotPort, slotIndex) in block.slots" :key="`${block.id}-${slotIndex}`">
+          <button
+            v-if="slotPort"
+            :class="['port-cell', cls(map.get(slotPort)?.status), mediaClass(block.type, slotPort), { 'port-selected': selectedPortNumber === slotPort }]"
+            :aria-label="`Port ${slotPort}: ${map.get(slotPort)?.status || 'free'}`"
+            @click="selectPort(slotPort)"
+          >
+            <div>P{{ slotPort }}</div>
+            <small>{{ map.get(slotPort)?.label || '-' }}</small>
+          </button>
+          <div v-else class="port-cell port-cell--empty" aria-hidden="true" />
+        </template>
       </div>
     </section>
   </div>

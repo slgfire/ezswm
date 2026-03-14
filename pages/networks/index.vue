@@ -37,6 +37,11 @@ function resetForm() {
   Object.assign(form, { name: '', subnet: '', prefix: 24, gateway: '', routing: '', description: '', notes: '', vlanId: undefined, category: '' })
 }
 
+function closeAddDrawer() {
+  isAddDrawerOpen.value = false
+  resetForm()
+}
+
 function usage(network: NetworkWithAllocations) {
   const used = network.allocations.filter((entry) => entry.status === 'used' || entry.status === 'gateway').length
   const reserved = network.allocations.filter((entry) => entry.status === 'reserved').length
@@ -123,7 +128,7 @@ async function removeNetwork(id: string) {
       title="Add network"
       description="Create a network without leaving the overview."
       :has-unsaved-changes="isNetworkFormDirty"
-      @close="isAddDrawerOpen = false"
+      @close="closeAddDrawer"
     >
       <form class="stack" @submit.prevent="createNetwork">
         <div class="network-form-grid">
@@ -177,7 +182,7 @@ async function removeNetwork(id: string) {
           </label>
         </div>
         <div class="row row-end">
-          <button type="button" class="secondary" @click="resetForm(); isAddDrawerOpen = false">Cancel</button>
+          <button type="button" class="secondary" @click="closeAddDrawer">Cancel</button>
           <button type="submit">Create network</button>
         </div>
       </form>
