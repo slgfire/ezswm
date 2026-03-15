@@ -85,3 +85,15 @@
   - `compose.yaml`
   - `.env.example`
   - `README.md`
+
+## Stage 9 - VueUse runtime stabilization
+- Resolved 500 runtime crash (`useDebounceFn is not defined`) by wiring VueUse into Nuxt and adding direct composable import for the app shell search debounce.
+- Changed files:
+  - `nuxt.config.ts`
+  - `package.json`
+  - `app.vue`
+- Validation status:
+  - `npm run dev`: blocked in this environment because dependency installation is restricted by registry access policy.
+  - `npm run build`: blocked in this environment for the same dependency installation reason.
+  - `docker compose build --no-cache`: blocked because package installation in container hits the same registry restriction.
+  - `docker compose up`: not executed successfully since image build is blocked.

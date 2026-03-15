@@ -31,6 +31,7 @@
 </template>
 
 <script setup lang="ts">
+import { useDebounceFn } from '@vueuse/core'
 const navItems = [
   [{ label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/' }],
   [{ label: 'Switches', icon: 'i-lucide-server', to: '/switches' }],

@@ -1,5 +1,5 @@
 export default defineNuxtConfig({
-  modules: ['@nuxt/ui', '@nuxtjs/i18n'],
+  modules: ['@nuxt/ui', '@nuxtjs/i18n', '@vueuse/nuxt'],
   css: ['~/assets/css/main.css'],
   devtools: { enabled: false },
   future: {
