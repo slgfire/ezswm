@@ -13,7 +13,7 @@ export default defineNuxtConfig({
     strategy: 'no_prefix',
     locales: [{ code: 'en', name: 'English', file: 'en.json' }],
     lazy: true,
-    langDir: 'i18n/locales'
+    langDir: 'locales'
   },
   compatibilityDate: '2025-01-01'
 })
