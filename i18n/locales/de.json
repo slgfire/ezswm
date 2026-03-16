@@ -1,0 +1,332 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "switches": "Switches",
+    "vlans": "VLANs",
+    "networks": "Netzwerke",
+    "topology": "Topologie",
+    "tools": "Werkzeuge",
+    "subnetCalculator": "Subnetz-Rechner",
+    "importExport": "Import/Export",
+    "backup": "Sicherung",
+    "settings": "Einstellungen",
+    "users": "Benutzer",
+    "layoutTemplates": "Layout-Vorlagen"
+  },
+  "auth": {
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "setup": "Einrichtung abschließen",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "confirmPassword": "Passwort bestätigen",
+    "displayName": "Anzeigename",
+    "rememberMe": "Angemeldet bleiben",
+    "language": "Sprache",
+    "setupTitle": "Willkommen bei ezSWM",
+    "setupDescription": "Erstellen Sie Ihr Admin-Konto, um zu beginnen.",
+    "loginTitle": "Bei ezSWM anmelden",
+    "loginDescription": "Geben Sie Ihre Zugangsdaten ein."
+  },
+  "common": {
+    "welcome": "Willkommen bei ezSWM",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "create": "Erstellen",
+    "search": "Suchen...",
+    "actions": "Aktionen",
+    "name": "Name",
+    "description": "Beschreibung",
+    "status": "Status",
+    "noData": "Keine Daten vorhanden",
+    "loading": "Laden...",
+    "confirm": "Bestätigen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "yes": "Ja",
+    "no": "Nein",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "all": "Alle",
+    "type": "Typ",
+    "showing": "Zeige {from}-{to} von {total} Einträgen",
+    "perPage": "Pro Seite",
+    "duplicate": "Duplizieren",
+    "export": "Exportieren",
+    "import": "Importieren",
+    "download": "Herunterladen",
+    "upload": "Hochladen",
+    "reset": "Zurücksetzen",
+    "close": "Schließen",
+    "details": "Details",
+    "general": "Allgemein",
+    "account": "Konto",
+    "notes": "Notizen"
+  },
+  "dashboard": {
+    "emptyTitle": "Willkommen bei ezSWM!",
+    "emptyDescription": "Erstellen Sie Ihren ersten Switch, um zu beginnen.",
+    "switchCount": "Switches",
+    "networkCount": "Netzwerke",
+    "vlanCount": "VLANs",
+    "ipUtilization": "IP-Auslastung",
+    "portStatus": "Port-Status",
+    "recentActivity": "Letzte Aktivitäten",
+    "favorites": "Favoriten",
+    "warnings": "Warnungen",
+    "orphanVlans": "Verwaiste VLANs",
+    "duplicateIps": "Doppelte IPs",
+    "highUsage": "Stark genutzte Netzwerke"
+  },
+  "switches": {
+    "title": "Switches",
+    "create": "Switch erstellen",
+    "edit": "Switch bearbeiten",
+    "delete": "Switch löschen",
+    "duplicate": "Switch duplizieren",
+    "fields": {
+      "name": "Name",
+      "model": "Modell",
+      "manufacturer": "Hersteller",
+      "serialNumber": "Seriennummer",
+      "location": "Standort",
+      "rackPosition": "Rack-Position",
+      "managementIp": "Management-IP",
+      "firmwareVersion": "Firmware-Version",
+      "layoutTemplate": "Layout-Vorlage",
+      "portCount": "Anzahl Ports"
+    },
+    "messages": {
+      "created": "Switch erfolgreich erstellt",
+      "updated": "Switch erfolgreich aktualisiert",
+      "deleted": "Switch erfolgreich gelöscht",
+      "duplicated": "Switch erfolgreich dupliziert"
+    },
+    "ports": {
+      "title": "Ports",
+      "edit": "Port bearbeiten",
+      "bulkEdit": "Ports gruppiert bearbeiten",
+      "nativeVlan": "Native VLAN",
+      "taggedVlans": "Getaggte VLANs",
+      "connectedDevice": "Verbundenes Gerät",
+      "connectedPort": "Verbundener Port",
+      "speed": "Geschwindigkeit",
+      "macAddress": "MAC-Adresse",
+      "lagGroup": "LAG-Gruppe"
+    },
+    "emptyTitle": "Noch keine Switches",
+    "emptyDescription": "Erstellen Sie Ihren ersten Switch."
+  },
+  "vlans": {
+    "title": "VLANs",
+    "create": "VLAN erstellen",
+    "edit": "VLAN bearbeiten",
+    "delete": "VLAN löschen",
+    "fields": {
+      "vlanId": "VLAN-ID",
+      "name": "Name",
+      "color": "Farbe",
+      "status": "Status",
+      "routingDevice": "Routing-Gerät",
+      "networkCount": "Netzwerke"
+    },
+    "messages": {
+      "created": "VLAN erfolgreich erstellt",
+      "updated": "VLAN erfolgreich aktualisiert",
+      "deleted": "VLAN erfolgreich gelöscht"
+    },
+    "emptyTitle": "Noch keine VLANs definiert",
+    "emptyDescription": "Erstellen Sie Ihr erstes VLAN."
+  },
+  "networks": {
+    "title": "Netzwerke",
+    "create": "Netzwerk erstellen",
+    "edit": "Netzwerk bearbeiten",
+    "delete": "Netzwerk löschen",
+    "fields": {
+      "name": "Name",
+      "subnet": "Subnetz (CIDR)",
+      "gateway": "Gateway",
+      "dnsServers": "DNS-Server",
+      "vlan": "VLAN",
+      "utilization": "Auslastung"
+    },
+    "messages": {
+      "created": "Netzwerk erfolgreich erstellt",
+      "updated": "Netzwerk erfolgreich aktualisiert",
+      "deleted": "Netzwerk erfolgreich gelöscht"
+    },
+    "emptyTitle": "Noch keine Netzwerke konfiguriert",
+    "emptyDescription": "Erstellen Sie Ihr erstes Netzwerk.",
+    "allocations": {
+      "title": "IP-Zuweisungen",
+      "create": "Zuweisung hinzufügen",
+      "fields": {
+        "ipAddress": "IP-Adresse",
+        "hostname": "Hostname",
+        "macAddress": "MAC-Adresse",
+        "deviceType": "Gerätetyp",
+        "status": "Status"
+      },
+      "messages": {
+        "created": "IP-Zuweisung erfolgreich erstellt",
+        "updated": "IP-Zuweisung erfolgreich aktualisiert",
+        "deleted": "IP-Zuweisung erfolgreich gelöscht"
+      }
+    },
+    "ranges": {
+      "title": "IP-Bereiche",
+      "create": "Bereich hinzufügen",
+      "fields": {
+        "startIp": "Start-IP",
+        "endIp": "End-IP",
+        "type": "Typ"
+      },
+      "messages": {
+        "created": "IP-Bereich erfolgreich erstellt",
+        "updated": "IP-Bereich erfolgreich aktualisiert",
+        "deleted": "IP-Bereich erfolgreich gelöscht"
+      }
+    },
+    "subnetInfo": {
+      "networkAddress": "Netzwerkadresse",
+      "broadcastAddress": "Broadcast-Adresse",
+      "subnetMask": "Subnetzmaske",
+      "wildcardMask": "Wildcard-Maske",
+      "firstUsable": "Erste nutzbare IP",
+      "lastUsable": "Letzte nutzbare IP",
+      "totalHosts": "Gesamte Hosts",
+      "usableHosts": "Nutzbare Hosts"
+    }
+  },
+  "templates": {
+    "title": "Layout-Vorlagen",
+    "create": "Vorlage erstellen",
+    "edit": "Vorlage bearbeiten",
+    "delete": "Vorlage löschen",
+    "detail": "Vorlagen-Details",
+    "fields": {
+      "name": "Name",
+      "manufacturer": "Hersteller",
+      "model": "Modell",
+      "description": "Beschreibung",
+      "unitCount": "Einheiten",
+      "portCount": "Gesamte Ports"
+    },
+    "units": {
+      "title": "Einheiten",
+      "add": "Einheit hinzufügen",
+      "remove": "Einheit entfernen",
+      "unitNumber": "Einheitsnummer",
+      "label": "Bezeichnung"
+    },
+    "blocks": {
+      "title": "Port-Blöcke",
+      "add": "Block hinzufügen",
+      "remove": "Block entfernen",
+      "type": "Port-Typ",
+      "count": "Anzahl Ports",
+      "startIndex": "Startindex",
+      "rows": "Reihen",
+      "label": "Bezeichnung"
+    },
+    "messages": {
+      "created": "Vorlage erfolgreich erstellt",
+      "updated": "Vorlage erfolgreich aktualisiert",
+      "deleted": "Vorlage erfolgreich gelöscht",
+      "exported": "Vorlage erfolgreich exportiert",
+      "imported": "Vorlage erfolgreich importiert"
+    },
+    "emptyTitle": "Noch keine Layout-Vorlagen",
+    "emptyDescription": "Erstellen Sie eine Vorlage für Ihre Switch-Modelle.",
+    "confirmDelete": "Möchten Sie diese Vorlage wirklich löschen?"
+  },
+  "topology": {
+    "title": "Netzwerk-Topologie",
+    "emptyTitle": "Keine Switch-Verbindungen gefunden",
+    "emptyDescription": "Verbinden Sie Switches, um die Topologie anzuzeigen.",
+    "exportPdf": "PDF exportieren",
+    "exportPng": "PNG exportieren"
+  },
+  "tools": {
+    "subnetCalculator": {
+      "title": "Subnetz-Rechner",
+      "inputLabel": "CIDR-Notation",
+      "inputPlaceholder": "z.B. 10.0.1.0/24",
+      "results": "Ergebnisse"
+    }
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "general": {
+      "title": "Allgemein",
+      "appName": "Anwendungsname",
+      "defaultVlan": "Standard-VLAN für neue Ports",
+      "defaultPortStatus": "Standard-Port-Status",
+      "paginationSize": "Einträge pro Seite",
+      "portSpeeds": "Verfügbare Port-Geschwindigkeiten"
+    },
+    "account": {
+      "title": "Konto",
+      "displayName": "Anzeigename",
+      "language": "Sprache",
+      "changePassword": "Passwort ändern",
+      "currentPassword": "Aktuelles Passwort",
+      "newPassword": "Neues Passwort",
+      "confirmNewPassword": "Neues Passwort bestätigen",
+      "saveProfile": "Profil speichern",
+      "savePassword": "Passwort ändern"
+    },
+    "messages": {
+      "updated": "Einstellungen erfolgreich aktualisiert",
+      "profileUpdated": "Profil erfolgreich aktualisiert",
+      "passwordChanged": "Passwort erfolgreich geändert",
+      "passwordMismatch": "Passwörter stimmen nicht überein"
+    }
+  },
+  "backup": {
+    "title": "Sicherung & Wiederherstellung",
+    "export": "Sicherung herunterladen",
+    "exportDescription": "Laden Sie eine vollständige Sicherung aller Daten als ZIP-Datei herunter.",
+    "import": "Aus Sicherung wiederherstellen",
+    "importDescription": "Laden Sie eine Sicherungs-ZIP-Datei hoch, um alle Daten wiederherzustellen.",
+    "selectFile": "Sicherungsdatei auswählen",
+    "restore": "Wiederherstellen",
+    "confirmRestore": "Dies überschreibt alle aktuellen Daten. Sind Sie sicher?",
+    "messages": {
+      "exported": "Sicherung erfolgreich heruntergeladen",
+      "imported": "Sicherung erfolgreich wiederhergestellt"
+    }
+  },
+  "importExport": {
+    "title": "Import / Export",
+    "importTab": "Import",
+    "exportTab": "Export",
+    "selectEntity": "Entitätstyp auswählen",
+    "selectFormat": "Format auswählen",
+    "downloadTemplate": "Vorlage herunterladen",
+    "uploadFile": "Datei hochladen",
+    "validationResults": "Validierungsergebnisse",
+    "confirmImport": "Gültige Zeilen importieren",
+    "importEmptyTitle": "Daten importieren",
+    "importEmptyDescription": "Wählen Sie einen Entitätstyp und laden Sie eine CSV- oder JSON-Datei hoch.",
+    "exportEmptyTitle": "Daten exportieren",
+    "exportEmptyDescription": "Wählen Sie einen Entitätstyp und ein Format, um Ihre Daten zu exportieren."
+  },
+  "activity": {
+    "title": "Aktivitäten",
+    "created": "erstellt",
+    "updated": "aktualisiert",
+    "deleted": "gelöscht",
+    "undo": "Rückgängig"
+  },
+  "errors": {
+    "notFound": "Nicht gefunden",
+    "unauthorized": "Nicht autorisiert",
+    "validationFailed": "Validierung fehlgeschlagen",
+    "serverError": "Serverfehler",
+    "networkError": "Netzwerkfehler"
+  }
+}

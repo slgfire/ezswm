@@ -7,6 +7,10 @@ Related documents:
 - CLAUDE.md
 - docs/STRATEGY.md
 - docs/MIGRATION_STATUS.md
+- docs/specs/SPEC_DATA_MODEL.md
+- docs/specs/SPEC_BACKEND.md
+- docs/specs/SPEC_FRONTEND.md
+- docs/specs/SPEC_INFRASTRUCTURE.md
 
 ---
 
@@ -14,24 +18,24 @@ Related documents:
 
 ezSWM is a lightweight infrastructure documentation tool built with:
 
-- Nuxt 4
-- TypeScript
-- Nuxt UI
+- Nuxt 3.x (with `compatibilityVersion: 4`)
+- TypeScript (strict mode)
+- Nuxt UI v2
 - Nuxt i18n
+- Zod (validation)
 - JSON file storage
 - Docker
 
-Persistent data is stored in:
-
-/app/data
+Persistent data is stored in: `/app/data`
 
 Architecture layers:
 
-1. UI Layer
-2. Composables Layer
-3. API Layer
-4. Repository Layer
-5. Storage Layer
+1. UI Layer (`app/pages`, `app/components`)
+2. Composables Layer (`app/composables`)
+3. API Layer (`server/api`)
+4. Validation Layer (`server/validators` — Zod schemas)
+5. Repository Layer (`server/repositories`)
+6. Storage Layer (`server/storage`)
 
 ---
 
@@ -39,23 +43,26 @@ Architecture layers:
 
 ## Separation of concerns
 
-UI
-- render data
-- handle interactions
+UI:
+- Render data
+- Handle user interactions
 
-Composables
-- client state
+Composables:
+- Client state management
 - API calls
 
-API
-- validate input
-- call repositories
+API:
+- Parse requests
+- Validate input (via Zod)
+- Call repositories
+- Return structured responses
 
-Repositories
-- persistence logic
+Repositories:
+- Persistence logic
+- Cross-entity validation
 
-Storage
-- JSON file access
+Storage:
+- JSON file access (atomic read/write)
 
 ## Repository-only file access
 
@@ -67,57 +74,66 @@ All JSON writes must be atomic.
 
 Write pattern:
 
-1. write temporary file
-2. replace original
+1. Write to temporary file (`<file>.tmp`)
+2. Rename temporary file to target (atomic operation)
 
 ## Strict typing
 
-All domain models must have TypeScript interfaces.
+All domain models have TypeScript interfaces in `types/`.
 
-Stored in:
+## Validation
 
-types/
+All API request validation uses Zod schemas in `server/validators/`.
 
 ---
 
 # 3. Project Structure
 
-Recommended structure:
-
+```
 app/
-components/
-composables/
-pages/
+  components/         # Vue components (by domain)
+  composables/        # Client-side composables
+  pages/              # Route pages
+  layouts/            # default.vue, auth.vue
+  middleware/          # Client-side auth guard
 
 server/
-api/
-repositories/
-storage/
-utils/
+  api/                # API route handlers
+  middleware/          # Server-side auth middleware
+  repositories/       # Data persistence
+  storage/            # JSON file utilities
+  validators/         # Zod schemas
+  utils/              # IPv4, auth utilities
 
-types/
-i18n/locales/
+types/                # TypeScript interfaces
+
+i18n/
+  locales/            # en.json, de.json
 
 docs/
+  specs/              # SPEC files
 
-data/
+data/                 # Local development data (gitignored)
+```
 
 ---
 
 # 4. UI Layer Architecture
 
-The UI must follow the Nuxt UI dashboard template architecture.
+The UI must follow the Nuxt UI v2 dashboard template architecture.
 
 Reference:
 https://github.com/nuxt-ui-templates/dashboard
 
 Layout must include:
 
-- sidebar
-- header
-- dashboard content
-- dark mode
-- responsive panels
+- Sidebar navigation (collapsible on mobile)
+- Header bar (global search, user menu, theme toggle)
+- Breadcrumb navigation
+- Dashboard content area
+- Footer (version info)
+- Dark mode (default)
+- Fully responsive (desktop, tablet, smartphone)
 
 Do NOT build a custom shell.
 
@@ -127,13 +143,16 @@ Do NOT build a custom shell.
 
 Standard flow:
 
+```
 User
 → UI component
 → composable
 → API route
+→ Zod validation
 → repository
 → storage
 → JSON file
+```
 
 Response flows back the same way.
 
@@ -143,20 +162,38 @@ Response flows back the same way.
 
 Responsibilities:
 
-- parse requests
-- validate payloads
-- call repositories
-- return structured responses
+- Parse requests
+- Validate payloads (Zod)
+- Call repositories
+- Return structured responses
 
 API must NOT:
 
-- access JSON directly
-- contain UI logic
+- Access JSON files directly
+- Contain UI logic
 
-Example routes:
+Routes are organized by domain:
 
+```
+server/api/auth/
 server/api/switches/
+server/api/vlans/
 server/api/networks/
+server/api/layout-templates/
+server/api/activity/
+server/api/settings/
+server/api/users/
+server/api/search.get.ts
+server/api/health.get.ts
+server/api/topology.get.ts
+server/api/subnet-calculator.get.ts
+server/api/dashboard/
+server/api/backup/
+server/api/import/
+server/api/export/
+```
+
+Full route table: docs/specs/SPEC_BACKEND.md §3
 
 ---
 
@@ -166,7 +203,7 @@ Repositories manage persistence operations.
 
 Typical functions:
 
-- list
+- list (with filters)
 - getById
 - create
 - update
@@ -174,33 +211,41 @@ Typical functions:
 
 Repositories may:
 
-- call storage utilities
-- enforce persistence rules
+- Call storage utilities
+- Enforce persistence rules
+- Perform cross-entity validation
 
 Repositories must NOT:
 
-- render UI
-- contain frontend logic
+- Render UI
+- Contain frontend logic
 
 ---
 
 # 8. Storage Layer
 
-Handles JSON files.
+Handles JSON files in `/app/data`.
 
 Responsibilities:
 
-- ensure files exist
-- read JSON
-- write JSON atomically
+- Ensure files exist on startup
+- Read JSON
+- Write JSON atomically
 
-Example files:
+JSON files:
 
-switches.json
+```
+users.json
+switches.json          (with embedded Port[])
+vlans.json
 networks.json
 ipAllocations.json
 ipRanges.json
-layouts.json
+layoutTemplates.json   (with embedded LayoutUnit[]/LayoutBlock[])
+lagGroups.json
+activity.json
+settings.json          (single object, not array)
+```
 
 ---
 
@@ -208,91 +253,124 @@ layouts.json
 
 Core entities:
 
-Switch
-Port
-Network
-IPAllocation
-IPRange
-LayoutTemplate
-LayoutBlock
+- User
+- Switch
+- Port (embedded in Switch)
+- VLAN (separate entity)
+- Network
+- IPAllocation
+- IPRange
+- LayoutTemplate
+- LayoutUnit (embedded in LayoutTemplate)
+- LayoutBlock (embedded in LayoutUnit)
+- LAGGroup
+- ActivityEntry
+- AppSettings
 
-All interfaces must live in:
+All interfaces live in `types/`.
 
-types/
+Full data model: docs/specs/SPEC_DATA_MODEL.md
 
 ---
 
-# 10. Validation Architecture
+# 10. Authentication Architecture
 
-Reusable utilities must validate:
+- Multi-user with bcrypt password hashing
+- JWT tokens (7 days default, 30 days with "Remember me")
+- Setup wizard on first start (create admin)
+- Server middleware validates JWT on all API routes (except /auth/setup, /auth/login, /health)
+- Client middleware redirects unauthenticated users to login
+- MVP: all users have full access
+- Future: Admin/Viewer roles
+
+---
+
+# 11. Validation Architecture
+
+Reusable Zod schemas in `server/validators/` validate:
 
 - IPv4 format
-- subnet membership
-- prefix → netmask
-- duplicate IP detection
-- IP range validation
+- Subnet membership
+- CIDR notation
+- Duplicate IP detection
+- IP range overlap
+- VLAN ID uniqueness (1-4094)
+- VLAN color uniqueness
+- MAC address format
 
-Validation should occur primarily in API routes.
+Validation occurs in API routes before calling repositories.
 
 ---
 
-# 11. Search Architecture
+# 12. Search Architecture
 
 Global search lives in the header.
 
 Search scope:
 
-- pages
-- switches
-- networks
-- VLAN IDs
-- subnets
-- IP addresses
-- hostnames
+- Switches (name, model, location, management_ip, serial_number)
+- VLANs (vlan_id, name, routing_device)
+- Networks (name, subnet)
+- Ports (label, description, connected_device)
+- IP Allocations (ip_address, hostname, mac_address)
 
-For MVP, client-side search is acceptable.
+Server-side search via `/api/search?q=<query>`.
 
 ---
 
-# 12. Internationalization Architecture
+# 13. Internationalization Architecture
 
-Locales must live in:
+Locales live in:
 
+```
 i18n/locales/en.json
 i18n/locales/de.json
+```
 
-Correct configuration:
+Configuration in `nuxt.config.ts`:
 
-langDir: 'locales'
-
-Avoid duplicated paths:
-
-i18n/i18n/locales/en.json
+```typescript
+i18n: {
+  locales: [
+    { code: 'en', name: 'English', file: 'en.json' },
+    { code: 'de', name: 'Deutsch', file: 'de.json' }
+  ],
+  defaultLocale: 'en',
+  langDir: 'locales',
+  strategy: 'no_prefix'
+}
+```
 
 Default language: English.
+Language is stored per user.
+Everything is translated (labels, errors, toasts, tooltips, placeholders).
 
 ---
 
-# 13. Docker and Runtime Architecture
+# 14. Docker and Runtime Architecture
 
-Docker must use multi-stage builds.
+Docker uses multi-stage builds.
 
 Builder:
-
-npm install
+```
+npm ci
 npm run build
+```
 
 Runtime:
-
+```
 node .output/server/index.mjs
+```
 
-compose.yaml mounts only:
+compose.yaml mounts only: `./data:/app/data`
 
-./data:/app/data
+Health check: `GET /api/health`
+
+Full Docker configuration: docs/specs/SPEC_INFRASTRUCTURE.md
 
 ---
 
-# 14. Documentation Rules
+# 15. Documentation Rules
 
 Documents must stay aligned:
 
@@ -300,36 +378,44 @@ Documents must stay aligned:
 - docs/STRATEGY.md
 - docs/ARCHITECTURE.md
 - docs/MIGRATION_STATUS.md
+- docs/specs/SPEC_*.md
 
 After each stage:
 
-- update MIGRATION_STATUS.md
-- ensure architecture rules are respected
+- Update MIGRATION_STATUS.md
+- Ensure architecture rules are respected
+- Verify all SPECs are still accurate
 
 ---
 
-# 15. Initial Implementation Priorities
+# 16. Implementation Priorities
 
-1. project bootstrap
-2. Nuxt UI dashboard shell
-3. storage scaffolding
-4. domain types
-5. repositories
-6. CRUD APIs
-7. core pages
-8. port visualization
-9. validation
+1. Project bootstrap
+2. Storage & data foundation
+3. Authentication
+4. Dashboard shell
+5. Core CRUD pages
+6. Switch port visualization
+7. Advanced features (topology, calculator, dashboard KPIs)
+8. Import/export & backup
+9. Polish & validation
+10. Docker & production
+
+Full phase details: docs/STRATEGY.md and docs/specs/SPEC_INFRASTRUCTURE.md §13
 
 ---
 
-# 16. Non-Goals for Early Stages
+# 17. Non-Goals for Early Stages
 
 Avoid early complexity:
 
-- role/permission systems
-- advanced multi-user workflows
-- database support
-- drag-and-drop editors
-- over-engineered abstractions
+- Role/permission systems (Admin/Viewer comes post-MVP)
+- Advanced multi-user workflows
+- Database support
+- Drag-and-drop editors (except topology)
+- IPv6 (post-MVP)
+- SNMP/API integration (post-MVP)
+- Public API / Swagger
+- Over-engineered abstractions
 
 Focus on a stable MVP first.

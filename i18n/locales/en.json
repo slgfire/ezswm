@@ -1,0 +1,332 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "switches": "Switches",
+    "vlans": "VLANs",
+    "networks": "Networks",
+    "topology": "Topology",
+    "tools": "Tools",
+    "subnetCalculator": "Subnet Calculator",
+    "importExport": "Import/Export",
+    "backup": "Backup",
+    "settings": "Settings",
+    "users": "Users",
+    "layoutTemplates": "Layout Templates"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "setup": "Complete Setup",
+    "username": "Username",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "displayName": "Display Name",
+    "rememberMe": "Remember me",
+    "language": "Language",
+    "setupTitle": "Welcome to ezSWM",
+    "setupDescription": "Create your admin account to get started.",
+    "loginTitle": "Sign in to ezSWM",
+    "loginDescription": "Enter your credentials to continue."
+  },
+  "common": {
+    "welcome": "Welcome to ezSWM",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search...",
+    "actions": "Actions",
+    "name": "Name",
+    "description": "Description",
+    "status": "Status",
+    "noData": "No data available",
+    "loading": "Loading...",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "yes": "Yes",
+    "no": "No",
+    "active": "Active",
+    "inactive": "Inactive",
+    "all": "All",
+    "type": "Type",
+    "showing": "Showing {from}-{to} of {total} entries",
+    "perPage": "Per page",
+    "duplicate": "Duplicate",
+    "export": "Export",
+    "import": "Import",
+    "download": "Download",
+    "upload": "Upload",
+    "reset": "Reset",
+    "close": "Close",
+    "details": "Details",
+    "general": "General",
+    "account": "Account",
+    "notes": "Notes"
+  },
+  "dashboard": {
+    "emptyTitle": "Welcome to ezSWM!",
+    "emptyDescription": "Start by creating your first switch.",
+    "switchCount": "Switches",
+    "networkCount": "Networks",
+    "vlanCount": "VLANs",
+    "ipUtilization": "IP Utilization",
+    "portStatus": "Port Status",
+    "recentActivity": "Recent Activity",
+    "favorites": "Favorites",
+    "warnings": "Warnings",
+    "orphanVlans": "Orphan VLANs",
+    "duplicateIps": "Duplicate IPs",
+    "highUsage": "High Usage Networks"
+  },
+  "switches": {
+    "title": "Switches",
+    "create": "Create Switch",
+    "edit": "Edit Switch",
+    "delete": "Delete Switch",
+    "duplicate": "Duplicate Switch",
+    "fields": {
+      "name": "Name",
+      "model": "Model",
+      "manufacturer": "Manufacturer",
+      "serialNumber": "Serial Number",
+      "location": "Location",
+      "rackPosition": "Rack Position",
+      "managementIp": "Management IP",
+      "firmwareVersion": "Firmware Version",
+      "layoutTemplate": "Layout Template",
+      "portCount": "Port Count"
+    },
+    "messages": {
+      "created": "Switch created successfully",
+      "updated": "Switch updated successfully",
+      "deleted": "Switch deleted successfully",
+      "duplicated": "Switch duplicated successfully"
+    },
+    "ports": {
+      "title": "Ports",
+      "edit": "Edit Port",
+      "bulkEdit": "Bulk Edit Ports",
+      "nativeVlan": "Native VLAN",
+      "taggedVlans": "Tagged VLANs",
+      "connectedDevice": "Connected Device",
+      "connectedPort": "Connected Port",
+      "speed": "Speed",
+      "macAddress": "MAC Address",
+      "lagGroup": "LAG Group"
+    },
+    "emptyTitle": "No switches yet",
+    "emptyDescription": "Create your first switch to get started."
+  },
+  "vlans": {
+    "title": "VLANs",
+    "create": "Create VLAN",
+    "edit": "Edit VLAN",
+    "delete": "Delete VLAN",
+    "fields": {
+      "vlanId": "VLAN ID",
+      "name": "Name",
+      "color": "Color",
+      "status": "Status",
+      "routingDevice": "Routing Device",
+      "networkCount": "Networks"
+    },
+    "messages": {
+      "created": "VLAN created successfully",
+      "updated": "VLAN updated successfully",
+      "deleted": "VLAN deleted successfully"
+    },
+    "emptyTitle": "No VLANs defined yet",
+    "emptyDescription": "Create your first VLAN to get started."
+  },
+  "networks": {
+    "title": "Networks",
+    "create": "Create Network",
+    "edit": "Edit Network",
+    "delete": "Delete Network",
+    "fields": {
+      "name": "Name",
+      "subnet": "Subnet (CIDR)",
+      "gateway": "Gateway",
+      "dnsServers": "DNS Servers",
+      "vlan": "VLAN",
+      "utilization": "Utilization"
+    },
+    "messages": {
+      "created": "Network created successfully",
+      "updated": "Network updated successfully",
+      "deleted": "Network deleted successfully"
+    },
+    "emptyTitle": "No networks configured yet",
+    "emptyDescription": "Create your first network to get started.",
+    "allocations": {
+      "title": "IP Allocations",
+      "create": "Add Allocation",
+      "fields": {
+        "ipAddress": "IP Address",
+        "hostname": "Hostname",
+        "macAddress": "MAC Address",
+        "deviceType": "Device Type",
+        "status": "Status"
+      },
+      "messages": {
+        "created": "IP allocation created successfully",
+        "updated": "IP allocation updated successfully",
+        "deleted": "IP allocation deleted successfully"
+      }
+    },
+    "ranges": {
+      "title": "IP Ranges",
+      "create": "Add Range",
+      "fields": {
+        "startIp": "Start IP",
+        "endIp": "End IP",
+        "type": "Type"
+      },
+      "messages": {
+        "created": "IP range created successfully",
+        "updated": "IP range updated successfully",
+        "deleted": "IP range deleted successfully"
+      }
+    },
+    "subnetInfo": {
+      "networkAddress": "Network Address",
+      "broadcastAddress": "Broadcast Address",
+      "subnetMask": "Subnet Mask",
+      "wildcardMask": "Wildcard Mask",
+      "firstUsable": "First Usable",
+      "lastUsable": "Last Usable",
+      "totalHosts": "Total Hosts",
+      "usableHosts": "Usable Hosts"
+    }
+  },
+  "templates": {
+    "title": "Layout Templates",
+    "create": "Create Template",
+    "edit": "Edit Template",
+    "delete": "Delete Template",
+    "detail": "Template Details",
+    "fields": {
+      "name": "Name",
+      "manufacturer": "Manufacturer",
+      "model": "Model",
+      "description": "Description",
+      "unitCount": "Units",
+      "portCount": "Total Ports"
+    },
+    "units": {
+      "title": "Units",
+      "add": "Add Unit",
+      "remove": "Remove Unit",
+      "unitNumber": "Unit Number",
+      "label": "Label"
+    },
+    "blocks": {
+      "title": "Port Blocks",
+      "add": "Add Block",
+      "remove": "Remove Block",
+      "type": "Port Type",
+      "count": "Port Count",
+      "startIndex": "Start Index",
+      "rows": "Rows",
+      "label": "Label"
+    },
+    "messages": {
+      "created": "Template created successfully",
+      "updated": "Template updated successfully",
+      "deleted": "Template deleted successfully",
+      "exported": "Template exported successfully",
+      "imported": "Template imported successfully"
+    },
+    "emptyTitle": "No layout templates yet",
+    "emptyDescription": "Create a template for your switch models.",
+    "confirmDelete": "Are you sure you want to delete this template?"
+  },
+  "topology": {
+    "title": "Network Topology",
+    "emptyTitle": "No switch connections found",
+    "emptyDescription": "Connect switches to see the topology.",
+    "exportPdf": "Export PDF",
+    "exportPng": "Export PNG"
+  },
+  "tools": {
+    "subnetCalculator": {
+      "title": "Subnet Calculator",
+      "inputLabel": "CIDR Notation",
+      "inputPlaceholder": "e.g. 10.0.1.0/24",
+      "results": "Results"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "general": {
+      "title": "General",
+      "appName": "Application Name",
+      "defaultVlan": "Default VLAN for new ports",
+      "defaultPortStatus": "Default port status",
+      "paginationSize": "Items per page",
+      "portSpeeds": "Available port speeds"
+    },
+    "account": {
+      "title": "Account",
+      "displayName": "Display Name",
+      "language": "Language",
+      "changePassword": "Change Password",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmNewPassword": "Confirm New Password",
+      "saveProfile": "Save Profile",
+      "savePassword": "Change Password"
+    },
+    "messages": {
+      "updated": "Settings updated successfully",
+      "profileUpdated": "Profile updated successfully",
+      "passwordChanged": "Password changed successfully",
+      "passwordMismatch": "Passwords do not match"
+    }
+  },
+  "backup": {
+    "title": "Backup & Restore",
+    "export": "Download Backup",
+    "exportDescription": "Download a full backup of all data as a ZIP file.",
+    "import": "Restore from Backup",
+    "importDescription": "Upload a backup ZIP file to restore all data.",
+    "selectFile": "Select backup file",
+    "restore": "Restore",
+    "confirmRestore": "This will overwrite all current data. Are you sure?",
+    "messages": {
+      "exported": "Backup downloaded successfully",
+      "imported": "Backup restored successfully"
+    }
+  },
+  "importExport": {
+    "title": "Import / Export",
+    "importTab": "Import",
+    "exportTab": "Export",
+    "selectEntity": "Select entity type",
+    "selectFormat": "Select format",
+    "downloadTemplate": "Download Template",
+    "uploadFile": "Upload File",
+    "validationResults": "Validation Results",
+    "confirmImport": "Import valid rows",
+    "importEmptyTitle": "Import Data",
+    "importEmptyDescription": "Select an entity type and upload a CSV or JSON file to import data.",
+    "exportEmptyTitle": "Export Data",
+    "exportEmptyDescription": "Select an entity type and format to export your data."
+  },
+  "activity": {
+    "title": "Activity",
+    "created": "created",
+    "updated": "updated",
+    "deleted": "deleted",
+    "undo": "Undo"
+  },
+  "errors": {
+    "notFound": "Not found",
+    "unauthorized": "Unauthorized",
+    "validationFailed": "Validation failed",
+    "serverError": "Server error",
+    "networkError": "Network error"
+  }
+}
