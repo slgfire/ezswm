@@ -2,32 +2,33 @@ export function useVlans() {
   const items = ref<any[]>([])
   const total = ref(0)
   const loading = ref(false)
+  const { apiFetch } = useApiFetch()
 
   async function fetch(params?: Record<string, any>) {
     loading.value = true
     try {
-      const data = await $fetch<any>('/api/vlans', { params })
+      const data = await apiFetch<any>('/api/vlans', { params })
       items.value = data.data || data
-      total.value = data.total || items.value.length
+      total.value = data.meta?.total || data.total || items.value.length
     } finally {
       loading.value = false
     }
   }
 
   async function create(body: Record<string, any>) {
-    return await $fetch('/api/vlans', { method: 'POST', body })
+    return await apiFetch('/api/vlans', { method: 'POST', body })
   }
 
   async function update(id: string, body: Record<string, any>) {
-    return await $fetch(`/api/vlans/${id}`, { method: 'PUT', body })
+    return await apiFetch(`/api/vlans/${id}`, { method: 'PUT', body })
   }
 
   async function remove(id: string) {
-    await $fetch(`/api/vlans/${id}`, { method: 'DELETE' })
+    await apiFetch(`/api/vlans/${id}`, { method: 'DELETE' })
   }
 
   async function getReferences(id: string) {
-    return await $fetch(`/api/vlans/${id}/references`)
+    return await apiFetch(`/api/vlans/${id}/references`)
   }
 
   return { items, total, loading, fetch, create, update, remove, getReferences }

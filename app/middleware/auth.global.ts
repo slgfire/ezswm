@@ -1,5 +1,6 @@
 export default defineNuxtRouteMiddleware(async (to) => {
   const { user, fetchUser, checkSetup, setupCompleted } = useAuth()
+  const { setLocale } = useI18n()
 
   // Check setup status on first load
   if (setupCompleted.value === null) {
@@ -32,6 +33,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // Try to fetch user if not loaded
   if (!user.value) {
     await fetchUser()
+  }
+
+  // Apply user's language preference
+  if (user.value?.language) {
+    await setLocale(user.value.language)
   }
 
   // Redirect to login if not authenticated

@@ -43,7 +43,7 @@ export function setAuthCookie(event: H3Event, token: string, rememberMe: boolean
   const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60
   setCookie(event, 'ezswm_token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: getRequestURL(event).protocol === 'https:',
     sameSite: 'lax',
     maxAge,
     path: '/'

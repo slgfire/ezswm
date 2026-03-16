@@ -1,0 +1,35 @@
+{
+  "cookies": [
+    {
+      "name": "i18n_redirected",
+      "value": "en",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1805238184.673257,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "ezswm_token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMXJlcXdDZTNyWDB2aThncDR5WHciLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzczNzAyMTg2LCJleHAiOjE3NzQzMDY5ODZ9.M8896925Vb6_x22sEAoM0dCiWPVZDW04nmv5V3BmWSQ",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1774306986.362529,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "nuxt-color-mode",
+          "value": "dark"
+        }
+      ]
+    }
+  ]
+}

@@ -83,7 +83,7 @@
 
 <script setup lang="ts">
 const toast = useToast()
-const { t } = useI18n()
+const { t, setLocale } = useI18n()
 const { user } = useAuth()
 const { settings, fetch: fetchSettings, update: updateSettings } = useSettings()
 const { update: updateUser, changePassword: changePasswordApi } = useUsers()
@@ -149,6 +149,8 @@ async function saveAccount() {
       display_name: accountForm.display_name,
       language: accountForm.language
     })
+    await setLocale(accountForm.language)
+    user.value = { ...user.value!, language: accountForm.language }
     toast.add({ title: t('settings.messages.profileUpdated'), color: 'green' })
   } catch {
     toast.add({ title: t('errors.serverError'), color: 'red' })

@@ -49,6 +49,7 @@
 definePageMeta({ layout: false })
 
 const { setup: doSetup } = useAuth()
+const { setLocale } = useI18n()
 const router = useRouter()
 
 const loading = ref(false)
@@ -94,6 +95,7 @@ async function onSubmit() {
       password: form.password,
       language: form.language
     })
+    await setLocale(form.language)
     await router.push('/')
   } catch (e: unknown) {
     const err = e as { data?: { message?: string } }

@@ -86,6 +86,10 @@
             <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.firmwareVersion') }}</dt>
             <dd class="mt-1">{{ item.firmware_version || '-' }}</dd>
           </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.layoutTemplate') }}</dt>
+            <dd class="mt-1">{{ currentTemplateName || '-' }}</dd>
+          </div>
           <div class="sm:col-span-2">
             <dt class="text-sm font-medium text-gray-400">{{ $t('common.notes') }}</dt>
             <dd class="mt-1 whitespace-pre-wrap">{{ item.notes || '-' }}</dd>
@@ -128,6 +132,15 @@
                 <UInput v-model="editForm.firmware_version" />
               </UFormGroup>
             </div>
+
+            <UFormGroup :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
+              <USelect
+                v-model="editForm.layout_template_id"
+                :options="templateOptions"
+                option-attribute="label"
+                value-attribute="value"
+              />
+            </UFormGroup>
 
             <UFormGroup :label="$t('common.notes')" name="notes">
               <UTextarea v-model="editForm.notes" :rows="3" />
@@ -205,6 +218,7 @@ const route = useRoute()
 const id = route.params.id as string
 const { item, loading, fetch: fetchSwitch, update } = useSwitch(id)
 const { duplicate } = useSwitches()
+const { items: templates, fetch: fetchTemplates } = useLayoutTemplates()
 
 const editMode = ref(false)
 const saving = ref(false)
@@ -239,7 +253,22 @@ const editForm = reactive({
   rack_position: '',
   management_ip: '',
   firmware_version: '',
+  layout_template_id: '',
   notes: ''
+})
+
+const currentTemplateName = computed(() => {
+  if (!item.value?.layout_template_id) return null
+  const tpl = templates.value.find(t => t.id === item.value!.layout_template_id)
+  return tpl?.name || item.value.layout_template_id
+})
+
+const templateOptions = computed(() => {
+  const options = [{ label: '---', value: '' }]
+  for (const tpl of templates.value) {
+    options.push({ label: tpl.name, value: tpl.id })
+  }
+  return options
 })
 
 function toggleEditMode() {
@@ -252,6 +281,7 @@ function toggleEditMode() {
     editForm.rack_position = item.value.rack_position || ''
     editForm.management_ip = item.value.management_ip || ''
     editForm.firmware_version = item.value.firmware_version || ''
+    editForm.layout_template_id = item.value.layout_template_id || ''
     editForm.notes = item.value.notes || ''
   }
   editMode.value = !editMode.value
@@ -262,7 +292,17 @@ async function onSave() {
 
   saving.value = true
   try {
-    await update({ ...editForm })
+    const body: Record<string, any> = { ...editForm }
+    // Remove empty optional fields but keep layout_template_id to allow clearing
+    for (const key of Object.keys(body)) {
+      if (body[key] === '' && key !== 'layout_template_id') {
+        delete body[key]
+      }
+    }
+    if (body.layout_template_id === '') {
+      delete body.layout_template_id
+    }
+    await update(body)
     toast.add({ title: t('switches.messages.updated'), color: 'green' })
     editMode.value = false
   } catch (e: any) {
@@ -300,5 +340,6 @@ async function onDelete() {
 
 onMounted(() => {
   fetchSwitch()
+  fetchTemplates()
 })
 </script>

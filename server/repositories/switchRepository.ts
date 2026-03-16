@@ -79,9 +79,16 @@ export const switchRepository = {
       }
     }
 
+    // Regenerate ports if layout_template_id changed
+    let ports = switches[index].ports
+    if (data.layout_template_id && data.layout_template_id !== switches[index].layout_template_id) {
+      ports = generatePortsFromTemplate(data.layout_template_id)
+    }
+
     switches[index] = {
       ...switches[index],
       ...data,
+      ports,
       updated_at: new Date().toISOString()
     }
 

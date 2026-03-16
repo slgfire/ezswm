@@ -6,15 +6,24 @@ interface AuthUser {
   language: string
 }
 
-const user = ref<AuthUser | null>(null)
-const setupCompleted = ref<boolean | null>(null)
-
 export function useAuth() {
+  const user = useState<AuthUser | null>('auth-user', () => null)
+  const setupCompleted = useState<boolean | null>('auth-setup', () => null)
   const isLoggedIn = computed(() => !!user.value)
+
+  function getRequestOpts(): { headers: Record<string, string> } {
+    if (import.meta.server) {
+      const headers = useRequestHeaders(['cookie'])
+      if (headers.cookie) {
+        return { headers: { cookie: headers.cookie } }
+      }
+    }
+    return { headers: {} }
+  }
 
   async function fetchUser() {
     try {
-      const data = await $fetch<AuthUser>('/api/auth/me')
+      const data = await $fetch<AuthUser>('/api/auth/me', getRequestOpts())
       user.value = data
       return data
     } catch {
@@ -25,11 +34,10 @@ export function useAuth() {
 
   async function checkSetup(): Promise<boolean> {
     try {
-      const data = await $fetch<{ setup_completed: boolean }>('/api/settings')
+      const data = await $fetch<{ setup_completed: boolean }>('/api/settings', getRequestOpts())
       setupCompleted.value = data.setup_completed
       return data.setup_completed
     } catch {
-      // If settings endpoint fails (auth required), setup is done
       setupCompleted.value = true
       return true
     }
