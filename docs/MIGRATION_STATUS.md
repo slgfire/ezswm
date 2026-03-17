@@ -184,6 +184,35 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 11: Switch Port Front-Panel Visualization (2026-03-17)
+
+**Critical bug fix + visual enhancements:**
+
+- Fixed `templateUnits` never being populated — port grid always fell back to flat 12-column layout
+- Fixed component name resolution: `SwitchSwitchPortGrid` → `SwitchPortGrid` (SSR rendering issue)
+- Added `watch([item, templates])` to populate `templateUnits` from layout template data
+- Fetched and passed VLAN data through grid to port items for color-coded backgrounds
+- Added VLAN color tinting (native_vlan color at 20% opacity as background)
+- Added trunk port indicator (full-width yellow top stripe replacing tiny dot)
+- Added SFP/SFP+ port type distinction (taller shape, rounded-t-lg, "SFP" micro-label)
+- Added management port visual (teal border) and console port visual (amber border)
+- Increased port size from 32x32px to 40x40px with larger font
+- Moved port visualization above details card as primary content
+- Made details card collapsible (collapsed by default) with chevron toggle
+- Details grid now uses 3 columns on large screens
+- Breadcrumb now shows switch name instead of ID (via useState override system)
+- Fixed Docker healthcheck IPv6 issue (localhost → 127.0.0.1)
+- Increased grid spacing between blocks and ports for better readability
+
+**Files changed:**
+- `app/pages/switches/[id].vue` — layout reorder, templateUnits fix, VLAN fetch, breadcrumb override, collapsible details
+- `app/components/switch/SwitchPortGrid.vue` — vlans prop, improved spacing
+- `app/components/switch/SwitchPortItem.vue` — VLAN colors, trunk stripe, port type shapes, larger size
+- `app/components/layout/AppBreadcrumbs.vue` — useState-based label override system
+- `compose.yaml` — healthcheck IPv4 fix
+
+---
+
 ## Open Issues
 
 - Topology page renders data from API but lacks canvas/SVG visualization

@@ -47,119 +47,8 @@
 
     <!-- Switch details -->
     <div v-if="item && !loading" class="space-y-6">
-      <!-- Info card -->
-      <UCard>
-        <template #header>
-          <h2 class="text-lg font-semibold">{{ $t('common.details') }}</h2>
-        </template>
-
-        <div v-if="!editMode" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.name') }}</dt>
-            <dd class="mt-1">{{ item.name }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.model') }}</dt>
-            <dd class="mt-1">{{ item.model || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.manufacturer') }}</dt>
-            <dd class="mt-1">{{ item.manufacturer || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.serialNumber') }}</dt>
-            <dd class="mt-1">{{ item.serial_number || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.location') }}</dt>
-            <dd class="mt-1">{{ item.location || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.rackPosition') }}</dt>
-            <dd class="mt-1">{{ item.rack_position || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.managementIp') }}</dt>
-            <dd class="mt-1">{{ item.management_ip || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.firmwareVersion') }}</dt>
-            <dd class="mt-1">{{ item.firmware_version || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.layoutTemplate') }}</dt>
-            <dd class="mt-1">{{ currentTemplateName || '-' }}</dd>
-          </div>
-          <div class="sm:col-span-2">
-            <dt class="text-sm font-medium text-gray-400">{{ $t('common.notes') }}</dt>
-            <dd class="mt-1 whitespace-pre-wrap">{{ item.notes || '-' }}</dd>
-          </div>
-        </div>
-
-        <!-- Edit form -->
-        <UForm v-if="editMode" :state="editForm" @submit="onSave">
-          <div class="space-y-4">
-            <UFormGroup :label="$t('switches.fields.name') + ' *'" name="name">
-              <UInput v-model="editForm.name" required />
-            </UFormGroup>
-
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <UFormGroup :label="$t('switches.fields.model')" name="model">
-                <UInput v-model="editForm.model" />
-              </UFormGroup>
-
-              <UFormGroup :label="$t('switches.fields.manufacturer')" name="manufacturer">
-                <UInput v-model="editForm.manufacturer" />
-              </UFormGroup>
-
-              <UFormGroup :label="$t('switches.fields.serialNumber')" name="serial_number">
-                <UInput v-model="editForm.serial_number" />
-              </UFormGroup>
-
-              <UFormGroup :label="$t('switches.fields.location')" name="location">
-                <UInput v-model="editForm.location" />
-              </UFormGroup>
-
-              <UFormGroup :label="$t('switches.fields.rackPosition')" name="rack_position">
-                <UInput v-model="editForm.rack_position" />
-              </UFormGroup>
-
-              <UFormGroup :label="$t('switches.fields.managementIp')" name="management_ip">
-                <UInput v-model="editForm.management_ip" />
-              </UFormGroup>
-
-              <UFormGroup :label="$t('switches.fields.firmwareVersion')" name="firmware_version">
-                <UInput v-model="editForm.firmware_version" />
-              </UFormGroup>
-            </div>
-
-            <UFormGroup :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
-              <USelect
-                v-model="editForm.layout_template_id"
-                :options="templateOptions"
-                option-attribute="label"
-                value-attribute="value"
-              />
-            </UFormGroup>
-
-            <UFormGroup :label="$t('common.notes')" name="notes">
-              <UTextarea v-model="editForm.notes" :rows="3" />
-            </UFormGroup>
-
-            <div class="flex justify-end gap-2 pt-2">
-              <UButton color="gray" variant="ghost" @click="toggleEditMode">
-                {{ $t('common.cancel') }}
-              </UButton>
-              <UButton type="submit" :loading="saving" icon="i-heroicons-check">
-                {{ $t('common.save') }}
-              </UButton>
-            </div>
-          </div>
-        </UForm>
-      </UCard>
-
       <!-- Bulk Editor -->
-      <SwitchSwitchPortBulkEditor
+      <SwitchPortBulkEditor
         v-if="selectedPorts.length > 0"
         :switch-id="id"
         :selected-ports="selectedPorts"
@@ -167,7 +56,7 @@
         @clear-selection="selectedPorts = []"
       />
 
-      <!-- Port Visualization -->
+      <!-- Port Visualization (primary content) -->
       <UCard>
         <template #header>
           <div class="flex items-center justify-between">
@@ -178,20 +67,140 @@
           </div>
         </template>
 
-        <SwitchSwitchPortGrid
+        <SwitchPortGrid
           v-if="item.ports && item.ports.length"
           :ports="item.ports"
           :units="templateUnits"
+          :vlans="vlans"
           :selected-ports="selectedPorts"
           @select-port="onSelectPort"
           @toggle-select="onToggleSelect"
         />
         <p v-else class="text-sm text-gray-400">No ports. Assign a layout template to generate ports.</p>
       </UCard>
+
+      <!-- Info card (collapsible) -->
+      <UCard>
+        <template #header>
+          <button class="flex w-full items-center justify-between" @click="showDetails = !showDetails">
+            <h2 class="text-lg font-semibold">{{ $t('common.details') }}</h2>
+            <UIcon
+              :name="showDetails ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
+              class="h-5 w-5 text-gray-400"
+            />
+          </button>
+        </template>
+
+        <div v-show="showDetails || editMode">
+          <div v-if="!editMode" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.name') }}</dt>
+              <dd class="mt-1">{{ item.name }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.model') }}</dt>
+              <dd class="mt-1">{{ item.model || '-' }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.manufacturer') }}</dt>
+              <dd class="mt-1">{{ item.manufacturer || '-' }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.serialNumber') }}</dt>
+              <dd class="mt-1">{{ item.serial_number || '-' }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.location') }}</dt>
+              <dd class="mt-1">{{ item.location || '-' }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.rackPosition') }}</dt>
+              <dd class="mt-1">{{ item.rack_position || '-' }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.managementIp') }}</dt>
+              <dd class="mt-1">{{ item.management_ip || '-' }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.firmwareVersion') }}</dt>
+              <dd class="mt-1">{{ item.firmware_version || '-' }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-400">{{ $t('switches.fields.layoutTemplate') }}</dt>
+              <dd class="mt-1">{{ currentTemplateName || '-' }}</dd>
+            </div>
+            <div class="sm:col-span-2 lg:col-span-3">
+              <dt class="text-sm font-medium text-gray-400">{{ $t('common.notes') }}</dt>
+              <dd class="mt-1 whitespace-pre-wrap">{{ item.notes || '-' }}</dd>
+            </div>
+          </div>
+
+          <!-- Edit form -->
+          <UForm v-if="editMode" :state="editForm" @submit="onSave">
+            <div class="space-y-4">
+              <UFormGroup :label="$t('switches.fields.name') + ' *'" name="name">
+                <UInput v-model="editForm.name" required />
+              </UFormGroup>
+
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <UFormGroup :label="$t('switches.fields.model')" name="model">
+                  <UInput v-model="editForm.model" />
+                </UFormGroup>
+
+                <UFormGroup :label="$t('switches.fields.manufacturer')" name="manufacturer">
+                  <UInput v-model="editForm.manufacturer" />
+                </UFormGroup>
+
+                <UFormGroup :label="$t('switches.fields.serialNumber')" name="serial_number">
+                  <UInput v-model="editForm.serial_number" />
+                </UFormGroup>
+
+                <UFormGroup :label="$t('switches.fields.location')" name="location">
+                  <UInput v-model="editForm.location" />
+                </UFormGroup>
+
+                <UFormGroup :label="$t('switches.fields.rackPosition')" name="rack_position">
+                  <UInput v-model="editForm.rack_position" />
+                </UFormGroup>
+
+                <UFormGroup :label="$t('switches.fields.managementIp')" name="management_ip">
+                  <UInput v-model="editForm.management_ip" />
+                </UFormGroup>
+
+                <UFormGroup :label="$t('switches.fields.firmwareVersion')" name="firmware_version">
+                  <UInput v-model="editForm.firmware_version" />
+                </UFormGroup>
+              </div>
+
+              <UFormGroup :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
+                <USelect
+                  v-model="editForm.layout_template_id"
+                  :options="templateOptions"
+                  option-attribute="label"
+                  value-attribute="value"
+                />
+              </UFormGroup>
+
+              <UFormGroup :label="$t('common.notes')" name="notes">
+                <UTextarea v-model="editForm.notes" :rows="3" />
+              </UFormGroup>
+
+              <div class="flex justify-end gap-2 pt-2">
+                <UButton color="gray" variant="ghost" @click="toggleEditMode">
+                  {{ $t('common.cancel') }}
+                </UButton>
+                <UButton type="submit" :loading="saving" icon="i-heroicons-check">
+                  {{ $t('common.save') }}
+                </UButton>
+              </div>
+            </div>
+          </UForm>
+        </div>
+      </UCard>
     </div>
 
     <!-- Port Side Panel -->
-    <SwitchSwitchPortSidePanel
+    <SwitchPortSidePanel
       v-model="showPortPanel"
       :port="selectedPort"
       :switch-id="id"
@@ -219,16 +228,25 @@ const id = route.params.id as string
 const { item, loading, fetch: fetchSwitch, update } = useSwitch(id)
 const { duplicate } = useSwitches()
 const { items: templates, fetch: fetchTemplates } = useLayoutTemplates()
+const { items: vlans, fetch: fetchVlans } = useVlans()
 
 const editMode = ref(false)
 const saving = ref(false)
 const showDeleteDialog = ref(false)
 const deleting = ref(false)
+const showDetails = ref(false)
 
 const selectedPorts = ref<string[]>([])
 const showPortPanel = ref(false)
 const selectedPort = ref<any>(null)
 const templateUnits = ref<any[]>([])
+const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrides', () => ({}))
+
+watch(item, (sw) => {
+  if (sw?.name) {
+    breadcrumbOverrides.value[`/switches/${id}`] = sw.name
+  }
+}, { immediate: true })
 
 function onSelectPort(portId: string) {
   const port = item.value?.ports?.find((p: any) => p.id === portId)
@@ -272,6 +290,7 @@ const templateOptions = computed(() => {
 })
 
 function toggleEditMode() {
+  if (!editMode.value) showDetails.value = true
   if (!editMode.value && item.value) {
     editForm.name = item.value.name || ''
     editForm.model = item.value.model || ''
@@ -338,8 +357,18 @@ async function onDelete() {
   }
 }
 
+watch([item, templates], () => {
+  if (item.value?.layout_template_id) {
+    const tpl = templates.value.find(t => t.id === item.value!.layout_template_id)
+    templateUnits.value = tpl?.units || []
+  } else {
+    templateUnits.value = []
+  }
+}, { immediate: true })
+
 onMounted(() => {
   fetchSwitch()
   fetchTemplates()
+  fetchVlans()
 })
 </script>

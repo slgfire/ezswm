@@ -36,6 +36,8 @@ const labelMap: Record<string, string> = {
   'edit': 'common.edit'
 }
 
+const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrides', () => ({}))
+
 const crumbs = computed(() => {
   const parts = route.path.split('/').filter(Boolean)
   const result = [{ path: '/', label: t('nav.dashboard') }]
@@ -44,9 +46,10 @@ const crumbs = computed(() => {
   for (const part of parts) {
     currentPath += `/${part}`
     const key = labelMap[part]
+    const override = breadcrumbOverrides.value[currentPath]
     result.push({
       path: currentPath,
-      label: key ? t(key) : part
+      label: override || (key ? t(key) : part)
     })
   }
 

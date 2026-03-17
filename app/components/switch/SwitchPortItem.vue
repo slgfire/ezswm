@@ -1,39 +1,60 @@
 <template>
   <div
-    class="relative flex h-8 w-8 cursor-pointer items-center justify-center rounded text-xs font-mono transition-all"
+    class="relative flex cursor-pointer items-center justify-center font-mono text-xs transition-all"
     :class="[
       portClasses,
       selected ? 'ring-2 ring-primary-500' : '',
-      port.type === 'sfp' || port.type === 'sfp+' ? 'h-10 w-6' : ''
+      portShapeClasses
     ]"
     :style="portStyle"
     :title="portTitle"
   >
-    <span class="text-[10px]">{{ port.index }}</span>
-    <div v-if="isTrunk" class="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-yellow-400" />
+    <span class="text-xs">{{ port.index }}</span>
+    <!-- Trunk indicator: top stripe -->
+    <div v-if="isTrunk" class="absolute inset-x-0 top-0 h-0.5 rounded-t bg-yellow-400" />
+    <!-- LAG indicator -->
     <div v-if="port.lag_group_id" class="absolute -bottom-1 -right-1 h-2 w-2 rounded-full bg-blue-400" />
+    <!-- SFP label -->
+    <span
+      v-if="isSfpType"
+      class="absolute -bottom-0.5 text-[7px] leading-none text-gray-400"
+    >SFP</span>
   </div>
 </template>
 
 <script setup lang="ts">
 const props = defineProps<{
   port: any
+  vlans?: any[]
   selected: boolean
 }>()
 
 const isTrunk = computed(() => props.port.tagged_vlans && props.port.tagged_vlans.length > 0)
+const isSfpType = computed(() => props.port.type === 'sfp' || props.port.type === 'sfp+')
+const isConsole = computed(() => props.port.type === 'console')
+const isManagement = computed(() => props.port.type === 'management')
+
+const portShapeClasses = computed(() => {
+  if (isSfpType.value) return 'h-12 min-w-[2.5rem] rounded-t-lg rounded-b'
+  if (isConsole.value) return 'h-10 min-w-[2.5rem] rounded border-amber-500/50'
+  if (isManagement.value) return 'h-10 min-w-[2.5rem] rounded border-teal-500/50'
+  return 'h-10 min-w-[2.5rem] rounded'
+})
 
 const portClasses = computed(() => {
   const status = props.port.status
+  if (isConsole.value) return 'bg-gray-800 border border-amber-500/50 text-amber-400'
+  if (isManagement.value) return 'bg-gray-800 border border-teal-500/50 text-teal-300'
   if (status === 'disabled') return 'bg-gray-800 border border-red-500/50 text-red-400'
   if (status === 'up') return 'bg-gray-700 border border-green-500/50 text-green-300'
   return 'bg-gray-800 border border-gray-600 text-gray-500'
 })
 
 const portStyle = computed(() => {
-  // If port has a native_vlan color, tint the background
-  // This would require VLAN color data passed down - for now use status-based
-  return {}
+  if (!props.port.native_vlan || !props.vlans?.length) return {}
+  const vlan = props.vlans.find(v => v.vlan_id === props.port.native_vlan)
+  if (!vlan?.color) return {}
+  return { backgroundColor: vlan.color + '33' }
 })
 
 const portTitle = computed(() => {
