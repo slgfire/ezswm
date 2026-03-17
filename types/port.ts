@@ -1,4 +1,4 @@
-export type PortType = 'rj45' | 'sfp' | 'sfp+' | 'console' | 'management'
+export type PortType = 'rj45' | 'sfp' | 'sfp+' | 'qsfp' | 'console' | 'management'
 export type PortSpeed = '100M' | '1G' | '10G' | '25G' | '40G' | '100G'
 export type PortStatus = 'up' | 'down' | 'disabled'
 

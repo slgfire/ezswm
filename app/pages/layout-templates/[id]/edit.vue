@@ -163,6 +163,7 @@ const portTypeOptions = [
   { label: 'RJ45', value: 'rj45' },
   { label: 'SFP', value: 'sfp' },
   { label: 'SFP+', value: 'sfp+' },
+  { label: 'QSFP', value: 'qsfp' },
   { label: 'Console', value: 'console' },
   { label: 'Management', value: 'management' }
 ]

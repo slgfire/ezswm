@@ -14,9 +14,13 @@
     <div v-if="isTrunk" class="absolute inset-x-0 top-0 h-0.5 rounded-t bg-yellow-400" />
     <!-- LAG indicator -->
     <div v-if="port.lag_group_id" class="absolute -bottom-1 -right-1 h-2 w-2 rounded-full bg-blue-400" />
-    <!-- SFP label -->
+    <!-- SFP/QSFP label -->
     <span
-      v-if="isSfpType"
+      v-if="isQsfp"
+      class="absolute -bottom-0.5 text-[6px] leading-none text-gray-400"
+    >QSFP</span>
+    <span
+      v-else-if="isSfpType"
       class="absolute -bottom-0.5 text-[7px] leading-none text-gray-400"
     >SFP</span>
   </div>
@@ -30,11 +34,13 @@ const props = defineProps<{
 }>()
 
 const isTrunk = computed(() => props.port.tagged_vlans && props.port.tagged_vlans.length > 0)
+const isQsfp = computed(() => props.port.type === 'qsfp')
 const isSfpType = computed(() => props.port.type === 'sfp' || props.port.type === 'sfp+')
 const isConsole = computed(() => props.port.type === 'console')
 const isManagement = computed(() => props.port.type === 'management')
 
 const portShapeClasses = computed(() => {
+  if (isQsfp.value) return 'h-12 min-w-[3rem] rounded-t-lg rounded-b'
   if (isSfpType.value) return 'h-12 min-w-[2.5rem] rounded-t-lg rounded-b'
   if (isConsole.value) return 'h-10 min-w-[2.5rem] rounded border-amber-500/50'
   if (isManagement.value) return 'h-10 min-w-[2.5rem] rounded border-teal-500/50'

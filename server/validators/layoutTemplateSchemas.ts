@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 const layoutBlockSchema = z.object({
-  type: z.enum(['rj45', 'sfp', 'sfp+', 'console', 'management']),
+  type: z.enum(['rj45', 'sfp', 'sfp+', 'qsfp', 'console', 'management']),
   count: z.number().int().positive(),
   start_index: z.number().int().positive(),
   rows: z.number().int().positive(),

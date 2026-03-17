@@ -151,6 +151,7 @@ function getPortTypeColor(type: string): string {
     rj45: 'blue',
     sfp: 'green',
     'sfp+': 'purple',
+    qsfp: 'pink',
     console: 'yellow',
     management: 'orange'
   }

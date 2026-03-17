@@ -1,6 +1,6 @@
 export interface LayoutBlock {
   id: string
-  type: 'rj45' | 'sfp' | 'sfp+' | 'console' | 'management'
+  type: 'rj45' | 'sfp' | 'sfp+' | 'qsfp' | 'console' | 'management'
   count: number
   start_index: number
   rows: number
