@@ -89,7 +89,7 @@
                         @click="removeBlock(unitIndex, blockIndex)"
                       />
                     </div>
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
                       <UFormGroup :label="$t('templates.blocks.type')">
                         <USelect
                           v-model="block.type"
@@ -104,6 +104,13 @@
                       </UFormGroup>
                       <UFormGroup :label="$t('templates.blocks.rows')">
                         <UInput v-model.number="block.rows" type="number" min="1" />
+                      </UFormGroup>
+                      <UFormGroup label="Row Layout">
+                        <USelect
+                          v-model="block.row_layout"
+                          :options="rowLayoutOptions"
+                          :disabled="block.rows < 2"
+                        />
                       </UFormGroup>
                       <UFormGroup :label="$t('templates.blocks.label')">
                         <UInput v-model="block.label" :placeholder="$t('templates.blocks.label')" />
@@ -168,6 +175,12 @@ const portTypeOptions = [
   { label: 'Management', value: 'management' }
 ]
 
+const rowLayoutOptions = [
+  { label: 'Sequential', value: 'sequential' },
+  { label: 'Odd/Even', value: 'odd-even' },
+  { label: 'Even/Odd', value: 'even-odd' }
+]
+
 const form = ref<any>(null)
 
 function addUnit() {
@@ -196,6 +209,7 @@ function addBlock(unitIndex: number) {
     count: 1,
     start_index: nextStartIndex,
     rows: 1,
+    row_layout: 'sequential',
     label: ''
   })
 }
@@ -241,6 +255,7 @@ onMounted(async () => {
           count: b.count,
           start_index: b.start_index,
           rows: b.rows,
+          row_layout: b.row_layout || 'sequential',
           label: b.label || ''
         }))
       }))

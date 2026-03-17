@@ -5,6 +5,7 @@ const layoutBlockSchema = z.object({
   count: z.number().int().positive(),
   start_index: z.number().int().positive(),
   rows: z.number().int().positive(),
+  row_layout: z.enum(['sequential', 'odd-even', 'even-odd']).optional(),
   label: z.string().max(100).optional()
 })
 

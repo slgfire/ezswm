@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative flex cursor-pointer items-center justify-center font-mono text-xs transition-all"
+    class="group relative flex cursor-pointer items-center justify-center font-mono transition-all"
     :class="[
       portClasses,
       selected ? 'ring-2 ring-primary-500' : '',
@@ -9,20 +9,20 @@
     :style="portStyle"
     :title="portTitle"
   >
-    <span class="text-xs">{{ port.index }}</span>
+    <span class="text-xs font-medium">{{ port.index }}</span>
     <!-- Trunk indicator: top stripe -->
-    <div v-if="isTrunk" class="absolute inset-x-0 top-0 h-0.5 rounded-t bg-yellow-400" />
+    <div v-if="isTrunk" class="absolute inset-x-0 top-0 h-[3px] rounded-t bg-yellow-400" />
     <!-- LAG indicator -->
     <div v-if="port.lag_group_id" class="absolute -bottom-1 -right-1 h-2 w-2 rounded-full bg-blue-400" />
-    <!-- SFP/QSFP label -->
+    <!-- Port type label below -->
     <span
       v-if="isQsfp"
-      class="absolute -bottom-0.5 text-[6px] leading-none text-gray-400"
+      class="absolute -bottom-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-semibold leading-none tracking-wide text-gray-400"
     >QSFP</span>
     <span
       v-else-if="isSfpType"
-      class="absolute -bottom-0.5 text-[7px] leading-none text-gray-400"
-    >SFP</span>
+      class="absolute -bottom-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-semibold leading-none tracking-wide text-gray-400"
+    >{{ port.type === 'sfp+' ? 'SFP+' : 'SFP' }}</span>
   </div>
 </template>
 
@@ -40,8 +40,8 @@ const isConsole = computed(() => props.port.type === 'console')
 const isManagement = computed(() => props.port.type === 'management')
 
 const portShapeClasses = computed(() => {
-  if (isQsfp.value) return 'h-12 min-w-[3rem] rounded-t-lg rounded-b'
-  if (isSfpType.value) return 'h-12 min-w-[2.5rem] rounded-t-lg rounded-b'
+  if (isQsfp.value) return 'h-11 min-w-[3.25rem] rounded-t-lg rounded-b text-sm'
+  if (isSfpType.value) return 'h-11 min-w-[2.75rem] rounded-t-lg rounded-b text-sm'
   if (isConsole.value) return 'h-10 min-w-[2.5rem] rounded border-amber-500/50'
   if (isManagement.value) return 'h-10 min-w-[2.5rem] rounded border-teal-500/50'
   return 'h-10 min-w-[2.5rem] rounded'

@@ -5,17 +5,17 @@
       "value": "en",
       "domain": "localhost",
       "path": "/",
-      "expires": 1805319108.035429,
+      "expires": 1805322778.492341,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "ezswm_token",
-      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMXJlcXdDZTNyWDB2aThncDR5WHciLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzczNzgzMTEwLCJleHAiOjE3NzQzODc5MTB9.bjfdfdyFwTszuEq9EAaIBxgwXjoIkMREod2fshqkPhc",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMXJlcXdDZTNyWDB2aThncDR5WHciLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzczNzg2NzgxLCJleHAiOjE3NzQzOTE1ODF9.aOXksW_w-D31niioI0d2GHnym_ypCeGDiWVm0Nj2Z-0",
       "domain": "localhost",
       "path": "/",
-      "expires": 1774387910.061014,
+      "expires": 1774391581.464964,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Lax"
