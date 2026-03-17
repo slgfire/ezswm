@@ -1,18 +1,33 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.serial('Switch CRUD', () => {
-  test('create switch', async ({ page }) => {
+  test('create switch', async ({ page, context }) => {
+    // Cleanup any leftover
+    const existing = await context.request.get('http://localhost:3000/api/switches')
+    const existingData = await existing.json()
+    const items = existingData.data || existingData
+    if (Array.isArray(items)) {
+      for (const s of items) {
+        if (s.name === 'Core-Switch-01') {
+          await context.request.delete(`http://localhost:3000/api/switches/${s.id}`)
+        }
+      }
+    }
+
     await page.goto('/switches/create')
-    await page.waitForTimeout(500)
+    await page.waitForLoadState('networkidle')
 
-    // Fill form by finding inputs in order
-    const textInputs = page.locator('.space-y-4 input[type="text"], .space-y-4 input:not([type])')
+    // Fill form — find text inputs in the form's space-y-4 container
+    const form = page.locator('main form, main .max-w-2xl')
+    const inputs = form.locator('input[type="text"], input:not([type])')
 
-    await textInputs.nth(0).fill('Core-Switch-01')   // name
-    await textInputs.nth(1).fill('2960-24T')          // model
-    await textInputs.nth(2).fill('Cisco')             // manufacturer
-    await textInputs.nth(4).fill('Hall A')            // location
-    await textInputs.nth(6).fill('10.0.0.1')          // management_ip
+    await inputs.nth(0).fill('Core-Switch-01')   // name
+    await inputs.nth(1).fill('2960-24T')          // model
+    await inputs.nth(2).fill('Cisco')             // manufacturer
+    // nth(3) = serial number (skip)
+    await inputs.nth(4).fill('Hall A')            // location
+    // nth(5) = rack_position (skip)
+    await inputs.nth(6).fill('10.0.0.1')          // management_ip
 
     await page.getByRole('button', { name: /save|speichern/i }).click()
 

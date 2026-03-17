@@ -8,7 +8,6 @@
           v-model="cidr"
           :placeholder="$t('tools.subnetCalculator.inputPlaceholder')"
           size="lg"
-          @input="calculate"
         />
       </UFormGroup>
 
@@ -41,15 +40,30 @@
 const cidr = ref('')
 const result = ref<any>(null)
 
-async function calculate() {
-  if (!cidr.value || !cidr.value.includes('/')) {
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+let requestId = 0
+
+watch(cidr, (val) => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+
+  if (!val || !val.includes('/')) {
+    requestId++
     result.value = null
     return
   }
-  try {
-    result.value = await $fetch('/api/subnet-calculator', { params: { cidr: cidr.value } })
-  } catch {
-    result.value = null
-  }
-}
+
+  debounceTimer = setTimeout(async () => {
+    const currentId = ++requestId
+    try {
+      const data = await $fetch('/api/subnet-calculator', { params: { cidr: val } })
+      if (currentId === requestId) {
+        result.value = data
+      }
+    } catch {
+      if (currentId === requestId) {
+        result.value = null
+      }
+    }
+  }, 150)
+})
 </script>
