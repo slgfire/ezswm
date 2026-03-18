@@ -1,5 +1,5 @@
 export type PortType = 'rj45' | 'sfp' | 'sfp+' | 'qsfp' | 'console' | 'management'
-export type PortSpeed = '100M' | '1G' | '10G' | '25G' | '40G' | '100G'
+export type PortSpeed = '100M' | '1G' | '2.5G' | '10G' | '100G'
 export type PortStatus = 'up' | 'down' | 'disabled'
 
 export interface Port {

@@ -83,12 +83,9 @@
                       @click="removeBlock(unitIndex, blockIndex)"
                     />
                   </div>
-                  <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <UFormGroup :label="$t('templates.blocks.type')">
-                      <USelect
-                        v-model="block.type"
-                        :options="portTypeOptions"
-                      />
+                      <USelect v-model="block.type" :options="portTypeOptions" />
                     </UFormGroup>
                     <UFormGroup :label="$t('templates.blocks.count')">
                       <UInput v-model.number="block.count" type="number" min="1" />
@@ -96,18 +93,17 @@
                     <UFormGroup :label="$t('templates.blocks.startIndex')">
                       <UInput v-model.number="block.start_index" type="number" min="1" />
                     </UFormGroup>
+                    <UFormGroup :label="$t('templates.blocks.label')">
+                      <UInput v-model="block.label" :placeholder="$t('templates.blocks.label')" />
+                    </UFormGroup>
                     <UFormGroup :label="$t('templates.blocks.rows')">
                       <UInput v-model.number="block.rows" type="number" min="1" />
                     </UFormGroup>
                     <UFormGroup label="Row Layout">
-                      <USelect
-                        v-model="block.row_layout"
-                        :options="rowLayoutOptions"
-                        :disabled="block.rows < 2"
-                      />
+                      <USelect v-model="block.row_layout" :options="rowLayoutOptions" :disabled="block.rows < 2" />
                     </UFormGroup>
-                    <UFormGroup :label="$t('templates.blocks.label')">
-                      <UInput v-model="block.label" :placeholder="$t('templates.blocks.label')" />
+                    <UFormGroup label="Default Speed">
+                      <USelect v-model="block.default_speed" :options="speedOptions" />
                     </UFormGroup>
                   </div>
                 </div>
@@ -163,6 +159,15 @@ const rowLayoutOptions = [
   { label: 'Even/Odd', value: 'even-odd' }
 ]
 
+const speedOptions = [
+  { label: '-- None --', value: '' },
+  { label: '100M', value: '100M' },
+  { label: '1G', value: '1G' },
+  { label: '2.5G', value: '2.5G' },
+  { label: '10G', value: '10G' },
+  { label: '100G', value: '100G' }
+]
+
 const form = reactive({
   name: '',
   manufacturer: '',
@@ -173,7 +178,7 @@ const form = reactive({
       unit_number: 1,
       label: 'Unit 1',
       blocks: [
-        { type: 'rj45', count: 24, start_index: 1, rows: 2, row_layout: 'sequential', label: '' }
+        { type: 'rj45', count: 24, start_index: 1, rows: 2, row_layout: 'sequential', default_speed: '', label: '' }
       ]
     }
   ]
@@ -206,6 +211,7 @@ function addBlock(unitIndex: number) {
     start_index: nextStartIndex,
     rows: 1,
     row_layout: 'sequential',
+    default_speed: '',
     label: ''
   })
 }

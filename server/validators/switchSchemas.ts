@@ -29,7 +29,7 @@ export const updateSwitchSchema = z.object({
 
 export const updatePortSchema = z.object({
   label: z.string().max(50).optional().nullable(),
-  speed: z.enum(['100M', '1G', '10G', '25G', '40G', '100G']).optional().nullable(),
+  speed: z.preprocess(v => v === '' ? null : v, z.enum(['100M', '1G', '2.5G', '10G', '100G']).optional().nullable()),
   status: z.enum(['up', 'down', 'disabled']).optional(),
   native_vlan: z.number().int().min(1).max(4094).optional().nullable(),
   tagged_vlans: z.array(z.number().int().min(1).max(4094)).optional(),
@@ -48,7 +48,7 @@ export const bulkUpdatePortsSchema = z.object({
     status: z.enum(['up', 'down', 'disabled']).optional(),
     native_vlan: z.number().int().min(1).max(4094).optional().nullable(),
     tagged_vlans: z.array(z.number().int().min(1).max(4094)).optional(),
-    speed: z.enum(['100M', '1G', '10G', '25G', '40G', '100G']).optional().nullable(),
+    speed: z.preprocess(v => v === '' ? null : v, z.enum(['100M', '1G', '2.5G', '10G', '100G']).optional().nullable()),
     description: z.string().max(500).optional().nullable()
   })
 })

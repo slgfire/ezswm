@@ -140,6 +140,13 @@ const { getById, remove } = useLayoutTemplates()
 const template = ref<any>(null)
 const loading = ref(true)
 const showDeleteDialog = ref(false)
+const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrides', () => ({}))
+
+watch(template, (tpl) => {
+  if (tpl?.name) {
+    breadcrumbOverrides.value[`/layout-templates/${route.params.id}`] = tpl.name
+  }
+}, { immediate: true })
 
 function getUnitPortCount(unit: any): number {
   if (!unit.blocks) return 0

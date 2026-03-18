@@ -7,6 +7,7 @@ export interface LayoutBlock {
   start_index: number
   rows: number
   row_layout?: RowLayout
+  default_speed?: string
   label?: string
 }
 

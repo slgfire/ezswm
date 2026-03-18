@@ -6,7 +6,7 @@ const DEFAULT_SETTINGS = {
   default_vlan: null,
   default_port_status: 'down',
   pagination_size: 25,
-  port_speeds: ['100M', '1G', '10G', '25G', '40G', '100G'],
+  port_speeds: ['100M', '1G', '2.5G', '10G', '100G'],
   setup_completed: false
 }
 

@@ -5,7 +5,8 @@ const layoutBlockSchema = z.object({
   count: z.number().int().positive(),
   start_index: z.number().int().positive(),
   rows: z.number().int().positive(),
-  row_layout: z.enum(['sequential', 'odd-even', 'even-odd']).optional(),
+  row_layout: z.preprocess(v => v === '' ? undefined : v, z.enum(['sequential', 'odd-even', 'even-odd']).optional()),
+  default_speed: z.preprocess(v => v === '' ? undefined : v, z.enum(['100M', '1G', '2.5G', '10G', '100G']).optional()),
   label: z.string().max(100).optional()
 })
 

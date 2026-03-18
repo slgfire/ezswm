@@ -14,7 +14,7 @@
         <UInput v-model.number="form.native_vlan" type="number" placeholder="No change" />
       </UFormGroup>
       <UFormGroup label="Speed">
-        <USelect v-model="form.speed" :options="['', '100M', '1G', '10G', '25G', '40G', '100G']" placeholder="No change" />
+        <USelect v-model="form.speed" :options="['', '100M', '1G', '2.5G', '10G', '100G']" placeholder="No change" />
       </UFormGroup>
     </div>
     <template #footer>

@@ -69,7 +69,12 @@ const portTitle = computed(() => {
   parts.push(`Type: ${props.port.type}`)
   if (props.port.native_vlan) parts.push(`Native VLAN: ${props.port.native_vlan}`)
   if (props.port.tagged_vlans?.length) parts.push(`Tagged VLANs: ${props.port.tagged_vlans.join(', ')}`)
-  if (props.port.connected_device) parts.push(`Connected: ${props.port.connected_device}`)
+  if (props.port.connected_device) {
+    const connStr = props.port.connected_port
+      ? `${props.port.connected_device} → ${props.port.connected_port}`
+      : props.port.connected_device
+    parts.push(`Connected: ${connStr}`)
+  }
   return parts.join('\n')
 })
 </script>

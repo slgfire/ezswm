@@ -6,6 +6,11 @@ import { layoutTemplateRepository } from './layoutTemplateRepository'
 
 const FILE_NAME = 'switches.json'
 
+function generatePortLabel(blockLabel: string | undefined, unitNumber: number, portIndex: number): string {
+  if (!blockLabel) return `${unitNumber}/${portIndex}`
+  return blockLabel.match(/[\/\-:.]$/) ? `${blockLabel}${portIndex}` : `${blockLabel} ${unitNumber}/${portIndex}`
+}
+
 function generatePortsFromTemplate(templateId: string): Port[] {
   const template = layoutTemplateRepository.getById(templateId)
   if (!template) return []
@@ -19,8 +24,9 @@ function generatePortsFromTemplate(templateId: string): Port[] {
           id: nanoid(),
           unit: unit.unit_number,
           index: portIndex,
-          label: block.label ? `${block.label} ${unit.unit_number}/${portIndex}` : `${unit.unit_number}/${portIndex}`,
+          label: generatePortLabel(block.label, unit.unit_number, portIndex),
           type: block.type,
+          speed: block.default_speed,
           status: 'down',
           tagged_vlans: []
         })
@@ -110,9 +116,13 @@ export const switchRepository = {
 
     const oldPort = switches[swIndex].ports[portIndex]
 
-    // Handle bidirectional link removal
+    // Handle bidirectional link: remove old link if connection changed or removed
     if (oldPort.connected_device_id && oldPort.connected_port_id) {
-      if (data.connected_device_id === null || data.connected_device_id === undefined) {
+      const deviceChanged = data.connected_device_id !== undefined && data.connected_device_id !== oldPort.connected_device_id
+      const portChanged = data.connected_port_id !== undefined && data.connected_port_id !== oldPort.connected_port_id
+      const removed = data.connected_device_id === null || data.connected_device_id === undefined
+
+      if (removed || deviceChanged || portChanged) {
         this._removeRemoteLink(switches, oldPort.connected_device_id, oldPort.connected_port_id)
       }
     }
@@ -122,9 +132,16 @@ export const switchRepository = {
       ...data
     }
 
-    // Handle bidirectional link creation
+    const updatedPort = switches[swIndex].ports[portIndex]
+
+    // Handle bidirectional link creation (after local port is updated so label/settings are current)
     if (data.connected_device_id && data.connected_port_id) {
-      this._createRemoteLink(switches, data.connected_device_id, data.connected_port_id, switchId, portId)
+      this._createRemoteLink(switches, data.connected_device_id, data.connected_port_id, switchId, portId, {
+        speed: updatedPort.speed,
+        native_vlan: updatedPort.native_vlan,
+        tagged_vlans: updatedPort.tagged_vlans,
+        status: updatedPort.status
+      })
     }
 
     switches[swIndex].updated_at = new Date().toISOString()
@@ -224,7 +241,7 @@ export const switchRepository = {
     remotePort.connected_port = undefined
   },
 
-  _createRemoteLink(switches: Switch[], remoteSwitchId: string, remotePortId: string, localSwitchId: string, localPortId: string): void {
+  _createRemoteLink(switches: Switch[], remoteSwitchId: string, remotePortId: string, localSwitchId: string, localPortId: string, syncSettings?: Partial<Port>): void {
     const remoteSw = switches.find(s => s.id === remoteSwitchId)
     if (!remoteSw) return
 
@@ -237,9 +254,18 @@ export const switchRepository = {
     const localPort = localSw.ports.find(p => p.id === localPortId)
     if (!localPort) return
 
+    // Set bidirectional link
     remotePort.connected_device = localSw.name
     remotePort.connected_device_id = localSwitchId
     remotePort.connected_port_id = localPortId
     remotePort.connected_port = localPort.label
+
+    // Sync port settings to remote side
+    if (syncSettings) {
+      if (syncSettings.speed) remotePort.speed = syncSettings.speed
+      if (syncSettings.native_vlan !== undefined) remotePort.native_vlan = syncSettings.native_vlan
+      if (syncSettings.tagged_vlans) remotePort.tagged_vlans = [...syncSettings.tagged_vlans]
+      if (syncSettings.status === 'up') remotePort.status = 'up'
+    }
   }
 }
