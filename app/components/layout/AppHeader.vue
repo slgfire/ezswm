@@ -1,5 +1,5 @@
 <template>
-  <header class="flex h-16 items-center justify-between border-b border-gray-800 bg-gray-950 px-4">
+  <header class="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-gray-950">
     <div class="flex items-center gap-4">
       <!-- Mobile menu toggle -->
       <UButton

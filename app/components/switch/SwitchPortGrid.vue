@@ -4,7 +4,7 @@
     <template v-if="units && units.length">
       <div v-for="(unit, ui) in units" :key="unit.unit_number">
         <SwitchUnitDivider v-if="ui > 0" :label="unit.label || `Unit ${unit.unit_number}`" />
-        <div class="mb-3 text-sm font-semibold text-gray-300">{{ unit.label || `Unit ${unit.unit_number}` }}</div>
+        <div class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">{{ unit.label || `Unit ${unit.unit_number}` }}</div>
         <div class="flex flex-wrap items-start gap-6">
           <div v-for="block in unit.blocks" :key="block.id" class="flex flex-col gap-1.5">
             <div v-if="block.label" class="text-xs font-medium text-gray-500">{{ block.label }}</div>
@@ -58,6 +58,36 @@
         @click="$emit('select-port', port.id)"
       />
     </div>
+
+    <!-- Legend -->
+    <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-gray-200 pt-3 text-[11px] text-gray-500 dark:border-gray-700 dark:text-gray-400">
+      <!-- Status -->
+      <span class="font-semibold text-gray-600 dark:text-gray-300">Status:</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-green-400 bg-green-50 dark:bg-gray-700" /> Up</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-800" /> Down</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-red-300 bg-red-50 dark:bg-gray-800" /> Disabled</span>
+
+      <span class="text-gray-300 dark:text-gray-600">|</span>
+
+      <!-- Port types -->
+      <span class="font-semibold text-gray-600 dark:text-gray-300">Type:</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-sky-400" /> SFP/SFP+</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-violet-400" /> QSFP</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-amber-400" /> Console</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-teal-400" /> Mgmt</span>
+
+      <span class="text-gray-300 dark:text-gray-600">|</span>
+
+      <!-- Indicators -->
+      <span class="font-semibold text-gray-600 dark:text-gray-300">Indicators:</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-full bg-yellow-400" /> Trunk</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-4 rounded-sm border-b-[3px] border-b-blue-500 bg-gray-200 dark:bg-gray-700" /> LAG</span>
+      <template v-if="vlans && vlans.length">
+        <template v-for="vlan in usedVlans" :key="vlan.vlan_id">
+          <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: vlan.color }" /> VLAN {{ vlan.vlan_id }}</span>
+        </template>
+      </template>
+    </div>
   </div>
 </template>
 
@@ -108,7 +138,17 @@ function getRowsForBlock(unitNumber: number, block: any): any[][] {
   return result
 }
 
-function needsExtraBottomSpace(block: any): boolean {
-  return block.type === 'sfp' || block.type === 'sfp+' || block.type === 'qsfp'
+function needsExtraBottomSpace(_block: any): boolean {
+  return false
 }
+
+// VLANs actually used on ports (for legend)
+const usedVlans = computed(() => {
+  if (!props.vlans?.length) return []
+  const usedIds = new Set<number>()
+  for (const p of props.ports) {
+    if (p.native_vlan) usedIds.add(p.native_vlan)
+  }
+  return props.vlans.filter(v => usedIds.has(v.vlan_id) && v.color)
+})
 </script>

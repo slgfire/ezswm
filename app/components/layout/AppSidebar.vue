@@ -1,13 +1,13 @@
 <template>
   <aside
-    class="flex h-full flex-col border-r border-gray-800 bg-gray-950"
+    class="flex h-full flex-col border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950"
     :class="collapsed ? 'w-16' : 'w-64'"
   >
     <!-- Logo -->
-    <div class="flex h-16 items-center border-b border-gray-800 px-4">
+    <div class="flex h-16 items-center border-b border-gray-200 px-4 dark:border-gray-800">
       <NuxtLink to="/" class="flex items-center gap-2">
         <span class="text-xl font-bold text-primary-500">ez</span>
-        <span v-if="!collapsed" class="text-xl font-bold text-white">SWM</span>
+        <span v-if="!collapsed" class="text-xl font-bold text-gray-900 dark:text-white">SWM</span>
       </NuxtLink>
     </div>
 
@@ -15,14 +15,14 @@
     <nav class="flex-1 overflow-y-auto px-2 py-4">
       <ul class="space-y-1">
         <template v-for="section in navSections" :key="section.label">
-          <li v-if="section.divider" class="my-3 border-t border-gray-800" />
+          <li v-if="section.divider" class="my-3 border-t border-gray-200 dark:border-gray-800" />
           <li v-for="item in section.items" :key="item.to">
             <NuxtLink
               :to="item.to"
               class="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors"
               :class="isActive(item.to)
                 ? 'bg-primary-500/10 text-primary-500'
-                : 'text-gray-400 hover:bg-gray-800 hover:text-white'"
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white'"
             >
               <UIcon :name="item.icon" class="h-5 w-5 flex-shrink-0" />
               <span v-if="!collapsed">{{ $t(item.label) }}</span>
@@ -33,7 +33,7 @@
     </nav>
 
     <!-- Collapse toggle -->
-    <div class="border-t border-gray-800 p-2">
+    <div class="border-t border-gray-200 p-2 dark:border-gray-800">
       <UButton
         variant="ghost"
         color="gray"
