@@ -215,7 +215,8 @@ End-to-end tests: 11/11 passed
 
 ## Open Issues
 
-- Topology page renders data from API but lacks canvas/SVG visualization
+- Topology page: interactive network diagram (Coming Soon placeholder in UI)
+- LAG Groups: UI for creating/managing Link Aggregation Groups, assigning ports, visual indicator on port grid (bottom border/stripe prepared)
 - Print view CSS not implemented
 - Form validation is server-side only (no real-time client validation)
 - Dashboard widget reordering not implemented
@@ -225,8 +226,9 @@ End-to-end tests: 11/11 passed
 
 ## Next Tasks (Post-MVP)
 
+- Topology: interactive graph visualization (v-network-graph or similar)
+- LAG Groups: CRUD API + UI for managing LAG groups per switch
 - Phase 11: Testing (vitest, unit tests for repositories and IPv4 utils)
-- Topology canvas rendering (SVG/Canvas based)
 - Real-time client-side form validation
 - Dashboard widget drag & drop
 - CSV export/import support

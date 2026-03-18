@@ -1,13 +1,14 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-4">
     <!-- Block-based rendering -->
     <template v-if="units && units.length">
       <div v-for="(unit, ui) in units" :key="unit.unit_number">
         <SwitchUnitDivider v-if="ui > 0" :label="unit.label || `Unit ${unit.unit_number}`" />
-        <div class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">{{ unit.label || `Unit ${unit.unit_number}` }}</div>
-        <div class="flex flex-wrap items-start gap-6">
-          <div v-for="block in unit.blocks" :key="block.id" class="flex flex-col gap-1.5">
-            <div v-if="block.label" class="text-xs font-medium text-gray-500">{{ block.label }}</div>
+        <div class="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800/30">
+          <div class="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ unit.label || `Unit ${unit.unit_number}` }}</div>
+          <div class="flex flex-wrap items-start gap-5">
+            <div v-for="block in unit.blocks" :key="block.id" class="flex flex-col gap-1">
+              <div v-if="block.label" class="text-[10px] font-medium text-gray-400 dark:text-gray-500">{{ block.label }}</div>
             <!-- Multi-row block with layout modes -->
             <div
               v-if="block.rows >= 2"
@@ -41,6 +42,7 @@
                 @click="$emit('select-port', port.id)"
                 @click.shift="$emit('toggle-select', port.id)"
               />
+            </div>
             </div>
           </div>
         </div>
@@ -81,7 +83,6 @@
       <!-- Indicators -->
       <span class="font-semibold text-gray-600 dark:text-gray-300">Indicators:</span>
       <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-full bg-yellow-400" /> Trunk</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-4 rounded-sm border-b-[3px] border-b-blue-500 bg-gray-200 dark:bg-gray-700" /> LAG</span>
       <template v-if="vlans && vlans.length">
         <template v-for="vlan in usedVlans" :key="vlan.vlan_id">
           <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: vlan.color }" /> VLAN {{ vlan.vlan_id }}</span>

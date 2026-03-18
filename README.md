@@ -154,6 +154,16 @@ switch-to-switch connections based on port links. Planned features:
 - Edge labels showing connected ports and VLANs
 - Export as PNG/PDF
 
+## 🔗 LAG Groups
+
+🚧 **Coming soon** — Link Aggregation Group management for bundling
+multiple physical ports into a single logical link. Planned features:
+
+- Create/manage LAG groups per switch
+- Assign ports to LAG groups via UI
+- Visual indicator on port grid (colored bottom border per group)
+- Bandwidth aggregation and redundancy documentation
+
 ---
 
 ## 📄 License
