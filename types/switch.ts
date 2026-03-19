@@ -13,6 +13,7 @@ export interface Switch {
   layout_template_id?: string
   ports: Port[]
   is_favorite: boolean
+  sort_order?: number
   notes?: string
   created_at: string
   updated_at: string

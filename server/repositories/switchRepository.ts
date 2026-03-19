@@ -38,7 +38,17 @@ function generatePortsFromTemplate(templateId: string): Port[] {
 
 export const switchRepository = {
   list(): Switch[] {
-    return readJson<Switch[]>(FILE_NAME)
+    const switches = readJson<Switch[]>(FILE_NAME)
+    return switches.sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999))
+  },
+
+  updateSortOrder(order: string[]): void {
+    const switches = readJson<Switch[]>(FILE_NAME)
+    for (let i = 0; i < order.length; i++) {
+      const sw = switches.find(s => s.id === order[i])
+      if (sw) sw.sort_order = i
+    }
+    writeJson(FILE_NAME, switches)
   },
 
   getById(id: string): Switch | null {

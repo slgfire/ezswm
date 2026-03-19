@@ -62,24 +62,39 @@
 
     <!-- Switch details -->
     <div v-if="item && !loading" class="space-y-4">
-      <!-- Quick info -->
-      <div class="-mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
-        <span v-if="item.model" class="flex items-center gap-1">
-          <UIcon name="i-heroicons-cpu-chip" class="h-3.5 w-3.5" />
-          {{ item.manufacturer ? `${item.manufacturer} ${item.model}` : item.model }}
-        </span>
-        <span v-if="item.location" class="flex items-center gap-1">
-          <UIcon name="i-heroicons-map-pin" class="h-3.5 w-3.5" />
-          {{ item.location }}{{ item.rack_position ? ` / ${item.rack_position}` : '' }}
-        </span>
-        <span v-if="item.management_ip" class="flex items-center gap-1 font-mono">
-          <UIcon name="i-heroicons-globe-alt" class="h-3.5 w-3.5" />
-          {{ item.management_ip }}
-        </span>
-        <span v-if="currentTemplateName" class="flex items-center gap-1">
-          <UIcon name="i-heroicons-rectangle-group" class="h-3.5 w-3.5" />
-          {{ currentTemplateName }}
-        </span>
+      <!-- Info bar -->
+      <div class="-mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-gray-200 bg-white px-5 py-3 dark:border-gray-700 dark:bg-gray-800/30">
+        <div v-if="item.model">
+          <div class="text-[10px] uppercase tracking-wider text-gray-400">Model</div>
+          <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.manufacturer ? `${item.manufacturer} ${item.model}` : item.model }}</div>
+        </div>
+        <div v-if="item.model && (item.location || item.management_ip)" class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
+        <div v-if="item.location">
+          <div class="text-[10px] uppercase tracking-wider text-gray-400">Location</div>
+          <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.location }}{{ item.rack_position ? ` / ${item.rack_position}` : '' }}</div>
+        </div>
+        <div v-if="item.location && item.management_ip" class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
+        <div v-if="item.management_ip">
+          <div class="text-[10px] uppercase tracking-wider text-gray-400">Management IP</div>
+          <div class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ item.management_ip }}</div>
+        </div>
+        <div v-if="item.ports?.length" class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
+        <div v-if="item.ports?.length">
+          <div class="text-[10px] uppercase tracking-wider text-gray-400">Ports</div>
+          <div class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+            {{ item.ports.length }}
+            <span class="flex items-center gap-1.5 text-xs font-normal">
+              <span v-if="portStats.up" class="flex items-center gap-0.5 text-green-500"><span class="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />{{ portStats.up }}</span>
+              <span v-if="portStats.down" class="flex items-center gap-0.5 text-gray-400"><span class="inline-block h-1.5 w-1.5 rounded-full bg-gray-400" />{{ portStats.down }}</span>
+              <span v-if="portStats.disabled" class="flex items-center gap-0.5 text-red-400"><span class="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />{{ portStats.disabled }}</span>
+            </span>
+          </div>
+        </div>
+        <div v-if="currentTemplateName" class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
+        <div v-if="currentTemplateName">
+          <div class="text-[10px] uppercase tracking-wider text-gray-400">Template</div>
+          <div class="text-sm text-gray-600 dark:text-gray-300">{{ currentTemplateName }}</div>
+        </div>
       </div>
 
       <!-- Details panel (toggled via info button in header) -->
@@ -249,6 +264,15 @@ const selectedPorts = ref<string[]>([])
 const showPortPanel = ref(false)
 const selectedPort = ref<any>(null)
 const templateUnits = ref<any[]>([])
+const portStats = computed(() => {
+  const ports = item.value?.ports || []
+  return {
+    up: ports.filter((p: any) => p.status === 'up').length,
+    down: ports.filter((p: any) => p.status === 'down').length,
+    disabled: ports.filter((p: any) => p.status === 'disabled').length
+  }
+})
+
 const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrides', () => ({}))
 
 watch(item, (sw) => {

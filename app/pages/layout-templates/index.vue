@@ -1,53 +1,40 @@
 <template>
   <div class="p-6">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold">{{ $t('templates.title') }}</h1>
-      <UButton to="/layout-templates/create" icon="i-heroicons-plus">
+    <div class="mb-4 flex items-center justify-between">
+      <h1 class="text-xl font-bold">{{ $t('templates.title') }}</h1>
+      <UButton to="/layout-templates/create" icon="i-heroicons-plus" size="sm">
         {{ $t('templates.create') }}
       </UButton>
     </div>
 
-    <UCard v-if="loading">
-      <div class="flex items-center justify-center py-12">
-        <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
-        <span class="ml-2 text-gray-400">{{ $t('common.loading') }}</span>
-      </div>
-    </UCard>
+    <div v-if="loading" class="flex items-center justify-center py-12">
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
+    </div>
 
     <template v-else-if="items.length > 0">
       <UTable :rows="items" :columns="columns">
         <template #name-data="{ row }">
-          <NuxtLink :to="`/layout-templates/${row.id}`" class="text-primary-500 hover:underline font-medium">
+          <NuxtLink :to="`/layout-templates/${row.id}`" class="font-medium text-primary-500 hover:underline">
             {{ row.name }}
           </NuxtLink>
         </template>
 
         <template #unitCount-data="{ row }">
-          {{ row.units?.length || 0 }}
+          <span class="text-xs text-gray-400">{{ row.units?.length || 0 }}</span>
         </template>
 
         <template #portCount-data="{ row }">
-          {{ getTotalPortCount(row) }}
+          <span class="text-xs text-gray-400">{{ getTotalPortCount(row) }}</span>
         </template>
 
         <template #actions-data="{ row }">
-          <div class="flex items-center gap-2">
-            <UButton
-              :to="`/layout-templates/${row.id}/edit`"
-              icon="i-heroicons-pencil-square"
-              size="xs"
-              color="gray"
-              variant="ghost"
-              :aria-label="$t('common.edit')"
-            />
-            <UButton
-              icon="i-heroicons-trash"
-              size="xs"
-              color="red"
-              variant="ghost"
-              :aria-label="$t('common.delete')"
-              @click="confirmDelete(row)"
-            />
+          <div class="flex items-center gap-1">
+            <UTooltip :text="$t('common.edit')">
+              <UButton :to="`/layout-templates/${row.id}/edit`" icon="i-heroicons-pencil-square" size="xs" variant="ghost" />
+            </UTooltip>
+            <UTooltip :text="$t('common.delete')">
+              <UButton icon="i-heroicons-trash" size="xs" color="red" variant="ghost" @click="confirmDelete(row)" />
+            </UTooltip>
           </div>
         </template>
       </UTable>
@@ -87,24 +74,18 @@ const columns = computed(() => [
   { key: 'name', label: t('templates.fields.name') },
   { key: 'manufacturer', label: t('templates.fields.manufacturer') },
   { key: 'model', label: t('templates.fields.model') },
-  { key: 'unitCount', label: t('templates.fields.unitCount') },
-  { key: 'portCount', label: t('templates.fields.portCount') },
-  { key: 'actions', label: t('common.actions') }
+  { key: 'unitCount', label: 'Units' },
+  { key: 'portCount', label: 'Ports' },
+  { key: 'actions', label: '' }
 ])
 
 function getTotalPortCount(template: any): number {
   if (!template.units) return 0
-  return template.units.reduce((total: number, unit: any) => {
-    return total + (unit.blocks || []).reduce((blockTotal: number, block: any) => {
-      return blockTotal + (block.count || 0)
-    }, 0)
-  }, 0)
+  return template.units.reduce((total: number, unit: any) =>
+    total + (unit.blocks || []).reduce((bt: number, b: any) => bt + (b.count || 0), 0), 0)
 }
 
-function confirmDelete(row: any) {
-  deleteTarget.value = row
-  showDeleteDialog.value = true
-}
+function confirmDelete(row: any) { deleteTarget.value = row; showDeleteDialog.value = true }
 
 async function handleDelete() {
   if (!deleteTarget.value) return
@@ -112,15 +93,9 @@ async function handleDelete() {
     await remove(deleteTarget.value.id)
     toast.add({ title: t('templates.messages.deleted'), color: 'green' })
     await fetch()
-  } catch {
-    toast.add({ title: t('errors.serverError'), color: 'red' })
-  } finally {
-    showDeleteDialog.value = false
-    deleteTarget.value = null
-  }
+  } catch { toast.add({ title: t('errors.serverError'), color: 'red' }) }
+  finally { showDeleteDialog.value = false; deleteTarget.value = null }
 }
 
-onMounted(() => {
-  fetch()
-})
+onMounted(() => { fetch() })
 </script>

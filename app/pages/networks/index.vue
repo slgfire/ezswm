@@ -1,104 +1,108 @@
 <template>
   <div class="p-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold">{{ $t('networks.title') }}</h1>
-      <UButton to="/networks/create" icon="i-heroicons-plus">
+    <div class="mb-4 flex items-center justify-between">
+      <h1 class="text-xl font-bold">{{ $t('networks.title') }}</h1>
+      <UButton to="/networks/create" icon="i-heroicons-plus" size="sm">
         {{ $t('networks.create') }}
       </UButton>
     </div>
 
     <!-- Filters -->
-    <div class="mt-4 flex flex-wrap items-center gap-3">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
       <UInput
         v-model="search"
         icon="i-heroicons-magnifying-glass"
         :placeholder="$t('common.search')"
+        size="sm"
         class="w-64"
       />
       <USelect
         v-model="vlanFilter"
         :options="vlanFilterOptions"
         :placeholder="$t('networks.fields.vlan')"
+        size="sm"
         class="w-48"
       />
     </div>
 
-    <!-- Table -->
-    <div class="mt-4">
-      <UTable
-        v-if="filteredItems.length > 0"
-        :rows="paginatedItems"
-        :columns="columns"
-        :loading="loading"
+    <!-- Network List -->
+    <div v-if="sortedItems.length > 0" class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/30">
+      <!-- Sort header -->
+      <div class="flex items-center gap-4 border-b border-gray-100 px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400 dark:border-gray-700/50">
+        <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('name')">
+          Name
+          <UIcon v-if="sortField === 'name'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
+        </button>
+        <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('subnet')">
+          Subnet
+          <UIcon v-if="sortField === 'subnet'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
+        </button>
+        <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('gateway')">
+          Gateway
+          <UIcon v-if="sortField === 'gateway'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
+        </button>
+      </div>
+
+      <!-- Rows -->
+      <NuxtLink
+        v-for="(net, i) in sortedItems"
+        :key="net.id"
+        :to="`/networks/${net.id}`"
+        class="group flex items-stretch pr-5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
+        :class="i > 0 ? 'border-t border-gray-100 dark:border-gray-700/50' : ''"
       >
-        <template #name-data="{ row }">
-          <NuxtLink :to="`/networks/${row.id}`" class="text-primary-400 hover:underline">
-            {{ row.name }}
-          </NuxtLink>
-        </template>
+        <!-- VLAN color left accent -->
+        <div
+          class="w-1 flex-shrink-0"
+          :style="getVlan(net.vlan_id) ? { backgroundColor: getVlan(net.vlan_id).color } : {}"
+          :class="[
+            !getVlan(net.vlan_id) ? 'bg-transparent' : '',
+            i === 0 ? 'rounded-tl-lg' : '',
+            i === sortedItems.length - 1 ? 'rounded-bl-lg' : ''
+          ]"
+        />
 
-        <template #subnet-data="{ row }">
-          <code class="rounded bg-gray-800 px-1.5 py-0.5 text-sm">{{ row.subnet }}</code>
-        </template>
-
-        <template #gateway-data="{ row }">
-          {{ row.gateway || '-' }}
-        </template>
-
-        <template #vlan-data="{ row }">
-          <VlanBadge
-            v-if="getVlan(row.vlan_id)"
-            :vlan-id="getVlan(row.vlan_id).vlan_id"
-            :name="getVlan(row.vlan_id).name"
-            :color="getVlan(row.vlan_id).color"
-          />
-          <span v-else class="text-gray-500">-</span>
-        </template>
-
-        <template #actions-data="{ row }">
-          <div class="flex items-center gap-1">
-            <UButton
-              icon="i-heroicons-pencil-square"
-              variant="ghost"
-              size="xs"
-              :to="`/networks/${row.id}`"
-              :aria-label="$t('common.edit')"
-            />
-            <UButton
-              icon="i-heroicons-trash"
-              variant="ghost"
-              color="red"
-              size="xs"
-              :aria-label="$t('common.delete')"
-              @click="openDeleteDialog(row)"
-            />
+        <!-- Main info -->
+        <div class="min-w-0 flex-1 py-3 pl-4">
+          <div class="flex items-center gap-2">
+            <span class="text-base font-semibold text-gray-900 dark:text-white">{{ net.name }}</span>
+            <code class="rounded bg-primary-50 px-2 py-0.5 text-sm font-medium text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">{{ net.subnet }}</code>
           </div>
-        </template>
-      </UTable>
+          <div class="mt-0.5 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+            <span v-if="net.gateway" class="flex items-center gap-1 font-mono">
+              <UIcon name="i-heroicons-arrow-right-circle" class="h-3 w-3 text-gray-400" />
+              {{ net.gateway }}
+            </span>
+            <span v-if="getVlan(net.vlan_id)" class="flex items-center gap-1">
+              <UIcon name="i-heroicons-tag" class="h-3 w-3 text-gray-400" />
+              VLAN {{ getVlan(net.vlan_id).vlan_id }} — {{ getVlan(net.vlan_id).name }}
+            </span>
+            <span v-if="net.description" class="flex items-center gap-1 truncate">
+              <UIcon name="i-heroicons-document-text" class="h-3 w-3 flex-shrink-0 text-gray-400" />
+              {{ net.description }}
+            </span>
+          </div>
+        </div>
 
-      <SharedEmptyState
-        v-else-if="!loading"
-        icon="i-heroicons-globe-alt"
-        :title="$t('networks.emptyTitle')"
-        :description="$t('networks.emptyDescription')"
-      >
-        <template #action>
-          <UButton to="/networks/create" icon="i-heroicons-plus">
-            {{ $t('networks.create') }}
-          </UButton>
-        </template>
-      </SharedEmptyState>
+        <!-- Actions (on hover) -->
+        <div class="flex items-center gap-1 py-3 opacity-0 transition-opacity group-hover:opacity-100">
+          <UButton icon="i-heroicons-pencil-square" variant="ghost" color="gray" size="xs" @click.prevent />
+          <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="xs" @click.prevent="openDeleteDialog(net)" />
+        </div>
+      </NuxtLink>
     </div>
 
-    <!-- Pagination -->
-    <div v-if="totalPages > 1" class="mt-4 flex items-center justify-between">
-      <span class="text-sm text-gray-400">
-        {{ $t('common.showing', { from: (page - 1) * perPage + 1, to: Math.min(page * perPage, filteredItems.length), total: filteredItems.length }) }}
-      </span>
-      <UPagination v-model="page" :total="filteredItems.length" :page-count="perPage" />
-    </div>
+    <SharedEmptyState
+      v-else-if="!loading"
+      icon="i-heroicons-globe-alt"
+      :title="$t('networks.emptyTitle')"
+      :description="$t('networks.emptyDescription')"
+    >
+      <template #action>
+        <UButton to="/networks/create" icon="i-heroicons-plus">{{ $t('networks.create') }}</UButton>
+      </template>
+    </SharedEmptyState>
 
-    <!-- Delete confirmation -->
     <SharedConfirmDialog
       v-model="showDeleteDialog"
       :title="$t('networks.delete')"
@@ -117,12 +121,18 @@ const { items: vlans, fetch: fetchVlans } = useVlans()
 
 const search = ref('')
 const vlanFilter = ref('all')
-const page = ref(1)
-const perPage = 25
 const showDeleteDialog = ref(false)
 const deleteTarget = ref<any>(null)
 const deleteMessage = ref('')
 const deleting = ref(false)
+
+const sortField = ref<'name' | 'subnet' | 'gateway'>('name')
+const sortAsc = ref(true)
+
+function toggleSort(field: 'name' | 'subnet' | 'gateway') {
+  if (sortField.value === field) sortAsc.value = !sortAsc.value
+  else { sortField.value = field; sortAsc.value = true }
+}
 
 const vlanFilterOptions = computed(() => {
   const options: { label: string; value: string }[] = [
@@ -135,14 +145,6 @@ const vlanFilterOptions = computed(() => {
   return options
 })
 
-const columns = computed(() => [
-  { key: 'name', label: t('networks.fields.name'), sortable: true },
-  { key: 'subnet', label: t('networks.fields.subnet'), sortable: true },
-  { key: 'gateway', label: t('networks.fields.gateway') },
-  { key: 'vlan', label: t('networks.fields.vlan') },
-  { key: 'actions', label: t('common.actions') }
-])
-
 function getVlan(vlanId: string) {
   if (!vlanId) return null
   return vlans.value.find((v: any) => v.id === vlanId)
@@ -150,29 +152,27 @@ function getVlan(vlanId: string) {
 
 const filteredItems = computed(() => {
   let result = items.value
-
-  if (vlanFilter.value === 'none') {
-    result = result.filter((n: any) => !n.vlan_id)
-  } else if (vlanFilter.value !== 'all') {
-    result = result.filter((n: any) => n.vlan_id === vlanFilter.value)
-  }
-
+  if (vlanFilter.value === 'none') result = result.filter((n: any) => !n.vlan_id)
+  else if (vlanFilter.value !== 'all') result = result.filter((n: any) => n.vlan_id === vlanFilter.value)
   if (search.value) {
     const q = search.value.toLowerCase()
-    result = result.filter((n: any) =>
-      n.name?.toLowerCase().includes(q) ||
-      n.subnet?.toLowerCase().includes(q)
-    )
+    result = result.filter((n: any) => n.name?.toLowerCase().includes(q) || n.subnet?.toLowerCase().includes(q))
   }
-
   return result
 })
 
-const totalPages = computed(() => Math.ceil(filteredItems.value.length / perPage))
-
-const paginatedItems = computed(() => {
-  const start = (page.value - 1) * perPage
-  return filteredItems.value.slice(start, start + perPage)
+const sortedItems = computed(() => {
+  const list = [...filteredItems.value]
+  list.sort((a: any, b: any) => {
+    let va = a[sortField.value] || ''
+    let vb = b[sortField.value] || ''
+    if (typeof va === 'string') va = va.toLowerCase()
+    if (typeof vb === 'string') vb = vb.toLowerCase()
+    if (va < vb) return sortAsc.value ? -1 : 1
+    if (va > vb) return sortAsc.value ? 1 : -1
+    return 0
+  })
+  return list
 })
 
 function openDeleteDialog(network: any) {
@@ -191,16 +191,9 @@ async function confirmDelete() {
     await fetchNetworks()
   } catch (err: any) {
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' })
-  } finally {
-    deleting.value = false
-  }
+  } finally { deleting.value = false }
 }
 
-watch([search, vlanFilter], () => {
-  page.value = 1
-})
-
-onMounted(() => {
-  Promise.all([fetchNetworks(), fetchVlans()])
-})
+watch([search, vlanFilter], () => {})
+onMounted(() => { Promise.all([fetchNetworks(), fetchVlans()]) })
 </script>
