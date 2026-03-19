@@ -69,6 +69,14 @@
             </UBadge>
           </div>
           <div class="mt-0.5 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+            <span v-if="getNetworksForVlan(vlan.id).length" class="flex items-center gap-1 text-primary-500">
+              <UIcon name="i-heroicons-globe-alt" class="h-3 w-3" />
+              {{ getNetworksForVlan(vlan.id).map(n => n.name).join(', ') }}
+            </span>
+            <span v-else class="flex items-center gap-1 text-yellow-500">
+              <UIcon name="i-heroicons-exclamation-triangle" class="h-3 w-3" />
+              No network
+            </span>
             <span v-if="vlan.routing_device" class="flex items-center gap-1">
               <UIcon name="i-heroicons-server" class="h-3 w-3 text-gray-400" />
               {{ vlan.routing_device }}
@@ -304,6 +312,10 @@ const sortedItems = computed(() => {
   })
   return list
 })
+
+function getNetworksForVlan(vlanId: string) {
+  return allNetworks.value.filter((n: any) => n.vlan_id === vlanId)
+}
 
 const panelNetworks = computed(() => {
   if (!selectedVlan.value) return []

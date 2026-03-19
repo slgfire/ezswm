@@ -198,9 +198,24 @@
         </UForm>
       </div>
 
-      <!-- Bulk Editor -->
+      <!-- Selection bar (shown when ports are selected) -->
+      <div v-if="selectedPorts.length > 0" class="flex items-center justify-between rounded-lg border border-primary-300 bg-primary-50 px-4 py-2 dark:border-primary-500/30 dark:bg-primary-500/10">
+        <span class="text-sm font-medium text-primary-700 dark:text-primary-300">
+          {{ selectedPorts.length }} port{{ selectedPorts.length > 1 ? 's' : '' }} selected
+        </span>
+        <div class="flex items-center gap-2">
+          <UButton size="xs" variant="soft" @click="bulkEditorRef?.open()">
+            Bulk Edit
+          </UButton>
+          <UButton size="xs" variant="ghost" color="gray" @click="selectedPorts = []">
+            Clear
+          </UButton>
+        </div>
+      </div>
+
+      <!-- Bulk Editor Sidebar -->
       <SwitchPortBulkEditor
-        v-if="selectedPorts.length > 0"
+        ref="bulkEditorRef"
         :switch-id="id"
         :selected-ports="selectedPorts"
         @saved="fetchSwitch"
@@ -261,6 +276,7 @@ const deleting = ref(false)
 const showDetails = ref(false)
 
 const selectedPorts = ref<string[]>([])
+const bulkEditorRef = ref<any>(null)
 const showPortPanel = ref(false)
 const selectedPort = ref<any>(null)
 const templateUnits = ref<any[]>([])

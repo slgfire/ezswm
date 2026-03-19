@@ -27,7 +27,25 @@
         </UFormGroup>
 
         <UFormGroup label="Tagged VLANs">
-          <UInput v-model="taggedVlansStr" placeholder="e.g. 100,200,300" />
+          <div v-if="allVlans.length" class="max-h-32 space-y-1 overflow-y-auto rounded-md border border-gray-200 p-2 dark:border-gray-700">
+            <label
+              v-for="v in allVlans"
+              :key="v.vlan_id"
+              class="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              <input
+                type="checkbox"
+                :value="v.vlan_id"
+                :checked="selectedTaggedVlans.includes(v.vlan_id)"
+                class="rounded border-gray-300 text-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800"
+                @change="toggleTaggedVlan(v.vlan_id)"
+              />
+              <div class="h-2.5 w-2.5 rounded" :style="{ backgroundColor: v.color }" />
+              <span>{{ v.vlan_id }}</span>
+              <span class="text-xs text-gray-400">{{ v.name }}</span>
+            </label>
+          </div>
+          <UInput v-else v-model="taggedVlansStr" placeholder="e.g. 100,200,300" />
         </UFormGroup>
 
         <!-- Connected Device: freetext or switch reference -->
@@ -162,6 +180,8 @@ const connectionMode = ref<'freetext' | 'switch'>('freetext')
 const selectedSwitchId = ref('')
 const selectedPortId = ref('')
 const allSwitches = ref<any[]>([])
+const allVlans = ref<any[]>([])
+const selectedTaggedVlans = ref<number[]>([])
 const loadingSwitches = ref(false)
 
 const form = reactive({
@@ -176,6 +196,12 @@ const form = reactive({
 
 const taggedVlansStr = ref('')
 
+function toggleTaggedVlan(vlanId: number) {
+  const idx = selectedTaggedVlans.value.indexOf(vlanId)
+  if (idx >= 0) selectedTaggedVlans.value.splice(idx, 1)
+  else selectedTaggedVlans.value.push(vlanId)
+}
+
 async function fetchSwitches() {
   loadingSwitches.value = true
   try {
@@ -183,6 +209,13 @@ async function fetchSwitches() {
     allSwitches.value = data.data || data
   } catch { /* ignore */ }
   finally { loadingSwitches.value = false }
+}
+
+async function fetchVlans() {
+  try {
+    const data = await apiFetch<any>('/api/vlans')
+    allVlans.value = (data.data || data).sort((a: any, b: any) => a.vlan_id - b.vlan_id)
+  } catch { /* ignore */ }
 }
 
 const switchOptions = computed(() => {
@@ -253,6 +286,7 @@ watch(() => props.port, (p) => {
     form.description = p.description || ''
     form.mac_address = p.mac_address || ''
     taggedVlansStr.value = (p.tagged_vlans || []).join(',')
+    selectedTaggedVlans.value = [...(p.tagged_vlans || [])]
 
     if (p.connected_device_id) {
       connectionMode.value = 'switch'
@@ -275,7 +309,7 @@ watch(() => props.port, (p) => {
 
 watch(isOpen, async (open) => {
   if (open) {
-    await fetchSwitches()
+    await Promise.all([fetchSwitches(), fetchVlans()])
     // Apply pending selection after switches are loaded
     if (pendingSwitchId.value) {
       selectedSwitchId.value = pendingSwitchId.value
@@ -306,7 +340,9 @@ async function onSaveClick() {
 }
 
 async function save() {
-  const tagged_vlans = taggedVlansStr.value
+  const tagged_vlans = allVlans.value.length
+    ? [...selectedTaggedVlans.value]
+    : taggedVlansStr.value
     ? taggedVlansStr.value.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v))
     : []
 

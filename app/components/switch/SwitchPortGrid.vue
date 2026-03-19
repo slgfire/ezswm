@@ -3,9 +3,8 @@
     <!-- Block-based rendering -->
     <template v-if="units && units.length">
       <div v-for="(unit, ui) in units" :key="unit.unit_number">
-        <SwitchUnitDivider v-if="ui > 0" :label="unit.label || `Unit ${unit.unit_number}`" />
+        <SwitchUnitDivider :label="unit.label || `Unit ${unit.unit_number}`" />
         <div class="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800/30">
-          <div class="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ unit.label || `Unit ${unit.unit_number}` }}</div>
           <div class="flex flex-wrap items-start gap-5">
             <div v-for="block in unit.blocks" :key="block.id" class="flex flex-col gap-1">
               <div v-if="block.label" class="text-[10px] font-medium text-gray-400 dark:text-gray-500">{{ block.label }}</div>
@@ -26,8 +25,7 @@
                   :port="port"
                   :vlans="vlans"
                   :selected="selectedPorts.includes(port.id)"
-                  @click="$emit('select-port', port.id)"
-                  @click.shift="$emit('toggle-select', port.id)"
+                  @click="onPortClick($event, port.id)"
                 />
               </div>
             </div>
@@ -39,8 +37,7 @@
                 :port="port"
                 :vlans="vlans"
                 :selected="selectedPorts.includes(port.id)"
-                @click="$emit('select-port', port.id)"
-                @click.shift="$emit('toggle-select', port.id)"
+                @click="onPortClick($event, port.id)"
               />
             </div>
             </div>
@@ -57,7 +54,7 @@
         :port="port"
         :vlans="vlans"
         :selected="selectedPorts.includes(port.id)"
-        @click="$emit('select-port', port.id)"
+        @click="onPortClick($event, port.id)"
       />
     </div>
 
@@ -88,6 +85,13 @@
           <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: vlan.color }" /> VLAN {{ vlan.vlan_id }}</span>
         </template>
       </template>
+
+      <span class="text-gray-300 dark:text-gray-600">|</span>
+
+      <span class="flex items-center gap-1 text-gray-400">
+        <UIcon name="i-heroicons-cursor-arrow-ripple" class="h-3 w-3" />
+        Ctrl+Click to multi-select
+      </span>
     </div>
   </div>
 </template>
@@ -100,10 +104,19 @@ const props = defineProps<{
   selectedPorts: string[]
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   'select-port': [portId: string]
   'toggle-select': [portId: string]
 }>()
+
+function onPortClick(event: MouseEvent, portId: string) {
+  if (event.ctrlKey || event.metaKey) {
+    event.preventDefault()
+    emit('toggle-select', portId)
+  } else {
+    emit('select-port', portId)
+  }
+}
 
 function getPortsForBlock(unitNumber: number, block: any) {
   return props.ports

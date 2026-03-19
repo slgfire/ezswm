@@ -75,7 +75,7 @@
             </span>
             <span v-if="getVlan(net.vlan_id)" class="flex items-center gap-1">
               <UIcon name="i-heroicons-tag" class="h-3 w-3 text-gray-400" />
-              VLAN {{ getVlan(net.vlan_id).vlan_id }} — {{ getVlan(net.vlan_id).name }}
+              VLAN {{ getVlan(net.vlan_id).vlan_id }} · {{ getVlan(net.vlan_id).name }}
             </span>
             <span v-if="net.description" class="flex items-center gap-1 truncate">
               <UIcon name="i-heroicons-document-text" class="h-3 w-3 flex-shrink-0 text-gray-400" />

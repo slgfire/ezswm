@@ -224,14 +224,31 @@ End-to-end tests: 11/11 passed
 
 ---
 
-## Next Tasks (Post-MVP)
+## Feature Backlog
 
+### Quick Wins
+- Port utilization bar on switch cards (% ports up/configured)
+- Favoriten/Pinned switches — star icon, pinned cards shown first
+- CSV export for switches, VLANs, networks
+- Keyboard shortcuts — `/` to focus search, `Esc` to close panels
+- Port table view — collapsible table below port grid for copy-paste
+
+### Medium Effort
+- VLAN matrix per switch — which VLANs on which switch, as grid/matrix
+- Activity log per entity — "recent changes to this switch" in detail panel
+- Bulk import — CSV/JSON upload for switches, VLANs, networks
+- Real-time client-side form validation
+
+### Larger Features
 - Topology: interactive graph visualization (v-network-graph or similar)
 - LAG Groups: CRUD API + UI for managing LAG groups per switch
+- Dashboard widgets customizable — drag & drop reorder KPI cards
+- PDF export — switch front panel as printable PDF
+- IPv6 support
+
+### Testing & Quality
 - Phase 11: Testing (vitest, unit tests for repositories and IPv4 utils)
-- Real-time client-side form validation
-- Dashboard widget drag & drop
-- CSV export/import support
+- Print view CSS
 
 ---
 
