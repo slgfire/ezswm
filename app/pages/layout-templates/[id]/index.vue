@@ -13,7 +13,7 @@
         </div>
         <div class="flex items-center gap-1">
           <UTooltip :text="$t('common.edit')">
-            <UButton :to="`/layout-templates/${template.id}/edit`" icon="i-heroicons-pencil-square" variant="ghost" color="gray" size="xs" />
+            <UButton :to="`/layout-templates/${template.id}/edit`" icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" />
           </UTooltip>
           <UTooltip :text="$t('common.duplicate')">
             <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="gray" size="xs" @click="onDuplicate" />

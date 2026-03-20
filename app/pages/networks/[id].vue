@@ -8,10 +8,10 @@
       </div>
       <div v-if="network" class="flex items-center gap-1">
         <UTooltip :text="showDetails ? $t('common.hideDetails') : $t('common.showDetails')">
-          <UButton icon="i-heroicons-information-circle" :variant="showDetails ? 'solid' : 'ghost'" color="gray" size="sm" @click="showDetails = !showDetails" />
+          <UButton icon="i-heroicons-information-circle" :variant="showDetails ? 'solid' : 'ghost'" color="blue" size="sm" @click="showDetails = !showDetails" />
         </UTooltip>
         <UTooltip :text="editing ? $t('common.cancel') : $t('common.edit')">
-          <UButton :icon="editing ? 'i-heroicons-x-mark' : 'i-heroicons-pencil'" :variant="editing ? 'solid' : 'ghost'" color="gray" size="sm" @click="editing ? editing = false : startEdit()" />
+          <UButton :icon="editing ? 'i-heroicons-x-mark' : 'i-heroicons-pencil'" :variant="editing ? 'solid' : 'ghost'" :color="editing ? 'gray' : 'primary'" size="sm" @click="editing ? editing = false : startEdit()" />
         </UTooltip>
         <UTooltip :text="$t('common.delete')">
           <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="sm" @click="showDeleteDialog = true" />
@@ -119,97 +119,187 @@
         </form>
       </div>
 
-      <!-- IP Allocations -->
+      <!-- Unified IP Overview -->
       <div>
         <div class="mb-2 flex items-center justify-between">
-          <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ $t('networks.allocations.title') }}</h2>
-          <UButton icon="i-heroicons-plus" size="xs" variant="soft" @click="showAllocForm = !showAllocForm">
-            {{ $t('networks.allocations.create') }}
+          <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ $t('networks.unified.title') }}</h2>
+          <UButton icon="i-heroicons-plus" size="sm" @click="addPanelError = ''; showAddPanel = true">
+            {{ $t('common.add') }}
           </UButton>
         </div>
 
-        <div v-if="showAllocForm" class="mb-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700">
-          <!-- Inline error message -->
-          <div v-if="allocError" class="mb-3 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
-            {{ allocError }}
+
+        <!-- Unified list -->
+        <div class="divide-y divide-gray-200 rounded-lg border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+          <div
+            v-for="row in unifiedList"
+            :key="row.key"
+            class="flex items-center gap-3 px-4 py-2"
+            :class="rowClass(row)"
+          >
+            <!-- Fixed rows (network, gateway, broadcast) -->
+            <template v-if="row.kind === 'fixed'">
+              <div class="w-40 shrink-0">
+                <code class="text-xs text-gray-500 dark:text-gray-400">{{ row.ip }}</code>
+              </div>
+              <div class="flex-1">
+                <span class="text-xs font-medium text-gray-400 dark:text-gray-500">{{ row.label }}</span>
+              </div>
+            </template>
+
+            <!-- Allocation rows -->
+            <template v-else-if="row.kind === 'allocation'">
+              <div class="w-40 shrink-0">
+                <code class="text-xs">{{ row.data.ip_address }}</code>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span v-if="row.data.hostname" class="text-sm font-medium text-gray-900 dark:text-white">{{ row.data.hostname }}</span>
+                  <span v-if="row.data.device_type" class="text-xs text-gray-500">{{ row.data.device_type }}</span>
+                  <UBadge :color="row.data.status === 'active' ? 'green' : row.data.status === 'reserved' ? 'yellow' : 'gray'" variant="subtle" size="xs">{{ row.data.status }}</UBadge>
+                </div>
+              </div>
+              <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="xs" @click="openDeleteAllocDialog(row.data)" />
+            </template>
+
+            <!-- Range rows -->
+            <template v-else-if="row.kind === 'range'">
+              <div class="w-40 shrink-0 cursor-pointer" @click="openRangeEdit(row.data)">
+                <code class="text-xs">{{ row.data.start_ip }} &ndash; {{ row.data.end_ip }}</code>
+              </div>
+              <div class="min-w-0 flex-1 cursor-pointer" @click="openRangeEdit(row.data)">
+                <div class="flex flex-wrap items-center gap-2">
+                  <UBadge :color="rangeTypeBadgeColor(row.data.type)" variant="subtle" size="xs">{{ $t(`networks.ranges.types.${row.data.type}`) }}</UBadge>
+                  <span v-if="row.data.description" class="text-xs text-gray-500 dark:text-gray-400">{{ row.data.description }}</span>
+                  <span v-if="row.data.type !== 'dhcp'" class="text-xs text-gray-400">
+                    {{ $t('networks.ranges.ipsDocumented', { count: countAllocsInRange(row.data) }) }}
+                  </span>
+                </div>
+              </div>
+            </template>
           </div>
-          <form class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6" @submit.prevent="onCreateAllocation">
-            <UFormGroup :label="$t('networks.allocations.fields.ipAddress') + ' *'">
-              <UInput v-model="allocForm.ip_address" placeholder="10.0.1.10" size="sm" required :color="allocError ? 'red' : undefined" />
-            </UFormGroup>
-            <UFormGroup :label="$t('networks.allocations.fields.hostname')">
-              <UInput v-model="allocForm.hostname" size="sm" />
-            </UFormGroup>
-            <UFormGroup :label="$t('networks.allocations.fields.deviceType')">
-              <USelect v-model="allocForm.device_type" :options="deviceTypeOptions" size="sm" />
-            </UFormGroup>
-            <UFormGroup :label="$t('networks.allocations.fields.status')">
-              <USelect v-model="allocForm.status" :options="allocStatusOptions" size="sm" />
-            </UFormGroup>
-            <UFormGroup :label="$t('networks.allocations.fields.macAddress')">
-              <UInput v-model="allocForm.mac_address" placeholder="AA:BB:CC:DD:EE:FF" size="sm" />
-            </UFormGroup>
-            <div class="flex items-end gap-2">
-              <UButton type="submit" :loading="creatingAlloc" size="sm">{{ $t('common.add') }}</UButton>
-              <UButton variant="ghost" color="gray" size="sm" @click="showAllocForm = false">{{ $t('common.cancel') }}</UButton>
-            </div>
-          </form>
+          <div v-if="unifiedList.length === 0" class="px-4 py-3">
+            <p class="text-xs text-gray-500">{{ $t('common.noData') }}</p>
+          </div>
         </div>
-
-        <UTable v-if="allocations.length > 0" :rows="allocations" :columns="allocColumns">
-          <template #ip_address-data="{ row }">
-            <code class="text-xs">{{ row.ip_address }}</code>
-          </template>
-          <template #status-data="{ row }">
-            <UBadge :color="row.status === 'active' ? 'green' : row.status === 'reserved' ? 'yellow' : 'gray'" variant="subtle">{{ row.status }}</UBadge>
-          </template>
-          <template #actions-data="{ row }">
-            <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="xs" @click="openDeleteAllocDialog(row)" />
-          </template>
-        </UTable>
-        <p v-else class="text-xs text-gray-500">{{ $t('common.noData') }}</p>
-      </div>
-
-      <!-- IP Ranges -->
-      <div>
-        <div class="mb-2 flex items-center justify-between">
-          <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ $t('networks.ranges.title') }}</h2>
-          <UButton icon="i-heroicons-plus" size="xs" variant="soft" @click="showRangeForm = !showRangeForm">
-            {{ $t('networks.ranges.create') }}
-          </UButton>
-        </div>
-
-        <div v-if="showRangeForm" class="mb-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700">
-          <form class="grid grid-cols-2 gap-3 sm:grid-cols-4" @submit.prevent="onCreateRange">
-            <UFormGroup :label="$t('networks.ranges.fields.startIp') + ' *'">
-              <UInput v-model="rangeForm.start_ip" placeholder="10.0.1.100" size="sm" required />
-            </UFormGroup>
-            <UFormGroup :label="$t('networks.ranges.fields.endIp') + ' *'">
-              <UInput v-model="rangeForm.end_ip" placeholder="10.0.1.200" size="sm" required />
-            </UFormGroup>
-            <UFormGroup :label="$t('networks.ranges.fields.type') + ' *'">
-              <USelect v-model="rangeForm.type" :options="rangeTypeOptions" size="sm" />
-            </UFormGroup>
-            <div class="flex items-end gap-2">
-              <UButton type="submit" :loading="creatingRange" size="sm">{{ $t('common.add') }}</UButton>
-              <UButton variant="ghost" color="gray" size="sm" @click="showRangeForm = false">{{ $t('common.cancel') }}</UButton>
-            </div>
-          </form>
-        </div>
-
-        <UTable v-if="ranges.length > 0" :rows="ranges" :columns="rangeColumns">
-          <template #start_ip-data="{ row }"><code class="text-xs">{{ row.start_ip }}</code></template>
-          <template #end_ip-data="{ row }"><code class="text-xs">{{ row.end_ip }}</code></template>
-          <template #type-data="{ row }">
-            <UBadge :color="row.type === 'dhcp' ? 'blue' : row.type === 'static' ? 'green' : 'yellow'" variant="subtle">{{ row.type }}</UBadge>
-          </template>
-          <template #actions-data="{ row }">
-            <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="xs" @click="openDeleteRangeDialog(row)" />
-          </template>
-        </UTable>
-        <p v-else class="text-xs text-gray-500">{{ $t('common.noData') }}</p>
       </div>
     </div>
+
+    <!-- Range edit slideover -->
+    <USlideover v-model="showRangeEdit" :title="$t('networks.ranges.editRange')">
+      <div class="p-6">
+        <div v-if="rangeEditError" class="mb-4 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+          {{ rangeEditError }}
+        </div>
+        <form class="space-y-4" @submit.prevent="onSaveRangeEdit">
+          <UFormGroup :label="$t('networks.ranges.fields.startIp') + ' *'">
+            <UInput v-model="rangeEditForm.start_ip" required />
+          </UFormGroup>
+          <UFormGroup :label="$t('networks.ranges.fields.endIp') + ' *'">
+            <UInput v-model="rangeEditForm.end_ip" required />
+          </UFormGroup>
+          <UFormGroup :label="$t('networks.ranges.fields.type') + ' *'">
+            <USelect v-model="rangeEditForm.type" :options="rangeTypeOptions" />
+          </UFormGroup>
+          <UFormGroup :label="$t('common.description')">
+            <UInput v-model="rangeEditForm.description" />
+          </UFormGroup>
+          <div class="flex items-center justify-between pt-2">
+            <UButton icon="i-heroicons-trash" variant="ghost" color="red" @click="openDeleteRangeDialog(rangeEditTarget!)">
+              {{ $t('common.delete') }}
+            </UButton>
+            <div class="flex gap-2">
+              <UButton variant="ghost" color="gray" @click="showRangeEdit = false">{{ $t('common.cancel') }}</UButton>
+              <UButton type="submit" :loading="savingRangeEdit">{{ $t('common.save') }}</UButton>
+            </div>
+          </div>
+        </form>
+      </div>
+    </USlideover>
+
+    <!-- Add IP/Range Sidebar -->
+    <USlideover v-model="showAddPanel">
+      <UCard>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold">{{ addPanelMode === 'ip' ? $t('networks.unified.addIp') : $t('networks.unified.addRange') }}</h3>
+            <UButton variant="ghost" icon="i-heroicons-x-mark" size="sm" @click="showAddPanel = false" />
+          </div>
+        </template>
+
+        <!-- Mode toggle -->
+        <div class="mb-4 flex items-center gap-1">
+          <button
+            class="px-2.5 py-1 text-xs font-medium rounded border transition-colors"
+            :class="addPanelMode === 'ip'
+              ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
+              : 'bg-gray-100 border-gray-300 text-gray-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'"
+            @click="addPanelMode = 'ip'"
+          >{{ $t('networks.unified.addIp') }}</button>
+          <button
+            class="px-2.5 py-1 text-xs font-medium rounded border transition-colors"
+            :class="addPanelMode === 'range'
+              ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
+              : 'bg-gray-100 border-gray-300 text-gray-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'"
+            @click="addPanelMode = 'range'"
+          >{{ $t('networks.unified.addRange') }}</button>
+        </div>
+
+        <!-- Error -->
+        <div v-if="addPanelError" class="mb-4 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+          {{ addPanelError }}
+        </div>
+
+        <!-- IP Address form -->
+        <form v-if="addPanelMode === 'ip'" class="space-y-4" @submit.prevent="onCreateAllocation">
+          <UFormGroup :label="$t('networks.allocations.fields.ipAddress') + ' *'">
+            <UInput v-model="allocForm.ip_address" placeholder="10.0.1.10" required :color="addPanelError ? 'red' : undefined" />
+          </UFormGroup>
+          <UFormGroup :label="$t('networks.allocations.fields.hostname')">
+            <UInput v-model="allocForm.hostname" />
+          </UFormGroup>
+          <div class="grid grid-cols-2 gap-3">
+            <UFormGroup :label="$t('networks.allocations.fields.deviceType')">
+              <USelect v-model="allocForm.device_type" :options="deviceTypeOptions" />
+            </UFormGroup>
+            <UFormGroup :label="$t('networks.allocations.fields.status')">
+              <USelect v-model="allocForm.status" :options="allocStatusOptions" />
+            </UFormGroup>
+          </div>
+          <UFormGroup :label="$t('networks.allocations.fields.macAddress')">
+            <UInput v-model="allocForm.mac_address" placeholder="AA:BB:CC:DD:EE:FF" />
+          </UFormGroup>
+          <UFormGroup :label="$t('common.description')">
+            <UInput v-model="allocForm.description" />
+          </UFormGroup>
+        </form>
+
+        <!-- IP Range form -->
+        <form v-if="addPanelMode === 'range'" class="space-y-4" @submit.prevent="onCreateRange">
+          <div class="grid grid-cols-2 gap-3">
+            <UFormGroup :label="$t('networks.ranges.fields.startIp') + ' *'">
+              <UInput v-model="rangeForm.start_ip" placeholder="10.0.1.100" required :color="addPanelError ? 'red' : undefined" />
+            </UFormGroup>
+            <UFormGroup :label="$t('networks.ranges.fields.endIp') + ' *'">
+              <UInput v-model="rangeForm.end_ip" placeholder="10.0.1.200" required :color="addPanelError ? 'red' : undefined" />
+            </UFormGroup>
+          </div>
+          <UFormGroup :label="$t('networks.ranges.fields.type') + ' *'">
+            <USelect v-model="rangeForm.type" :options="rangeTypeOptions" />
+          </UFormGroup>
+          <UFormGroup :label="$t('common.description')">
+            <UInput v-model="rangeForm.description" />
+          </UFormGroup>
+        </form>
+
+        <template #footer>
+          <div class="flex justify-end gap-2">
+            <UButton variant="ghost" color="gray" @click="showAddPanel = false">{{ $t('common.cancel') }}</UButton>
+            <UButton :loading="addPanelMode === 'ip' ? creatingAlloc : creatingRange" @click="addPanelMode === 'ip' ? onCreateAllocation() : onCreateRange()">{{ $t('common.add') }}</UButton>
+          </div>
+        </template>
+      </UCard>
+    </USlideover>
 
     <SharedConfirmDialog v-model="showDeleteDialog" :title="$t('networks.delete')" :message="network ? `${$t('networks.delete')}: ${network.name} (${network.subnet})?` : ''" :loading="deleting" @confirm="confirmDeleteNetwork" />
     <SharedConfirmDialog v-model="showDeleteAllocDialog" :title="$t('networks.allocations.title')" :message="deleteAllocTarget ? `${$t('common.delete')}: ${deleteAllocTarget.ip_address}?` : ''" :loading="deletingAlloc" @confirm="confirmDeleteAlloc" />
@@ -235,24 +325,37 @@ const showDeleteDialog = ref(false)
 const deleting = ref(false)
 
 const allocations = ref<any[]>([])
-const showAllocForm = ref(false)
-const allocError = ref('')
+const showAddPanel = ref(false)
+const addPanelMode = ref<'ip' | 'range'>('ip')
+const addPanelError = ref('')
 const creatingAlloc = ref(false)
 const showDeleteAllocDialog = ref(false)
 const deleteAllocTarget = ref<any>(null)
 const deletingAlloc = ref(false)
 
 const ranges = ref<any[]>([])
-const showRangeForm = ref(false)
 const creatingRange = ref(false)
 const showDeleteRangeDialog = ref(false)
 const deleteRangeTarget = ref<any>(null)
 const deletingRange = ref(false)
 
+// Range edit slideover
+const showRangeEdit = ref(false)
+const rangeEditTarget = ref<any>(null)
+const rangeEditForm = ref({ start_ip: '', end_ip: '', type: 'static', description: '' })
+const rangeEditError = ref('')
+const savingRangeEdit = ref(false)
+
 const editForm = ref({ name: '', subnet: '', gateway: '', vlan_id: '', description: '' })
 const editDnsInput = ref('')
 const allocForm = ref({ ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' })
 const rangeForm = ref({ start_ip: '', end_ip: '', type: 'static', description: '' })
+
+// IP to numeric for sorting
+function ipToLong(ip: string): number {
+  const parts = ip.split('.').map(Number)
+  return ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0
+}
 
 const utilizationPercent = computed(() => {
   if (!subnetInfo.value.usableHosts || subnetInfo.value.usableHosts <= 0) return 0
@@ -275,22 +378,13 @@ const associatedVlan = computed(() => {
 
 const deviceTypeOptions = [{ label: '-', value: '' }, { label: 'Server', value: 'server' }, { label: 'Switch', value: 'switch' }, { label: 'Printer', value: 'printer' }, { label: 'Phone', value: 'phone' }, { label: 'AP', value: 'ap' }, { label: 'Camera', value: 'camera' }, { label: 'Other', value: 'other' }]
 const allocStatusOptions = computed(() => [{ label: t('common.active'), value: 'active' }, { label: 'Reserved', value: 'reserved' }, { label: t('common.inactive'), value: 'inactive' }])
-const rangeTypeOptions = [{ label: 'Static', value: 'static' }, { label: 'DHCP', value: 'dhcp' }, { label: 'Reserved', value: 'reserved' }]
+const rangeTypeOptions = [{ label: 'DHCP', value: 'dhcp' }, { label: 'Static', value: 'static' }, { label: 'Reserved', value: 'reserved' }]
 
-const allocColumns = computed(() => [
-  { key: 'ip_address', label: t('networks.allocations.fields.ipAddress'), sortable: true },
-  { key: 'hostname', label: t('networks.allocations.fields.hostname') },
-  { key: 'device_type', label: t('networks.allocations.fields.deviceType') },
-  { key: 'status', label: t('networks.allocations.fields.status') },
-  { key: 'actions', label: '' }
-])
-const rangeColumns = computed(() => [
-  { key: 'start_ip', label: t('networks.ranges.fields.startIp'), sortable: true },
-  { key: 'end_ip', label: t('networks.ranges.fields.endIp') },
-  { key: 'type', label: t('networks.ranges.fields.type') },
-  { key: 'description', label: t('common.description') },
-  { key: 'actions', label: '' }
-])
+// Add menu for the "+" dropdown
+const addMenuItems = computed(() => [[
+  { label: t('networks.unified.addIp'), icon: 'i-heroicons-computer-desktop', click: () => { addPanelMode.value = 'ip'; addPanelError.value = ''; showAddPanel.value = true } },
+  { label: t('networks.unified.addRange'), icon: 'i-heroicons-bars-3-bottom-left', click: () => { addPanelMode.value = 'range'; addPanelError.value = ''; showAddPanel.value = true } }
+]])
 
 const subnetInfo = computed(() => {
   if (!network.value?.subnet) return { network: '-', broadcast: '-', mask: '-', totalHosts: 0, usableHosts: 0 }
@@ -307,6 +401,85 @@ const subnetInfo = computed(() => {
   const numToIp = (n: number) => `${(n >>> 24) & 255}.${(n >>> 16) & 255}.${(n >>> 8) & 255}.${n & 255}`
   return { network: numToIp(networkNum), broadcast: numToIp(broadcastNum), mask: numToIp(maskNum), totalHosts, usableHosts: Math.max(0, usableHosts) }
 })
+
+// Unified list computed
+interface UnifiedRow {
+  key: string
+  kind: 'fixed' | 'allocation' | 'range'
+  sortIp: number
+  ip?: string
+  label?: string
+  data?: any
+}
+
+const unifiedList = computed<UnifiedRow[]>(() => {
+  const rows: UnifiedRow[] = []
+  const info = subnetInfo.value
+
+  // Fixed rows
+  if (info.network !== '-') {
+    rows.push({ key: 'net', kind: 'fixed', sortIp: ipToLong(info.network), ip: info.network, label: t('networks.unified.networkAddress') })
+  }
+  if (network.value?.gateway) {
+    rows.push({ key: 'gw', kind: 'fixed', sortIp: ipToLong(network.value.gateway), ip: network.value.gateway, label: t('networks.unified.gateway') })
+  }
+  if (info.broadcast !== '-') {
+    rows.push({ key: 'bc', kind: 'fixed', sortIp: ipToLong(info.broadcast), ip: info.broadcast, label: t('networks.unified.broadcast') })
+  }
+
+  // Allocation rows
+  for (const a of allocations.value) {
+    rows.push({ key: `alloc-${a.id}`, kind: 'allocation', sortIp: ipToLong(a.ip_address), data: a })
+  }
+
+  // Range rows
+  for (const r of ranges.value) {
+    rows.push({ key: `range-${r.id}`, kind: 'range', sortIp: ipToLong(r.start_ip), data: r })
+  }
+
+  rows.sort((a, b) => a.sortIp - b.sortIp)
+  return rows
+})
+
+function rangeTypeBadgeColor(type: string): string {
+  if (type === 'dhcp') return 'blue'
+  if (type === 'static') return 'green'
+  return 'yellow'
+}
+
+function rowClass(row: UnifiedRow): string {
+  if (row.kind === 'fixed') {
+    return 'bg-gray-50 dark:bg-gray-800/50'
+  }
+  if (row.kind === 'range') {
+    const type = row.data?.type
+    if (type === 'dhcp') return 'bg-blue-50/50 dark:bg-blue-900/10'
+    if (type === 'static') return 'bg-green-50/50 dark:bg-green-900/10'
+    if (type === 'reserved') return 'bg-yellow-50/50 dark:bg-yellow-900/10'
+  }
+  return ''
+}
+
+function countAllocsInRange(range: any): number {
+  const start = ipToLong(range.start_ip)
+  const end = ipToLong(range.end_ip)
+  return allocations.value.filter(a => {
+    const ip = ipToLong(a.ip_address)
+    return ip >= start && ip <= end
+  }).length
+}
+
+function openRangeEdit(range: any) {
+  rangeEditTarget.value = range
+  rangeEditForm.value = {
+    start_ip: range.start_ip,
+    end_ip: range.end_ip,
+    type: range.type,
+    description: range.description || ''
+  }
+  rangeEditError.value = ''
+  showRangeEdit.value = true
+}
 
 function startEdit() {
   editForm.value = { name: network.value.name, subnet: network.value.subnet, gateway: network.value.gateway || '', vlan_id: network.value.vlan_id || '', description: network.value.description || '' }
@@ -340,17 +513,16 @@ async function fetchAllocations() {
 }
 
 async function onCreateAllocation() {
-  allocError.value = ''
+  addPanelError.value = ''
   creatingAlloc.value = true
   try {
     await $fetch(`/api/networks/${networkId}/allocations`, { method: 'POST', body: { ip_address: allocForm.value.ip_address.trim(), hostname: allocForm.value.hostname.trim() || undefined, mac_address: allocForm.value.mac_address.trim() || undefined, device_type: allocForm.value.device_type || undefined, description: allocForm.value.description.trim() || undefined, status: allocForm.value.status } })
     toast.add({ title: t('networks.allocations.messages.created'), color: 'green' })
-    showAllocForm.value = false
-    allocError.value = ''
+    showAddPanel.value = false
     allocForm.value = { ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' }
     await fetchAllocations()
   } catch (err: any) {
-    allocError.value = err?.data?.message || t('errors.serverError')
+    addPanelError.value = err?.data?.message || t('errors.serverError')
   }
   finally { creatingAlloc.value = false }
 }
@@ -370,24 +542,55 @@ async function fetchRanges() {
 }
 
 async function onCreateRange() {
+  addPanelError.value = ''
   creatingRange.value = true
   try {
     await $fetch(`/api/networks/${networkId}/ranges`, { method: 'POST', body: { start_ip: rangeForm.value.start_ip.trim(), end_ip: rangeForm.value.end_ip.trim(), type: rangeForm.value.type, description: rangeForm.value.description.trim() || undefined } })
     toast.add({ title: t('networks.ranges.messages.created'), color: 'green' })
-    showRangeForm.value = false
+    showAddPanel.value = false
     rangeForm.value = { start_ip: '', end_ip: '', type: 'static', description: '' }
     await fetchRanges()
-  } catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' }) }
+  } catch (err: any) {
+    addPanelError.value = err?.data?.message || t('errors.serverError')
+  }
   finally { creatingRange.value = false }
 }
 
-function openDeleteRangeDialog(r: any) { deleteRangeTarget.value = r; showDeleteRangeDialog.value = true }
+function openDeleteRangeDialog(r: any) {
+  deleteRangeTarget.value = r
+  showDeleteRangeDialog.value = true
+  showRangeEdit.value = false
+}
+
 async function confirmDeleteRange() {
   if (!deleteRangeTarget.value) return
   deletingRange.value = true
   try { await $fetch(`/api/networks/${networkId}/ranges/${deleteRangeTarget.value.id}`, { method: 'DELETE' }); toast.add({ title: t('networks.ranges.messages.deleted'), color: 'green' }); showDeleteRangeDialog.value = false; await fetchRanges() }
   catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' }) }
   finally { deletingRange.value = false }
+}
+
+async function onSaveRangeEdit() {
+  if (!rangeEditTarget.value) return
+  rangeEditError.value = ''
+  savingRangeEdit.value = true
+  try {
+    await $fetch(`/api/networks/${networkId}/ranges/${rangeEditTarget.value.id}`, {
+      method: 'PUT',
+      body: {
+        start_ip: rangeEditForm.value.start_ip.trim(),
+        end_ip: rangeEditForm.value.end_ip.trim(),
+        type: rangeEditForm.value.type,
+        description: rangeEditForm.value.description.trim() || null
+      }
+    })
+    toast.add({ title: t('networks.ranges.messages.updated'), color: 'green' })
+    showRangeEdit.value = false
+    await fetchRanges()
+  } catch (err: any) {
+    rangeEditError.value = err?.data?.message || t('errors.serverError')
+  }
+  finally { savingRangeEdit.value = false }
 }
 
 async function loadNetwork() {

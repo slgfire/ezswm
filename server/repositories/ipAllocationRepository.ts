@@ -1,7 +1,8 @@
 import { nanoid } from 'nanoid'
 import { readJson, writeJson } from '../storage/jsonStorage'
 import type { IPAllocation } from '../../types/ipAllocation'
-import { isValidIPv4, isIPInSubnet, isUsableHostIP, isValidMacAddress, subnetRangeError, parseSubnet } from '../utils/ipv4'
+import type { IPRange } from '../../types/ipRange'
+import { isValidIPv4, isIPInSubnet, isUsableHostIP, isValidMacAddress, subnetRangeError, parseSubnet, ipToLong } from '../utils/ipv4'
 import { networkRepository } from './networkRepository'
 
 const FILE_NAME = 'ipAllocations.json'
@@ -41,6 +42,16 @@ export const ipAllocationRepository = {
 
     if (data.mac_address && !isValidMacAddress(data.mac_address)) {
       throw createError({ statusCode: 400, message: 'Invalid MAC address format (expected XX:XX:XX:XX:XX:XX)' })
+    }
+
+    // Check if IP falls inside a DHCP dynamic range
+    const ipRanges = readJson<IPRange[]>('ipRanges.json')
+    const networkRanges = ipRanges.filter(r => r.network_id === networkId)
+    const ipLong = ipToLong(data.ip_address)
+    for (const range of networkRanges) {
+      if (range.type === 'dhcp' && ipLong >= ipToLong(range.start_ip) && ipLong <= ipToLong(range.end_ip)) {
+        throw createError({ statusCode: 400, message: `IP ${data.ip_address} is inside a DHCP dynamic range (${range.start_ip} - ${range.end_ip}). Static IPs cannot be assigned within dynamic DHCP ranges.` })
+      }
     }
 
     // Global IP uniqueness

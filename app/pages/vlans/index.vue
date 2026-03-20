@@ -90,7 +90,7 @@
 
         <!-- Actions (on hover) -->
         <div class="flex items-center gap-1 py-3 opacity-0 transition-opacity group-hover:opacity-100">
-          <UButton icon="i-heroicons-pencil-square" variant="ghost" color="gray" size="xs" @click.stop="openPanel(vlan, true)" />
+          <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.stop="openPanel(vlan, true)" />
           <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="xs" @click.stop="openDeleteDialog(vlan)" />
         </div>
       </div>
@@ -120,7 +120,7 @@
             </div>
             <div class="flex items-center gap-1">
               <UTooltip v-if="!panelEditing" :text="$t('common.edit')">
-                <UButton icon="i-heroicons-pencil" variant="ghost" size="sm" @click="startEdit()" />
+                <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="sm" @click="startEdit()" />
               </UTooltip>
               <UButton variant="ghost" icon="i-heroicons-x-mark" size="sm" @click="panelEditing ? panelEditing = false : showPanel = false" />
             </div>
@@ -210,7 +210,7 @@
 
         <template #footer>
           <div v-if="panelEditing" class="flex justify-end gap-2">
-            <UButton variant="ghost" @click="panelEditing = false">{{ $t('common.cancel') }}</UButton>
+            <UButton variant="ghost" color="gray" @click="panelEditing = false">{{ $t('common.cancel') }}</UButton>
             <UButton :loading="saving" @click="onSave">{{ $t('common.save') }}</UButton>
           </div>
         </template>

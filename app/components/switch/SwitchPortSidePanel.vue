@@ -207,7 +207,7 @@
             {{ $t('switches.ports.resetPort') }}
           </UButton>
           <div class="flex gap-2">
-            <UButton variant="ghost" @click="isOpen = false">{{ $t('common.cancel') }}</UButton>
+            <UButton variant="ghost" color="gray" @click="isOpen = false">{{ $t('common.cancel') }}</UButton>
             <UButton @click="onSaveClick">{{ $t('common.save') }}</UButton>
           </div>
         </div>

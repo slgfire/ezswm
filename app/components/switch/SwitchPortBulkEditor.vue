@@ -56,7 +56,7 @@
 
       <template #footer>
         <div class="flex items-center justify-between">
-          <UButton variant="soft" color="gray" @click="close">{{ $t('common.cancel') }}</UButton>
+          <UButton variant="ghost" color="gray" @click="close">{{ $t('common.cancel') }}</UButton>
           <UButton @click="apply">{{ $t('switches.ports.applyToPorts', { count: selectedPorts.length }) }}</UButton>
         </div>
       </template>

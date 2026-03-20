@@ -30,7 +30,7 @@
         <template #actions-data="{ row }">
           <div class="flex items-center gap-1">
             <UTooltip :text="$t('common.edit')">
-              <UButton :to="`/layout-templates/${row.id}/edit`" icon="i-heroicons-pencil-square" size="xs" variant="ghost" />
+              <UButton :to="`/layout-templates/${row.id}/edit`" icon="i-heroicons-pencil-square" size="xs" variant="ghost" color="primary" />
             </UTooltip>
             <UTooltip :text="$t('common.duplicate')">
               <UButton icon="i-heroicons-document-duplicate" size="xs" variant="ghost" @click="onDuplicate(row)" />

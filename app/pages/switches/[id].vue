@@ -19,7 +19,7 @@
           <UButton
             icon="i-heroicons-information-circle"
             :variant="showDetails ? 'solid' : 'ghost'"
-            color="gray"
+            color="blue"
             size="sm"
             @click="showDetails = !showDetails"
           />
@@ -28,7 +28,7 @@
           <UButton
             :icon="editMode ? 'i-heroicons-x-mark' : 'i-heroicons-pencil'"
             :variant="editMode ? 'solid' : 'ghost'"
-            color="gray"
+            :color="editMode ? 'gray' : 'primary'"
             size="sm"
             @click="toggleEditMode"
           />

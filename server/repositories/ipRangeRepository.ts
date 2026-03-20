@@ -45,7 +45,7 @@ export const ipRangeRepository = {
     const existingRanges = this.list(networkId)
     for (const existing of existingRanges) {
       if (doRangesOverlap(data.start_ip, data.end_ip, existing.start_ip, existing.end_ip)) {
-        throw createError({ statusCode: 409, message: `Range overlaps with existing range ${existing.start_ip} - ${existing.end_ip}` })
+        throw createError({ statusCode: 409, message: `Range ${data.start_ip}-${data.end_ip} overlaps with existing range ${existing.start_ip}-${existing.end_ip} (${existing.type})` })
       }
     }
 
@@ -100,7 +100,7 @@ export const ipRangeRepository = {
     const networkRanges = ranges.filter(r => r.network_id === current.network_id && r.id !== id)
     for (const existing of networkRanges) {
       if (doRangesOverlap(startIp, endIp, existing.start_ip, existing.end_ip)) {
-        throw createError({ statusCode: 409, message: `Range overlaps with existing range ${existing.start_ip} - ${existing.end_ip}` })
+        throw createError({ statusCode: 409, message: `Range ${startIp}-${endIp} overlaps with existing range ${existing.start_ip}-${existing.end_ip} (${existing.type})` })
       }
     }
 

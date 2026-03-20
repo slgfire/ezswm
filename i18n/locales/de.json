@@ -237,13 +237,29 @@
       "fields": {
         "startIp": "Start-IP",
         "endIp": "End-IP",
-        "type": "Typ"
+        "type": "Typ",
+        "description": "Beschreibung"
       },
+      "types": {
+        "dhcp": "DHCP",
+        "static": "Statisch",
+        "reserved": "Reserviert"
+      },
+      "ipsDocumented": "{count} IPs dokumentiert",
+      "editRange": "Bereich bearbeiten",
       "messages": {
         "created": "IP-Bereich erfolgreich erstellt",
         "updated": "IP-Bereich erfolgreich aktualisiert",
         "deleted": "IP-Bereich erfolgreich gelöscht"
       }
+    },
+    "unified": {
+      "title": "IP-Übersicht",
+      "addIp": "IP-Adresse",
+      "addRange": "IP-Bereich",
+      "networkAddress": "Netzwerk",
+      "gateway": "Gateway",
+      "broadcast": "Broadcast"
     },
     "subnetInfo": {
       "networkAddress": "Netzwerkadresse",

@@ -42,7 +42,7 @@
             class="group relative flex flex-col rounded-lg border border-gray-200 bg-white transition-all hover:border-primary-400 hover:shadow-md dark:border-gray-700 dark:bg-gray-800/50 dark:hover:border-primary-500"
           >
             <!-- Hover actions (top-right overlay) -->
-            <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/90 px-1 py-0.5 opacity-0 shadow-sm backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-gray-800/90">
+            <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-gray-700/95">
               <UButton icon="i-heroicons-bars-2" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="gray" size="2xs" @click.prevent />
               <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="gray" size="2xs" @click.prevent="onDuplicate(sw)" />
               <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="2xs" @click.prevent="confirmDelete(sw)" />
