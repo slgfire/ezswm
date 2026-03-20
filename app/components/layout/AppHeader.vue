@@ -35,7 +35,7 @@
           <div v-else-if="hasResults" class="max-h-96 overflow-y-auto py-1">
             <!-- Switches -->
             <template v-if="results.switches?.length">
-              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">Switches</div>
+              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.switches') }}</div>
               <NuxtLink
                 v-for="sw in results.switches"
                 :key="sw.id"
@@ -53,7 +53,7 @@
 
             <!-- VLANs -->
             <template v-if="results.vlans?.length">
-              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">VLANs</div>
+              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.vlans') }}</div>
               <NuxtLink
                 v-for="vlan in results.vlans"
                 :key="vlan.id"
@@ -70,7 +70,7 @@
 
             <!-- Networks -->
             <template v-if="results.networks?.length">
-              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">Networks</div>
+              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.networks') }}</div>
               <NuxtLink
                 v-for="net in results.networks"
                 :key="net.id"
@@ -88,7 +88,7 @@
 
             <!-- Allocations -->
             <template v-if="results.allocations?.length">
-              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">IP Allocations</div>
+              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.ipAllocations') }}</div>
               <div
                 v-for="alloc in results.allocations"
                 :key="alloc.id"
@@ -104,7 +104,7 @@
           </div>
 
           <div v-else class="py-4 text-center text-sm text-gray-400">
-            No results found
+            {{ $t('search.noResults') }}
           </div>
         </div>
       </div>

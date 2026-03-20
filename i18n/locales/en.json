@@ -63,7 +63,16 @@
     "details": "Details",
     "general": "General",
     "account": "Account",
-    "notes": "Notes"
+    "notes": "Notes",
+    "clear": "Clear",
+    "noChange": "No change",
+    "add": "Add",
+    "warning": "Warning",
+    "noResults": "No results found",
+    "hideDetails": "Hide details",
+    "showDetails": "Show details",
+    "comingSoon": "Coming Soon",
+    "inDevelopment": "In Development"
   },
   "dashboard": {
     "emptyTitle": "Welcome to ezSWM!",
@@ -114,10 +123,43 @@
       "connectedPort": "Connected Port",
       "speed": "Speed",
       "macAddress": "MAC Address",
-      "lagGroup": "LAG Group"
+      "lagGroup": "LAG Group",
+      "bulkReset": "Reset Ports",
+      "confirmBulkReset": "Reset {count} port(s) to defaults? This will clear all settings and connections.",
+      "bulkResetDone": "{count} port(s) reset to defaults",
+      "selected": "{count} port(s) selected",
+      "noPortsMessage": "No ports. Assign a layout template to generate ports.",
+      "multiSelectHint": "Ctrl+Click to multi-select",
+      "portUpdated": "Port updated",
+      "portReset": "Port reset to defaults",
+      "resetPort": "Reset Port",
+      "setToUp": "Yes, set to up",
+      "keepDown": "No, keep down",
+      "portDownPrompt": "This port is currently \"down\". Set it to \"up\" since you are connecting it?",
+      "freetext": "Freetext",
+      "switchReference": "Switch Reference",
+      "noAvailablePorts": "No available ports on this switch.",
+      "portConflict": "This port is already connected to",
+      "portConflictOverride": "Saving will override that connection.",
+      "applyToPorts": "Apply to {count} port(s)",
+      "selectSwitch": "Select switch...",
+      "selectPort": "Select port...",
+      "devicePlaceholder": "Device name or hostname",
+      "portPlaceholder": "Port name",
+      "noPortSelected": "No port selected",
+      "bulkEditTitle": "Bulk Edit — {count} ports",
+      "bulkEditHint": "Changes will be applied to all {count} selected ports. Leave fields empty to keep current values.",
+      "updatedPorts": "Updated {count} ports"
     },
     "emptyTitle": "No switches yet",
-    "emptyDescription": "Create your first switch to get started."
+    "emptyDescription": "Create your first switch to get started.",
+    "infoBar": {
+      "model": "Model",
+      "location": "Location",
+      "managementIp": "Management IP",
+      "ports": "Ports",
+      "template": "Template"
+    }
   },
   "vlans": {
     "title": "VLANs",
@@ -138,7 +180,11 @@
       "deleted": "VLAN deleted successfully"
     },
     "emptyTitle": "No VLANs defined yet",
-    "emptyDescription": "Create your first VLAN to get started."
+    "emptyDescription": "Create your first VLAN to get started.",
+    "noNetwork": "No network",
+    "sortId": "ID",
+    "sortName": "Name",
+    "sortStatus": "Status"
   },
   "networks": {
     "title": "Networks",
@@ -199,6 +245,17 @@
       "lastUsable": "Last Usable",
       "totalHosts": "Total Hosts",
       "usableHosts": "Usable Hosts"
+    },
+    "infoBar": {
+      "subnet": "Subnet",
+      "gateway": "Gateway",
+      "mask": "Mask",
+      "hosts": "Hosts",
+      "allocated": "Allocated",
+      "vlan": "VLAN",
+      "network": "Network",
+      "broadcast": "Broadcast",
+      "dns": "DNS"
     }
   },
   "templates": {
@@ -230,25 +287,48 @@
       "count": "Port Count",
       "startIndex": "Start Index",
       "rows": "Rows",
-      "label": "Label"
+      "label": "Label",
+      "rowLayout": "Row Layout",
+      "defaultSpeed": "Default Speed"
     },
     "messages": {
       "created": "Template created successfully",
       "updated": "Template updated successfully",
       "deleted": "Template deleted successfully",
       "exported": "Template exported successfully",
-      "imported": "Template imported successfully"
+      "imported": "Template imported successfully",
+      "duplicated": "Template duplicated successfully"
     },
     "emptyTitle": "No layout templates yet",
     "emptyDescription": "Create a template for your switch models.",
-    "confirmDelete": "Are you sure you want to delete this template?"
+    "confirmDelete": "Are you sure you want to delete this template?",
+    "infoBar": {
+      "units": "units",
+      "ports": "ports",
+      "count": "Count",
+      "start": "Start",
+      "rows": "Rows",
+      "layout": "Layout",
+      "speed": "Speed",
+      "label": "Label"
+    },
+    "preview": "Preview",
+    "previewEmpty": "Add blocks to see the port layout preview.",
+    "rowLayout": {
+      "sequential": "Sequential",
+      "oddEven": "Odd/Even",
+      "evenOdd": "Even/Odd"
+    }
   },
   "topology": {
     "title": "Network Topology",
     "emptyTitle": "No switch connections found",
     "emptyDescription": "Connect switches to see the topology.",
     "exportPdf": "Export PDF",
-    "exportPng": "Export PNG"
+    "exportPng": "Export PNG",
+    "comingSoon": "Coming Soon",
+    "comingSoonDescription": "Interactive network topology diagram showing switch-to-switch connections based on port links. Auto-layout, clickable nodes, and VLAN edge labels.",
+    "inDevelopment": "In Development"
   },
   "tools": {
     "subnetCalculator": {
@@ -328,5 +408,25 @@
     "validationFailed": "Validation failed",
     "serverError": "Server error",
     "networkError": "Network error"
+  },
+  "search": {
+    "switches": "Switches",
+    "vlans": "VLANs",
+    "networks": "Networks",
+    "ipAllocations": "IP Allocations",
+    "noResults": "No results found"
+  },
+  "legend": {
+    "status": "Status",
+    "up": "Up",
+    "down": "Down",
+    "disabled": "Disabled",
+    "type": "Type",
+    "indicators": "Indicators",
+    "trunk": "Trunk",
+    "sfp": "SFP/SFP+",
+    "qsfp": "QSFP",
+    "console": "Console",
+    "mgmt": "Mgmt"
   }
 }

@@ -15,7 +15,7 @@
         </h1>
       </div>
       <div v-if="item" class="flex items-center gap-1">
-        <UTooltip :text="showDetails ? 'Hide details' : 'Show details'">
+        <UTooltip :text="showDetails ? $t('common.hideDetails') : $t('common.showDetails')">
           <UButton
             icon="i-heroicons-information-circle"
             :variant="showDetails ? 'solid' : 'ghost'"
@@ -65,22 +65,22 @@
       <!-- Info bar -->
       <div class="-mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-gray-200 bg-white px-5 py-3 dark:border-gray-700 dark:bg-gray-800/30">
         <div v-if="item.model">
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">Model</div>
+          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.model') }}</div>
           <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.manufacturer ? `${item.manufacturer} ${item.model}` : item.model }}</div>
         </div>
         <div v-if="item.model && (item.location || item.management_ip)" class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
         <div v-if="item.location">
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">Location</div>
+          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.location') }}</div>
           <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.location }}{{ item.rack_position ? ` / ${item.rack_position}` : '' }}</div>
         </div>
         <div v-if="item.location && item.management_ip" class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
         <div v-if="item.management_ip">
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">Management IP</div>
+          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.managementIp') }}</div>
           <div class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ item.management_ip }}</div>
         </div>
         <div v-if="item.ports?.length" class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
         <div v-if="item.ports?.length">
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">Ports</div>
+          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.ports') }}</div>
           <div class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
             {{ item.ports.length }}
             <span class="flex items-center gap-1.5 text-xs font-normal">
@@ -92,7 +92,7 @@
         </div>
         <div v-if="currentTemplateName" class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
         <div v-if="currentTemplateName">
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">Template</div>
+          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.template') }}</div>
           <div class="text-sm text-gray-600 dark:text-gray-300">{{ currentTemplateName }}</div>
         </div>
       </div>
@@ -205,10 +205,13 @@
         </span>
         <div class="flex items-center gap-2">
           <UButton size="xs" variant="soft" @click="bulkEditorRef?.open()">
-            Bulk Edit
+            {{ $t('switches.ports.bulkEdit') }}
+          </UButton>
+          <UButton size="xs" variant="soft" color="red" @click="bulkReset">
+            {{ $t('switches.ports.bulkReset') }}
           </UButton>
           <UButton size="xs" variant="ghost" color="gray" @click="selectedPorts = []">
-            Clear
+            {{ $t('common.clear') }}
           </UButton>
         </div>
       </div>
@@ -233,7 +236,7 @@
           @select-port="onSelectPort"
           @toggle-select="onToggleSelect"
         />
-        <p v-else class="text-sm text-gray-400">No ports. Assign a layout template to generate ports.</p>
+        <p v-else class="text-sm text-gray-400">{{ $t('switches.ports.noPortsMessage') }}</p>
       </div>
 
     </div>
@@ -302,6 +305,20 @@ function onSelectPort(portId: string) {
   if (port) {
     selectedPort.value = port
     showPortPanel.value = true
+  }
+}
+
+async function bulkReset() {
+  if (!window.confirm(t('switches.ports.confirmBulkReset', { count: selectedPorts.value.length }))) return
+  try {
+    for (const portId of selectedPorts.value) {
+      await $fetch(`/api/switches/${id}/ports/${portId}`, { method: 'DELETE' })
+    }
+    toast.add({ title: t('switches.ports.bulkResetDone', { count: selectedPorts.value.length }), color: 'green' })
+    selectedPorts.value = []
+    await fetchSwitch()
+  } catch (e: any) {
+    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'red' })
   }
 }
 

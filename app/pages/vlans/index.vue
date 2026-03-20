@@ -29,15 +29,15 @@
       <!-- Sort header -->
       <div class="flex items-center gap-4 border-b border-gray-100 px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400 dark:border-gray-700/50">
         <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('vlan_id')">
-          ID
+          {{ $t('vlans.sortId') }}
           <UIcon v-if="sortField === 'vlan_id'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
         </button>
         <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('name')">
-          Name
+          {{ $t('vlans.sortName') }}
           <UIcon v-if="sortField === 'name'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
         </button>
         <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('status')">
-          Status
+          {{ $t('vlans.sortStatus') }}
           <UIcon v-if="sortField === 'status'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
         </button>
       </div>
@@ -75,7 +75,7 @@
             </span>
             <span v-else class="flex items-center gap-1 text-yellow-500">
               <UIcon name="i-heroicons-exclamation-triangle" class="h-3 w-3" />
-              No network
+              {{ $t('vlans.noNetwork') }}
             </span>
             <span v-if="vlan.routing_device" class="flex items-center gap-1">
               <UIcon name="i-heroicons-server" class="h-3 w-3 text-gray-400" />

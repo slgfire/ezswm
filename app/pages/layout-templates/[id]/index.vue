@@ -15,6 +15,9 @@
           <UTooltip :text="$t('common.edit')">
             <UButton :to="`/layout-templates/${template.id}/edit`" icon="i-heroicons-pencil-square" variant="ghost" color="gray" size="xs" />
           </UTooltip>
+          <UTooltip :text="$t('common.duplicate')">
+            <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="gray" size="xs" @click="onDuplicate" />
+          </UTooltip>
           <UTooltip :text="$t('common.delete')">
             <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="xs" @click="showDeleteDialog = true" />
           </UTooltip>
@@ -33,11 +36,11 @@
         </span>
         <span class="flex items-center gap-1">
           <UIcon name="i-heroicons-square-3-stack-3d" class="h-3.5 w-3.5" />
-          {{ template.units?.length || 0 }} units
+          {{ template.units?.length || 0 }} {{ $t('templates.infoBar.units') }}
         </span>
         <span class="flex items-center gap-1">
           <UIcon name="i-heroicons-rectangle-group" class="h-3.5 w-3.5" />
-          {{ getTotalPortCount() }} ports
+          {{ getTotalPortCount() }} {{ $t('templates.infoBar.ports') }}
         </span>
         <span v-if="template.description" class="text-gray-400">— {{ template.description }}</span>
       </div>
@@ -53,7 +56,7 @@
             <span class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
               {{ unit.label || `Unit ${unit.unit_number}` }}
             </span>
-            <span class="text-xs text-gray-400">{{ getUnitPortCount(unit) }} ports</span>
+            <span class="text-xs text-gray-400">{{ getUnitPortCount(unit) }} {{ $t('templates.infoBar.ports') }}</span>
           </div>
 
           <div v-if="unit.blocks && unit.blocks.length > 0" class="space-y-2">
@@ -66,17 +69,17 @@
                 {{ block.type.toUpperCase() }}
               </UBadge>
               <div class="flex flex-1 flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
-                <span><span class="text-gray-400 dark:text-gray-500">Count:</span> {{ block.count }}</span>
-                <span><span class="text-gray-400 dark:text-gray-500">Start:</span> {{ block.start_index }}</span>
-                <span><span class="text-gray-400 dark:text-gray-500">Rows:</span> {{ block.rows }}</span>
+                <span><span class="text-gray-400 dark:text-gray-500">{{ $t('templates.infoBar.count') }}:</span> {{ block.count }}</span>
+                <span><span class="text-gray-400 dark:text-gray-500">{{ $t('templates.infoBar.start') }}:</span> {{ block.start_index }}</span>
+                <span><span class="text-gray-400 dark:text-gray-500">{{ $t('templates.infoBar.rows') }}:</span> {{ block.rows }}</span>
                 <span v-if="block.row_layout && block.row_layout !== 'sequential'">
-                  <span class="text-gray-400 dark:text-gray-500">Layout:</span> {{ block.row_layout }}
+                  <span class="text-gray-400 dark:text-gray-500">{{ $t('templates.infoBar.layout') }}:</span> {{ block.row_layout }}
                 </span>
                 <span v-if="block.default_speed">
-                  <span class="text-gray-400 dark:text-gray-500">Speed:</span> {{ block.default_speed }}
+                  <span class="text-gray-400 dark:text-gray-500">{{ $t('templates.infoBar.speed') }}:</span> {{ block.default_speed }}
                 </span>
                 <span v-if="block.label" class="font-mono">
-                  <span class="text-gray-400 dark:text-gray-500">Label:</span> {{ block.label }}
+                  <span class="text-gray-400 dark:text-gray-500">{{ $t('templates.infoBar.label') }}:</span> {{ block.label }}
                 </span>
               </div>
             </div>
@@ -139,6 +142,10 @@ function getPortTypeColor(type: string): string {
     console: 'yellow', management: 'orange'
   }
   return colors[type] || 'gray'
+}
+
+function onDuplicate() {
+  navigateTo(`/layout-templates/create?clone=${route.params.id}`)
 }
 
 async function handleDelete() {

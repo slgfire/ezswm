@@ -7,7 +7,7 @@
         <h1 class="text-xl font-bold">{{ network?.name || $t('common.loading') }}</h1>
       </div>
       <div v-if="network" class="flex items-center gap-1">
-        <UTooltip :text="showDetails ? 'Hide details' : 'Show details'">
+        <UTooltip :text="showDetails ? $t('common.hideDetails') : $t('common.showDetails')">
           <UButton icon="i-heroicons-information-circle" :variant="showDetails ? 'solid' : 'ghost'" color="gray" size="sm" @click="showDetails = !showDetails" />
         </UTooltip>
         <UTooltip :text="editing ? $t('common.cancel') : $t('common.edit')">
@@ -27,32 +27,32 @@
       <!-- Subnet stats -->
       <div class="-mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-gray-200 bg-white px-5 py-3 dark:border-gray-700 dark:bg-gray-800/30">
         <div>
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">Subnet</div>
+          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.subnet') }}</div>
           <div class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ network.subnet }}</div>
         </div>
         <div class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
         <div v-if="network.gateway">
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">Gateway</div>
+          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.gateway') }}</div>
           <div class="font-mono text-sm font-semibold text-gray-900 dark:text-white">{{ network.gateway }}</div>
         </div>
         <div v-if="network.gateway" class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
         <div>
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">Mask</div>
+          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.mask') }}</div>
           <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.mask }}</div>
         </div>
         <div class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
         <div>
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">Hosts</div>
+          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.hosts') }}</div>
           <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ subnetInfo.usableHosts.toLocaleString() }}</div>
         </div>
         <div class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
         <div>
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">Allocated</div>
+          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.allocated') }}</div>
           <div class="text-sm font-semibold" :class="utilizationPercent > 80 ? 'text-red-500' : 'text-primary-500'">{{ allocations.length }} <span class="text-xs font-normal text-gray-400">({{ utilizationPercent }}%)</span></div>
         </div>
         <div v-if="associatedVlan" class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
         <div v-if="associatedVlan">
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">VLAN</div>
+          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.vlan') }}</div>
           <div class="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
             <div class="h-2 w-2 rounded-full" :style="{ backgroundColor: associatedVlan.color }" />
             {{ associatedVlan.vlan_id }} <span class="font-normal text-gray-400">{{ associatedVlan.name }}</span>
@@ -73,15 +73,15 @@
       <div v-show="showDetails || editing" class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800/30">
         <div v-if="!editing" class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
           <div>
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">Network</dt>
+            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.network') }}</dt>
             <dd class="font-mono">{{ subnetInfo.network }}</dd>
           </div>
           <div>
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">Broadcast</dt>
+            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.broadcast') }}</dt>
             <dd class="font-mono">{{ subnetInfo.broadcast }}</dd>
           </div>
           <div v-if="network.dns_servers?.length">
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">DNS</dt>
+            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.dns') }}</dt>
             <dd class="font-mono">{{ network.dns_servers.join(', ') }}</dd>
           </div>
           <div v-if="network.description" class="col-span-2 sm:col-span-3 lg:col-span-4">
@@ -146,8 +146,8 @@
               <UInput v-model="allocForm.mac_address" placeholder="AA:BB:CC:DD:EE:FF" size="sm" />
             </UFormGroup>
             <div class="flex items-end gap-2">
-              <UButton type="submit" :loading="creatingAlloc" size="sm">Add</UButton>
-              <UButton variant="ghost" color="gray" size="sm" @click="showAllocForm = false">Cancel</UButton>
+              <UButton type="submit" :loading="creatingAlloc" size="sm">{{ $t('common.add') }}</UButton>
+              <UButton variant="ghost" color="gray" size="sm" @click="showAllocForm = false">{{ $t('common.cancel') }}</UButton>
             </div>
           </form>
         </div>
@@ -187,8 +187,8 @@
               <USelect v-model="rangeForm.type" :options="rangeTypeOptions" size="sm" />
             </UFormGroup>
             <div class="flex items-end gap-2">
-              <UButton type="submit" :loading="creatingRange" size="sm">Add</UButton>
-              <UButton variant="ghost" color="gray" size="sm" @click="showRangeForm = false">Cancel</UButton>
+              <UButton type="submit" :loading="creatingRange" size="sm">{{ $t('common.add') }}</UButton>
+              <UButton variant="ghost" color="gray" size="sm" @click="showRangeForm = false">{{ $t('common.cancel') }}</UButton>
             </div>
           </form>
         </div>

@@ -3,7 +3,7 @@ import { z } from 'zod'
 const layoutBlockSchema = z.object({
   type: z.enum(['rj45', 'sfp', 'sfp+', 'qsfp', 'console', 'management']),
   count: z.number().int().positive(),
-  start_index: z.number().int().positive(),
+  start_index: z.number().int().min(0),
   rows: z.number().int().positive(),
   row_layout: z.preprocess(v => v === '' ? undefined : v, z.enum(['sequential', 'odd-even', 'even-odd']).optional()),
   default_speed: z.preprocess(v => v === '' ? undefined : v, z.enum(['100M', '1G', '2.5G', '10G', '100G']).optional()),

@@ -97,7 +97,7 @@
                         <UInput v-model.number="block.count" type="number" min="1" />
                       </UFormGroup>
                       <UFormGroup :label="$t('templates.blocks.startIndex')">
-                        <UInput v-model.number="block.start_index" type="number" min="1" />
+                        <UInput v-model.number="block.start_index" type="number" min="0" />
                       </UFormGroup>
                       <UFormGroup :label="$t('templates.blocks.label')">
                         <UInput v-model="block.label" :placeholder="$t('templates.blocks.label')" />
@@ -105,10 +105,10 @@
                       <UFormGroup :label="$t('templates.blocks.rows')">
                         <UInput v-model.number="block.rows" type="number" min="1" />
                       </UFormGroup>
-                      <UFormGroup label="Row Layout">
+                      <UFormGroup :label="$t('templates.blocks.rowLayout')">
                         <USelect v-model="block.row_layout" :options="rowLayoutOptions" :disabled="block.rows < 2" />
                       </UFormGroup>
-                      <UFormGroup label="Default Speed">
+                      <UFormGroup :label="$t('templates.blocks.defaultSpeed')">
                         <USelect v-model="block.default_speed" :options="speedOptions" />
                       </UFormGroup>
                     </div>
@@ -119,6 +119,20 @@
                   </div>
                 </div>
               </div>
+            </div>
+
+            <!-- Live Preview -->
+            <UDivider />
+            <div>
+              <h2 class="mb-3 text-lg font-semibold">{{ $t('templates.preview') }}</h2>
+              <div v-if="previewPorts.length" class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50">
+                <SwitchPortGrid
+                  :ports="previewPorts"
+                  :units="form.units"
+                  :selected-ports="[]"
+                />
+              </div>
+              <p v-else class="text-sm text-gray-400">{{ $t('templates.previewEmpty') }}</p>
             </div>
 
             <UDivider />
@@ -172,11 +186,11 @@ const portTypeOptions = [
   { label: 'Management', value: 'management' }
 ]
 
-const rowLayoutOptions = [
-  { label: 'Sequential', value: 'sequential' },
-  { label: 'Odd/Even', value: 'odd-even' },
-  { label: 'Even/Odd', value: 'even-odd' }
-]
+const rowLayoutOptions = computed(() => [
+  { label: t('templates.rowLayout.sequential'), value: 'sequential' },
+  { label: t('templates.rowLayout.oddEven'), value: 'odd-even' },
+  { label: t('templates.rowLayout.evenOdd'), value: 'even-odd' }
+])
 
 const speedOptions = [
   { label: '-- None --', value: '' },
@@ -188,6 +202,31 @@ const speedOptions = [
 ]
 
 const form = ref<any>(null)
+
+const previewPorts = computed(() => {
+  if (!form.value?.units) return []
+  const ports: any[] = []
+  for (const unit of form.value.units) {
+    for (const block of unit.blocks || []) {
+      for (let i = 0; i < block.count; i++) {
+        const portIndex = block.start_index + i
+        const label = block.label
+          ? (block.label.match(/[\/\-:.]$/) ? `${block.label}${portIndex}` : `${block.label} ${unit.unit_number}/${portIndex}`)
+          : `${unit.unit_number}/${portIndex}`
+        ports.push({
+          id: `p-${unit.unit_number}-${portIndex}`,
+          unit: unit.unit_number,
+          index: portIndex,
+          label,
+          type: block.type,
+          status: 'down',
+          tagged_vlans: []
+        })
+      }
+    }
+  }
+  return ports
+})
 
 function addUnit() {
   const nextNumber = form.value.units.length > 0

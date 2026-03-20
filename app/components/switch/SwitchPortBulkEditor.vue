@@ -3,27 +3,27 @@
     <UCard>
       <template #header>
         <div class="flex items-center justify-between">
-          <h3 class="font-semibold">Bulk Edit — {{ selectedPorts.length }} ports</h3>
+          <h3 class="font-semibold">{{ $t('switches.ports.bulkEditTitle', { count: selectedPorts.length }) }}</h3>
           <UButton variant="ghost" icon="i-heroicons-x-mark" size="sm" @click="close" />
         </div>
       </template>
 
       <div class="space-y-4">
-        <p class="text-xs text-gray-400">Changes will be applied to all {{ selectedPorts.length }} selected ports. Leave fields empty to keep current values.</p>
+        <p class="text-xs text-gray-400">{{ $t('switches.ports.bulkEditHint', { count: selectedPorts.length }) }}</p>
 
-        <UFormGroup label="Status">
-          <USelect v-model="form.status" :options="statusOptions" placeholder="No change" />
+        <UFormGroup :label="$t('common.status')">
+          <USelect v-model="form.status" :options="statusOptions" :placeholder="$t('common.noChange')" />
         </UFormGroup>
 
-        <UFormGroup label="Speed">
-          <USelect v-model="form.speed" :options="speedOptions" placeholder="No change" />
+        <UFormGroup :label="$t('switches.ports.speed')">
+          <USelect v-model="form.speed" :options="speedOptions" :placeholder="$t('common.noChange')" />
         </UFormGroup>
 
-        <UFormGroup label="Native VLAN">
-          <UInput v-model.number="form.native_vlan" type="number" placeholder="No change" />
+        <UFormGroup :label="$t('switches.ports.nativeVlan')">
+          <UInput v-model.number="form.native_vlan" type="number" :placeholder="$t('common.noChange')" />
         </UFormGroup>
 
-        <UFormGroup label="Tagged VLANs">
+        <UFormGroup :label="$t('switches.ports.taggedVlans')">
           <div v-if="allVlans.length" class="max-h-32 space-y-1 overflow-y-auto rounded-md border border-gray-200 p-2 dark:border-gray-700">
             <label
               v-for="v in allVlans"
@@ -45,15 +45,15 @@
           <UInput v-else v-model="form.tagged_vlans_str" placeholder="e.g. 100,200,300" />
         </UFormGroup>
 
-        <UFormGroup label="Description">
-          <UInput v-model="form.description" placeholder="No change" />
+        <UFormGroup :label="$t('common.description')">
+          <UInput v-model="form.description" :placeholder="$t('common.noChange')" />
         </UFormGroup>
       </div>
 
       <template #footer>
         <div class="flex items-center justify-between">
-          <UButton variant="soft" color="gray" @click="close">Cancel</UButton>
-          <UButton @click="apply">Apply to {{ selectedPorts.length }} ports</UButton>
+          <UButton variant="soft" color="gray" @click="close">{{ $t('common.cancel') }}</UButton>
+          <UButton @click="apply">{{ $t('switches.ports.applyToPorts', { count: selectedPorts.length }) }}</UButton>
         </div>
       </template>
     </UCard>
@@ -67,6 +67,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ saved: [], 'clear-selection': [] }>()
+const { t } = useI18n()
 const toast = useToast()
 const { apiFetch } = useApiFetch()
 
@@ -87,21 +88,21 @@ async function fetchVlans() {
   } catch { /* ignore */ }
 }
 
-const statusOptions = [
-  { label: 'No change', value: '' },
-  { label: 'Up', value: 'up' },
-  { label: 'Down', value: 'down' },
-  { label: 'Disabled', value: 'disabled' }
-]
+const statusOptions = computed(() => [
+  { label: t('common.noChange'), value: '' },
+  { label: t('legend.up'), value: 'up' },
+  { label: t('legend.down'), value: 'down' },
+  { label: t('legend.disabled'), value: 'disabled' }
+])
 
-const speedOptions = [
-  { label: 'No change', value: '' },
+const speedOptions = computed(() => [
+  { label: t('common.noChange'), value: '' },
   { label: '100M', value: '100M' },
   { label: '1G', value: '1G' },
   { label: '2.5G', value: '2.5G' },
   { label: '10G', value: '10G' },
   { label: '100G', value: '100G' }
-]
+])
 
 const form = reactive({
   status: '',
@@ -140,7 +141,7 @@ async function apply() {
       method: 'PUT',
       body: { port_ids: props.selectedPorts, updates }
     })
-    toast.add({ title: `Updated ${props.selectedPorts.length} ports`, color: 'green' })
+    toast.add({ title: t('switches.ports.updatedPorts', { count: props.selectedPorts.length }), color: 'green' })
     // Reset form
     form.status = ''
     form.speed = ''

@@ -32,6 +32,9 @@
             <UTooltip :text="$t('common.edit')">
               <UButton :to="`/layout-templates/${row.id}/edit`" icon="i-heroicons-pencil-square" size="xs" variant="ghost" />
             </UTooltip>
+            <UTooltip :text="$t('common.duplicate')">
+              <UButton icon="i-heroicons-document-duplicate" size="xs" variant="ghost" @click="onDuplicate(row)" />
+            </UTooltip>
             <UTooltip :text="$t('common.delete')">
               <UButton icon="i-heroicons-trash" size="xs" color="red" variant="ghost" @click="confirmDelete(row)" />
             </UTooltip>
@@ -83,6 +86,10 @@ function getTotalPortCount(template: any): number {
   if (!template.units) return 0
   return template.units.reduce((total: number, unit: any) =>
     total + (unit.blocks || []).reduce((bt: number, b: any) => bt + (b.count || 0), 0), 0)
+}
+
+function onDuplicate(row: any) {
+  navigateTo(`/layout-templates/create?clone=${row.id}`)
 }
 
 function confirmDelete(row: any) { deleteTarget.value = row; showDeleteDialog.value = true }

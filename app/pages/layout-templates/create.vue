@@ -91,7 +91,7 @@
                       <UInput v-model.number="block.count" type="number" min="1" />
                     </UFormGroup>
                     <UFormGroup :label="$t('templates.blocks.startIndex')">
-                      <UInput v-model.number="block.start_index" type="number" min="1" />
+                      <UInput v-model.number="block.start_index" type="number" min="0" />
                     </UFormGroup>
                     <UFormGroup :label="$t('templates.blocks.label')">
                       <UInput v-model="block.label" :placeholder="$t('templates.blocks.label')" />
@@ -99,10 +99,10 @@
                     <UFormGroup :label="$t('templates.blocks.rows')">
                       <UInput v-model.number="block.rows" type="number" min="1" />
                     </UFormGroup>
-                    <UFormGroup label="Row Layout">
+                    <UFormGroup :label="$t('templates.blocks.rowLayout')">
                       <USelect v-model="block.row_layout" :options="rowLayoutOptions" :disabled="block.rows < 2" />
                     </UFormGroup>
-                    <UFormGroup label="Default Speed">
+                    <UFormGroup :label="$t('templates.blocks.defaultSpeed')">
                       <USelect v-model="block.default_speed" :options="speedOptions" />
                     </UFormGroup>
                   </div>
@@ -117,6 +117,20 @@
             <div v-if="form.units.length === 0" class="text-center py-8 text-gray-500">
               {{ $t('common.noData') }}
             </div>
+          </div>
+
+          <!-- Live Preview -->
+          <UDivider />
+          <div>
+            <h2 class="mb-3 text-lg font-semibold">{{ $t('templates.preview') }}</h2>
+            <div v-if="previewPorts.length" class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50">
+              <SwitchPortGrid
+                :ports="previewPorts"
+                :units="form.units"
+                :selected-ports="[]"
+              />
+            </div>
+            <p v-else class="text-sm text-gray-400">{{ $t('templates.previewEmpty') }}</p>
           </div>
 
           <UDivider />
@@ -139,10 +153,12 @@
 <script setup lang="ts">
 const { t } = useI18n()
 const toast = useToast()
+const route = useRoute()
 const router = useRouter()
-const { create } = useLayoutTemplates()
+const { create, getById } = useLayoutTemplates()
 
 const submitting = ref(false)
+const cloneId = route.query.clone as string | undefined
 
 const portTypeOptions = [
   { label: 'RJ45', value: 'rj45' },
@@ -153,11 +169,11 @@ const portTypeOptions = [
   { label: 'Management', value: 'management' }
 ]
 
-const rowLayoutOptions = [
-  { label: 'Sequential', value: 'sequential' },
-  { label: 'Odd/Even', value: 'odd-even' },
-  { label: 'Even/Odd', value: 'even-odd' }
-]
+const rowLayoutOptions = computed(() => [
+  { label: t('templates.rowLayout.sequential'), value: 'sequential' },
+  { label: t('templates.rowLayout.oddEven'), value: 'odd-even' },
+  { label: t('templates.rowLayout.evenOdd'), value: 'even-odd' }
+])
 
 const speedOptions = [
   { label: '-- None --', value: '' },
@@ -182,6 +198,30 @@ const form = reactive({
       ]
     }
   ]
+})
+
+const previewPorts = computed(() => {
+  const ports: any[] = []
+  for (const unit of form.units) {
+    for (const block of unit.blocks) {
+      for (let i = 0; i < block.count; i++) {
+        const portIndex = block.start_index + i
+        const label = block.label
+          ? (block.label.match(/[\/\-:.]$/) ? `${block.label}${portIndex}` : `${block.label} ${unit.unit_number}/${portIndex}`)
+          : `${unit.unit_number}/${portIndex}`
+        ports.push({
+          id: `p-${unit.unit_number}-${portIndex}`,
+          unit: unit.unit_number,
+          index: portIndex,
+          label,
+          type: block.type,
+          status: 'down',
+          tagged_vlans: []
+        })
+      }
+    }
+  }
+  return ports
 })
 
 function addUnit() {
@@ -245,4 +285,29 @@ async function handleSubmit() {
     submitting.value = false
   }
 }
+
+onMounted(async () => {
+  if (cloneId) {
+    try {
+      const data = await getById(cloneId)
+      form.name = `${data.name} (Copy)`
+      form.manufacturer = data.manufacturer || ''
+      form.model = data.model || ''
+      form.description = data.description || ''
+      form.units = (data.units || []).map((u: any) => ({
+        unit_number: u.unit_number,
+        label: u.label || '',
+        blocks: (u.blocks || []).map((b: any) => ({
+          type: b.type,
+          count: b.count,
+          start_index: b.start_index,
+          rows: b.rows,
+          row_layout: b.row_layout || 'sequential',
+          default_speed: b.default_speed || '',
+          label: b.label || ''
+        }))
+      }))
+    } catch { /* ignore, use defaults */ }
+  }
+})
 </script>

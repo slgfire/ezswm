@@ -14,19 +14,19 @@
           <UBadge :color="port.status === 'up' ? 'green' : port.status === 'disabled' ? 'red' : 'gray'">{{ port.status }}</UBadge>
         </div>
 
-        <UFormGroup label="Status">
+        <UFormGroup :label="$t('common.status')">
           <USelect v-model="form.status" :options="['up', 'down', 'disabled']" />
         </UFormGroup>
 
-        <UFormGroup label="Speed">
+        <UFormGroup :label="$t('switches.ports.speed')">
           <USelect v-model="form.speed" :options="speeds" placeholder="Select speed" />
         </UFormGroup>
 
-        <UFormGroup label="Native VLAN">
+        <UFormGroup :label="$t('switches.ports.nativeVlan')">
           <UInput v-model.number="form.native_vlan" type="number" placeholder="VLAN ID" />
         </UFormGroup>
 
-        <UFormGroup label="Tagged VLANs">
+        <UFormGroup :label="$t('switches.ports.taggedVlans')">
           <div v-if="allVlans.length" class="max-h-32 space-y-1 overflow-y-auto rounded-md border border-gray-200 p-2 dark:border-gray-700">
             <label
               v-for="v in allVlans"
@@ -49,7 +49,7 @@
         </UFormGroup>
 
         <!-- Connected Device: freetext or switch reference -->
-        <UFormGroup label="Connected Device">
+        <UFormGroup :label="$t('switches.ports.connectedDevice')">
           <div class="space-y-2">
             <div class="flex items-center gap-2">
               <button
@@ -58,21 +58,21 @@
                   ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
                   : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-300'"
                 @click="connectionMode = 'freetext'"
-              >Freetext</button>
+              >{{ $t('switches.ports.freetext') }}</button>
               <button
                 class="px-2 py-1 text-xs font-medium rounded border transition-colors"
                 :class="connectionMode === 'switch'
                   ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
                   : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-300'"
                 @click="connectionMode = 'switch'"
-              >Switch Reference</button>
+              >{{ $t('switches.ports.switchReference') }}</button>
             </div>
 
             <!-- Freetext mode -->
             <UInput
               v-if="connectionMode === 'freetext'"
               v-model="form.connected_device"
-              placeholder="Device name or hostname"
+              :placeholder="$t('switches.ports.devicePlaceholder')"
             />
 
             <!-- Switch reference mode -->
@@ -82,7 +82,7 @@
                 :options="switchOptions"
                 option-attribute="label"
                 value-attribute="value"
-                placeholder="Select switch..."
+                :placeholder="$t('switches.ports.selectSwitch')"
               />
               <USelect
                 v-if="selectedSwitchId && remotePortOptions.length"
@@ -90,43 +90,43 @@
                 :options="remotePortOptions"
                 option-attribute="label"
                 value-attribute="value"
-                placeholder="Select port..."
+                :placeholder="$t('switches.ports.selectPort')"
               />
               <p v-if="selectedSwitchId && !loadingSwitches && !remotePortOptions.length" class="text-xs text-gray-500">
-                No available ports on this switch.
+                {{ $t('switches.ports.noAvailablePorts') }}
               </p>
               <!-- Port conflict warning -->
               <div v-if="portConflict" class="rounded-md bg-yellow-500/10 border border-yellow-500/30 px-3 py-2 text-xs text-yellow-400">
-                <span class="font-semibold">Warning:</span> This port is already connected to
+                <span class="font-semibold">{{ $t('common.warning') }}:</span> {{ $t('switches.ports.portConflict') }}
                 <span class="font-medium text-yellow-300">{{ portConflict.device }} → {{ portConflict.port }}</span>.
-                Saving will override that connection.
+                {{ $t('switches.ports.portConflictOverride') }}
               </div>
             </template>
           </div>
         </UFormGroup>
 
         <!-- Connected Port display/edit -->
-        <UFormGroup label="Connected Port">
+        <UFormGroup :label="$t('switches.ports.connectedPort')">
           <div v-if="connectionMode === 'switch' && selectedSwitchId && selectedPortId" class="flex items-center gap-2">
             <UBadge color="blue" variant="subtle">
               {{ selectedPortLabel }}
             </UBadge>
           </div>
           <p v-else-if="connectionMode === 'switch' && !selectedPortId" class="text-xs text-gray-500">
-            No port selected
+            {{ $t('switches.ports.noPortSelected') }}
           </p>
           <UInput
             v-else
             v-model="form.connected_port"
-            placeholder="Port name"
+            :placeholder="$t('switches.ports.portPlaceholder')"
           />
         </UFormGroup>
 
-        <UFormGroup label="Description">
+        <UFormGroup :label="$t('common.description')">
           <UInput v-model="form.description" />
         </UFormGroup>
 
-        <UFormGroup label="MAC Address">
+        <UFormGroup :label="$t('switches.ports.macAddress')">
           <UInput v-model="form.mac_address" placeholder="XX:XX:XX:XX:XX:XX" />
         </UFormGroup>
       </div>
@@ -134,14 +134,14 @@
       <!-- Port status prompt -->
       <div v-if="showSetUpPrompt" class="mx-4 mb-4 rounded-lg border border-primary-500/30 bg-primary-500/10 p-3">
         <p class="text-sm text-primary-300 mb-2">
-          This port is currently <span class="font-semibold">"down"</span>. Set it to <span class="font-semibold">"up"</span> since you are connecting it?
+          {{ $t('switches.ports.portDownPrompt') }}
         </p>
         <div class="flex gap-2">
           <UButton size="xs" color="primary" @click="form.status = 'up'; showSetUpPrompt = false; save()">
-            Yes, set to up
+            {{ $t('switches.ports.setToUp') }}
           </UButton>
           <UButton size="xs" variant="soft" color="gray" @click="showSetUpPrompt = false; save()">
-            No, keep down
+            {{ $t('switches.ports.keepDown') }}
           </UButton>
         </div>
       </div>
@@ -149,11 +149,11 @@
       <template #footer>
         <div class="flex items-center justify-between">
           <UButton color="red" variant="soft" icon="i-heroicons-arrow-path" @click="resetPort">
-            Reset Port
+            {{ $t('switches.ports.resetPort') }}
           </UButton>
           <div class="flex gap-2">
-            <UButton variant="ghost" @click="isOpen = false">Cancel</UButton>
-            <UButton @click="onSaveClick">Save</UButton>
+            <UButton variant="ghost" @click="isOpen = false">{{ $t('common.cancel') }}</UButton>
+            <UButton @click="onSaveClick">{{ $t('common.save') }}</UButton>
           </div>
         </div>
       </template>
@@ -172,6 +172,7 @@ const emit = defineEmits<{
 }>()
 
 const isOpen = defineModel<boolean>()
+const { t } = useI18n()
 const toast = useToast()
 const { apiFetch } = useApiFetch()
 const speeds = ['100M', '1G', '2.5G', '10G', '100G']
@@ -377,7 +378,7 @@ async function save() {
       method: 'PUT',
       body
     })
-    toast.add({ title: 'Port updated', color: 'green' })
+    toast.add({ title: t('switches.ports.portUpdated'), color: 'green' })
     emit('saved')
     isOpen.value = false
   } catch (e: any) {
@@ -390,7 +391,7 @@ async function resetPort() {
     await $fetch(`/api/switches/${props.switchId}/ports/${props.port.id}`, {
       method: 'DELETE'
     })
-    toast.add({ title: 'Port reset to defaults', color: 'green' })
+    toast.add({ title: t('switches.ports.portReset'), color: 'green' })
     emit('saved')
     isOpen.value = false
   } catch (e: any) {

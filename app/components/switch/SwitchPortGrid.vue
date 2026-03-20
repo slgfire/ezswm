@@ -61,25 +61,25 @@
     <!-- Legend -->
     <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-gray-200 pt-3 text-[11px] text-gray-500 dark:border-gray-700 dark:text-gray-400">
       <!-- Status -->
-      <span class="font-semibold text-gray-600 dark:text-gray-300">Status:</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-green-400 bg-green-50 dark:bg-gray-700" /> Up</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-800" /> Down</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-red-300 bg-red-50 dark:bg-gray-800" /> Disabled</span>
+      <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.status') }}:</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-green-400 bg-green-50 dark:bg-gray-700" /> {{ $t('legend.up') }}</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-800" /> {{ $t('legend.down') }}</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-red-300 bg-red-50 dark:bg-gray-800" /> {{ $t('legend.disabled') }}</span>
 
       <span class="text-gray-300 dark:text-gray-600">|</span>
 
       <!-- Port types -->
-      <span class="font-semibold text-gray-600 dark:text-gray-300">Type:</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-sky-400" /> SFP/SFP+</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-violet-400" /> QSFP</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-amber-400" /> Console</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-teal-400" /> Mgmt</span>
+      <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.type') }}:</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-sky-400" /> {{ $t('legend.sfp') }}</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-violet-400" /> {{ $t('legend.qsfp') }}</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-amber-400" /> {{ $t('legend.console') }}</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-teal-400" /> {{ $t('legend.mgmt') }}</span>
 
       <span class="text-gray-300 dark:text-gray-600">|</span>
 
       <!-- Indicators -->
-      <span class="font-semibold text-gray-600 dark:text-gray-300">Indicators:</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-full bg-yellow-400" /> Trunk</span>
+      <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.indicators') }}:</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-full bg-yellow-400" /> {{ $t('legend.trunk') }}</span>
       <template v-if="vlans && vlans.length">
         <template v-for="vlan in usedVlans" :key="vlan.vlan_id">
           <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: vlan.color }" /> VLAN {{ vlan.vlan_id }}</span>
@@ -90,13 +90,15 @@
 
       <span class="flex items-center gap-1 text-gray-400">
         <UIcon name="i-heroicons-cursor-arrow-ripple" class="h-3 w-3" />
-        Ctrl+Click to multi-select
+        {{ $t('switches.ports.multiSelectHint') }}
       </span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
+
 const props = defineProps<{
   ports: any[]
   units?: any[]
@@ -130,17 +132,19 @@ function getRowsForBlock(unitNumber: number, block: any): any[][] {
 
   const rows = block.rows || 2
   const mode = block.row_layout || 'sequential'
+  const startIdx = block.start_index || 0
 
   if (mode === 'odd-even') {
-    const oddPorts = ports.filter(p => p.index % 2 === 1)
-    const evenPorts = ports.filter(p => p.index % 2 === 0)
-    return [oddPorts, evenPorts]
+    // Use relative position in block: first port = position 0
+    const topRow = ports.filter((_, i) => i % 2 === 0)
+    const bottomRow = ports.filter((_, i) => i % 2 === 1)
+    return [topRow, bottomRow]
   }
 
   if (mode === 'even-odd') {
-    const evenPorts = ports.filter(p => p.index % 2 === 0)
-    const oddPorts = ports.filter(p => p.index % 2 === 1)
-    return [evenPorts, oddPorts]
+    const topRow = ports.filter((_, i) => i % 2 === 1)
+    const bottomRow = ports.filter((_, i) => i % 2 === 0)
+    return [topRow, bottomRow]
   }
 
   // Sequential: split into N rows of equal size
