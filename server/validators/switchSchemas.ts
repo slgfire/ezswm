@@ -31,6 +31,8 @@ export const updatePortSchema = z.object({
   label: z.string().max(50).optional().nullable(),
   speed: z.preprocess(v => v === '' ? null : v, z.enum(['100M', '1G', '2.5G', '10G', '100G']).optional().nullable()),
   status: z.enum(['up', 'down', 'disabled']).optional(),
+  port_mode: z.preprocess(v => v === '' ? null : v, z.enum(['access', 'trunk']).optional().nullable()),
+  access_vlan: z.number().int().min(1).max(4094).optional().nullable(),
   native_vlan: z.number().int().min(1).max(4094).optional().nullable(),
   tagged_vlans: z.array(z.number().int().min(1).max(4094)).optional(),
   connected_device: z.string().max(200).optional().nullable(),
@@ -46,6 +48,8 @@ export const bulkUpdatePortsSchema = z.object({
   port_ids: z.array(z.string()).min(1),
   updates: z.object({
     status: z.enum(['up', 'down', 'disabled']).optional(),
+    port_mode: z.preprocess(v => v === '' ? null : v, z.enum(['access', 'trunk']).optional().nullable()),
+    access_vlan: z.number().int().min(1).max(4094).optional().nullable(),
     native_vlan: z.number().int().min(1).max(4094).optional().nullable(),
     tagged_vlans: z.array(z.number().int().min(1).max(4094)).optional(),
     speed: z.preprocess(v => v === '' ? null : v, z.enum(['100M', '1G', '2.5G', '10G', '100G']).optional().nullable()),

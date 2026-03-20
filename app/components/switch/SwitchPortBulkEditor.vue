@@ -19,31 +19,35 @@
           <USelect v-model="form.speed" :options="speedOptions" :placeholder="$t('common.noChange')" />
         </UFormGroup>
 
-        <UFormGroup :label="$t('switches.ports.nativeVlan')">
-          <UInput v-model.number="form.native_vlan" type="number" :placeholder="$t('common.noChange')" />
+        <!-- Port Mode -->
+        <UFormGroup :label="$t('switches.ports.portMode')">
+          <USelect v-model="form.port_mode" :options="portModeOptions" :placeholder="$t('common.noChange')" />
         </UFormGroup>
 
-        <UFormGroup :label="$t('switches.ports.taggedVlans')">
-          <div v-if="allVlans.length" class="max-h-32 space-y-1 overflow-y-auto rounded-md border border-gray-200 p-2 dark:border-gray-700">
-            <label
-              v-for="v in allVlans"
-              :key="v.vlan_id"
-              class="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-              <input
-                type="checkbox"
-                :value="v.vlan_id"
-                :checked="selectedTaggedVlans.includes(v.vlan_id)"
-                class="rounded border-gray-300 text-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800"
-                @change="toggleTaggedVlan(v.vlan_id)"
-              />
-              <div class="h-2.5 w-2.5 rounded" :style="{ backgroundColor: v.color }" />
-              <span>{{ v.vlan_id }}</span>
-              <span class="text-xs text-gray-400">{{ v.name }}</span>
-            </label>
-          </div>
-          <UInput v-else v-model="form.tagged_vlans_str" placeholder="e.g. 100,200,300" />
-        </UFormGroup>
+        <!-- Access VLAN -->
+        <template v-if="form.port_mode === 'access'">
+          <UFormGroup :label="$t('switches.ports.accessVlan')">
+            <VlanDropdown v-if="allVlans.length" v-model="form.access_vlan" :vlans="allVlans" />
+            <UInput v-else v-model.number="form.access_vlan" type="number" :placeholder="$t('common.noChange')" />
+          </UFormGroup>
+        </template>
+
+        <!-- Trunk: Native + Tagged -->
+        <template v-if="form.port_mode === 'trunk'">
+          <UFormGroup :label="$t('switches.ports.nativeVlan')">
+            <VlanDropdown v-if="allVlans.length" v-model="form.native_vlan" :vlans="allVlans" />
+            <UInput v-else v-model.number="form.native_vlan" type="number" :placeholder="$t('common.noChange')" />
+          </UFormGroup>
+
+          <UFormGroup :label="$t('switches.ports.taggedVlans')">
+            <VlanMultiSelect
+              v-if="allVlans.length"
+              v-model="selectedTaggedVlans"
+              :vlans="allVlans"
+            />
+            <UInput v-else v-model="form.tagged_vlans_str" placeholder="e.g. 100,200,300" />
+          </UFormGroup>
+        </template>
 
         <UFormGroup :label="$t('common.description')">
           <UInput v-model="form.description" :placeholder="$t('common.noChange')" />
@@ -104,9 +108,17 @@ const speedOptions = computed(() => [
   { label: '100G', value: '100G' }
 ])
 
+const portModeOptions = computed(() => [
+  { label: t('common.noChange'), value: '' },
+  { label: t('switches.ports.modeAccess'), value: 'access' },
+  { label: t('switches.ports.modeTrunk'), value: 'trunk' }
+])
+
 const form = reactive({
   status: '',
   speed: '',
+  port_mode: '',
+  access_vlan: null as number | null,
   native_vlan: null as number | null,
   tagged_vlans_str: '',
   description: ''
@@ -128,11 +140,21 @@ async function apply() {
   const updates: Record<string, any> = {}
   if (form.status) updates.status = form.status
   if (form.speed) updates.speed = form.speed
-  if (form.native_vlan) updates.native_vlan = form.native_vlan
-  if (selectedTaggedVlans.value.length) {
-    updates.tagged_vlans = [...selectedTaggedVlans.value]
-  } else if (form.tagged_vlans_str) {
-    updates.tagged_vlans = form.tagged_vlans_str.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v))
+  if (form.port_mode) {
+    updates.port_mode = form.port_mode
+    if (form.port_mode === 'access') {
+      if (form.access_vlan) updates.access_vlan = form.access_vlan
+      updates.native_vlan = null
+      updates.tagged_vlans = []
+    } else {
+      updates.access_vlan = null
+      if (form.native_vlan) updates.native_vlan = form.native_vlan
+      if (selectedTaggedVlans.value.length) {
+        updates.tagged_vlans = [...selectedTaggedVlans.value]
+      } else if (form.tagged_vlans_str) {
+        updates.tagged_vlans = form.tagged_vlans_str.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v))
+      }
+    }
   }
   if (form.description) updates.description = form.description
 
@@ -145,6 +167,8 @@ async function apply() {
     // Reset form
     form.status = ''
     form.speed = ''
+    form.port_mode = ''
+    form.access_vlan = null
     form.native_vlan = null
     form.tagged_vlans_str = ''
     form.description = ''

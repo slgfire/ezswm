@@ -7,16 +7,45 @@
       portShapeClasses
     ]"
     :style="portStyle"
-    :title="portTitle"
   >
     <span class="text-xs font-semibold leading-none">{{ port.index }}</span>
     <span
       v-if="typeLabel"
       class="mt-0.5 text-[7px] font-medium leading-none opacity-60"
     >{{ typeLabel }}</span>
-    <!-- VLAN dot (top-right): native VLAN color or yellow for trunk -->
-    <div v-if="isTrunk" class="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-yellow-400 ring-1 ring-white dark:ring-gray-900" :title="`Trunk: ${port.tagged_vlans.join(', ')}`" />
-    <div v-else-if="vlanDotColor" class="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full ring-1 ring-white dark:ring-gray-900" :style="{ backgroundColor: vlanDotColor }" :title="`VLAN ${port.native_vlan}`" />
+    <!-- VLAN indicator (top-right): trunk = circle, access = square -->
+    <div v-if="isTrunk" class="group/vlan absolute -top-2 -right-2 p-1">
+      <div class="h-2.5 w-2.5 rounded-full ring-1 ring-white dark:ring-gray-900" :style="{ backgroundColor: vlanDotColor || '#FBBF24' }" />
+      <div class="pointer-events-none absolute left-0 top-full z-50 hidden min-w-[10rem] rounded-md border border-gray-200 bg-white p-2 shadow-lg group-hover/vlan:block dark:border-gray-700 dark:bg-gray-900">
+        <div class="space-y-1 text-xs">
+          <div class="font-semibold text-gray-700 dark:text-gray-200">Trunk</div>
+          <div v-if="port.native_vlan" class="flex items-center gap-1.5">
+            <div class="h-2 w-2 flex-shrink-0 rounded" :style="{ backgroundColor: getVlanColor(port.native_vlan) }" />
+            <span class="font-medium text-gray-700 dark:text-gray-200">{{ port.native_vlan }}</span>
+            <span class="truncate text-gray-400">{{ getVlanName(port.native_vlan) }}</span>
+            <span class="ml-auto flex-shrink-0 text-[10px] text-primary-500">N</span>
+          </div>
+          <div v-for="vid in port.tagged_vlans" :key="vid" class="flex items-center gap-1.5">
+            <div class="h-2 w-2 flex-shrink-0 rounded" :style="{ backgroundColor: getVlanColor(vid) }" />
+            <span class="font-medium text-gray-700 dark:text-gray-200">{{ vid }}</span>
+            <span class="truncate text-gray-400">{{ getVlanName(vid) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-else-if="vlanDotColor" class="group/vlan absolute -top-2 -right-2 p-1">
+      <div class="h-2.5 w-2.5 rounded-sm ring-1 ring-white dark:ring-gray-900" :style="{ backgroundColor: vlanDotColor }" />
+      <div class="pointer-events-none absolute left-0 top-full z-50 hidden min-w-[10rem] rounded-md border border-gray-200 bg-white p-2 shadow-lg group-hover/vlan:block dark:border-gray-700 dark:bg-gray-900">
+        <div class="space-y-1 text-xs">
+          <div class="font-semibold text-gray-700 dark:text-gray-200">Access</div>
+          <div class="flex items-center gap-1.5">
+            <div class="h-2 w-2 flex-shrink-0 rounded-sm" :style="{ backgroundColor: vlanDotColor }" />
+            <span class="font-medium text-gray-700 dark:text-gray-200">{{ port.access_vlan || port.native_vlan }}</span>
+            <span class="text-gray-400">{{ getVlanName(port.access_vlan || port.native_vlan) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- LAG indicator: colored bottom border -->
     <div v-if="port.lag_group_id" class="absolute inset-x-0 bottom-0 h-[3px] rounded-b" :style="{ backgroundColor: lagColor }" />
   </div>
@@ -68,29 +97,26 @@ const portClasses = computed(() => {
   return 'bg-gray-100 border border-gray-300 text-gray-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-500'
 })
 
+function getVlanColor(vlanId: number): string {
+  const vlan = props.vlans?.find(v => v.vlan_id === vlanId)
+  return vlan?.color || '#888'
+}
+
+function getVlanName(vlanId: number): string {
+  const vlan = props.vlans?.find(v => v.vlan_id === vlanId)
+  return vlan?.name || ''
+}
+
 const vlanDotColor = computed(() => {
-  if (!props.port.native_vlan || !props.vlans?.length) return null
-  const vlan = props.vlans.find(v => v.vlan_id === props.port.native_vlan)
+  if (!props.vlans?.length) return null
+  // Access mode: use access_vlan, Trunk mode: use native_vlan
+  const vlanId = props.port.access_vlan || props.port.native_vlan
+  if (!vlanId) return null
+  const vlan = props.vlans.find(v => v.vlan_id === vlanId)
   return vlan?.color || null
 })
 
 const portStyle = computed(() => {
   return {}
-})
-
-const portTitle = computed(() => {
-  const parts = [props.port.label || `Port ${props.port.unit}/${props.port.index}`]
-  parts.push(`Status: ${props.port.status}`)
-  parts.push(`Type: ${props.port.type}`)
-  if (props.port.native_vlan) parts.push(`Native VLAN: ${props.port.native_vlan}`)
-  if (props.port.tagged_vlans?.length) parts.push(`Tagged VLANs: ${props.port.tagged_vlans.join(', ')}`)
-  if (props.port.lag_group_id) parts.push(`LAG: ${props.port.lag_group_id}`)
-  if (props.port.connected_device) {
-    const connStr = props.port.connected_port
-      ? `${props.port.connected_device} → ${props.port.connected_port}`
-      : props.port.connected_device
-    parts.push(`Connected: ${connStr}`)
-  }
-  return parts.join('\n')
 })
 </script>

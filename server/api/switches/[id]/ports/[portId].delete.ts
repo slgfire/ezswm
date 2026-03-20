@@ -8,6 +8,8 @@ export default defineEventHandler(async (event) => {
   const resetData = {
     status: 'down' as const,
     speed: undefined,
+    port_mode: undefined,
+    access_vlan: undefined,
     native_vlan: undefined,
     tagged_vlans: [],
     connected_device: undefined,

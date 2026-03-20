@@ -22,31 +22,33 @@
           <USelect v-model="form.speed" :options="speeds" placeholder="Select speed" />
         </UFormGroup>
 
-        <UFormGroup :label="$t('switches.ports.nativeVlan')">
-          <UInput v-model.number="form.native_vlan" type="number" placeholder="VLAN ID" />
+        <!-- Port Mode -->
+        <UFormGroup :label="$t('switches.ports.portMode')">
+          <USelect v-model="form.port_mode" :options="portModeOptions" />
         </UFormGroup>
 
-        <UFormGroup :label="$t('switches.ports.taggedVlans')">
-          <div v-if="allVlans.length" class="max-h-32 space-y-1 overflow-y-auto rounded-md border border-gray-200 p-2 dark:border-gray-700">
-            <label
-              v-for="v in allVlans"
-              :key="v.vlan_id"
-              class="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-              <input
-                type="checkbox"
-                :value="v.vlan_id"
-                :checked="selectedTaggedVlans.includes(v.vlan_id)"
-                class="rounded border-gray-300 text-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800"
-                @change="toggleTaggedVlan(v.vlan_id)"
-              />
-              <div class="h-2.5 w-2.5 rounded" :style="{ backgroundColor: v.color }" />
-              <span>{{ v.vlan_id }}</span>
-              <span class="text-xs text-gray-400">{{ v.name }}</span>
-            </label>
-          </div>
-          <UInput v-else v-model="taggedVlansStr" placeholder="e.g. 100,200,300" />
-        </UFormGroup>
+        <!-- Access Mode: single VLAN -->
+        <template v-if="form.port_mode === 'access'">
+          <UFormGroup :label="$t('switches.ports.accessVlan')">
+            <VlanDropdown v-model="form.access_vlan" :vlans="allVlans" />
+          </UFormGroup>
+        </template>
+
+        <!-- Trunk Mode: native VLAN + tagged VLANs multi-select -->
+        <template v-if="form.port_mode === 'trunk'">
+          <UFormGroup :label="$t('switches.ports.nativeVlan')">
+            <VlanDropdown v-model="form.native_vlan" :vlans="allVlans" />
+          </UFormGroup>
+
+          <UFormGroup :label="$t('switches.ports.taggedVlans')">
+            <VlanMultiSelect
+              v-if="allVlans.length"
+              v-model="selectedTaggedVlans"
+              :vlans="allVlans"
+            />
+            <UInput v-else v-model="taggedVlansStr" placeholder="e.g. 100,200,300" />
+          </UFormGroup>
+        </template>
 
         <!-- Connected Device: freetext or switch reference -->
         <UFormGroup :label="$t('switches.ports.connectedDevice')">
@@ -177,6 +179,11 @@ const toast = useToast()
 const { apiFetch } = useApiFetch()
 const speeds = ['100M', '1G', '2.5G', '10G', '100G']
 
+const portModeOptions = computed(() => [
+  { label: t('switches.ports.modeAccess'), value: 'access' },
+  { label: t('switches.ports.modeTrunk'), value: 'trunk' }
+])
+
 const connectionMode = ref<'freetext' | 'switch'>('freetext')
 const selectedSwitchId = ref('')
 const selectedPortId = ref('')
@@ -188,6 +195,8 @@ const loadingSwitches = ref(false)
 const form = reactive({
   status: '',
   speed: '',
+  port_mode: 'access' as string,
+  access_vlan: null as number | null,
   native_vlan: null as number | null,
   connected_device: '',
   connected_port: '',
@@ -196,6 +205,13 @@ const form = reactive({
 })
 
 const taggedVlansStr = ref('')
+
+const vlanSelectOptions = computed(() => {
+  return [
+    { label: '— None —', value: '' },
+    ...allVlans.value.map((v: any) => ({ label: `${v.vlan_id} · ${v.name}`, value: v.vlan_id }))
+  ]
+})
 
 function toggleTaggedVlan(vlanId: number) {
   const idx = selectedTaggedVlans.value.indexOf(vlanId)
@@ -281,6 +297,8 @@ watch(() => props.port, (p) => {
   if (p) {
     form.status = p.status
     form.speed = p.speed || ''
+    form.port_mode = p.port_mode || (p.tagged_vlans?.length ? 'trunk' : 'access')
+    form.access_vlan = p.access_vlan || null
     form.native_vlan = p.native_vlan || null
     form.connected_device = p.connected_device || ''
     form.connected_port = p.connected_port || ''
@@ -350,6 +368,16 @@ async function save() {
   const body: Record<string, any> = {
     ...form,
     tagged_vlans
+  }
+
+  // Access mode: clear trunk fields
+  if (form.port_mode === 'access') {
+    body.native_vlan = null
+    body.tagged_vlans = []
+  }
+  // Trunk mode: clear access field
+  if (form.port_mode === 'trunk') {
+    body.access_vlan = null
   }
 
   if (connectionMode.value === 'switch' && selectedSwitchId.value) {

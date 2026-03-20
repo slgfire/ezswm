@@ -79,10 +79,11 @@
 
       <!-- Indicators -->
       <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.indicators') }}:</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-full bg-yellow-400" /> {{ $t('legend.trunk') }}</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-gray-400" /> Access</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-full bg-gray-400" /> Trunk</span>
       <template v-if="vlans && vlans.length">
         <template v-for="vlan in usedVlans" :key="vlan.vlan_id">
-          <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: vlan.color }" /> VLAN {{ vlan.vlan_id }}</span>
+          <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm" :style="{ backgroundColor: vlan.color }" /> VLAN {{ vlan.vlan_id }}</span>
         </template>
       </template>
 

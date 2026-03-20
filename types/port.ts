@@ -1,6 +1,7 @@
 export type PortType = 'rj45' | 'sfp' | 'sfp+' | 'qsfp' | 'console' | 'management'
 export type PortSpeed = '100M' | '1G' | '2.5G' | '10G' | '100G'
 export type PortStatus = 'up' | 'down' | 'disabled'
+export type PortMode = 'access' | 'trunk'
 
 export interface Port {
   id: string
@@ -10,6 +11,8 @@ export interface Port {
   type: PortType
   speed?: PortSpeed
   status: PortStatus
+  port_mode?: PortMode
+  access_vlan?: number
   native_vlan?: number
   tagged_vlans: number[]
   connected_device?: string

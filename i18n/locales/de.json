@@ -149,7 +149,11 @@
       "noPortSelected": "Kein Port ausgewählt",
       "bulkEditTitle": "Gruppenbearbeitung — {count} Ports",
       "bulkEditHint": "Änderungen werden auf alle {count} ausgewählten Ports angewendet. Felder leer lassen, um aktuelle Werte beizubehalten.",
-      "updatedPorts": "{count} Ports aktualisiert"
+      "updatedPorts": "{count} Ports aktualisiert",
+      "portMode": "Port-Modus",
+      "modeAccess": "Access",
+      "modeTrunk": "Trunk",
+      "accessVlan": "Access-VLAN"
     },
     "emptyTitle": "Noch keine Switches",
     "emptyDescription": "Erstellen Sie Ihren ersten Switch.",

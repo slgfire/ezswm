@@ -149,7 +149,11 @@
       "noPortSelected": "No port selected",
       "bulkEditTitle": "Bulk Edit — {count} ports",
       "bulkEditHint": "Changes will be applied to all {count} selected ports. Leave fields empty to keep current values.",
-      "updatedPorts": "Updated {count} ports"
+      "updatedPorts": "Updated {count} ports",
+      "portMode": "Port Mode",
+      "modeAccess": "Access",
+      "modeTrunk": "Trunk",
+      "accessVlan": "Access VLAN"
     },
     "emptyTitle": "No switches yet",
     "emptyDescription": "Create your first switch to get started.",
