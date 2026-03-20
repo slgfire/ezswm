@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { readJson, writeJson } from '../storage/jsonStorage'
 import type { Network } from '../../types/network'
-import { isValidCIDR, isValidIPv4, isIPInSubnet } from '../utils/ipv4'
+import { isValidCIDR, isValidIPv4, isIPInSubnet, subnetRangeError } from '../utils/ipv4'
 
 const FILE_NAME = 'networks.json'
 
@@ -25,7 +25,7 @@ export const networkRepository = {
     }
 
     if (data.gateway && !isIPInSubnet(data.gateway, data.subnet)) {
-      throw createError({ statusCode: 400, message: 'Gateway must be within the subnet' })
+      throw createError({ statusCode: 400, message: 'Gateway is not within the subnet' })
     }
 
     for (const dns of data.dns_servers) {
@@ -67,7 +67,7 @@ export const networkRepository = {
     }
 
     if (data.gateway && !isIPInSubnet(data.gateway, subnet)) {
-      throw createError({ statusCode: 400, message: 'Gateway must be within the subnet' })
+      throw createError({ statusCode: 400, message: 'Gateway is not within the subnet' })
     }
 
     if (data.dns_servers) {

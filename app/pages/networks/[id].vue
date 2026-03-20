@@ -129,9 +129,13 @@
         </div>
 
         <div v-if="showAllocForm" class="mb-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+          <!-- Inline error message -->
+          <div v-if="allocError" class="mb-3 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+            {{ allocError }}
+          </div>
           <form class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6" @submit.prevent="onCreateAllocation">
             <UFormGroup :label="$t('networks.allocations.fields.ipAddress') + ' *'">
-              <UInput v-model="allocForm.ip_address" placeholder="10.0.1.10" size="sm" required />
+              <UInput v-model="allocForm.ip_address" placeholder="10.0.1.10" size="sm" required :color="allocError ? 'red' : undefined" />
             </UFormGroup>
             <UFormGroup :label="$t('networks.allocations.fields.hostname')">
               <UInput v-model="allocForm.hostname" size="sm" />
@@ -232,6 +236,7 @@ const deleting = ref(false)
 
 const allocations = ref<any[]>([])
 const showAllocForm = ref(false)
+const allocError = ref('')
 const creatingAlloc = ref(false)
 const showDeleteAllocDialog = ref(false)
 const deleteAllocTarget = ref<any>(null)
@@ -335,14 +340,18 @@ async function fetchAllocations() {
 }
 
 async function onCreateAllocation() {
+  allocError.value = ''
   creatingAlloc.value = true
   try {
     await $fetch(`/api/networks/${networkId}/allocations`, { method: 'POST', body: { ip_address: allocForm.value.ip_address.trim(), hostname: allocForm.value.hostname.trim() || undefined, mac_address: allocForm.value.mac_address.trim() || undefined, device_type: allocForm.value.device_type || undefined, description: allocForm.value.description.trim() || undefined, status: allocForm.value.status } })
     toast.add({ title: t('networks.allocations.messages.created'), color: 'green' })
     showAllocForm.value = false
+    allocError.value = ''
     allocForm.value = { ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' }
     await fetchAllocations()
-  } catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' }) }
+  } catch (err: any) {
+    allocError.value = err?.data?.message || t('errors.serverError')
+  }
   finally { creatingAlloc.value = false }
 }
 

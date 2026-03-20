@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { readJson, writeJson } from '../storage/jsonStorage'
 import type { IPAllocation } from '../../types/ipAllocation'
-import { isValidIPv4, isIPInSubnet, isValidMacAddress } from '../utils/ipv4'
+import { isValidIPv4, isIPInSubnet, isUsableHostIP, isValidMacAddress, subnetRangeError, parseSubnet } from '../utils/ipv4'
 import { networkRepository } from './networkRepository'
 
 const FILE_NAME = 'ipAllocations.json'
@@ -30,8 +30,13 @@ export const ipAllocationRepository = {
       throw createError({ statusCode: 400, message: 'Invalid IP address' })
     }
 
-    if (!isIPInSubnet(data.ip_address, network.subnet)) {
-      throw createError({ statusCode: 400, message: `IP ${data.ip_address} is not within subnet ${network.subnet}` })
+    if (!isUsableHostIP(data.ip_address, network.subnet)) {
+      const info = parseSubnet(network.subnet)
+      if (!isIPInSubnet(data.ip_address, network.subnet)) {
+        throw createError({ statusCode: 400, message: subnetRangeError(data.ip_address, network.subnet) })
+      }
+      // IP is in subnet but is network or broadcast address
+      throw createError({ statusCode: 400, message: `IP ${data.ip_address} is the ${data.ip_address === info.network_address ? 'network' : 'broadcast'} address of ${network.subnet}. Valid range: ${info.first_usable} - ${info.last_usable}` })
     }
 
     if (data.mac_address && !isValidMacAddress(data.mac_address)) {
@@ -71,8 +76,12 @@ export const ipAllocationRepository = {
       }
 
       const network = networkRepository.getById(allocations[index].network_id)
-      if (network && !isIPInSubnet(data.ip_address, network.subnet)) {
-        throw createError({ statusCode: 400, message: `IP ${data.ip_address} is not within subnet ${network.subnet}` })
+      if (network && !isUsableHostIP(data.ip_address, network.subnet)) {
+        const info = parseSubnet(network.subnet)
+        if (!isIPInSubnet(data.ip_address, network.subnet)) {
+          throw createError({ statusCode: 400, message: subnetRangeError(data.ip_address, network.subnet) })
+        }
+        throw createError({ statusCode: 400, message: `IP ${data.ip_address} is the ${data.ip_address === info.network_address ? 'network' : 'broadcast'} address of ${network.subnet}. Valid range: ${info.first_usable} - ${info.last_usable}` })
       }
 
       if (allocations.some(a => a.ip_address === data.ip_address && a.id !== id)) {

@@ -50,79 +50,132 @@
           </UFormGroup>
         </template>
 
-        <!-- Connected Device: freetext or switch reference -->
-        <UFormGroup :label="$t('switches.ports.connectedDevice')">
-          <div class="space-y-2">
-            <div class="flex items-center gap-2">
-              <button
-                class="px-2 py-1 text-xs font-medium rounded border transition-colors"
-                :class="connectionMode === 'freetext'
-                  ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
-                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-300'"
-                @click="connectionMode = 'freetext'"
-              >{{ $t('switches.ports.freetext') }}</button>
-              <button
-                class="px-2 py-1 text-xs font-medium rounded border transition-colors"
-                :class="connectionMode === 'switch'
-                  ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
-                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-300'"
-                @click="connectionMode = 'switch'"
-              >{{ $t('switches.ports.switchReference') }}</button>
+        <!-- Connection Type -->
+        <UFormGroup :label="$t('switches.ports.connectionType')">
+          <div class="flex items-center gap-1">
+            <button
+              v-for="mode in connectionModes"
+              :key="mode.value"
+              class="px-2.5 py-1 text-xs font-medium rounded border transition-colors"
+              :class="connectionMode === mode.value
+                ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
+                : 'bg-gray-100 border-gray-300 text-gray-500 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:text-gray-300'"
+              @click="connectionMode = mode.value"
+            >{{ mode.label }}</button>
+          </div>
+        </UFormGroup>
+
+        <!-- Connected Switch -->
+        <template v-if="connectionMode === 'switch'">
+          <UFormGroup :label="$t('switches.ports.connectedSwitch')">
+            <USelectMenu
+              :model-value="selectedSwitchOption"
+              :options="switchSearchOptions"
+              searchable
+              :searchable-placeholder="$t('switches.ports.searchSwitch')"
+              option-attribute="label"
+              by="value"
+              @update:model-value="onSwitchSelect"
+            >
+              <template #label>
+                <div v-if="selectedSwitchId" class="flex items-center gap-2">
+                  <UIcon name="i-heroicons-server-stack" class="h-3.5 w-3.5 text-gray-400" />
+                  <span>{{ switchSearchOptions.find(s => s.value === selectedSwitchId)?.label || selectedSwitchId }}</span>
+                </div>
+                <span v-else class="text-gray-400">—</span>
+              </template>
+              <template #option="{ option }">
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-heroicons-server-stack" class="h-3.5 w-3.5 text-gray-400" />
+                  <div>
+                    <div class="font-medium">{{ option.sw?.name || '—' }}</div>
+                    <div v-if="option.sw?.management_ip" class="font-mono text-xs text-gray-400">{{ option.sw.management_ip }}</div>
+                  </div>
+                </div>
+              </template>
+            </USelectMenu>
+          </UFormGroup>
+
+          <UFormGroup v-if="selectedSwitchId" :label="$t('switches.ports.connectedPort')">
+            <USelectMenu
+              :model-value="selectedPortOption"
+              :options="remotePortSearchOptions"
+              searchable
+              :searchable-placeholder="$t('switches.ports.searchPort')"
+              option-attribute="label"
+              by="value"
+              @update:model-value="onPortSelect"
+            >
+              <template #label>
+                <span v-if="selectedPortId">{{ selectedPortLabel }}</span>
+                <span v-else class="text-gray-400">—</span>
+              </template>
+              <template #option="{ option }">
+                <span>{{ option.label }}</span>
+                <span v-if="option.connected" class="ml-1 text-xs text-yellow-400">({{ option.connected }})</span>
+              </template>
+            </USelectMenu>
+            <!-- Port conflict warning -->
+            <div v-if="portConflict" class="mt-1 rounded-md bg-yellow-500/10 border border-yellow-500/30 px-3 py-2 text-xs text-yellow-400">
+              <span class="font-semibold">{{ $t('common.warning') }}:</span> {{ $t('switches.ports.portConflict') }}
+              <span class="font-medium text-yellow-300">{{ portConflict.device }} → {{ portConflict.port }}</span>.
+              {{ $t('switches.ports.portConflictOverride') }}
             </div>
+          </UFormGroup>
+        </template>
 
-            <!-- Freetext mode -->
-            <UInput
-              v-if="connectionMode === 'freetext'"
-              v-model="form.connected_device"
-              :placeholder="$t('switches.ports.devicePlaceholder')"
-            />
+        <!-- Connected Device (freetext with IP/hostname search) -->
+        <template v-if="connectionMode === 'device'">
+          <UFormGroup :label="$t('switches.ports.connectedDevice')">
+            <USelectMenu
+              :model-value="selectedDeviceOption"
+              :options="deviceSearchOptions"
+              searchable
+              :searchable-placeholder="$t('switches.ports.searchDevice')"
+              option-attribute="label"
+              by="value"
+              creatable
+              @update:model-value="onDeviceSelect"
+            >
+              <template #label>
+                <div v-if="form.connected_device" class="flex items-center gap-2">
+                  <UIcon name="i-heroicons-computer-desktop" class="h-3.5 w-3.5 text-gray-400" />
+                  <span>{{ form.connected_device }}</span>
+                </div>
+                <span v-else class="text-gray-400">—</span>
+              </template>
+              <template #option="{ option }">
+                <div class="flex items-center gap-2">
+                  <UIcon :name="option.icon || 'i-heroicons-computer-desktop'" class="h-3.5 w-3.5 text-gray-400" />
+                  <div>
+                    <div class="font-medium">{{ option.label }}</div>
+                    <div v-if="option.detail" class="text-xs text-gray-400">{{ option.detail }}</div>
+                  </div>
+                </div>
+              </template>
+              <template #option-create="{ option }">
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-heroicons-plus" class="h-3.5 w-3.5 text-primary-400" />
+                  <span>{{ option.label }}</span>
+                </div>
+              </template>
+            </USelectMenu>
+          </UFormGroup>
 
-            <!-- Switch reference mode -->
-            <template v-if="connectionMode === 'switch'">
-              <USelect
-                v-model="selectedSwitchId"
-                :options="switchOptions"
-                option-attribute="label"
-                value-attribute="value"
-                :placeholder="$t('switches.ports.selectSwitch')"
-              />
-              <USelect
-                v-if="selectedSwitchId && remotePortOptions.length"
-                v-model="selectedPortId"
-                :options="remotePortOptions"
-                option-attribute="label"
-                value-attribute="value"
-                :placeholder="$t('switches.ports.selectPort')"
-              />
-              <p v-if="selectedSwitchId && !loadingSwitches && !remotePortOptions.length" class="text-xs text-gray-500">
-                {{ $t('switches.ports.noAvailablePorts') }}
-              </p>
-              <!-- Port conflict warning -->
-              <div v-if="portConflict" class="rounded-md bg-yellow-500/10 border border-yellow-500/30 px-3 py-2 text-xs text-yellow-400">
-                <span class="font-semibold">{{ $t('common.warning') }}:</span> {{ $t('switches.ports.portConflict') }}
-                <span class="font-medium text-yellow-300">{{ portConflict.device }} → {{ portConflict.port }}</span>.
-                {{ $t('switches.ports.portConflictOverride') }}
-              </div>
-            </template>
-          </div>
-        </UFormGroup>
+          <UFormGroup :label="$t('switches.ports.connectedPort')">
+            <UInput v-model="form.connected_port" :placeholder="$t('switches.ports.portPlaceholder')" />
+          </UFormGroup>
+        </template>
 
-        <!-- Connected Port display/edit -->
-        <UFormGroup :label="$t('switches.ports.connectedPort')">
-          <div v-if="connectionMode === 'switch' && selectedSwitchId && selectedPortId" class="flex items-center gap-2">
-            <UBadge color="blue" variant="subtle">
-              {{ selectedPortLabel }}
-            </UBadge>
-          </div>
-          <p v-else-if="connectionMode === 'switch' && !selectedPortId" class="text-xs text-gray-500">
-            {{ $t('switches.ports.noPortSelected') }}
-          </p>
-          <UInput
-            v-else
-            v-model="form.connected_port"
-            :placeholder="$t('switches.ports.portPlaceholder')"
-          />
-        </UFormGroup>
+        <!-- Freetext mode -->
+        <template v-if="connectionMode === 'freetext'">
+          <UFormGroup :label="$t('switches.ports.connectedDevice')">
+            <UInput v-model="form.connected_device" :placeholder="$t('switches.ports.devicePlaceholder')" />
+          </UFormGroup>
+          <UFormGroup :label="$t('switches.ports.connectedPort')">
+            <UInput v-model="form.connected_port" :placeholder="$t('switches.ports.portPlaceholder')" />
+          </UFormGroup>
+        </template>
 
         <UFormGroup :label="$t('common.description')">
           <UInput v-model="form.description" />
@@ -184,11 +237,17 @@ const portModeOptions = computed(() => [
   { label: t('switches.ports.modeTrunk'), value: 'trunk' }
 ])
 
-const connectionMode = ref<'freetext' | 'switch'>('freetext')
+const connectionMode = ref<'switch' | 'device' | 'freetext'>('freetext')
+const connectionModes = computed(() => [
+  { label: t('switches.ports.connectedSwitch'), value: 'switch' },
+  { label: t('switches.ports.connectedDevice'), value: 'device' },
+  { label: t('switches.ports.freetext'), value: 'freetext' }
+])
 const selectedSwitchId = ref('')
 const selectedPortId = ref('')
 const allSwitches = ref<any[]>([])
 const allVlans = ref<any[]>([])
+const allAllocations = ref<any[]>([])
 const selectedTaggedVlans = ref<number[]>([])
 const loadingSwitches = ref(false)
 
@@ -235,51 +294,114 @@ async function fetchVlans() {
   } catch { /* ignore */ }
 }
 
-const switchOptions = computed(() => {
+async function fetchAllocations() {
+  try {
+    const data = await apiFetch<any>('/api/search', { params: { q: '*' } })
+    allAllocations.value = data.allocations || []
+  } catch {
+    // Fallback: fetch all networks and their allocations
+    try {
+      const nets = await apiFetch<any>('/api/networks')
+      const networkList = nets.data || nets || []
+      const allocs: any[] = []
+      for (const net of networkList) {
+        try {
+          const a = await apiFetch<any>(`/api/networks/${net.id}/allocations`)
+          allocs.push(...(a.data || a || []))
+        } catch { /* ignore */ }
+      }
+      allAllocations.value = allocs
+    } catch { /* ignore */ }
+  }
+}
+
+// Switch search options
+const switchSearchOptions = computed(() => {
   return [
-    { label: '-- None --', value: '' },
+    { label: '—', value: '', sw: null },
     ...allSwitches.value.map(s => ({
       label: s.id === props.switchId ? `${s.name} (this switch)` : s.name,
-      value: s.id
+      value: s.id,
+      sw: s
     }))
   ]
 })
 
-const remotePortOptions = computed(() => {
+const selectedSwitchOption = computed(() =>
+  switchSearchOptions.value.find(o => o.value === selectedSwitchId.value) || switchSearchOptions.value[0]
+)
+
+function onSwitchSelect(option: any) {
+  selectedSwitchId.value = option?.value || ''
+  selectedPortId.value = ''
+}
+
+// Remote port search options
+const remotePortSearchOptions = computed(() => {
   if (!selectedSwitchId.value) return []
   const sw = allSwitches.value.find(s => s.id === selectedSwitchId.value)
   if (!sw?.ports) return []
   return [
-    { label: '-- None --', value: '' },
+    { label: '—', value: '', connected: '' },
     ...sw.ports
       .filter((p: any) => {
-        // For self-switch: exclude the port being edited
         if (selectedSwitchId.value === props.switchId && p.id === props.port?.id) return false
         return true
       })
       .map((p: any) => {
-        let label = p.label || `${p.unit}/${p.index}`
-        // Mark ports that are already connected elsewhere
-        if (p.connected_device_id && !(p.connected_device_id === props.switchId && p.connected_port_id === props.port?.id)) {
-          label += ` (→ ${p.connected_device})`
-        }
-        return { label, value: p.id }
+        const label = p.label || `${p.unit}/${p.index}`
+        const connected = (p.connected_device_id && !(p.connected_device_id === props.switchId && p.connected_port_id === props.port?.id))
+          ? `→ ${p.connected_device}` : ''
+        return { label, value: p.id, connected }
       })
   ]
 })
 
-// Check if selected port is already connected to someone else
+const selectedPortOption = computed(() =>
+  remotePortSearchOptions.value.find(o => o.value === selectedPortId.value) || null
+)
+
+function onPortSelect(option: any) {
+  selectedPortId.value = option?.value || ''
+}
+
+// Device search options — combines IP allocations + freetext
+const deviceSearchOptions = computed(() => {
+  const options: any[] = [{ label: '—', value: '', icon: '', detail: '' }]
+  // Add all known IP allocations
+  for (const alloc of allAllocations.value) {
+    const parts = [alloc.hostname, alloc.ip_address].filter(Boolean)
+    options.push({
+      label: alloc.hostname || alloc.ip_address,
+      value: alloc.hostname || alloc.ip_address,
+      icon: 'i-heroicons-server',
+      detail: [alloc.ip_address, alloc.device_type, alloc.description].filter(Boolean).join(' · ')
+    })
+  }
+  return options
+})
+
+const selectedDeviceOption = computed(() =>
+  deviceSearchOptions.value.find(o => o.value === form.connected_device) || null
+)
+
+function onDeviceSelect(option: any) {
+  if (typeof option === 'string') {
+    // Creatable: user typed a new value
+    form.connected_device = option
+  } else {
+    form.connected_device = option?.value || ''
+  }
+}
+
+// Port conflict check
 const portConflict = computed(() => {
   if (!selectedSwitchId.value || !selectedPortId.value) return null
   const sw = allSwitches.value.find(s => s.id === selectedSwitchId.value)
   const port = sw?.ports?.find((p: any) => p.id === selectedPortId.value)
   if (!port?.connected_device_id) return null
-  // If already connected to this port on this switch, no conflict
   if (port.connected_device_id === props.switchId && port.connected_port_id === props.port?.id) return null
-  return {
-    device: port.connected_device || 'Unknown',
-    port: port.connected_port || 'Unknown port'
-  }
+  return { device: port.connected_device || 'Unknown', port: port.connected_port || 'Unknown port' }
 })
 
 const selectedPortLabel = computed(() => {
@@ -311,11 +433,16 @@ watch(() => props.port, (p) => {
       connectionMode.value = 'switch'
       pendingSwitchId.value = p.connected_device_id
       pendingPortId.value = p.connected_port_id || ''
-      // Set immediately if switches already loaded
       if (allSwitches.value.length) {
         selectedSwitchId.value = p.connected_device_id
         selectedPortId.value = p.connected_port_id || ''
       }
+    } else if (p.connected_device) {
+      connectionMode.value = 'freetext'
+      selectedSwitchId.value = ''
+      selectedPortId.value = ''
+      pendingSwitchId.value = ''
+      pendingPortId.value = ''
     } else {
       connectionMode.value = 'freetext'
       selectedSwitchId.value = ''
@@ -328,7 +455,7 @@ watch(() => props.port, (p) => {
 
 watch(isOpen, async (open) => {
   if (open) {
-    await Promise.all([fetchSwitches(), fetchVlans()])
+    await Promise.all([fetchSwitches(), fetchVlans(), fetchAllocations()])
     // Apply pending selection after switches are loaded
     if (pendingSwitchId.value) {
       selectedSwitchId.value = pendingSwitchId.value

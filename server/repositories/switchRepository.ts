@@ -2,9 +2,80 @@ import { nanoid } from 'nanoid'
 import { readJson, writeJson } from '../storage/jsonStorage'
 import type { Switch } from '../../types/switch'
 import type { Port } from '../../types/port'
+import type { IPAllocation } from '../../types/ipAllocation'
 import { layoutTemplateRepository } from './layoutTemplateRepository'
+import { isValidIPv4, isIPInSubnet } from '../utils/ipv4'
 
 const FILE_NAME = 'switches.json'
+const ALLOC_FILE_NAME = 'ipAllocations.json'
+const NETWORK_FILE_NAME = 'networks.json'
+
+/**
+ * Auto-create or update an IP allocation when a switch gets a management_ip.
+ * Finds the matching network by CIDR and upserts the allocation.
+ * Silently skips if no matching network is found.
+ */
+function syncManagementIpAllocation(switchId: string, switchName: string, newIp: string | undefined, oldIp?: string): void {
+  try {
+    const allocations = readJson<IPAllocation[]>(ALLOC_FILE_NAME)
+    const networks = readJson<{ id: string; subnet: string }[]>(NETWORK_FILE_NAME)
+
+    // Remove old allocation if IP changed or removed
+    if (oldIp && oldIp !== newIp) {
+      const oldIndex = allocations.findIndex(a => a.ip_address === oldIp && a.description === `Management IP for switch: ${switchName}`)
+      if (oldIndex === -1) {
+        // Also try matching by switch ID in description (in case switch was renamed)
+        const altIndex = allocations.findIndex(a => a.ip_address === oldIp && a.description?.startsWith('Management IP for switch:'))
+        if (altIndex !== -1) {
+          allocations.splice(altIndex, 1)
+        }
+      } else {
+        allocations.splice(oldIndex, 1)
+      }
+    }
+
+    // Create new allocation if IP is set
+    if (newIp && isValidIPv4(newIp)) {
+      // Find matching network
+      const matchingNetwork = networks.find(n => isIPInSubnet(newIp, n.subnet))
+      if (!matchingNetwork) {
+        // No matching network - write back any removals and return
+        if (oldIp && oldIp !== newIp) {
+          writeJson(ALLOC_FILE_NAME, allocations)
+        }
+        return
+      }
+
+      // Check if this IP is already allocated
+      const existingAlloc = allocations.find(a => a.ip_address === newIp)
+      if (existingAlloc) {
+        // Update existing allocation to reflect this switch
+        existingAlloc.hostname = switchName
+        existingAlloc.device_type = 'switch'
+        existingAlloc.description = `Management IP for switch: ${switchName}`
+        existingAlloc.updated_at = new Date().toISOString()
+      } else {
+        // Create new allocation
+        const now = new Date().toISOString()
+        allocations.push({
+          id: nanoid(),
+          network_id: matchingNetwork.id,
+          ip_address: newIp,
+          hostname: switchName,
+          device_type: 'switch',
+          description: `Management IP for switch: ${switchName}`,
+          status: 'active',
+          created_at: now,
+          updated_at: now
+        })
+      }
+    }
+
+    writeJson(ALLOC_FILE_NAME, allocations)
+  } catch {
+    // Silently ignore errors - management IP allocation is best-effort
+  }
+}
 
 function generatePortLabel(blockLabel: string | undefined, unitNumber: number, portIndex: number): string {
   if (!blockLabel) return `${unitNumber}/${portIndex}`
@@ -79,6 +150,12 @@ export const switchRepository = {
 
     switches.push(sw)
     writeJson(FILE_NAME, switches)
+
+    // Auto-create IP allocation for management IP
+    if (sw.management_ip) {
+      syncManagementIpAllocation(sw.id, sw.name, sw.management_ip)
+    }
+
     return sw
   },
 
@@ -101,6 +178,10 @@ export const switchRepository = {
       ports = generatePortsFromTemplate(data.layout_template_id)
     }
 
+    const oldSwitch = switches[index]
+    const oldManagementIp = oldSwitch.management_ip
+    const oldName = oldSwitch.name
+
     switches[index] = {
       ...switches[index],
       ...data,
@@ -109,6 +190,14 @@ export const switchRepository = {
     }
 
     writeJson(FILE_NAME, switches)
+
+    // Auto-update IP allocation for management IP changes
+    const newManagementIp = switches[index].management_ip
+    const newName = switches[index].name
+    if (newManagementIp !== oldManagementIp || (newName !== oldName && newManagementIp)) {
+      syncManagementIpAllocation(switches[index].id, newName, newManagementIp, oldManagementIp)
+    }
+
     return switches[index]
   },
 
@@ -231,6 +320,11 @@ export const switchRepository = {
       if (port.connected_device_id && port.connected_port_id) {
         this._removeRemoteLink(switches, port.connected_device_id, port.connected_port_id)
       }
+    }
+
+    // Clean up management IP allocation
+    if (sw.management_ip) {
+      syncManagementIpAllocation(sw.id, sw.name, undefined, sw.management_ip)
     }
 
     switches.splice(index, 1)

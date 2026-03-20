@@ -74,6 +74,45 @@ export function isIPInSubnet(ip: string, cidr: string): boolean {
   return (ipLong & mask) >>> 0 === network
 }
 
+/**
+ * Check if an IP is a usable host address in a subnet (not network/broadcast).
+ * For /31 and /32, all addresses are considered usable (RFC 3021).
+ */
+export function isUsableHostIP(ip: string, cidr: string): boolean {
+  if (!isIPInSubnet(ip, cidr)) return false
+  const [subnetIp, prefixStr] = cidr.split('/')
+  const prefix = Number(prefixStr)
+  // /31 and /32 subnets: all addresses are usable (RFC 3021)
+  if (prefix >= 31) return true
+  const mask = (~0 << (32 - prefix)) >>> 0
+  const network = (ipToLong(subnetIp) & mask) >>> 0
+  const wildcard = (~mask) >>> 0
+  const broadcast = (network | wildcard) >>> 0
+  const ipLong = ipToLong(ip)
+  // Reject network address and broadcast address
+  return ipLong !== network && ipLong !== broadcast
+}
+
+/**
+ * Build a detailed error message for an IP not in subnet, showing valid range.
+ */
+export function subnetRangeError(ip: string, cidr: string): string {
+  const info = parseSubnet(cidr)
+  return `IP ${ip} is not in network ${cidr}. Valid range: ${info.first_usable} - ${info.last_usable}`
+}
+
+/**
+ * Find the first network whose CIDR contains the given IP.
+ */
+export function findNetworkForIP(ip: string, networks: { id: string; subnet: string }[]): { id: string; subnet: string } | null {
+  for (const net of networks) {
+    if (isIPInSubnet(ip, net.subnet)) {
+      return net
+    }
+  }
+  return null
+}
+
 export function doRangesOverlap(
   start1: string, end1: string,
   start2: string, end2: string

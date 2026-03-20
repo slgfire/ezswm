@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { readJson, writeJson } from '../storage/jsonStorage'
 import type { IPRange } from '../../types/ipRange'
-import { isValidIPv4, isIPInSubnet, ipToLong, doRangesOverlap } from '../utils/ipv4'
+import { isValidIPv4, isIPInSubnet, ipToLong, doRangesOverlap, subnetRangeError } from '../utils/ipv4'
 import { networkRepository } from './networkRepository'
 
 const FILE_NAME = 'ipRanges.json'
@@ -34,8 +34,11 @@ export const ipRangeRepository = {
       throw createError({ statusCode: 400, message: 'Start IP must be less than or equal to end IP' })
     }
 
-    if (!isIPInSubnet(data.start_ip, network.subnet) || !isIPInSubnet(data.end_ip, network.subnet)) {
-      throw createError({ statusCode: 400, message: 'Range must be within the network subnet' })
+    if (!isIPInSubnet(data.start_ip, network.subnet)) {
+      throw createError({ statusCode: 400, message: subnetRangeError(data.start_ip, network.subnet) })
+    }
+    if (!isIPInSubnet(data.end_ip, network.subnet)) {
+      throw createError({ statusCode: 400, message: subnetRangeError(data.end_ip, network.subnet) })
     }
 
     // Check overlap with existing ranges in the same network
@@ -85,8 +88,11 @@ export const ipRangeRepository = {
 
     const network = networkRepository.getById(current.network_id)
     if (network) {
-      if (!isIPInSubnet(startIp, network.subnet) || !isIPInSubnet(endIp, network.subnet)) {
-        throw createError({ statusCode: 400, message: 'Range must be within the network subnet' })
+      if (!isIPInSubnet(startIp, network.subnet)) {
+        throw createError({ statusCode: 400, message: subnetRangeError(startIp, network.subnet) })
+      }
+      if (!isIPInSubnet(endIp, network.subnet)) {
+        throw createError({ statusCode: 400, message: subnetRangeError(endIp, network.subnet) })
       }
     }
 

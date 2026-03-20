@@ -153,7 +153,12 @@
       "portMode": "Port Mode",
       "modeAccess": "Access",
       "modeTrunk": "Trunk",
-      "accessVlan": "Access VLAN"
+      "accessVlan": "Access VLAN",
+      "connectionType": "Connection",
+      "connectedSwitch": "Connected Switch",
+      "searchSwitch": "Search switch...",
+      "searchPort": "Search port...",
+      "searchDevice": "Search or type device name..."
     },
     "emptyTitle": "No switches yet",
     "emptyDescription": "Create your first switch to get started.",
