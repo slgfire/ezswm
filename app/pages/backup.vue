@@ -23,7 +23,7 @@
             <input
               ref="fileInput"
               type="file"
-              accept=".zip"
+              accept=".json"
               class="block w-full text-sm text-gray-400
                 file:mr-4 file:py-2 file:px-4
                 file:rounded-md file:border-0
@@ -72,7 +72,7 @@ async function downloadBackup() {
     const url = URL.createObjectURL(response as Blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `ezswm-backup-${new Date().toISOString().slice(0, 10)}.zip`
+    a.download = `ezswm-backup-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
     toast.add({ title: t('backup.messages.exported'), color: 'green' })
@@ -84,13 +84,13 @@ async function downloadBackup() {
 async function restoreBackup() {
   if (!selectedFile.value) return
   try {
-    const formData = new FormData()
-    formData.append('file', selectedFile.value)
-    await $fetch('/api/backup/import', { method: 'POST', body: formData })
+    const text = await selectedFile.value.text()
+    const backup = JSON.parse(text)
+    await $fetch('/api/backup/import', { method: 'POST', body: backup })
     toast.add({ title: t('backup.messages.imported'), color: 'green' })
     selectedFile.value = null
-  } catch {
-    toast.add({ title: t('errors.serverError'), color: 'red' })
+  } catch (err: any) {
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' })
   } finally {
     showRestoreDialog.value = false
   }
