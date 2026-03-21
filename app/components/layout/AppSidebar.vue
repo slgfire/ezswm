@@ -77,8 +77,7 @@ const navSections = [
     divider: true,
     items: [
       { to: '/layout-templates', icon: 'i-heroicons-rectangle-group', label: 'nav.layoutTemplates' },
-      { to: '/import-export', icon: 'i-heroicons-arrow-down-tray', label: 'nav.importExport' },
-      { to: '/backup', icon: 'i-heroicons-archive-box', label: 'nav.backup' }
+      { to: '/data-management', icon: 'i-heroicons-circle-stack', label: 'nav.dataManagement' }
     ]
   },
   {

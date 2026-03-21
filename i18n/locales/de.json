@@ -9,6 +9,7 @@
     "subnetCalculator": "Subnetz-Rechner",
     "importExport": "Import/Export",
     "backup": "Sicherung",
+    "dataManagement": "Datenverwaltung",
     "settings": "Einstellungen",
     "users": "Benutzer",
     "layoutTemplates": "Layout-Vorlagen"
@@ -419,6 +420,40 @@
     "importEmptyDescription": "Wählen Sie einen Entitätstyp und laden Sie eine CSV- oder JSON-Datei hoch.",
     "exportEmptyTitle": "Daten exportieren",
     "exportEmptyDescription": "Wählen Sie einen Entitätstyp und ein Format, um Ihre Daten zu exportieren."
+  },
+  "dataManagement": {
+    "title": "Datenverwaltung",
+    "backupTab": "Sicherung",
+    "exportTab": "Export",
+    "importTab": "Import",
+    "entities": {
+      "switches": "Switches",
+      "vlans": "VLANs",
+      "networks": "Netzwerke",
+      "allocations": "IP-Zuweisungen",
+      "templates": "Layout-Vorlagen"
+    },
+    "export": {
+      "selectType": "Entitätstyp",
+      "selectFormat": "Format",
+      "download": "Herunterladen",
+      "downloadTemplate": "Vorlage herunterladen",
+      "success": "Export erfolgreich heruntergeladen"
+    },
+    "import": {
+      "selectFile": "Datei auswählen",
+      "preview": "Zu importierende Zeilen",
+      "rows": "Zeilen",
+      "importButton": "Importieren",
+      "confirmTitle": "Import bestätigen",
+      "confirmMessage": "{count} Einträge vom Typ \"{type}\" importieren? Neue Einträge werden hinzugefügt, bestehende Daten werden nicht ersetzt.",
+      "imported": "importiert",
+      "skipped": "übersprungen",
+      "errorCount": "Fehler",
+      "success": "{count} Einträge erfolgreich importiert",
+      "hasErrors": "{count} Einträge hatten Fehler",
+      "parseError": "Die ausgewählte Datei konnte nicht gelesen werden"
+    }
   },
   "activity": {
     "title": "Aktivitäten",

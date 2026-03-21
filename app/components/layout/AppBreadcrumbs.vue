@@ -29,8 +29,7 @@ const labelMap: Record<string, string> = {
   'tools': 'nav.tools',
   'subnet-calculator': 'nav.subnetCalculator',
   'layout-templates': 'nav.layoutTemplates',
-  'import-export': 'nav.importExport',
-  'backup': 'nav.backup',
+  'data-management': 'nav.dataManagement',
   'settings': 'nav.settings',
   'create': 'common.create',
   'edit': 'common.edit'

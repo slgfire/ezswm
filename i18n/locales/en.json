@@ -9,6 +9,7 @@
     "subnetCalculator": "Subnet Calculator",
     "importExport": "Import/Export",
     "backup": "Backup",
+    "dataManagement": "Data Management",
     "settings": "Settings",
     "users": "Users",
     "layoutTemplates": "Layout Templates"
@@ -419,6 +420,40 @@
     "importEmptyDescription": "Select an entity type and upload a CSV or JSON file to import data.",
     "exportEmptyTitle": "Export Data",
     "exportEmptyDescription": "Select an entity type and format to export your data."
+  },
+  "dataManagement": {
+    "title": "Data Management",
+    "backupTab": "Backup",
+    "exportTab": "Export",
+    "importTab": "Import",
+    "entities": {
+      "switches": "Switches",
+      "vlans": "VLANs",
+      "networks": "Networks",
+      "allocations": "IP Allocations",
+      "templates": "Layout Templates"
+    },
+    "export": {
+      "selectType": "Entity Type",
+      "selectFormat": "Format",
+      "download": "Download",
+      "downloadTemplate": "Download Template",
+      "success": "Export downloaded successfully"
+    },
+    "import": {
+      "selectFile": "Select File",
+      "preview": "Rows to import",
+      "rows": "rows",
+      "importButton": "Import",
+      "confirmTitle": "Confirm Import",
+      "confirmMessage": "Import {count} entries of type \"{type}\"? New entries will be added without replacing existing data.",
+      "imported": "imported",
+      "skipped": "skipped",
+      "errorCount": "errors",
+      "success": "{count} entries imported successfully",
+      "hasErrors": "{count} entries had errors",
+      "parseError": "Could not parse the selected file"
+    }
   },
   "activity": {
     "title": "Activity",
