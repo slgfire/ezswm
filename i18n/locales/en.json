@@ -234,6 +234,7 @@
     "allocations": {
       "title": "IP Allocations",
       "create": "Add Allocation",
+      "edit": "Edit Allocation",
       "fields": {
         "ipAddress": "IP Address",
         "hostname": "Hostname",

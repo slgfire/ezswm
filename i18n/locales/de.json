@@ -234,6 +234,7 @@
     "allocations": {
       "title": "IP-Zuweisungen",
       "create": "Zuweisung hinzufügen",
+      "edit": "Zuweisung bearbeiten",
       "fields": {
         "ipAddress": "IP-Adresse",
         "hostname": "Hostname",

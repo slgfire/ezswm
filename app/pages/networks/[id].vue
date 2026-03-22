@@ -61,12 +61,29 @@
       </div>
 
       <!-- Utilization bar -->
-      <div class="overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700" style="height: 6px">
-        <div
-          class="h-full rounded-full transition-all"
-          :class="utilizationPercent > 80 ? 'bg-red-500' : utilizationPercent > 50 ? 'bg-yellow-500' : 'bg-primary-500'"
-          :style="{ width: `${Math.min(utilizationPercent, 100)}%` }"
-        />
+      <div class="space-y-1.5">
+        <div class="flex h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+          <div
+            class="h-full bg-green-500 transition-all"
+            :style="{ width: `${Math.min(utilizationPercent, 100)}%` }"
+          />
+          <div
+            v-if="dhcpRangePercent > 0"
+            class="h-full bg-blue-500/60 transition-all"
+            :style="{ width: `${Math.min(dhcpRangePercent, 100 - utilizationPercent)}%` }"
+          />
+          <div
+            v-if="reservedRangePercent > 0"
+            class="h-full bg-yellow-500/50 transition-all"
+            :style="{ width: `${Math.min(reservedRangePercent, 100 - utilizationPercent - dhcpRangePercent)}%` }"
+          />
+        </div>
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-gray-400">
+          <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-green-500" /> {{ allocations.length }} Allocated</span>
+          <span v-if="dhcpRangePercent > 0" class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-blue-500/60" /> DHCP</span>
+          <span v-if="reservedRangePercent > 0" class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-yellow-500/50" /> Reserved</span>
+          <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-gray-500/30" /> Free</span>
+        </div>
       </div>
 
       <!-- Details panel (toggled) -->
@@ -130,27 +147,27 @@
 
 
         <!-- Unified list -->
-        <div class="divide-y divide-gray-200 rounded-lg border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+        <div class="divide-y divide-gray-200 overflow-hidden rounded-lg border border-gray-200 dark:divide-gray-700/50 dark:border-gray-700">
           <div
             v-for="row in unifiedList"
             :key="row.key"
-            class="flex items-center gap-3 px-4 py-2"
+            class="group flex items-center gap-3 px-4 py-2.5"
             :class="rowClass(row)"
           >
             <!-- Fixed rows (network, gateway, broadcast) -->
             <template v-if="row.kind === 'fixed'">
               <div class="w-40 shrink-0">
-                <code class="text-xs text-gray-500 dark:text-gray-400">{{ row.ip }}</code>
+                <code class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ row.ip }}</code>
               </div>
               <div class="flex-1">
-                <span class="text-xs font-medium text-gray-400 dark:text-gray-500">{{ row.label }}</span>
+                <span class="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ row.label }}</span>
               </div>
             </template>
 
             <!-- Allocation rows -->
             <template v-else-if="row.kind === 'allocation'">
               <div class="w-40 shrink-0">
-                <code class="text-xs">{{ row.data.ip_address }}</code>
+                <code class="font-mono text-xs text-gray-900 dark:text-white">{{ row.data.ip_address }}</code>
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
@@ -159,22 +176,30 @@
                   <UBadge :color="row.data.status === 'active' ? 'green' : row.data.status === 'reserved' ? 'yellow' : 'gray'" variant="subtle" size="xs">{{ row.data.status }}</UBadge>
                 </div>
               </div>
-              <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="xs" @click="openDeleteAllocDialog(row.data)" />
+              <div class="flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100">
+                <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click="openEditAlloc(row.data)" />
+                <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="xs" @click="openDeleteAllocDialog(row.data)" />
+              </div>
             </template>
 
             <!-- Range rows -->
             <template v-else-if="row.kind === 'range'">
-              <div class="w-40 shrink-0 cursor-pointer" @click="openRangeEdit(row.data)">
-                <code class="text-xs">{{ row.data.start_ip }} &ndash; {{ row.data.end_ip }}</code>
+              <div class="w-40 shrink-0">
+                <code class="font-mono text-xs text-gray-900 dark:text-white">{{ row.data.start_ip }} &ndash; {{ abbreviateEndIp(row.data.start_ip, row.data.end_ip) }}</code>
               </div>
-              <div class="min-w-0 flex-1 cursor-pointer" @click="openRangeEdit(row.data)">
+              <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
                   <UBadge :color="rangeTypeBadgeColor(row.data.type)" variant="subtle" size="xs">{{ $t(`networks.ranges.types.${row.data.type}`) }}</UBadge>
+                  <span class="font-mono text-[11px] text-gray-400">{{ rangeIpCount(row.data) }} IPs</span>
                   <span v-if="row.data.description" class="text-xs text-gray-500 dark:text-gray-400">{{ row.data.description }}</span>
-                  <span v-if="row.data.type !== 'dhcp'" class="text-xs text-gray-400">
-                    {{ $t('networks.ranges.ipsDocumented', { count: countAllocsInRange(row.data) }) }}
+                  <span v-if="row.data.type !== 'dhcp' && countAllocsInRange(row.data) > 0" class="text-xs text-gray-400">
+                    ({{ $t('networks.ranges.ipsDocumented', { count: countAllocsInRange(row.data) }) }})
                   </span>
                 </div>
+              </div>
+              <div class="flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100">
+                <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click="openRangeEdit(row.data)" />
+                <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="xs" @click="openDeleteRange(row.data)" />
               </div>
             </template>
           </div>
@@ -222,8 +247,8 @@
       <UCard>
         <template #header>
           <div class="flex items-center justify-between">
-            <h3 class="font-semibold">{{ addPanelMode === 'ip' ? $t('networks.unified.addIp') : $t('networks.unified.addRange') }}</h3>
-            <UButton variant="ghost" icon="i-heroicons-x-mark" size="sm" @click="showAddPanel = false" />
+            <h3 class="font-semibold">{{ editAllocTarget ? $t('networks.allocations.edit') : addPanelMode === 'ip' ? $t('networks.unified.addIp') : $t('networks.unified.addRange') }}</h3>
+            <UButton variant="ghost" icon="i-heroicons-x-mark" size="sm" @click="showAddPanel = false; editAllocTarget = null" />
           </div>
         </template>
 
@@ -294,7 +319,7 @@
 
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton variant="ghost" color="gray" @click="showAddPanel = false">{{ $t('common.cancel') }}</UButton>
+            <UButton variant="ghost" color="gray" @click="showAddPanel = false; editAllocTarget = null">{{ $t('common.cancel') }}</UButton>
             <UButton :loading="addPanelMode === 'ip' ? creatingAlloc : creatingRange" @click="addPanelMode === 'ip' ? onCreateAllocation() : onCreateRange()">{{ $t('common.add') }}</UButton>
           </div>
         </template>
@@ -346,6 +371,8 @@ const rangeEditForm = ref({ start_ip: '', end_ip: '', type: 'static', descriptio
 const rangeEditError = ref('')
 const savingRangeEdit = ref(false)
 
+const editAllocTarget = ref<any>(null)
+
 const editForm = ref({ name: '', subnet: '', gateway: '', vlan_id: '', description: '' })
 const editDnsInput = ref('')
 const allocForm = ref({ ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' })
@@ -360,6 +387,28 @@ function ipToLong(ip: string): number {
 const utilizationPercent = computed(() => {
   if (!subnetInfo.value.usableHosts || subnetInfo.value.usableHosts <= 0) return 0
   return Math.round((allocations.value.length / subnetInfo.value.usableHosts) * 100)
+})
+
+const dhcpRangePercent = computed(() => {
+  if (!subnetInfo.value.usableHosts || subnetInfo.value.usableHosts <= 0) return 0
+  let dhcpIps = 0
+  for (const r of ranges.value) {
+    if (r.type === 'dhcp') {
+      dhcpIps += ipToLong(r.end_ip) - ipToLong(r.start_ip) + 1
+    }
+  }
+  return Math.round((dhcpIps / subnetInfo.value.usableHosts) * 100)
+})
+
+const reservedRangePercent = computed(() => {
+  if (!subnetInfo.value.usableHosts || subnetInfo.value.usableHosts <= 0) return 0
+  let reservedIps = 0
+  for (const r of ranges.value) {
+    if (r.type === 'reserved') {
+      reservedIps += ipToLong(r.end_ip) - ipToLong(r.start_ip) + 1
+    }
+  }
+  return Math.round((reservedIps / subnetInfo.value.usableHosts) * 100)
 })
 
 const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrides', () => ({}))
@@ -447,15 +496,32 @@ function rangeTypeBadgeColor(type: string): string {
   return 'yellow'
 }
 
+function abbreviateEndIp(startIp: string, endIp: string): string {
+  const startParts = startIp.split('.')
+  const endParts = endIp.split('.')
+  let common = 0
+  for (let i = 0; i < 4; i++) {
+    if (startParts[i] === endParts[i]) common++
+    else break
+  }
+  if (common >= 3) return '.' + endParts.slice(3).join('.')
+  if (common >= 2) return '.' + endParts.slice(2).join('.')
+  return endIp
+}
+
+function rangeIpCount(range: any): number {
+  return ipToLong(range.end_ip) - ipToLong(range.start_ip) + 1
+}
+
 function rowClass(row: UnifiedRow): string {
   if (row.kind === 'fixed') {
-    return 'bg-gray-50 dark:bg-gray-800/50'
+    return 'bg-gray-50 dark:bg-dark-50'
   }
   if (row.kind === 'range') {
     const type = row.data?.type
-    if (type === 'dhcp') return 'bg-blue-50/50 dark:bg-blue-900/10'
-    if (type === 'static') return 'bg-green-50/50 dark:bg-green-900/10'
-    if (type === 'reserved') return 'bg-yellow-50/50 dark:bg-yellow-900/10'
+    if (type === 'dhcp') return 'border-l-2 border-l-blue-500 bg-blue-500/5 dark:bg-blue-500/5'
+    if (type === 'static') return 'border-l-2 border-l-green-500 bg-green-500/5 dark:bg-green-500/5'
+    if (type === 'reserved') return 'border-l-2 border-l-yellow-500 bg-yellow-500/5 dark:bg-yellow-500/5'
   }
   return ''
 }
@@ -515,16 +581,50 @@ async function fetchAllocations() {
 async function onCreateAllocation() {
   addPanelError.value = ''
   creatingAlloc.value = true
+  const body = {
+    ip_address: allocForm.value.ip_address.trim(),
+    hostname: allocForm.value.hostname.trim() || undefined,
+    mac_address: allocForm.value.mac_address.trim() || undefined,
+    device_type: allocForm.value.device_type || undefined,
+    description: allocForm.value.description.trim() || undefined,
+    status: allocForm.value.status
+  }
   try {
-    await $fetch(`/api/networks/${networkId}/allocations`, { method: 'POST', body: { ip_address: allocForm.value.ip_address.trim(), hostname: allocForm.value.hostname.trim() || undefined, mac_address: allocForm.value.mac_address.trim() || undefined, device_type: allocForm.value.device_type || undefined, description: allocForm.value.description.trim() || undefined, status: allocForm.value.status } })
-    toast.add({ title: t('networks.allocations.messages.created'), color: 'green' })
+    if (editAllocTarget.value) {
+      await $fetch(`/api/networks/${networkId}/allocations/${editAllocTarget.value.id}`, { method: 'PUT', body })
+      toast.add({ title: t('networks.allocations.messages.updated'), color: 'green' })
+    } else {
+      await $fetch(`/api/networks/${networkId}/allocations`, { method: 'POST', body })
+      toast.add({ title: t('networks.allocations.messages.created'), color: 'green' })
+    }
     showAddPanel.value = false
+    editAllocTarget.value = null
     allocForm.value = { ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' }
     await fetchAllocations()
   } catch (err: any) {
     addPanelError.value = err?.data?.message || t('errors.serverError')
   }
   finally { creatingAlloc.value = false }
+}
+
+function openEditAlloc(a: any) {
+  editAllocTarget.value = a
+  allocForm.value = {
+    ip_address: a.ip_address,
+    hostname: a.hostname || '',
+    mac_address: a.mac_address || '',
+    device_type: a.device_type || '',
+    description: a.description || '',
+    status: a.status || 'active'
+  }
+  addPanelMode.value = 'ip'
+  addPanelError.value = ''
+  showAddPanel.value = true
+}
+
+function openDeleteRange(r: any) {
+  deleteRangeTarget.value = r
+  showDeleteRangeDialog.value = true
 }
 
 function openDeleteAllocDialog(a: any) { deleteAllocTarget.value = a; showDeleteAllocDialog.value = true }
