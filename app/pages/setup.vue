@@ -9,7 +9,7 @@
           </div>
         </template>
 
-        <UForm :state="form" :validate="validate" @submit="onSubmit">
+        <UForm :state="form" :validate="validate" @submit.prevent="onSubmit">
           <div class="space-y-4">
             <UFormField :label="$t('auth.username')" name="username" required>
               <UInput v-model="form.username" />

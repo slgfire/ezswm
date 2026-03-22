@@ -218,7 +218,7 @@
           <UButton icon="i-heroicons-x-mark" variant="ghost" color="neutral" size="sm" @click="editMode = false" />
         </div>
 
-        <UForm :state="editForm" class="flex-1 overflow-y-auto px-6 py-4" @submit="onSave">
+        <UForm :state="editForm" class="flex-1 overflow-y-auto px-6 py-4" @submit.prevent="onSave">
           <div class="space-y-4">
             <UFormField :label="$t('switches.fields.name') + ' *'" name="name">
               <UInput v-model="editForm.name" required />

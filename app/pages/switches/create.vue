@@ -11,7 +11,7 @@
     </div>
 
     <UCard class="max-w-2xl">
-      <UForm :state="form" @submit="onSubmit">
+      <UForm :state="form" @submit.prevent="onSubmit">
         <div class="space-y-4">
           <UFormField :label="$t('switches.fields.name') + ' *'" name="name">
             <UInput v-model="form.name" :placeholder="$t('switches.fields.name')" required />
