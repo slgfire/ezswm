@@ -5,9 +5,8 @@
   >
     <!-- Logo -->
     <div class="flex h-16 items-center border-b border-gray-200 px-4 dark:border-gray-800">
-      <NuxtLink to="/" class="flex items-center gap-1.5 font-display">
-        <span class="text-xl font-bold text-primary-500">ez</span>
-        <span v-if="!collapsed" class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">SWM</span>
+      <NuxtLink to="/" class="font-display text-xl font-bold">
+        <span class="text-primary-500">ez</span><span v-if="!collapsed" class="tracking-tight text-gray-900 dark:text-white">SWM</span>
       </NuxtLink>
     </div>
 

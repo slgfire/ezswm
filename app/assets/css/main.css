@@ -50,34 +50,34 @@ h1, h2, h3, h4 {
 .stagger-item:nth-child(11) { animation-delay: 300ms; }
 .stagger-item:nth-child(12) { animation-delay: 330ms; }
 
-/* Cyan glow hover for cards */
+/* Green glow hover for cards */
 .card-glow {
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
 }
 
 .card-glow:hover {
-  border-color: rgba(6, 182, 212, 0.3);
+  border-color: rgba(34, 197, 94, 0.3);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   transform: scale(1.005);
 }
 
 .dark .card-glow:hover {
-  border-color: rgba(6, 182, 212, 0.4);
-  box-shadow: 0 0 20px rgba(6, 182, 212, 0.08);
+  border-color: rgba(34, 197, 94, 0.4);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.08);
 }
 
 /* Port hover glow */
 .port-glow:hover {
-  box-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
 }
 
-/* KPI number gradient — dark mode only, solid cyan in light */
+/* KPI number gradient — dark mode only, solid green in light */
 .kpi-number {
-  color: #06b6d4;
+  color: #22c55e;
 }
 
 .dark .kpi-number {
-  background: linear-gradient(135deg, #06b6d4, #ffffff);
+  background: linear-gradient(135deg, #22c55e, #ffffff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -97,7 +97,7 @@ h1, h2, h3, h4 {
   transform: translateY(-50%);
   width: 3px;
   height: 60%;
-  background: #06b6d4;
+  background: #22c55e;
   border-radius: 0 2px 2px 0;
 }
 
@@ -105,7 +105,7 @@ h1, h2, h3, h4 {
 .search-terminal::before {
   content: '>_';
   font-family: 'JetBrains Mono', monospace;
-  color: #06b6d4;
+  color: #22c55e;
   font-size: 0.75rem;
   font-weight: 600;
   margin-right: 0.5rem;
@@ -113,7 +113,7 @@ h1, h2, h3, h4 {
 
 /* Subtle alternating rows */
 .dark .alt-row:nth-child(even) {
-  background-color: rgba(6, 182, 212, 0.02);
+  background-color: rgba(34, 197, 94, 0.02);
 }
 
 /* Smooth transitions for all interactive elements */

@@ -9,8 +9,8 @@
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <NuxtLink to="/switches" class="stagger-item card-glow block rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700/50 dark:bg-dark-100">
           <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-500/10">
-              <UIcon name="i-heroicons-server-stack" class="h-6 w-6 text-cyan-500" />
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary-500/10">
+              <UIcon name="i-heroicons-server-stack" class="h-6 w-6 text-primary-500" />
             </div>
             <div>
               <div class="kpi-number font-display text-3xl font-bold">{{ stats.counts.switches }}</div>
@@ -144,7 +144,7 @@
                     width: `${Math.min(net.percentage, 100)}%`,
                     backgroundColor: net.percentage > 80 ? undefined : net.vlan_color || undefined
                   }"
-                  :class="net.percentage > 80 ? 'bg-red-500' : net.percentage > 50 ? 'bg-yellow-500' : net.vlan_color ? '' : 'bg-cyan-500'"
+                  :class="net.percentage > 80 ? 'bg-red-500' : net.percentage > 50 ? 'bg-yellow-500' : net.vlan_color ? '' : 'bg-primary-500'"
                 />
               </div>
             </div>
@@ -158,7 +158,7 @@
             <div v-for="entry in stats.recentActivity" :key="entry.id" class="flex items-center gap-2 rounded px-1 py-1.5 text-sm alt-row">
               <span
                 class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded"
-                :class="entry.action === 'create' ? 'bg-green-500/15 text-green-500' : entry.action === 'delete' ? 'bg-red-500/15 text-red-500' : 'bg-cyan-500/15 text-cyan-500'"
+                :class="entry.action === 'create' ? 'bg-green-500/15 text-green-500' : entry.action === 'delete' ? 'bg-red-500/15 text-red-500' : 'bg-primary-500/15 text-primary-500'"
               >
                 <UIcon
                   :name="entry.action === 'create' ? 'i-heroicons-plus' : entry.action === 'delete' ? 'i-heroicons-minus' : 'i-heroicons-pencil'"
