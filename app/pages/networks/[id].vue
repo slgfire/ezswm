@@ -211,8 +211,15 @@
     </div>
 
     <!-- Range edit slideover -->
-    <USlideover :open="showRangeEdit" @close="showRangeEdit = false" :title="$t('networks.ranges.editRange')">
-      <div class="p-6">
+    <USlideover :open="showRangeEdit" @close="showRangeEdit = false">
+      <template #header>
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold">{{ $t('networks.ranges.editRange') }}</h3>
+          <UButton variant="ghost" icon="i-heroicons-x-mark" size="sm" @click="showRangeEdit = false" />
+        </div>
+      </template>
+
+      <template #body>
         <div v-if="rangeEditError" class="mb-4 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
           {{ rangeEditError }}
         </div>
@@ -229,17 +236,20 @@
           <UFormField :label="$t('common.description')">
             <UInput v-model="rangeEditForm.description" />
           </UFormField>
-          <div class="flex items-center justify-between pt-2">
-            <UButton icon="i-heroicons-trash" variant="ghost" color="red" @click="openDeleteRangeDialog(rangeEditTarget!)">
-              {{ $t('common.delete') }}
-            </UButton>
-            <div class="flex gap-2">
-              <UButton variant="ghost" color="neutral" @click="showRangeEdit = false">{{ $t('common.cancel') }}</UButton>
-              <UButton type="submit" :loading="savingRangeEdit">{{ $t('common.save') }}</UButton>
-            </div>
-          </div>
         </form>
-      </div>
+      </template>
+
+      <template #footer>
+        <div class="flex items-center justify-between">
+          <UButton icon="i-heroicons-trash" variant="ghost" color="red" @click="openDeleteRangeDialog(rangeEditTarget!)">
+            {{ $t('common.delete') }}
+          </UButton>
+          <div class="flex gap-2">
+            <UButton variant="ghost" color="neutral" @click="showRangeEdit = false">{{ $t('common.cancel') }}</UButton>
+            <UButton :loading="savingRangeEdit" @click="onSaveRangeEdit">{{ $t('common.save') }}</UButton>
+          </div>
+        </div>
+      </template>
     </USlideover>
 
     <!-- Add IP/Range Sidebar -->
