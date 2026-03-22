@@ -1,7 +1,7 @@
 <template>
   <USelectMenu
     :model-value="selectedOptions"
-    :options="options"
+    :items="options"
     multiple
     :searchable="vlans.length > 5"
     searchable-placeholder="Search VLAN..."

@@ -98,7 +98,7 @@
               <UTextarea v-model="editForm.description" :rows="3" />
             </UFormField>
             <UFormField :label="$t('vlans.fields.status')">
-              <USelect v-model="editForm.status" :options="statusOptions" />
+              <USelect v-model="editForm.status" :items="statusOptions" />
             </UFormField>
             <UFormField :label="$t('vlans.fields.routingDevice')">
               <UInput v-model="editForm.routing_device" />

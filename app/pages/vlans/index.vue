@@ -18,7 +18,7 @@
       />
       <USelect
         v-model="statusFilter"
-        :options="statusOptions"
+        :items="statusOptions"
         size="sm"
         class="w-40"
       />
@@ -191,7 +191,7 @@
             <UTextarea v-model="editForm.description" :rows="2" />
           </UFormField>
           <UFormField :label="$t('vlans.fields.status')">
-            <USelect v-model="editForm.status" :options="editStatusOptions" />
+            <USelect v-model="editForm.status" :items="editStatusOptions" />
           </UFormField>
           <UFormField :label="$t('vlans.fields.routingDevice')">
             <UInput v-model="editForm.routing_device" />

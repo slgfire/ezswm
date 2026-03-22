@@ -15,7 +15,7 @@
                 <UFormField :label="$t('settings.general.defaultPortStatus')">
                   <USelect
                     v-model="generalForm.default_port_status"
-                    :options="portStatusOptions"
+                    :items="portStatusOptions"
                   />
                 </UFormField>
                 <UFormField :label="$t('settings.general.paginationSize')">
@@ -41,7 +41,7 @@
                   <UInput v-model="accountForm.display_name" :placeholder="$t('settings.account.displayName')" />
                 </UFormField>
                 <UFormField :label="$t('settings.account.language')">
-                  <USelect v-model="accountForm.language" :options="languageOptions" />
+                  <USelect v-model="accountForm.language" :items="languageOptions" />
                 </UFormField>
                 <div class="flex justify-end">
                   <UButton type="submit" :loading="savingProfile">

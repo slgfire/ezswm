@@ -123,7 +123,7 @@
               <UInput v-model="editDnsInput" placeholder="8.8.8.8, 8.8.4.4" />
             </UFormField>
             <UFormField :label="$t('networks.fields.vlan')">
-              <USelect v-model="editForm.vlan_id" :options="vlanOptions" />
+              <USelect v-model="editForm.vlan_id" :items="vlanOptions" />
             </UFormField>
             <UFormField :label="$t('common.description')">
               <UInput v-model="editForm.description" />
@@ -224,7 +224,7 @@
             <UInput v-model="rangeEditForm.end_ip" required />
           </UFormField>
           <UFormField :label="$t('networks.ranges.fields.type') + ' *'">
-            <USelect v-model="rangeEditForm.type" :options="rangeTypeOptions" />
+            <USelect v-model="rangeEditForm.type" :items="rangeTypeOptions" />
           </UFormField>
           <UFormField :label="$t('common.description')">
             <UInput v-model="rangeEditForm.description" />
@@ -285,10 +285,10 @@
           </UFormField>
           <div class="grid grid-cols-2 gap-3">
             <UFormField :label="$t('networks.allocations.fields.deviceType')">
-              <USelect v-model="allocForm.device_type" :options="deviceTypeOptions" />
+              <USelect v-model="allocForm.device_type" :items="deviceTypeOptions" />
             </UFormField>
             <UFormField :label="$t('networks.allocations.fields.status')">
-              <USelect v-model="allocForm.status" :options="allocStatusOptions" />
+              <USelect v-model="allocForm.status" :items="allocStatusOptions" />
             </UFormField>
           </div>
           <UFormField :label="$t('networks.allocations.fields.macAddress')">
@@ -310,7 +310,7 @@
             </UFormField>
           </div>
           <UFormField :label="$t('networks.ranges.fields.type') + ' *'">
-            <USelect v-model="rangeForm.type" :options="rangeTypeOptions" />
+            <USelect v-model="rangeForm.type" :items="rangeTypeOptions" />
           </UFormField>
           <UFormField :label="$t('common.description')">
             <UInput v-model="rangeForm.description" />

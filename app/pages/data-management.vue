@@ -58,7 +58,7 @@
               <UFormField :label="$t('dataManagement.export.selectType')">
                 <USelectMenu
                   v-model="exportType"
-                  :options="entityTypeOptions"
+                  :items="entityTypeOptions"
                   value-attribute="value"
                   option-attribute="label"
                   size="sm"
@@ -68,7 +68,7 @@
               <UFormField :label="$t('dataManagement.export.selectFormat')">
                 <USelectMenu
                   v-model="exportFormat"
-                  :options="formatOptions"
+                  :items="formatOptions"
                   value-attribute="value"
                   option-attribute="label"
                   size="sm"
@@ -95,7 +95,7 @@
               <UFormField :label="$t('dataManagement.export.selectType')">
                 <USelectMenu
                   v-model="importType"
-                  :options="entityTypeOptions"
+                  :items="entityTypeOptions"
                   value-attribute="value"
                   option-attribute="label"
                   size="sm"

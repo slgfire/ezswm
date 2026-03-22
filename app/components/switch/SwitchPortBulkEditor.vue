@@ -12,16 +12,16 @@
         <p class="text-xs text-gray-400">{{ $t('switches.ports.bulkEditHint', { count: selectedPorts.length }) }}</p>
 
         <UFormField :label="$t('common.status')">
-          <USelect v-model="form.status" :options="statusOptions" :placeholder="$t('common.noChange')" />
+          <USelect v-model="form.status" :items="statusOptions" :placeholder="$t('common.noChange')" />
         </UFormField>
 
         <UFormField :label="$t('switches.ports.speed')">
-          <USelect v-model="form.speed" :options="speedOptions" :placeholder="$t('common.noChange')" />
+          <USelect v-model="form.speed" :items="speedOptions" :placeholder="$t('common.noChange')" />
         </UFormField>
 
         <!-- Port Mode -->
         <UFormField :label="$t('switches.ports.portMode')">
-          <USelect v-model="form.port_mode" :options="portModeOptions" :placeholder="$t('common.noChange')" />
+          <USelect v-model="form.port_mode" :items="portModeOptions" :placeholder="$t('common.noChange')" />
         </UFormField>
 
         <!-- Access VLAN -->

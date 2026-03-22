@@ -21,7 +21,7 @@
       <USelectMenu
         v-if="manufacturers.length > 0"
         v-model="selectedManufacturer"
-        :options="manufacturerOptions"
+        :items="manufacturerOptions"
         value-attribute="value"
         option-attribute="label"
         :placeholder="$t('templates.allManufacturers')"
@@ -31,7 +31,7 @@
       />
       <USelectMenu
         v-model="selectedPortType"
-        :options="portTypeOptions"
+        :items="portTypeOptions"
         value-attribute="value"
         option-attribute="label"
         :placeholder="$t('templates.allPortTypes')"

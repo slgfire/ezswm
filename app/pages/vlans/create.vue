@@ -40,7 +40,7 @@
 
           <!-- Status -->
           <UFormField :label="$t('vlans.fields.status')">
-            <USelect v-model="form.status" :options="statusOptions" />
+            <USelect v-model="form.status" :items="statusOptions" />
           </UFormField>
 
           <!-- Routing Device -->

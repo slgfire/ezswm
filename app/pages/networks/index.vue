@@ -18,7 +18,7 @@
       />
       <USelect
         v-model="vlanFilter"
-        :options="vlanFilterOptions"
+        :items="vlanFilterOptions"
         :placeholder="$t('networks.fields.vlan')"
         size="sm"
         class="w-48"

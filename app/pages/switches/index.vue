@@ -19,7 +19,7 @@
       <USelectMenu
         v-if="locationOptions.length > 1"
         v-model="locationFilter"
-        :options="locationOptions"
+        :items="locationOptions"
         value-attribute="value"
         option-attribute="label"
         :placeholder="$t('switches.allLocations')"
@@ -28,7 +28,7 @@
       />
       <USelectMenu
         v-model="roleFilter"
-        :options="roleOptions"
+        :items="roleOptions"
         value-attribute="value"
         option-attribute="label"
         :placeholder="$t('switches.allRoles')"
@@ -38,7 +38,7 @@
       <USelectMenu
         v-if="tagOptions.length > 1"
         v-model="tagFilter"
-        :options="tagOptions"
+        :items="tagOptions"
         value-attribute="value"
         option-attribute="label"
         :placeholder="$t('switches.allTags')"

@@ -15,16 +15,16 @@
         </div>
 
         <UFormField :label="$t('common.status')">
-          <USelect v-model="form.status" :options="['up', 'down', 'disabled']" />
+          <USelect v-model="form.status" :items="['up', 'down', 'disabled']" />
         </UFormField>
 
         <UFormField :label="$t('switches.ports.speed')">
-          <USelect v-model="form.speed" :options="speeds" placeholder="Select speed" />
+          <USelect v-model="form.speed" :items="speeds" placeholder="Select speed" />
         </UFormField>
 
         <!-- Port Mode -->
         <UFormField :label="$t('switches.ports.portMode')">
-          <USelect v-model="form.port_mode" :options="portModeOptions" />
+          <USelect v-model="form.port_mode" :items="portModeOptions" />
         </UFormField>
 
         <!-- Access Mode: single VLAN -->
@@ -70,7 +70,7 @@
           <UFormField :label="$t('switches.ports.connectedSwitch')">
             <USelectMenu
               :model-value="selectedSwitchOption"
-              :options="switchSearchOptions"
+              :items="switchSearchOptions"
               searchable
               :searchable-placeholder="$t('switches.ports.searchSwitch')"
               option-attribute="label"
@@ -99,7 +99,7 @@
           <UFormField v-if="selectedSwitchId" :label="$t('switches.ports.connectedPort')">
             <USelectMenu
               :model-value="selectedPortOption"
-              :options="remotePortSearchOptions"
+              :items="remotePortSearchOptions"
               searchable
               :searchable-placeholder="$t('switches.ports.searchPort')"
               option-attribute="label"
@@ -129,7 +129,7 @@
           <UFormField :label="$t('switches.ports.connectedDevice')">
             <USelectMenu
               :model-value="selectedDeviceOption"
-              :options="deviceSearchOptions"
+              :items="deviceSearchOptions"
               searchable
               :searchable-placeholder="$t('switches.ports.searchDevice')"
               option-attribute="label"

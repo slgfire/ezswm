@@ -49,7 +49,7 @@
           <UFormField :label="$t('networks.fields.vlan')">
             <USelect
               v-model="form.vlan_id"
-              :options="vlanOptions"
+              :items="vlanOptions"
               :placeholder="$t('networks.fields.vlan')"
             />
           </UFormField>

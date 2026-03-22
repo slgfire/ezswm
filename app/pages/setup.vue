@@ -28,7 +28,7 @@
             </UFormField>
 
             <UFormField :label="$t('auth.language')" name="language">
-              <USelect v-model="form.language" :options="languageOptions" />
+              <USelect v-model="form.language" :items="languageOptions" />
             </UFormField>
 
             <UButton type="submit" block :loading="loading">

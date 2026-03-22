@@ -85,7 +85,7 @@
                   </div>
                   <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <UFormField :label="$t('templates.blocks.type')">
-                      <USelect v-model="block.type" :options="portTypeOptions" />
+                      <USelect v-model="block.type" :items="portTypeOptions" />
                     </UFormField>
                     <UFormField :label="$t('templates.blocks.count')">
                       <UInput v-model.number="block.count" type="number" min="1" />
@@ -100,10 +100,10 @@
                       <UInput v-model.number="block.rows" type="number" min="1" />
                     </UFormField>
                     <UFormField :label="$t('templates.blocks.rowLayout')">
-                      <USelect v-model="block.row_layout" :options="rowLayoutOptions" :disabled="block.rows < 2" />
+                      <USelect v-model="block.row_layout" :items="rowLayoutOptions" :disabled="block.rows < 2" />
                     </UFormField>
                     <UFormField :label="$t('templates.blocks.defaultSpeed')">
-                      <USelect v-model="block.default_speed" :options="speedOptions" />
+                      <USelect v-model="block.default_speed" :items="speedOptions" />
                     </UFormField>
                   </div>
                 </div>

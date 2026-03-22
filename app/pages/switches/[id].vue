@@ -255,7 +255,7 @@
             <UFormField :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
               <USelectMenu
                 v-model="editForm.layout_template_id"
-                :options="templateOptions"
+                :items="templateOptions"
                 option-attribute="label"
                 value-attribute="value"
               />
@@ -264,7 +264,7 @@
             <UFormField :label="$t('switches.fields.role')" name="role">
               <USelectMenu
                 v-model="editForm.role"
-                :options="editRoleOptions"
+                :items="editRoleOptions"
                 option-attribute="label"
                 value-attribute="value"
               />

@@ -48,7 +48,7 @@
           <UFormField :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
             <USelect
               v-model="form.layout_template_id"
-              :options="templateOptions"
+              :items="templateOptions"
               :placeholder="$t('switches.fields.layoutTemplate')"
               option-attribute="label"
               value-attribute="value"
@@ -58,7 +58,7 @@
           <UFormField :label="$t('switches.fields.role')" name="role">
             <USelectMenu
               v-model="form.role"
-              :options="roleOptions"
+              :items="roleOptions"
               option-attribute="label"
               value-attribute="value"
             />
