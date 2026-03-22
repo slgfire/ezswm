@@ -212,84 +212,86 @@
 
     <!-- Edit Side Panel -->
     <USlideover :open="editMode" @close="editMode = false">
-      <div class="flex h-full flex-col">
-        <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+      <template #header>
+        <div class="flex items-center justify-between">
           <h3 class="font-semibold">{{ $t('switches.edit') }}</h3>
           <UButton icon="i-heroicons-x-mark" variant="ghost" color="neutral" size="sm" @click="editMode = false" />
         </div>
+      </template>
 
-        <UForm :state="editForm" class="flex-1 overflow-y-auto px-6 py-4" @submit.prevent="onSave">
-          <div class="space-y-4">
-            <UFormField :label="$t('switches.fields.name') + ' *'" name="name">
-              <UInput v-model="editForm.name" required />
-            </UFormField>
+      <template #body>
+        <div class="space-y-4">
+          <UFormField :label="$t('switches.fields.name') + ' *'" name="name">
+            <UInput v-model="editForm.name" required />
+          </UFormField>
 
-            <UFormField :label="$t('switches.fields.model')" name="model">
-              <UInput v-model="editForm.model" />
-            </UFormField>
+          <UFormField :label="$t('switches.fields.model')" name="model">
+            <UInput v-model="editForm.model" />
+          </UFormField>
 
-            <UFormField :label="$t('switches.fields.manufacturer')" name="manufacturer">
-              <UInput v-model="editForm.manufacturer" />
-            </UFormField>
+          <UFormField :label="$t('switches.fields.manufacturer')" name="manufacturer">
+            <UInput v-model="editForm.manufacturer" />
+          </UFormField>
 
-            <UFormField :label="$t('switches.fields.serialNumber')" name="serial_number">
-              <UInput v-model="editForm.serial_number" />
-            </UFormField>
+          <UFormField :label="$t('switches.fields.serialNumber')" name="serial_number">
+            <UInput v-model="editForm.serial_number" />
+          </UFormField>
 
-            <UFormField :label="$t('switches.fields.location')" name="location">
-              <UInput v-model="editForm.location" />
-            </UFormField>
+          <UFormField :label="$t('switches.fields.location')" name="location">
+            <UInput v-model="editForm.location" />
+          </UFormField>
 
-            <UFormField :label="$t('switches.fields.rackPosition')" name="rack_position">
-              <UInput v-model="editForm.rack_position" />
-            </UFormField>
+          <UFormField :label="$t('switches.fields.rackPosition')" name="rack_position">
+            <UInput v-model="editForm.rack_position" />
+          </UFormField>
 
-            <UFormField :label="$t('switches.fields.managementIp')" name="management_ip">
-              <UInput v-model="editForm.management_ip" />
-            </UFormField>
+          <UFormField :label="$t('switches.fields.managementIp')" name="management_ip">
+            <UInput v-model="editForm.management_ip" />
+          </UFormField>
 
-            <UFormField :label="$t('switches.fields.firmwareVersion')" name="firmware_version">
-              <UInput v-model="editForm.firmware_version" />
-            </UFormField>
+          <UFormField :label="$t('switches.fields.firmwareVersion')" name="firmware_version">
+            <UInput v-model="editForm.firmware_version" />
+          </UFormField>
 
-            <UFormField :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
-              <USelectMenu :search-input="false"
-                v-model="editForm.layout_template_id"
-                :items="templateOptions"
-                option-attribute="label"
-                value-attribute="value"
-              />
-            </UFormField>
+          <UFormField :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
+            <USelectMenu :search-input="false"
+              v-model="editForm.layout_template_id"
+              :items="templateOptions"
+              option-attribute="label"
+              value-attribute="value"
+            />
+          </UFormField>
 
-            <UFormField :label="$t('switches.fields.role')" name="role">
-              <USelectMenu :search-input="false"
-                v-model="editForm.role"
-                :items="editRoleOptions"
-                option-attribute="label"
-                value-attribute="value"
-              />
-            </UFormField>
+          <UFormField :label="$t('switches.fields.role')" name="role">
+            <USelectMenu :search-input="false"
+              v-model="editForm.role"
+              :items="editRoleOptions"
+              option-attribute="label"
+              value-attribute="value"
+            />
+          </UFormField>
 
-            <UFormField :label="$t('switches.fields.tags')" name="tags">
-              <UInput
-                v-model="editTagInput"
-                :placeholder="$t('switches.tagsPlaceholder')"
-                @keydown.enter.prevent="addEditTag"
-              />
-              <div v-if="editForm.tags.length > 0" class="mt-2 flex flex-wrap gap-1">
-                <UBadge v-for="tg in editForm.tags" :key="tg" color="neutral" variant="soft" size="xs" class="cursor-pointer" @click="removeEditTag(tg)">
-                  {{ tg }} <UIcon name="i-heroicons-x-mark" class="ml-0.5 h-3 w-3" />
-                </UBadge>
-              </div>
-            </UFormField>
+          <UFormField :label="$t('switches.fields.tags')" name="tags">
+            <UInput
+              v-model="editTagInput"
+              :placeholder="$t('switches.tagsPlaceholder')"
+              @keydown.enter.prevent="addEditTag"
+            />
+            <div v-if="editForm.tags.length > 0" class="mt-2 flex flex-wrap gap-1">
+              <UBadge v-for="tg in editForm.tags" :key="tg" color="neutral" variant="soft" size="xs" class="cursor-pointer" @click="removeEditTag(tg)">
+                {{ tg }} <UIcon name="i-heroicons-x-mark" class="ml-0.5 h-3 w-3" />
+              </UBadge>
+            </div>
+          </UFormField>
 
-            <UFormField :label="$t('common.notes')" name="notes">
-              <UTextarea v-model="editForm.notes" :rows="3" />
-            </UFormField>
-          </div>
-        </UForm>
+          <UFormField :label="$t('common.notes')" name="notes">
+            <UTextarea v-model="editForm.notes" :rows="3" />
+          </UFormField>
+        </div>
+      </template>
 
-        <div class="flex justify-end gap-2 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
+      <template #footer>
+        <div class="flex justify-end gap-2">
           <UButton color="neutral" variant="ghost" @click="editMode = false">
             {{ $t('common.cancel') }}
           </UButton>
@@ -297,7 +299,7 @@
             {{ $t('common.save') }}
           </UButton>
         </div>
-      </div>
+      </template>
     </USlideover>
 
     <!-- Delete confirmation dialog -->
