@@ -108,7 +108,7 @@
     </SharedEmptyState>
 
     <!-- VLAN Side Panel -->
-    <USlideover v-model="showPanel">
+    <USlideover :open="showPanel" @close="showPanel = false">
       <UCard>
         <template #header>
           <div class="flex items-center justify-between">

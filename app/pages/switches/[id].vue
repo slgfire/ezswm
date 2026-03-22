@@ -211,7 +211,7 @@
     />
 
     <!-- Edit Side Panel -->
-    <USlideover v-model="editMode">
+    <USlideover :open="editMode" @close="editMode = false">
       <div class="flex h-full flex-col">
         <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
           <h3 class="font-semibold">{{ $t('switches.edit') }}</h3>

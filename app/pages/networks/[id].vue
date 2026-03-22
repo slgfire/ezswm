@@ -211,7 +211,7 @@
     </div>
 
     <!-- Range edit slideover -->
-    <USlideover v-model="showRangeEdit" :title="$t('networks.ranges.editRange')">
+    <USlideover :open="showRangeEdit" @close="showRangeEdit = false" :title="$t('networks.ranges.editRange')">
       <div class="p-6">
         <div v-if="rangeEditError" class="mb-4 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
           {{ rangeEditError }}
@@ -243,7 +243,7 @@
     </USlideover>
 
     <!-- Add IP/Range Sidebar -->
-    <USlideover v-model="showAddPanel">
+    <USlideover :open="showAddPanel" @close="showAddPanel = false; editAllocTarget = null">
       <UCard>
         <template #header>
           <div class="flex items-center justify-between">

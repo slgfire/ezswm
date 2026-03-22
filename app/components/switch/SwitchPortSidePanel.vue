@@ -1,5 +1,5 @@
 <template>
-  <USlideover v-model="isOpen">
+  <USlideover :open="isOpen" @close="isOpen = false">
     <UCard>
       <template #header>
         <div class="flex items-center justify-between">
