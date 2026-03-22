@@ -55,6 +55,28 @@
             />
           </UFormGroup>
 
+          <UFormGroup :label="$t('switches.fields.role')" name="role">
+            <USelectMenu
+              v-model="form.role"
+              :options="roleOptions"
+              option-attribute="label"
+              value-attribute="value"
+            />
+          </UFormGroup>
+
+          <UFormGroup :label="$t('switches.fields.tags')" name="tags">
+            <UInput
+              v-model="tagInput"
+              :placeholder="$t('switches.tagsPlaceholder')"
+              @keydown.enter.prevent="addTag"
+            />
+            <div v-if="form.tags.length > 0" class="mt-2 flex flex-wrap gap-1">
+              <UBadge v-for="tg in form.tags" :key="tg" color="gray" variant="soft" size="xs" class="cursor-pointer" @click="removeTag(tg)">
+                {{ tg }} <UIcon name="i-heroicons-x-mark" class="ml-0.5 h-3 w-3" />
+              </UBadge>
+            </div>
+          </UFormGroup>
+
           <UFormGroup :label="$t('common.notes')" name="notes">
             <UTextarea v-model="form.notes" :placeholder="$t('common.notes')" :rows="3" />
           </UFormGroup>
@@ -81,6 +103,8 @@ const { items: templates, fetch: fetchTemplates } = useLayoutTemplates()
 
 const submitting = ref(false)
 
+const tagInput = ref('')
+
 const form = reactive({
   name: '',
   model: '',
@@ -91,8 +115,30 @@ const form = reactive({
   management_ip: '',
   firmware_version: '',
   layout_template_id: '',
+  role: '',
+  tags: [] as string[],
   notes: ''
 })
+
+const roleOptions = computed(() => [
+  { label: '---', value: '' },
+  { label: t('switches.roles.core'), value: 'core' },
+  { label: t('switches.roles.distribution'), value: 'distribution' },
+  { label: t('switches.roles.access'), value: 'access' },
+  { label: t('switches.roles.management'), value: 'management' }
+])
+
+function addTag() {
+  const tag = tagInput.value.trim()
+  if (tag && !form.tags.includes(tag)) {
+    form.tags.push(tag)
+  }
+  tagInput.value = ''
+}
+
+function removeTag(tag: string) {
+  form.tags = form.tags.filter(t => t !== tag)
+}
 
 const templateOptions = computed(() => {
   const options = [{ label: '---', value: '' }]
@@ -107,10 +153,10 @@ async function onSubmit() {
 
   submitting.value = true
   try {
-    const body: Record<string, any> = { ...form }
+    const body: Record<string, any> = { ...form, tags: [...form.tags] }
     // Remove empty optional fields
     for (const key of Object.keys(body)) {
-      if (body[key] === '') {
+      if (body[key] === '' || (Array.isArray(body[key]) && body[key].length === 0)) {
         delete body[key]
       }
     }

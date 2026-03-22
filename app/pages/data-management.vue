@@ -193,14 +193,14 @@
 const toast = useToast()
 const { t } = useI18n()
 
-// --- Tab definitions ---
+const MAX_IMPORT_SIZE = 5 * 1024 * 1024 // 5MB
+
 const tabs = computed(() => [
   { key: 'backup', label: t('dataManagement.backupTab') },
   { key: 'export', label: t('dataManagement.exportTab') },
   { key: 'import', label: t('dataManagement.importTab') }
 ])
 
-// --- Entity type options ---
 const entityTypeOptions = computed(() => [
   { value: 'switches', label: t('dataManagement.entities.switches') },
   { value: 'vlans', label: t('dataManagement.entities.vlans') },
@@ -214,9 +214,6 @@ const formatOptions = computed(() => [
   { value: 'csv', label: 'CSV' }
 ])
 
-// ==========================================
-// BACKUP TAB
-// ==========================================
 const backupFile = ref<File | null>(null)
 const showRestoreDialog = ref(false)
 
@@ -228,12 +225,7 @@ function onBackupFileSelect(event: Event) {
 async function downloadBackup() {
   try {
     const response = await $fetch('/api/backup/export', { responseType: 'blob' })
-    const url = URL.createObjectURL(response as Blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `ezswm-backup-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+    downloadBlob(response as Blob, `ezswm-backup-${new Date().toISOString().slice(0, 10)}.json`)
     toast.add({ title: t('backup.messages.exported'), color: 'green' })
   } catch {
     toast.add({ title: t('errors.serverError'), color: 'red' })
@@ -255,9 +247,6 @@ async function restoreBackup() {
   }
 }
 
-// ==========================================
-// EXPORT TAB
-// ==========================================
 const exportType = ref('switches')
 const exportFormat = ref('json')
 const exportLoading = ref(false)
@@ -272,12 +261,7 @@ async function downloadExport() {
     })
     const ext = exportFormat.value === 'csv' ? 'csv' : 'json'
     const timestamp = new Date().toISOString().slice(0, 10)
-    const url = URL.createObjectURL(response as Blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `ezswm-${exportType.value}-${timestamp}.${ext}`
-    a.click()
-    URL.revokeObjectURL(url)
+    downloadBlob(response as Blob, `ezswm-${exportType.value}-${timestamp}.${ext}`)
     toast.add({ title: t('dataManagement.export.success'), color: 'green' })
   } catch {
     toast.add({ title: t('errors.serverError'), color: 'red' })
@@ -286,9 +270,6 @@ async function downloadExport() {
   }
 }
 
-// ==========================================
-// IMPORT TAB
-// ==========================================
 const importType = ref('switches')
 const importFile = ref<File | null>(null)
 const importPreview = ref<number | null>(null)
@@ -297,7 +278,8 @@ const showImportDialog = ref(false)
 const importResults = ref<{ imported: number; skipped: number; errors: string[] } | null>(null)
 
 function parseCsv(text: string): Record<string, unknown>[] {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  const stripped = text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text
+  const lines = stripped.split('\n').map(l => l.trim()).filter(Boolean)
   if (lines.length < 2) return []
   const headers = lines[0].split(',').map(h => h.trim())
   const rows: Record<string, unknown>[] = []
@@ -352,6 +334,12 @@ async function onImportFileSelect(event: Event) {
 
   if (!file) return
 
+  if (file.size > MAX_IMPORT_SIZE) {
+    toast.add({ title: t('dataManagement.import.fileTooLarge'), color: 'red' })
+    importFile.value = null
+    return
+  }
+
   try {
     const text = await file.text()
     let data: Record<string, unknown>[]
@@ -377,12 +365,7 @@ async function downloadTemplate() {
       params: { type: importType.value },
       responseType: 'blob'
     })
-    const url = URL.createObjectURL(response as Blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `ezswm-${importType.value}-template.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+    downloadBlob(response as Blob, `ezswm-${importType.value}-template.csv`)
   } catch {
     toast.add({ title: t('errors.serverError'), color: 'red' })
   }

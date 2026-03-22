@@ -8,8 +8,9 @@ export function useNetworks() {
     loading.value = true
     try {
       const data = await apiFetch<any>('/api/networks', { params })
-      items.value = data.data || data
-      total.value = data.meta?.total || data.total || items.value.length
+      items.value = data?.data || data || []
+      total.value = data?.meta?.total || data?.total || items.value.length
+    } catch {
     } finally {
       loading.value = false
     }

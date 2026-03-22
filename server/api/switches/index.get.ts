@@ -5,12 +5,15 @@ export default defineEventHandler(async (event) => {
 
   const location = query.location as string | undefined
   const manufacturer = query.manufacturer as string | undefined
+  const role = query.role as string | undefined
+  const tag = query.tag as string | undefined
   const isFavorite = query.is_favorite === 'true' ? true : query.is_favorite === 'false' ? false : undefined
   const search = query.search as string | undefined
   const page = Math.max(1, parseInt(query.page as string, 10) || 1)
   const perPage = Math.min(100, Math.max(1, parseInt(query.per_page as string, 10) || 20))
 
-  let items = await switchRepository.list()
+  const allSwitches = await switchRepository.list()
+  let items = [...allSwitches]
 
   if (location) {
     items = items.filter((s) => s.location === location)
@@ -18,6 +21,14 @@ export default defineEventHandler(async (event) => {
 
   if (manufacturer) {
     items = items.filter((s) => s.manufacturer === manufacturer)
+  }
+
+  if (role) {
+    items = items.filter((s) => s.role === role)
+  }
+
+  if (tag) {
+    items = items.filter((s) => s.tags?.includes(tag))
   }
 
   if (isFavorite !== undefined) {
@@ -34,6 +45,9 @@ export default defineEventHandler(async (event) => {
   const offset = (page - 1) * perPage
   const paginatedItems = items.slice(offset, offset + perPage)
 
+  const locations = [...new Set(allSwitches.map(s => s.location).filter(Boolean))].sort() as string[]
+  const tags = [...new Set(allSwitches.flatMap(s => s.tags || []))].sort()
+
   return {
     data: paginatedItems,
     meta: {
@@ -42,5 +56,9 @@ export default defineEventHandler(async (event) => {
       total,
       total_pages: totalPages,
     },
+    filters: {
+      locations,
+      tags,
+    }
   }
 })

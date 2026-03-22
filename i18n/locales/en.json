@@ -106,7 +106,9 @@
       "managementIp": "Management IP",
       "firmwareVersion": "Firmware Version",
       "layoutTemplate": "Layout Template",
-      "portCount": "Port Count"
+      "portCount": "Port Count",
+      "role": "Role",
+      "tags": "Tags"
     },
     "messages": {
       "created": "Switch created successfully",
@@ -161,6 +163,19 @@
       "searchPort": "Search port...",
       "searchDevice": "Search or type device name..."
     },
+    "roles": {
+      "core": "Core",
+      "distribution": "Distribution",
+      "access": "Access",
+      "management": "Management"
+    },
+    "allRoles": "All Roles",
+    "allLocations": "All Locations",
+    "allTags": "All Tags",
+    "viewGrid": "Card View",
+    "viewList": "List View",
+    "noResults": "No switches match your filters.",
+    "tagsPlaceholder": "Add tag and press Enter",
     "emptyTitle": "No switches yet",
     "emptyDescription": "Create your first switch to get started.",
     "infoBar": {
@@ -326,8 +341,16 @@
       "duplicated": "Template duplicated successfully"
     },
     "emptyTitle": "No layout templates yet",
-    "emptyDescription": "Create a template for your switch models.",
+    "emptyDescription": "Create your first switch template to define port layouts for your switch models.",
     "confirmDelete": "Are you sure you want to delete this template?",
+    "usedBy": "Used by {count} switch | Used by {count} switches",
+    "switches": "Switches",
+    "portTypes": "Port Types",
+    "allManufacturers": "All Manufacturers",
+    "allPortTypes": "All Port Types",
+    "viewGrid": "Card View",
+    "viewList": "List View",
+    "noResults": "No templates match your filters.",
     "infoBar": {
       "units": "units",
       "ports": "ports",
@@ -452,7 +475,8 @@
       "errorCount": "errors",
       "success": "{count} entries imported successfully",
       "hasErrors": "{count} entries had errors",
-      "parseError": "Could not parse the selected file"
+      "parseError": "Could not parse the selected file",
+      "fileTooLarge": "File exceeds maximum size of 5 MB"
     }
   },
   "activity": {
@@ -474,6 +498,7 @@
     "vlans": "VLANs",
     "networks": "Networks",
     "ipAllocations": "IP Allocations",
+    "templates": "Layout Templates",
     "noResults": "No results found"
   },
   "legend": {

@@ -24,13 +24,13 @@
             @click="showDetails = !showDetails"
           />
         </UTooltip>
-        <UTooltip :text="editMode ? $t('common.cancel') : $t('common.edit')">
+        <UTooltip :text="$t('common.edit')">
           <UButton
-            :icon="editMode ? 'i-heroicons-x-mark' : 'i-heroicons-pencil'"
-            :variant="editMode ? 'solid' : 'ghost'"
-            :color="editMode ? 'gray' : 'primary'"
+            icon="i-heroicons-pencil"
+            variant="ghost"
+            color="primary"
             size="sm"
-            @click="toggleEditMode"
+            @click="openEditPanel"
           />
         </UTooltip>
         <UTooltip :text="$t('common.duplicate')">
@@ -98,8 +98,8 @@
       </div>
 
       <!-- Details panel (toggled via info button in header) -->
-      <div v-show="showDetails || editMode" class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800/30">
-        <div v-if="!editMode" class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
+      <div v-show="showDetails" class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800/30">
+        <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
           <div>
             <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.name') }}</dt>
             <dd>{{ item.name }}</dd>
@@ -136,66 +136,27 @@
             <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.layoutTemplate') }}</dt>
             <dd>{{ currentTemplateName || '-' }}</dd>
           </div>
+          <div>
+            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.role') }}</dt>
+            <dd>
+              <UBadge v-if="item.role" :color="roleColor(item.role)" variant="subtle" size="xs">
+                {{ $t(`switches.roles.${item.role}`) }}
+              </UBadge>
+              <span v-else>-</span>
+            </dd>
+          </div>
+          <div v-if="item.tags?.length" class="col-span-2 sm:col-span-3 lg:col-span-4">
+            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.tags') }}</dt>
+            <dd class="flex flex-wrap gap-1 pt-0.5">
+              <UBadge v-for="tg in item.tags" :key="tg" color="gray" variant="soft" size="xs">{{ tg }}</UBadge>
+            </dd>
+          </div>
           <div v-if="item.notes" class="col-span-2 sm:col-span-3 lg:col-span-4">
             <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('common.notes') }}</dt>
             <dd class="whitespace-pre-wrap">{{ item.notes }}</dd>
           </div>
         </div>
 
-        <!-- Edit form -->
-        <UForm v-if="editMode" :state="editForm" @submit="onSave">
-          <div class="space-y-4">
-            <UFormGroup :label="$t('switches.fields.name') + ' *'" name="name">
-              <UInput v-model="editForm.name" required />
-            </UFormGroup>
-
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <UFormGroup :label="$t('switches.fields.model')" name="model">
-                <UInput v-model="editForm.model" />
-              </UFormGroup>
-              <UFormGroup :label="$t('switches.fields.manufacturer')" name="manufacturer">
-                <UInput v-model="editForm.manufacturer" />
-              </UFormGroup>
-              <UFormGroup :label="$t('switches.fields.serialNumber')" name="serial_number">
-                <UInput v-model="editForm.serial_number" />
-              </UFormGroup>
-              <UFormGroup :label="$t('switches.fields.location')" name="location">
-                <UInput v-model="editForm.location" />
-              </UFormGroup>
-              <UFormGroup :label="$t('switches.fields.rackPosition')" name="rack_position">
-                <UInput v-model="editForm.rack_position" />
-              </UFormGroup>
-              <UFormGroup :label="$t('switches.fields.managementIp')" name="management_ip">
-                <UInput v-model="editForm.management_ip" />
-              </UFormGroup>
-              <UFormGroup :label="$t('switches.fields.firmwareVersion')" name="firmware_version">
-                <UInput v-model="editForm.firmware_version" />
-              </UFormGroup>
-            </div>
-
-            <UFormGroup :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
-              <USelect
-                v-model="editForm.layout_template_id"
-                :options="templateOptions"
-                option-attribute="label"
-                value-attribute="value"
-              />
-            </UFormGroup>
-
-            <UFormGroup :label="$t('common.notes')" name="notes">
-              <UTextarea v-model="editForm.notes" :rows="3" />
-            </UFormGroup>
-
-            <div class="flex justify-end gap-2 pt-2">
-              <UButton color="gray" variant="ghost" @click="toggleEditMode">
-                {{ $t('common.cancel') }}
-              </UButton>
-              <UButton type="submit" :loading="saving" icon="i-heroicons-check">
-                {{ $t('common.save') }}
-              </UButton>
-            </div>
-          </div>
-        </UForm>
       </div>
 
       <!-- Selection bar (shown when ports are selected) -->
@@ -248,6 +209,96 @@
       :switch-id="id"
       @saved="fetchSwitch"
     />
+
+    <!-- Edit Side Panel -->
+    <USlideover v-model="editMode">
+      <div class="flex h-full flex-col">
+        <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+          <h3 class="font-semibold">{{ $t('switches.edit') }}</h3>
+          <UButton icon="i-heroicons-x-mark" variant="ghost" color="gray" size="sm" @click="editMode = false" />
+        </div>
+
+        <UForm :state="editForm" class="flex-1 overflow-y-auto px-6 py-4" @submit="onSave">
+          <div class="space-y-4">
+            <UFormGroup :label="$t('switches.fields.name') + ' *'" name="name">
+              <UInput v-model="editForm.name" required />
+            </UFormGroup>
+
+            <UFormGroup :label="$t('switches.fields.model')" name="model">
+              <UInput v-model="editForm.model" />
+            </UFormGroup>
+
+            <UFormGroup :label="$t('switches.fields.manufacturer')" name="manufacturer">
+              <UInput v-model="editForm.manufacturer" />
+            </UFormGroup>
+
+            <UFormGroup :label="$t('switches.fields.serialNumber')" name="serial_number">
+              <UInput v-model="editForm.serial_number" />
+            </UFormGroup>
+
+            <UFormGroup :label="$t('switches.fields.location')" name="location">
+              <UInput v-model="editForm.location" />
+            </UFormGroup>
+
+            <UFormGroup :label="$t('switches.fields.rackPosition')" name="rack_position">
+              <UInput v-model="editForm.rack_position" />
+            </UFormGroup>
+
+            <UFormGroup :label="$t('switches.fields.managementIp')" name="management_ip">
+              <UInput v-model="editForm.management_ip" />
+            </UFormGroup>
+
+            <UFormGroup :label="$t('switches.fields.firmwareVersion')" name="firmware_version">
+              <UInput v-model="editForm.firmware_version" />
+            </UFormGroup>
+
+            <UFormGroup :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
+              <USelectMenu
+                v-model="editForm.layout_template_id"
+                :options="templateOptions"
+                option-attribute="label"
+                value-attribute="value"
+              />
+            </UFormGroup>
+
+            <UFormGroup :label="$t('switches.fields.role')" name="role">
+              <USelectMenu
+                v-model="editForm.role"
+                :options="editRoleOptions"
+                option-attribute="label"
+                value-attribute="value"
+              />
+            </UFormGroup>
+
+            <UFormGroup :label="$t('switches.fields.tags')" name="tags">
+              <UInput
+                v-model="editTagInput"
+                :placeholder="$t('switches.tagsPlaceholder')"
+                @keydown.enter.prevent="addEditTag"
+              />
+              <div v-if="editForm.tags.length > 0" class="mt-2 flex flex-wrap gap-1">
+                <UBadge v-for="tg in editForm.tags" :key="tg" color="gray" variant="soft" size="xs" class="cursor-pointer" @click="removeEditTag(tg)">
+                  {{ tg }} <UIcon name="i-heroicons-x-mark" class="ml-0.5 h-3 w-3" />
+                </UBadge>
+              </div>
+            </UFormGroup>
+
+            <UFormGroup :label="$t('common.notes')" name="notes">
+              <UTextarea v-model="editForm.notes" :rows="3" />
+            </UFormGroup>
+          </div>
+        </UForm>
+
+        <div class="flex justify-end gap-2 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
+          <UButton color="gray" variant="ghost" @click="editMode = false">
+            {{ $t('common.cancel') }}
+          </UButton>
+          <UButton :loading="saving" icon="i-heroicons-check" @click="onSave">
+            {{ $t('common.save') }}
+          </UButton>
+        </div>
+      </div>
+    </USlideover>
 
     <!-- Delete confirmation dialog -->
     <SharedConfirmDialog
@@ -328,6 +379,8 @@ function onToggleSelect(portId: string) {
   else selectedPorts.value.push(portId)
 }
 
+const editTagInput = ref('')
+
 const editForm = reactive({
   name: '',
   model: '',
@@ -338,8 +391,35 @@ const editForm = reactive({
   management_ip: '',
   firmware_version: '',
   layout_template_id: '',
+  role: '',
+  tags: [] as string[],
   notes: ''
 })
+
+const editRoleOptions = computed(() => [
+  { label: '---', value: '' },
+  { label: t('switches.roles.core'), value: 'core' },
+  { label: t('switches.roles.distribution'), value: 'distribution' },
+  { label: t('switches.roles.access'), value: 'access' },
+  { label: t('switches.roles.management'), value: 'management' }
+])
+
+function roleColor(role: string): string {
+  const map: Record<string, string> = { core: 'red', distribution: 'orange', access: 'blue', management: 'purple' }
+  return map[role] || 'gray'
+}
+
+function addEditTag() {
+  const tag = editTagInput.value.trim()
+  if (tag && !editForm.tags.includes(tag)) {
+    editForm.tags.push(tag)
+  }
+  editTagInput.value = ''
+}
+
+function removeEditTag(tag: string) {
+  editForm.tags = editForm.tags.filter(t => t !== tag)
+}
 
 const currentTemplateName = computed(() => {
   if (!item.value?.layout_template_id) return null
@@ -355,21 +435,22 @@ const templateOptions = computed(() => {
   return options
 })
 
-function toggleEditMode() {
-  if (!editMode.value) showDetails.value = true
-  if (!editMode.value && item.value) {
-    editForm.name = item.value.name || ''
-    editForm.model = item.value.model || ''
-    editForm.manufacturer = item.value.manufacturer || ''
-    editForm.serial_number = item.value.serial_number || ''
-    editForm.location = item.value.location || ''
-    editForm.rack_position = item.value.rack_position || ''
-    editForm.management_ip = item.value.management_ip || ''
-    editForm.firmware_version = item.value.firmware_version || ''
-    editForm.layout_template_id = item.value.layout_template_id || ''
-    editForm.notes = item.value.notes || ''
-  }
-  editMode.value = !editMode.value
+function openEditPanel() {
+  if (!item.value) return
+  editForm.name = item.value.name || ''
+  editForm.model = item.value.model || ''
+  editForm.manufacturer = item.value.manufacturer || ''
+  editForm.serial_number = item.value.serial_number || ''
+  editForm.location = item.value.location || ''
+  editForm.rack_position = item.value.rack_position || ''
+  editForm.management_ip = item.value.management_ip || ''
+  editForm.firmware_version = item.value.firmware_version || ''
+  editForm.layout_template_id = item.value.layout_template_id || ''
+  editForm.role = item.value.role || ''
+  editForm.tags = [...(item.value.tags || [])]
+  editForm.notes = item.value.notes || ''
+  editTagInput.value = ''
+  editMode.value = true
 }
 
 async function onSave() {
@@ -377,10 +458,13 @@ async function onSave() {
 
   saving.value = true
   try {
-    const body: Record<string, any> = { ...editForm }
+    const body: Record<string, any> = { ...editForm, tags: [...editForm.tags] }
     // Remove empty optional fields but keep layout_template_id to allow clearing
     for (const key of Object.keys(body)) {
       if (body[key] === '' && key !== 'layout_template_id') {
+        delete body[key]
+      }
+      if (Array.isArray(body[key]) && body[key].length === 0) {
         delete body[key]
       }
     }

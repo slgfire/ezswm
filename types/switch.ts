@@ -1,5 +1,7 @@
 import type { Port } from './port'
 
+export type SwitchRole = 'core' | 'distribution' | 'access' | 'management'
+
 export interface Switch {
   id: string
   name: string
@@ -11,6 +13,8 @@ export interface Switch {
   management_ip?: string
   firmware_version?: string
   layout_template_id?: string
+  role?: SwitchRole
+  tags?: string[]
   ports: Port[]
   is_favorite: boolean
   sort_order?: number

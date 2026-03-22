@@ -8,8 +8,9 @@ export function useVlans() {
     loading.value = true
     try {
       const data = await apiFetch<any>('/api/vlans', { params })
-      items.value = data.data || data
-      total.value = data.meta?.total || data.total || items.value.length
+      items.value = data?.data || data || []
+      total.value = data?.meta?.total || data?.total || items.value.length
+    } catch {
     } finally {
       loading.value = false
     }

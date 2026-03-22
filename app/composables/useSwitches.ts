@@ -8,8 +8,10 @@ export function useSwitches() {
     loading.value = true
     try {
       const data = await apiFetch<any>('/api/switches', { params })
-      items.value = data.data || data
-      total.value = data.meta?.total || data.total || items.value.length
+      items.value = data?.data || data || []
+      total.value = data?.meta?.total || data?.total || items.value.length
+    } catch {
+      // Auth redirect or network error — keep existing items
     } finally {
       loading.value = false
     }

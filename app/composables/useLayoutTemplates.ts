@@ -7,7 +7,8 @@ export function useLayoutTemplates() {
     loading.value = true
     try {
       const data = await apiFetch<any>('/api/layout-templates', { params })
-      items.value = data.data || data.items || data
+      items.value = data?.data || data?.items || data || []
+    } catch {
     } finally {
       loading.value = false
     }

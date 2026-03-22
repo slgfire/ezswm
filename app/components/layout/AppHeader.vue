@@ -13,6 +13,7 @@
       <!-- Search -->
       <div class="relative hidden sm:block">
         <UInput
+          ref="searchInputRef"
           v-model="searchQuery"
           :placeholder="$t('common.search')"
           icon="i-heroicons-magnifying-glass"
@@ -21,6 +22,9 @@
           autocomplete="off"
           @focus="showResults = true"
           @keydown.escape="showResults = false"
+          @keydown.down.prevent="moveSelection(1)"
+          @keydown.up.prevent="moveSelection(-1)"
+          @keydown.enter.prevent="navigateToSelected"
         />
 
         <!-- Search results dropdown -->
@@ -37,16 +41,24 @@
             <template v-if="results.switches?.length">
               <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.switches') }}</div>
               <NuxtLink
-                v-for="sw in results.switches"
+                v-for="(sw, i) in results.switches"
                 :key="sw.id"
                 :to="`/switches/${sw.id}`"
-                class="flex items-center gap-3 px-3 py-2 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('switches', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800']"
                 @click="closeSearch"
+                @mouseenter="selectedIndex = flatIndex('switches', i)"
               >
                 <UIcon name="i-heroicons-server-stack" class="h-4 w-4 flex-shrink-0 text-gray-400" />
                 <div class="min-w-0 flex-1">
-                  <div class="font-medium text-gray-900 dark:text-white">{{ sw.name }}</div>
-                  <div v-if="sw.management_ip" class="truncate font-mono text-xs text-gray-400">{{ sw.management_ip }}</div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-medium text-gray-900 dark:text-white" v-html="highlight(sw.name)" />
+                    <span v-if="sw.role" class="rounded bg-gray-100 px-1 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">{{ sw.role }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 truncate text-xs text-gray-400">
+                    <span v-if="sw.manufacturer || sw.model" v-html="highlight([sw.manufacturer, sw.model].filter(Boolean).join(' '))" />
+                    <span v-if="sw.management_ip" class="font-mono" v-html="highlight(sw.management_ip)" />
+                    <span v-if="sw.tags?.length" class="truncate">{{ sw.tags.join(', ') }}</span>
+                  </div>
                 </div>
               </NuxtLink>
             </template>
@@ -55,15 +67,16 @@
             <template v-if="results.vlans?.length">
               <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.vlans') }}</div>
               <NuxtLink
-                v-for="vlan in results.vlans"
+                v-for="(vlan, i) in results.vlans"
                 :key="vlan.id"
                 :to="`/vlans/${vlan.id}`"
-                class="flex items-center gap-3 px-3 py-2 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('vlans', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800']"
                 @click="closeSearch"
+                @mouseenter="selectedIndex = flatIndex('vlans', i)"
               >
                 <div class="h-3 w-3 flex-shrink-0 rounded" :style="{ backgroundColor: vlan.color }" />
                 <div class="min-w-0 flex-1">
-                  <div class="font-medium text-gray-900 dark:text-white">VLAN {{ vlan.vlan_id }} — {{ vlan.name }}</div>
+                  <div class="font-medium text-gray-900 dark:text-white"><span v-html="highlight(`VLAN ${vlan.vlan_id} — ${vlan.name}`)" /></div>
                 </div>
               </NuxtLink>
             </template>
@@ -72,16 +85,17 @@
             <template v-if="results.networks?.length">
               <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.networks') }}</div>
               <NuxtLink
-                v-for="net in results.networks"
+                v-for="(net, i) in results.networks"
                 :key="net.id"
                 :to="`/networks/${net.id}`"
-                class="flex items-center gap-3 px-3 py-2 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('networks', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800']"
                 @click="closeSearch"
+                @mouseenter="selectedIndex = flatIndex('networks', i)"
               >
                 <UIcon name="i-heroicons-globe-alt" class="h-4 w-4 flex-shrink-0 text-gray-400" />
                 <div class="min-w-0 flex-1">
-                  <div class="font-medium text-gray-900 dark:text-white">{{ net.name }}</div>
-                  <div class="font-mono text-xs text-gray-400">{{ net.subnet }}</div>
+                  <div class="font-medium text-gray-900 dark:text-white" v-html="highlight(net.name)" />
+                  <div class="font-mono text-xs text-gray-400" v-html="highlight(net.subnet)" />
                 </div>
               </NuxtLink>
             </template>
@@ -89,17 +103,39 @@
             <!-- Allocations -->
             <template v-if="results.allocations?.length">
               <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.ipAllocations') }}</div>
-              <div
-                v-for="alloc in results.allocations"
+              <NuxtLink
+                v-for="(alloc, i) in results.allocations"
                 :key="alloc.id"
-                class="flex items-center gap-3 px-3 py-2 text-sm"
+                :to="allocLink(alloc)"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('allocations', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800']"
+                @click="closeSearch"
+                @mouseenter="selectedIndex = flatIndex('allocations', i)"
               >
                 <UIcon name="i-heroicons-map-pin" class="h-4 w-4 flex-shrink-0 text-gray-400" />
                 <div class="min-w-0 flex-1">
-                  <div class="font-mono font-medium text-gray-900 dark:text-white">{{ alloc.ip_address }}</div>
-                  <div v-if="alloc.hostname" class="text-xs text-gray-400">{{ alloc.hostname }}</div>
+                  <div class="font-mono font-medium text-gray-900 dark:text-white" v-html="highlight(alloc.ip_address)" />
+                  <div v-if="alloc.hostname" class="text-xs text-gray-400" v-html="highlight(alloc.hostname)" />
                 </div>
-              </div>
+              </NuxtLink>
+            </template>
+
+            <!-- Templates -->
+            <template v-if="results.templates?.length">
+              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.templates') }}</div>
+              <NuxtLink
+                v-for="(tpl, i) in results.templates"
+                :key="tpl.id"
+                :to="`/layout-templates/${tpl.id}`"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('templates', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800']"
+                @click="closeSearch"
+                @mouseenter="selectedIndex = flatIndex('templates', i)"
+              >
+                <UIcon name="i-heroicons-rectangle-group" class="h-4 w-4 flex-shrink-0 text-gray-400" />
+                <div class="min-w-0 flex-1">
+                  <div class="font-medium text-gray-900 dark:text-white" v-html="highlight(tpl.name)" />
+                  <div v-if="tpl.manufacturer || tpl.model" class="text-xs text-gray-400" v-html="highlight([tpl.manufacturer, tpl.model].filter(Boolean).join(' · '))" />
+                </div>
+              </NuxtLink>
             </template>
           </div>
 
@@ -151,14 +187,17 @@ function toggleColorMode() {
 const searchQuery = ref('')
 const showResults = ref(false)
 const searching = ref(false)
-const results = ref<any>({ switches: [], vlans: [], networks: [], allocations: [] })
+const selectedIndex = ref(-1)
+const searchInputRef = ref<any>(null)
+const results = ref<any>({ switches: [], vlans: [], networks: [], allocations: [], templates: [] })
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 watch(searchQuery, (q) => {
   if (debounceTimer) clearTimeout(debounceTimer)
+  selectedIndex.value = -1
   if (!q || q.length < 2) {
-    results.value = { switches: [], vlans: [], networks: [], allocations: [] }
+    results.value = { switches: [], vlans: [], networks: [], allocations: [], templates: [] }
     return
   }
   searching.value = true
@@ -166,7 +205,7 @@ watch(searchQuery, (q) => {
     try {
       results.value = await $fetch('/api/search', { params: { q } })
     } catch {
-      results.value = { switches: [], vlans: [], networks: [], allocations: [] }
+      results.value = { switches: [], vlans: [], networks: [], allocations: [], templates: [] }
     } finally {
       searching.value = false
     }
@@ -177,12 +216,76 @@ const hasResults = computed(() =>
   results.value.switches?.length ||
   results.value.vlans?.length ||
   results.value.networks?.length ||
-  results.value.allocations?.length
+  results.value.allocations?.length ||
+  results.value.templates?.length
 )
+
+// Flat list of all results for keyboard navigation
+const flatResults = computed(() => {
+  const items: { type: string; index: number; url: string }[] = []
+  for (const sw of results.value.switches || []) {
+    items.push({ type: 'switches', index: items.length, url: `/switches/${sw.id}` })
+  }
+  for (const v of results.value.vlans || []) {
+    items.push({ type: 'vlans', index: items.length, url: `/vlans/${v.id}` })
+  }
+  for (const n of results.value.networks || []) {
+    items.push({ type: 'networks', index: items.length, url: `/networks/${n.id}` })
+  }
+  for (const a of results.value.allocations || []) {
+    items.push({ type: 'allocations', index: items.length, url: `/networks/${a.network_id}` })
+  }
+  for (const tpl of results.value.templates || []) {
+    items.push({ type: 'templates', index: items.length, url: `/layout-templates/${tpl.id}` })
+  }
+  return items
+})
+
+function flatIndex(type: string, i: number): number {
+  let offset = 0
+  const order = ['switches', 'vlans', 'networks', 'allocations', 'templates']
+  for (const t of order) {
+    if (t === type) return offset + i
+    offset += (results.value[t]?.length || 0)
+  }
+  return -1
+}
+
+function moveSelection(dir: number) {
+  showResults.value = true
+  const total = flatResults.value.length
+  if (total === 0) return
+  selectedIndex.value = (selectedIndex.value + dir + total) % total
+}
+
+function navigateToSelected() {
+  if (selectedIndex.value >= 0 && selectedIndex.value < flatResults.value.length) {
+    const item = flatResults.value[selectedIndex.value]
+    closeSearch()
+    router.push(item.url)
+  }
+}
+
+function allocLink(alloc: any): string {
+  return alloc.network_id ? `/networks/${alloc.network_id}` : '#'
+}
+
+function highlight(text: string | undefined | null): string {
+  if (!text || !searchQuery.value || searchQuery.value.length < 2) return escapeHtml(text || '')
+  const escaped = escapeHtml(text)
+  const q = escapeHtml(searchQuery.value)
+  const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+  return escaped.replace(regex, '<mark class="bg-primary-200/50 text-inherit dark:bg-primary-700/40 rounded-sm px-0.5">$1</mark>')
+}
+
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
 
 function closeSearch() {
   showResults.value = false
   searchQuery.value = ''
+  selectedIndex.value = -1
 }
 
 const userMenuItems = computed(() => [

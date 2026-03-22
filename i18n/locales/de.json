@@ -106,7 +106,9 @@
       "managementIp": "Management-IP",
       "firmwareVersion": "Firmware-Version",
       "layoutTemplate": "Layout-Vorlage",
-      "portCount": "Anzahl Ports"
+      "portCount": "Anzahl Ports",
+      "role": "Rolle",
+      "tags": "Tags"
     },
     "messages": {
       "created": "Switch erfolgreich erstellt",
@@ -161,6 +163,19 @@
       "searchPort": "Port suchen...",
       "searchDevice": "Gerät suchen oder eingeben..."
     },
+    "roles": {
+      "core": "Core",
+      "distribution": "Distribution",
+      "access": "Access",
+      "management": "Management"
+    },
+    "allRoles": "Alle Rollen",
+    "allLocations": "Alle Standorte",
+    "allTags": "Alle Tags",
+    "viewGrid": "Kartenansicht",
+    "viewList": "Listenansicht",
+    "noResults": "Keine Switches entsprechen Ihren Filtern.",
+    "tagsPlaceholder": "Tag eingeben und Enter drücken",
     "emptyTitle": "Noch keine Switches",
     "emptyDescription": "Erstellen Sie Ihren ersten Switch.",
     "infoBar": {
@@ -326,8 +341,16 @@
       "duplicated": "Vorlage erfolgreich dupliziert"
     },
     "emptyTitle": "Noch keine Layout-Vorlagen",
-    "emptyDescription": "Erstellen Sie eine Vorlage für Ihre Switch-Modelle.",
+    "emptyDescription": "Erstellen Sie Ihre erste Switch-Vorlage, um Port-Layouts für Ihre Switch-Modelle zu definieren.",
     "confirmDelete": "Möchten Sie diese Vorlage wirklich löschen?",
+    "usedBy": "Verwendet von {count} Switch | Verwendet von {count} Switches",
+    "switches": "Switches",
+    "portTypes": "Port-Typen",
+    "allManufacturers": "Alle Hersteller",
+    "allPortTypes": "Alle Port-Typen",
+    "viewGrid": "Kartenansicht",
+    "viewList": "Listenansicht",
+    "noResults": "Keine Vorlagen entsprechen Ihren Filtern.",
     "infoBar": {
       "units": "Units",
       "ports": "Ports",
@@ -452,7 +475,8 @@
       "errorCount": "Fehler",
       "success": "{count} Einträge erfolgreich importiert",
       "hasErrors": "{count} Einträge hatten Fehler",
-      "parseError": "Die ausgewählte Datei konnte nicht gelesen werden"
+      "parseError": "Die ausgewählte Datei konnte nicht gelesen werden",
+      "fileTooLarge": "Datei überschreitet die maximale Größe von 5 MB"
     }
   },
   "activity": {
@@ -474,6 +498,7 @@
     "vlans": "VLANs",
     "networks": "Netzwerke",
     "ipAllocations": "IP-Zuweisungen",
+    "templates": "Layout-Vorlagen",
     "noResults": "Keine Ergebnisse gefunden"
   },
   "legend": {
