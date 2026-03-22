@@ -1,5 +1,5 @@
 <template>
-  <USlideover v-model:open="isOpen">
+  <USlideover v-model:open="isOpen" title="Port Details">
     <template #header>
       <div class="flex items-center justify-between">
         <h3 class="font-semibold">{{ port?.label || `Port ${port?.unit}/${port?.index}` }}</h3>
@@ -62,7 +62,7 @@
               :search-input="false"
               :model-value="selectedSwitchOption"
               :items="switchSearchOptions"
-              option-attribute="label"
+              
               by="value"
               @update:model-value="onSwitchSelect"
             />
@@ -72,7 +72,7 @@
               :search-input="false"
               :model-value="selectedPortOption"
               :items="remotePortSearchOptions"
-              option-attribute="label"
+              
               by="value"
               @update:model-value="onPortSelect"
             />

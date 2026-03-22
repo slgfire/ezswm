@@ -22,8 +22,8 @@
         v-if="manufacturers.length > 0"
         v-model="selectedManufacturer"
         :items="manufacturerOptions"
-        value-attribute="value"
-        option-attribute="label"
+        value-key="value"
+        
         :placeholder="$t('templates.allManufacturers')"
         size="sm"
         class="w-48"
@@ -32,8 +32,8 @@
       <USelectMenu :search-input="false"
         v-model="selectedPortType"
         :items="portTypeOptions"
-        value-attribute="value"
-        option-attribute="label"
+        value-key="value"
+        
         :placeholder="$t('templates.allPortTypes')"
         size="sm"
         class="w-44"

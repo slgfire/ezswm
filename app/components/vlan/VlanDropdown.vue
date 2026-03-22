@@ -4,7 +4,7 @@
     :items="options"
     :searchable="vlans.length > 5"
     searchable-placeholder="Search VLAN..."
-    option-attribute="label"
+    
     by="value"
     @update:model-value="onSelect"
   >

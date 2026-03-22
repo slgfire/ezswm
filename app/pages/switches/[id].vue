@@ -211,7 +211,7 @@
     />
 
     <!-- Edit Side Panel -->
-    <USlideover v-model:open="editMode">
+    <USlideover v-model:open="editMode" title="Edit Switch">
       <template #header>
         <div class="flex items-center justify-between">
           <h3 class="font-semibold">{{ $t('switches.edit') }}</h3>
@@ -257,8 +257,8 @@
             <USelectMenu :search-input="false"
               v-model="editForm.layout_template_id"
               :items="templateOptions"
-              option-attribute="label"
-              value-attribute="value"
+              
+              value-key="value"
             />
           </UFormField>
 
@@ -266,8 +266,8 @@
             <USelectMenu :search-input="false"
               v-model="editForm.role"
               :items="editRoleOptions"
-              option-attribute="label"
-              value-attribute="value"
+              
+              value-key="value"
             />
           </UFormField>
 

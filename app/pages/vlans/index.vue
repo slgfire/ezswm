@@ -108,7 +108,7 @@
     </SharedEmptyState>
 
     <!-- VLAN Side Panel -->
-    <USlideover v-model:open="showPanel">
+    <USlideover v-model:open="showPanel" title="VLAN Details">
         <template #header>
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">

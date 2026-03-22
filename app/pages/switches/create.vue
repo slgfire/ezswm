@@ -50,8 +50,8 @@
               v-model="form.layout_template_id"
               :items="templateOptions"
               :placeholder="$t('switches.fields.layoutTemplate')"
-              option-attribute="label"
-              value-attribute="value"
+              
+              value-key="value"
             />
           </UFormField>
 
@@ -59,8 +59,8 @@
             <USelectMenu :search-input="false"
               v-model="form.role"
               :items="roleOptions"
-              option-attribute="label"
-              value-attribute="value"
+              
+              value-key="value"
             />
           </UFormField>
 

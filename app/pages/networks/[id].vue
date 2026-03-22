@@ -211,7 +211,7 @@
     </div>
 
     <!-- Range edit slideover -->
-    <USlideover v-model:open="showRangeEdit">
+    <USlideover v-model:open="showRangeEdit" title="Edit Range">
       <template #header>
         <div class="flex items-center justify-between">
           <h3 class="font-semibold">{{ $t('networks.ranges.editRange') }}</h3>
@@ -253,7 +253,7 @@
     </USlideover>
 
     <!-- Add IP/Range Sidebar -->
-    <USlideover v-model:open="showAddPanel">
+    <USlideover v-model:open="showAddPanel" title="Add">
         <template #header>
           <div class="flex items-center justify-between">
             <h3 class="font-semibold">{{ editAllocTarget ? $t('networks.allocations.edit') : addPanelMode === 'ip' ? $t('networks.unified.addIp') : $t('networks.unified.addRange') }}</h3>

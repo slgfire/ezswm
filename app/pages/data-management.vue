@@ -59,8 +59,8 @@
                 <USelectMenu :search-input="false"
                   v-model="exportType"
                   :items="entityTypeOptions"
-                  value-attribute="value"
-                  option-attribute="label"
+                  value-key="value"
+                  
                   size="sm"
                 />
               </UFormField>
@@ -69,8 +69,8 @@
                 <USelectMenu :search-input="false"
                   v-model="exportFormat"
                   :items="formatOptions"
-                  value-attribute="value"
-                  option-attribute="label"
+                  value-key="value"
+                  
                   size="sm"
                 />
               </UFormField>
@@ -96,8 +96,8 @@
                 <USelectMenu :search-input="false"
                   v-model="importType"
                   :items="entityTypeOptions"
-                  value-attribute="value"
-                  option-attribute="label"
+                  value-key="value"
+                  
                   size="sm"
                 />
               </UFormField>

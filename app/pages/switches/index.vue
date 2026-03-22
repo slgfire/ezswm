@@ -20,8 +20,8 @@
         v-if="locationOptions.length > 1"
         v-model="locationFilter"
         :items="locationOptions"
-        value-attribute="value"
-        option-attribute="label"
+        value-key="value"
+        
         :placeholder="$t('switches.allLocations')"
         size="sm"
         class="w-48"
@@ -29,8 +29,8 @@
       <USelectMenu :search-input="false"
         v-model="roleFilter"
         :items="roleOptions"
-        value-attribute="value"
-        option-attribute="label"
+        value-key="value"
+        
         :placeholder="$t('switches.allRoles')"
         size="sm"
         class="w-44"
@@ -39,8 +39,8 @@
         v-if="tagOptions.length > 1"
         v-model="tagFilter"
         :items="tagOptions"
-        value-attribute="value"
-        option-attribute="label"
+        value-key="value"
+        
         :placeholder="$t('switches.allTags')"
         size="sm"
         class="w-44"
