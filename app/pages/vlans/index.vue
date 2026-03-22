@@ -109,7 +109,6 @@
 
     <!-- VLAN Side Panel -->
     <USlideover :open="showPanel" @close="showPanel = false">
-      <UCard>
         <template #header>
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -127,6 +126,7 @@
           </div>
         </template>
 
+        <template #body>
         <div v-if="selectedVlan && !panelEditing" class="space-y-4">
           <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
             <div>
@@ -207,6 +207,7 @@
             </div>
           </UFormField>
         </form>
+        </template>
 
         <template #footer>
           <div v-if="panelEditing" class="flex justify-end gap-2">
@@ -214,7 +215,6 @@
             <UButton :loading="saving" @click="onSave">{{ $t('common.save') }}</UButton>
           </div>
         </template>
-      </UCard>
     </USlideover>
 
     <!-- Delete confirmation -->

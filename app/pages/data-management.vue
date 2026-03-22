@@ -56,7 +56,7 @@
           <UCard>
             <div class="space-y-4 max-w-lg">
               <UFormField :label="$t('dataManagement.export.selectType')">
-                <USelectMenu
+                <USelectMenu :search-input="false"
                   v-model="exportType"
                   :items="entityTypeOptions"
                   value-attribute="value"
@@ -66,7 +66,7 @@
               </UFormField>
 
               <UFormField :label="$t('dataManagement.export.selectFormat')">
-                <USelectMenu
+                <USelectMenu :search-input="false"
                   v-model="exportFormat"
                   :items="formatOptions"
                   value-attribute="value"
@@ -93,7 +93,7 @@
           <UCard>
             <div class="space-y-4 max-w-lg">
               <UFormField :label="$t('dataManagement.export.selectType')">
-                <USelectMenu
+                <USelectMenu :search-input="false"
                   v-model="importType"
                   :items="entityTypeOptions"
                   value-attribute="value"

@@ -56,7 +56,7 @@
           </UFormField>
 
           <UFormField :label="$t('switches.fields.role')" name="role">
-            <USelectMenu
+            <USelectMenu :search-input="false"
               v-model="form.role"
               :items="roleOptions"
               option-attribute="label"

@@ -244,7 +244,6 @@
 
     <!-- Add IP/Range Sidebar -->
     <USlideover :open="showAddPanel" @close="showAddPanel = false; editAllocTarget = null">
-      <UCard>
         <template #header>
           <div class="flex items-center justify-between">
             <h3 class="font-semibold">{{ editAllocTarget ? $t('networks.allocations.edit') : addPanelMode === 'ip' ? $t('networks.unified.addIp') : $t('networks.unified.addRange') }}</h3>
@@ -252,6 +251,7 @@
           </div>
         </template>
 
+        <template #body>
         <!-- Mode toggle -->
         <div class="mb-4 flex items-center gap-1">
           <button
@@ -316,6 +316,7 @@
             <UInput v-model="rangeForm.description" />
           </UFormField>
         </form>
+        </template>
 
         <template #footer>
           <div class="flex justify-end gap-2">
@@ -323,7 +324,6 @@
             <UButton :loading="addPanelMode === 'ip' ? creatingAlloc : creatingRange" @click="addPanelMode === 'ip' ? onCreateAllocation() : onCreateRange()">{{ $t('common.add') }}</UButton>
           </div>
         </template>
-      </UCard>
     </USlideover>
 
     <SharedConfirmDialog v-model="showDeleteDialog" :title="$t('networks.delete')" :message="network ? `${$t('networks.delete')}: ${network.name} (${network.subnet})?` : ''" :loading="deleting" @confirm="confirmDeleteNetwork" />

@@ -1,5 +1,5 @@
 <template>
-  <USelectMenu
+  <USelectMenu :search-input="false"
     :model-value="selectedOption"
     :items="options"
     :searchable="vlans.length > 5"

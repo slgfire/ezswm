@@ -1,13 +1,13 @@
 <template>
   <USlideover :open="isOpen" @close="isOpen = false">
-    <UCard>
-      <template #header>
-        <div class="flex items-center justify-between">
-          <h3 class="font-semibold">{{ $t('switches.ports.bulkEditTitle', { count: selectedPorts.length }) }}</h3>
-          <UButton variant="ghost" icon="i-heroicons-x-mark" size="sm" @click="close" />
-        </div>
-      </template>
+    <template #header>
+      <div class="flex items-center justify-between">
+        <h3 class="font-semibold">{{ $t('switches.ports.bulkEditTitle', { count: selectedPorts.length }) }}</h3>
+        <UButton variant="ghost" icon="i-heroicons-x-mark" size="sm" @click="close" />
+      </div>
+    </template>
 
+    <template #body>
       <div class="space-y-4">
         <p class="text-xs text-gray-400">{{ $t('switches.ports.bulkEditHint', { count: selectedPorts.length }) }}</p>
 
@@ -53,14 +53,14 @@
           <UInput v-model="form.description" :placeholder="$t('common.noChange')" />
         </UFormField>
       </div>
+    </template>
 
-      <template #footer>
-        <div class="flex items-center justify-between">
-          <UButton variant="ghost" color="neutral" @click="close">{{ $t('common.cancel') }}</UButton>
-          <UButton @click="apply">{{ $t('switches.ports.applyToPorts', { count: selectedPorts.length }) }}</UButton>
-        </div>
-      </template>
-    </UCard>
+    <template #footer>
+      <div class="flex items-center justify-between">
+        <UButton variant="ghost" color="neutral" @click="close">{{ $t('common.cancel') }}</UButton>
+        <UButton @click="apply">{{ $t('switches.ports.applyToPorts', { count: selectedPorts.length }) }}</UButton>
+      </div>
+    </template>
   </USlideover>
 </template>
 

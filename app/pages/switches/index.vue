@@ -16,7 +16,7 @@
         size="sm"
         class="w-64"
       />
-      <USelectMenu
+      <USelectMenu :search-input="false"
         v-if="locationOptions.length > 1"
         v-model="locationFilter"
         :items="locationOptions"
@@ -26,7 +26,7 @@
         size="sm"
         class="w-48"
       />
-      <USelectMenu
+      <USelectMenu :search-input="false"
         v-model="roleFilter"
         :items="roleOptions"
         value-attribute="value"
@@ -35,7 +35,7 @@
         size="sm"
         class="w-44"
       />
-      <USelectMenu
+      <USelectMenu :search-input="false"
         v-if="tagOptions.length > 1"
         v-model="tagFilter"
         :items="tagOptions"
