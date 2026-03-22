@@ -9,7 +9,7 @@
       <form @submit.prevent="onSubmit">
         <div class="space-y-4">
           <!-- VLAN ID -->
-          <UFormGroup :label="$t('vlans.fields.vlanId') + ' *'" :error="errors.vlan_id">
+          <UFormField :label="$t('vlans.fields.vlanId') + ' *'" :error="errors.vlan_id">
             <UInput
               v-model.number="form.vlan_id"
               type="number"
@@ -18,41 +18,41 @@
               :placeholder="$t('vlans.fields.vlanId')"
               required
             />
-          </UFormGroup>
+          </UFormField>
 
           <!-- Name -->
-          <UFormGroup :label="$t('vlans.fields.name') + ' *'" :error="errors.name">
+          <UFormField :label="$t('vlans.fields.name') + ' *'" :error="errors.name">
             <UInput
               v-model="form.name"
               :placeholder="$t('vlans.fields.name')"
               required
             />
-          </UFormGroup>
+          </UFormField>
 
           <!-- Description -->
-          <UFormGroup :label="$t('common.description')">
+          <UFormField :label="$t('common.description')">
             <UTextarea
               v-model="form.description"
               :placeholder="$t('common.description')"
               :rows="3"
             />
-          </UFormGroup>
+          </UFormField>
 
           <!-- Status -->
-          <UFormGroup :label="$t('vlans.fields.status')">
+          <UFormField :label="$t('vlans.fields.status')">
             <USelect v-model="form.status" :options="statusOptions" />
-          </UFormGroup>
+          </UFormField>
 
           <!-- Routing Device -->
-          <UFormGroup :label="$t('vlans.fields.routingDevice')">
+          <UFormField :label="$t('vlans.fields.routingDevice')">
             <UInput
               v-model="form.routing_device"
               :placeholder="$t('vlans.fields.routingDevice')"
             />
-          </UFormGroup>
+          </UFormField>
 
           <!-- Color -->
-          <UFormGroup :label="$t('vlans.fields.color') + ' *'" :error="errors.color">
+          <UFormField :label="$t('vlans.fields.color') + ' *'" :error="errors.color">
             <div class="flex items-center gap-3">
               <input
                 v-model="form.color"
@@ -66,7 +66,7 @@
               />
               <VlanColorSwatch :color="form.color" size="lg" />
             </div>
-          </UFormGroup>
+          </UFormField>
         </div>
 
         <div class="mt-6 flex items-center gap-3">

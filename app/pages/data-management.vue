@@ -23,7 +23,7 @@
               </template>
               <p class="mb-4 text-sm text-gray-400">{{ $t('backup.importDescription') }}</p>
               <div class="space-y-4">
-                <UFormGroup :label="$t('backup.selectFile')">
+                <UFormField :label="$t('backup.selectFile')">
                   <input
                     ref="backupFileInput"
                     type="file"
@@ -37,7 +37,7 @@
                       dark:file:bg-primary-900 dark:file:text-primary-300"
                     @change="onBackupFileSelect"
                   />
-                </UFormGroup>
+                </UFormField>
                 <UButton
                   size="sm"
                   icon="i-heroicons-arrow-up-tray"
@@ -55,7 +55,7 @@
         <div v-else-if="item.key === 'export'" class="mt-4">
           <UCard>
             <div class="space-y-4 max-w-lg">
-              <UFormGroup :label="$t('dataManagement.export.selectType')">
+              <UFormField :label="$t('dataManagement.export.selectType')">
                 <USelectMenu
                   v-model="exportType"
                   :options="entityTypeOptions"
@@ -63,9 +63,9 @@
                   option-attribute="label"
                   size="sm"
                 />
-              </UFormGroup>
+              </UFormField>
 
-              <UFormGroup :label="$t('dataManagement.export.selectFormat')">
+              <UFormField :label="$t('dataManagement.export.selectFormat')">
                 <USelectMenu
                   v-model="exportFormat"
                   :options="formatOptions"
@@ -73,7 +73,7 @@
                   option-attribute="label"
                   size="sm"
                 />
-              </UFormGroup>
+              </UFormField>
 
               <UButton
                 size="sm"
@@ -92,7 +92,7 @@
         <div v-else-if="item.key === 'import'" class="mt-4">
           <UCard>
             <div class="space-y-4 max-w-lg">
-              <UFormGroup :label="$t('dataManagement.export.selectType')">
+              <UFormField :label="$t('dataManagement.export.selectType')">
                 <USelectMenu
                   v-model="importType"
                   :options="entityTypeOptions"
@@ -100,7 +100,7 @@
                   option-attribute="label"
                   size="sm"
                 />
-              </UFormGroup>
+              </UFormField>
 
               <div>
                 <UButton
@@ -114,7 +114,7 @@
                 </UButton>
               </div>
 
-              <UFormGroup :label="$t('dataManagement.import.selectFile')">
+              <UFormField :label="$t('dataManagement.import.selectFile')">
                 <input
                   ref="importFileInput"
                   type="file"
@@ -128,7 +128,7 @@
                     dark:file:bg-primary-900 dark:file:text-primary-300"
                   @change="onImportFileSelect"
                 />
-              </UFormGroup>
+              </UFormField>
 
               <!-- Preview -->
               <div v-if="importPreview !== null" class="rounded-md bg-gray-50 p-3 dark:bg-gray-800">

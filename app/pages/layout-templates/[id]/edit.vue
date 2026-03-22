@@ -16,21 +16,21 @@
           <div class="space-y-6">
             <!-- Basic Info -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormGroup :label="$t('templates.fields.name') + ' *'" required>
+              <UFormField :label="$t('templates.fields.name') + ' *'" required>
                 <UInput v-model="form.name" :placeholder="$t('templates.fields.name')" />
-              </UFormGroup>
-              <UFormGroup :label="$t('templates.fields.manufacturer')">
+              </UFormField>
+              <UFormField :label="$t('templates.fields.manufacturer')">
                 <UInput v-model="form.manufacturer" :placeholder="$t('templates.fields.manufacturer')" />
-              </UFormGroup>
-              <UFormGroup :label="$t('templates.fields.model')">
+              </UFormField>
+              <UFormField :label="$t('templates.fields.model')">
                 <UInput v-model="form.model" :placeholder="$t('templates.fields.model')" />
-              </UFormGroup>
-              <UFormGroup :label="$t('templates.fields.description')">
+              </UFormField>
+              <UFormField :label="$t('templates.fields.description')">
                 <UInput v-model="form.description" :placeholder="$t('templates.fields.description')" />
-              </UFormGroup>
+              </UFormField>
             </div>
 
-            <UDivider />
+            <USeparator />
 
             <!-- Units Section -->
             <div>
@@ -57,12 +57,12 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <UFormGroup :label="$t('templates.units.unitNumber')">
+                  <UFormField :label="$t('templates.units.unitNumber')">
                     <UInput v-model.number="unit.unit_number" type="number" min="1" />
-                  </UFormGroup>
-                  <UFormGroup :label="$t('templates.units.label')">
+                  </UFormField>
+                  <UFormField :label="$t('templates.units.label')">
                     <UInput v-model="unit.label" :placeholder="$t('templates.units.label')" />
-                  </UFormGroup>
+                  </UFormField>
                 </div>
 
                 <!-- Blocks Section -->
@@ -90,27 +90,27 @@
                       />
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <UFormGroup :label="$t('templates.blocks.type')">
+                      <UFormField :label="$t('templates.blocks.type')">
                         <USelect v-model="block.type" :options="portTypeOptions" />
-                      </UFormGroup>
-                      <UFormGroup :label="$t('templates.blocks.count')">
+                      </UFormField>
+                      <UFormField :label="$t('templates.blocks.count')">
                         <UInput v-model.number="block.count" type="number" min="1" />
-                      </UFormGroup>
-                      <UFormGroup :label="$t('templates.blocks.startIndex')">
+                      </UFormField>
+                      <UFormField :label="$t('templates.blocks.startIndex')">
                         <UInput v-model.number="block.start_index" type="number" min="0" />
-                      </UFormGroup>
-                      <UFormGroup :label="$t('templates.blocks.label')">
+                      </UFormField>
+                      <UFormField :label="$t('templates.blocks.label')">
                         <UInput v-model="block.label" :placeholder="$t('templates.blocks.label')" />
-                      </UFormGroup>
-                      <UFormGroup :label="$t('templates.blocks.rows')">
+                      </UFormField>
+                      <UFormField :label="$t('templates.blocks.rows')">
                         <UInput v-model.number="block.rows" type="number" min="1" />
-                      </UFormGroup>
-                      <UFormGroup :label="$t('templates.blocks.rowLayout')">
+                      </UFormField>
+                      <UFormField :label="$t('templates.blocks.rowLayout')">
                         <USelect v-model="block.row_layout" :options="rowLayoutOptions" :disabled="block.rows < 2" />
-                      </UFormGroup>
-                      <UFormGroup :label="$t('templates.blocks.defaultSpeed')">
+                      </UFormField>
+                      <UFormField :label="$t('templates.blocks.defaultSpeed')">
                         <USelect v-model="block.default_speed" :options="speedOptions" />
-                      </UFormGroup>
+                      </UFormField>
                     </div>
                   </div>
 
@@ -122,7 +122,7 @@
             </div>
 
             <!-- Live Preview -->
-            <UDivider />
+            <USeparator />
             <div>
               <h2 class="mb-3 text-lg font-semibold">{{ $t('templates.preview') }}</h2>
               <div v-if="previewPorts.length" class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50">
@@ -135,7 +135,7 @@
               <p v-else class="text-sm text-gray-400">{{ $t('templates.previewEmpty') }}</p>
             </div>
 
-            <UDivider />
+            <USeparator />
 
             <!-- Form Actions -->
             <div class="flex justify-end gap-3">

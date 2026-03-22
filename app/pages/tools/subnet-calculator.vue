@@ -3,13 +3,13 @@
     <h1 class="mb-6 text-2xl font-bold">{{ $t('tools.subnetCalculator.title') }}</h1>
 
     <div class="max-w-xl">
-      <UFormGroup :label="$t('tools.subnetCalculator.inputLabel')">
+      <UFormField :label="$t('tools.subnetCalculator.inputLabel')">
         <UInput
           v-model="cidr"
           :placeholder="$t('tools.subnetCalculator.inputPlaceholder')"
           size="lg"
         />
-      </UFormGroup>
+      </UFormField>
 
       <UCard v-if="result" class="mt-6">
         <template #header><h2 class="font-semibold">{{ $t('tools.subnetCalculator.results') }}</h2></template>

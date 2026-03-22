@@ -9,33 +9,33 @@
       <form @submit.prevent="onSubmit">
         <div class="space-y-4">
           <!-- Name -->
-          <UFormGroup :label="$t('networks.fields.name') + ' *'" :error="errors.name">
+          <UFormField :label="$t('networks.fields.name') + ' *'" :error="errors.name">
             <UInput
               v-model="form.name"
               :placeholder="$t('networks.fields.name')"
               required
             />
-          </UFormGroup>
+          </UFormField>
 
           <!-- Subnet -->
-          <UFormGroup :label="$t('networks.fields.subnet') + ' *'" :error="errors.subnet">
+          <UFormField :label="$t('networks.fields.subnet') + ' *'" :error="errors.subnet">
             <UInput
               v-model="form.subnet"
               placeholder="10.0.1.0/24"
               required
             />
-          </UFormGroup>
+          </UFormField>
 
           <!-- Gateway -->
-          <UFormGroup :label="$t('networks.fields.gateway')">
+          <UFormField :label="$t('networks.fields.gateway')">
             <UInput
               v-model="form.gateway"
               placeholder="10.0.1.1"
             />
-          </UFormGroup>
+          </UFormField>
 
           <!-- DNS Servers -->
-          <UFormGroup :label="$t('networks.fields.dnsServers')">
+          <UFormField :label="$t('networks.fields.dnsServers')">
             <UInput
               v-model="dnsInput"
               placeholder="8.8.8.8, 8.8.4.4"
@@ -43,25 +43,25 @@
             <template #hint>
               <span class="text-xs text-gray-500">{{ $t('networks.fields.dnsServers') }} (comma-separated)</span>
             </template>
-          </UFormGroup>
+          </UFormField>
 
           <!-- VLAN -->
-          <UFormGroup :label="$t('networks.fields.vlan')">
+          <UFormField :label="$t('networks.fields.vlan')">
             <USelect
               v-model="form.vlan_id"
               :options="vlanOptions"
               :placeholder="$t('networks.fields.vlan')"
             />
-          </UFormGroup>
+          </UFormField>
 
           <!-- Description -->
-          <UFormGroup :label="$t('common.description')">
+          <UFormField :label="$t('common.description')">
             <UTextarea
               v-model="form.description"
               :placeholder="$t('common.description')"
               :rows="3"
             />
-          </UFormGroup>
+          </UFormField>
         </div>
 
         <div class="mt-6 flex items-center gap-3">

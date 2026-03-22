@@ -14,44 +14,44 @@
           <UBadge :color="port.status === 'up' ? 'green' : port.status === 'disabled' ? 'red' : 'gray'">{{ port.status }}</UBadge>
         </div>
 
-        <UFormGroup :label="$t('common.status')">
+        <UFormField :label="$t('common.status')">
           <USelect v-model="form.status" :options="['up', 'down', 'disabled']" />
-        </UFormGroup>
+        </UFormField>
 
-        <UFormGroup :label="$t('switches.ports.speed')">
+        <UFormField :label="$t('switches.ports.speed')">
           <USelect v-model="form.speed" :options="speeds" placeholder="Select speed" />
-        </UFormGroup>
+        </UFormField>
 
         <!-- Port Mode -->
-        <UFormGroup :label="$t('switches.ports.portMode')">
+        <UFormField :label="$t('switches.ports.portMode')">
           <USelect v-model="form.port_mode" :options="portModeOptions" />
-        </UFormGroup>
+        </UFormField>
 
         <!-- Access Mode: single VLAN -->
         <template v-if="form.port_mode === 'access'">
-          <UFormGroup :label="$t('switches.ports.accessVlan')">
+          <UFormField :label="$t('switches.ports.accessVlan')">
             <VlanDropdown v-model="form.access_vlan" :vlans="allVlans" />
-          </UFormGroup>
+          </UFormField>
         </template>
 
         <!-- Trunk Mode: native VLAN + tagged VLANs multi-select -->
         <template v-if="form.port_mode === 'trunk'">
-          <UFormGroup :label="$t('switches.ports.nativeVlan')">
+          <UFormField :label="$t('switches.ports.nativeVlan')">
             <VlanDropdown v-model="form.native_vlan" :vlans="allVlans" />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup :label="$t('switches.ports.taggedVlans')">
+          <UFormField :label="$t('switches.ports.taggedVlans')">
             <VlanMultiSelect
               v-if="allVlans.length"
               v-model="selectedTaggedVlans"
               :vlans="allVlans"
             />
             <UInput v-else v-model="taggedVlansStr" placeholder="e.g. 100,200,300" />
-          </UFormGroup>
+          </UFormField>
         </template>
 
         <!-- Connection Type -->
-        <UFormGroup :label="$t('switches.ports.connectionType')">
+        <UFormField :label="$t('switches.ports.connectionType')">
           <div class="flex items-center gap-1">
             <button
               v-for="mode in connectionModes"
@@ -63,11 +63,11 @@
               @click="connectionMode = mode.value"
             >{{ mode.label }}</button>
           </div>
-        </UFormGroup>
+        </UFormField>
 
         <!-- Connected Switch -->
         <template v-if="connectionMode === 'switch'">
-          <UFormGroup :label="$t('switches.ports.connectedSwitch')">
+          <UFormField :label="$t('switches.ports.connectedSwitch')">
             <USelectMenu
               :model-value="selectedSwitchOption"
               :options="switchSearchOptions"
@@ -94,9 +94,9 @@
                 </div>
               </template>
             </USelectMenu>
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup v-if="selectedSwitchId" :label="$t('switches.ports.connectedPort')">
+          <UFormField v-if="selectedSwitchId" :label="$t('switches.ports.connectedPort')">
             <USelectMenu
               :model-value="selectedPortOption"
               :options="remotePortSearchOptions"
@@ -121,12 +121,12 @@
               <span class="font-medium text-yellow-300">{{ portConflict.device }} → {{ portConflict.port }}</span>.
               {{ $t('switches.ports.portConflictOverride') }}
             </div>
-          </UFormGroup>
+          </UFormField>
         </template>
 
         <!-- Connected Device (freetext with IP/hostname search) -->
         <template v-if="connectionMode === 'device'">
-          <UFormGroup :label="$t('switches.ports.connectedDevice')">
+          <UFormField :label="$t('switches.ports.connectedDevice')">
             <USelectMenu
               :model-value="selectedDeviceOption"
               :options="deviceSearchOptions"
@@ -160,30 +160,30 @@
                 </div>
               </template>
             </USelectMenu>
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup :label="$t('switches.ports.connectedPort')">
+          <UFormField :label="$t('switches.ports.connectedPort')">
             <UInput v-model="form.connected_port" :placeholder="$t('switches.ports.portPlaceholder')" />
-          </UFormGroup>
+          </UFormField>
         </template>
 
         <!-- Freetext mode -->
         <template v-if="connectionMode === 'freetext'">
-          <UFormGroup :label="$t('switches.ports.connectedDevice')">
+          <UFormField :label="$t('switches.ports.connectedDevice')">
             <UInput v-model="form.connected_device" :placeholder="$t('switches.ports.devicePlaceholder')" />
-          </UFormGroup>
-          <UFormGroup :label="$t('switches.ports.connectedPort')">
+          </UFormField>
+          <UFormField :label="$t('switches.ports.connectedPort')">
             <UInput v-model="form.connected_port" :placeholder="$t('switches.ports.portPlaceholder')" />
-          </UFormGroup>
+          </UFormField>
         </template>
 
-        <UFormGroup :label="$t('common.description')">
+        <UFormField :label="$t('common.description')">
           <UInput v-model="form.description" />
-        </UFormGroup>
+        </UFormField>
 
-        <UFormGroup :label="$t('switches.ports.macAddress')">
+        <UFormField :label="$t('switches.ports.macAddress')">
           <UInput v-model="form.mac_address" placeholder="XX:XX:XX:XX:XX:XX" />
-        </UFormGroup>
+        </UFormField>
       </div>
 
       <!-- Port status prompt -->

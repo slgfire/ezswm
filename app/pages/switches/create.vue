@@ -13,39 +13,39 @@
     <UCard class="max-w-2xl">
       <UForm :state="form" @submit="onSubmit">
         <div class="space-y-4">
-          <UFormGroup :label="$t('switches.fields.name') + ' *'" name="name">
+          <UFormField :label="$t('switches.fields.name') + ' *'" name="name">
             <UInput v-model="form.name" :placeholder="$t('switches.fields.name')" required />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup :label="$t('switches.fields.model')" name="model">
+          <UFormField :label="$t('switches.fields.model')" name="model">
             <UInput v-model="form.model" :placeholder="$t('switches.fields.model')" />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup :label="$t('switches.fields.manufacturer')" name="manufacturer">
+          <UFormField :label="$t('switches.fields.manufacturer')" name="manufacturer">
             <UInput v-model="form.manufacturer" :placeholder="$t('switches.fields.manufacturer')" />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup :label="$t('switches.fields.serialNumber')" name="serial_number">
+          <UFormField :label="$t('switches.fields.serialNumber')" name="serial_number">
             <UInput v-model="form.serial_number" :placeholder="$t('switches.fields.serialNumber')" />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup :label="$t('switches.fields.location')" name="location">
+          <UFormField :label="$t('switches.fields.location')" name="location">
             <UInput v-model="form.location" :placeholder="$t('switches.fields.location')" />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup :label="$t('switches.fields.rackPosition')" name="rack_position">
+          <UFormField :label="$t('switches.fields.rackPosition')" name="rack_position">
             <UInput v-model="form.rack_position" :placeholder="$t('switches.fields.rackPosition')" />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup :label="$t('switches.fields.managementIp')" name="management_ip">
+          <UFormField :label="$t('switches.fields.managementIp')" name="management_ip">
             <UInput v-model="form.management_ip" :placeholder="$t('switches.fields.managementIp')" />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup :label="$t('switches.fields.firmwareVersion')" name="firmware_version">
+          <UFormField :label="$t('switches.fields.firmwareVersion')" name="firmware_version">
             <UInput v-model="form.firmware_version" :placeholder="$t('switches.fields.firmwareVersion')" />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
+          <UFormField :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
             <USelect
               v-model="form.layout_template_id"
               :options="templateOptions"
@@ -53,18 +53,18 @@
               option-attribute="label"
               value-attribute="value"
             />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup :label="$t('switches.fields.role')" name="role">
+          <UFormField :label="$t('switches.fields.role')" name="role">
             <USelectMenu
               v-model="form.role"
               :options="roleOptions"
               option-attribute="label"
               value-attribute="value"
             />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup :label="$t('switches.fields.tags')" name="tags">
+          <UFormField :label="$t('switches.fields.tags')" name="tags">
             <UInput
               v-model="tagInput"
               :placeholder="$t('switches.tagsPlaceholder')"
@@ -75,11 +75,11 @@
                 {{ tg }} <UIcon name="i-heroicons-x-mark" class="ml-0.5 h-3 w-3" />
               </UBadge>
             </div>
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup :label="$t('common.notes')" name="notes">
+          <UFormField :label="$t('common.notes')" name="notes">
             <UTextarea v-model="form.notes" :placeholder="$t('common.notes')" :rows="3" />
-          </UFormGroup>
+          </UFormField>
 
           <div class="flex justify-end gap-2 pt-4">
             <UButton color="gray" variant="ghost" to="/switches">

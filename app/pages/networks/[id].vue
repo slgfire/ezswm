@@ -110,24 +110,24 @@
         <!-- Edit form -->
         <form v-if="editing" class="space-y-4" @submit.prevent="onSave">
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <UFormGroup :label="$t('networks.fields.name') + ' *'">
+            <UFormField :label="$t('networks.fields.name') + ' *'">
               <UInput v-model="editForm.name" required />
-            </UFormGroup>
-            <UFormGroup :label="$t('networks.fields.subnet') + ' *'">
+            </UFormField>
+            <UFormField :label="$t('networks.fields.subnet') + ' *'">
               <UInput v-model="editForm.subnet" required />
-            </UFormGroup>
-            <UFormGroup :label="$t('networks.fields.gateway')">
+            </UFormField>
+            <UFormField :label="$t('networks.fields.gateway')">
               <UInput v-model="editForm.gateway" />
-            </UFormGroup>
-            <UFormGroup :label="$t('networks.fields.dnsServers')">
+            </UFormField>
+            <UFormField :label="$t('networks.fields.dnsServers')">
               <UInput v-model="editDnsInput" placeholder="8.8.8.8, 8.8.4.4" />
-            </UFormGroup>
-            <UFormGroup :label="$t('networks.fields.vlan')">
+            </UFormField>
+            <UFormField :label="$t('networks.fields.vlan')">
               <USelect v-model="editForm.vlan_id" :options="vlanOptions" />
-            </UFormGroup>
-            <UFormGroup :label="$t('common.description')">
+            </UFormField>
+            <UFormField :label="$t('common.description')">
               <UInput v-model="editForm.description" />
-            </UFormGroup>
+            </UFormField>
           </div>
           <div class="flex justify-end gap-2">
             <UButton variant="ghost" color="gray" @click="editing = false">{{ $t('common.cancel') }}</UButton>
@@ -217,18 +217,18 @@
           {{ rangeEditError }}
         </div>
         <form class="space-y-4" @submit.prevent="onSaveRangeEdit">
-          <UFormGroup :label="$t('networks.ranges.fields.startIp') + ' *'">
+          <UFormField :label="$t('networks.ranges.fields.startIp') + ' *'">
             <UInput v-model="rangeEditForm.start_ip" required />
-          </UFormGroup>
-          <UFormGroup :label="$t('networks.ranges.fields.endIp') + ' *'">
+          </UFormField>
+          <UFormField :label="$t('networks.ranges.fields.endIp') + ' *'">
             <UInput v-model="rangeEditForm.end_ip" required />
-          </UFormGroup>
-          <UFormGroup :label="$t('networks.ranges.fields.type') + ' *'">
+          </UFormField>
+          <UFormField :label="$t('networks.ranges.fields.type') + ' *'">
             <USelect v-model="rangeEditForm.type" :options="rangeTypeOptions" />
-          </UFormGroup>
-          <UFormGroup :label="$t('common.description')">
+          </UFormField>
+          <UFormField :label="$t('common.description')">
             <UInput v-model="rangeEditForm.description" />
-          </UFormGroup>
+          </UFormField>
           <div class="flex items-center justify-between pt-2">
             <UButton icon="i-heroicons-trash" variant="ghost" color="red" @click="openDeleteRangeDialog(rangeEditTarget!)">
               {{ $t('common.delete') }}
@@ -277,44 +277,44 @@
 
         <!-- IP Address form -->
         <form v-if="addPanelMode === 'ip'" class="space-y-4" @submit.prevent="onCreateAllocation">
-          <UFormGroup :label="$t('networks.allocations.fields.ipAddress') + ' *'">
+          <UFormField :label="$t('networks.allocations.fields.ipAddress') + ' *'">
             <UInput v-model="allocForm.ip_address" placeholder="10.0.1.10" required :color="addPanelError ? 'red' : undefined" />
-          </UFormGroup>
-          <UFormGroup :label="$t('networks.allocations.fields.hostname')">
+          </UFormField>
+          <UFormField :label="$t('networks.allocations.fields.hostname')">
             <UInput v-model="allocForm.hostname" />
-          </UFormGroup>
+          </UFormField>
           <div class="grid grid-cols-2 gap-3">
-            <UFormGroup :label="$t('networks.allocations.fields.deviceType')">
+            <UFormField :label="$t('networks.allocations.fields.deviceType')">
               <USelect v-model="allocForm.device_type" :options="deviceTypeOptions" />
-            </UFormGroup>
-            <UFormGroup :label="$t('networks.allocations.fields.status')">
+            </UFormField>
+            <UFormField :label="$t('networks.allocations.fields.status')">
               <USelect v-model="allocForm.status" :options="allocStatusOptions" />
-            </UFormGroup>
+            </UFormField>
           </div>
-          <UFormGroup :label="$t('networks.allocations.fields.macAddress')">
+          <UFormField :label="$t('networks.allocations.fields.macAddress')">
             <UInput v-model="allocForm.mac_address" placeholder="AA:BB:CC:DD:EE:FF" />
-          </UFormGroup>
-          <UFormGroup :label="$t('common.description')">
+          </UFormField>
+          <UFormField :label="$t('common.description')">
             <UInput v-model="allocForm.description" />
-          </UFormGroup>
+          </UFormField>
         </form>
 
         <!-- IP Range form -->
         <form v-if="addPanelMode === 'range'" class="space-y-4" @submit.prevent="onCreateRange">
           <div class="grid grid-cols-2 gap-3">
-            <UFormGroup :label="$t('networks.ranges.fields.startIp') + ' *'">
+            <UFormField :label="$t('networks.ranges.fields.startIp') + ' *'">
               <UInput v-model="rangeForm.start_ip" placeholder="10.0.1.100" required :color="addPanelError ? 'red' : undefined" />
-            </UFormGroup>
-            <UFormGroup :label="$t('networks.ranges.fields.endIp') + ' *'">
+            </UFormField>
+            <UFormField :label="$t('networks.ranges.fields.endIp') + ' *'">
               <UInput v-model="rangeForm.end_ip" placeholder="10.0.1.200" required :color="addPanelError ? 'red' : undefined" />
-            </UFormGroup>
+            </UFormField>
           </div>
-          <UFormGroup :label="$t('networks.ranges.fields.type') + ' *'">
+          <UFormField :label="$t('networks.ranges.fields.type') + ' *'">
             <USelect v-model="rangeForm.type" :options="rangeTypeOptions" />
-          </UFormGroup>
-          <UFormGroup :label="$t('common.description')">
+          </UFormField>
+          <UFormField :label="$t('common.description')">
             <UInput v-model="rangeForm.description" />
-          </UFormGroup>
+          </UFormField>
         </form>
 
         <template #footer>

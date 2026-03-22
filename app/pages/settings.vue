@@ -9,18 +9,18 @@
           <UCard>
             <form @submit.prevent="saveGeneral">
               <div class="space-y-4">
-                <UFormGroup :label="$t('settings.general.appName')">
+                <UFormField :label="$t('settings.general.appName')">
                   <UInput v-model="generalForm.app_name" :placeholder="$t('settings.general.appName')" />
-                </UFormGroup>
-                <UFormGroup :label="$t('settings.general.defaultPortStatus')">
+                </UFormField>
+                <UFormField :label="$t('settings.general.defaultPortStatus')">
                   <USelect
                     v-model="generalForm.default_port_status"
                     :options="portStatusOptions"
                   />
-                </UFormGroup>
-                <UFormGroup :label="$t('settings.general.paginationSize')">
+                </UFormField>
+                <UFormField :label="$t('settings.general.paginationSize')">
                   <UInput v-model.number="generalForm.pagination_size" type="number" min="5" max="100" />
-                </UFormGroup>
+                </UFormField>
                 <div class="flex justify-end">
                   <UButton type="submit" :loading="savingGeneral">{{ $t('common.save') }}</UButton>
                 </div>
@@ -37,12 +37,12 @@
             </template>
             <form @submit.prevent="saveAccount">
               <div class="space-y-4">
-                <UFormGroup :label="$t('settings.account.displayName')">
+                <UFormField :label="$t('settings.account.displayName')">
                   <UInput v-model="accountForm.display_name" :placeholder="$t('settings.account.displayName')" />
-                </UFormGroup>
-                <UFormGroup :label="$t('settings.account.language')">
+                </UFormField>
+                <UFormField :label="$t('settings.account.language')">
                   <USelect v-model="accountForm.language" :options="languageOptions" />
-                </UFormGroup>
+                </UFormField>
                 <div class="flex justify-end">
                   <UButton type="submit" :loading="savingProfile">
                     {{ $t('settings.account.saveProfile') }}
@@ -58,15 +58,15 @@
             </template>
             <form @submit.prevent="handleChangePassword">
               <div class="space-y-4">
-                <UFormGroup :label="$t('settings.account.currentPassword')">
+                <UFormField :label="$t('settings.account.currentPassword')">
                   <UInput v-model="passwordForm.current_password" type="password" />
-                </UFormGroup>
-                <UFormGroup :label="$t('settings.account.newPassword')">
+                </UFormField>
+                <UFormField :label="$t('settings.account.newPassword')">
                   <UInput v-model="passwordForm.new_password" type="password" />
-                </UFormGroup>
-                <UFormGroup :label="$t('settings.account.confirmNewPassword')">
+                </UFormField>
+                <UFormField :label="$t('settings.account.confirmNewPassword')">
                   <UInput v-model="passwordForm.confirm_password" type="password" />
-                </UFormGroup>
+                </UFormField>
                 <div class="flex justify-end">
                   <UButton type="submit" :loading="savingPassword">
                     {{ $t('settings.account.savePassword') }}

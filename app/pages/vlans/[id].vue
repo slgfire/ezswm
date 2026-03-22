@@ -88,22 +88,22 @@
         <!-- Edit Form -->
         <form v-else @submit.prevent="onSave">
           <div class="space-y-4">
-            <UFormGroup :label="$t('vlans.fields.vlanId') + ' *'">
+            <UFormField :label="$t('vlans.fields.vlanId') + ' *'">
               <UInput v-model.number="editForm.vlan_id" type="number" :min="1" :max="4094" required />
-            </UFormGroup>
-            <UFormGroup :label="$t('vlans.fields.name') + ' *'">
+            </UFormField>
+            <UFormField :label="$t('vlans.fields.name') + ' *'">
               <UInput v-model="editForm.name" required />
-            </UFormGroup>
-            <UFormGroup :label="$t('common.description')">
+            </UFormField>
+            <UFormField :label="$t('common.description')">
               <UTextarea v-model="editForm.description" :rows="3" />
-            </UFormGroup>
-            <UFormGroup :label="$t('vlans.fields.status')">
+            </UFormField>
+            <UFormField :label="$t('vlans.fields.status')">
               <USelect v-model="editForm.status" :options="statusOptions" />
-            </UFormGroup>
-            <UFormGroup :label="$t('vlans.fields.routingDevice')">
+            </UFormField>
+            <UFormField :label="$t('vlans.fields.routingDevice')">
               <UInput v-model="editForm.routing_device" />
-            </UFormGroup>
-            <UFormGroup :label="$t('vlans.fields.color') + ' *'">
+            </UFormField>
+            <UFormField :label="$t('vlans.fields.color') + ' *'">
               <div class="flex items-center gap-3">
                 <input
                   v-model="editForm.color"
@@ -113,7 +113,7 @@
                 <UInput v-model="editForm.color" class="w-32" />
                 <VlanColorSwatch :color="editForm.color" size="lg" />
               </div>
-            </UFormGroup>
+            </UFormField>
           </div>
           <div class="mt-4 flex items-center gap-3">
             <UButton type="submit" :loading="saving" icon="i-heroicons-check">

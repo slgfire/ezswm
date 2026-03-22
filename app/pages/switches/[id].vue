@@ -220,57 +220,57 @@
 
         <UForm :state="editForm" class="flex-1 overflow-y-auto px-6 py-4" @submit="onSave">
           <div class="space-y-4">
-            <UFormGroup :label="$t('switches.fields.name') + ' *'" name="name">
+            <UFormField :label="$t('switches.fields.name') + ' *'" name="name">
               <UInput v-model="editForm.name" required />
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup :label="$t('switches.fields.model')" name="model">
+            <UFormField :label="$t('switches.fields.model')" name="model">
               <UInput v-model="editForm.model" />
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup :label="$t('switches.fields.manufacturer')" name="manufacturer">
+            <UFormField :label="$t('switches.fields.manufacturer')" name="manufacturer">
               <UInput v-model="editForm.manufacturer" />
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup :label="$t('switches.fields.serialNumber')" name="serial_number">
+            <UFormField :label="$t('switches.fields.serialNumber')" name="serial_number">
               <UInput v-model="editForm.serial_number" />
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup :label="$t('switches.fields.location')" name="location">
+            <UFormField :label="$t('switches.fields.location')" name="location">
               <UInput v-model="editForm.location" />
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup :label="$t('switches.fields.rackPosition')" name="rack_position">
+            <UFormField :label="$t('switches.fields.rackPosition')" name="rack_position">
               <UInput v-model="editForm.rack_position" />
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup :label="$t('switches.fields.managementIp')" name="management_ip">
+            <UFormField :label="$t('switches.fields.managementIp')" name="management_ip">
               <UInput v-model="editForm.management_ip" />
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup :label="$t('switches.fields.firmwareVersion')" name="firmware_version">
+            <UFormField :label="$t('switches.fields.firmwareVersion')" name="firmware_version">
               <UInput v-model="editForm.firmware_version" />
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
+            <UFormField :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
               <USelectMenu
                 v-model="editForm.layout_template_id"
                 :options="templateOptions"
                 option-attribute="label"
                 value-attribute="value"
               />
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup :label="$t('switches.fields.role')" name="role">
+            <UFormField :label="$t('switches.fields.role')" name="role">
               <USelectMenu
                 v-model="editForm.role"
                 :options="editRoleOptions"
                 option-attribute="label"
                 value-attribute="value"
               />
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup :label="$t('switches.fields.tags')" name="tags">
+            <UFormField :label="$t('switches.fields.tags')" name="tags">
               <UInput
                 v-model="editTagInput"
                 :placeholder="$t('switches.tagsPlaceholder')"
@@ -281,11 +281,11 @@
                   {{ tg }} <UIcon name="i-heroicons-x-mark" class="ml-0.5 h-3 w-3" />
                 </UBadge>
               </div>
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup :label="$t('common.notes')" name="notes">
+            <UFormField :label="$t('common.notes')" name="notes">
               <UTextarea v-model="editForm.notes" :rows="3" />
-            </UFormGroup>
+            </UFormField>
           </div>
         </UForm>
 

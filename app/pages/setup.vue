@@ -11,25 +11,25 @@
 
         <UForm :state="form" :validate="validate" @submit="onSubmit">
           <div class="space-y-4">
-            <UFormGroup :label="$t('auth.username')" name="username" required>
+            <UFormField :label="$t('auth.username')" name="username" required>
               <UInput v-model="form.username" />
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup :label="$t('auth.displayName')" name="display_name" required>
+            <UFormField :label="$t('auth.displayName')" name="display_name" required>
               <UInput v-model="form.display_name" />
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup :label="$t('auth.password')" name="password" required>
+            <UFormField :label="$t('auth.password')" name="password" required>
               <UInput v-model="form.password" type="password" />
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup :label="$t('auth.confirmPassword')" name="confirm_password" required>
+            <UFormField :label="$t('auth.confirmPassword')" name="confirm_password" required>
               <UInput v-model="form.confirm_password" type="password" />
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup :label="$t('auth.language')" name="language">
+            <UFormField :label="$t('auth.language')" name="language">
               <USelect v-model="form.language" :options="languageOptions" />
-            </UFormGroup>
+            </UFormField>
 
             <UButton type="submit" block :loading="loading">
               {{ $t('auth.setup') }}

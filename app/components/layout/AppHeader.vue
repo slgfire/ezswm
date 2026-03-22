@@ -157,12 +157,12 @@
       />
 
       <!-- User menu -->
-      <UDropdown :items="userMenuItems" :popper="{ placement: 'bottom-end' }">
+      <UDropdownMenu :items="userMenuItems" :popper="{ placement: 'bottom-end' }">
         <UButton variant="ghost" color="gray" class="gap-2">
           <UIcon name="i-heroicons-user-circle" class="h-5 w-5" />
           <span class="hidden sm:inline text-sm">{{ user?.display_name }}</span>
         </UButton>
-      </UDropdown>
+      </UDropdownMenu>
     </div>
   </header>
 

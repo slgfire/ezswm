@@ -11,13 +11,13 @@
 
         <UForm :state="form" @submit="onSubmit">
           <div class="space-y-4">
-            <UFormGroup :label="$t('auth.username')" name="username" required>
+            <UFormField :label="$t('auth.username')" name="username" required>
               <UInput v-model="form.username" />
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup :label="$t('auth.password')" name="password" required>
+            <UFormField :label="$t('auth.password')" name="password" required>
               <UInput v-model="form.password" type="password" />
-            </UFormGroup>
+            </UFormField>
 
             <div class="flex items-center">
               <UCheckbox v-model="form.remember_me" :label="$t('auth.rememberMe')" />

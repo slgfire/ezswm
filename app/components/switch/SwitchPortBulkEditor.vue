@@ -11,47 +11,47 @@
       <div class="space-y-4">
         <p class="text-xs text-gray-400">{{ $t('switches.ports.bulkEditHint', { count: selectedPorts.length }) }}</p>
 
-        <UFormGroup :label="$t('common.status')">
+        <UFormField :label="$t('common.status')">
           <USelect v-model="form.status" :options="statusOptions" :placeholder="$t('common.noChange')" />
-        </UFormGroup>
+        </UFormField>
 
-        <UFormGroup :label="$t('switches.ports.speed')">
+        <UFormField :label="$t('switches.ports.speed')">
           <USelect v-model="form.speed" :options="speedOptions" :placeholder="$t('common.noChange')" />
-        </UFormGroup>
+        </UFormField>
 
         <!-- Port Mode -->
-        <UFormGroup :label="$t('switches.ports.portMode')">
+        <UFormField :label="$t('switches.ports.portMode')">
           <USelect v-model="form.port_mode" :options="portModeOptions" :placeholder="$t('common.noChange')" />
-        </UFormGroup>
+        </UFormField>
 
         <!-- Access VLAN -->
         <template v-if="form.port_mode === 'access'">
-          <UFormGroup :label="$t('switches.ports.accessVlan')">
+          <UFormField :label="$t('switches.ports.accessVlan')">
             <VlanDropdown v-if="allVlans.length" v-model="form.access_vlan" :vlans="allVlans" />
             <UInput v-else v-model.number="form.access_vlan" type="number" :placeholder="$t('common.noChange')" />
-          </UFormGroup>
+          </UFormField>
         </template>
 
         <!-- Trunk: Native + Tagged -->
         <template v-if="form.port_mode === 'trunk'">
-          <UFormGroup :label="$t('switches.ports.nativeVlan')">
+          <UFormField :label="$t('switches.ports.nativeVlan')">
             <VlanDropdown v-if="allVlans.length" v-model="form.native_vlan" :vlans="allVlans" />
             <UInput v-else v-model.number="form.native_vlan" type="number" :placeholder="$t('common.noChange')" />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup :label="$t('switches.ports.taggedVlans')">
+          <UFormField :label="$t('switches.ports.taggedVlans')">
             <VlanMultiSelect
               v-if="allVlans.length"
               v-model="selectedTaggedVlans"
               :vlans="allVlans"
             />
             <UInput v-else v-model="form.tagged_vlans_str" placeholder="e.g. 100,200,300" />
-          </UFormGroup>
+          </UFormField>
         </template>
 
-        <UFormGroup :label="$t('common.description')">
+        <UFormField :label="$t('common.description')">
           <UInput v-model="form.description" :placeholder="$t('common.noChange')" />
-        </UFormGroup>
+        </UFormField>
       </div>
 
       <template #footer>
