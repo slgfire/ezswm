@@ -89,7 +89,7 @@
             <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-gray-700/95">
               <UButton icon="i-heroicons-bars-2" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="neutral" size="2xs" @click.prevent />
               <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="2xs" @click.prevent="onDuplicate(sw)" />
-              <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="2xs" @click.prevent="confirmDelete(sw)" />
+              <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="2xs" @click.prevent="confirmDelete(sw)" />
             </div>
 
             <!-- Header: Name + Subtitle + Role -->
@@ -166,7 +166,7 @@
         <!-- Hover actions -->
         <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-gray-700/95">
           <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="2xs" @click.prevent="onDuplicate(sw)" />
-          <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="2xs" @click.prevent="confirmDelete(sw)" />
+          <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="2xs" @click.prevent="confirmDelete(sw)" />
         </div>
 
         <!-- Info -->
@@ -323,12 +323,12 @@ watch(filteredItems, (fi) => {
 
 function roleColor(role: string): string {
   const map: Record<string, string> = {
-    core: 'red',
-    distribution: 'orange',
-    access: 'blue',
-    management: 'purple'
+    core: 'error',
+    distribution: 'warning',
+    access: 'info',
+    management: 'secondary'
   }
-  return map[role] || 'gray'
+  return map[role] || 'neutral'
 }
 
 function getPortStats(sw: any) {
@@ -356,20 +356,20 @@ async function onDelete() {
   deleting.value = true
   try {
     await remove(deleteTarget.value.id)
-    toast.add({ title: t('switches.messages.deleted'), color: 'green' })
+    toast.add({ title: t('switches.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     await loadData()
-  } catch (e: any) { toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'red' }) }
+  } catch (e: any) { toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' }) }
   finally { deleting.value = false }
 }
 
 async function onDuplicate(row: any) {
   try {
     const result = await duplicate(row.id)
-    toast.add({ title: t('switches.messages.duplicated'), color: 'green' })
+    toast.add({ title: t('switches.messages.duplicated'), color: 'success' })
     await loadData()
     if (result && (result as any).id) await navigateTo(`/switches/${(result as any).id}`)
-  } catch (e: any) { toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'red' }) }
+  } catch (e: any) { toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' }) }
 }
 
 const { apiFetch } = useApiFetch()

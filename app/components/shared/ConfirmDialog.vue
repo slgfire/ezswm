@@ -17,7 +17,7 @@
         <UButton color="neutral" variant="ghost" @click="model = false">
           {{ $t('common.cancel') }}
         </UButton>
-        <UButton color="red" :loading="loading" @click="$emit('confirm')">
+        <UButton color="error" :loading="loading" @click="$emit('confirm')">
           {{ confirmLabel || $t('common.confirm') }}
         </UButton>
       </div>

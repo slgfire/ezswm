@@ -8,7 +8,7 @@
         <p class="max-w-md text-sm text-gray-500">
           {{ $t('topology.comingSoonDescription') }}
         </p>
-        <UBadge class="mt-4" color="yellow" variant="subtle">
+        <UBadge class="mt-4" color="warning" variant="subtle">
           {{ $t('topology.inDevelopment') }}
         </UBadge>
       </div>

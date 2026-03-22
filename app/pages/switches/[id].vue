@@ -19,7 +19,7 @@
           <UButton
             icon="i-heroicons-information-circle"
             :variant="showDetails ? 'solid' : 'ghost'"
-            color="blue"
+            color="info"
             size="sm"
             @click="showDetails = !showDetails"
           />
@@ -46,7 +46,7 @@
           <UButton
             icon="i-heroicons-trash"
             variant="ghost"
-            color="red"
+            color="error"
             size="sm"
             @click="showDeleteDialog = true"
           />
@@ -168,7 +168,7 @@
           <UButton size="xs" variant="soft" @click="bulkEditorRef?.open()">
             {{ $t('switches.ports.bulkEdit') }}
           </UButton>
-          <UButton size="xs" variant="soft" color="red" @click="bulkReset">
+          <UButton size="xs" variant="soft" color="error" @click="bulkReset">
             {{ $t('switches.ports.bulkReset') }}
           </UButton>
           <UButton size="xs" variant="ghost" color="neutral" @click="selectedPorts = []">
@@ -211,7 +211,7 @@
     />
 
     <!-- Edit Side Panel -->
-    <USlideover :open="editMode" @close="editMode = false">
+    <USlideover v-model:open="editMode">
       <template #header>
         <div class="flex items-center justify-between">
           <h3 class="font-semibold">{{ $t('switches.edit') }}</h3>
@@ -367,11 +367,11 @@ async function bulkReset() {
     for (const portId of selectedPorts.value) {
       await $fetch(`/api/switches/${id}/ports/${portId}`, { method: 'DELETE' })
     }
-    toast.add({ title: t('switches.ports.bulkResetDone', { count: selectedPorts.value.length }), color: 'green' })
+    toast.add({ title: t('switches.ports.bulkResetDone', { count: selectedPorts.value.length }), color: 'success' })
     selectedPorts.value = []
     await fetchSwitch()
   } catch (e: any) {
-    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'red' })
+    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
   }
 }
 
@@ -407,8 +407,8 @@ const editRoleOptions = computed(() => [
 ])
 
 function roleColor(role: string): string {
-  const map: Record<string, string> = { core: 'red', distribution: 'orange', access: 'blue', management: 'purple' }
-  return map[role] || 'gray'
+  const map: Record<string, string> = { core: 'error', distribution: 'warning', access: 'info', management: 'secondary' }
+  return map[role] || 'neutral'
 }
 
 function addEditTag() {
@@ -474,10 +474,10 @@ async function onSave() {
       delete body.layout_template_id
     }
     await update(body)
-    toast.add({ title: t('switches.messages.updated'), color: 'green' })
+    toast.add({ title: t('switches.messages.updated'), color: 'success' })
     editMode.value = false
   } catch (e: any) {
-    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'red' })
+    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     saving.value = false
   }
@@ -486,12 +486,12 @@ async function onSave() {
 async function onDuplicate() {
   try {
     const result = await duplicate(id)
-    toast.add({ title: t('switches.messages.duplicated'), color: 'green' })
+    toast.add({ title: t('switches.messages.duplicated'), color: 'success' })
     if (result && (result as any).id) {
       await navigateTo(`/switches/${(result as any).id}`)
     }
   } catch (e: any) {
-    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'red' })
+    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
   }
 }
 
@@ -499,11 +499,11 @@ async function onDelete() {
   deleting.value = true
   try {
     await $fetch(`/api/switches/${id}`, { method: 'DELETE' })
-    toast.add({ title: t('switches.messages.deleted'), color: 'green' })
+    toast.add({ title: t('switches.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     await navigateTo('/switches')
   } catch (e: any) {
-    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'red' })
+    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     deleting.value = false
   }

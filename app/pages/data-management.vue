@@ -148,13 +148,13 @@
 
               <!-- Results -->
               <div v-if="importResults" class="flex flex-wrap items-center gap-2 pt-2">
-                <UBadge color="green" variant="subtle">
+                <UBadge color="success" variant="subtle">
                   {{ importResults.imported }} {{ $t('dataManagement.import.imported') }}
                 </UBadge>
-                <UBadge v-if="importResults.skipped > 0" color="yellow" variant="subtle">
+                <UBadge v-if="importResults.skipped > 0" color="warning" variant="subtle">
                   {{ importResults.skipped }} {{ $t('dataManagement.import.skipped') }}
                 </UBadge>
-                <UBadge v-if="importResults.errors.length > 0" color="red" variant="subtle">
+                <UBadge v-if="importResults.errors.length > 0" color="error" variant="subtle">
                   {{ importResults.errors.length }} {{ $t('dataManagement.import.errorCount') }}
                 </UBadge>
               </div>
@@ -226,9 +226,9 @@ async function downloadBackup() {
   try {
     const response = await $fetch('/api/backup/export', { responseType: 'blob' })
     downloadBlob(response as Blob, `ezswm-backup-${new Date().toISOString().slice(0, 10)}.json`)
-    toast.add({ title: t('backup.messages.exported'), color: 'green' })
+    toast.add({ title: t('backup.messages.exported'), color: 'success' })
   } catch {
-    toast.add({ title: t('errors.serverError'), color: 'red' })
+    toast.add({ title: t('errors.serverError'), color: 'error' })
   }
 }
 
@@ -238,10 +238,10 @@ async function restoreBackup() {
     const text = await backupFile.value.text()
     const backup = JSON.parse(text)
     await $fetch('/api/backup/import', { method: 'POST', body: backup })
-    toast.add({ title: t('backup.messages.imported'), color: 'green' })
+    toast.add({ title: t('backup.messages.imported'), color: 'success' })
     backupFile.value = null
   } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' })
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     showRestoreDialog.value = false
   }
@@ -262,9 +262,9 @@ async function downloadExport() {
     const ext = exportFormat.value === 'csv' ? 'csv' : 'json'
     const timestamp = new Date().toISOString().slice(0, 10)
     downloadBlob(response as Blob, `ezswm-${exportType.value}-${timestamp}.${ext}`)
-    toast.add({ title: t('dataManagement.export.success'), color: 'green' })
+    toast.add({ title: t('dataManagement.export.success'), color: 'success' })
   } catch {
-    toast.add({ title: t('errors.serverError'), color: 'red' })
+    toast.add({ title: t('errors.serverError'), color: 'error' })
   } finally {
     exportLoading.value = false
   }
@@ -335,7 +335,7 @@ async function onImportFileSelect(event: Event) {
   if (!file) return
 
   if (file.size > MAX_IMPORT_SIZE) {
-    toast.add({ title: t('dataManagement.import.fileTooLarge'), color: 'red' })
+    toast.add({ title: t('dataManagement.import.fileTooLarge'), color: 'error' })
     importFile.value = null
     return
   }
@@ -354,7 +354,7 @@ async function onImportFileSelect(event: Event) {
     importParsedData.value = data
     importPreview.value = data.length
   } catch {
-    toast.add({ title: t('dataManagement.import.parseError'), color: 'red' })
+    toast.add({ title: t('dataManagement.import.parseError'), color: 'error' })
   }
 }
 
@@ -367,7 +367,7 @@ async function downloadTemplate() {
     })
     downloadBlob(response as Blob, `ezswm-${importType.value}-template.csv`)
   } catch {
-    toast.add({ title: t('errors.serverError'), color: 'red' })
+    toast.add({ title: t('errors.serverError'), color: 'error' })
   }
 }
 
@@ -386,13 +386,13 @@ async function executeImport() {
     importResults.value = result as { imported: number; skipped: number; errors: string[] }
 
     if (importResults.value.imported > 0) {
-      toast.add({ title: t('dataManagement.import.success', { count: importResults.value.imported }), color: 'green' })
+      toast.add({ title: t('dataManagement.import.success', { count: importResults.value.imported }), color: 'success' })
     }
     if (importResults.value.errors.length > 0) {
       toast.add({ title: t('dataManagement.import.hasErrors', { count: importResults.value.errors.length }), color: 'yellow' })
     }
   } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' })
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   }
 }
 </script>

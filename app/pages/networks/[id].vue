@@ -8,13 +8,13 @@
       </div>
       <div v-if="network" class="flex items-center gap-1">
         <UTooltip :text="showDetails ? $t('common.hideDetails') : $t('common.showDetails')">
-          <UButton icon="i-heroicons-information-circle" :variant="showDetails ? 'solid' : 'ghost'" color="blue" size="sm" @click="showDetails = !showDetails" />
+          <UButton icon="i-heroicons-information-circle" :variant="showDetails ? 'solid' : 'ghost'" color="info" size="sm" @click="showDetails = !showDetails" />
         </UTooltip>
         <UTooltip :text="editing ? $t('common.cancel') : $t('common.edit')">
           <UButton :icon="editing ? 'i-heroicons-x-mark' : 'i-heroicons-pencil'" :variant="editing ? 'solid' : 'ghost'" :color="editing ? 'gray' : 'primary'" size="sm" @click="editing ? editing = false : startEdit()" />
         </UTooltip>
         <UTooltip :text="$t('common.delete')">
-          <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="sm" @click="showDeleteDialog = true" />
+          <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" @click="showDeleteDialog = true" />
         </UTooltip>
       </div>
     </div>
@@ -173,12 +173,12 @@
                 <div class="flex flex-wrap items-center gap-2">
                   <span v-if="row.data.hostname" class="text-sm font-medium text-gray-900 dark:text-white">{{ row.data.hostname }}</span>
                   <span v-if="row.data.device_type" class="text-xs text-gray-500">{{ row.data.device_type }}</span>
-                  <UBadge :color="row.data.status === 'active' ? 'green' : row.data.status === 'reserved' ? 'yellow' : 'gray'" variant="subtle" size="xs">{{ row.data.status }}</UBadge>
+                  <UBadge :color="row.data.status === 'active' ? 'success' : row.data.status === 'reserved' ? 'warning' : 'neutral'" variant="subtle" size="xs">{{ row.data.status }}</UBadge>
                 </div>
               </div>
               <div class="flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100">
                 <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click="openEditAlloc(row.data)" />
-                <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="xs" @click="openDeleteAllocDialog(row.data)" />
+                <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="openDeleteAllocDialog(row.data)" />
               </div>
             </template>
 
@@ -199,7 +199,7 @@
               </div>
               <div class="flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100">
                 <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click="openRangeEdit(row.data)" />
-                <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="xs" @click="openDeleteRange(row.data)" />
+                <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="openDeleteRange(row.data)" />
               </div>
             </template>
           </div>
@@ -211,7 +211,7 @@
     </div>
 
     <!-- Range edit slideover -->
-    <USlideover :open="showRangeEdit" @close="showRangeEdit = false">
+    <USlideover v-model:open="showRangeEdit">
       <template #header>
         <div class="flex items-center justify-between">
           <h3 class="font-semibold">{{ $t('networks.ranges.editRange') }}</h3>
@@ -241,7 +241,7 @@
 
       <template #footer>
         <div class="flex items-center justify-between">
-          <UButton icon="i-heroicons-trash" variant="ghost" color="red" @click="openDeleteRangeDialog(rangeEditTarget!)">
+          <UButton icon="i-heroicons-trash" variant="ghost" color="error" @click="openDeleteRangeDialog(rangeEditTarget!)">
             {{ $t('common.delete') }}
           </UButton>
           <div class="flex gap-2">
@@ -253,7 +253,7 @@
     </USlideover>
 
     <!-- Add IP/Range Sidebar -->
-    <USlideover :open="showAddPanel" @close="showAddPanel = false; editAllocTarget = null">
+    <USlideover v-model:open="showAddPanel">
         <template #header>
           <div class="flex items-center justify-between">
             <h3 class="font-semibold">{{ editAllocTarget ? $t('networks.allocations.edit') : addPanelMode === 'ip' ? $t('networks.unified.addIp') : $t('networks.unified.addRange') }}</h3>
@@ -288,7 +288,7 @@
         <!-- IP Address form -->
         <form v-if="addPanelMode === 'ip'" class="space-y-4" @submit.prevent="onCreateAllocation">
           <UFormField :label="$t('networks.allocations.fields.ipAddress') + ' *'">
-            <UInput v-model="allocForm.ip_address" placeholder="10.0.1.10" required :color="addPanelError ? 'red' : undefined" />
+            <UInput v-model="allocForm.ip_address" placeholder="10.0.1.10" required :color="addPanelError ? 'error' : undefined" />
           </UFormField>
           <UFormField :label="$t('networks.allocations.fields.hostname')">
             <UInput v-model="allocForm.hostname" />
@@ -313,10 +313,10 @@
         <form v-if="addPanelMode === 'range'" class="space-y-4" @submit.prevent="onCreateRange">
           <div class="grid grid-cols-2 gap-3">
             <UFormField :label="$t('networks.ranges.fields.startIp') + ' *'">
-              <UInput v-model="rangeForm.start_ip" placeholder="10.0.1.100" required :color="addPanelError ? 'red' : undefined" />
+              <UInput v-model="rangeForm.start_ip" placeholder="10.0.1.100" required :color="addPanelError ? 'error' : undefined" />
             </UFormField>
             <UFormField :label="$t('networks.ranges.fields.endIp') + ' *'">
-              <UInput v-model="rangeForm.end_ip" placeholder="10.0.1.200" required :color="addPanelError ? 'red' : undefined" />
+              <UInput v-model="rangeForm.end_ip" placeholder="10.0.1.200" required :color="addPanelError ? 'error' : undefined" />
             </UFormField>
           </div>
           <UFormField :label="$t('networks.ranges.fields.type') + ' *'">
@@ -501,9 +501,9 @@ const unifiedList = computed<UnifiedRow[]>(() => {
 })
 
 function rangeTypeBadgeColor(type: string): string {
-  if (type === 'dhcp') return 'blue'
-  if (type === 'static') return 'green'
-  return 'yellow'
+  if (type === 'dhcp') return 'info'
+  if (type === 'static') return 'success'
+  return 'warning'
 }
 
 function abbreviateEndIp(startIp: string, endIp: string): string {
@@ -569,17 +569,17 @@ async function onSave() {
   try {
     const dnsServers = editDnsInput.value ? editDnsInput.value.split(',').map((s: string) => s.trim()).filter(Boolean) : []
     await updateNetwork(networkId, { name: editForm.value.name.trim(), subnet: editForm.value.subnet.trim(), gateway: editForm.value.gateway.trim() || undefined, dns_servers: dnsServers, vlan_id: editForm.value.vlan_id || undefined, description: editForm.value.description.trim() || undefined })
-    toast.add({ title: t('networks.messages.updated'), color: 'green' })
+    toast.add({ title: t('networks.messages.updated'), color: 'success' })
     editing.value = false
     await loadNetwork()
-  } catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' }) }
+  } catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' }) }
   finally { saving.value = false }
 }
 
 async function confirmDeleteNetwork() {
   deleting.value = true
-  try { await removeNetwork(networkId); toast.add({ title: t('networks.messages.deleted'), color: 'green' }); showDeleteDialog.value = false; await router.push('/networks') }
-  catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' }) }
+  try { await removeNetwork(networkId); toast.add({ title: t('networks.messages.deleted'), color: 'success' }); showDeleteDialog.value = false; await router.push('/networks') }
+  catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' }) }
   finally { deleting.value = false }
 }
 
@@ -602,10 +602,10 @@ async function onCreateAllocation() {
   try {
     if (editAllocTarget.value) {
       await $fetch(`/api/networks/${networkId}/allocations/${editAllocTarget.value.id}`, { method: 'PUT', body })
-      toast.add({ title: t('networks.allocations.messages.updated'), color: 'green' })
+      toast.add({ title: t('networks.allocations.messages.updated'), color: 'success' })
     } else {
       await $fetch(`/api/networks/${networkId}/allocations`, { method: 'POST', body })
-      toast.add({ title: t('networks.allocations.messages.created'), color: 'green' })
+      toast.add({ title: t('networks.allocations.messages.created'), color: 'success' })
     }
     showAddPanel.value = false
     editAllocTarget.value = null
@@ -641,8 +641,8 @@ function openDeleteAllocDialog(a: any) { deleteAllocTarget.value = a; showDelete
 async function confirmDeleteAlloc() {
   if (!deleteAllocTarget.value) return
   deletingAlloc.value = true
-  try { await $fetch(`/api/networks/${networkId}/allocations/${deleteAllocTarget.value.id}`, { method: 'DELETE' }); toast.add({ title: t('networks.allocations.messages.deleted'), color: 'green' }); showDeleteAllocDialog.value = false; await fetchAllocations() }
-  catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' }) }
+  try { await $fetch(`/api/networks/${networkId}/allocations/${deleteAllocTarget.value.id}`, { method: 'DELETE' }); toast.add({ title: t('networks.allocations.messages.deleted'), color: 'success' }); showDeleteAllocDialog.value = false; await fetchAllocations() }
+  catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' }) }
   finally { deletingAlloc.value = false }
 }
 
@@ -656,7 +656,7 @@ async function onCreateRange() {
   creatingRange.value = true
   try {
     await $fetch(`/api/networks/${networkId}/ranges`, { method: 'POST', body: { start_ip: rangeForm.value.start_ip.trim(), end_ip: rangeForm.value.end_ip.trim(), type: rangeForm.value.type, description: rangeForm.value.description.trim() || undefined } })
-    toast.add({ title: t('networks.ranges.messages.created'), color: 'green' })
+    toast.add({ title: t('networks.ranges.messages.created'), color: 'success' })
     showAddPanel.value = false
     rangeForm.value = { start_ip: '', end_ip: '', type: 'static', description: '' }
     await fetchRanges()
@@ -675,8 +675,8 @@ function openDeleteRangeDialog(r: any) {
 async function confirmDeleteRange() {
   if (!deleteRangeTarget.value) return
   deletingRange.value = true
-  try { await $fetch(`/api/networks/${networkId}/ranges/${deleteRangeTarget.value.id}`, { method: 'DELETE' }); toast.add({ title: t('networks.ranges.messages.deleted'), color: 'green' }); showDeleteRangeDialog.value = false; await fetchRanges() }
-  catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' }) }
+  try { await $fetch(`/api/networks/${networkId}/ranges/${deleteRangeTarget.value.id}`, { method: 'DELETE' }); toast.add({ title: t('networks.ranges.messages.deleted'), color: 'success' }); showDeleteRangeDialog.value = false; await fetchRanges() }
+  catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' }) }
   finally { deletingRange.value = false }
 }
 
@@ -694,7 +694,7 @@ async function onSaveRangeEdit() {
         description: rangeEditForm.value.description.trim() || null
       }
     })
-    toast.add({ title: t('networks.ranges.messages.updated'), color: 'green' })
+    toast.add({ title: t('networks.ranges.messages.updated'), color: 'success' })
     showRangeEdit.value = false
     await fetchRanges()
   } catch (err: any) {
@@ -706,7 +706,7 @@ async function onSaveRangeEdit() {
 async function loadNetwork() {
   pageLoading.value = true
   try { network.value = await $fetch<any>(`/api/networks/${networkId}`) }
-  catch { toast.add({ title: t('errors.notFound'), color: 'red' }); await router.push('/networks') }
+  catch { toast.add({ title: t('errors.notFound'), color: 'error' }); await router.push('/networks') }
   finally { pageLoading.value = false }
 }
 

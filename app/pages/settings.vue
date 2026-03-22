@@ -133,9 +133,9 @@ async function saveGeneral() {
       default_port_status: generalForm.default_port_status,
       pagination_size: generalForm.pagination_size
     })
-    toast.add({ title: t('settings.messages.updated'), color: 'green' })
+    toast.add({ title: t('settings.messages.updated'), color: 'success' })
   } catch {
-    toast.add({ title: t('errors.serverError'), color: 'red' })
+    toast.add({ title: t('errors.serverError'), color: 'error' })
   } finally {
     savingGeneral.value = false
   }
@@ -151,9 +151,9 @@ async function saveAccount() {
     })
     await setLocale(accountForm.language)
     user.value = { ...user.value!, language: accountForm.language }
-    toast.add({ title: t('settings.messages.profileUpdated'), color: 'green' })
+    toast.add({ title: t('settings.messages.profileUpdated'), color: 'success' })
   } catch {
-    toast.add({ title: t('errors.serverError'), color: 'red' })
+    toast.add({ title: t('errors.serverError'), color: 'error' })
   } finally {
     savingProfile.value = false
   }
@@ -163,7 +163,7 @@ async function handleChangePassword() {
   if (!user.value) return
 
   if (passwordForm.new_password !== passwordForm.confirm_password) {
-    toast.add({ title: t('settings.messages.passwordMismatch'), color: 'red' })
+    toast.add({ title: t('settings.messages.passwordMismatch'), color: 'error' })
     return
   }
 
@@ -173,12 +173,12 @@ async function handleChangePassword() {
       current_password: passwordForm.current_password,
       new_password: passwordForm.new_password
     })
-    toast.add({ title: t('settings.messages.passwordChanged'), color: 'green' })
+    toast.add({ title: t('settings.messages.passwordChanged'), color: 'success' })
     passwordForm.current_password = ''
     passwordForm.new_password = ''
     passwordForm.confirm_password = ''
   } catch (e: any) {
-    toast.add({ title: e.data?.message || t('errors.serverError'), color: 'red' })
+    toast.add({ title: e.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     savingPassword.value = false
   }

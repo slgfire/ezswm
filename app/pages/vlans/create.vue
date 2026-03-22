@@ -143,10 +143,10 @@ async function onSubmit() {
       routing_device: form.value.routing_device.trim() || undefined,
       color: form.value.color.toUpperCase()
     })
-    toast.add({ title: t('vlans.messages.created'), color: 'green' })
+    toast.add({ title: t('vlans.messages.created'), color: 'success' })
     await router.push(`/vlans/${(result as any).id}`)
   } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' })
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     submitting.value = false
   }

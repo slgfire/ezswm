@@ -136,10 +136,10 @@ async function onSubmit() {
       vlan_id: form.value.vlan_id || undefined,
       description: form.value.description.trim() || undefined
     })
-    toast.add({ title: t('networks.messages.created'), color: 'green' })
+    toast.add({ title: t('networks.messages.created'), color: 'success' })
     await router.push(`/networks/${(result as any).id}`)
   } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' })
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     submitting.value = false
   }

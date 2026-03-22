@@ -1,5 +1,5 @@
 <template>
-  <USlideover :open="isOpen" @close="isOpen = false">
+  <USlideover v-model:open="isOpen">
     <template #header>
       <div class="flex items-center justify-between">
         <h3 class="font-semibold">{{ $t('switches.ports.bulkEditTitle', { count: selectedPorts.length }) }}</h3>
@@ -163,7 +163,7 @@ async function apply() {
       method: 'PUT',
       body: { port_ids: props.selectedPorts, updates }
     })
-    toast.add({ title: t('switches.ports.updatedPorts', { count: props.selectedPorts.length }), color: 'green' })
+    toast.add({ title: t('switches.ports.updatedPorts', { count: props.selectedPorts.length }), color: 'success' })
     // Reset form
     form.status = ''
     form.speed = ''
@@ -176,7 +176,7 @@ async function apply() {
     emit('saved')
     close()
   } catch (e: any) {
-    toast.add({ title: e.data?.message || 'Failed', color: 'red' })
+    toast.add({ title: e.data?.message || 'Failed', color: 'error' })
   }
 }
 </script>

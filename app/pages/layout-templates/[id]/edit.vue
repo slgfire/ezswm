@@ -48,7 +48,7 @@
                     v-if="form.units.length > 1"
                     icon="i-heroicons-trash"
                     size="xs"
-                    color="red"
+                    color="error"
                     variant="ghost"
                     @click="removeUnit(unitIndex)"
                   >
@@ -84,7 +84,7 @@
                       <UButton
                         icon="i-heroicons-x-mark"
                         size="xs"
-                        color="red"
+                        color="error"
                         variant="ghost"
                         @click="removeBlock(unitIndex, blockIndex)"
                       />
@@ -276,10 +276,10 @@ async function handleSubmit() {
       description: form.value.description || undefined,
       units: form.value.units
     })
-    toast.add({ title: t('templates.messages.updated'), color: 'green' })
+    toast.add({ title: t('templates.messages.updated'), color: 'success' })
     router.push(`/layout-templates/${route.params.id}`)
   } catch {
-    toast.add({ title: t('errors.serverError'), color: 'red' })
+    toast.add({ title: t('errors.serverError'), color: 'error' })
   } finally {
     submitting.value = false
   }

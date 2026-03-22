@@ -87,7 +87,7 @@
         <!-- Actions (on hover) -->
         <div class="flex items-center gap-1 py-3 opacity-0 transition-opacity group-hover:opacity-100">
           <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.prevent />
-          <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="xs" @click.prevent="openDeleteDialog(net)" />
+          <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="openDeleteDialog(net)" />
         </div>
       </NuxtLink>
     </div>
@@ -186,11 +186,11 @@ async function confirmDelete() {
   deleting.value = true
   try {
     await remove(deleteTarget.value.id)
-    toast.add({ title: t('networks.messages.deleted'), color: 'green' })
+    toast.add({ title: t('networks.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     await fetchNetworks()
   } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' })
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally { deleting.value = false }
 }
 

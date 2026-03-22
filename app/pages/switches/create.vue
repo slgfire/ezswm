@@ -161,14 +161,14 @@ async function onSubmit() {
       }
     }
     const result = await create(body)
-    toast.add({ title: t('switches.messages.created'), color: 'green' })
+    toast.add({ title: t('switches.messages.created'), color: 'success' })
     if (result && (result as any).id) {
       await navigateTo(`/switches/${(result as any).id}`)
     } else {
       await navigateTo('/switches')
     }
   } catch (e: any) {
-    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'red' })
+    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     submitting.value = false
   }

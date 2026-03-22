@@ -82,7 +82,7 @@
           <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-gray-700/95">
             <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="2xs" @click.stop="navigateTo(`/layout-templates/${tpl.id}/edit`)" />
             <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="2xs" @click.stop="onDuplicate(tpl)" />
-            <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="2xs" @click.stop="confirmDelete(tpl)" />
+            <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="2xs" @click.stop="confirmDelete(tpl)" />
           </div>
 
           <!-- Card Body -->
@@ -177,7 +177,7 @@
               <UButton icon="i-heroicons-document-duplicate" size="xs" variant="ghost" @click.stop="onDuplicate(tpl)" />
             </UTooltip>
             <UTooltip :text="$t('common.delete')">
-              <UButton icon="i-heroicons-trash" size="xs" color="red" variant="ghost" @click.stop="confirmDelete(tpl)" />
+              <UButton icon="i-heroicons-trash" size="xs" color="error" variant="ghost" @click.stop="confirmDelete(tpl)" />
             </UTooltip>
           </div>
         </div>
@@ -271,12 +271,12 @@ const filteredItems = computed(() => {
 })
 
 const portTypeColorMap: Record<string, string> = {
-  rj45: 'blue',
-  sfp: 'sky',
-  'sfp+': 'violet',
-  qsfp: 'purple',
-  console: 'amber',
-  management: 'teal'
+  rj45: 'info',
+  sfp: 'info',
+  'sfp+': 'secondary',
+  qsfp: 'secondary',
+  console: 'warning',
+  management: 'success'
 }
 
 function getTotalPortCount(template: LayoutTemplate): number {
@@ -312,10 +312,10 @@ async function handleDelete() {
   if (!deleteTarget.value) return
   try {
     await remove(deleteTarget.value.id)
-    toast.add({ title: t('templates.messages.deleted'), color: 'green' })
+    toast.add({ title: t('templates.messages.deleted'), color: 'success' })
     await loadData()
   } catch {
-    toast.add({ title: t('errors.serverError'), color: 'red' })
+    toast.add({ title: t('errors.serverError'), color: 'error' })
   } finally {
     showDeleteDialog.value = false
     deleteTarget.value = null

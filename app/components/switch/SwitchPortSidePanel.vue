@@ -1,5 +1,5 @@
 <template>
-  <USlideover :open="isOpen" @close="isOpen = false">
+  <USlideover v-model:open="isOpen">
     <template #header>
       <div class="flex items-center justify-between">
         <h3 class="font-semibold">{{ port?.label || `Port ${port?.unit}/${port?.index}` }}</h3>
@@ -11,7 +11,7 @@
       <div v-if="port" class="space-y-4">
         <div class="flex gap-2">
           <UBadge>{{ port.type }}</UBadge>
-          <UBadge :color="port.status === 'up' ? 'green' : port.status === 'disabled' ? 'red' : 'neutral'">{{ port.status }}</UBadge>
+          <UBadge :color="port.status === 'up' ? 'success' : port.status === 'disabled' ? 'error' : 'neutral'">{{ port.status }}</UBadge>
         </div>
 
         <UFormField :label="$t('common.status')">
@@ -122,7 +122,7 @@
 
     <template #footer>
       <div class="flex items-center justify-between">
-        <UButton color="red" variant="soft" icon="i-heroicons-arrow-path" @click="resetPort">{{ $t('switches.ports.resetPort') }}</UButton>
+        <UButton color="error" variant="soft" icon="i-heroicons-arrow-path" @click="resetPort">{{ $t('switches.ports.resetPort') }}</UButton>
         <div class="flex gap-2">
           <UButton variant="ghost" color="neutral" @click="isOpen = false">{{ $t('common.cancel') }}</UButton>
           <UButton @click="onSaveClick">{{ $t('common.save') }}</UButton>
@@ -290,14 +290,14 @@ async function save() {
   } else { body.connected_device_id = null; body.connected_port_id = null }
   try {
     await $fetch(`/api/switches/${props.switchId}/ports/${props.port.id}`, { method: 'PUT', body })
-    toast.add({ title: t('switches.ports.portUpdated'), color: 'green' }); emit('saved'); isOpen.value = false
-  } catch (e: any) { toast.add({ title: e.data?.message || 'Failed', color: 'red' }) }
+    toast.add({ title: t('switches.ports.portUpdated'), color: 'success' }); emit('saved'); isOpen.value = false
+  } catch (e: any) { toast.add({ title: e.data?.message || 'Failed', color: 'error' }) }
 }
 
 async function resetPort() {
   try {
     await $fetch(`/api/switches/${props.switchId}/ports/${props.port.id}`, { method: 'DELETE' })
-    toast.add({ title: t('switches.ports.portReset'), color: 'green' }); emit('saved'); isOpen.value = false
-  } catch (e: any) { toast.add({ title: e.data?.message || 'Reset failed', color: 'red' }) }
+    toast.add({ title: t('switches.ports.portReset'), color: 'success' }); emit('saved'); isOpen.value = false
+  } catch (e: any) { toast.add({ title: e.data?.message || 'Reset failed', color: 'error' }) }
 }
 </script>

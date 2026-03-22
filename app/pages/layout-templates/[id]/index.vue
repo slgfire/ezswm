@@ -19,7 +19,7 @@
             <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click="onDuplicate" />
           </UTooltip>
           <UTooltip :text="$t('common.delete')">
-            <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="xs" @click="showDeleteDialog = true" />
+            <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="showDeleteDialog = true" />
           </UTooltip>
         </div>
       </div>
@@ -141,7 +141,7 @@ function getPortTypeColor(type: string): string {
     rj45: 'blue', sfp: 'green', 'sfp+': 'purple', qsfp: 'pink',
     console: 'yellow', management: 'orange'
   }
-  return colors[type] || 'gray'
+  return colors[type] || 'neutral'
 }
 
 function onDuplicate() {
@@ -151,10 +151,10 @@ function onDuplicate() {
 async function handleDelete() {
   try {
     await remove(route.params.id as string)
-    toast.add({ title: t('templates.messages.deleted'), color: 'green' })
+    toast.add({ title: t('templates.messages.deleted'), color: 'success' })
     router.push('/layout-templates')
   } catch {
-    toast.add({ title: t('errors.serverError'), color: 'red' })
+    toast.add({ title: t('errors.serverError'), color: 'error' })
   } finally {
     showDeleteDialog.value = false
   }

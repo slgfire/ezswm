@@ -36,7 +36,7 @@
               <UButton
                 icon="i-heroicons-trash"
                 variant="ghost"
-                color="red"
+                color="error"
                 size="sm"
                 @click="showDeleteDialog = true"
               >
@@ -60,7 +60,7 @@
               <span class="text-sm text-gray-400">{{ $t('vlans.fields.status') }}</span>
               <p>
                 <UBadge
-                  :color="vlan.status === 'active' ? 'green' : 'gray'"
+                  :color="vlan.status === 'active' ? 'success' : 'neutral'"
                   variant="subtle"
                 >
                   {{ vlan.status === 'active' ? $t('common.active') : $t('common.inactive') }}
@@ -216,11 +216,11 @@ async function onSave() {
       routing_device: editForm.value.routing_device.trim() || undefined,
       color: editForm.value.color.toUpperCase()
     })
-    toast.add({ title: t('vlans.messages.updated'), color: 'green' })
+    toast.add({ title: t('vlans.messages.updated'), color: 'success' })
     editing.value = false
     await loadVlan()
   } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' })
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     saving.value = false
   }
@@ -230,11 +230,11 @@ async function confirmDelete() {
   deleting.value = true
   try {
     await remove(id)
-    toast.add({ title: t('vlans.messages.deleted'), color: 'green' })
+    toast.add({ title: t('vlans.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     await router.push('/vlans')
   } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' })
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     deleting.value = false
   }
@@ -246,7 +246,7 @@ async function loadVlan() {
     const data = await $fetch<any>(`/api/vlans/${id}`)
     vlan.value = data
   } catch {
-    toast.add({ title: t('errors.notFound'), color: 'red' })
+    toast.add({ title: t('errors.notFound'), color: 'error' })
     await router.push('/vlans')
   } finally {
     loading.value = false

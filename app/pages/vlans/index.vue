@@ -64,7 +64,7 @@
           <div class="flex items-center gap-3">
             <span class="text-lg font-bold" :style="{ color: vlan.color }">{{ vlan.vlan_id }}</span>
             <span class="text-base font-semibold text-gray-900 dark:text-white">{{ vlan.name }}</span>
-            <UBadge :color="vlan.status === 'active' ? 'green' : 'gray'" variant="subtle" size="xs">
+            <UBadge :color="vlan.status === 'active' ? 'success' : 'neutral'" variant="subtle" size="xs">
               {{ vlan.status === 'active' ? $t('common.active') : $t('common.inactive') }}
             </UBadge>
           </div>
@@ -91,7 +91,7 @@
         <!-- Actions (on hover) -->
         <div class="flex items-center gap-1 py-3 opacity-0 transition-opacity group-hover:opacity-100">
           <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.stop="openPanel(vlan, true)" />
-          <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="xs" @click.stop="openDeleteDialog(vlan)" />
+          <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.stop="openDeleteDialog(vlan)" />
         </div>
       </div>
     </div>
@@ -108,7 +108,7 @@
     </SharedEmptyState>
 
     <!-- VLAN Side Panel -->
-    <USlideover :open="showPanel" @close="showPanel = false">
+    <USlideover v-model:open="showPanel">
         <template #header>
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -140,7 +140,7 @@
             <div>
               <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('vlans.fields.status') }}</dt>
               <dd>
-                <UBadge :color="selectedVlan.status === 'active' ? 'green' : 'gray'" variant="subtle">
+                <UBadge :color="selectedVlan.status === 'active' ? 'success' : 'neutral'" variant="subtle">
                   {{ selectedVlan.status === 'active' ? $t('common.active') : $t('common.inactive') }}
                 </UBadge>
               </dd>
@@ -353,13 +353,13 @@ async function onSave() {
       routing_device: editForm.value.routing_device.trim() || undefined,
       color: editForm.value.color.toUpperCase()
     })
-    toast.add({ title: t('vlans.messages.updated'), color: 'green' })
+    toast.add({ title: t('vlans.messages.updated'), color: 'success' })
     panelEditing.value = false
     await fetchVlans()
     // Update selected vlan with fresh data
     selectedVlan.value = items.value.find((v: any) => v.id === selectedVlan.value.id)
   } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' })
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     saving.value = false
   }
@@ -376,12 +376,12 @@ async function confirmDelete() {
   deleting.value = true
   try {
     await remove(deleteTarget.value.id)
-    toast.add({ title: t('vlans.messages.deleted'), color: 'green' })
+    toast.add({ title: t('vlans.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     showPanel.value = false
     await fetchVlans()
   } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'red' })
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     deleting.value = false
   }
