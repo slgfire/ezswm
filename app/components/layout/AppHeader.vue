@@ -5,7 +5,7 @@
       <UButton
         class="lg:hidden"
         variant="ghost"
-        color="gray"
+        color="neutral"
         icon="i-heroicons-bars-3"
         @click="$emit('toggleSidebar')"
       />
@@ -151,14 +151,14 @@
       <!-- Theme toggle -->
       <UButton
         variant="ghost"
-        color="gray"
+        color="neutral"
         :icon="isDark ? 'i-heroicons-sun' : 'i-heroicons-moon'"
         @click="toggleColorMode"
       />
 
       <!-- User menu -->
       <UDropdownMenu :items="userMenuItems" :popper="{ placement: 'bottom-end' }">
-        <UButton variant="ghost" color="gray" class="gap-2">
+        <UButton variant="ghost" color="neutral" class="gap-2">
           <UIcon name="i-heroicons-user-circle" class="h-5 w-5" />
           <span class="hidden sm:inline text-sm">{{ user?.display_name }}</span>
         </UButton>

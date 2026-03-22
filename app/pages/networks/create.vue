@@ -68,7 +68,7 @@
           <UButton type="submit" :loading="submitting" icon="i-heroicons-check">
             {{ $t('common.save') }}
           </UButton>
-          <UButton variant="ghost" color="gray" to="/networks">
+          <UButton variant="ghost" color="neutral" to="/networks">
             {{ $t('common.cancel') }}
           </UButton>
         </div>

@@ -4,7 +4,7 @@
       <div class="flex items-center justify-between">
         <h2 class="font-semibold">{{ sw.name }}</h2>
         <div class="flex gap-1">
-          <UBadge v-if="sw.model" color="gray">{{ sw.model }}</UBadge>
+          <UBadge v-if="sw.model" color="neutral">{{ sw.model }}</UBadge>
         </div>
       </div>
     </template>

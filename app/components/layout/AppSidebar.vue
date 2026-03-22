@@ -35,7 +35,7 @@
     <div class="border-t border-gray-200 p-2 dark:border-gray-800">
       <UButton
         variant="ghost"
-        color="gray"
+        color="neutral"
         :icon="collapsed ? 'i-heroicons-chevron-right' : 'i-heroicons-chevron-left'"
         size="sm"
         block

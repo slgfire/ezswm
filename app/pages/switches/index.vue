@@ -87,8 +87,8 @@
           >
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-gray-700/95">
-              <UButton icon="i-heroicons-bars-2" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="gray" size="2xs" @click.prevent />
-              <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="gray" size="2xs" @click.prevent="onDuplicate(sw)" />
+              <UButton icon="i-heroicons-bars-2" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="neutral" size="2xs" @click.prevent />
+              <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="2xs" @click.prevent="onDuplicate(sw)" />
               <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="2xs" @click.prevent="confirmDelete(sw)" />
             </div>
 
@@ -109,7 +109,7 @@
               </div>
               <!-- Tags -->
               <div v-if="sw.tags?.length" class="mt-2 flex flex-wrap gap-1">
-                <UBadge v-for="tg in sw.tags" :key="tg" color="gray" variant="soft" size="xs">
+                <UBadge v-for="tg in sw.tags" :key="tg" color="neutral" variant="soft" size="xs">
                   {{ tg }}
                 </UBadge>
               </div>
@@ -165,7 +165,7 @@
       >
         <!-- Hover actions -->
         <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-gray-700/95">
-          <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="gray" size="2xs" @click.prevent="onDuplicate(sw)" />
+          <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="2xs" @click.prevent="onDuplicate(sw)" />
           <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="2xs" @click.prevent="confirmDelete(sw)" />
         </div>
 
@@ -189,7 +189,7 @@
               <UIcon name="i-heroicons-globe-alt" class="h-3 w-3" />
               {{ sw.management_ip }}
             </span>
-            <UBadge v-for="tg in (sw.tags || [])" :key="tg" color="gray" variant="soft" size="xs">
+            <UBadge v-for="tg in (sw.tags || [])" :key="tg" color="neutral" variant="soft" size="xs">
               {{ tg }}
             </UBadge>
           </div>

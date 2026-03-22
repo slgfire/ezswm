@@ -71,7 +71,7 @@
               @keydown.enter.prevent="addTag"
             />
             <div v-if="form.tags.length > 0" class="mt-2 flex flex-wrap gap-1">
-              <UBadge v-for="tg in form.tags" :key="tg" color="gray" variant="soft" size="xs" class="cursor-pointer" @click="removeTag(tg)">
+              <UBadge v-for="tg in form.tags" :key="tg" color="neutral" variant="soft" size="xs" class="cursor-pointer" @click="removeTag(tg)">
                 {{ tg }} <UIcon name="i-heroicons-x-mark" class="ml-0.5 h-3 w-3" />
               </UBadge>
             </div>
@@ -82,7 +82,7 @@
           </UFormField>
 
           <div class="flex justify-end gap-2 pt-4">
-            <UButton color="gray" variant="ghost" to="/switches">
+            <UButton color="neutral" variant="ghost" to="/switches">
               {{ $t('common.cancel') }}
             </UButton>
             <UButton type="submit" :loading="submitting" icon="i-heroicons-check">

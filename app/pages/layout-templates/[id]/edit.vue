@@ -7,7 +7,7 @@
 
     <template v-else-if="form">
       <div class="flex items-center gap-4 mb-6">
-        <UButton :to="`/layout-templates/${route.params.id}`" icon="i-heroicons-arrow-left" color="gray" variant="ghost" />
+        <UButton :to="`/layout-templates/${route.params.id}`" icon="i-heroicons-arrow-left" color="neutral" variant="ghost" />
         <h1 class="text-2xl font-bold">{{ $t('templates.edit') }}</h1>
       </div>
 
@@ -139,7 +139,7 @@
 
             <!-- Form Actions -->
             <div class="flex justify-end gap-3">
-              <UButton :to="`/layout-templates/${route.params.id}`" color="gray" variant="ghost">
+              <UButton :to="`/layout-templates/${route.params.id}`" color="neutral" variant="ghost">
                 {{ $t('common.cancel') }}
               </UButton>
               <UButton type="submit" :loading="submitting">

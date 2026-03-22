@@ -16,7 +16,7 @@
             <UButton :to="`/layout-templates/${template.id}/edit`" icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" />
           </UTooltip>
           <UTooltip :text="$t('common.duplicate')">
-            <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="gray" size="xs" @click="onDuplicate" />
+            <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click="onDuplicate" />
           </UTooltip>
           <UTooltip :text="$t('common.delete')">
             <UButton icon="i-heroicons-trash" variant="ghost" color="red" size="xs" @click="showDeleteDialog = true" />

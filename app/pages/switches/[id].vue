@@ -37,7 +37,7 @@
           <UButton
             icon="i-heroicons-document-duplicate"
             variant="ghost"
-            color="gray"
+            color="neutral"
             size="sm"
             @click="onDuplicate"
           />
@@ -148,7 +148,7 @@
           <div v-if="item.tags?.length" class="col-span-2 sm:col-span-3 lg:col-span-4">
             <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.tags') }}</dt>
             <dd class="flex flex-wrap gap-1 pt-0.5">
-              <UBadge v-for="tg in item.tags" :key="tg" color="gray" variant="soft" size="xs">{{ tg }}</UBadge>
+              <UBadge v-for="tg in item.tags" :key="tg" color="neutral" variant="soft" size="xs">{{ tg }}</UBadge>
             </dd>
           </div>
           <div v-if="item.notes" class="col-span-2 sm:col-span-3 lg:col-span-4">
@@ -171,7 +171,7 @@
           <UButton size="xs" variant="soft" color="red" @click="bulkReset">
             {{ $t('switches.ports.bulkReset') }}
           </UButton>
-          <UButton size="xs" variant="ghost" color="gray" @click="selectedPorts = []">
+          <UButton size="xs" variant="ghost" color="neutral" @click="selectedPorts = []">
             {{ $t('common.clear') }}
           </UButton>
         </div>
@@ -215,7 +215,7 @@
       <div class="flex h-full flex-col">
         <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
           <h3 class="font-semibold">{{ $t('switches.edit') }}</h3>
-          <UButton icon="i-heroicons-x-mark" variant="ghost" color="gray" size="sm" @click="editMode = false" />
+          <UButton icon="i-heroicons-x-mark" variant="ghost" color="neutral" size="sm" @click="editMode = false" />
         </div>
 
         <UForm :state="editForm" class="flex-1 overflow-y-auto px-6 py-4" @submit="onSave">
@@ -277,7 +277,7 @@
                 @keydown.enter.prevent="addEditTag"
               />
               <div v-if="editForm.tags.length > 0" class="mt-2 flex flex-wrap gap-1">
-                <UBadge v-for="tg in editForm.tags" :key="tg" color="gray" variant="soft" size="xs" class="cursor-pointer" @click="removeEditTag(tg)">
+                <UBadge v-for="tg in editForm.tags" :key="tg" color="neutral" variant="soft" size="xs" class="cursor-pointer" @click="removeEditTag(tg)">
                   {{ tg }} <UIcon name="i-heroicons-x-mark" class="ml-0.5 h-3 w-3" />
                 </UBadge>
               </div>
@@ -290,7 +290,7 @@
         </UForm>
 
         <div class="flex justify-end gap-2 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-          <UButton color="gray" variant="ghost" @click="editMode = false">
+          <UButton color="neutral" variant="ghost" @click="editMode = false">
             {{ $t('common.cancel') }}
           </UButton>
           <UButton :loading="saving" icon="i-heroicons-check" @click="onSave">

@@ -130,7 +130,7 @@
             </UFormField>
           </div>
           <div class="flex justify-end gap-2">
-            <UButton variant="ghost" color="gray" @click="editing = false">{{ $t('common.cancel') }}</UButton>
+            <UButton variant="ghost" color="neutral" @click="editing = false">{{ $t('common.cancel') }}</UButton>
             <UButton type="submit" :loading="saving">{{ $t('common.save') }}</UButton>
           </div>
         </form>
@@ -234,7 +234,7 @@
               {{ $t('common.delete') }}
             </UButton>
             <div class="flex gap-2">
-              <UButton variant="ghost" color="gray" @click="showRangeEdit = false">{{ $t('common.cancel') }}</UButton>
+              <UButton variant="ghost" color="neutral" @click="showRangeEdit = false">{{ $t('common.cancel') }}</UButton>
               <UButton type="submit" :loading="savingRangeEdit">{{ $t('common.save') }}</UButton>
             </div>
           </div>
@@ -319,7 +319,7 @@
 
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton variant="ghost" color="gray" @click="showAddPanel = false; editAllocTarget = null">{{ $t('common.cancel') }}</UButton>
+            <UButton variant="ghost" color="neutral" @click="showAddPanel = false; editAllocTarget = null">{{ $t('common.cancel') }}</UButton>
             <UButton :loading="addPanelMode === 'ip' ? creatingAlloc : creatingRange" @click="addPanelMode === 'ip' ? onCreateAllocation() : onCreateRange()">{{ $t('common.add') }}</UButton>
           </div>
         </template>
