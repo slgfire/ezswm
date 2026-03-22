@@ -11,13 +11,13 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
-    "@nuxt/ui": "2.22.3",
-    "@nuxtjs/google-fonts": "3.2.0",
+    "@nuxt/ui": "4.5.1",
     "@nuxtjs/i18n": "10.2.3",
     "bcryptjs": "3.0.3",
     "jsonwebtoken": "9.0.3",
     "nanoid": "5.1.7",
     "nuxt": "4.4.2",
+    "tailwindcss": "4.1.8",
     "vuedraggable": "4.1.0",
     "zod": "3.24.4"
   },

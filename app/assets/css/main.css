@@ -1,4 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+@import "@nuxt/ui";
+
 /* ezSWM — Industrial Terminal Theme */
+
+/* Tailwind v4 theme customization */
+@theme {
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-display: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-dark: #0a0a0f;
+  --color-dark-50: #0d0d14;
+  --color-dark-100: #10101a;
+  --color-dark-200: #14141f;
+
+  --animate-fade-in: fadeIn 0.3s ease-out forwards;
+  --animate-slide-up: slideUp 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 /* Deep dark backgrounds */
 .dark body {
@@ -25,18 +54,7 @@ h1, h2, h3, h4 {
   animation: slideUp 0.3s ease-out forwards;
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Generate stagger delays (up to 20 items) */
+/* Generate stagger delays */
 .stagger-item:nth-child(1) { animation-delay: 0ms; }
 .stagger-item:nth-child(2) { animation-delay: 30ms; }
 .stagger-item:nth-child(3) { animation-delay: 60ms; }
@@ -99,16 +117,6 @@ h1, h2, h3, h4 {
   height: 60%;
   background: #22c55e;
   border-radius: 0 2px 2px 0;
-}
-
-/* Terminal search style */
-.search-terminal::before {
-  content: '>_';
-  font-family: 'JetBrains Mono', monospace;
-  color: #22c55e;
-  font-size: 0.75rem;
-  font-weight: 600;
-  margin-right: 0.5rem;
 }
 
 /* Subtle alternating rows */

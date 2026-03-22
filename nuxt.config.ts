@@ -1,17 +1,8 @@
 export default defineNuxtConfig({
   modules: [
     '@nuxt/ui',
-    '@nuxtjs/i18n',
-    '@nuxtjs/google-fonts'
+    '@nuxtjs/i18n'
   ],
-
-  googleFonts: {
-    families: {
-      'JetBrains Mono': [400, 500, 600, 700],
-      'IBM Plex Sans': [300, 400, 500, 600, 700]
-    },
-    display: 'swap'
-  },
 
   i18n: {
     locales: [
