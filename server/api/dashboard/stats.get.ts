@@ -25,11 +25,13 @@ export default defineEventHandler(() => {
   }
 
   // Network utilization
+  const vlanMap = new Map(vlans.map(v => [v.id, v]))
   const networkUtilization = networks.map(n => {
     const info = parseSubnet(n.subnet)
     const allocated = allocations.filter(a => a.network_id === n.id).length
     const rangeCount = ranges.filter(r => r.network_id === n.id).length
     const percentage = info.usable_hosts > 0 ? Math.round((allocated / info.usable_hosts) * 100) : 0
+    const vlan = n.vlan_id ? vlanMap.get(n.vlan_id) : null
     return {
       id: n.id,
       name: n.name,
@@ -37,7 +39,10 @@ export default defineEventHandler(() => {
       total_hosts: info.usable_hosts,
       allocated,
       ranges: rangeCount,
-      percentage
+      percentage,
+      vlan_color: vlan?.color || null,
+      vlan_name: vlan?.name || null,
+      vlan_id: vlan?.vlan_id || null
     }
   })
 

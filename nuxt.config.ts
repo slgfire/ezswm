@@ -5,8 +5,17 @@ export default defineNuxtConfig({
 
   modules: [
     '@nuxt/ui',
-    '@nuxtjs/i18n'
+    '@nuxtjs/i18n',
+    '@nuxtjs/google-fonts'
   ],
+
+  googleFonts: {
+    families: {
+      'JetBrains Mono': [400, 500, 600, 700],
+      'IBM Plex Sans': [300, 400, 500, 600, 700]
+    },
+    display: 'swap'
+  },
 
   i18n: {
     locales: [
@@ -17,6 +26,8 @@ export default defineNuxtConfig({
     langDir: 'locales',
     strategy: 'no_prefix'
   },
+
+  css: ['~/assets/css/main.css'],
 
   colorMode: {
     preference: 'dark'

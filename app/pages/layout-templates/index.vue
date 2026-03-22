@@ -24,6 +24,7 @@
         :options="manufacturerOptions"
         value-attribute="value"
         option-attribute="label"
+        :placeholder="$t('templates.allManufacturers')"
         size="sm"
         class="w-48"
         @update:model-value="onFilter"
@@ -33,6 +34,7 @@
         :options="portTypeOptions"
         value-attribute="value"
         option-attribute="label"
+        :placeholder="$t('templates.allPortTypes')"
         size="sm"
         class="w-44"
         @update:model-value="onFilter"
@@ -68,11 +70,11 @@
         <div
           v-for="tpl in filteredItems"
           :key="tpl.id"
-          class="group relative cursor-pointer rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-900 dark:hover:shadow-gray-800/50"
+          class="stagger-item card-glow group relative cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700/50 dark:bg-dark-100"
           @click="navigateTo(`/layout-templates/${tpl.id}`)"
         >
           <!-- Port Preview -->
-          <div class="border-b border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-700/50 dark:bg-gray-800/50">
+          <div class="border-b border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-700/30 dark:bg-dark-50">
             <TemplateMiniPreview :template="tpl" />
           </div>
 

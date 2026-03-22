@@ -1,0 +1,141 @@
+/* ezSWM — Industrial Terminal Theme */
+
+/* Deep dark backgrounds */
+.dark body {
+  background-color: #0a0a0f;
+}
+
+.dark .bg-gray-950 {
+  background-color: #0a0a0f;
+}
+
+/* Headings use display font (JetBrains Mono) */
+h1, h2, h3, h4 {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* Technical data always mono */
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+}
+
+/* Staggered animation for lists and grids */
+.stagger-item {
+  opacity: 0;
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Generate stagger delays (up to 20 items) */
+.stagger-item:nth-child(1) { animation-delay: 0ms; }
+.stagger-item:nth-child(2) { animation-delay: 30ms; }
+.stagger-item:nth-child(3) { animation-delay: 60ms; }
+.stagger-item:nth-child(4) { animation-delay: 90ms; }
+.stagger-item:nth-child(5) { animation-delay: 120ms; }
+.stagger-item:nth-child(6) { animation-delay: 150ms; }
+.stagger-item:nth-child(7) { animation-delay: 180ms; }
+.stagger-item:nth-child(8) { animation-delay: 210ms; }
+.stagger-item:nth-child(9) { animation-delay: 240ms; }
+.stagger-item:nth-child(10) { animation-delay: 270ms; }
+.stagger-item:nth-child(11) { animation-delay: 300ms; }
+.stagger-item:nth-child(12) { animation-delay: 330ms; }
+
+/* Cyan glow hover for cards */
+.card-glow {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.card-glow:hover {
+  border-color: rgba(6, 182, 212, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: scale(1.005);
+}
+
+.dark .card-glow:hover {
+  border-color: rgba(6, 182, 212, 0.4);
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.08);
+}
+
+/* Port hover glow */
+.port-glow:hover {
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+}
+
+/* KPI number gradient — dark mode only, solid cyan in light */
+.kpi-number {
+  color: #06b6d4;
+}
+
+.dark .kpi-number {
+  background: linear-gradient(135deg, #06b6d4, #ffffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Active sidebar indicator */
+.sidebar-active {
+  position: relative;
+  overflow: visible;
+}
+
+.sidebar-active::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: #06b6d4;
+  border-radius: 0 2px 2px 0;
+}
+
+/* Terminal search style */
+.search-terminal::before {
+  content: '>_';
+  font-family: 'JetBrains Mono', monospace;
+  color: #06b6d4;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+/* Subtle alternating rows */
+.dark .alt-row:nth-child(even) {
+  background-color: rgba(6, 182, 212, 0.02);
+}
+
+/* Smooth transitions for all interactive elements */
+a, button {
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Scrollbar styling for dark mode */
+.dark ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0a0a0f;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}

@@ -22,6 +22,7 @@
         :options="locationOptions"
         value-attribute="value"
         option-attribute="label"
+        :placeholder="$t('switches.allLocations')"
         size="sm"
         class="w-48"
       />
@@ -30,6 +31,7 @@
         :options="roleOptions"
         value-attribute="value"
         option-attribute="label"
+        :placeholder="$t('switches.allRoles')"
         size="sm"
         class="w-44"
       />
@@ -39,6 +41,7 @@
         :options="tagOptions"
         value-attribute="value"
         option-attribute="label"
+        :placeholder="$t('switches.allTags')"
         size="sm"
         class="w-44"
       />
@@ -80,7 +83,7 @@
         <template #item="{ element: sw }">
           <NuxtLink
             :to="`/switches/${sw.id}`"
-            class="group relative flex flex-col rounded-lg border border-gray-200 bg-white transition-all hover:border-primary-400 hover:shadow-md dark:border-gray-700 dark:bg-gray-800/50 dark:hover:border-primary-500"
+            class="stagger-item card-glow group relative flex flex-col rounded-lg border border-gray-200 bg-white dark:border-gray-700/50 dark:bg-dark-100"
           >
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-gray-700/95">
@@ -125,7 +128,7 @@
             </div>
 
             <!-- Ports footer -->
-            <div class="mt-auto flex items-center justify-between border-t border-gray-100 px-5 py-2.5 dark:border-gray-700">
+            <div class="mt-auto flex items-center justify-between border-t border-gray-100 px-5 py-2.5 font-mono dark:border-gray-700/50">
               <span class="text-xs font-medium uppercase tracking-wider text-gray-400">{{ sw.ports?.length || 0 }} ports</span>
               <div class="flex items-center gap-3 text-xs">
                 <span v-if="getPortStats(sw).up" class="flex items-center gap-1 text-green-500">
@@ -158,7 +161,7 @@
         v-for="sw in filteredItems"
         :key="sw.id"
         :to="`/switches/${sw.id}`"
-        class="group relative flex items-center gap-4 rounded-lg border border-gray-200 bg-white px-5 py-3 transition-all hover:border-primary-400 hover:shadow-md dark:border-gray-700 dark:bg-gray-800/50 dark:hover:border-primary-500"
+        class="stagger-item card-glow group relative flex items-center gap-4 rounded-lg border border-gray-200 bg-white px-5 py-3 dark:border-gray-700/50 dark:bg-dark-100"
       >
         <!-- Hover actions -->
         <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-gray-700/95">

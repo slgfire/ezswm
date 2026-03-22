@@ -1,5 +1,5 @@
 <template>
-  <header class="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-gray-950">
+  <header class="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-dark">
     <div class="flex items-center gap-4">
       <!-- Mobile menu toggle -->
       <UButton
@@ -12,20 +12,21 @@
 
       <!-- Search -->
       <div class="relative hidden sm:block">
-        <UInput
-          ref="searchInputRef"
-          v-model="searchQuery"
-          :placeholder="$t('common.search')"
-          icon="i-heroicons-magnifying-glass"
-          size="sm"
-          class="w-72"
-          autocomplete="off"
-          @focus="showResults = true"
-          @keydown.escape="showResults = false"
-          @keydown.down.prevent="moveSelection(1)"
-          @keydown.up.prevent="moveSelection(-1)"
-          @keydown.enter.prevent="navigateToSelected"
-        />
+        <div class="flex items-center rounded-md border border-gray-200 bg-gray-50 px-3 dark:border-gray-700 dark:bg-dark-100">
+          <span class="font-mono text-xs font-semibold text-primary-500 select-none">&gt;_</span>
+          <input
+            ref="searchInputRef"
+            v-model="searchQuery"
+            :placeholder="$t('common.search')"
+            class="w-64 border-0 bg-transparent py-1.5 pl-2 font-mono text-sm text-gray-900 placeholder-gray-400 outline-none dark:text-white dark:placeholder-gray-500"
+            autocomplete="off"
+            @focus="showResults = true"
+            @keydown.escape="showResults = false"
+            @keydown.down.prevent="moveSelection(1)"
+            @keydown.up.prevent="moveSelection(-1)"
+            @keydown.enter.prevent="navigateToSelected"
+          />
+        </div>
 
         <!-- Search results dropdown -->
         <div

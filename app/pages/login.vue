@@ -4,7 +4,7 @@
       <UCard class="w-full">
         <template #header>
           <div class="text-center">
-            <h1 class="text-2xl font-bold">{{ $t('auth.loginTitle') }}</h1>
+            <h1 class="font-display text-2xl font-bold">{{ $t('auth.loginTitle') }}</h1>
             <p class="mt-1 text-sm text-gray-400">{{ $t('auth.loginDescription') }}</p>
           </div>
         </template>

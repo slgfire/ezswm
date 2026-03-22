@@ -1,6 +1,6 @@
 <template>
   <div
-    class="group relative flex cursor-pointer flex-col items-center justify-center font-mono transition-all"
+    class="port-glow group relative flex cursor-pointer flex-col items-center justify-center font-mono transition-all"
     :class="[
       portClasses,
       selected ? 'ring-2 ring-primary-500' : '',
