@@ -213,6 +213,48 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 13: Dark Theme & UI Polish (2026-03-24)
+
+**Dark theme token overrides:**
+- Overrode Nuxt UI v4 CSS custom properties for deep-dark industrial look
+- `--ui-bg: #0e0e0e`, `--ui-bg-elevated: #161616`, `--ui-border: #222222`
+- Restored consistent visual hierarchy: body (#0a0a0a) → bg-default (#0e0e0e) → bg-elevated (#161616)
+
+**Hover visibility fix:**
+- Created `.row-hover` CSS class with `rgba(255,255,255,0.10)` for dark mode
+- Replaced invisible `hover:bg-elevated` on VLAN, Network, and IP allocation list rows
+- Created `.list-container` CSS class with visible border for list containers
+
+**Card border fix:**
+- Replaced `ring ring-default` (thick, odd-looking) with `.card-glow` border styling
+- `card-glow` now sets border via CSS (`rgba(255,255,255,0.08)` dark mode) with green glow on hover
+- Applied to Switch cards, Template cards, Dashboard KPI cards
+
+**Favicon and page titles:**
+- Generated favicon.ico, apple-touch-icon.png, icon-192.png, icon-512.png from logo.png
+- Added `titleTemplate: '%s — ezSWM'` to nuxt.config.ts
+- Added `useHead()` with page-specific titles to all 20 pages
+- Dynamic pages show entity names (e.g. "sw-core — ezSWM", "VLAN 100 — Server-VLAN — ezSWM")
+
+**Files changed:**
+- `app/assets/css/main.css` — dark theme tokens, .row-hover, .list-container, .card-glow border
+- `nuxt.config.ts` — app.head with title, titleTemplate, favicon links
+- `public/` — favicon.ico, apple-touch-icon.png, icon-192.png, icon-512.png
+- All 20 page files in `app/pages/` — useHead() titles
+- `app/pages/vlans/index.vue`, `app/pages/networks/index.vue` — row-hover, list-container
+- `app/pages/switches/index.vue`, `app/pages/layout-templates/index.vue` — card-glow borders
+- `app/pages/index.vue` — card-glow borders on KPI cards
+
+**Verification:**
+- `npm run build`: Passes (8.95 MB output)
+- `docker compose build --no-cache`: Passes
+- Zero console errors/warnings
+- Dark theme visually consistent across all pages
+- Hover effects clearly visible on list rows
+- Card borders clean with green glow on hover
+
+---
+
 ## Open Issues
 
 - Topology page: interactive network diagram (Coming Soon placeholder in UI)

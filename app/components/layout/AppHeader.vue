@@ -149,12 +149,14 @@
 
     <div class="flex items-center gap-2">
       <!-- Theme toggle -->
-      <UButton
-        variant="ghost"
-        color="neutral"
-        :icon="isDark ? 'i-heroicons-sun' : 'i-heroicons-moon'"
-        @click="toggleColorMode"
-      />
+      <ClientOnly>
+        <UButton
+          variant="ghost"
+          color="neutral"
+          :icon="isDark ? 'i-heroicons-sun' : 'i-heroicons-moon'"
+          @click="toggleColorMode"
+        />
+      </ClientOnly>
 
       <!-- User menu -->
       <UDropdownMenu :items="userMenuItems" :content="{ align: 'end' }">
