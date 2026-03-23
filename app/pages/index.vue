@@ -7,7 +7,7 @@
     <div v-else-if="stats && hasSomeData" class="space-y-6">
       <!-- KPI Cards -->
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <NuxtLink to="/switches" class="stagger-item card-glow block rounded-lg bg-default ring ring-default p-5">
+        <NuxtLink to="/switches" class="stagger-item card-glow block rounded-lg bg-default p-5">
           <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary-500/10">
               <UIcon name="i-heroicons-server-stack" class="h-6 w-6 text-primary-500" />
@@ -18,7 +18,7 @@
             </div>
           </div>
         </NuxtLink>
-        <NuxtLink to="/networks" class="stagger-item card-glow block rounded-lg bg-default ring ring-default p-5">
+        <NuxtLink to="/networks" class="stagger-item card-glow block rounded-lg bg-default p-5">
           <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-green-500/10">
               <UIcon name="i-heroicons-globe-alt" class="h-6 w-6 text-green-500" />
@@ -29,7 +29,7 @@
             </div>
           </div>
         </NuxtLink>
-        <NuxtLink to="/vlans" class="stagger-item card-glow block rounded-lg bg-default ring ring-default p-5">
+        <NuxtLink to="/vlans" class="stagger-item card-glow block rounded-lg bg-default p-5">
           <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-500/10">
               <UIcon name="i-heroicons-tag" class="h-6 w-6 text-purple-500" />
@@ -40,7 +40,7 @@
             </div>
           </div>
         </NuxtLink>
-        <NuxtLink to="/networks" class="stagger-item card-glow block rounded-lg bg-default ring ring-default p-5">
+        <NuxtLink to="/networks" class="stagger-item card-glow block rounded-lg bg-default p-5">
           <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-500/10">
               <UIcon name="i-heroicons-map-pin" class="h-6 w-6 text-orange-500" />

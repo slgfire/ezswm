@@ -24,9 +24,9 @@
     "displayName": "Display Name",
     "rememberMe": "Remember me",
     "language": "Language",
-    "setupTitle": "Welcome to ezSWM",
+    "setupTitle": "Welcome",
     "setupDescription": "Create your admin account to get started.",
-    "loginTitle": "Sign in to ezSWM",
+    "loginTitle": "Sign in",
     "loginDescription": "Enter your credentials to continue."
   },
   "common": {

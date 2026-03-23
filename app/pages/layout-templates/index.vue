@@ -70,7 +70,7 @@
         <div
           v-for="tpl in filteredItems"
           :key="tpl.id"
-          class="stagger-item card-glow group relative cursor-pointer overflow-hidden rounded-lg bg-default ring ring-default"
+          class="stagger-item card-glow group relative cursor-pointer overflow-hidden rounded-lg bg-default"
           @click="navigateTo(`/layout-templates/${tpl.id}`)"
         >
           <!-- Port Preview -->
@@ -129,7 +129,7 @@
         <div
           v-for="tpl in filteredItems"
           :key="tpl.id"
-          class="group flex cursor-pointer items-center gap-4 rounded-lg border border-default bg-default px-4 py-3 transition-shadow hover:shadow-md"
+          class="card-glow group flex cursor-pointer items-center gap-4 rounded-lg bg-default px-4 py-3"
           @click="navigateTo(`/layout-templates/${tpl.id}`)"
         >
           <!-- Mini Preview -->

@@ -25,7 +25,7 @@
     </div>
 
     <!-- VLAN List -->
-    <div v-if="sortedItems.length > 0" class="rounded-lg border border-default bg-default/30">
+    <div v-if="sortedItems.length > 0" class="list-container rounded-lg bg-default">
       <!-- Sort header -->
       <div class="flex items-center gap-4 border-b border-default px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400">
         <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('vlan_id')">
@@ -45,7 +45,7 @@
       <div
         v-for="(vlan, i) in sortedItems"
         :key="vlan.id"
-        class="group flex cursor-pointer items-stretch pr-5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
+        class="row-hover group flex cursor-pointer items-stretch pr-5"
         :class="i > 0 ? 'border-t border-default' : ''"
         @click="openPanel(vlan, false)"
       >

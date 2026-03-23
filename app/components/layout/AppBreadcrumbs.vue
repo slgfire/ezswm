@@ -2,11 +2,11 @@
   <nav v-if="crumbs.length > 1" class="border-b border-default px-4 py-2">
     <ol class="flex items-center gap-1 text-sm">
       <li v-for="(crumb, i) in crumbs" :key="crumb.path" class="flex items-center gap-1">
-        <UIcon v-if="i > 0" name="i-heroicons-chevron-right-20-solid" class="h-4 w-4 text-gray-500" />
+        <UIcon v-if="i > 0" name="i-heroicons-chevron-right-20-solid" class="h-4 w-4 text-neutral-500" />
         <NuxtLink
           v-if="i < crumbs.length - 1"
           :to="crumb.path"
-          class="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+          class="text-neutral-400 hover:text-gray-900 dark:hover:text-white"
         >
           {{ crumb.label }}
         </NuxtLink>

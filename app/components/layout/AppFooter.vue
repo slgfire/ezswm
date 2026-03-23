@@ -1,5 +1,5 @@
 <template>
-  <footer class="border-t border-default px-4 py-2 text-center font-mono text-xs text-gray-500 dark:text-gray-600">
+  <footer class="border-t border-default px-4 py-2 text-center font-mono text-xs text-neutral-500 dark:text-neutral-500">
     <span class="text-primary-500/60">ez</span>SWM v{{ version }} &mdash; GPL License
   </footer>
 </template>

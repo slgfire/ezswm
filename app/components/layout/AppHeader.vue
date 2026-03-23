@@ -157,7 +157,7 @@
       />
 
       <!-- User menu -->
-      <UDropdownMenu :items="userMenuItems" :popper="{ placement: 'bottom-end' }">
+      <UDropdownMenu :items="userMenuItems" :content="{ align: 'end' }">
         <UButton variant="ghost" color="neutral" class="gap-2">
           <UIcon name="i-heroicons-user-circle" class="h-5 w-5" />
           <span class="hidden sm:inline text-sm">{{ user?.display_name }}</span>
@@ -290,18 +290,21 @@ function closeSearch() {
 }
 
 const userMenuItems = computed(() => [
-  [{
+  {
     label: t('nav.settings'),
     icon: 'i-heroicons-cog-6-tooth',
-    click: () => router.push('/settings')
-  }],
-  [{
+    onSelect: () => router.push('/settings')
+  },
+  {
+    type: 'separator' as const
+  },
+  {
     label: t('auth.logout'),
     icon: 'i-heroicons-arrow-right-on-rectangle',
-    click: async () => {
+    onSelect: async () => {
       await logout()
       await router.push('/login')
     }
-  }]
+  }
 ])
 </script>

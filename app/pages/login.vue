@@ -12,11 +12,11 @@
         <UForm :state="form" @submit.prevent="onSubmit">
           <div class="space-y-4">
             <UFormField :label="$t('auth.username')" name="username" required>
-              <UInput v-model="form.username" />
+              <UInput v-model="form.username" class="w-full" />
             </UFormField>
 
             <UFormField :label="$t('auth.password')" name="password" required>
-              <UInput v-model="form.password" type="password" />
+              <UInput v-model="form.password" type="password" class="w-full" />
             </UFormField>
 
             <div class="flex items-center">

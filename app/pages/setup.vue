@@ -12,23 +12,23 @@
         <UForm :state="form" :validate="validate" @submit.prevent="onSubmit">
           <div class="space-y-4">
             <UFormField :label="$t('auth.username')" name="username" required>
-              <UInput v-model="form.username" />
+              <UInput v-model="form.username" class="w-full" />
             </UFormField>
 
             <UFormField :label="$t('auth.displayName')" name="display_name" required>
-              <UInput v-model="form.display_name" />
+              <UInput v-model="form.display_name" class="w-full" />
             </UFormField>
 
             <UFormField :label="$t('auth.password')" name="password" required>
-              <UInput v-model="form.password" type="password" />
+              <UInput v-model="form.password" type="password" class="w-full" />
             </UFormField>
 
             <UFormField :label="$t('auth.confirmPassword')" name="confirm_password" required>
-              <UInput v-model="form.confirm_password" type="password" />
+              <UInput v-model="form.confirm_password" type="password" class="w-full" />
             </UFormField>
 
             <UFormField :label="$t('auth.language')" name="language">
-              <USelect v-model="form.language" :items="languageOptions" />
+              <USelect v-model="form.language" :items="languageOptions" class="w-full" />
             </UFormField>
 
             <UButton type="submit" block :loading="loading">

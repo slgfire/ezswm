@@ -83,7 +83,7 @@
         <template #item="{ element: sw }">
           <NuxtLink
             :to="`/switches/${sw.id}`"
-            class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default ring ring-default"
+            class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
           >
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
@@ -161,7 +161,7 @@
         v-for="sw in filteredItems"
         :key="sw.id"
         :to="`/switches/${sw.id}`"
-        class="stagger-item card-glow group relative flex items-center gap-4 rounded-lg border border-default bg-default px-5 py-3"
+        class="stagger-item card-glow group relative flex items-center gap-4 rounded-lg bg-default px-5 py-3"
       >
         <!-- Hover actions -->
         <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">

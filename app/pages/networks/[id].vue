@@ -521,7 +521,7 @@ function rowClass(row: UnifiedRow): string {
     if (type === 'static') return 'border-l-2 border-l-green-500 bg-green-500/5 dark:bg-green-500/5'
     if (type === 'reserved') return 'border-l-2 border-l-yellow-500 bg-yellow-500/5 dark:bg-yellow-500/5'
   }
-  return ''
+  return 'row-hover'
 }
 
 function countAllocsInRange(range: any): number {
