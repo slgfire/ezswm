@@ -1,4 +1,16 @@
-node_modules
-.nuxt
-.output
+node_modules/
+.nuxt/
+.output/
+data/
+*.tmp
 .env
+.DS_Store
+dist/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+app/public/

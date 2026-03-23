@@ -1,0 +1,518 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "switches": "Switches",
+    "vlans": "VLANs",
+    "networks": "Netzwerke",
+    "topology": "Topologie",
+    "tools": "Werkzeuge",
+    "subnetCalculator": "Subnetz-Rechner",
+    "importExport": "Import/Export",
+    "backup": "Sicherung",
+    "dataManagement": "Datenverwaltung",
+    "settings": "Einstellungen",
+    "users": "Benutzer",
+    "layoutTemplates": "Layout-Vorlagen"
+  },
+  "auth": {
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "setup": "Einrichtung abschließen",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "confirmPassword": "Passwort bestätigen",
+    "displayName": "Anzeigename",
+    "rememberMe": "Angemeldet bleiben",
+    "language": "Sprache",
+    "setupTitle": "Willkommen",
+    "setupDescription": "Erstellen Sie Ihr Admin-Konto, um zu beginnen.",
+    "loginTitle": "Anmelden",
+    "loginDescription": "Geben Sie Ihre Zugangsdaten ein."
+  },
+  "common": {
+    "welcome": "Willkommen bei ezSWM",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "create": "Erstellen",
+    "search": "Suchen...",
+    "actions": "Aktionen",
+    "name": "Name",
+    "description": "Beschreibung",
+    "status": "Status",
+    "noData": "Keine Daten vorhanden",
+    "loading": "Laden...",
+    "confirm": "Bestätigen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "yes": "Ja",
+    "no": "Nein",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "all": "Alle",
+    "type": "Typ",
+    "showing": "Zeige {from}-{to} von {total} Einträgen",
+    "perPage": "Pro Seite",
+    "duplicate": "Duplizieren",
+    "export": "Exportieren",
+    "import": "Importieren",
+    "download": "Herunterladen",
+    "upload": "Hochladen",
+    "reset": "Zurücksetzen",
+    "close": "Schließen",
+    "details": "Details",
+    "general": "Allgemein",
+    "account": "Konto",
+    "notes": "Notizen",
+    "clear": "Leeren",
+    "noChange": "Keine Änderung",
+    "add": "Hinzufügen",
+    "warning": "Warnung",
+    "noResults": "Keine Ergebnisse gefunden",
+    "hideDetails": "Details ausblenden",
+    "showDetails": "Details anzeigen",
+    "comingSoon": "Demnächst",
+    "inDevelopment": "In Entwicklung"
+  },
+  "dashboard": {
+    "emptyTitle": "Willkommen bei ezSWM!",
+    "emptyDescription": "Erstellen Sie Ihren ersten Switch, um zu beginnen.",
+    "switchCount": "Switches",
+    "networkCount": "Netzwerke",
+    "vlanCount": "VLANs",
+    "ipUtilization": "IP-Auslastung",
+    "portStatus": "Port-Status",
+    "recentActivity": "Letzte Aktivitäten",
+    "favorites": "Favoriten",
+    "warnings": "Warnungen",
+    "orphanVlans": "Verwaiste VLANs",
+    "duplicateIps": "Doppelte IPs",
+    "highUsage": "Stark genutzte Netzwerke"
+  },
+  "switches": {
+    "title": "Switches",
+    "create": "Switch erstellen",
+    "edit": "Switch bearbeiten",
+    "delete": "Switch löschen",
+    "duplicate": "Switch duplizieren",
+    "fields": {
+      "name": "Name",
+      "model": "Modell",
+      "manufacturer": "Hersteller",
+      "serialNumber": "Seriennummer",
+      "location": "Standort",
+      "rackPosition": "Rack-Position",
+      "managementIp": "Management-IP",
+      "firmwareVersion": "Firmware-Version",
+      "layoutTemplate": "Layout-Vorlage",
+      "portCount": "Anzahl Ports",
+      "role": "Rolle",
+      "tags": "Tags"
+    },
+    "messages": {
+      "created": "Switch erfolgreich erstellt",
+      "updated": "Switch erfolgreich aktualisiert",
+      "deleted": "Switch erfolgreich gelöscht",
+      "duplicated": "Switch erfolgreich dupliziert"
+    },
+    "ports": {
+      "title": "Ports",
+      "edit": "Port bearbeiten",
+      "bulkEdit": "Ports gruppiert bearbeiten",
+      "nativeVlan": "Native VLAN",
+      "taggedVlans": "Getaggte VLANs",
+      "connectedDevice": "Verbundenes Gerät",
+      "connectedPort": "Verbundener Port",
+      "speed": "Geschwindigkeit",
+      "macAddress": "MAC-Adresse",
+      "lagGroup": "LAG-Gruppe",
+      "bulkReset": "Ports zurücksetzen",
+      "confirmBulkReset": "{count} Port(s) auf Standard zurücksetzen? Alle Einstellungen und Verbindungen werden gelöscht.",
+      "bulkResetDone": "{count} Port(s) zurückgesetzt",
+      "selected": "{count} Port(s) ausgewählt",
+      "noPortsMessage": "Keine Ports. Weisen Sie eine Layout-Vorlage zu um Ports zu generieren.",
+      "multiSelectHint": "Strg+Klick für Mehrfachauswahl",
+      "portUpdated": "Port aktualisiert",
+      "portReset": "Port auf Standard zurückgesetzt",
+      "resetPort": "Port zurücksetzen",
+      "setToUp": "Ja, auf Up setzen",
+      "keepDown": "Nein, Down lassen",
+      "portDownPrompt": "Dieser Port ist aktuell \"down\". Auf \"up\" setzen da Sie ihn verbinden?",
+      "freetext": "Freitext",
+      "switchReference": "Switch-Referenz",
+      "noAvailablePorts": "Keine verfügbaren Ports auf diesem Switch.",
+      "portConflict": "Dieser Port ist bereits verbunden mit",
+      "portConflictOverride": "Speichern überschreibt diese Verbindung.",
+      "applyToPorts": "Auf {count} Port(s) anwenden",
+      "selectSwitch": "Switch auswählen...",
+      "selectPort": "Port auswählen...",
+      "devicePlaceholder": "Gerätename oder Hostname",
+      "portPlaceholder": "Port-Name",
+      "noPortSelected": "Kein Port ausgewählt",
+      "bulkEditTitle": "Gruppenbearbeitung — {count} Ports",
+      "bulkEditHint": "Änderungen werden auf alle {count} ausgewählten Ports angewendet. Felder leer lassen, um aktuelle Werte beizubehalten.",
+      "updatedPorts": "{count} Ports aktualisiert",
+      "portMode": "Port-Modus",
+      "modeAccess": "Access",
+      "modeTrunk": "Trunk",
+      "accessVlan": "Access-VLAN",
+      "connectionType": "Verbindung",
+      "connectedSwitch": "Verbundener Switch",
+      "searchSwitch": "Switch suchen...",
+      "searchPort": "Port suchen...",
+      "searchDevice": "Gerät suchen oder eingeben..."
+    },
+    "roles": {
+      "core": "Core",
+      "distribution": "Distribution",
+      "access": "Access",
+      "management": "Management"
+    },
+    "allRoles": "Alle Rollen",
+    "allLocations": "Alle Standorte",
+    "allTags": "Alle Tags",
+    "viewGrid": "Kartenansicht",
+    "viewList": "Listenansicht",
+    "noResults": "Keine Switches entsprechen Ihren Filtern.",
+    "tagsPlaceholder": "Tag eingeben und Enter drücken",
+    "emptyTitle": "Noch keine Switches",
+    "emptyDescription": "Erstellen Sie Ihren ersten Switch.",
+    "infoBar": {
+      "model": "Modell",
+      "location": "Standort",
+      "managementIp": "Management-IP",
+      "ports": "Ports",
+      "template": "Vorlage"
+    }
+  },
+  "vlans": {
+    "title": "VLANs",
+    "create": "VLAN erstellen",
+    "edit": "VLAN bearbeiten",
+    "delete": "VLAN löschen",
+    "fields": {
+      "vlanId": "VLAN-ID",
+      "name": "Name",
+      "color": "Farbe",
+      "status": "Status",
+      "routingDevice": "Routing-Gerät",
+      "networkCount": "Netzwerke"
+    },
+    "messages": {
+      "created": "VLAN erfolgreich erstellt",
+      "updated": "VLAN erfolgreich aktualisiert",
+      "deleted": "VLAN erfolgreich gelöscht"
+    },
+    "emptyTitle": "Noch keine VLANs definiert",
+    "emptyDescription": "Erstellen Sie Ihr erstes VLAN.",
+    "noNetwork": "Kein Netzwerk",
+    "sortId": "ID",
+    "sortName": "Name",
+    "sortStatus": "Status"
+  },
+  "networks": {
+    "title": "Netzwerke",
+    "create": "Netzwerk erstellen",
+    "edit": "Netzwerk bearbeiten",
+    "delete": "Netzwerk löschen",
+    "fields": {
+      "name": "Name",
+      "subnet": "Subnetz (CIDR)",
+      "gateway": "Gateway",
+      "dnsServers": "DNS-Server",
+      "vlan": "VLAN",
+      "utilization": "Auslastung"
+    },
+    "messages": {
+      "created": "Netzwerk erfolgreich erstellt",
+      "updated": "Netzwerk erfolgreich aktualisiert",
+      "deleted": "Netzwerk erfolgreich gelöscht"
+    },
+    "emptyTitle": "Noch keine Netzwerke konfiguriert",
+    "emptyDescription": "Erstellen Sie Ihr erstes Netzwerk.",
+    "allocations": {
+      "title": "IP-Zuweisungen",
+      "create": "Zuweisung hinzufügen",
+      "edit": "Zuweisung bearbeiten",
+      "fields": {
+        "ipAddress": "IP-Adresse",
+        "hostname": "Hostname",
+        "macAddress": "MAC-Adresse",
+        "deviceType": "Gerätetyp",
+        "status": "Status"
+      },
+      "messages": {
+        "created": "IP-Zuweisung erfolgreich erstellt",
+        "updated": "IP-Zuweisung erfolgreich aktualisiert",
+        "deleted": "IP-Zuweisung erfolgreich gelöscht"
+      }
+    },
+    "ranges": {
+      "title": "IP-Bereiche",
+      "create": "Bereich hinzufügen",
+      "fields": {
+        "startIp": "Start-IP",
+        "endIp": "End-IP",
+        "type": "Typ",
+        "description": "Beschreibung"
+      },
+      "types": {
+        "dhcp": "DHCP",
+        "static": "Statisch",
+        "reserved": "Reserviert"
+      },
+      "ipsDocumented": "{count} IPs dokumentiert",
+      "editRange": "Bereich bearbeiten",
+      "messages": {
+        "created": "IP-Bereich erfolgreich erstellt",
+        "updated": "IP-Bereich erfolgreich aktualisiert",
+        "deleted": "IP-Bereich erfolgreich gelöscht"
+      }
+    },
+    "unified": {
+      "title": "IP-Übersicht",
+      "addIp": "IP-Adresse",
+      "addRange": "IP-Bereich",
+      "networkAddress": "Netzwerk",
+      "gateway": "Gateway",
+      "broadcast": "Broadcast"
+    },
+    "subnetInfo": {
+      "networkAddress": "Netzwerkadresse",
+      "broadcastAddress": "Broadcast-Adresse",
+      "subnetMask": "Subnetzmaske",
+      "wildcardMask": "Wildcard-Maske",
+      "firstUsable": "Erste nutzbare IP",
+      "lastUsable": "Letzte nutzbare IP",
+      "totalHosts": "Gesamte Hosts",
+      "usableHosts": "Nutzbare Hosts"
+    },
+    "infoBar": {
+      "subnet": "Subnetz",
+      "gateway": "Gateway",
+      "mask": "Maske",
+      "hosts": "Hosts",
+      "allocated": "Zugewiesen",
+      "vlan": "VLAN",
+      "network": "Netzwerk",
+      "broadcast": "Broadcast",
+      "dns": "DNS"
+    }
+  },
+  "templates": {
+    "title": "Layout-Vorlagen",
+    "create": "Vorlage erstellen",
+    "edit": "Vorlage bearbeiten",
+    "delete": "Vorlage löschen",
+    "detail": "Vorlagen-Details",
+    "fields": {
+      "name": "Name",
+      "manufacturer": "Hersteller",
+      "model": "Modell",
+      "description": "Beschreibung",
+      "unitCount": "Einheiten",
+      "portCount": "Gesamte Ports"
+    },
+    "units": {
+      "title": "Einheiten",
+      "add": "Einheit hinzufügen",
+      "remove": "Einheit entfernen",
+      "unitNumber": "Einheitsnummer",
+      "label": "Bezeichnung"
+    },
+    "blocks": {
+      "title": "Port-Blöcke",
+      "add": "Block hinzufügen",
+      "remove": "Block entfernen",
+      "type": "Port-Typ",
+      "count": "Anzahl Ports",
+      "startIndex": "Startindex",
+      "rows": "Reihen",
+      "label": "Bezeichnung",
+      "rowLayout": "Zeilenanordnung",
+      "defaultSpeed": "Standard-Geschwindigkeit"
+    },
+    "messages": {
+      "created": "Vorlage erfolgreich erstellt",
+      "updated": "Vorlage erfolgreich aktualisiert",
+      "deleted": "Vorlage erfolgreich gelöscht",
+      "exported": "Vorlage erfolgreich exportiert",
+      "imported": "Vorlage erfolgreich importiert",
+      "duplicated": "Vorlage erfolgreich dupliziert"
+    },
+    "emptyTitle": "Noch keine Layout-Vorlagen",
+    "emptyDescription": "Erstellen Sie Ihre erste Switch-Vorlage, um Port-Layouts für Ihre Switch-Modelle zu definieren.",
+    "confirmDelete": "Möchten Sie diese Vorlage wirklich löschen?",
+    "usedBy": "Verwendet von {count} Switch | Verwendet von {count} Switches",
+    "switches": "Switches",
+    "portTypes": "Port-Typen",
+    "allManufacturers": "Alle Hersteller",
+    "allPortTypes": "Alle Port-Typen",
+    "viewGrid": "Kartenansicht",
+    "viewList": "Listenansicht",
+    "noResults": "Keine Vorlagen entsprechen Ihren Filtern.",
+    "infoBar": {
+      "units": "Units",
+      "ports": "Ports",
+      "count": "Anzahl",
+      "start": "Start",
+      "rows": "Zeilen",
+      "layout": "Anordnung",
+      "speed": "Geschwindigkeit",
+      "label": "Bezeichnung"
+    },
+    "preview": "Vorschau",
+    "previewEmpty": "Fügen Sie Blöcke hinzu um die Port-Layout-Vorschau zu sehen.",
+    "rowLayout": {
+      "sequential": "Sequenziell",
+      "oddEven": "Ungerade/Gerade",
+      "evenOdd": "Gerade/Ungerade"
+    }
+  },
+  "topology": {
+    "title": "Netzwerk-Topologie",
+    "emptyTitle": "Keine Switch-Verbindungen gefunden",
+    "emptyDescription": "Verbinden Sie Switches, um die Topologie anzuzeigen.",
+    "exportPdf": "PDF exportieren",
+    "exportPng": "PNG exportieren",
+    "comingSoon": "Demnächst",
+    "comingSoonDescription": "Interaktives Netzwerk-Topologiediagramm basierend auf Switch-Verbindungen. Auto-Layout, klickbare Knoten und VLAN-Beschriftungen.",
+    "inDevelopment": "In Entwicklung"
+  },
+  "tools": {
+    "subnetCalculator": {
+      "title": "Subnetz-Rechner",
+      "inputLabel": "CIDR-Notation",
+      "inputPlaceholder": "z.B. 10.0.1.0/24",
+      "results": "Ergebnisse"
+    }
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "general": {
+      "title": "Allgemein",
+      "appName": "Anwendungsname",
+      "defaultVlan": "Standard-VLAN für neue Ports",
+      "defaultPortStatus": "Standard-Port-Status",
+      "paginationSize": "Einträge pro Seite",
+      "portSpeeds": "Verfügbare Port-Geschwindigkeiten"
+    },
+    "account": {
+      "title": "Konto",
+      "displayName": "Anzeigename",
+      "language": "Sprache",
+      "changePassword": "Passwort ändern",
+      "currentPassword": "Aktuelles Passwort",
+      "newPassword": "Neues Passwort",
+      "confirmNewPassword": "Neues Passwort bestätigen",
+      "saveProfile": "Profil speichern",
+      "savePassword": "Passwort ändern"
+    },
+    "messages": {
+      "updated": "Einstellungen erfolgreich aktualisiert",
+      "profileUpdated": "Profil erfolgreich aktualisiert",
+      "passwordChanged": "Passwort erfolgreich geändert",
+      "passwordMismatch": "Passwörter stimmen nicht überein"
+    }
+  },
+  "backup": {
+    "title": "Sicherung & Wiederherstellung",
+    "export": "Sicherung herunterladen",
+    "exportDescription": "Laden Sie eine vollständige Sicherung aller Daten als ZIP-Datei herunter.",
+    "import": "Aus Sicherung wiederherstellen",
+    "importDescription": "Laden Sie eine Sicherungs-ZIP-Datei hoch, um alle Daten wiederherzustellen.",
+    "selectFile": "Sicherungsdatei auswählen",
+    "restore": "Wiederherstellen",
+    "confirmRestore": "Dies überschreibt alle aktuellen Daten. Sind Sie sicher?",
+    "messages": {
+      "exported": "Sicherung erfolgreich heruntergeladen",
+      "imported": "Sicherung erfolgreich wiederhergestellt"
+    }
+  },
+  "importExport": {
+    "title": "Import / Export",
+    "importTab": "Import",
+    "exportTab": "Export",
+    "selectEntity": "Entitätstyp auswählen",
+    "selectFormat": "Format auswählen",
+    "downloadTemplate": "Vorlage herunterladen",
+    "uploadFile": "Datei hochladen",
+    "validationResults": "Validierungsergebnisse",
+    "confirmImport": "Gültige Zeilen importieren",
+    "importEmptyTitle": "Daten importieren",
+    "importEmptyDescription": "Wählen Sie einen Entitätstyp und laden Sie eine CSV- oder JSON-Datei hoch.",
+    "exportEmptyTitle": "Daten exportieren",
+    "exportEmptyDescription": "Wählen Sie einen Entitätstyp und ein Format, um Ihre Daten zu exportieren."
+  },
+  "dataManagement": {
+    "title": "Datenverwaltung",
+    "backupTab": "Sicherung",
+    "exportTab": "Export",
+    "importTab": "Import",
+    "entities": {
+      "switches": "Switches",
+      "vlans": "VLANs",
+      "networks": "Netzwerke",
+      "allocations": "IP-Zuweisungen",
+      "templates": "Layout-Vorlagen"
+    },
+    "export": {
+      "selectType": "Entitätstyp",
+      "selectFormat": "Format",
+      "download": "Herunterladen",
+      "downloadTemplate": "Vorlage herunterladen",
+      "success": "Export erfolgreich heruntergeladen"
+    },
+    "import": {
+      "selectFile": "Datei auswählen",
+      "preview": "Zu importierende Zeilen",
+      "rows": "Zeilen",
+      "importButton": "Importieren",
+      "confirmTitle": "Import bestätigen",
+      "confirmMessage": "{count} Einträge vom Typ \"{type}\" importieren? Neue Einträge werden hinzugefügt, bestehende Daten werden nicht ersetzt.",
+      "imported": "importiert",
+      "skipped": "übersprungen",
+      "errorCount": "Fehler",
+      "success": "{count} Einträge erfolgreich importiert",
+      "hasErrors": "{count} Einträge hatten Fehler",
+      "parseError": "Die ausgewählte Datei konnte nicht gelesen werden",
+      "fileTooLarge": "Datei überschreitet die maximale Größe von 5 MB"
+    }
+  },
+  "activity": {
+    "title": "Aktivitäten",
+    "created": "erstellt",
+    "updated": "aktualisiert",
+    "deleted": "gelöscht",
+    "undo": "Rückgängig"
+  },
+  "errors": {
+    "notFound": "Nicht gefunden",
+    "unauthorized": "Nicht autorisiert",
+    "validationFailed": "Validierung fehlgeschlagen",
+    "serverError": "Serverfehler",
+    "networkError": "Netzwerkfehler"
+  },
+  "search": {
+    "switches": "Switches",
+    "vlans": "VLANs",
+    "networks": "Netzwerke",
+    "ipAllocations": "IP-Zuweisungen",
+    "templates": "Layout-Vorlagen",
+    "noResults": "Keine Ergebnisse gefunden"
+  },
+  "legend": {
+    "status": "Status",
+    "up": "Aktiv",
+    "down": "Inaktiv",
+    "disabled": "Deaktiviert",
+    "type": "Typ",
+    "indicators": "Indikatoren",
+    "trunk": "Trunk",
+    "sfp": "SFP/SFP+",
+    "qsfp": "QSFP",
+    "console": "Konsole",
+    "mgmt": "Mgmt"
+  }
+}

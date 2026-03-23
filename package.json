@@ -1,0 +1,32 @@
+{
+  "name": "ezswm",
+  "version": "0.3.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "generate": "nuxt generate",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@nuxt/ui": "4.5.1",
+    "@nuxtjs/i18n": "10.2.3",
+    "bcryptjs": "3.0.3",
+    "jsonwebtoken": "9.0.3",
+    "nanoid": "5.1.7",
+    "nuxt": "4.4.2",
+    "tailwindcss": "4.1.8",
+    "vuedraggable": "4.1.0",
+    "zod": "3.24.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/bcryptjs": "3.0.0",
+    "@types/jsonwebtoken": "9.0.10",
+    "@types/node": "^25.5.0",
+    "typescript": "5.9.3",
+    "vue-tsc": "3.2.5"
+  }
+}

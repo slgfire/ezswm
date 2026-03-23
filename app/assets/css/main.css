@@ -1,0 +1,189 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* ezSWM — Industrial Terminal Theme */
+
+/* Tailwind v4 theme customization */
+@theme {
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-display: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-dark: #0a0a0a;
+  --color-dark-50: #0e0e0e;
+  --color-dark-100: #121212;
+  --color-dark-200: #161616;
+
+  --animate-fade-in: fadeIn 0.3s ease-out forwards;
+  --animate-slide-up: slideUp 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Deep dark theme — override Nuxt UI v4 tokens for industrial look */
+.dark {
+  --ui-bg: #0e0e0e;
+  --ui-bg-elevated: #161616;
+  --ui-bg-muted: #161616;
+  --ui-bg-accented: #1e1e1e;
+  --ui-bg-inverted: #e8e8e8;
+  --ui-border: #222222;
+  --ui-border-muted: #1a1a1a;
+  --ui-border-accented: #2a2a2a;
+}
+
+.dark body {
+  background-color: #0a0a0a;
+}
+
+.dark .bg-gray-950 {
+  background-color: #0a0a0a;
+}
+
+/* Headings use display font (JetBrains Mono) */
+h1, h2, h3, h4 {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* Technical data always mono */
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+}
+
+/* Staggered animation for lists and grids */
+.stagger-item {
+  opacity: 0;
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+/* Generate stagger delays */
+.stagger-item:nth-child(1) { animation-delay: 0ms; }
+.stagger-item:nth-child(2) { animation-delay: 30ms; }
+.stagger-item:nth-child(3) { animation-delay: 60ms; }
+.stagger-item:nth-child(4) { animation-delay: 90ms; }
+.stagger-item:nth-child(5) { animation-delay: 120ms; }
+.stagger-item:nth-child(6) { animation-delay: 150ms; }
+.stagger-item:nth-child(7) { animation-delay: 180ms; }
+.stagger-item:nth-child(8) { animation-delay: 210ms; }
+.stagger-item:nth-child(9) { animation-delay: 240ms; }
+.stagger-item:nth-child(10) { animation-delay: 270ms; }
+.stagger-item:nth-child(11) { animation-delay: 300ms; }
+.stagger-item:nth-child(12) { animation-delay: 330ms; }
+
+/* Green glow hover for cards */
+.card-glow {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.dark .card-glow {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.card-glow:hover {
+  border-color: rgba(34, 197, 94, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: scale(1.005);
+}
+
+.dark .card-glow:hover {
+  border-color: rgba(34, 197, 94, 0.4);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.08);
+}
+
+/* Port hover glow */
+.port-glow:hover {
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+
+/* KPI number gradient — dark mode only, solid green in light */
+.kpi-number {
+  color: #22c55e;
+}
+
+.dark .kpi-number {
+  background: linear-gradient(135deg, #22c55e, #ffffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Active sidebar indicator */
+.sidebar-active {
+  position: relative;
+  overflow: visible;
+}
+
+.sidebar-active::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: #22c55e;
+  border-radius: 0 2px 2px 0;
+}
+
+/* List container — visible border for table-like lists */
+.list-container {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark .list-container {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* List row hover — visible contrast against bg-default */
+.row-hover {
+  transition: background-color 0.15s ease;
+}
+
+.row-hover:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+.dark .row-hover:hover {
+  background-color: rgba(255, 255, 255, 0.10);
+}
+
+/* Subtle alternating rows */
+.dark .alt-row:nth-child(even) {
+  background-color: rgba(34, 197, 94, 0.02);
+}
+
+/* Smooth transitions for all interactive elements */
+a, button {
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Nuxt UI v4: form inputs fill their container inside form fields - applied via class="w-full" on components */
+
+/* Scrollbar styling for dark mode */
+.dark ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}

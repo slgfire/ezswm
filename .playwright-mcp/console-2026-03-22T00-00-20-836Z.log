@@ -1,0 +1,123 @@
+[  659274ms] [WARNING] [intlify] Not found 'nav.dashboard' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659275ms] [WARNING] [intlify] Not found 'nav.switches' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659276ms] [WARNING] [intlify] Not found 'nav.vlans' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659277ms] [WARNING] [intlify] Not found 'nav.networks' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659278ms] [WARNING] [intlify] Not found 'nav.topology' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659279ms] [WARNING] [intlify] Not found 'nav.subnetCalculator' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659280ms] [WARNING] [intlify] Not found 'nav.layoutTemplates' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659280ms] [WARNING] [intlify] Not found 'nav.dataManagement' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659281ms] [WARNING] [intlify] Not found 'nav.settings' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659283ms] [WARNING] [intlify] Not found 'nav.dashboard' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659283ms] [WARNING] [intlify] Not found 'nav.switches' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659287ms] [WARNING] [intlify] Not found 'switches.title' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659288ms] [WARNING] [intlify] Not found 'common.search' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659289ms] [WARNING] [intlify] Not found 'switches.allLocations' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659289ms] [WARNING] [intlify] Not found 'switches.allRoles' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659290ms] [WARNING] [intlify] Not found 'switches.roles.core' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659291ms] [WARNING] [intlify] Not found 'switches.roles.distribution' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659291ms] [WARNING] [intlify] Not found 'switches.roles.access' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659292ms] [WARNING] [intlify] Not found 'switches.roles.management' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659293ms] [WARNING] [intlify] Not found 'switches.allTags' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659293ms] [WARNING] [intlify] Not found 'switches.viewGrid' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659294ms] [WARNING] [intlify] Not found 'switches.viewList' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659295ms] [WARNING] [intlify] Not found 'switches.delete' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659295ms] [WARNING] [intlify] Not found 'common.delete' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659306ms] [WARNING] [intlify] Not found 'switches.create' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659307ms] [WARNING] [intlify] Not found 'switches.roles.core' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659308ms] [WARNING] [intlify] Not found 'switches.roles.access' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659311ms] [WARNING] [intlify] Not found 'common.search' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659312ms] [WARNING] [intlify] Not found 'nav.settings' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[  659312ms] [WARNING] [intlify] Not found 'auth.logout' key in 'en' locale messages. @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@intlify/shared/dist/shared.mjs?v=b3e56ccf:7
+[67217768ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67218997ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67220023ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67221048ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67222075ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67223099ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67224120ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67225156ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67226199ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67227256ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67228386ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67229612ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67231113ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67232940ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67235688ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67239413ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67243044ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67248379ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67253146ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67258556ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67263735ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67266169ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67270535ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67274921ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67277330ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67282951ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67288881ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67291923ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 500 @ http://localhost:3000/_nuxt/@vite/client:1034
+[67537580ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: WebSocket opening handshake timed out @ http://localhost:3000/_nuxt/@vite/client:1034
+[70011366ms] [WARNING] The resource http://localhost:3000/_nuxt/builds/meta/dev.json was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3000/switches:0
+[70055569ms] [WARNING] The resource http://localhost:3000/_nuxt/builds/meta/dev.json was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3000/switches:0
+[70091165ms] [WARNING] The resource http://localhost:3000/_nuxt/builds/meta/dev.json was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3000/switches:0
+[71365011ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_nuxt/@vite/client:1034
+[71366325ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_nuxt/@vite/client:1034
+[71370531ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 503 @ http://localhost:3000/_nuxt/@vite/client:1034
+[71414454ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Connection closed before receiving a handshake response @ http://localhost:3000/_nuxt/@vite/client:1034
+[71415458ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@vite/client:1034
+[71416464ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@vite/client:1034
+[71417470ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@vite/client:1034
+[71418480ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@vite/client:1034
+[71419510ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@vite/client:1034
+[71420542ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@vite/client:1034
+[71421595ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@vite/client:1034
+[71422807ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@vite/client:1034
+[71424302ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@vite/client:1034
+[71425694ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@vite/client:1034
+[71438467ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/' failed: Error during WebSocket handshake: Unexpected response code: 404 @ http://localhost:3000/_nuxt/@vite/client:1034
+[77170421ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@id/virtual:nuxt:%2Fhome%2Fezswm-claude%2F.nuxt%2Fnuxt-fonts-global.css:0
+[77170421ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@nuxt/nitro-server/dist/runtime/h3-compat.mjs?v=0a1bda51:0
+[77170422ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@id/virtual:nuxt:%2Fhome%2Fezswm-claude%2F.nuxt%2Fpaths.mjs:0
+[77170422ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/assets/css/main.css:0
+[77170422ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/nuxt/dist/app/composables/router.js?v=0a1bda51:0
+[77170432ms] Failed to fetch dynamically imported module: http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/nuxt/dist/app/entry.js?v=0a1bda51
+[77170422ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/nuxt/node_modules/hookable/dist/index.mjs?v=0a1bda51:0
+[77170422ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/unctx/dist/index.mjs?v=0a1bda51:0
+[77170423ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@id/virtual:nuxt:%2Fhome%2Fezswm-claude%2F.nuxt%2Fcomponents.islands.mjs:0
+[77170423ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/nuxt/dist/app/components/nuxt-root.vue:0
+[77170423ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/nuxt/dist/app/plugins/revive-payload.client.js?v=0a1bda51:0
+[77170423ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/nuxt/dist/head/runtime/plugins/unhead.js?v=0a1bda51:0
+[77170423ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/nuxt/dist/pages/runtime/plugins/router.js?v=0a1bda51:0
+[77170423ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/nuxt/dist/app/plugins/browser-devtools-timing.client.js?v=0a1bda51:0
+[77170423ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/nuxt/dist/app/plugins/payload.client.js?v=0a1bda51:0
+[77170423ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/nuxt/dist/app/plugins/dev-server-logs.js?v=0a1bda51:0
+[77170424ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/nuxt/dist/app/plugins/navigation-repaint.client.js?v=0a1bda51:0
+[77170424ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/nuxt/dist/app/plugins/check-outdated-build.client.js?v=0a1bda51:0
+[77170424ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/nuxt/dist/app/plugins/chunk-reload.client.js?v=0a1bda51:0
+[77170424ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/nuxt/dist/pages/runtime/plugins/prefetch.client.js?v=0a1bda51:0
+[77170424ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/nuxt/dist/pages/runtime/plugins/check-if-page-unused.js?v=0a1bda51:0
+[77170424ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@nuxt/devtools/dist/runtime/plugins/devtools.client.js?v=0a1bda51:0
+[77170424ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@nuxtjs/i18n/dist/runtime/plugins/switch-locale-path-ssr.js?v=0a1bda51:0
+[77170425ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@nuxtjs/i18n/dist/runtime/plugins/route-locale-detect.js?v=0a1bda51:0
+[77170425ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@nuxtjs/i18n/dist/runtime/plugins/preload.js?v=0a1bda51:0
+[77170425ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@nuxtjs/i18n/dist/runtime/plugins/dev.js?v=0a1bda51:0
+[77170425ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@nuxtjs/i18n/dist/runtime/plugins/i18n.js?v=0a1bda51:0
+[77170425ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@nuxt/ui/dist/runtime/plugins/colors.js?v=0a1bda51:0
+[77170426ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@nuxtjs/color-mode/dist/runtime/plugin.client.js?v=0a1bda51:0
+[77170426ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@nuxt/icon/dist/runtime/plugin.js?v=0a1bda51:0
+[77170426ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/nuxt/dist/app/plugins/check-if-layout-used.js?v=0a1bda51:0
+[77170426ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@nuxtjs/i18n/dist/runtime/plugins/ssg-detect.js?v=0a1bda51:0
+[77170426ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@id/virtual:nuxt:%2Fhome%2Fezswm-claude%2F.nuxt%2Fruntime.vue-devtools-client.zWVOfJP8Kyi2vPDXLUY5801Qjr0QSYneQ1UbnSaJUlU.js:0
+[77170426ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@id/virtual:nuxt:%2Fhome%2Fezswm-claude%2F.nuxt%2Fcomponents.plugin.mjs:0
+[77170427ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/ofetch/dist/shared/ofetch.CWycOUEr.mjs?v=0a1bda51:0
+[77170427ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/destr/dist/index.mjs?v=0a1bda51:0
+[77170427ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/ufo/dist/index.mjs?v=0a1bda51:0
+[77171029ms] [ERROR] Failed to load resource: the server responded with a status of 504 (Outdated Request) @ http://localhost:3000/_nuxt/@fs/home/ezswm-claude/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-bundler.js?v=0a1bda51:0
+[77171107ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/favicon.ico:0
+[77171810ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_nuxt/?token=AQ52B0M3bFwz' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@vite/client:744
+[77174750ms] [ERROR] WebSocket connection to 'ws://localhost:5173/_nuxt/?token=AQ52B0M3bFwz' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_nuxt/@vite/client:754
+[77174751ms] [ERROR] [vite] failed to connect to websocket.
+your current setup:
+  (browser) localhost:3000/_nuxt/ <--[HTTP]--> localhost:5173/_nuxt/ (server)
+  (browser) localhost:3000/_nuxt/ <--[WebSocket (failing)]--> localhost:5173/_nuxt/ (server)
+Check out your Vite / network configuration and https://vite.dev/config/server-options.html#server-hmr . @ http://localhost:3000/_nuxt/@vite/client:764
