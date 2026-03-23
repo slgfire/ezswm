@@ -119,6 +119,8 @@ const { getById, remove } = useLayoutTemplates()
 
 const template = ref<any>(null)
 const loading = ref(true)
+
+useHead({ title: computed(() => template.value?.name || t('templates.title')) })
 const showDeleteDialog = ref(false)
 const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrides', () => ({}))
 

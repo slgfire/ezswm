@@ -85,6 +85,7 @@
 <script setup lang="ts">
 const toast = useToast()
 const { t, setLocale } = useI18n()
+useHead({ title: t('settings.title') })
 const { user } = useAuth()
 const { settings, fetch: fetchSettings, update: updateSettings } = useSettings()
 const { update: updateUser, changePassword: changePasswordApi } = useUsers()

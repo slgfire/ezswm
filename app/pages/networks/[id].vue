@@ -341,6 +341,8 @@ const { items: vlans, fetch: fetchVlans } = useVlans()
 
 const pageLoading = ref(true)
 const network = ref<any>(null)
+
+useHead({ title: computed(() => network.value?.name || t('networks.title')) })
 const editing = ref(false)
 const saving = ref(false)
 const showDetails = ref(false)

@@ -318,6 +318,8 @@ const route = useRoute()
 
 const id = route.params.id as string
 const { item, loading, fetch: fetchSwitch, update } = useSwitch(id)
+
+useHead({ title: computed(() => item.value?.name || t('switches.title')) })
 const { duplicate } = useSwitches()
 const { items: templates, fetch: fetchTemplates } = useLayoutTemplates()
 const { items: vlans, fetch: fetchVlans } = useVlans()

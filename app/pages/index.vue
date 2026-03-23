@@ -197,6 +197,8 @@
 </template>
 
 <script setup lang="ts">
+useHead({ title: 'Dashboard' })
+
 const stats = ref<any>(null)
 const loading = ref(true)
 

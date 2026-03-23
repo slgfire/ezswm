@@ -198,6 +198,7 @@
 <script setup lang="ts">
 const toast = useToast()
 const { t } = useI18n()
+useHead({ title: t('dataManagement.title') })
 
 const MAX_IMPORT_SIZE = 5 * 1024 * 1024 // 5MB
 

@@ -37,6 +37,8 @@
 </template>
 
 <script setup lang="ts">
+useHead({ title: 'Subnet Calculator' })
+
 const cidr = ref('')
 const result = ref<any>(null)
 

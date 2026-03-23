@@ -152,6 +152,7 @@
 
 <script setup lang="ts">
 const { t } = useI18n()
+useHead({ title: t('templates.create') })
 const toast = useToast()
 const route = useRoute()
 const router = useRouter()

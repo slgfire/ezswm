@@ -86,6 +86,7 @@
 
 <script setup lang="ts">
 const { t } = useI18n()
+useHead({ title: t('networks.create') })
 const toast = useToast()
 const router = useRouter()
 const { create } = useNetworks()

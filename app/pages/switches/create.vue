@@ -100,6 +100,7 @@
 
 <script setup lang="ts">
 const { t } = useI18n()
+useHead({ title: t('switches.create') })
 const toast = useToast()
 const { create } = useSwitches()
 const { items: templates, fetch: fetchTemplates } = useLayoutTemplates()

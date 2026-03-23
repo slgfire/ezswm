@@ -47,6 +47,7 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: false })
+useHead({ title: 'Setup' })
 
 const { setup: doSetup } = useAuth()
 const { setLocale } = useI18n()

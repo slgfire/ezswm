@@ -249,6 +249,7 @@
 import draggable from 'vuedraggable'
 
 const { t } = useI18n()
+useHead({ title: t('switches.title') })
 const toast = useToast()
 const { items, loading, fetch: fetchSwitches, remove, duplicate } = useSwitches()
 

@@ -169,6 +169,8 @@ const { items: allNetworks, fetch: fetchNetworks } = useNetworks()
 const id = route.params.id as string
 const loading = ref(true)
 const vlan = ref<any>(null)
+
+useHead({ title: computed(() => vlan.value ? `VLAN ${vlan.value.vlan_id} — ${vlan.value.name}` : t('vlans.title')) })
 const editing = ref(false)
 const saving = ref(false)
 const showDeleteDialog = ref(false)

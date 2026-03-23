@@ -88,6 +88,7 @@
 
 <script setup lang="ts">
 const { t } = useI18n()
+useHead({ title: t('vlans.create') })
 const toast = useToast()
 const router = useRouter()
 const { create } = useVlans()

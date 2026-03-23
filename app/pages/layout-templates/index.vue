@@ -217,6 +217,7 @@
 import type { LayoutTemplate } from '~/types/layoutTemplate'
 
 const { t } = useI18n()
+useHead({ title: t('templates.title') })
 const toast = useToast()
 const { items, loading, fetch, remove } = useLayoutTemplates()
 

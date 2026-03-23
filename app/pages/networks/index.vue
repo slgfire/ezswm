@@ -115,6 +115,7 @@
 
 <script setup lang="ts">
 const { t } = useI18n()
+useHead({ title: t('networks.title') })
 const toast = useToast()
 const { items, loading, fetch: fetchNetworks, remove } = useNetworks()
 const { items: vlans, fetch: fetchVlans } = useVlans()

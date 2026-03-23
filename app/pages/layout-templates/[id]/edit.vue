@@ -175,6 +175,8 @@ const { getById, update } = useLayoutTemplates()
 
 const loading = ref(true)
 const submitting = ref(false)
+
+useHead({ title: computed(() => `Edit — ${breadcrumbOverrides.value['/layout-templates/' + route.params.id] || t('templates.title')}`) })
 const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrides', () => ({}))
 
 const portTypeOptions = [

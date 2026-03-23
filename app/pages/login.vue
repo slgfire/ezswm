@@ -39,6 +39,7 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: false })
+useHead({ title: 'Login' })
 
 const { login } = useAuth()
 const router = useRouter()
