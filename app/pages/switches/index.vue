@@ -83,10 +83,10 @@
         <template #item="{ element: sw }">
           <NuxtLink
             :to="`/switches/${sw.id}`"
-            class="stagger-item card-glow group relative flex flex-col rounded-lg border border-gray-200 bg-white dark:border-gray-700/50 dark:bg-dark-100"
+            class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default ring ring-default"
           >
             <!-- Hover actions -->
-            <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-gray-700/95">
+            <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
               <UButton icon="i-heroicons-bars-2" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="neutral" size="2xs" @click.prevent />
               <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="2xs" @click.prevent="onDuplicate(sw)" />
               <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="2xs" @click.prevent="confirmDelete(sw)" />
@@ -103,13 +103,13 @@
                     {{ [sw.manufacturer, sw.model].filter(Boolean).join(' · ') }}
                   </p>
                 </div>
-                <UBadge v-if="sw.role" :color="roleColor(sw.role)" variant="subtle" size="xs" class="shrink-0">
+                <UBadge v-if="sw.role" :color="roleColor(sw.role)" variant="subtle" size="sm" class="shrink-0">
                   {{ $t(`switches.roles.${sw.role}`) }}
                 </UBadge>
               </div>
               <!-- Tags -->
               <div v-if="sw.tags?.length" class="mt-2 flex flex-wrap gap-1">
-                <UBadge v-for="tg in sw.tags" :key="tg" color="neutral" variant="soft" size="xs">
+                <UBadge v-for="tg in sw.tags" :key="tg" color="neutral" variant="soft" size="sm">
                   {{ tg }}
                 </UBadge>
               </div>
@@ -128,7 +128,7 @@
             </div>
 
             <!-- Ports footer -->
-            <div class="mt-auto flex items-center justify-between border-t border-gray-100 px-5 py-2.5 font-mono dark:border-gray-700/50">
+            <div class="mt-auto flex items-center justify-between border-t border-default px-5 py-2.5 font-mono">
               <span class="text-xs font-medium uppercase tracking-wider text-gray-400">{{ sw.ports?.length || 0 }} ports</span>
               <div class="flex items-center gap-3 text-xs">
                 <span v-if="getPortStats(sw).up" class="flex items-center gap-1 text-green-500">
@@ -150,7 +150,7 @@
       </draggable>
       <template #fallback>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div v-for="i in 3" :key="i" class="h-40 animate-pulse rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800/30" />
+          <div v-for="i in 3" :key="i" class="h-40 animate-pulse rounded-lg border border-default bg-elevated" />
         </div>
       </template>
     </ClientOnly>
@@ -161,10 +161,10 @@
         v-for="sw in filteredItems"
         :key="sw.id"
         :to="`/switches/${sw.id}`"
-        class="stagger-item card-glow group relative flex items-center gap-4 rounded-lg border border-gray-200 bg-white px-5 py-3 dark:border-gray-700/50 dark:bg-dark-100"
+        class="stagger-item card-glow group relative flex items-center gap-4 rounded-lg border border-default bg-default px-5 py-3"
       >
         <!-- Hover actions -->
-        <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-gray-700/95">
+        <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
           <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="2xs" @click.prevent="onDuplicate(sw)" />
           <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="2xs" @click.prevent="confirmDelete(sw)" />
         </div>
@@ -173,7 +173,7 @@
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
             <h3 class="truncate font-semibold text-gray-900 dark:text-white">{{ sw.name }}</h3>
-            <UBadge v-if="sw.role" :color="roleColor(sw.role)" variant="subtle" size="xs">
+            <UBadge v-if="sw.role" :color="roleColor(sw.role)" variant="subtle" size="sm">
               {{ $t(`switches.roles.${sw.role}`) }}
             </UBadge>
             <span v-if="sw.manufacturer || sw.model" class="hidden text-sm text-gray-500 dark:text-gray-400 md:inline">
@@ -189,7 +189,7 @@
               <UIcon name="i-heroicons-globe-alt" class="h-3 w-3" />
               {{ sw.management_ip }}
             </span>
-            <UBadge v-for="tg in (sw.tags || [])" :key="tg" color="neutral" variant="soft" size="xs">
+            <UBadge v-for="tg in (sw.tags || [])" :key="tg" color="neutral" variant="soft" size="sm">
               {{ tg }}
             </UBadge>
           </div>

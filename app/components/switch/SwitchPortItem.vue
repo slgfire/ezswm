@@ -16,7 +16,7 @@
     <!-- VLAN indicator (top-right): trunk = circle, access = square -->
     <div v-if="isTrunk" class="group/vlan absolute -top-2 -right-2 p-1">
       <div class="h-2.5 w-2.5 rounded-full ring-1 ring-white dark:ring-gray-900" :style="{ backgroundColor: vlanDotColor || '#FBBF24' }" />
-      <div class="pointer-events-none absolute left-0 top-full z-50 hidden min-w-[10rem] rounded-md border border-gray-200 bg-white p-2 shadow-lg group-hover/vlan:block dark:border-gray-700 dark:bg-gray-900">
+      <div class="pointer-events-none absolute left-0 top-full z-50 hidden min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg group-hover/vlan:block">
         <div class="space-y-1 text-xs">
           <div class="font-semibold text-gray-700 dark:text-gray-200">Trunk</div>
           <div v-if="port.native_vlan" class="flex items-center gap-1.5">
@@ -35,7 +35,7 @@
     </div>
     <div v-else-if="vlanDotColor" class="group/vlan absolute -top-2 -right-2 p-1">
       <div class="h-2.5 w-2.5 rounded-sm ring-1 ring-white dark:ring-gray-900" :style="{ backgroundColor: vlanDotColor }" />
-      <div class="pointer-events-none absolute left-0 top-full z-50 hidden min-w-[10rem] rounded-md border border-gray-200 bg-white p-2 shadow-lg group-hover/vlan:block dark:border-gray-700 dark:bg-gray-900">
+      <div class="pointer-events-none absolute left-0 top-full z-50 hidden min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg group-hover/vlan:block">
         <div class="space-y-1 text-xs">
           <div class="font-semibold text-gray-700 dark:text-gray-200">Access</div>
           <div class="flex items-center gap-1.5">
@@ -92,9 +92,9 @@ const portShapeClasses = computed(() => {
 
 const portClasses = computed(() => {
   const status = props.port.status
-  if (status === 'disabled') return 'bg-red-50 border border-red-300 text-red-500 dark:bg-gray-800 dark:border-red-500/50 dark:text-red-400'
-  if (status === 'up') return 'bg-green-50 border border-green-300 text-green-700 dark:bg-gray-700 dark:border-green-500/50 dark:text-green-300'
-  return 'bg-gray-100 border border-gray-300 text-gray-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-500'
+  if (status === 'disabled') return 'bg-red-50 border border-red-300 text-red-500 dark:bg-neutral-800 dark:border-red-500/50 dark:text-red-400'
+  if (status === 'up') return 'bg-green-50 border border-green-300 text-green-700 dark:bg-neutral-700 dark:border-green-500/50 dark:text-green-300'
+  return 'bg-gray-100 border border-gray-300 text-gray-500 dark:bg-neutral-800 dark:border-neutral-600 dark:text-gray-500'
 })
 
 function getVlanColor(vlanId: number): string {

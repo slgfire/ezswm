@@ -26,9 +26,9 @@
     </div>
 
     <!-- Network List -->
-    <div v-if="sortedItems.length > 0" class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/30">
+    <div v-if="sortedItems.length > 0" class="rounded-lg border border-default bg-default/30">
       <!-- Sort header -->
-      <div class="flex items-center gap-4 border-b border-gray-100 px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400 dark:border-gray-700/50">
+      <div class="flex items-center gap-4 border-b border-default px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400">
         <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('name')">
           Name
           <UIcon v-if="sortField === 'name'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
@@ -49,7 +49,7 @@
         :key="net.id"
         :to="`/networks/${net.id}`"
         class="group flex items-stretch pr-5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
-        :class="i > 0 ? 'border-t border-gray-100 dark:border-gray-700/50' : ''"
+        :class="i > 0 ? 'border-t border-default' : ''"
       >
         <!-- VLAN color left accent -->
         <div

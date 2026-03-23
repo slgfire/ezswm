@@ -1,5 +1,5 @@
 <template>
-  <nav v-if="crumbs.length > 1" class="border-b border-gray-200 px-4 py-2 dark:border-gray-800">
+  <nav v-if="crumbs.length > 1" class="border-b border-default px-4 py-2">
     <ol class="flex items-center gap-1 text-sm">
       <li v-for="(crumb, i) in crumbs" :key="crumb.path" class="flex items-center gap-1">
         <UIcon v-if="i > 0" name="i-heroicons-chevron-right-20-solid" class="h-4 w-4 text-gray-500" />

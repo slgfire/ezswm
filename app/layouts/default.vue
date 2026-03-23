@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen overflow-hidden bg-gray-50 dark:bg-dark">
+  <div class="flex h-screen overflow-hidden bg-elevated">
     <!-- Sidebar (desktop) -->
     <div class="hidden lg:flex">
       <LayoutAppSidebar :collapsed="sidebarCollapsed" @toggle="sidebarCollapsed = !sidebarCollapsed" />

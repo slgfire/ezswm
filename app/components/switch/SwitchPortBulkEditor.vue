@@ -1,34 +1,28 @@
 <template>
-  <USlideover v-model:open="isOpen" title="Bulk Edit">
-    <template #header>
-      <div class="flex items-center justify-between">
-        <h3 class="font-semibold">{{ $t('switches.ports.bulkEditTitle', { count: selectedPorts.length }) }}</h3>
-        <UButton variant="ghost" icon="i-heroicons-x-mark" size="sm" @click="close" />
-      </div>
-    </template>
+  <USlideover v-model:open="isOpen" :title="$t('switches.ports.bulkEditTitle', { count: selectedPorts.length })" description="Edit multiple ports at once">
 
     <template #body>
       <div class="space-y-4">
         <p class="text-xs text-gray-400">{{ $t('switches.ports.bulkEditHint', { count: selectedPorts.length }) }}</p>
 
         <UFormField :label="$t('common.status')">
-          <USelect v-model="form.status" :items="statusOptions" :placeholder="$t('common.noChange')" />
+          <USelect v-model="form.status" :items="statusOptions" :placeholder="$t('common.noChange')" class="w-full" />
         </UFormField>
 
         <UFormField :label="$t('switches.ports.speed')">
-          <USelect v-model="form.speed" :items="speedOptions" :placeholder="$t('common.noChange')" />
+          <USelect v-model="form.speed" :items="speedOptions" :placeholder="$t('common.noChange')" class="w-full" />
         </UFormField>
 
         <!-- Port Mode -->
         <UFormField :label="$t('switches.ports.portMode')">
-          <USelect v-model="form.port_mode" :items="portModeOptions" :placeholder="$t('common.noChange')" />
+          <USelect v-model="form.port_mode" :items="portModeOptions" :placeholder="$t('common.noChange')" class="w-full" />
         </UFormField>
 
         <!-- Access VLAN -->
         <template v-if="form.port_mode === 'access'">
           <UFormField :label="$t('switches.ports.accessVlan')">
             <VlanDropdown v-if="allVlans.length" v-model="form.access_vlan" :vlans="allVlans" />
-            <UInput v-else v-model.number="form.access_vlan" type="number" :placeholder="$t('common.noChange')" />
+            <UInput v-else v-model.number="form.access_vlan" type="number" :placeholder="$t('common.noChange')" class="w-full" />
           </UFormField>
         </template>
 
@@ -36,7 +30,7 @@
         <template v-if="form.port_mode === 'trunk'">
           <UFormField :label="$t('switches.ports.nativeVlan')">
             <VlanDropdown v-if="allVlans.length" v-model="form.native_vlan" :vlans="allVlans" />
-            <UInput v-else v-model.number="form.native_vlan" type="number" :placeholder="$t('common.noChange')" />
+            <UInput v-else v-model.number="form.native_vlan" type="number" :placeholder="$t('common.noChange')" class="w-full" />
           </UFormField>
 
           <UFormField :label="$t('switches.ports.taggedVlans')">
@@ -45,12 +39,12 @@
               v-model="selectedTaggedVlans"
               :vlans="allVlans"
             />
-            <UInput v-else v-model="form.tagged_vlans_str" placeholder="e.g. 100,200,300" />
+            <UInput v-else v-model="form.tagged_vlans_str" placeholder="e.g. 100,200,300" class="w-full" />
           </UFormField>
         </template>
 
         <UFormField :label="$t('common.description')">
-          <UInput v-model="form.description" :placeholder="$t('common.noChange')" />
+          <UInput v-model="form.description" :placeholder="$t('common.noChange')" class="w-full" />
         </UFormField>
       </div>
     </template>
@@ -93,14 +87,12 @@ async function fetchVlans() {
 }
 
 const statusOptions = computed(() => [
-  { label: t('common.noChange'), value: '' },
   { label: t('legend.up'), value: 'up' },
   { label: t('legend.down'), value: 'down' },
   { label: t('legend.disabled'), value: 'disabled' }
 ])
 
 const speedOptions = computed(() => [
-  { label: t('common.noChange'), value: '' },
   { label: '100M', value: '100M' },
   { label: '1G', value: '1G' },
   { label: '2.5G', value: '2.5G' },
@@ -109,7 +101,6 @@ const speedOptions = computed(() => [
 ])
 
 const portModeOptions = computed(() => [
-  { label: t('common.noChange'), value: '' },
   { label: t('switches.ports.modeAccess'), value: 'access' },
   { label: t('switches.ports.modeTrunk'), value: 'trunk' }
 ])

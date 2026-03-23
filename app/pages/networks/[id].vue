@@ -25,32 +25,32 @@
 
     <div v-else-if="network" class="space-y-5">
       <!-- Subnet stats -->
-      <div class="-mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-gray-200 bg-white px-5 py-3 dark:border-gray-700 dark:bg-gray-800/30">
+      <div class="-mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-default bg-default/30 px-5 py-3">
         <div>
           <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.subnet') }}</div>
           <div class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ network.subnet }}</div>
         </div>
-        <div class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
+        <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
         <div v-if="network.gateway">
           <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.gateway') }}</div>
           <div class="font-mono text-sm font-semibold text-gray-900 dark:text-white">{{ network.gateway }}</div>
         </div>
-        <div v-if="network.gateway" class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
+        <div v-if="network.gateway" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
         <div>
           <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.mask') }}</div>
           <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.mask }}</div>
         </div>
-        <div class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
+        <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
         <div>
           <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.hosts') }}</div>
           <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ subnetInfo.usableHosts.toLocaleString() }}</div>
         </div>
-        <div class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
+        <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
         <div>
           <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.allocated') }}</div>
           <div class="text-sm font-semibold" :class="utilizationPercent > 80 ? 'text-red-500' : 'text-primary-500'">{{ allocations.length }} <span class="text-xs font-normal text-gray-400">({{ utilizationPercent }}%)</span></div>
         </div>
-        <div v-if="associatedVlan" class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
+        <div v-if="associatedVlan" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
         <div v-if="associatedVlan">
           <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.vlan') }}</div>
           <div class="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
@@ -62,7 +62,7 @@
 
       <!-- Utilization bar -->
       <div class="space-y-1.5">
-        <div class="flex h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+        <div class="flex h-2 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
           <div
             class="h-full bg-green-500 transition-all"
             :style="{ width: `${Math.min(utilizationPercent, 100)}%` }"
@@ -87,7 +87,7 @@
       </div>
 
       <!-- Details panel (toggled) -->
-      <div v-show="showDetails || editing" class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800/30">
+      <div v-show="showDetails || editing" class="rounded-lg border border-default bg-default/30 p-4">
         <div v-if="!editing" class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
           <div>
             <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.network') }}</dt>
@@ -111,22 +111,22 @@
         <form v-if="editing" class="space-y-4" @submit.prevent="onSave">
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <UFormField :label="$t('networks.fields.name') + ' *'">
-              <UInput v-model="editForm.name" required />
+              <UInput v-model="editForm.name" required class="w-full" />
             </UFormField>
             <UFormField :label="$t('networks.fields.subnet') + ' *'">
-              <UInput v-model="editForm.subnet" required />
+              <UInput v-model="editForm.subnet" required class="w-full" />
             </UFormField>
             <UFormField :label="$t('networks.fields.gateway')">
-              <UInput v-model="editForm.gateway" />
+              <UInput v-model="editForm.gateway" class="w-full" />
             </UFormField>
             <UFormField :label="$t('networks.fields.dnsServers')">
-              <UInput v-model="editDnsInput" placeholder="8.8.8.8, 8.8.4.4" />
+              <UInput v-model="editDnsInput" placeholder="8.8.8.8, 8.8.4.4" class="w-full" />
             </UFormField>
             <UFormField :label="$t('networks.fields.vlan')">
-              <USelect v-model="editForm.vlan_id" :items="vlanOptions" />
+              <USelect v-model="editForm.vlan_id" :items="vlanOptions" placeholder="-" class="w-full" />
             </UFormField>
             <UFormField :label="$t('common.description')">
-              <UInput v-model="editForm.description" />
+              <UInput v-model="editForm.description" class="w-full" />
             </UFormField>
           </div>
           <div class="flex justify-end gap-2">
@@ -147,7 +147,7 @@
 
 
         <!-- Unified list -->
-        <div class="divide-y divide-gray-200 overflow-hidden rounded-lg border border-gray-200 dark:divide-gray-700/50 dark:border-gray-700">
+        <div class="divide-y divide-default overflow-hidden rounded-lg border border-default bg-default">
           <div
             v-for="row in unifiedList"
             :key="row.key"
@@ -173,7 +173,7 @@
                 <div class="flex flex-wrap items-center gap-2">
                   <span v-if="row.data.hostname" class="text-sm font-medium text-gray-900 dark:text-white">{{ row.data.hostname }}</span>
                   <span v-if="row.data.device_type" class="text-xs text-gray-500">{{ row.data.device_type }}</span>
-                  <UBadge :color="row.data.status === 'active' ? 'success' : row.data.status === 'reserved' ? 'warning' : 'neutral'" variant="subtle" size="xs">{{ row.data.status }}</UBadge>
+                  <UBadge :color="row.data.status === 'active' ? 'success' : row.data.status === 'reserved' ? 'warning' : 'neutral'" variant="subtle" size="sm">{{ row.data.status }}</UBadge>
                 </div>
               </div>
               <div class="flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100">
@@ -189,7 +189,7 @@
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
-                  <UBadge :color="rangeTypeBadgeColor(row.data.type)" variant="subtle" size="xs">{{ $t(`networks.ranges.types.${row.data.type}`) }}</UBadge>
+                  <UBadge :color="rangeTypeBadgeColor(row.data.type)" variant="subtle" size="sm">{{ $t(`networks.ranges.types.${row.data.type}`) }}</UBadge>
                   <span class="font-mono text-[11px] text-gray-400">{{ rangeIpCount(row.data) }} IPs</span>
                   <span v-if="row.data.description" class="text-xs text-gray-500 dark:text-gray-400">{{ row.data.description }}</span>
                   <span v-if="row.data.type !== 'dhcp' && countAllocsInRange(row.data) > 0" class="text-xs text-gray-400">
@@ -211,13 +211,7 @@
     </div>
 
     <!-- Range edit slideover -->
-    <USlideover v-model:open="showRangeEdit" title="Edit Range">
-      <template #header>
-        <div class="flex items-center justify-between">
-          <h3 class="font-semibold">{{ $t('networks.ranges.editRange') }}</h3>
-          <UButton variant="ghost" icon="i-heroicons-x-mark" size="sm" @click="showRangeEdit = false" />
-        </div>
-      </template>
+    <USlideover v-model:open="showRangeEdit" :title="$t('networks.ranges.editRange')" description="Modify IP range settings">
 
       <template #body>
         <div v-if="rangeEditError" class="mb-4 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
@@ -225,16 +219,16 @@
         </div>
         <form class="space-y-4" @submit.prevent="onSaveRangeEdit">
           <UFormField :label="$t('networks.ranges.fields.startIp') + ' *'">
-            <UInput v-model="rangeEditForm.start_ip" required />
+            <UInput v-model="rangeEditForm.start_ip" required class="w-full" />
           </UFormField>
           <UFormField :label="$t('networks.ranges.fields.endIp') + ' *'">
-            <UInput v-model="rangeEditForm.end_ip" required />
+            <UInput v-model="rangeEditForm.end_ip" required class="w-full" />
           </UFormField>
           <UFormField :label="$t('networks.ranges.fields.type') + ' *'">
-            <USelect v-model="rangeEditForm.type" :items="rangeTypeOptions" />
+            <USelect v-model="rangeEditForm.type" :items="rangeTypeOptions" class="w-full" />
           </UFormField>
           <UFormField :label="$t('common.description')">
-            <UInput v-model="rangeEditForm.description" />
+            <UInput v-model="rangeEditForm.description" class="w-full" />
           </UFormField>
         </form>
       </template>
@@ -253,13 +247,7 @@
     </USlideover>
 
     <!-- Add IP/Range Sidebar -->
-    <USlideover v-model:open="showAddPanel" title="Add">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="font-semibold">{{ editAllocTarget ? $t('networks.allocations.edit') : addPanelMode === 'ip' ? $t('networks.unified.addIp') : $t('networks.unified.addRange') }}</h3>
-            <UButton variant="ghost" icon="i-heroicons-x-mark" size="sm" @click="showAddPanel = false; editAllocTarget = null" />
-          </div>
-        </template>
+    <USlideover v-model:open="showAddPanel" :title="editAllocTarget ? $t('networks.allocations.edit') : addPanelMode === 'ip' ? $t('networks.unified.addIp') : $t('networks.unified.addRange')" description="Add IP allocation or range">
 
         <template #body>
         <!-- Mode toggle -->
@@ -268,14 +256,14 @@
             class="px-2.5 py-1 text-xs font-medium rounded border transition-colors"
             :class="addPanelMode === 'ip'
               ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
-              : 'bg-gray-100 border-gray-300 text-gray-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'"
+              : 'bg-neutral-100 border-neutral-300 text-neutral-500 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400'"
             @click="addPanelMode = 'ip'"
           >{{ $t('networks.unified.addIp') }}</button>
           <button
             class="px-2.5 py-1 text-xs font-medium rounded border transition-colors"
             :class="addPanelMode === 'range'
               ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
-              : 'bg-gray-100 border-gray-300 text-gray-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'"
+              : 'bg-neutral-100 border-neutral-300 text-neutral-500 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400'"
             @click="addPanelMode = 'range'"
           >{{ $t('networks.unified.addRange') }}</button>
         </div>
@@ -288,24 +276,24 @@
         <!-- IP Address form -->
         <form v-if="addPanelMode === 'ip'" class="space-y-4" @submit.prevent="onCreateAllocation">
           <UFormField :label="$t('networks.allocations.fields.ipAddress') + ' *'">
-            <UInput v-model="allocForm.ip_address" placeholder="10.0.1.10" required :color="addPanelError ? 'error' : undefined" />
+            <UInput v-model="allocForm.ip_address" placeholder="10.0.1.10" required :color="addPanelError ? 'error' : undefined" class="w-full" />
           </UFormField>
           <UFormField :label="$t('networks.allocations.fields.hostname')">
-            <UInput v-model="allocForm.hostname" />
+            <UInput v-model="allocForm.hostname" class="w-full" />
           </UFormField>
           <div class="grid grid-cols-2 gap-3">
             <UFormField :label="$t('networks.allocations.fields.deviceType')">
-              <USelect v-model="allocForm.device_type" :items="deviceTypeOptions" />
+              <USelect v-model="allocForm.device_type" :items="deviceTypeOptions" placeholder="-" class="w-full" />
             </UFormField>
             <UFormField :label="$t('networks.allocations.fields.status')">
-              <USelect v-model="allocForm.status" :items="allocStatusOptions" />
+              <USelect v-model="allocForm.status" :items="allocStatusOptions" class="w-full" />
             </UFormField>
           </div>
           <UFormField :label="$t('networks.allocations.fields.macAddress')">
-            <UInput v-model="allocForm.mac_address" placeholder="AA:BB:CC:DD:EE:FF" />
+            <UInput v-model="allocForm.mac_address" placeholder="AA:BB:CC:DD:EE:FF" class="w-full" />
           </UFormField>
           <UFormField :label="$t('common.description')">
-            <UInput v-model="allocForm.description" />
+            <UInput v-model="allocForm.description" class="w-full" />
           </UFormField>
         </form>
 
@@ -313,17 +301,17 @@
         <form v-if="addPanelMode === 'range'" class="space-y-4" @submit.prevent="onCreateRange">
           <div class="grid grid-cols-2 gap-3">
             <UFormField :label="$t('networks.ranges.fields.startIp') + ' *'">
-              <UInput v-model="rangeForm.start_ip" placeholder="10.0.1.100" required :color="addPanelError ? 'error' : undefined" />
+              <UInput v-model="rangeForm.start_ip" placeholder="10.0.1.100" required :color="addPanelError ? 'error' : undefined" class="w-full" />
             </UFormField>
             <UFormField :label="$t('networks.ranges.fields.endIp') + ' *'">
-              <UInput v-model="rangeForm.end_ip" placeholder="10.0.1.200" required :color="addPanelError ? 'error' : undefined" />
+              <UInput v-model="rangeForm.end_ip" placeholder="10.0.1.200" required :color="addPanelError ? 'error' : undefined" class="w-full" />
             </UFormField>
           </div>
           <UFormField :label="$t('networks.ranges.fields.type') + ' *'">
-            <USelect v-model="rangeForm.type" :items="rangeTypeOptions" />
+            <USelect v-model="rangeForm.type" :items="rangeTypeOptions" class="w-full" />
           </UFormField>
           <UFormField :label="$t('common.description')">
-            <UInput v-model="rangeForm.description" />
+            <UInput v-model="rangeForm.description" class="w-full" />
           </UFormField>
         </form>
         </template>
@@ -425,7 +413,7 @@ const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrid
 watch(network, (n) => { if (n?.name) breadcrumbOverrides.value[`/networks/${networkId}`] = n.name }, { immediate: true })
 
 const vlanOptions = computed(() => {
-  const opts: { label: string; value: string }[] = [{ label: '-', value: '' }]
+  const opts: { label: string; value: string }[] = []
   vlans.value.forEach((v: any) => { opts.push({ label: `VLAN ${v.vlan_id} - ${v.name}`, value: v.id }) })
   return opts
 })
@@ -435,7 +423,7 @@ const associatedVlan = computed(() => {
   return vlans.value.find((v: any) => v.id === network.value.vlan_id)
 })
 
-const deviceTypeOptions = [{ label: '-', value: '' }, { label: 'Server', value: 'server' }, { label: 'Switch', value: 'switch' }, { label: 'Printer', value: 'printer' }, { label: 'Phone', value: 'phone' }, { label: 'AP', value: 'ap' }, { label: 'Camera', value: 'camera' }, { label: 'Other', value: 'other' }]
+const deviceTypeOptions = [{ label: 'Server', value: 'server' }, { label: 'Switch', value: 'switch' }, { label: 'Printer', value: 'printer' }, { label: 'Phone', value: 'phone' }, { label: 'AP', value: 'ap' }, { label: 'Camera', value: 'camera' }, { label: 'Other', value: 'other' }]
 const allocStatusOptions = computed(() => [{ label: t('common.active'), value: 'active' }, { label: 'Reserved', value: 'reserved' }, { label: t('common.inactive'), value: 'inactive' }])
 const rangeTypeOptions = [{ label: 'DHCP', value: 'dhcp' }, { label: 'Static', value: 'static' }, { label: 'Reserved', value: 'reserved' }]
 
@@ -525,7 +513,7 @@ function rangeIpCount(range: any): number {
 
 function rowClass(row: UnifiedRow): string {
   if (row.kind === 'fixed') {
-    return 'bg-gray-50 dark:bg-dark-50'
+    return 'bg-elevated'
   }
   if (row.kind === 'range') {
     const type = row.data?.type

@@ -15,7 +15,7 @@
         <span
           v-for="vid in modelValue"
           :key="vid"
-          class="inline-flex items-center gap-1 rounded bg-gray-100 px-1.5 py-0.5 text-xs dark:bg-gray-700"
+          class="inline-flex items-center gap-1 rounded bg-neutral-100 px-1.5 py-0.5 text-xs dark:bg-neutral-700"
         >
           <div class="h-2 w-2 rounded" :style="{ backgroundColor: getColor(vid) }" />
           {{ vid }}

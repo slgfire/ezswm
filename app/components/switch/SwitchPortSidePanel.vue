@@ -1,11 +1,5 @@
 <template>
-  <USlideover v-model:open="isOpen" title="Port Details">
-    <template #header>
-      <div class="flex items-center justify-between">
-        <h3 class="font-semibold">{{ port?.label || `Port ${port?.unit}/${port?.index}` }}</h3>
-        <UButton variant="ghost" icon="i-heroicons-x-mark" @click="isOpen = false" />
-      </div>
-    </template>
+  <USlideover v-model:open="isOpen" :title="port?.label || `Port ${port?.unit}/${port?.index}`" description="Edit port configuration">
 
     <template #body>
       <div v-if="port" class="space-y-4">
@@ -15,15 +9,15 @@
         </div>
 
         <UFormField :label="$t('common.status')">
-          <USelect v-model="form.status" :items="['up', 'down', 'disabled']" />
+          <USelect v-model="form.status" :items="['up', 'down', 'disabled']" class="w-full" />
         </UFormField>
 
         <UFormField :label="$t('switches.ports.speed')">
-          <USelect v-model="form.speed" :items="speeds" placeholder="Select speed" />
+          <USelect v-model="form.speed" :items="speeds" placeholder="Select speed" class="w-full" />
         </UFormField>
 
         <UFormField :label="$t('switches.ports.portMode')">
-          <USelect v-model="form.port_mode" :items="portModeOptions" />
+          <USelect v-model="form.port_mode" :items="portModeOptions" class="w-full" />
         </UFormField>
 
         <template v-if="form.port_mode === 'access'">
@@ -38,7 +32,7 @@
           </UFormField>
           <UFormField :label="$t('switches.ports.taggedVlans')">
             <VlanMultiSelect v-if="allVlans.length" v-model="selectedTaggedVlans" :vlans="allVlans" />
-            <UInput v-else v-model="taggedVlansStr" placeholder="e.g. 100,200,300" />
+            <UInput v-else v-model="taggedVlansStr" placeholder="e.g. 100,200,300" class="w-full" />
           </UFormField>
         </template>
 
@@ -50,7 +44,7 @@
               class="px-2.5 py-1 text-xs font-medium rounded border transition-colors"
               :class="connectionMode === mode.value
                 ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
-                : 'bg-gray-100 border-gray-300 text-gray-500 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:text-gray-300'"
+                : 'bg-neutral-100 border-neutral-300 text-neutral-500 hover:text-neutral-700 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'"
               @click="connectionMode = mode.value"
             >{{ mode.label }}</button>
           </div>
@@ -62,9 +56,10 @@
               :search-input="false"
               :model-value="selectedSwitchOption"
               :items="switchSearchOptions"
-              
+
               by="value"
               @update:model-value="onSwitchSelect"
+              class="w-full"
             />
           </UFormField>
           <UFormField v-if="selectedSwitchId" :label="$t('switches.ports.connectedPort')">
@@ -72,9 +67,10 @@
               :search-input="false"
               :model-value="selectedPortOption"
               :items="remotePortSearchOptions"
-              
+
               by="value"
               @update:model-value="onPortSelect"
+              class="w-full"
             />
             <div v-if="portConflict" class="mt-1 rounded-md bg-yellow-500/10 border border-yellow-500/30 px-3 py-2 text-xs text-yellow-400">
               <span class="font-semibold">{{ $t('common.warning') }}:</span> {{ $t('switches.ports.portConflict') }}
@@ -86,28 +82,28 @@
 
         <template v-if="connectionMode === 'device'">
           <UFormField :label="$t('switches.ports.connectedDevice')">
-            <UInput v-model="form.connected_device" :placeholder="$t('switches.ports.devicePlaceholder')" />
+            <UInput v-model="form.connected_device" :placeholder="$t('switches.ports.devicePlaceholder')" class="w-full" />
           </UFormField>
           <UFormField :label="$t('switches.ports.connectedPort')">
-            <UInput v-model="form.connected_port" :placeholder="$t('switches.ports.portPlaceholder')" />
+            <UInput v-model="form.connected_port" :placeholder="$t('switches.ports.portPlaceholder')" class="w-full" />
           </UFormField>
         </template>
 
         <template v-if="connectionMode === 'freetext'">
           <UFormField :label="$t('switches.ports.connectedDevice')">
-            <UInput v-model="form.connected_device" :placeholder="$t('switches.ports.devicePlaceholder')" />
+            <UInput v-model="form.connected_device" :placeholder="$t('switches.ports.devicePlaceholder')" class="w-full" />
           </UFormField>
           <UFormField :label="$t('switches.ports.connectedPort')">
-            <UInput v-model="form.connected_port" :placeholder="$t('switches.ports.portPlaceholder')" />
+            <UInput v-model="form.connected_port" :placeholder="$t('switches.ports.portPlaceholder')" class="w-full" />
           </UFormField>
         </template>
 
         <UFormField :label="$t('common.description')">
-          <UInput v-model="form.description" />
+          <UInput v-model="form.description" class="w-full" />
         </UFormField>
 
         <UFormField :label="$t('switches.ports.macAddress')">
-          <UInput v-model="form.mac_address" placeholder="XX:XX:XX:XX:XX:XX" />
+          <UInput v-model="form.mac_address" placeholder="XX:XX:XX:XX:XX:XX" class="w-full" />
         </UFormField>
       </div>
 

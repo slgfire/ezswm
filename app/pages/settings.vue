@@ -3,23 +3,23 @@
     <h1 class="mb-6 text-2xl font-bold">{{ $t('settings.title') }}</h1>
 
     <UTabs :items="tabs">
-      <template #item="{ item }">
-        <!-- General Tab -->
-        <div v-if="item.key === 'general'" class="mt-4">
+      <template #general>
+        <div class="mt-4">
           <UCard>
             <form @submit.prevent="saveGeneral">
               <div class="space-y-4">
                 <UFormField :label="$t('settings.general.appName')">
-                  <UInput v-model="generalForm.app_name" :placeholder="$t('settings.general.appName')" />
+                  <UInput v-model="generalForm.app_name" :placeholder="$t('settings.general.appName')" class="w-full" />
                 </UFormField>
                 <UFormField :label="$t('settings.general.defaultPortStatus')">
                   <USelect
                     v-model="generalForm.default_port_status"
                     :items="portStatusOptions"
+                    class="w-full"
                   />
                 </UFormField>
                 <UFormField :label="$t('settings.general.paginationSize')">
-                  <UInput v-model.number="generalForm.pagination_size" type="number" min="5" max="100" />
+                  <UInput v-model.number="generalForm.pagination_size" type="number" min="5" max="100" class="w-full" />
                 </UFormField>
                 <div class="flex justify-end">
                   <UButton type="submit" :loading="savingGeneral">{{ $t('common.save') }}</UButton>
@@ -28,9 +28,10 @@
             </form>
           </UCard>
         </div>
+      </template>
 
-        <!-- Account Tab -->
-        <div v-if="item.key === 'account'" class="mt-4 space-y-6">
+      <template #account>
+        <div class="mt-4 space-y-6">
           <UCard>
             <template #header>
               <h3 class="font-semibold">{{ $t('settings.account.title') }}</h3>
@@ -38,10 +39,10 @@
             <form @submit.prevent="saveAccount">
               <div class="space-y-4">
                 <UFormField :label="$t('settings.account.displayName')">
-                  <UInput v-model="accountForm.display_name" :placeholder="$t('settings.account.displayName')" />
+                  <UInput v-model="accountForm.display_name" :placeholder="$t('settings.account.displayName')" class="w-full" />
                 </UFormField>
                 <UFormField :label="$t('settings.account.language')">
-                  <USelect v-model="accountForm.language" :items="languageOptions" />
+                  <USelect v-model="accountForm.language" :items="languageOptions" class="w-full" />
                 </UFormField>
                 <div class="flex justify-end">
                   <UButton type="submit" :loading="savingProfile">
@@ -59,13 +60,13 @@
             <form @submit.prevent="handleChangePassword">
               <div class="space-y-4">
                 <UFormField :label="$t('settings.account.currentPassword')">
-                  <UInput v-model="passwordForm.current_password" type="password" />
+                  <UInput v-model="passwordForm.current_password" type="password" class="w-full" />
                 </UFormField>
                 <UFormField :label="$t('settings.account.newPassword')">
-                  <UInput v-model="passwordForm.new_password" type="password" />
+                  <UInput v-model="passwordForm.new_password" type="password" class="w-full" />
                 </UFormField>
                 <UFormField :label="$t('settings.account.confirmNewPassword')">
-                  <UInput v-model="passwordForm.confirm_password" type="password" />
+                  <UInput v-model="passwordForm.confirm_password" type="password" class="w-full" />
                 </UFormField>
                 <div class="flex justify-end">
                   <UButton type="submit" :loading="savingPassword">
@@ -93,8 +94,8 @@ const savingProfile = ref(false)
 const savingPassword = ref(false)
 
 const tabs = computed(() => [
-  { key: 'general', label: t('common.general') },
-  { key: 'account', label: t('common.account') }
+  { label: t('common.general'), slot: 'general' as const },
+  { label: t('common.account'), slot: 'account' as const }
 ])
 
 const portStatusOptions = [

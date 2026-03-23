@@ -17,6 +17,7 @@
               :max="4094"
               :placeholder="$t('vlans.fields.vlanId')"
               required
+              class="w-full"
             />
           </UFormField>
 
@@ -26,6 +27,7 @@
               v-model="form.name"
               :placeholder="$t('vlans.fields.name')"
               required
+              class="w-full"
             />
           </UFormField>
 
@@ -35,12 +37,13 @@
               v-model="form.description"
               :placeholder="$t('common.description')"
               :rows="3"
+              class="w-full"
             />
           </UFormField>
 
           <!-- Status -->
           <UFormField :label="$t('vlans.fields.status')">
-            <USelect v-model="form.status" :items="statusOptions" />
+            <USelect v-model="form.status" :items="statusOptions" class="w-full" />
           </UFormField>
 
           <!-- Routing Device -->
@@ -48,6 +51,7 @@
             <UInput
               v-model="form.routing_device"
               :placeholder="$t('vlans.fields.routingDevice')"
+              class="w-full"
             />
           </UFormField>
 

@@ -14,6 +14,7 @@
               v-model="form.name"
               :placeholder="$t('networks.fields.name')"
               required
+              class="w-full"
             />
           </UFormField>
 
@@ -23,6 +24,7 @@
               v-model="form.subnet"
               placeholder="10.0.1.0/24"
               required
+              class="w-full"
             />
           </UFormField>
 
@@ -31,6 +33,7 @@
             <UInput
               v-model="form.gateway"
               placeholder="10.0.1.1"
+              class="w-full"
             />
           </UFormField>
 
@@ -39,6 +42,7 @@
             <UInput
               v-model="dnsInput"
               placeholder="8.8.8.8, 8.8.4.4"
+              class="w-full"
             />
             <template #hint>
               <span class="text-xs text-gray-500">{{ $t('networks.fields.dnsServers') }} (comma-separated)</span>
@@ -51,6 +55,8 @@
               v-model="form.vlan_id"
               :items="vlanOptions"
               :placeholder="$t('networks.fields.vlan')"
+              value-key="value"
+              class="w-full"
             />
           </UFormField>
 
@@ -60,6 +66,7 @@
               v-model="form.description"
               :placeholder="$t('common.description')"
               :rows="3"
+              class="w-full"
             />
           </UFormField>
         </div>
@@ -97,9 +104,7 @@ const form = ref({
 })
 
 const vlanOptions = computed(() => {
-  const options: { label: string; value: string }[] = [
-    { label: '-', value: '' }
-  ]
+  const options: { label: string; value: string }[] = []
   vlans.value.forEach((v: any) => {
     options.push({ label: `VLAN ${v.vlan_id} - ${v.name}`, value: v.id })
   })

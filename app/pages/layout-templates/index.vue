@@ -70,16 +70,16 @@
         <div
           v-for="tpl in filteredItems"
           :key="tpl.id"
-          class="stagger-item card-glow group relative cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700/50 dark:bg-dark-100"
+          class="stagger-item card-glow group relative cursor-pointer overflow-hidden rounded-lg bg-default ring ring-default"
           @click="navigateTo(`/layout-templates/${tpl.id}`)"
         >
           <!-- Port Preview -->
-          <div class="border-b border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-700/30 dark:bg-dark-50">
+          <div class="border-b border-default bg-elevated px-4 py-3">
             <TemplateMiniPreview :template="tpl" />
           </div>
 
           <!-- Hover actions -->
-          <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-gray-700/95">
+          <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
             <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="2xs" @click.stop="navigateTo(`/layout-templates/${tpl.id}/edit`)" />
             <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="2xs" @click.stop="onDuplicate(tpl)" />
             <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="2xs" @click.stop="confirmDelete(tpl)" />
@@ -96,10 +96,10 @@
 
             <!-- Badges -->
             <div class="mt-3 flex flex-wrap gap-1.5">
-              <UBadge variant="subtle" size="xs">
+              <UBadge variant="subtle" size="sm">
                 {{ getTotalPortCount(tpl) }} Ports
               </UBadge>
-              <UBadge variant="subtle" size="xs" color="neutral">
+              <UBadge variant="subtle" size="sm" color="neutral">
                 {{ tpl.units?.length || 0 }} {{ tpl.units?.length === 1 ? 'Unit' : 'Units' }}
               </UBadge>
               <UBadge
@@ -129,7 +129,7 @@
         <div
           v-for="tpl in filteredItems"
           :key="tpl.id"
-          class="group flex cursor-pointer items-center gap-4 rounded-lg border border-gray-200 bg-white px-4 py-3 transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-900 dark:hover:shadow-gray-800/50"
+          class="group flex cursor-pointer items-center gap-4 rounded-lg border border-default bg-default px-4 py-3 transition-shadow hover:shadow-md"
           @click="navigateTo(`/layout-templates/${tpl.id}`)"
         >
           <!-- Mini Preview -->
@@ -146,10 +146,10 @@
               </span>
             </div>
             <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <UBadge variant="subtle" size="xs">
+              <UBadge variant="subtle" size="sm">
                 {{ getTotalPortCount(tpl) }} Ports
               </UBadge>
-              <UBadge variant="subtle" size="xs" color="neutral">
+              <UBadge variant="subtle" size="sm" color="neutral">
                 {{ tpl.units?.length || 0 }} {{ tpl.units?.length === 1 ? 'Unit' : 'Units' }}
               </UBadge>
               <UBadge

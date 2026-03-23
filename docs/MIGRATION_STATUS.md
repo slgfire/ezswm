@@ -252,6 +252,42 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 12: Nuxt UI v4 Migration — Fixes (2026-03-22)
+
+**USlideover accessibility fixes:**
+- Replaced all 6 `#header` slot overrides with native `title`/`description` props
+- Eliminates reka-ui `DialogTitle`/`DialogDescription` console warnings
+- Files: SwitchPortSidePanel.vue, SwitchPortBulkEditor.vue, vlans/index.vue, networks/[id].vue (x2), switches/[id].vue
+
+**UModal accessibility fix:**
+- Added `title`/`description` props to ConfirmDialog.vue
+
+**UTabs v4 slot API migration:**
+- Migrated settings.vue from `#item` + `v-if="item.key"` to named slot properties (`#general`, `#account`)
+- Migrated data-management.vue from `#item` to named slots (`#backup`, `#export`, `#import`)
+- Fixed Settings and Data Management pages showing empty tab content
+
+**USelect v4 empty value fix:**
+- Removed `{ label: '---', value: '' }` items from USelect (v4 forbids empty string values)
+- Added `placeholder` prop instead for optional fields
+- Fixed 500 error on switches/create, networks/create, layout-templates/create/edit
+- Files: switches/create.vue, networks/create.vue, networks/[id].vue, layout-templates/create.vue, layout-templates/[id]/edit.vue, SwitchPortBulkEditor.vue
+
+**Form input full-width styling:**
+- Added `class="w-full"` to ~60 UInput/USelect/USelectMenu/UTextarea components across 12 files
+- All form fields inside UFormField now render full-width consistently
+- Files: all create pages, edit slideovers, settings, data-management, port side panel, bulk editor
+
+**Verification:**
+- All pages tested: Dashboard, Switches, VLANs, Networks, Layout Templates, Settings, Data Management
+- All create pages render correctly with full-width form fields
+- Port edit slideover, VLAN detail slideover, switch edit slideover all working
+- Zero console errors, zero warnings
+- `npm run build`: Passes (8.95 MB output)
+- `docker compose build --no-cache`: Passes
+
+---
+
 ## History
 
 ### Phase 0 — Documentation & Planning (2026-03-16)

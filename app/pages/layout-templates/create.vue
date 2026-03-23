@@ -11,16 +11,16 @@
           <!-- Basic Info -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UFormField :label="$t('templates.fields.name') + ' *'" required>
-              <UInput v-model="form.name" :placeholder="$t('templates.fields.name')" />
+              <UInput v-model="form.name" :placeholder="$t('templates.fields.name')" class="w-full" />
             </UFormField>
             <UFormField :label="$t('templates.fields.manufacturer')">
-              <UInput v-model="form.manufacturer" :placeholder="$t('templates.fields.manufacturer')" />
+              <UInput v-model="form.manufacturer" :placeholder="$t('templates.fields.manufacturer')" class="w-full" />
             </UFormField>
             <UFormField :label="$t('templates.fields.model')">
-              <UInput v-model="form.model" :placeholder="$t('templates.fields.model')" />
+              <UInput v-model="form.model" :placeholder="$t('templates.fields.model')" class="w-full" />
             </UFormField>
             <UFormField :label="$t('templates.fields.description')">
-              <UInput v-model="form.description" :placeholder="$t('templates.fields.description')" />
+              <UInput v-model="form.description" :placeholder="$t('templates.fields.description')" class="w-full" />
             </UFormField>
           </div>
 
@@ -52,10 +52,10 @@
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <UFormField :label="$t('templates.units.unitNumber')">
-                  <UInput v-model.number="unit.unit_number" type="number" min="1" />
+                  <UInput v-model.number="unit.unit_number" type="number" min="1" class="w-full" />
                 </UFormField>
                 <UFormField :label="$t('templates.units.label')">
-                  <UInput v-model="unit.label" :placeholder="$t('templates.units.label')" />
+                  <UInput v-model="unit.label" :placeholder="$t('templates.units.label')" class="w-full" />
                 </UFormField>
               </div>
 
@@ -85,25 +85,25 @@
                   </div>
                   <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <UFormField :label="$t('templates.blocks.type')">
-                      <USelect v-model="block.type" :items="portTypeOptions" />
+                      <USelect v-model="block.type" :items="portTypeOptions" class="w-full" />
                     </UFormField>
                     <UFormField :label="$t('templates.blocks.count')">
-                      <UInput v-model.number="block.count" type="number" min="1" />
+                      <UInput v-model.number="block.count" type="number" min="1" class="w-full" />
                     </UFormField>
                     <UFormField :label="$t('templates.blocks.startIndex')">
-                      <UInput v-model.number="block.start_index" type="number" min="0" />
+                      <UInput v-model.number="block.start_index" type="number" min="0" class="w-full" />
                     </UFormField>
                     <UFormField :label="$t('templates.blocks.label')">
-                      <UInput v-model="block.label" :placeholder="$t('templates.blocks.label')" />
+                      <UInput v-model="block.label" :placeholder="$t('templates.blocks.label')" class="w-full" />
                     </UFormField>
                     <UFormField :label="$t('templates.blocks.rows')">
-                      <UInput v-model.number="block.rows" type="number" min="1" />
+                      <UInput v-model.number="block.rows" type="number" min="1" class="w-full" />
                     </UFormField>
                     <UFormField :label="$t('templates.blocks.rowLayout')">
-                      <USelect v-model="block.row_layout" :items="rowLayoutOptions" :disabled="block.rows < 2" />
+                      <USelect v-model="block.row_layout" :items="rowLayoutOptions" :disabled="block.rows < 2" class="w-full" />
                     </UFormField>
                     <UFormField :label="$t('templates.blocks.defaultSpeed')">
-                      <USelect v-model="block.default_speed" :items="speedOptions" />
+                      <USelect v-model="block.default_speed" :items="speedOptions" placeholder="-- None --" class="w-full" />
                     </UFormField>
                   </div>
                 </div>
@@ -123,7 +123,7 @@
           <USeparator />
           <div>
             <h2 class="mb-3 text-lg font-semibold">{{ $t('templates.preview') }}</h2>
-            <div v-if="previewPorts.length" class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50">
+            <div v-if="previewPorts.length" class="rounded-lg border border-default bg-elevated p-4">
               <SwitchPortGrid
                 :ports="previewPorts"
                 :units="form.units"
@@ -176,7 +176,6 @@ const rowLayoutOptions = computed(() => [
 ])
 
 const speedOptions = [
-  { label: '-- None --', value: '' },
   { label: '100M', value: '100M' },
   { label: '1G', value: '1G' },
   { label: '2.5G', value: '2.5G' },

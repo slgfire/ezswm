@@ -1,5 +1,5 @@
 <template>
-  <header class="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-dark">
+  <header class="flex h-16 items-center justify-between border-b border-default bg-default px-4">
     <div class="flex items-center gap-4">
       <!-- Mobile menu toggle -->
       <UButton
@@ -12,7 +12,7 @@
 
       <!-- Search -->
       <div class="relative hidden sm:block">
-        <div class="flex items-center rounded-md border border-gray-200 bg-gray-50 px-3 dark:border-gray-700 dark:bg-dark-100">
+        <div class="flex items-center rounded-md border border-default bg-elevated px-3">
           <span class="font-mono text-xs font-semibold text-primary-500 select-none">&gt;_</span>
           <input
             ref="searchInputRef"
@@ -31,7 +31,7 @@
         <!-- Search results dropdown -->
         <div
           v-if="showResults && searchQuery.length >= 2"
-          class="absolute left-0 top-full z-50 mt-1 w-96 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900"
+          class="absolute left-0 top-full z-50 mt-1 w-96 rounded-lg border border-default bg-default shadow-lg"
         >
           <div v-if="searching" class="flex items-center justify-center py-4">
             <UIcon name="i-heroicons-arrow-path" class="h-4 w-4 animate-spin text-gray-400" />
@@ -45,7 +45,7 @@
                 v-for="(sw, i) in results.switches"
                 :key="sw.id"
                 :to="`/switches/${sw.id}`"
-                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('switches', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800']"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('switches', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('switches', i)"
               >
@@ -53,7 +53,7 @@
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-1.5">
                     <span class="font-medium text-gray-900 dark:text-white" v-html="highlight(sw.name)" />
-                    <span v-if="sw.role" class="rounded bg-gray-100 px-1 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">{{ sw.role }}</span>
+                    <span v-if="sw.role" class="rounded bg-neutral-100 px-1 py-0.5 text-[10px] font-medium text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">{{ sw.role }}</span>
                   </div>
                   <div class="flex items-center gap-2 truncate text-xs text-gray-400">
                     <span v-if="sw.manufacturer || sw.model" v-html="highlight([sw.manufacturer, sw.model].filter(Boolean).join(' '))" />
@@ -71,7 +71,7 @@
                 v-for="(vlan, i) in results.vlans"
                 :key="vlan.id"
                 :to="`/vlans/${vlan.id}`"
-                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('vlans', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800']"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('vlans', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('vlans', i)"
               >
@@ -89,7 +89,7 @@
                 v-for="(net, i) in results.networks"
                 :key="net.id"
                 :to="`/networks/${net.id}`"
-                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('networks', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800']"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('networks', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('networks', i)"
               >
@@ -108,7 +108,7 @@
                 v-for="(alloc, i) in results.allocations"
                 :key="alloc.id"
                 :to="allocLink(alloc)"
-                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('allocations', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800']"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('allocations', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('allocations', i)"
               >
@@ -127,7 +127,7 @@
                 v-for="(tpl, i) in results.templates"
                 :key="tpl.id"
                 :to="`/layout-templates/${tpl.id}`"
-                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('templates', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800']"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('templates', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('templates', i)"
               >

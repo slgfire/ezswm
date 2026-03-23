@@ -50,7 +50,7 @@
         <div
           v-for="unit in template.units"
           :key="unit.unit_number"
-          class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800/30"
+          class="rounded-lg border border-default bg-default/30 p-4"
         >
           <div class="mb-3 flex items-center justify-between">
             <span class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
@@ -63,9 +63,9 @@
             <div
               v-for="(block, blockIdx) in unit.blocks"
               :key="blockIdx"
-              class="flex items-center gap-3 rounded border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800/50"
+              class="flex items-center gap-3 rounded border border-default bg-elevated px-3 py-2"
             >
-              <UBadge :color="getPortTypeColor(block.type)" variant="subtle" size="xs">
+              <UBadge :color="getPortTypeColor(block.type)" variant="subtle" size="sm">
                 {{ block.type.toUpperCase() }}
               </UBadge>
               <div class="flex flex-1 flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500 dark:text-gray-400">

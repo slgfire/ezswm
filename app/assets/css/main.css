@@ -10,10 +10,10 @@
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   --font-display: 'JetBrains Mono', ui-monospace, monospace;
 
-  --color-dark: #0a0a0f;
-  --color-dark-50: #0d0d14;
-  --color-dark-100: #10101a;
-  --color-dark-200: #14141f;
+  --color-dark: #0a0a0a;
+  --color-dark-50: #0e0e0e;
+  --color-dark-100: #121212;
+  --color-dark-200: #161616;
 
   --animate-fade-in: fadeIn 0.3s ease-out forwards;
   --animate-slide-up: slideUp 0.3s ease-out forwards;
@@ -31,11 +31,11 @@
 
 /* Deep dark backgrounds */
 .dark body {
-  background-color: #0a0a0f;
+  background-color: #0a0a0a;
 }
 
 .dark .bg-gray-950 {
-  background-color: #0a0a0f;
+  background-color: #0a0a0a;
 }
 
 /* Headings use display font (JetBrains Mono) */
@@ -129,6 +129,8 @@ a, button {
   transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* Nuxt UI v4: form inputs fill their container inside form fields - applied via class="w-full" on components */
+
 /* Scrollbar styling for dark mode */
 .dark ::-webkit-scrollbar {
   width: 6px;
@@ -136,7 +138,7 @@ a, button {
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: #0a0a0f;
+  background: #0a0a0a;
 }
 
 .dark ::-webkit-scrollbar-thumb {

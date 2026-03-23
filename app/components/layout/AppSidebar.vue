@@ -1,10 +1,10 @@
 <template>
   <aside
-    class="flex h-full flex-col border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-dark"
+    class="flex h-full flex-col border-r border-default bg-default"
     :class="collapsed ? 'w-16' : 'w-64'"
   >
     <!-- Logo -->
-    <div class="flex h-16 items-center border-b border-gray-200 px-4 dark:border-gray-800">
+    <div class="flex h-16 items-center border-b border-default px-4">
       <NuxtLink to="/" class="font-display text-xl font-bold">
         <span class="text-primary-500">ez</span><span v-if="!collapsed" class="tracking-tight text-gray-900 dark:text-white">SWM</span>
       </NuxtLink>
@@ -14,7 +14,7 @@
     <nav class="flex-1 overflow-y-auto px-2 py-4">
       <ul class="space-y-1">
         <template v-for="section in navSections" :key="section.label">
-          <li v-if="section.divider" class="my-3 border-t border-gray-200 dark:border-gray-800" />
+          <li v-if="section.divider" class="my-3 border-t border-default" />
           <li v-for="item in section.items" :key="item.to">
             <NuxtLink
               :to="item.to"
@@ -32,7 +32,7 @@
     </nav>
 
     <!-- Collapse toggle -->
-    <div class="border-t border-gray-200 p-2 dark:border-gray-800">
+    <div class="border-t border-default p-2">
       <UButton
         variant="ghost"
         color="neutral"

@@ -63,22 +63,22 @@
     <!-- Switch details -->
     <div v-if="item && !loading" class="space-y-4">
       <!-- Info bar -->
-      <div class="-mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-gray-200 bg-white px-5 py-3 dark:border-gray-700 dark:bg-gray-800/30">
+      <div class="-mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-default bg-default/30 px-5 py-3">
         <div v-if="item.model">
           <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.model') }}</div>
           <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.manufacturer ? `${item.manufacturer} ${item.model}` : item.model }}</div>
         </div>
-        <div v-if="item.model && (item.location || item.management_ip)" class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
+        <div v-if="item.model && (item.location || item.management_ip)" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
         <div v-if="item.location">
           <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.location') }}</div>
           <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.location }}{{ item.rack_position ? ` / ${item.rack_position}` : '' }}</div>
         </div>
-        <div v-if="item.location && item.management_ip" class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
+        <div v-if="item.location && item.management_ip" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
         <div v-if="item.management_ip">
           <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.managementIp') }}</div>
           <div class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ item.management_ip }}</div>
         </div>
-        <div v-if="item.ports?.length" class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
+        <div v-if="item.ports?.length" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
         <div v-if="item.ports?.length">
           <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.ports') }}</div>
           <div class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
@@ -90,7 +90,7 @@
             </span>
           </div>
         </div>
-        <div v-if="currentTemplateName" class="h-8 w-px bg-gray-200 dark:bg-gray-700" />
+        <div v-if="currentTemplateName" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
         <div v-if="currentTemplateName">
           <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.template') }}</div>
           <div class="text-sm text-gray-600 dark:text-gray-300">{{ currentTemplateName }}</div>
@@ -98,7 +98,7 @@
       </div>
 
       <!-- Details panel (toggled via info button in header) -->
-      <div v-show="showDetails" class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800/30">
+      <div v-show="showDetails" class="rounded-lg border border-default bg-default/30 p-4">
         <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
           <div>
             <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.name') }}</dt>
@@ -139,7 +139,7 @@
           <div>
             <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.role') }}</dt>
             <dd>
-              <UBadge v-if="item.role" :color="roleColor(item.role)" variant="subtle" size="xs">
+              <UBadge v-if="item.role" :color="roleColor(item.role)" variant="subtle" size="sm">
                 {{ $t(`switches.roles.${item.role}`) }}
               </UBadge>
               <span v-else>-</span>
@@ -148,7 +148,7 @@
           <div v-if="item.tags?.length" class="col-span-2 sm:col-span-3 lg:col-span-4">
             <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.tags') }}</dt>
             <dd class="flex flex-wrap gap-1 pt-0.5">
-              <UBadge v-for="tg in item.tags" :key="tg" color="neutral" variant="soft" size="xs">{{ tg }}</UBadge>
+              <UBadge v-for="tg in item.tags" :key="tg" color="neutral" variant="soft" size="sm">{{ tg }}</UBadge>
             </dd>
           </div>
           <div v-if="item.notes" class="col-span-2 sm:col-span-3 lg:col-span-4">
@@ -211,54 +211,49 @@
     />
 
     <!-- Edit Side Panel -->
-    <USlideover v-model:open="editMode" title="Edit Switch">
-      <template #header>
-        <div class="flex items-center justify-between">
-          <h3 class="font-semibold">{{ $t('switches.edit') }}</h3>
-          <UButton icon="i-heroicons-x-mark" variant="ghost" color="neutral" size="sm" @click="editMode = false" />
-        </div>
-      </template>
+    <USlideover v-model:open="editMode" :title="$t('switches.edit')" description="Modify switch properties">
 
       <template #body>
         <div class="space-y-4">
           <UFormField :label="$t('switches.fields.name') + ' *'" name="name">
-            <UInput v-model="editForm.name" required />
+            <UInput v-model="editForm.name" required class="w-full" />
           </UFormField>
 
           <UFormField :label="$t('switches.fields.model')" name="model">
-            <UInput v-model="editForm.model" />
+            <UInput v-model="editForm.model" class="w-full" />
           </UFormField>
 
           <UFormField :label="$t('switches.fields.manufacturer')" name="manufacturer">
-            <UInput v-model="editForm.manufacturer" />
+            <UInput v-model="editForm.manufacturer" class="w-full" />
           </UFormField>
 
           <UFormField :label="$t('switches.fields.serialNumber')" name="serial_number">
-            <UInput v-model="editForm.serial_number" />
+            <UInput v-model="editForm.serial_number" class="w-full" />
           </UFormField>
 
           <UFormField :label="$t('switches.fields.location')" name="location">
-            <UInput v-model="editForm.location" />
+            <UInput v-model="editForm.location" class="w-full" />
           </UFormField>
 
           <UFormField :label="$t('switches.fields.rackPosition')" name="rack_position">
-            <UInput v-model="editForm.rack_position" />
+            <UInput v-model="editForm.rack_position" class="w-full" />
           </UFormField>
 
           <UFormField :label="$t('switches.fields.managementIp')" name="management_ip">
-            <UInput v-model="editForm.management_ip" />
+            <UInput v-model="editForm.management_ip" class="w-full" />
           </UFormField>
 
           <UFormField :label="$t('switches.fields.firmwareVersion')" name="firmware_version">
-            <UInput v-model="editForm.firmware_version" />
+            <UInput v-model="editForm.firmware_version" class="w-full" />
           </UFormField>
 
           <UFormField :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
             <USelectMenu :search-input="false"
               v-model="editForm.layout_template_id"
               :items="templateOptions"
-              
+
               value-key="value"
+              class="w-full"
             />
           </UFormField>
 
@@ -266,8 +261,9 @@
             <USelectMenu :search-input="false"
               v-model="editForm.role"
               :items="editRoleOptions"
-              
+
               value-key="value"
+              class="w-full"
             />
           </UFormField>
 
@@ -276,16 +272,17 @@
               v-model="editTagInput"
               :placeholder="$t('switches.tagsPlaceholder')"
               @keydown.enter.prevent="addEditTag"
+              class="w-full"
             />
             <div v-if="editForm.tags.length > 0" class="mt-2 flex flex-wrap gap-1">
-              <UBadge v-for="tg in editForm.tags" :key="tg" color="neutral" variant="soft" size="xs" class="cursor-pointer" @click="removeEditTag(tg)">
+              <UBadge v-for="tg in editForm.tags" :key="tg" color="neutral" variant="soft" size="sm" class="cursor-pointer" @click="removeEditTag(tg)">
                 {{ tg }} <UIcon name="i-heroicons-x-mark" class="ml-0.5 h-3 w-3" />
               </UBadge>
             </div>
           </UFormField>
 
           <UFormField :label="$t('common.notes')" name="notes">
-            <UTextarea v-model="editForm.notes" :rows="3" />
+            <UTextarea v-model="editForm.notes" :rows="3" class="w-full" />
           </UFormField>
         </div>
       </template>

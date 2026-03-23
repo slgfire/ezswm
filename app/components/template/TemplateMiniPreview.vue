@@ -54,6 +54,6 @@ function portClasses(type: string): string {
     console: 'bg-amber-400/70 dark:bg-amber-500/50',
     management: 'bg-teal-400/70 dark:bg-teal-500/50'
   }
-  return `${size} ${colorMap[type] || 'bg-gray-400/70 dark:bg-gray-500/50'}`
+  return `${size} ${colorMap[type] || 'bg-neutral-400/70 dark:bg-neutral-500/50'}`
 }
 </script>

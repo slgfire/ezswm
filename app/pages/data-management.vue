@@ -3,9 +3,8 @@
     <h1 class="mb-6 text-2xl font-bold">{{ $t('dataManagement.title') }}</h1>
 
     <UTabs :items="tabs">
-      <template #item="{ item }">
-        <!-- Backup Tab -->
-        <div v-if="item.key === 'backup'" class="mt-4">
+      <template #backup>
+        <div class="mt-4">
           <div class="grid gap-6 md:grid-cols-2">
             <UCard>
               <template #header>
@@ -51,8 +50,10 @@
           </div>
         </div>
 
-        <!-- Export Tab -->
-        <div v-else-if="item.key === 'export'" class="mt-4">
+      </template>
+
+      <template #export>
+        <div class="mt-4">
           <UCard>
             <div class="space-y-4 max-w-lg">
               <UFormField :label="$t('dataManagement.export.selectType')">
@@ -60,8 +61,9 @@
                   v-model="exportType"
                   :items="entityTypeOptions"
                   value-key="value"
-                  
+
                   size="sm"
+                  class="w-full"
                 />
               </UFormField>
 
@@ -70,8 +72,9 @@
                   v-model="exportFormat"
                   :items="formatOptions"
                   value-key="value"
-                  
+
                   size="sm"
+                  class="w-full"
                 />
               </UFormField>
 
@@ -88,8 +91,10 @@
           </UCard>
         </div>
 
-        <!-- Import Tab -->
-        <div v-else-if="item.key === 'import'" class="mt-4">
+      </template>
+
+      <template #import>
+        <div class="mt-4">
           <UCard>
             <div class="space-y-4 max-w-lg">
               <UFormField :label="$t('dataManagement.export.selectType')">
@@ -97,8 +102,9 @@
                   v-model="importType"
                   :items="entityTypeOptions"
                   value-key="value"
-                  
+
                   size="sm"
+                  class="w-full"
                 />
               </UFormField>
 
@@ -131,7 +137,7 @@
               </UFormField>
 
               <!-- Preview -->
-              <div v-if="importPreview !== null" class="rounded-md bg-gray-50 p-3 dark:bg-gray-800">
+              <div v-if="importPreview !== null" class="rounded-md bg-elevated p-3">
                 <p class="text-sm text-gray-600 dark:text-gray-300">
                   {{ $t('dataManagement.import.preview') }}: <strong>{{ importPreview }}</strong> {{ $t('dataManagement.import.rows') }}
                 </p>
@@ -196,9 +202,9 @@ const { t } = useI18n()
 const MAX_IMPORT_SIZE = 5 * 1024 * 1024 // 5MB
 
 const tabs = computed(() => [
-  { key: 'backup', label: t('dataManagement.backupTab') },
-  { key: 'export', label: t('dataManagement.exportTab') },
-  { key: 'import', label: t('dataManagement.importTab') }
+  { label: t('dataManagement.backupTab'), slot: 'backup' as const },
+  { label: t('dataManagement.exportTab'), slot: 'export' as const },
+  { label: t('dataManagement.importTab'), slot: 'import' as const }
 ])
 
 const entityTypeOptions = computed(() => [

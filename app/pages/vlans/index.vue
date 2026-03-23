@@ -25,9 +25,9 @@
     </div>
 
     <!-- VLAN List -->
-    <div v-if="sortedItems.length > 0" class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/30">
+    <div v-if="sortedItems.length > 0" class="rounded-lg border border-default bg-default/30">
       <!-- Sort header -->
-      <div class="flex items-center gap-4 border-b border-gray-100 px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400 dark:border-gray-700/50">
+      <div class="flex items-center gap-4 border-b border-default px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400">
         <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('vlan_id')">
           {{ $t('vlans.sortId') }}
           <UIcon v-if="sortField === 'vlan_id'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
@@ -46,7 +46,7 @@
         v-for="(vlan, i) in sortedItems"
         :key="vlan.id"
         class="group flex cursor-pointer items-stretch pr-5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
-        :class="i > 0 ? 'border-t border-gray-100 dark:border-gray-700/50' : ''"
+        :class="i > 0 ? 'border-t border-default' : ''"
         @click="openPanel(vlan, false)"
       >
         <!-- VLAN color left accent -->
@@ -64,7 +64,7 @@
           <div class="flex items-center gap-3">
             <span class="text-lg font-bold" :style="{ color: vlan.color }">{{ vlan.vlan_id }}</span>
             <span class="text-base font-semibold text-gray-900 dark:text-white">{{ vlan.name }}</span>
-            <UBadge :color="vlan.status === 'active' ? 'success' : 'neutral'" variant="subtle" size="xs">
+            <UBadge :color="vlan.status === 'active' ? 'success' : 'neutral'" variant="subtle" size="sm">
               {{ vlan.status === 'active' ? $t('common.active') : $t('common.inactive') }}
             </UBadge>
           </div>
@@ -108,22 +108,19 @@
     </SharedEmptyState>
 
     <!-- VLAN Side Panel -->
-    <USlideover v-model:open="showPanel" title="VLAN Details">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <VlanColorSwatch v-if="selectedVlan" :color="panelEditing ? editForm.color : selectedVlan.color" size="lg" />
-              <h3 class="font-semibold">
-                {{ selectedVlan ? `VLAN ${selectedVlan.vlan_id} — ${selectedVlan.name}` : '' }}
-              </h3>
-            </div>
-            <div class="flex items-center gap-1">
-              <UTooltip v-if="!panelEditing" :text="$t('common.edit')">
-                <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="sm" @click="startEdit()" />
-              </UTooltip>
-              <UButton variant="ghost" icon="i-heroicons-x-mark" size="sm" @click="panelEditing ? panelEditing = false : showPanel = false" />
-            </div>
+    <USlideover v-model:open="showPanel" :title="selectedVlan ? `VLAN ${selectedVlan.vlan_id} — ${selectedVlan.name}` : 'VLAN Details'" description="View and edit VLAN configuration">
+        <template #title>
+          <div class="flex items-center gap-2">
+            <VlanColorSwatch v-if="selectedVlan" :color="panelEditing ? editForm.color : selectedVlan.color" size="lg" />
+            <span class="font-semibold">
+              {{ selectedVlan ? `VLAN ${selectedVlan.vlan_id} — ${selectedVlan.name}` : '' }}
+            </span>
           </div>
+        </template>
+        <template #actions>
+          <UTooltip v-if="!panelEditing" :text="$t('common.edit')">
+            <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="sm" @click="startEdit()" />
+          </UTooltip>
         </template>
 
         <template #body>
@@ -163,7 +160,7 @@
           </div>
 
           <!-- Associated networks -->
-          <div v-if="panelNetworks.length" class="border-t border-gray-200 pt-3 dark:border-gray-700">
+          <div v-if="panelNetworks.length" class="border-t border-default pt-3">
             <div class="mb-2 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.title') }}</div>
             <div class="space-y-1">
               <NuxtLink
@@ -182,26 +179,26 @@
         <!-- Edit form -->
         <form v-if="panelEditing" class="space-y-4" @submit.prevent="onSave">
           <UFormField :label="$t('vlans.fields.vlanId') + ' *'">
-            <UInput v-model.number="editForm.vlan_id" type="number" :min="1" :max="4094" required />
+            <UInput v-model.number="editForm.vlan_id" type="number" :min="1" :max="4094" required class="w-full" />
           </UFormField>
           <UFormField :label="$t('vlans.fields.name') + ' *'">
-            <UInput v-model="editForm.name" required />
+            <UInput v-model="editForm.name" required class="w-full" />
           </UFormField>
           <UFormField :label="$t('common.description')">
-            <UTextarea v-model="editForm.description" :rows="2" />
+            <UTextarea v-model="editForm.description" :rows="2" class="w-full" />
           </UFormField>
           <UFormField :label="$t('vlans.fields.status')">
-            <USelect v-model="editForm.status" :items="editStatusOptions" />
+            <USelect v-model="editForm.status" :items="editStatusOptions" class="w-full" />
           </UFormField>
           <UFormField :label="$t('vlans.fields.routingDevice')">
-            <UInput v-model="editForm.routing_device" />
+            <UInput v-model="editForm.routing_device" class="w-full" />
           </UFormField>
           <UFormField :label="$t('vlans.fields.color') + ' *'">
             <div class="flex items-center gap-3">
               <input
                 v-model="editForm.color"
                 type="color"
-                class="h-9 w-12 cursor-pointer rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900"
+                class="h-9 w-12 cursor-pointer rounded border border-default bg-elevated"
               />
               <UInput v-model="editForm.color" class="w-28" size="sm" />
             </div>

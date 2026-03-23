@@ -7,7 +7,7 @@
     <div v-else-if="stats && hasSomeData" class="space-y-6">
       <!-- KPI Cards -->
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <NuxtLink to="/switches" class="stagger-item card-glow block rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700/50 dark:bg-dark-100">
+        <NuxtLink to="/switches" class="stagger-item card-glow block rounded-lg bg-default ring ring-default p-5">
           <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary-500/10">
               <UIcon name="i-heroicons-server-stack" class="h-6 w-6 text-primary-500" />
@@ -18,7 +18,7 @@
             </div>
           </div>
         </NuxtLink>
-        <NuxtLink to="/networks" class="stagger-item card-glow block rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700/50 dark:bg-dark-100">
+        <NuxtLink to="/networks" class="stagger-item card-glow block rounded-lg bg-default ring ring-default p-5">
           <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-green-500/10">
               <UIcon name="i-heroicons-globe-alt" class="h-6 w-6 text-green-500" />
@@ -29,7 +29,7 @@
             </div>
           </div>
         </NuxtLink>
-        <NuxtLink to="/vlans" class="stagger-item card-glow block rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700/50 dark:bg-dark-100">
+        <NuxtLink to="/vlans" class="stagger-item card-glow block rounded-lg bg-default ring ring-default p-5">
           <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-500/10">
               <UIcon name="i-heroicons-tag" class="h-6 w-6 text-purple-500" />
@@ -40,7 +40,7 @@
             </div>
           </div>
         </NuxtLink>
-        <NuxtLink to="/networks" class="stagger-item card-glow block rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700/50 dark:bg-dark-100">
+        <NuxtLink to="/networks" class="stagger-item card-glow block rounded-lg bg-default ring ring-default p-5">
           <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-500/10">
               <UIcon name="i-heroicons-map-pin" class="h-6 w-6 text-orange-500" />
@@ -137,7 +137,7 @@
                 </div>
                 <span class="font-mono text-sm" :class="net.percentage > 80 ? 'text-red-400' : net.percentage > 50 ? 'text-yellow-400' : 'text-gray-400'">{{ net.percentage }}%</span>
               </div>
-              <div class="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+              <div class="h-2 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
                 <div
                   class="h-2 rounded-full transition-all"
                   :style="{

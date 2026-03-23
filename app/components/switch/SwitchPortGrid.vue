@@ -4,7 +4,7 @@
     <template v-if="units && units.length">
       <div v-for="(unit, ui) in units" :key="unit.unit_number">
         <SwitchUnitDivider :label="unit.label || `Unit ${unit.unit_number}`" />
-        <div class="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800/30">
+        <div class="rounded-lg border border-default bg-default/30 p-3">
           <div class="flex flex-wrap items-start gap-5">
             <div v-for="block in unit.blocks" :key="block.id" class="flex flex-col gap-1">
               <div v-if="block.label" class="text-[10px] font-medium text-gray-400 dark:text-gray-500">{{ block.label }}</div>
@@ -59,12 +59,12 @@
     </div>
 
     <!-- Legend -->
-    <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-gray-200 pt-3 text-[11px] text-gray-500 dark:border-gray-700 dark:text-gray-400">
+    <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-default pt-3 text-[11px] text-gray-500 dark:text-gray-400">
       <!-- Status -->
       <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.status') }}:</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-green-400 bg-green-50 dark:bg-gray-700" /> {{ $t('legend.up') }}</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-800" /> {{ $t('legend.down') }}</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-red-300 bg-red-50 dark:bg-gray-800" /> {{ $t('legend.disabled') }}</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-green-400 bg-green-50 dark:bg-neutral-700" /> {{ $t('legend.up') }}</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-gray-300 bg-gray-100 dark:border-neutral-600 dark:bg-neutral-800" /> {{ $t('legend.down') }}</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-red-300 bg-red-50 dark:bg-neutral-800" /> {{ $t('legend.disabled') }}</span>
 
       <span class="text-gray-300 dark:text-gray-600">|</span>
 
