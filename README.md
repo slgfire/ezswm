@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="logo.png" alt="ezSWM" width="400"/>
+  <img src="public/logo.png" alt="ezSWM" width="400"/>
 
   [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
   [![Node](https://img.shields.io/badge/Node-22_LTS-green.svg)](https://nodejs.org)
