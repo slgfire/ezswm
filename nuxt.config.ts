@@ -37,7 +37,7 @@ export default defineNuxtConfig({
     jwtSecret: process.env.JWT_SECRET || '',
     dataDir: process.env.DATA_DIR || './data',
     public: {
-      appVersion: '0.2.0'
+      appVersion: '0.3.0'
     }
   },
 
