@@ -42,7 +42,7 @@
             </div>
             <p v-if="errors.units" class="mb-2 text-sm text-red-500">{{ errors.units }}</p>
 
-            <div v-for="(unit, unitIndex) in form.units" :key="unitIndex" class="card-glow mb-4 rounded-lg bg-default p-5">
+            <div v-for="(unit, unitIndex) in form.units" :key="unitIndex" class="list-container mb-4 rounded-lg bg-default p-5">
               <div class="mb-4 flex items-center justify-between">
                 <h3 class="font-mono text-sm font-semibold text-primary-500">UNIT {{ unit.unit_number }}</h3>
                 <UButton
