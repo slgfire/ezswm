@@ -45,41 +45,51 @@
         <span v-if="template.description" class="text-gray-400">— {{ template.description }}</span>
       </div>
 
+      <!-- Port Preview -->
+      <div v-if="previewPorts.length" class="mb-6 list-container rounded-lg bg-default p-5">
+        <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('templates.preview') }}</h2>
+        <div class="rounded-lg border border-default bg-elevated p-4">
+          <SwitchPortGrid
+            :ports="previewPorts"
+            :units="template.units"
+            :selected-ports="[]"
+          />
+        </div>
+      </div>
+
       <!-- Units -->
       <div class="space-y-4">
         <div
           v-for="unit in template.units"
           :key="unit.unit_number"
-          class="rounded-lg border border-default bg-default/30 p-4"
+          class="list-container rounded-lg bg-default p-5"
         >
-          <div class="mb-3 flex items-center justify-between">
-            <span class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-              {{ unit.label || `Unit ${unit.unit_number}` }}
-            </span>
-            <span class="text-xs text-gray-400">{{ getUnitPortCount(unit) }} {{ $t('templates.infoBar.ports') }}</span>
+          <div class="mb-4 flex items-center justify-between">
+            <h3 class="font-mono text-sm font-semibold text-primary-500">UNIT {{ unit.unit_number }}</h3>
+            <span class="font-mono text-xs text-gray-500">{{ getUnitPortCount(unit) }} ports</span>
           </div>
 
           <div v-if="unit.blocks && unit.blocks.length > 0" class="space-y-2">
             <div
               v-for="(block, blockIdx) in unit.blocks"
               :key="blockIdx"
-              class="flex items-center gap-3 rounded border border-default bg-elevated px-3 py-2"
+              class="flex items-center gap-4 rounded-md border border-default/50 bg-elevated/50 px-4 py-3"
             >
-              <UBadge :color="getPortTypeColor(block.type)" variant="subtle" size="sm">
+              <UBadge :color="getPortTypeColor(block.type)" variant="subtle" size="sm" class="w-24 justify-center font-mono">
                 {{ block.type.toUpperCase() }}
               </UBadge>
-              <div class="flex flex-1 flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
-                <span><span class="text-gray-400 dark:text-gray-500">{{ $t('templates.infoBar.count') }}:</span> {{ block.count }}</span>
-                <span><span class="text-gray-400 dark:text-gray-500">{{ $t('templates.infoBar.start') }}:</span> {{ block.start_index }}</span>
-                <span><span class="text-gray-400 dark:text-gray-500">{{ $t('templates.infoBar.rows') }}:</span> {{ block.rows }}</span>
-                <span v-if="block.row_layout && block.row_layout !== 'sequential'">
-                  <span class="text-gray-400 dark:text-gray-500">{{ $t('templates.infoBar.layout') }}:</span> {{ block.row_layout }}
+              <div class="flex flex-1 flex-wrap gap-x-6 gap-y-1 font-mono text-xs">
+                <span class="text-gray-300"><span class="text-gray-500">Count:</span> {{ block.count }}</span>
+                <span class="text-gray-300"><span class="text-gray-500">Start:</span> {{ block.start_index }}</span>
+                <span class="text-gray-300"><span class="text-gray-500">Rows:</span> {{ block.rows }}</span>
+                <span v-if="block.row_layout && block.row_layout !== 'sequential'" class="text-gray-300">
+                  <span class="text-gray-500">Layout:</span> {{ block.row_layout }}
                 </span>
-                <span v-if="block.default_speed">
-                  <span class="text-gray-400 dark:text-gray-500">{{ $t('templates.infoBar.speed') }}:</span> {{ block.default_speed }}
+                <span v-if="block.default_speed" class="text-primary-400">
+                  <span class="text-gray-500">Speed:</span> {{ block.default_speed }}
                 </span>
-                <span v-if="block.label" class="font-mono">
-                  <span class="text-gray-400 dark:text-gray-500">{{ $t('templates.infoBar.label') }}:</span> {{ block.label }}
+                <span v-if="block.label" class="text-gray-300">
+                  <span class="text-gray-500">Label:</span> {{ block.label }}
                 </span>
               </div>
             </div>
@@ -137,6 +147,29 @@ function getTotalPortCount(): number {
   if (!template.value?.units) return 0
   return template.value.units.reduce((t: number, u: any) => t + getUnitPortCount(u), 0)
 }
+
+const previewPorts = computed(() => {
+  if (!template.value?.units) return []
+  const ports: any[] = []
+  for (const unit of template.value.units) {
+    for (const block of unit.blocks || []) {
+      for (let i = 0; i < (block.count || 0); i++) {
+        const idx = (block.start_index || 0) + i
+        ports.push({
+          id: `preview-${unit.unit_number}-${idx}`,
+          unit: unit.unit_number,
+          index: idx,
+          label: block.label ? (block.label.match(/[\/\-:.]$/) ? `${block.label}${idx}` : `${idx}`) : `${idx}`,
+          type: block.type,
+          speed: block.default_speed || '',
+          status: 'down',
+          tagged_vlans: []
+        })
+      }
+    }
+  }
+  return ports
+})
 
 function getPortTypeColor(type: string): string {
   const colors: Record<string, string> = {
