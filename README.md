@@ -26,30 +26,47 @@ All data is stored as flat JSON files. No database setup, no migrations, no exte
 
 ## Features
 
-- **Visual Switch Front Panel** — See your ports as they look on the real switch, color-coded by VLAN
-- **Port Documentation** — Click any port to set VLANs, speed, connected devices, descriptions, and more
-- **Connected Device Linking** — Link ports to other switches (with bidirectional sync) or freetext device names
-- **Port Settings Sync** — When connecting ports, VLANs, speed, and status are synced to the remote side
-- **Port Conflict Detection** — Warning when a selected remote port is already connected elsewhere
-- **Self-Switch Connections** — Connect ports within the same switch (stacked switch / multi-unit support)
-- **Port Reset** — One-click reset to defaults, cleanly removes bidirectional links
-- **Smart Port Status** — Prompted to set port to "up" when connecting a port that is "down"
-- **VLAN Management** — Track VLANs with unique color assignments across your infrastructure
-- **Network & IP Tracking** — Subnet management with IP allocation and range tracking
-- **Layout Templates** — Define switch models once, reuse everywhere (RJ45, SFP+, QSFP, management ports)
-- **Default Speed per Block** — Set port speed at the template level, override per port as needed
-- **Row Layout Modes** — Sequential, odd/even, or even/odd port numbering per block
-- **Smart Port Labels** — Labels like `xe-0/0/` auto-generate as `xe-0/0/1`, `xe-0/0/2` etc.
-- **Live Label Sync** — Changing a template label updates all switches and cross-references instantly
-- **Subnet Calculator** — Built-in IPv4 subnet calculation tool
-- **Client-Side Validation** — Real-time form validation on all create/edit forms
-- **Global Search** — Search across switches, VLANs, networks, IP allocations, and templates
-- **Data Management** — Export/import entities, full backup/restore
-- **Topology View** — Coming soon: interactive network diagram based on switch connections
-- **Dark Mode** — Deep dark industrial theme by default, light mode available
-- **i18n** — English and German
-- **JSON Storage** — No database setup, just files on disk
-- **Docker Ready** — One command to build and run
+### Switch & Port Management
+
+> Visual front-panel rendering with full port documentation
+
+- See your ports as they look on the real switch, color-coded by VLAN
+- Click any port to configure VLANs, speed, connected devices, and descriptions
+- Link ports to other switches with **bidirectional sync** — speed, VLANs, and status are mirrored automatically
+- Conflict detection warns when a target port is already connected
+- Self-switch connections for stacked/multi-unit setups
+- One-click port reset that cleanly removes bidirectional links
+
+### Layout Templates
+
+> Define switch models once, reuse everywhere
+
+- Support for RJ45, SFP+, QSFP, Management, and Console port types
+- Row layout modes: sequential, odd/even, or even/odd numbering
+- Smart labels: `xe-0/0/` auto-generates as `xe-0/0/1`, `xe-0/0/2`, ...
+- Default speed per block, overridable per port
+- Live label sync — template changes propagate to all linked switches instantly
+
+### VLAN & Network Management
+
+> Color-coded VLANs, subnet tracking, IP allocation
+
+- VLAN management with unique color assignments across your infrastructure
+- Subnet management with IP allocation and range tracking
+- Built-in IPv4 subnet calculator
+- Ports show VLAN color tinting and trunk indicators (yellow stripe)
+
+### Search, Export & Administration
+
+> Everything you need to manage your documentation
+
+- Global search across switches, VLANs, networks, IPs, and templates
+- Export/import per entity, full backup/restore
+- Client-side form validation on all create/edit forms
+- Dark mode (deep industrial theme) + light mode
+- i18n: English and German
+- JSON file storage — no database, no migrations
+- Docker-ready with CI/CD image builds
 
 ---
 
