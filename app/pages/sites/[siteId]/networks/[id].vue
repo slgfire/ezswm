@@ -717,5 +717,7 @@ async function loadNetwork() {
   finally { pageLoading.value = false }
 }
 
-onMounted(async () => { await Promise.all([loadNetwork(), fetchVlans(), fetchAllocations(), fetchRanges()]) })
+const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
+
+onMounted(async () => { await Promise.all([loadNetwork(), fetchVlans(siteParams.value), fetchAllocations(), fetchRanges()]) })
 </script>

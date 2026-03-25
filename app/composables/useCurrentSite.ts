@@ -1,6 +1,16 @@
 export function useCurrentSite() {
-  const currentSiteId = useState<string>('current-site-id', () => 'all')
+  const route = useRoute()
+
+  // Initialize from URL if available
+  const initialSiteId = (route.params.siteId as string) || 'all'
+
+  const currentSiteId = useState<string>('current-site-id', () => initialSiteId)
   const currentSite = useState<any>('current-site', () => null)
+
+  // Keep in sync with route
+  if (route.params.siteId && route.params.siteId !== currentSiteId.value) {
+    currentSiteId.value = route.params.siteId as string
+  }
 
   function setSite(siteId: string, site?: any) {
     currentSiteId.value = siteId
@@ -11,7 +21,6 @@ export function useCurrentSite() {
     return currentSiteId.value === 'all'
   }
 
-  // Helper to get the site_id query param for API calls
   function siteQuery(): Record<string, string> {
     if (currentSiteId.value === 'all') return {}
     return { site_id: currentSiteId.value }

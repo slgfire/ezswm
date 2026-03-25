@@ -47,15 +47,15 @@
         <div class="mt-auto flex items-center justify-between border-t border-default px-5 py-2.5 text-xs text-gray-400">
           <span class="flex items-center gap-1">
             <UIcon name="i-heroicons-server-stack" class="h-3.5 w-3.5" />
-            {{ site.counts?.switches || 0 }} {{ $t('nav.switches', 'Switches') }}
+            {{ site._counts?.switches || 0 }} {{ $t('nav.switches', 'Switches') }}
           </span>
           <span class="flex items-center gap-1">
             <UIcon name="i-heroicons-tag" class="h-3.5 w-3.5" />
-            {{ site.counts?.vlans || 0 }} VLANs
+            {{ site._counts?.vlans || 0 }} VLANs
           </span>
           <span class="flex items-center gap-1">
             <UIcon name="i-heroicons-globe-alt" class="h-3.5 w-3.5" />
-            {{ site.counts?.networks || 0 }} {{ $t('nav.networks', 'Networks') }}
+            {{ site._counts?.networks || 0 }} {{ $t('nav.networks', 'Networks') }}
           </span>
         </div>
       </NuxtLink>
@@ -129,8 +129,8 @@ const deleteMessage = computed(() =>
 async function loadSites() {
   loading.value = true
   try {
-    const data = await $fetch<any[]>('/api/sites')
-    sites.value = data || []
+    const res = await $fetch<any>('/api/sites')
+    sites.value = res?.data || res || []
   } catch {
     sites.value = []
   } finally {

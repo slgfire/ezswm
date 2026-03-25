@@ -376,11 +376,12 @@ async function onDuplicate(row: any) {
 }
 
 const { apiFetch } = useApiFetch()
+const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 
 async function loadData() {
-  await fetchSwitches()
+  await fetchSwitches(siteParams.value)
   try {
-    const response = await apiFetch<any>('/api/switches', { params: { per_page: 1 } })
+    const response = await apiFetch<any>('/api/switches', { params: { per_page: 1, ...siteParams.value } })
     availableLocations.value = response?.filters?.locations || []
     availableTags.value = response?.filters?.tags || []
   } catch { /* silent */ }

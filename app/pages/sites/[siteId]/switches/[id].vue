@@ -530,9 +530,11 @@ watch([item, templates], () => {
   }
 }, { immediate: true })
 
+const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
+
 onMounted(() => {
   fetchSwitch()
   fetchTemplates()
-  fetchVlans()
+  fetchVlans(siteParams.value)
 })
 </script>

@@ -5,13 +5,13 @@
   >
     <!-- Logo -->
     <div class="flex h-16 items-center border-b border-default px-4">
-      <NuxtLink to="/" class="font-display text-xl font-bold">
+      <NuxtLink :to="sitePrefix" class="font-display text-xl font-bold">
         <span class="text-primary-500">ez</span><span v-if="!collapsed" class="tracking-tight text-gray-900 dark:text-white">SWM</span>
       </NuxtLink>
     </div>
 
     <!-- Site Switcher -->
-    <LayoutSiteSwitcher />
+    <LayoutSiteSwitcher v-if="!collapsed" />
 
     <!-- Navigation -->
     <nav class="flex-1 overflow-y-auto px-2 py-4">
@@ -60,7 +60,7 @@ const sitePrefix = computed(() => `/sites/${currentSiteId.value}`)
 const navSections = computed(() => [
   {
     items: [
-      { to: '/', icon: 'i-heroicons-home', label: 'nav.dashboard' }
+      { to: sitePrefix.value, icon: 'i-heroicons-home', label: 'nav.dashboard' }
     ]
   },
   {
@@ -88,14 +88,22 @@ const navSections = computed(() => [
   {
     divider: true,
     items: [
-      { to: '/settings', icon: 'i-heroicons-cog-6-tooth', label: 'nav.settings' },
-      { to: '/sites', icon: 'i-heroicons-building-office-2', label: 'nav.sites' }
+      { to: '/sites', icon: 'i-heroicons-building-office-2', label: 'nav.sites' },
+      { to: '/settings', icon: 'i-heroicons-cog-6-tooth', label: 'nav.settings' }
     ]
   }
 ])
 
 function isActive(path: string): boolean {
-  if (path === '/') return route.path === '/'
-  return route.path.startsWith(path)
+  if (path.startsWith('/sites/') && path !== '/sites') {
+    // For site-scoped paths, check if current route starts with this path
+    // But for the dashboard (/sites/:id), only match exact
+    const isDashboard = path.match(/^\/sites\/[^/]+$/)
+    if (isDashboard) {
+      return route.path === path || route.path === path + '/'
+    }
+    return route.path.startsWith(path)
+  }
+  return route.path === path || route.path.startsWith(path + '/')
 }
 </script>

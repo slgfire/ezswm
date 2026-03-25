@@ -106,14 +106,18 @@ function parseDns(): string[] {
 async function onSubmit() {
   submitting.value = true
   try {
-    const result = await create({
+    const body: Record<string, any> = {
       name: form.value.name.trim(),
       subnet: form.value.subnet.trim(),
       gateway: form.value.gateway.trim() || undefined,
       dns_servers: parseDns(),
       vlan_id: form.value.vlan_id || undefined,
       description: form.value.description.trim() || undefined
-    })
+    }
+    if (siteId.value && siteId.value !== 'all') {
+      body.site_id = siteId.value
+    }
+    const result = await create(body)
     toast.add({ title: t('networks.messages.created'), color: 'success' })
     await router.push(`/sites/${siteId.value}/networks/${(result as any).id}`)
   } catch (err: any) {
@@ -123,7 +127,9 @@ async function onSubmit() {
   }
 }
 
+const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
+
 onMounted(() => {
-  fetchVlans()
+  fetchVlans(siteParams.value)
 })
 </script>

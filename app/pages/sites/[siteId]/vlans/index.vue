@@ -371,7 +371,7 @@ async function onSave() {
     })
     toast.add({ title: t('vlans.messages.updated'), color: 'success' })
     panelEditing.value = false
-    await fetchVlans()
+    await fetchVlans(siteParams.value)
     // Update selected vlan with fresh data
     selectedVlan.value = items.value.find((v: any) => v.id === selectedVlan.value.id)
   } catch (err: any) {
@@ -395,7 +395,7 @@ async function confirmDelete() {
     toast.add({ title: t('vlans.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     showPanel.value = false
-    await fetchVlans()
+    await fetchVlans(siteParams.value)
   } catch (err: any) {
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
@@ -405,8 +405,10 @@ async function confirmDelete() {
 
 watch([search, statusFilter], () => { page.value = 1 })
 
+const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
+
 onMounted(() => {
-  fetchVlans()
-  fetchNetworks()
+  fetchVlans(siteParams.value)
+  fetchNetworks(siteParams.value)
 })
 </script>

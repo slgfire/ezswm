@@ -270,7 +270,9 @@ async function loadVlan() {
   }
 }
 
+const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
+
 onMounted(async () => {
-  await Promise.all([loadVlan(), fetchNetworks()])
+  await Promise.all([loadVlan(), fetchNetworks(siteParams.value)])
 })
 </script>

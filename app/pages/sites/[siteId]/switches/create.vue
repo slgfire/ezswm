@@ -172,6 +172,9 @@ async function onSubmit() {
         delete body[key]
       }
     }
+    if (siteId.value && siteId.value !== 'all') {
+      body.site_id = siteId.value
+    }
     const result = await create(body)
     toast.add({ title: t('switches.messages.created'), color: 'success' })
     if (result && (result as any).id) {

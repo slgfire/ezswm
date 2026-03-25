@@ -250,7 +250,9 @@ function activityLink(entry: any): string | null {
 
 onMounted(async () => {
   try {
-    stats.value = await $fetch('/api/dashboard/stats')
+    const params: Record<string, string> = {}
+    if (siteId.value && siteId.value !== 'all') params.site_id = siteId.value
+    stats.value = await $fetch('/api/dashboard/stats', { params })
   } catch {
   } finally {
     loading.value = false

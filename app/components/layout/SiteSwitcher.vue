@@ -1,5 +1,5 @@
 <template>
-  <div class="px-3 pb-3">
+  <div class="border-b border-default px-3 py-2">
     <USelectMenu
       v-model="selectedSiteId"
       :items="siteOptions"
@@ -8,25 +8,22 @@
       size="sm"
       class="w-full"
       @update:model-value="onSiteChange"
-    >
-      <template #leading>
-        <UIcon name="i-heroicons-building-office-2" class="h-4 w-4 text-primary-500" />
-      </template>
-    </USelectMenu>
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 const router = useRouter()
 const route = useRoute()
-const { items: sites, fetch: fetchSites } = useSites()
+const { t } = useI18n()
 const { currentSiteId, setSite } = useCurrentSite()
 
-const selectedSiteId = ref(currentSiteId.value)
+const sites = ref<any[]>([])
+const selectedSiteId = ref('all')
 
 const siteOptions = computed(() => {
   const options: { label: string; value: string }[] = [
-    { label: 'All Sites', value: 'all' }
+    { label: t('sites.allSites'), value: 'all' }
   ]
   for (const site of sites.value) {
     options.push({ label: site.name, value: site.id })
@@ -38,30 +35,50 @@ function onSiteChange(value: string) {
   const site = sites.value.find((s: any) => s.id === value)
   setSite(value, site)
 
-  // Navigate to the same section but under new site context
-  const currentPath = route.path
+  const sitePathMatch = route.path.match(/\/sites\/[^/]+\/(.+)/)
+  const section = sitePathMatch ? sitePathMatch[1].split('/')[0] : ''
 
-  // Extract the section from current path (switches, vlans, networks, etc.)
-  const sitePathMatch = currentPath.match(/\/sites\/[^/]+\/(.+)/)
-  const section = sitePathMatch ? sitePathMatch[1] : 'switches'
-
-  if (value === 'all') {
-    router.push(`/sites/all/${section}`)
-  } else {
+  if (section) {
     router.push(`/sites/${value}/${section}`)
+  } else {
+    router.push(`/sites/${value}`)
   }
 }
 
-// Sync site from URL on mount and route change
+async function loadSites() {
+  try {
+    const res = await $fetch<any>('/api/sites')
+    sites.value = res?.data || res || []
+  } catch {
+    sites.value = []
+  }
+
+  // Set current site from URL
+  const siteId = route.params.siteId as string
+  if (siteId && siteId !== 'all') {
+    selectedSiteId.value = siteId
+    const site = sites.value.find((s: any) => s.id === siteId)
+    setSite(siteId, site || null)
+  } else if (siteId === 'all') {
+    selectedSiteId.value = 'all'
+    setSite('all', null)
+  } else if (sites.value.length > 0) {
+    // Not on a site page — default to first site
+    selectedSiteId.value = sites.value[0].id
+    setSite(sites.value[0].id, sites.value[0])
+  }
+}
+
+// Sync when URL changes
 watch(() => route.params.siteId, (siteId) => {
   if (siteId && typeof siteId === 'string') {
     selectedSiteId.value = siteId
     const site = sites.value.find((s: any) => s.id === siteId)
     setSite(siteId, site || null)
   }
-}, { immediate: true })
+})
 
 onMounted(() => {
-  fetchSites()
+  loadSites()
 })
 </script>

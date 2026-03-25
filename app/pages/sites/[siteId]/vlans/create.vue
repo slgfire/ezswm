@@ -104,14 +104,18 @@ function validate(state: any) {
 async function onSubmit() {
   submitting.value = true
   try {
-    const result = await create({
+    const body: Record<string, any> = {
       vlan_id: form.value.vlan_id,
       name: form.value.name.trim(),
       description: form.value.description.trim() || undefined,
       status: form.value.status,
       routing_device: form.value.routing_device.trim() || undefined,
       color: form.value.color.toUpperCase()
-    })
+    }
+    if (siteId.value && siteId.value !== 'all') {
+      body.site_id = siteId.value
+    }
+    const result = await create(body)
     toast.add({ title: t('vlans.messages.created'), color: 'success' })
     await router.push(`/sites/${siteId.value}/vlans/${(result as any).id}`)
   } catch (err: any) {

@@ -191,12 +191,13 @@ async function confirmDelete() {
     await remove(deleteTarget.value.id)
     toast.add({ title: t('networks.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
-    await fetchNetworks()
+    await fetchNetworks(siteParams.value)
   } catch (err: any) {
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally { deleting.value = false }
 }
 
 watch([search, vlanFilter], () => {})
-onMounted(() => { Promise.all([fetchNetworks(), fetchVlans()]) })
+const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
+onMounted(() => { Promise.all([fetchNetworks(siteParams.value), fetchVlans(siteParams.value)]) })
 </script>
