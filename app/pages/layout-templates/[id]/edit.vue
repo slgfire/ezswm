@@ -179,8 +179,8 @@ const loading = ref(true)
 const submitting = ref(false)
 const errors = ref<Record<string, string>>({})
 
-useHead({ title: computed(() => `Edit — ${breadcrumbOverrides.value['/layout-templates/' + route.params.id] || t('templates.title')}`) })
 const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrides', () => ({}))
+useHead({ title: computed(() => `Edit — ${breadcrumbOverrides.value['/layout-templates/' + route.params.id] || t('templates.title')}`) })
 
 const portTypeOptions = [
   { label: 'RJ45', value: 'rj45' },
