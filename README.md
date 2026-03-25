@@ -24,6 +24,22 @@ All data is stored as flat JSON files. No database setup, no migrations, no exte
 
 ---
 
+## Screenshots
+
+<div align="center">
+
+| Switches | VLANs |
+|:---:|:---:|
+| <img src="docs/images/screenshot-switches.png" width="450"/> | <img src="docs/images/screenshot-vlans.png" width="450"/> |
+
+| Layout Templates | Login |
+|:---:|:---:|
+| <img src="docs/images/screenshot-templates.png" width="450"/> | <img src="docs/images/screenshot-login.png" width="450"/> |
+
+</div>
+
+---
+
 ## Features
 
 ### Switch & Port Management
@@ -82,6 +98,14 @@ docker compose up -d
 ```
 
 Open http://localhost:3000 — follow the setup wizard to create your admin account.
+
+### Demo Data
+
+Populate with realistic demo data (switches, VLANs, networks, templates):
+
+```bash
+./scripts/seed-demo.sh
+```
 
 ### Docker Pull (from GitHub Container Registry)
 
