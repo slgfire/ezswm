@@ -5,82 +5,54 @@
       <h1 class="text-2xl font-bold">{{ $t('networks.create') }}</h1>
     </div>
 
-    <div class="max-w-3xl list-container rounded-lg bg-default p-5">
-      <UForm :state="form" :validate="validate" :validate-on="['blur', 'submit']" novalidate @submit="onSubmit">
-        <div class="space-y-4">
-          <!-- Name -->
-          <UFormField :label="$t('networks.fields.name')" name="name" required>
-            <UInput
-              v-model="form.name"
-              :placeholder="$t('networks.fields.name')"
-              required
-              class="w-full"
-            />
-          </UFormField>
-
-          <!-- Subnet -->
-          <UFormField :label="$t('networks.fields.subnet')" name="subnet" required>
-            <UInput
-              v-model="form.subnet"
-              placeholder="10.0.1.0/24"
-              required
-              class="w-full"
-            />
-          </UFormField>
-
-          <!-- Gateway -->
-          <UFormField :label="$t('networks.fields.gateway')">
-            <UInput
-              v-model="form.gateway"
-              placeholder="10.0.1.1"
-              class="w-full"
-            />
-          </UFormField>
-
-          <!-- DNS Servers -->
-          <UFormField :label="$t('networks.fields.dnsServers')">
-            <UInput
-              v-model="dnsInput"
-              placeholder="8.8.8.8, 8.8.4.4"
-              class="w-full"
-            />
-            <template #hint>
-              <span class="text-xs text-gray-500">{{ $t('networks.fields.dnsServers') }} (comma-separated)</span>
-            </template>
-          </UFormField>
-
-          <!-- VLAN -->
-          <UFormField :label="$t('networks.fields.vlan')">
-            <USelect
-              v-model="form.vlan_id"
-              :items="vlanOptions"
-              :placeholder="$t('networks.fields.vlan')"
-              value-key="value"
-              class="w-full"
-            />
-          </UFormField>
-
-          <!-- Description -->
-          <UFormField :label="$t('common.description')">
-            <UTextarea
-              v-model="form.description"
-              :placeholder="$t('common.description')"
-              :rows="3"
-              class="w-full"
-            />
-          </UFormField>
+    <UForm :state="form" :validate="validate" :validate-on="['blur', 'submit']" novalidate @submit="onSubmit">
+      <div class="max-w-4xl space-y-6">
+        <!-- Network Info -->
+        <div class="list-container rounded-lg bg-default p-5">
+          <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Network</h2>
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <UFormField :label="$t('networks.fields.name')" name="name" required>
+              <UInput v-model="form.name" :placeholder="$t('networks.fields.name')" class="w-full" />
+            </UFormField>
+            <UFormField :label="$t('networks.fields.subnet')" name="subnet" required>
+              <UInput v-model="form.subnet" placeholder="10.0.1.0/24" class="w-full" />
+            </UFormField>
+            <UFormField :label="$t('networks.fields.gateway')">
+              <UInput v-model="form.gateway" placeholder="10.0.1.1" class="w-full" />
+            </UFormField>
+            <UFormField :label="$t('networks.fields.dnsServers')">
+              <UInput v-model="dnsInput" placeholder="8.8.8.8, 8.8.4.4" class="w-full" />
+              <template #hint>
+                <span class="text-xs text-gray-500">Comma-separated</span>
+              </template>
+            </UFormField>
+          </div>
         </div>
 
-        <div class="mt-6 flex items-center gap-3">
-          <UButton type="submit" :loading="submitting" icon="i-heroicons-check">
-            {{ $t('common.save') }}
-          </UButton>
+        <!-- Association -->
+        <div class="list-container rounded-lg bg-default p-5">
+          <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">VLAN & Description</h2>
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <UFormField :label="$t('networks.fields.vlan')">
+              <USelect v-model="form.vlan_id" :items="vlanOptions" :placeholder="$t('networks.fields.vlan')" value-key="value" class="w-full" />
+            </UFormField>
+            <UFormField :label="$t('common.description')" class="md:col-span-2">
+              <UTextarea v-model="form.description" :placeholder="$t('common.description')" :rows="3" class="w-full" />
+            </UFormField>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end gap-3">
           <UButton variant="ghost" color="neutral" to="/networks">
             {{ $t('common.cancel') }}
           </UButton>
+          <UButton type="submit" :loading="submitting" icon="i-heroicons-check">
+            {{ $t('common.save') }}
+          </UButton>
         </div>
-      </UForm>
-    </div>
+      </div>
+    </UForm>
   </div>
 </template>
 

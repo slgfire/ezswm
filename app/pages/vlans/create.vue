@@ -5,84 +5,48 @@
       <h1 class="text-2xl font-bold">{{ $t('vlans.create') }}</h1>
     </div>
 
-    <div class="max-w-3xl list-container rounded-lg bg-default p-5">
-      <UForm :state="form" :validate="validate" :validate-on="['blur', 'submit']" novalidate @submit="onSubmit">
-        <div class="space-y-4">
-          <!-- VLAN ID -->
-          <UFormField :label="$t('vlans.fields.vlanId')" name="vlan_id" required>
-            <UInput
-              v-model.number="form.vlan_id"
-              type="number"
-              :min="1"
-              :max="4094"
-              :placeholder="$t('vlans.fields.vlanId')"
-              required
-              class="w-full"
-            />
-          </UFormField>
-
-          <!-- Name -->
-          <UFormField :label="$t('vlans.fields.name')" name="name" required>
-            <UInput
-              v-model="form.name"
-              :placeholder="$t('vlans.fields.name')"
-              required
-              class="w-full"
-            />
-          </UFormField>
-
-          <!-- Description -->
-          <UFormField :label="$t('common.description')">
-            <UTextarea
-              v-model="form.description"
-              :placeholder="$t('common.description')"
-              :rows="3"
-              class="w-full"
-            />
-          </UFormField>
-
-          <!-- Status -->
-          <UFormField :label="$t('vlans.fields.status')">
-            <USelect v-model="form.status" :items="statusOptions" class="w-full" />
-          </UFormField>
-
-          <!-- Routing Device -->
-          <UFormField :label="$t('vlans.fields.routingDevice')">
-            <UInput
-              v-model="form.routing_device"
-              :placeholder="$t('vlans.fields.routingDevice')"
-              class="w-full"
-            />
-          </UFormField>
-
-          <!-- Color -->
-          <UFormField :label="$t('vlans.fields.color')" name="color" required>
-            <div class="flex items-center gap-3">
-              <input
-                v-model="form.color"
-                type="color"
-                class="h-10 w-14 cursor-pointer rounded border border-gray-700 bg-gray-900"
-              />
-              <UInput
-                v-model="form.color"
-                placeholder="#FF5733"
-                class="w-32"
-              />
-              <VlanColorSwatch :color="form.color" size="lg" />
+    <UForm :state="form" :validate="validate" :validate-on="['blur', 'submit']" novalidate @submit="onSubmit">
+      <div class="max-w-4xl space-y-6">
+        <div class="list-container rounded-lg bg-default p-5">
+          <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">VLAN</h2>
+          <div class="space-y-4">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <UFormField :label="$t('vlans.fields.vlanId')" name="vlan_id" required>
+                <UInput v-model.number="form.vlan_id" type="number" :min="1" :max="4094" :placeholder="$t('vlans.fields.vlanId')" class="w-full" />
+              </UFormField>
+              <UFormField :label="$t('vlans.fields.name')" name="name" required>
+                <UInput v-model="form.name" :placeholder="$t('vlans.fields.name')" class="w-full" />
+              </UFormField>
+              <UFormField :label="$t('vlans.fields.status')">
+                <USelect v-model="form.status" :items="statusOptions" class="w-full" />
+              </UFormField>
+              <UFormField :label="$t('vlans.fields.routingDevice')">
+                <UInput v-model="form.routing_device" :placeholder="$t('vlans.fields.routingDevice')" class="w-full" />
+              </UFormField>
             </div>
-          </UFormField>
+            <UFormField :label="$t('common.description')">
+              <UTextarea v-model="form.description" :placeholder="$t('common.description')" :rows="2" class="w-full" />
+            </UFormField>
+            <UFormField :label="$t('vlans.fields.color')" name="color" required>
+              <div class="flex items-center gap-3">
+                <input v-model="form.color" type="color" class="h-10 w-14 cursor-pointer rounded border border-default bg-default" />
+                <UInput v-model="form.color" placeholder="#FF5733" class="w-32" />
+                <VlanColorSwatch :color="form.color" size="lg" />
+              </div>
+            </UFormField>
+          </div>
         </div>
 
-        <div class="mt-6 flex items-center gap-3">
-          <UButton type="submit" :loading="submitting" icon="i-heroicons-check">
-            {{ $t('common.save') }}
-          </UButton>
+        <div class="flex justify-end gap-3">
           <UButton variant="ghost" color="neutral" to="/vlans">
             {{ $t('common.cancel') }}
           </UButton>
+          <UButton type="submit" :loading="submitting" icon="i-heroicons-check">
+            {{ $t('common.save') }}
+          </UButton>
         </div>
-      </UForm>
-    </div>
+      </div>
+    </UForm>
   </div>
 </template>
 

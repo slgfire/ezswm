@@ -17,12 +17,14 @@
       <div v-if="item" class="flex items-center gap-1">
         <UTooltip :text="showDetails ? $t('common.hideDetails') : $t('common.showDetails')">
           <UButton
-            icon="i-heroicons-information-circle"
             :variant="showDetails ? 'solid' : 'ghost'"
             color="info"
             size="sm"
             @click="showDetails = !showDetails"
-          />
+          >
+            <UIcon name="i-heroicons-chevron-down" :class="['h-4 w-4 transition-transform duration-200', showDetails ? 'rotate-180' : '']" />
+            <span class="ml-1">{{ showDetails ? $t('common.hideDetails') : $t('common.showDetails') }}</span>
+          </UButton>
         </UTooltip>
         <UTooltip :text="$t('common.edit')">
           <UButton
@@ -98,7 +100,7 @@
       </div>
 
       <!-- Details panel (toggled via info button in header) -->
-      <div v-show="showDetails" class="rounded-lg border border-default bg-default/30 p-4">
+      <div v-show="showDetails" class="list-container rounded-lg bg-default p-4">
         <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
           <div>
             <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.name') }}</dt>

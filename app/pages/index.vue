@@ -149,6 +149,10 @@
               </div>
             </div>
           </div>
+          <div v-if="stats.networkUtilization.length <= 1" class="mt-3 flex items-center gap-2 text-xs text-gray-500">
+            <UIcon name="i-heroicons-light-bulb" class="h-3.5 w-3.5 text-yellow-500" />
+            <NuxtLink to="/networks/create" class="hover:text-primary-400">Add more networks to track utilization</NuxtLink>
+          </div>
         </UCard>
 
         <!-- Recent Activity -->
