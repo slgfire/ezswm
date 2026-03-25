@@ -217,6 +217,8 @@ When linking via switch reference:
 
 ## Roadmap
 
+- **Sites / Locations** — Isolated sites with separate switches, VLANs, and networks per location (e.g. LAN party + data center)
+- **Rack Planning** — Visual 19" rack view with height-unit positioning for switches and devices
 - **Topology** — Interactive network topology diagram showing switch-to-switch connections
 - **LAG Groups** — Link Aggregation Group management with visual port indicators
 - **IPv6 Support** — IPv6 subnet and allocation tracking
