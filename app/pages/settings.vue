@@ -2,7 +2,7 @@
   <div class="p-6">
     <h1 class="mb-6 text-2xl font-bold">{{ $t('settings.title') }}</h1>
 
-    <div class="max-w-3xl">
+    <div>
       <UTabs :items="tabs" variant="link" color="neutral">
         <template #general>
           <div class="mt-4">
