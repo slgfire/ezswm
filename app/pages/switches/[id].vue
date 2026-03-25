@@ -63,7 +63,7 @@
     <!-- Switch details -->
     <div v-if="item && !loading" class="space-y-4">
       <!-- Info bar -->
-      <div class="-mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-default bg-default/30 px-5 py-3">
+      <div class="-mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 list-container rounded-lg bg-default px-5 py-3">
         <div v-if="item.model">
           <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.model') }}</div>
           <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.manufacturer ? `${item.manufacturer} ${item.model}` : item.model }}</div>

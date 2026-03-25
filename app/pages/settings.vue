@@ -2,83 +2,83 @@
   <div class="p-6">
     <h1 class="mb-6 text-2xl font-bold">{{ $t('settings.title') }}</h1>
 
-    <UTabs :items="tabs">
-      <template #general>
-        <div class="mt-4">
-          <UCard>
-            <form @submit.prevent="saveGeneral">
-              <div class="space-y-4">
-                <UFormField :label="$t('settings.general.appName')">
-                  <UInput v-model="generalForm.app_name" :placeholder="$t('settings.general.appName')" class="w-full" />
-                </UFormField>
-                <UFormField :label="$t('settings.general.defaultPortStatus')">
-                  <USelect
-                    v-model="generalForm.default_port_status"
-                    :items="portStatusOptions"
-                    class="w-full"
-                  />
-                </UFormField>
-                <UFormField :label="$t('settings.general.paginationSize')">
-                  <UInput v-model.number="generalForm.pagination_size" type="number" min="5" max="100" class="w-full" />
-                </UFormField>
-                <div class="flex justify-end">
-                  <UButton type="submit" :loading="savingGeneral">{{ $t('common.save') }}</UButton>
+    <div class="max-w-3xl">
+      <UTabs :items="tabs">
+        <template #general>
+          <div class="mt-4">
+            <div class="list-container rounded-lg bg-default p-5">
+              <form @submit.prevent="saveGeneral">
+                <div class="space-y-4">
+                  <UFormField :label="$t('settings.general.appName')">
+                    <UInput v-model="generalForm.app_name" :placeholder="$t('settings.general.appName')" class="w-full" />
+                  </UFormField>
+                  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <UFormField :label="$t('settings.general.defaultPortStatus')">
+                      <USelect v-model="generalForm.default_port_status" :items="portStatusOptions" class="w-full" />
+                    </UFormField>
+                    <UFormField :label="$t('settings.general.paginationSize')">
+                      <UInput v-model.number="generalForm.pagination_size" type="number" min="5" max="100" class="w-full" />
+                    </UFormField>
+                  </div>
+                  <div class="flex justify-end">
+                    <UButton type="submit" :loading="savingGeneral" icon="i-heroicons-check">{{ $t('common.save') }}</UButton>
+                  </div>
                 </div>
-              </div>
-            </form>
-          </UCard>
-        </div>
-      </template>
+              </form>
+            </div>
+          </div>
+        </template>
 
-      <template #account>
-        <div class="mt-4 space-y-6">
-          <UCard>
-            <template #header>
-              <h3 class="font-semibold">{{ $t('settings.account.title') }}</h3>
-            </template>
-            <form @submit.prevent="saveAccount">
-              <div class="space-y-4">
-                <UFormField :label="$t('settings.account.displayName')">
-                  <UInput v-model="accountForm.display_name" :placeholder="$t('settings.account.displayName')" class="w-full" />
-                </UFormField>
-                <UFormField :label="$t('settings.account.language')">
-                  <USelect v-model="accountForm.language" :items="languageOptions" class="w-full" />
-                </UFormField>
-                <div class="flex justify-end">
-                  <UButton type="submit" :loading="savingProfile">
-                    {{ $t('settings.account.saveProfile') }}
-                  </UButton>
+        <template #account>
+          <div class="mt-4 space-y-6">
+            <div class="list-container rounded-lg bg-default p-5">
+              <h3 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('settings.account.title') }}</h3>
+              <form @submit.prevent="saveAccount">
+                <div class="space-y-4">
+                  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <UFormField :label="$t('settings.account.displayName')">
+                      <UInput v-model="accountForm.display_name" :placeholder="$t('settings.account.displayName')" class="w-full" />
+                    </UFormField>
+                    <UFormField :label="$t('settings.account.language')">
+                      <USelect v-model="accountForm.language" :items="languageOptions" class="w-full" />
+                    </UFormField>
+                  </div>
+                  <div class="flex justify-end">
+                    <UButton type="submit" :loading="savingProfile" icon="i-heroicons-check">
+                      {{ $t('settings.account.saveProfile') }}
+                    </UButton>
+                  </div>
                 </div>
-              </div>
-            </form>
-          </UCard>
+              </form>
+            </div>
 
-          <UCard>
-            <template #header>
-              <h3 class="font-semibold">{{ $t('settings.account.changePassword') }}</h3>
-            </template>
-            <UForm :state="passwordForm" :validate="validatePassword" :validate-on="['blur', 'submit']" novalidate @submit="handleChangePassword">
-              <div class="space-y-4">
-                <UFormField :label="$t('settings.account.currentPassword')" name="current_password">
-                  <UInput v-model="passwordForm.current_password" type="password" class="w-full" />
-                </UFormField>
-                <UFormField :label="$t('settings.account.newPassword')" name="new_password">
-                  <UInput v-model="passwordForm.new_password" type="password" class="w-full" />
-                </UFormField>
-                <UFormField :label="$t('settings.account.confirmNewPassword')" name="confirm_password">
-                  <UInput v-model="passwordForm.confirm_password" type="password" class="w-full" />
-                </UFormField>
-                <div class="flex justify-end">
-                  <UButton type="submit" :loading="savingPassword">
-                    {{ $t('settings.account.savePassword') }}
-                  </UButton>
+            <div class="list-container rounded-lg bg-default p-5">
+              <h3 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('settings.account.changePassword') }}</h3>
+              <UForm :state="passwordForm" :validate="validatePassword" :validate-on="['blur', 'submit']" novalidate @submit="handleChangePassword">
+                <div class="space-y-4">
+                  <UFormField :label="$t('settings.account.currentPassword')" name="current_password">
+                    <UInput v-model="passwordForm.current_password" type="password" class="w-full" />
+                  </UFormField>
+                  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <UFormField :label="$t('settings.account.newPassword')" name="new_password">
+                      <UInput v-model="passwordForm.new_password" type="password" class="w-full" />
+                    </UFormField>
+                    <UFormField :label="$t('settings.account.confirmNewPassword')" name="confirm_password">
+                      <UInput v-model="passwordForm.confirm_password" type="password" class="w-full" />
+                    </UFormField>
+                  </div>
+                  <div class="flex justify-end">
+                    <UButton type="submit" :loading="savingPassword" icon="i-heroicons-check">
+                      {{ $t('settings.account.savePassword') }}
+                    </UButton>
+                  </div>
                 </div>
-              </div>
-            </UForm>
-          </UCard>
-        </div>
-      </template>
-    </UTabs>
+              </UForm>
+            </div>
+          </div>
+        </template>
+      </UTabs>
+    </div>
   </div>
 </template>
 

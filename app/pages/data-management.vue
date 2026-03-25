@@ -6,37 +6,35 @@
       <template #backup>
         <div class="mt-4">
           <div class="grid gap-6 md:grid-cols-2">
-            <UCard>
-              <template #header>
-                <h2 class="font-semibold">{{ $t('common.export') }}</h2>
-              </template>
-              <p class="mb-4 text-sm text-gray-400">{{ $t('backup.exportDescription') }}</p>
+            <div class="list-container rounded-lg bg-default p-5">
+              <h2 class="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('common.export') }}</h2>
+              <p class="mb-4 text-sm text-gray-500">{{ $t('backup.exportDescription') }}</p>
               <UButton size="sm" icon="i-heroicons-arrow-down-tray" @click="downloadBackup">
                 {{ $t('backup.export') }}
               </UButton>
-            </UCard>
+            </div>
 
-            <UCard>
-              <template #header>
-                <h2 class="font-semibold">{{ $t('common.import') }}</h2>
-              </template>
-              <p class="mb-4 text-sm text-gray-400">{{ $t('backup.importDescription') }}</p>
+            <div class="list-container rounded-lg bg-default p-5">
+              <h2 class="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('common.import') }}</h2>
+              <p class="mb-4 text-sm text-gray-500">{{ $t('backup.importDescription') }}</p>
               <div class="space-y-4">
-                <UFormField :label="$t('backup.selectFile')">
+                <div
+                  class="cursor-pointer rounded-lg border-2 border-dashed border-default p-6 text-center transition-colors hover:border-primary-500/50"
+                  @click="($refs.backupFileInput as HTMLInputElement)?.click()"
+                >
+                  <UIcon name="i-heroicons-cloud-arrow-up" class="mx-auto mb-2 h-8 w-8 text-gray-500" />
+                  <p class="text-sm text-gray-400">
+                    <span v-if="backupFile" class="text-primary-400">{{ (backupFile as File).name }}</span>
+                    <span v-else>{{ $t('backup.selectFile') }} (.json)</span>
+                  </p>
                   <input
                     ref="backupFileInput"
                     type="file"
                     accept=".json"
-                    class="block w-full text-sm text-gray-400
-                      file:mr-4 file:py-2 file:px-4
-                      file:rounded-md file:border-0
-                      file:text-sm file:font-semibold
-                      file:bg-primary-50 file:text-primary-700
-                      hover:file:bg-primary-100
-                      dark:file:bg-primary-900 dark:file:text-primary-300"
+                    class="hidden"
                     @change="onBackupFileSelect"
                   />
-                </UFormField>
+                </div>
                 <UButton
                   size="sm"
                   icon="i-heroicons-arrow-up-tray"
@@ -46,7 +44,7 @@
                   {{ $t('backup.restore') }}
                 </UButton>
               </div>
-            </UCard>
+            </div>
           </div>
         </div>
 
