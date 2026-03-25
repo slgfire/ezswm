@@ -7,12 +7,13 @@
         <template #general>
           <div class="mt-4">
             <div class="list-container rounded-lg bg-default p-5">
+              <h3 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('settings.general.appName') }}</h3>
               <form @submit.prevent="saveGeneral">
                 <div class="space-y-4">
-                  <UFormField :label="$t('settings.general.appName')">
-                    <UInput v-model="generalForm.app_name" :placeholder="$t('settings.general.appName')" class="w-full" />
-                  </UFormField>
-                  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <UFormField :label="$t('settings.general.appName')">
+                      <UInput v-model="generalForm.app_name" :placeholder="$t('settings.general.appName')" class="w-full" />
+                    </UFormField>
                     <UFormField :label="$t('settings.general.defaultPortStatus')">
                       <USelect v-model="generalForm.default_port_status" :items="portStatusOptions" class="w-full" />
                     </UFormField>
