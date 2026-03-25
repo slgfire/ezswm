@@ -3,7 +3,7 @@
     <h1 class="mb-6 text-2xl font-bold">{{ $t('settings.title') }}</h1>
 
     <div class="max-w-3xl">
-      <UTabs :items="tabs">
+      <UTabs :items="tabs" variant="link" color="neutral">
         <template #general>
           <div class="mt-4">
             <div class="list-container rounded-lg bg-default p-5">

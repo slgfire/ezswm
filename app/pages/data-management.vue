@@ -2,7 +2,7 @@
   <div class="p-6">
     <h1 class="mb-6 text-2xl font-bold">{{ $t('dataManagement.title') }}</h1>
 
-    <UTabs :items="tabs">
+    <UTabs :items="tabs" variant="link" color="neutral">
       <template #backup>
         <div class="mt-4">
           <div class="grid gap-6 md:grid-cols-2">
