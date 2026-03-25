@@ -11,12 +11,13 @@
         <h1 class="text-2xl font-bold">{{ $t('templates.edit') }}</h1>
       </div>
 
-      <UCard>
-        <form @submit.prevent="handleSubmit">
-          <div class="space-y-6">
-            <!-- Basic Info -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormField :label="$t('templates.fields.name') + ' *'" name="name" :error="errors.name" required>
+      <form @submit.prevent="handleSubmit">
+        <div class="space-y-6">
+          <!-- Basic Info -->
+          <div class="list-container rounded-lg bg-default p-5">
+            <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('templates.fields.name') }}</h2>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <UFormField :label="$t('templates.fields.name')" name="name" :error="errors.name" required>
                 <UInput v-model="form.name" :placeholder="$t('templates.fields.name')" class="w-full" />
               </UFormField>
               <UFormField :label="$t('templates.fields.manufacturer')">
@@ -29,58 +30,62 @@
                 <UInput v-model="form.description" :placeholder="$t('templates.fields.description')" class="w-full" />
               </UFormField>
             </div>
+          </div>
 
-            <USeparator />
+          <!-- Units Section -->
+          <div>
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('templates.units.title') }}</h2>
+              <UButton icon="i-heroicons-plus" size="sm" @click="addUnit">
+                {{ $t('templates.units.add') }}
+              </UButton>
+            </div>
+            <p v-if="errors.units" class="mb-2 text-sm text-red-500">{{ errors.units }}</p>
 
-            <!-- Units Section -->
-            <div>
-              <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold">{{ $t('templates.units.title') }}</h2>
-                <UButton icon="i-heroicons-plus" size="sm" @click="addUnit">
-                  {{ $t('templates.units.add') }}
-                </UButton>
+            <div v-for="(unit, unitIndex) in form.units" :key="unitIndex" class="card-glow mb-4 rounded-lg bg-default p-5">
+              <div class="mb-4 flex items-center justify-between">
+                <h3 class="font-mono text-sm font-semibold text-primary-500">UNIT {{ unit.unit_number }}</h3>
+                <UButton
+                  v-if="form.units.length > 1"
+                  icon="i-heroicons-trash"
+                  size="xs"
+                  color="error"
+                  variant="ghost"
+                  @click="removeUnit(unitIndex)"
+                />
               </div>
 
-              <div v-for="(unit, unitIndex) in form.units" :key="unitIndex" class="mb-6 border border-gray-700 rounded-lg p-4">
-                <div class="flex items-center justify-between mb-4">
-                  <h3 class="font-medium">{{ $t('templates.units.unitNumber') }}: {{ unit.unit_number }}</h3>
-                  <UButton
-                    v-if="form.units.length > 1"
-                    icon="i-heroicons-trash"
-                    size="xs"
-                    color="error"
-                    variant="ghost"
-                    @click="removeUnit(unitIndex)"
-                  >
-                    {{ $t('templates.units.remove') }}
+              <div class="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <UFormField :label="$t('templates.units.unitNumber')">
+                  <UInput v-model.number="unit.unit_number" type="number" min="1" class="w-full" />
+                </UFormField>
+                <UFormField :label="$t('templates.units.label')">
+                  <UInput v-model="unit.label" :placeholder="$t('templates.units.label')" class="w-full" />
+                </UFormField>
+              </div>
+
+              <!-- Blocks Section -->
+              <div>
+                <div class="mb-3 flex items-center justify-between">
+                  <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-500">{{ $t('templates.blocks.title') }}</h4>
+                  <UButton icon="i-heroicons-plus" size="xs" variant="soft" @click="addBlock(unitIndex)">
+                    {{ $t('templates.blocks.add') }}
                   </UButton>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <UFormField :label="$t('templates.units.unitNumber')">
-                    <UInput v-model.number="unit.unit_number" type="number" min="1" class="w-full" />
-                  </UFormField>
-                  <UFormField :label="$t('templates.units.label')">
-                    <UInput v-model="unit.label" :placeholder="$t('templates.units.label')" class="w-full" />
-                  </UFormField>
-                </div>
-
-                <!-- Blocks Section -->
-                <div>
-                  <div class="flex items-center justify-between mb-3">
-                    <h4 class="text-sm font-medium text-gray-400">{{ $t('templates.blocks.title') }}</h4>
-                    <UButton icon="i-heroicons-plus" size="xs" variant="soft" @click="addBlock(unitIndex)">
-                      {{ $t('templates.blocks.add') }}
-                    </UButton>
-                  </div>
-
+                <div class="space-y-3">
                   <div
                     v-for="(block, blockIndex) in unit.blocks"
                     :key="blockIndex"
-                    class="mb-3 border border-gray-600 rounded-md p-3"
+                    class="rounded-md border border-default/50 bg-elevated/50 p-4"
                   >
-                    <div class="flex items-start justify-between mb-3">
-                      <span class="text-sm text-gray-400">{{ $t('templates.blocks.title') }} #{{ blockIndex + 1 }}</span>
+                    <div class="mb-3 flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <UBadge :color="block.type === 'rj45' ? 'primary' : block.type === 'sfp+' ? 'info' : block.type === 'qsfp' ? 'warning' : 'neutral'" variant="subtle" size="sm">
+                          {{ (block.type || 'N/A').toUpperCase() }}
+                        </UBadge>
+                        <span class="text-xs text-gray-500">#{{ blockIndex + 1 }}</span>
+                      </div>
                       <UButton
                         icon="i-heroicons-x-mark"
                         size="xs"
@@ -89,7 +94,7 @@
                         @click="removeBlock(unitIndex, blockIndex)"
                       />
                     </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
                       <UFormField :label="$t('templates.blocks.type')" :name="`units[${unitIndex}].blocks[${blockIndex}].type`" :error="errors[`units[${unitIndex}].blocks[${blockIndex}].type`]">
                         <USelect v-model="block.type" :items="portTypeOptions" class="w-full" />
                       </UFormField>
@@ -102,6 +107,8 @@
                       <UFormField :label="$t('templates.blocks.label')">
                         <UInput v-model="block.label" :placeholder="$t('templates.blocks.label')" class="w-full" />
                       </UFormField>
+                    </div>
+                    <div class="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
                       <UFormField :label="$t('templates.blocks.rows')">
                         <UInput v-model.number="block.rows" type="number" min="1" class="w-full" />
                       </UFormField>
@@ -113,44 +120,40 @@
                       </UFormField>
                     </div>
                   </div>
-
-                  <div v-if="unit.blocks.length === 0" class="text-center py-4 text-sm text-gray-500">
-                    {{ $t('common.noData') }}
-                  </div>
-                  <p v-if="errors[`units[${unitIndex}].blocks`]" class="mt-1 text-sm text-red-500">{{ errors[`units[${unitIndex}].blocks`] }}</p>
                 </div>
+
+                <div v-if="unit.blocks.length === 0" class="rounded-md border border-dashed border-default py-6 text-center text-sm text-gray-500">
+                  {{ $t('common.noData') }}
+                </div>
+                <p v-if="errors[`units[${unitIndex}].blocks`]" class="mt-1 text-sm text-red-500">{{ errors[`units[${unitIndex}].blocks`] }}</p>
               </div>
-            </div>
-            <p v-if="errors.units" class="mt-1 text-sm text-red-500">{{ errors.units }}</p>
-
-            <!-- Live Preview -->
-            <USeparator />
-            <div>
-              <h2 class="mb-3 text-lg font-semibold">{{ $t('templates.preview') }}</h2>
-              <div v-if="previewPorts.length" class="rounded-lg border border-default bg-elevated p-4">
-                <SwitchPortGrid
-                  :ports="previewPorts"
-                  :units="form.units"
-                  :selected-ports="[]"
-                />
-              </div>
-              <p v-else class="text-sm text-gray-400">{{ $t('templates.previewEmpty') }}</p>
-            </div>
-
-            <USeparator />
-
-            <!-- Form Actions -->
-            <div class="flex justify-end gap-3">
-              <UButton :to="`/layout-templates/${route.params.id}`" color="neutral" variant="ghost">
-                {{ $t('common.cancel') }}
-              </UButton>
-              <UButton type="submit" :loading="submitting">
-                {{ $t('common.save') }}
-              </UButton>
             </div>
           </div>
-        </form>
-      </UCard>
+
+          <!-- Live Preview -->
+          <div class="list-container rounded-lg bg-default p-5">
+            <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('templates.preview') }}</h2>
+            <div v-if="previewPorts.length" class="rounded-lg border border-default bg-elevated p-4">
+              <SwitchPortGrid
+                :ports="previewPorts"
+                :units="form.units"
+                :selected-ports="[]"
+              />
+            </div>
+            <p v-else class="text-sm text-gray-500">{{ $t('templates.previewEmpty') }}</p>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="flex justify-end gap-3">
+            <UButton :to="`/layout-templates/${route.params.id}`" color="neutral" variant="ghost">
+              {{ $t('common.cancel') }}
+            </UButton>
+            <UButton type="submit" :loading="submitting" icon="i-heroicons-check">
+              {{ $t('common.save') }}
+            </UButton>
+          </div>
+        </div>
+      </form>
     </template>
 
     <div v-else class="text-center py-12">
