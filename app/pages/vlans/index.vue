@@ -177,7 +177,7 @@
         </div>
 
         <!-- Edit form -->
-        <UForm ref="editFormRef" v-if="panelEditing" :state="editForm" :validate="validate" novalidate class="space-y-4" @submit="onSave">
+        <UForm ref="editFormRef" v-if="panelEditing" :state="editForm" :validate="validate" :validate-on="['blur', 'submit']" novalidate class="space-y-4" @submit="onSave">
           <UFormField :label="$t('vlans.fields.vlanId') + ' *'" name="vlan_id" required>
             <UInput v-model.number="editForm.vlan_id" type="number" :min="1" :max="4094" required class="w-full" />
           </UFormField>

@@ -169,6 +169,30 @@ a, button {
 
 /* Nuxt UI v4: form inputs fill their container inside form fields - applied via class="w-full" on components */
 
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .stagger-item {
+    opacity: 1;
+    animation: none;
+  }
+
+  .card-glow {
+    transition: none;
+  }
+
+  .card-glow:hover {
+    transform: none;
+  }
+
+  .row-hover {
+    transition: none;
+  }
+
+  a, button {
+    transition: none;
+  }
+}
+
 /* Scrollbar styling for dark mode */
 .dark ::-webkit-scrollbar {
   width: 6px;

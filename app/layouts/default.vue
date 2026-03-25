@@ -1,5 +1,10 @@
 <template>
   <div class="flex h-screen overflow-hidden bg-elevated">
+    <!-- Skip to main content (a11y) -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[9999] focus:rounded-md focus:bg-primary-500 focus:px-4 focus:py-2 focus:text-white focus:outline-none">
+      Skip to main content
+    </a>
+
     <!-- Sidebar (desktop) -->
     <div class="hidden lg:flex">
       <LayoutAppSidebar :collapsed="sidebarCollapsed" @toggle="sidebarCollapsed = !sidebarCollapsed" />
@@ -18,7 +23,7 @@
       <LayoutAppHeader @toggle-sidebar="mobileSidebarOpen = !mobileSidebarOpen" />
       <LayoutAppBreadcrumbs />
 
-      <main class="flex-1 overflow-y-auto">
+      <main id="main-content" class="flex-1 overflow-y-auto">
         <slot />
       </main>
 

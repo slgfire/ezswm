@@ -57,7 +57,7 @@
             <template #header>
               <h3 class="font-semibold">{{ $t('settings.account.changePassword') }}</h3>
             </template>
-            <UForm :state="passwordForm" :validate="validatePassword" novalidate @submit="handleChangePassword">
+            <UForm :state="passwordForm" :validate="validatePassword" :validate-on="['blur', 'submit']" novalidate @submit="handleChangePassword">
               <div class="space-y-4">
                 <UFormField :label="$t('settings.account.currentPassword')" name="current_password">
                   <UInput v-model="passwordForm.current_password" type="password" class="w-full" />

@@ -214,7 +214,7 @@
     <USlideover v-model:open="editMode" :title="$t('switches.edit')" description="Modify switch properties">
 
       <template #body>
-        <UForm ref="editFormRef" :state="editForm" :validate="validateEdit" novalidate class="space-y-4" @submit="onSave">
+        <UForm ref="editFormRef" :state="editForm" :validate="validateEdit" :validate-on="['blur', 'submit']" novalidate class="space-y-4" @submit="onSave">
           <UFormField :label="$t('switches.fields.name') + ' *'" name="name" required>
             <UInput v-model="editForm.name" required class="w-full" />
           </UFormField>

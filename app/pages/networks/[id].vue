@@ -108,7 +108,7 @@
         </div>
 
         <!-- Edit form -->
-        <UForm v-if="editing" :state="editForm" :validate="validate" novalidate class="space-y-4" @submit="onSave">
+        <UForm v-if="editing" :state="editForm" :validate="validate" :validate-on="['blur', 'submit']" novalidate class="space-y-4" @submit="onSave">
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <UFormField :label="$t('networks.fields.name') + ' *'" name="name" required>
               <UInput v-model="editForm.name" required class="w-full" />

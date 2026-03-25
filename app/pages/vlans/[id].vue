@@ -86,7 +86,7 @@
         </div>
 
         <!-- Edit Form -->
-        <UForm v-else :state="editForm" :validate="validate" novalidate @submit="onSave">
+        <UForm v-else :state="editForm" :validate="validate" :validate-on="['blur', 'submit']" novalidate @submit="onSave">
           <div class="space-y-4">
             <UFormField :label="$t('vlans.fields.vlanId')" name="vlan_id" required>
               <UInput v-model.number="editForm.vlan_id" type="number" :min="1" :max="4094" required />

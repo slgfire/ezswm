@@ -6,7 +6,7 @@
     </div>
 
     <UCard class="max-w-2xl">
-      <UForm :state="form" :validate="validate" novalidate @submit="onSubmit">
+      <UForm :state="form" :validate="validate" :validate-on="['blur', 'submit']" novalidate @submit="onSubmit">
         <div class="space-y-4">
           <!-- Name -->
           <UFormField :label="$t('networks.fields.name')" name="name" required>

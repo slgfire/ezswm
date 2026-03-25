@@ -11,7 +11,7 @@
     </div>
 
     <UCard class="max-w-2xl">
-      <UForm :state="form" :validate="validate" novalidate @submit="onSubmit">
+      <UForm :state="form" :validate="validate" :validate-on="['blur', 'submit']" novalidate @submit="onSubmit">
         <div class="space-y-4">
           <UFormField :label="$t('switches.fields.name') + ' *'" name="name">
             <UInput v-model="form.name" :placeholder="$t('switches.fields.name')" required class="w-full" />
