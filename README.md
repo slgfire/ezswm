@@ -27,14 +27,19 @@ All data is stored as flat JSON files. No database setup, no migrations, no exte
 ## Screenshots
 
 <div align="center">
+  <img src="docs/images/screenshot-dashboard.png" width="900"/>
+  <p><em>Dashboard — KPIs, port status, IP utilization, warnings, activity feed</em></p>
+</div>
 
-| Switches | VLANs |
-|:---:|:---:|
-| <img src="docs/images/screenshot-switches.png" width="450"/> | <img src="docs/images/screenshot-vlans.png" width="450"/> |
+<div align="center">
 
-| Layout Templates | Login |
+| Switches | Layout Templates |
 |:---:|:---:|
-| <img src="docs/images/screenshot-templates.png" width="450"/> | <img src="docs/images/screenshot-login.png" width="450"/> |
+| <img src="docs/images/screenshot-switches.png" width="450"/> | <img src="docs/images/screenshot-templates.png" width="450"/> |
+
+| VLANs | Login |
+|:---:|:---:|
+| <img src="docs/images/screenshot-vlans.png" width="450"/> | <img src="docs/images/screenshot-login.png" width="450"/> |
 
 </div>
 
