@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="mb-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <UButton icon="i-heroicons-arrow-left" variant="ghost" size="sm" to="/networks" />
+        <UButton icon="i-heroicons-arrow-left" variant="ghost" size="sm" :to="`/sites/${siteId}/networks`" />
         <h1 class="text-xl font-bold">{{ network?.name || $t('common.loading') }}</h1>
       </div>
       <div v-if="network" class="flex items-center gap-1">
@@ -334,6 +334,7 @@
 const { t } = useI18n()
 const toast = useToast()
 const route = useRoute()
+const siteId = computed(() => route.params.siteId as string)
 const router = useRouter()
 const networkId = route.params.id as string
 const { update: updateNetwork, remove: removeNetwork } = useNetworks()
@@ -584,7 +585,7 @@ async function onSave() {
 
 async function confirmDeleteNetwork() {
   deleting.value = true
-  try { await removeNetwork(networkId); toast.add({ title: t('networks.messages.deleted'), color: 'success' }); showDeleteDialog.value = false; await router.push('/networks') }
+  try { await removeNetwork(networkId); toast.add({ title: t('networks.messages.deleted'), color: 'success' }); showDeleteDialog.value = false; await router.push(`/sites/${siteId.value}/networks`) }
   catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' }) }
   finally { deleting.value = false }
 }
@@ -712,7 +713,7 @@ async function onSaveRangeEdit() {
 async function loadNetwork() {
   pageLoading.value = true
   try { network.value = await $fetch<any>(`/api/networks/${networkId}`) }
-  catch { toast.add({ title: t('errors.notFound'), color: 'error' }); await router.push('/networks') }
+  catch { toast.add({ title: t('errors.notFound'), color: 'error' }); await router.push(`/sites/${siteId.value}/networks`) }
   finally { pageLoading.value = false }
 }
 

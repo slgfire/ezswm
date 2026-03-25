@@ -4,7 +4,7 @@
       <UButton
         icon="i-heroicons-arrow-left"
         variant="ghost"
-        to="/switches"
+        :to="`/sites/${siteId}/switches`"
         :aria-label="$t('common.back')"
       />
       <h1 class="text-2xl font-bold">{{ $t('switches.create') }}</h1>
@@ -80,7 +80,7 @@
 
         <!-- Actions -->
         <div class="flex justify-end gap-3">
-          <UButton color="neutral" variant="ghost" to="/switches">
+          <UButton color="neutral" variant="ghost" :to="`/sites/${siteId}/switches`">
             {{ $t('common.cancel') }}
           </UButton>
           <UButton type="submit" :loading="submitting" icon="i-heroicons-check">
@@ -93,6 +93,8 @@
 </template>
 
 <script setup lang="ts">
+const route = useRoute()
+const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
 useHead({ title: t('switches.create') })
 const toast = useToast()
@@ -173,9 +175,9 @@ async function onSubmit() {
     const result = await create(body)
     toast.add({ title: t('switches.messages.created'), color: 'success' })
     if (result && (result as any).id) {
-      await navigateTo(`/switches/${(result as any).id}`)
+      await navigateTo(`/sites/${siteId.value}/switches/${(result as any).id}`)
     } else {
-      await navigateTo('/switches')
+      await navigateTo(`/sites/${siteId.value}/switches`)
     }
   } catch (e: any) {
     toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })

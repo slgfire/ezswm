@@ -1,7 +1,7 @@
 <template>
   <div class="p-6">
     <div class="mb-6 flex items-center gap-2">
-      <UButton icon="i-heroicons-arrow-left" variant="ghost" to="/vlans" />
+      <UButton icon="i-heroicons-arrow-left" variant="ghost" :to="`/sites/${siteId}/vlans`" />
       <h1 class="text-2xl font-bold">
         <template v-if="vlan">
           <VlanColorSwatch :color="vlan.color" size="lg" class="mr-2" />
@@ -136,7 +136,7 @@
           <NuxtLink
             v-for="net in associatedNetworks"
             :key="net.id"
-            :to="`/networks/${net.id}`"
+            :to="`/sites/${siteId}/networks/${net.id}`"
             class="block rounded-md p-2 hover:bg-gray-800"
           >
             <p class="font-medium text-primary-400">{{ net.name }}</p>
@@ -162,6 +162,7 @@
 const { t } = useI18n()
 const toast = useToast()
 const route = useRoute()
+const siteId = computed(() => route.params.siteId as string)
 const router = useRouter()
 const { items: allVlans, fetch: fetchVlans, update, remove } = useVlans()
 const { items: allNetworks, fetch: fetchNetworks } = useNetworks()
@@ -248,7 +249,7 @@ async function confirmDelete() {
     await remove(id)
     toast.add({ title: t('vlans.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
-    await router.push('/vlans')
+    await router.push(`/sites/${siteId.value}/vlans`)
   } catch (err: any) {
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
@@ -263,7 +264,7 @@ async function loadVlan() {
     vlan.value = data
   } catch {
     toast.add({ title: t('errors.notFound'), color: 'error' })
-    await router.push('/vlans')
+    await router.push(`/sites/${siteId.value}/vlans`)
   } finally {
     loading.value = false
   }

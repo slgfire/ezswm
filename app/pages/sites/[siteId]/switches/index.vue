@@ -2,7 +2,7 @@
   <div class="p-6">
     <div class="mb-4 flex items-center justify-between">
       <h1 class="text-xl font-bold">{{ $t('switches.title') }}</h1>
-      <UButton to="/switches/create" icon="i-heroicons-plus" size="sm">
+      <UButton :to="`/sites/${siteId}/switches/create`" icon="i-heroicons-plus" size="sm">
         {{ $t('switches.create') }}
       </UButton>
     </div>
@@ -82,7 +82,7 @@
       >
         <template #item="{ element: sw }">
           <NuxtLink
-            :to="`/switches/${sw.id}`"
+            :to="`/sites/${siteId}/switches/${sw.id}`"
             class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
           >
             <!-- Hover actions -->
@@ -160,7 +160,7 @@
       <NuxtLink
         v-for="sw in filteredItems"
         :key="sw.id"
-        :to="`/switches/${sw.id}`"
+        :to="`/sites/${siteId}/switches/${sw.id}`"
         class="stagger-item card-glow group relative flex items-center gap-4 rounded-lg bg-default px-5 py-3"
       >
         <!-- Hover actions -->
@@ -230,7 +230,7 @@
       :description="$t('switches.emptyDescription')"
     >
       <template #action>
-        <UButton to="/switches/create" icon="i-heroicons-plus">{{ $t('switches.create') }}</UButton>
+        <UButton :to="`/sites/${siteId}/switches/create`" icon="i-heroicons-plus">{{ $t('switches.create') }}</UButton>
       </template>
     </SharedEmptyState>
 
@@ -248,6 +248,8 @@
 <script setup lang="ts">
 import draggable from 'vuedraggable'
 
+const route = useRoute()
+const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
 useHead({ title: t('switches.title') })
 const toast = useToast()
@@ -369,7 +371,7 @@ async function onDuplicate(row: any) {
     const result = await duplicate(row.id)
     toast.add({ title: t('switches.messages.duplicated'), color: 'success' })
     await loadData()
-    if (result && (result as any).id) await navigateTo(`/switches/${(result as any).id}`)
+    if (result && (result as any).id) await navigateTo(`/sites/${siteId.value}/switches/${(result as any).id}`)
   } catch (e: any) { toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' }) }
 }
 

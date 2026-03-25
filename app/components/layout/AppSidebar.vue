@@ -10,6 +10,9 @@
       </NuxtLink>
     </div>
 
+    <!-- Site Switcher -->
+    <LayoutSiteSwitcher />
+
     <!-- Navigation -->
     <nav class="flex-1 overflow-y-auto px-2 py-4">
       <ul class="space-y-1">
@@ -50,8 +53,11 @@ defineProps<{ collapsed: boolean }>()
 defineEmits<{ toggle: [] }>()
 
 const route = useRoute()
+const { currentSiteId } = useCurrentSite()
 
-const navSections = [
+const sitePrefix = computed(() => `/sites/${currentSiteId.value}`)
+
+const navSections = computed(() => [
   {
     items: [
       { to: '/', icon: 'i-heroicons-home', label: 'nav.dashboard' }
@@ -60,9 +66,9 @@ const navSections = [
   {
     divider: true,
     items: [
-      { to: '/switches', icon: 'i-heroicons-server-stack', label: 'nav.switches' },
-      { to: '/vlans', icon: 'i-heroicons-tag', label: 'nav.vlans' },
-      { to: '/networks', icon: 'i-heroicons-globe-alt', label: 'nav.networks' }
+      { to: `${sitePrefix.value}/switches`, icon: 'i-heroicons-server-stack', label: 'nav.switches' },
+      { to: `${sitePrefix.value}/vlans`, icon: 'i-heroicons-tag', label: 'nav.vlans' },
+      { to: `${sitePrefix.value}/networks`, icon: 'i-heroicons-globe-alt', label: 'nav.networks' }
     ]
   },
   {
@@ -82,10 +88,11 @@ const navSections = [
   {
     divider: true,
     items: [
-      { to: '/settings', icon: 'i-heroicons-cog-6-tooth', label: 'nav.settings' }
+      { to: '/settings', icon: 'i-heroicons-cog-6-tooth', label: 'nav.settings' },
+      { to: '/sites', icon: 'i-heroicons-building-office-2', label: 'nav.sites' }
     ]
   }
-]
+])
 
 function isActive(path: string): boolean {
   if (path === '/') return route.path === '/'

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const createVlanSchema = z.object({
+  site_id: z.string().min(1),
   vlan_id: z.number().int().min(1).max(4094),
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
@@ -10,6 +11,7 @@ export const createVlanSchema = z.object({
 })
 
 export const updateVlanSchema = z.object({
+  site_id: z.string().min(1).optional(),
   vlan_id: z.number().int().min(1).max(4094).optional(),
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional().nullable(),

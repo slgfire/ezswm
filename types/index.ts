@@ -19,6 +19,8 @@ export type { LAGGroup } from './lagGroup'
 
 export type { ActivityAction, ActivityEntry } from './activity'
 
+export type { Site } from './site'
+
 export type { AppSettings } from './settings'
 export { DEFAULT_SETTINGS } from './settings'
 

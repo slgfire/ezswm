@@ -3,6 +3,7 @@ import { switchRepository } from '../../repositories/switchRepository'
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
 
+  const siteId = query.site_id as string | undefined
   const location = query.location as string | undefined
   const manufacturer = query.manufacturer as string | undefined
   const role = query.role as string | undefined
@@ -14,6 +15,10 @@ export default defineEventHandler(async (event) => {
 
   const allSwitches = await switchRepository.list()
   let items = [...allSwitches]
+
+  if (siteId) {
+    items = items.filter((s) => s.site_id === siteId)
+  }
 
   if (location) {
     items = items.filter((s) => s.location === location)

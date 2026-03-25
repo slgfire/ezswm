@@ -10,6 +10,7 @@ export const VLAN_COLOR_POOL: string[] = [
 
 export interface VLAN {
   id: string
+  site_id: string
   vlan_id: number
   name: string
   description?: string

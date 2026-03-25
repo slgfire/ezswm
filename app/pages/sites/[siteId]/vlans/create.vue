@@ -1,7 +1,7 @@
 <template>
   <div class="p-6">
     <div class="mb-6 flex items-center gap-2">
-      <UButton icon="i-heroicons-arrow-left" variant="ghost" to="/vlans" />
+      <UButton icon="i-heroicons-arrow-left" variant="ghost" :to="`/sites/${siteId}/vlans`" />
       <h1 class="text-2xl font-bold">{{ $t('vlans.create') }}</h1>
     </div>
 
@@ -38,7 +38,7 @@
         </div>
 
         <div class="flex justify-end gap-3">
-          <UButton variant="ghost" color="neutral" to="/vlans">
+          <UButton variant="ghost" color="neutral" :to="`/sites/${siteId}/vlans`">
             {{ $t('common.cancel') }}
           </UButton>
           <UButton type="submit" :loading="submitting" icon="i-heroicons-check">
@@ -51,6 +51,8 @@
 </template>
 
 <script setup lang="ts">
+const route = useRoute()
+const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
 useHead({ title: t('vlans.create') })
 const toast = useToast()
@@ -111,7 +113,7 @@ async function onSubmit() {
       color: form.value.color.toUpperCase()
     })
     toast.add({ title: t('vlans.messages.created'), color: 'success' })
-    await router.push(`/vlans/${(result as any).id}`)
+    await router.push(`/sites/${siteId.value}/vlans/${(result as any).id}`)
   } catch (err: any) {
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {

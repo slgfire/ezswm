@@ -2,7 +2,7 @@
   <div class="p-6">
     <div class="mb-4 flex items-center justify-between">
       <h1 class="text-xl font-bold">{{ $t('vlans.title') }}</h1>
-      <UButton to="/vlans/create" icon="i-heroicons-plus" size="sm">
+      <UButton :to="`/sites/${siteId}/vlans/create`" icon="i-heroicons-plus" size="sm">
         {{ $t('vlans.create') }}
       </UButton>
     </div>
@@ -103,7 +103,7 @@
       :description="$t('vlans.emptyDescription')"
     >
       <template #action>
-        <UButton to="/vlans/create" icon="i-heroicons-plus">{{ $t('vlans.create') }}</UButton>
+        <UButton :to="`/sites/${siteId}/vlans/create`" icon="i-heroicons-plus">{{ $t('vlans.create') }}</UButton>
       </template>
     </SharedEmptyState>
 
@@ -166,7 +166,7 @@
               <NuxtLink
                 v-for="net in panelNetworks"
                 :key="net.id"
-                :to="`/networks/${net.id}`"
+                :to="`/sites/${siteId}/networks/${net.id}`"
                 class="block rounded px-2 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <span class="font-medium text-primary-500">{{ net.name }}</span>
@@ -226,6 +226,8 @@
 </template>
 
 <script setup lang="ts">
+const route = useRoute()
+const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
 useHead({ title: t('vlans.title') })
 const toast = useToast()

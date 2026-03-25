@@ -1,7 +1,7 @@
 <template>
   <div class="p-6">
     <div class="mb-6 flex items-center gap-2">
-      <UButton icon="i-heroicons-arrow-left" variant="ghost" to="/networks" />
+      <UButton icon="i-heroicons-arrow-left" variant="ghost" :to="`/sites/${siteId}/networks`" />
       <h1 class="text-2xl font-bold">{{ $t('networks.create') }}</h1>
     </div>
 
@@ -44,7 +44,7 @@
 
         <!-- Actions -->
         <div class="flex justify-end gap-3">
-          <UButton variant="ghost" color="neutral" to="/networks">
+          <UButton variant="ghost" color="neutral" :to="`/sites/${siteId}/networks`">
             {{ $t('common.cancel') }}
           </UButton>
           <UButton type="submit" :loading="submitting" icon="i-heroicons-check">
@@ -57,6 +57,8 @@
 </template>
 
 <script setup lang="ts">
+const route = useRoute()
+const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
 useHead({ title: t('networks.create') })
 const toast = useToast()
@@ -113,7 +115,7 @@ async function onSubmit() {
       description: form.value.description.trim() || undefined
     })
     toast.add({ title: t('networks.messages.created'), color: 'success' })
-    await router.push(`/networks/${(result as any).id}`)
+    await router.push(`/sites/${siteId.value}/networks/${(result as any).id}`)
   } catch (err: any) {
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
