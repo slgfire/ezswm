@@ -7,6 +7,12 @@
       </UButton>
     </div>
 
+    <!-- Loading -->
+    <div v-if="pageLoading" class="flex justify-center py-12">
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
+    </div>
+
+    <template v-else>
     <!-- Filters -->
     <div class="mb-4 flex flex-wrap items-center gap-3">
       <UInput
@@ -102,6 +108,7 @@
         <UButton :to="`/sites/${siteId}/networks/create`" icon="i-heroicons-plus">{{ $t('networks.create') }}</UButton>
       </template>
     </SharedEmptyState>
+    </template>
 
     <SharedConfirmDialog
       v-model="showDeleteDialog"
@@ -122,6 +129,7 @@ const toast = useToast()
 const { items, loading, fetch: fetchNetworks, remove } = useNetworks()
 const { items: vlans, fetch: fetchVlans } = useVlans()
 
+const pageLoading = ref(true)
 const search = ref('')
 const vlanFilter = ref('all')
 const showDeleteDialog = ref(false)
@@ -199,5 +207,8 @@ async function confirmDelete() {
 
 watch([search, vlanFilter], () => {})
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
-onMounted(() => { Promise.all([fetchNetworks(siteParams.value), fetchVlans(siteParams.value)]) })
+onMounted(async () => {
+  await Promise.all([fetchNetworks(siteParams.value), fetchVlans(siteParams.value)])
+  pageLoading.value = false
+})
 </script>

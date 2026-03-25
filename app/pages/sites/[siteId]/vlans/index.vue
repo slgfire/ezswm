@@ -7,6 +7,12 @@
       </UButton>
     </div>
 
+    <!-- Loading -->
+    <div v-if="pageLoading" class="flex justify-center py-12">
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
+    </div>
+
+    <template v-else>
     <!-- Filters -->
     <div class="mb-4 flex flex-wrap items-center gap-3">
       <UInput
@@ -106,6 +112,7 @@
         <UButton :to="`/sites/${siteId}/vlans/create`" icon="i-heroicons-plus">{{ $t('vlans.create') }}</UButton>
       </template>
     </SharedEmptyState>
+    </template>
 
     <!-- VLAN Side Panel -->
     <USlideover v-model:open="showPanel" :title="selectedVlan ? `VLAN ${selectedVlan.vlan_id} — ${selectedVlan.name}` : 'VLAN Details'" description="View and edit VLAN configuration">
@@ -234,6 +241,7 @@ const toast = useToast()
 const { items, loading, fetch: fetchVlans, update, remove } = useVlans()
 const { items: allNetworks, fetch: fetchNetworks } = useNetworks()
 
+const pageLoading = ref(true)
 const search = ref('')
 const statusFilter = ref('all')
 const page = ref(1)
@@ -407,8 +415,8 @@ watch([search, statusFilter], () => { page.value = 1 })
 
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 
-onMounted(() => {
-  fetchVlans(siteParams.value)
-  fetchNetworks(siteParams.value)
+onMounted(async () => {
+  await Promise.all([fetchVlans(siteParams.value), fetchNetworks(siteParams.value)])
+  pageLoading.value = false
 })
 </script>
