@@ -6,10 +6,10 @@
     </div>
 
     <UCard class="max-w-2xl">
-      <form @submit.prevent="onSubmit">
+      <UForm :state="form" :validate="validate" novalidate @submit="onSubmit">
         <div class="space-y-4">
           <!-- Name -->
-          <UFormField :label="$t('networks.fields.name') + ' *'" :error="errors.name">
+          <UFormField :label="$t('networks.fields.name')" name="name" required>
             <UInput
               v-model="form.name"
               :placeholder="$t('networks.fields.name')"
@@ -19,7 +19,7 @@
           </UFormField>
 
           <!-- Subnet -->
-          <UFormField :label="$t('networks.fields.subnet') + ' *'" :error="errors.subnet">
+          <UFormField :label="$t('networks.fields.subnet')" name="subnet" required>
             <UInput
               v-model="form.subnet"
               placeholder="10.0.1.0/24"
@@ -79,7 +79,7 @@
             {{ $t('common.cancel') }}
           </UButton>
         </div>
-      </form>
+      </UForm>
     </UCard>
   </div>
 </template>
@@ -93,7 +93,6 @@ const { create } = useNetworks()
 const { items: vlans, fetch: fetchVlans } = useVlans()
 
 const submitting = ref(false)
-const errors = ref<Record<string, string>>({})
 const dnsInput = ref('')
 
 const form = ref({
@@ -112,17 +111,17 @@ const vlanOptions = computed(() => {
   return options
 })
 
-function validate(): boolean {
-  errors.value = {}
-  if (!form.value.name?.trim()) {
-    errors.value.name = 'Name is required'
+function validate(state: any) {
+  const errors: { name: string; message: string }[] = []
+  if (!state.name?.trim()) {
+    errors.push({ name: 'name', message: 'Name is required' })
   }
-  if (!form.value.subnet?.trim()) {
-    errors.value.subnet = 'Subnet (CIDR) is required'
-  } else if (!form.value.subnet.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}$/)) {
-    errors.value.subnet = 'Invalid CIDR notation (e.g. 10.0.1.0/24)'
+  if (!state.subnet?.trim()) {
+    errors.push({ name: 'subnet', message: 'Subnet (CIDR) is required' })
+  } else if (!state.subnet.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}$/)) {
+    errors.push({ name: 'subnet', message: 'Invalid CIDR notation (e.g. 10.0.1.0/24)' })
   }
-  return Object.keys(errors.value).length === 0
+  return errors
 }
 
 function parseDns(): string[] {
@@ -131,7 +130,6 @@ function parseDns(): string[] {
 }
 
 async function onSubmit() {
-  if (!validate()) return
   submitting.value = true
   try {
     const result = await create({

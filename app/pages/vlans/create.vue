@@ -6,10 +6,10 @@
     </div>
 
     <UCard class="max-w-2xl">
-      <form @submit.prevent="onSubmit">
+      <UForm :state="form" :validate="validate" novalidate @submit="onSubmit">
         <div class="space-y-4">
           <!-- VLAN ID -->
-          <UFormField :label="$t('vlans.fields.vlanId') + ' *'" :error="errors.vlan_id">
+          <UFormField :label="$t('vlans.fields.vlanId')" name="vlan_id" required>
             <UInput
               v-model.number="form.vlan_id"
               type="number"
@@ -22,7 +22,7 @@
           </UFormField>
 
           <!-- Name -->
-          <UFormField :label="$t('vlans.fields.name') + ' *'" :error="errors.name">
+          <UFormField :label="$t('vlans.fields.name')" name="name" required>
             <UInput
               v-model="form.name"
               :placeholder="$t('vlans.fields.name')"
@@ -56,7 +56,7 @@
           </UFormField>
 
           <!-- Color -->
-          <UFormField :label="$t('vlans.fields.color') + ' *'" :error="errors.color">
+          <UFormField :label="$t('vlans.fields.color')" name="color" required>
             <div class="flex items-center gap-3">
               <input
                 v-model="form.color"
@@ -81,7 +81,7 @@
             {{ $t('common.cancel') }}
           </UButton>
         </div>
-      </form>
+      </UForm>
     </UCard>
   </div>
 </template>
@@ -94,7 +94,6 @@ const router = useRouter()
 const { create } = useVlans()
 
 const submitting = ref(false)
-const errors = ref<Record<string, string>>({})
 
 const form = ref({
   vlan_id: null as number | null,
@@ -122,22 +121,21 @@ onMounted(async () => {
   }
 })
 
-function validate(): boolean {
-  errors.value = {}
-  if (!form.value.vlan_id || form.value.vlan_id < 1 || form.value.vlan_id > 4094) {
-    errors.value.vlan_id = 'VLAN ID must be between 1 and 4094'
+function validate(state: any) {
+  const errors: { name: string; message: string }[] = []
+  if (!state.vlan_id || state.vlan_id < 1 || state.vlan_id > 4094) {
+    errors.push({ name: 'vlan_id', message: 'VLAN ID must be between 1 and 4094' })
   }
-  if (!form.value.name?.trim()) {
-    errors.value.name = 'Name is required'
+  if (!state.name?.trim()) {
+    errors.push({ name: 'name', message: 'Name is required' })
   }
-  if (!form.value.color?.match(/^#[0-9A-Fa-f]{6}$/)) {
-    errors.value.color = 'Valid hex color required (e.g. #FF5733)'
+  if (!state.color?.match(/^#[0-9A-Fa-f]{6}$/)) {
+    errors.push({ name: 'color', message: 'Valid hex color required (e.g. #FF5733)' })
   }
-  return Object.keys(errors.value).length === 0
+  return errors
 }
 
 async function onSubmit() {
-  if (!validate()) return
   submitting.value = true
   try {
     const result = await create({

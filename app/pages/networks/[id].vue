@@ -108,24 +108,24 @@
         </div>
 
         <!-- Edit form -->
-        <form v-if="editing" class="space-y-4" @submit.prevent="onSave">
+        <UForm v-if="editing" :state="editForm" :validate="validate" novalidate class="space-y-4" @submit="onSave">
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <UFormField :label="$t('networks.fields.name') + ' *'">
+            <UFormField :label="$t('networks.fields.name') + ' *'" name="name" required>
               <UInput v-model="editForm.name" required class="w-full" />
             </UFormField>
-            <UFormField :label="$t('networks.fields.subnet') + ' *'">
+            <UFormField :label="$t('networks.fields.subnet') + ' *'" name="subnet" required>
               <UInput v-model="editForm.subnet" required class="w-full" />
             </UFormField>
-            <UFormField :label="$t('networks.fields.gateway')">
+            <UFormField :label="$t('networks.fields.gateway')" name="gateway">
               <UInput v-model="editForm.gateway" class="w-full" />
             </UFormField>
-            <UFormField :label="$t('networks.fields.dnsServers')">
+            <UFormField :label="$t('networks.fields.dnsServers')" name="dns_servers">
               <UInput v-model="editDnsInput" placeholder="8.8.8.8, 8.8.4.4" class="w-full" />
             </UFormField>
-            <UFormField :label="$t('networks.fields.vlan')">
+            <UFormField :label="$t('networks.fields.vlan')" name="vlan_id">
               <USelect v-model="editForm.vlan_id" :items="vlanOptions" placeholder="-" class="w-full" />
             </UFormField>
-            <UFormField :label="$t('common.description')">
+            <UFormField :label="$t('common.description')" name="description">
               <UInput v-model="editForm.description" class="w-full" />
             </UFormField>
           </div>
@@ -133,7 +133,7 @@
             <UButton variant="ghost" color="neutral" @click="editing = false">{{ $t('common.cancel') }}</UButton>
             <UButton type="submit" :loading="saving">{{ $t('common.save') }}</UButton>
           </div>
-        </form>
+        </UForm>
       </div>
 
       <!-- Unified IP Overview -->
@@ -552,6 +552,22 @@ function startEdit() {
   editDnsInput.value = network.value.dns_servers?.join(', ') || ''
   editing.value = true
   showDetails.value = true
+}
+
+function validate(state: any) {
+  const errors: { name: string; message: string }[] = []
+  if (!state.name?.trim()) {
+    errors.push({ name: 'name', message: 'Name is required' })
+  }
+  if (!state.subnet?.trim()) {
+    errors.push({ name: 'subnet', message: 'Subnet is required' })
+  } else if (!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}$/.test(state.subnet.trim())) {
+    errors.push({ name: 'subnet', message: 'Must be valid CIDR notation (e.g. 10.0.0.0/24)' })
+  }
+  if (state.gateway?.trim() && !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(state.gateway.trim())) {
+    errors.push({ name: 'gateway', message: 'Must be a valid IPv4 address (e.g. 10.0.0.1)' })
+  }
+  return errors
 }
 
 async function onSave() {
