@@ -114,8 +114,8 @@
             </div>
 
             <!-- Usage -->
-            <div class="mt-3 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
-              <UIcon name="i-heroicons-link" class="h-3.5 w-3.5" />
+            <div :class="['mt-3 flex items-center gap-1.5 text-xs', tpl.switch_count ? 'text-gray-400 dark:text-gray-500' : 'text-orange-400 dark:text-orange-500']">
+              <UIcon :name="tpl.switch_count ? 'i-heroicons-link' : 'i-heroicons-exclamation-triangle'" class="h-3.5 w-3.5" />
               <span>{{ $t('templates.usedBy', { count: tpl.switch_count || 0 }) }}</span>
             </div>
           </div>
@@ -161,8 +161,8 @@
               >
                 {{ pt.label }}
               </UBadge>
-              <span class="ml-1 flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
-                <UIcon name="i-heroicons-link" class="h-3 w-3" />
+              <span :class="['ml-1 flex items-center gap-1 text-xs', tpl.switch_count ? 'text-gray-400 dark:text-gray-500' : 'text-orange-400 dark:text-orange-500']">
+                <UIcon :name="tpl.switch_count ? 'i-heroicons-link' : 'i-heroicons-exclamation-triangle'" class="h-3 w-3" />
                 {{ $t('templates.usedBy', { count: tpl.switch_count || 0 }) }}
               </span>
             </div>

@@ -52,7 +52,7 @@
 
       <template #export>
         <div class="mt-4">
-          <UCard>
+          <div class="list-container rounded-lg bg-default p-5">
             <div class="space-y-4 max-w-lg">
               <UFormField :label="$t('dataManagement.export.selectType')">
                 <USelectMenu :search-input="false"
@@ -86,14 +86,14 @@
                 {{ $t('dataManagement.export.download') }}
               </UButton>
             </div>
-          </UCard>
+          </div>
         </div>
 
       </template>
 
       <template #import>
         <div class="mt-4">
-          <UCard>
+          <div class="list-container rounded-lg bg-default p-5">
             <div class="space-y-4 max-w-lg">
               <UFormField :label="$t('dataManagement.export.selectType')">
                 <USelectMenu :search-input="false"
@@ -118,21 +118,23 @@
                 </UButton>
               </div>
 
-              <UFormField :label="$t('dataManagement.import.selectFile')">
+              <div
+                class="cursor-pointer rounded-lg border-2 border-dashed border-default p-6 text-center transition-colors hover:border-primary-500/50"
+                @click="($refs.importFileInput as HTMLInputElement)?.click()"
+              >
+                <UIcon name="i-heroicons-cloud-arrow-up" class="mx-auto mb-2 h-8 w-8 text-gray-500" />
+                <p class="text-sm text-gray-400">
+                  <span v-if="importFile" class="text-primary-400">{{ (importFile as File).name }}</span>
+                  <span v-else>{{ $t('dataManagement.import.selectFile') }} (.json, .csv)</span>
+                </p>
                 <input
                   ref="importFileInput"
                   type="file"
                   accept=".json,.csv"
-                  class="block w-full text-sm text-gray-400
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-md file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-primary-50 file:text-primary-700
-                    hover:file:bg-primary-100
-                    dark:file:bg-primary-900 dark:file:text-primary-300"
+                  class="hidden"
                   @change="onImportFileSelect"
                 />
-              </UFormField>
+              </div>
 
               <!-- Preview -->
               <div v-if="importPreview !== null" class="rounded-md bg-elevated p-3">
@@ -170,7 +172,7 @@
                 </p>
               </div>
             </div>
-          </UCard>
+          </div>
         </div>
       </template>
     </UTabs>

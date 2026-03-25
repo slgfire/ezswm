@@ -12,7 +12,7 @@
 
       <!-- Search -->
       <div class="relative hidden sm:block">
-        <div class="flex items-center rounded-md border border-default bg-elevated px-3">
+        <div class="flex items-center rounded-md border border-default bg-elevated px-3" @click="searchInputRef?.focus()">
           <span class="font-mono text-xs font-semibold text-primary-500 select-none">&gt;_</span>
           <input
             ref="searchInputRef"
@@ -26,6 +26,7 @@
             @keydown.up.prevent="moveSelection(-1)"
             @keydown.enter.prevent="navigateToSelected"
           />
+          <kbd class="ml-auto hidden rounded border border-default bg-default px-1.5 py-0.5 font-mono text-[10px] text-gray-500 lg:inline-block">/</kbd>
         </div>
 
         <!-- Search results dropdown -->
@@ -290,6 +291,15 @@ function closeSearch() {
   searchQuery.value = ''
   selectedIndex.value = -1
 }
+
+onMounted(() => {
+  document.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
+      e.preventDefault()
+      searchInputRef.value?.focus()
+    }
+  })
+})
 
 const userMenuItems = computed(() => [
   {

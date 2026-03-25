@@ -5,7 +5,7 @@
       <h1 class="text-2xl font-bold">{{ $t('vlans.create') }}</h1>
     </div>
 
-    <UCard class="max-w-2xl">
+    <div class="max-w-3xl list-container rounded-lg bg-default p-5">
       <UForm :state="form" :validate="validate" :validate-on="['blur', 'submit']" novalidate @submit="onSubmit">
         <div class="space-y-4">
           <!-- VLAN ID -->
@@ -82,7 +82,7 @@
           </UButton>
         </div>
       </UForm>
-    </UCard>
+    </div>
   </div>
 </template>
 
