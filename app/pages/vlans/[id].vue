@@ -86,24 +86,24 @@
         </div>
 
         <!-- Edit Form -->
-        <form v-else @submit.prevent="onSave">
+        <UForm v-else :state="editForm" :validate="validate" novalidate @submit="onSave">
           <div class="space-y-4">
-            <UFormField :label="$t('vlans.fields.vlanId') + ' *'">
+            <UFormField :label="$t('vlans.fields.vlanId')" name="vlan_id" required>
               <UInput v-model.number="editForm.vlan_id" type="number" :min="1" :max="4094" required />
             </UFormField>
-            <UFormField :label="$t('vlans.fields.name') + ' *'">
+            <UFormField :label="$t('vlans.fields.name')" name="name" required>
               <UInput v-model="editForm.name" required />
             </UFormField>
-            <UFormField :label="$t('common.description')">
+            <UFormField :label="$t('common.description')" name="description">
               <UTextarea v-model="editForm.description" :rows="3" />
             </UFormField>
-            <UFormField :label="$t('vlans.fields.status')">
+            <UFormField :label="$t('vlans.fields.status')" name="status">
               <USelect v-model="editForm.status" :items="statusOptions" />
             </UFormField>
-            <UFormField :label="$t('vlans.fields.routingDevice')">
+            <UFormField :label="$t('vlans.fields.routingDevice')" name="routing_device">
               <UInput v-model="editForm.routing_device" />
             </UFormField>
-            <UFormField :label="$t('vlans.fields.color') + ' *'">
+            <UFormField :label="$t('vlans.fields.color')" name="color" required>
               <div class="flex items-center gap-3">
                 <input
                   v-model="editForm.color"
@@ -123,7 +123,7 @@
               {{ $t('common.cancel') }}
             </UButton>
           </div>
-        </form>
+        </UForm>
       </UCard>
 
       <!-- Associated Networks -->
@@ -205,6 +205,20 @@ function startEdit() {
     color: vlan.value.color
   }
   editing.value = true
+}
+
+function validate(state: any) {
+  const errors: { name: string; message: string }[] = []
+  if (!state.vlan_id || state.vlan_id < 1 || state.vlan_id > 4094) {
+    errors.push({ name: 'vlan_id', message: 'VLAN ID must be between 1 and 4094' })
+  }
+  if (!state.name?.trim()) {
+    errors.push({ name: 'name', message: 'Name is required' })
+  }
+  if (!state.color?.match(/^#[0-9A-Fa-f]{6}$/)) {
+    errors.push({ name: 'color', message: 'Valid hex color required (e.g. #FF5733)' })
+  }
+  return errors
 }
 
 async function onSave() {

@@ -10,7 +10,7 @@
         <div class="space-y-6">
           <!-- Basic Info -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <UFormField :label="$t('templates.fields.name') + ' *'" required>
+            <UFormField :label="$t('templates.fields.name') + ' *'" name="name" :error="errors.name" required>
               <UInput v-model="form.name" :placeholder="$t('templates.fields.name')" class="w-full" />
             </UFormField>
             <UFormField :label="$t('templates.fields.manufacturer')">
@@ -84,10 +84,10 @@
                     />
                   </div>
                   <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <UFormField :label="$t('templates.blocks.type')">
+                    <UFormField :label="$t('templates.blocks.type')" :name="`units[${unitIndex}].blocks[${blockIndex}].type`" :error="errors[`units[${unitIndex}].blocks[${blockIndex}].type`]">
                       <USelect v-model="block.type" :items="portTypeOptions" class="w-full" />
                     </UFormField>
-                    <UFormField :label="$t('templates.blocks.count')">
+                    <UFormField :label="$t('templates.blocks.count')" :name="`units[${unitIndex}].blocks[${blockIndex}].count`" :error="errors[`units[${unitIndex}].blocks[${blockIndex}].count`]">
                       <UInput v-model.number="block.count" type="number" min="1" class="w-full" />
                     </UFormField>
                     <UFormField :label="$t('templates.blocks.startIndex')">
@@ -111,12 +111,14 @@
                 <div v-if="unit.blocks.length === 0" class="text-center py-4 text-sm text-gray-500">
                   {{ $t('common.noData') }}
                 </div>
+                <p v-if="errors[`units[${unitIndex}].blocks`]" class="mt-1 text-sm text-red-500">{{ errors[`units[${unitIndex}].blocks`] }}</p>
               </div>
             </div>
 
             <div v-if="form.units.length === 0" class="text-center py-8 text-gray-500">
               {{ $t('common.noData') }}
             </div>
+            <p v-if="errors.units" class="mt-1 text-sm text-red-500">{{ errors.units }}</p>
           </div>
 
           <!-- Live Preview -->
@@ -159,6 +161,7 @@ const router = useRouter()
 const { create, getById } = useLayoutTemplates()
 
 const submitting = ref(false)
+const errors = ref<Record<string, string>>({})
 const cloneId = route.query.clone as string | undefined
 
 const portTypeOptions = [
@@ -260,8 +263,32 @@ function removeBlock(unitIndex: number, blockIndex: number) {
   form.units[unitIndex].blocks.splice(blockIndex, 1)
 }
 
+function validate(): boolean {
+  errors.value = {}
+  if (!form.name.trim()) {
+    errors.value.name = 'Name is required'
+  }
+  if (form.units.length === 0) {
+    errors.value.units = 'At least one unit is required'
+  }
+  form.units.forEach((unit, ui) => {
+    if (unit.blocks.length === 0) {
+      errors.value[`units[${ui}].blocks`] = 'Each unit must have at least one block'
+    }
+    unit.blocks.forEach((block, bi) => {
+      if (!block.count || block.count < 1) {
+        errors.value[`units[${ui}].blocks[${bi}].count`] = 'Count must be greater than 0'
+      }
+      if (!block.type) {
+        errors.value[`units[${ui}].blocks[${bi}].type`] = 'Type is required'
+      }
+    })
+  })
+  return Object.keys(errors.value).length === 0
+}
+
 async function handleSubmit() {
-  if (!form.name.trim()) return
+  if (!validate()) return
 
   submitting.value = true
   try {

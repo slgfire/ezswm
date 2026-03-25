@@ -214,8 +214,8 @@
     <USlideover v-model:open="editMode" :title="$t('switches.edit')" description="Modify switch properties">
 
       <template #body>
-        <div class="space-y-4">
-          <UFormField :label="$t('switches.fields.name') + ' *'" name="name">
+        <UForm ref="editFormRef" :state="editForm" :validate="validateEdit" novalidate class="space-y-4" @submit="onSave">
+          <UFormField :label="$t('switches.fields.name') + ' *'" name="name" required>
             <UInput v-model="editForm.name" required class="w-full" />
           </UFormField>
 
@@ -284,7 +284,7 @@
           <UFormField :label="$t('common.notes')" name="notes">
             <UTextarea v-model="editForm.notes" :rows="3" class="w-full" />
           </UFormField>
-        </div>
+        </UForm>
       </template>
 
       <template #footer>
@@ -292,7 +292,7 @@
           <UButton color="neutral" variant="ghost" @click="editMode = false">
             {{ $t('common.cancel') }}
           </UButton>
-          <UButton :loading="saving" icon="i-heroicons-check" @click="onSave">
+          <UButton :loading="saving" icon="i-heroicons-check" @click="editFormRef?.submit()">
             {{ $t('common.save') }}
           </UButton>
         </div>
@@ -326,6 +326,7 @@ const { items: vlans, fetch: fetchVlans } = useVlans()
 
 const editMode = ref(false)
 const saving = ref(false)
+const editFormRef = ref()
 const showDeleteDialog = ref(false)
 const deleting = ref(false)
 const showDetails = ref(false)
@@ -454,9 +455,18 @@ function openEditPanel() {
   editMode.value = true
 }
 
-async function onSave() {
-  if (!editForm.name.trim()) return
+function validateEdit(state: any) {
+  const errors: { name: string; message: string }[] = []
+  if (!state.name?.trim()) {
+    errors.push({ name: 'name', message: 'Name is required' })
+  }
+  if (state.management_ip?.trim() && !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(state.management_ip.trim())) {
+    errors.push({ name: 'management_ip', message: 'Must be a valid IPv4 address (e.g. 192.168.1.1)' })
+  }
+  return errors
+}
 
+async function onSave() {
   saving.value = true
   try {
     const body: Record<string, any> = { ...editForm, tags: [...editForm.tags] }

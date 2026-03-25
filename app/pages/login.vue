@@ -9,7 +9,7 @@
           </div>
         </template>
 
-        <UForm :state="form" @submit.prevent="onSubmit">
+        <UForm :state="form" :validate="validate" novalidate @submit="onSubmit">
           <div class="space-y-4">
             <UFormField :label="$t('auth.username')" name="username" required>
               <UInput v-model="form.username" class="w-full" />
@@ -52,6 +52,17 @@ const form = reactive({
   password: '',
   remember_me: false
 })
+
+function validate(state: typeof form) {
+  const errors: { name: string; message: string }[] = []
+  if (!state.username || state.username.length < 3) {
+    errors.push({ name: 'username', message: 'Username must be at least 3 characters' })
+  }
+  if (!state.password) {
+    errors.push({ name: 'password', message: 'Password is required' })
+  }
+  return errors
+}
 
 async function onSubmit() {
   loading.value = true

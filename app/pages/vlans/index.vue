@@ -177,23 +177,23 @@
         </div>
 
         <!-- Edit form -->
-        <form v-if="panelEditing" class="space-y-4" @submit.prevent="onSave">
-          <UFormField :label="$t('vlans.fields.vlanId') + ' *'">
+        <UForm ref="editFormRef" v-if="panelEditing" :state="editForm" :validate="validate" novalidate class="space-y-4" @submit="onSave">
+          <UFormField :label="$t('vlans.fields.vlanId') + ' *'" name="vlan_id" required>
             <UInput v-model.number="editForm.vlan_id" type="number" :min="1" :max="4094" required class="w-full" />
           </UFormField>
-          <UFormField :label="$t('vlans.fields.name') + ' *'">
+          <UFormField :label="$t('vlans.fields.name') + ' *'" name="name" required>
             <UInput v-model="editForm.name" required class="w-full" />
           </UFormField>
-          <UFormField :label="$t('common.description')">
+          <UFormField :label="$t('common.description')" name="description">
             <UTextarea v-model="editForm.description" :rows="2" class="w-full" />
           </UFormField>
-          <UFormField :label="$t('vlans.fields.status')">
+          <UFormField :label="$t('vlans.fields.status')" name="status">
             <USelect v-model="editForm.status" :items="editStatusOptions" class="w-full" />
           </UFormField>
-          <UFormField :label="$t('vlans.fields.routingDevice')">
+          <UFormField :label="$t('vlans.fields.routingDevice')" name="routing_device">
             <UInput v-model="editForm.routing_device" class="w-full" />
           </UFormField>
-          <UFormField :label="$t('vlans.fields.color') + ' *'">
+          <UFormField :label="$t('vlans.fields.color') + ' *'" name="color" required>
             <div class="flex items-center gap-3">
               <input
                 v-model="editForm.color"
@@ -203,13 +203,13 @@
               <UInput v-model="editForm.color" class="w-28" size="sm" />
             </div>
           </UFormField>
-        </form>
+        </UForm>
         </template>
 
         <template #footer>
           <div v-if="panelEditing" class="flex justify-end gap-2">
             <UButton variant="ghost" color="neutral" @click="panelEditing = false">{{ $t('common.cancel') }}</UButton>
-            <UButton :loading="saving" @click="onSave">{{ $t('common.save') }}</UButton>
+            <UButton :loading="saving" @click="editFormRef?.submit()">{{ $t('common.save') }}</UButton>
           </div>
         </template>
     </USlideover>
@@ -248,6 +248,8 @@ const showDeleteDialog = ref(false)
 const deleteTarget = ref<any>(null)
 const deleteMessage = ref('')
 const deleting = ref(false)
+
+const editFormRef = ref()
 
 const editForm = ref({
   vlan_id: 0,
@@ -338,6 +340,20 @@ function startEdit() {
     color: selectedVlan.value.color
   }
   panelEditing.value = true
+}
+
+function validate(state: any) {
+  const errors: { name: string; message: string }[] = []
+  if (!state.vlan_id || state.vlan_id < 1 || state.vlan_id > 4094) {
+    errors.push({ name: 'vlan_id', message: 'VLAN ID must be between 1 and 4094' })
+  }
+  if (!state.name?.trim()) {
+    errors.push({ name: 'name', message: 'Name is required' })
+  }
+  if (!state.color?.match(/^#[0-9A-Fa-f]{6}$/)) {
+    errors.push({ name: 'color', message: 'Valid hex color required (e.g. #FF5733)' })
+  }
+  return errors
 }
 
 async function onSave() {

@@ -9,7 +9,7 @@
           </div>
         </template>
 
-        <UForm :state="form" :validate="validate" @submit.prevent="onSubmit">
+        <UForm :state="form" :validate="validate" novalidate @submit="onSubmit">
           <div class="space-y-4">
             <UFormField :label="$t('auth.username')" name="username" required>
               <UInput v-model="form.username" class="w-full" />
@@ -70,18 +70,18 @@ const languageOptions = [
 ]
 
 function validate(state: typeof form) {
-  const errors: { path: string; message: string }[] = []
+  const errors: { name: string; message: string }[] = []
   if (!state.username || state.username.length < 3) {
-    errors.push({ path: 'username', message: 'Username must be at least 3 characters' })
+    errors.push({ name: 'username', message: 'Username must be at least 3 characters' })
   }
   if (!state.display_name) {
-    errors.push({ path: 'display_name', message: 'Display name is required' })
+    errors.push({ name: 'display_name', message: 'Display name is required' })
   }
   if (!state.password || state.password.length < 8) {
-    errors.push({ path: 'password', message: 'Password must be at least 8 characters' })
+    errors.push({ name: 'password', message: 'Password must be at least 8 characters' })
   }
   if (state.password !== state.confirm_password) {
-    errors.push({ path: 'confirm_password', message: 'Passwords do not match' })
+    errors.push({ name: 'confirm_password', message: 'Passwords do not match' })
   }
   return errors
 }

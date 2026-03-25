@@ -57,15 +57,15 @@
             <template #header>
               <h3 class="font-semibold">{{ $t('settings.account.changePassword') }}</h3>
             </template>
-            <form @submit.prevent="handleChangePassword">
+            <UForm :state="passwordForm" :validate="validatePassword" novalidate @submit="handleChangePassword">
               <div class="space-y-4">
-                <UFormField :label="$t('settings.account.currentPassword')">
+                <UFormField :label="$t('settings.account.currentPassword')" name="current_password">
                   <UInput v-model="passwordForm.current_password" type="password" class="w-full" />
                 </UFormField>
-                <UFormField :label="$t('settings.account.newPassword')">
+                <UFormField :label="$t('settings.account.newPassword')" name="new_password">
                   <UInput v-model="passwordForm.new_password" type="password" class="w-full" />
                 </UFormField>
-                <UFormField :label="$t('settings.account.confirmNewPassword')">
+                <UFormField :label="$t('settings.account.confirmNewPassword')" name="confirm_password">
                   <UInput v-model="passwordForm.confirm_password" type="password" class="w-full" />
                 </UFormField>
                 <div class="flex justify-end">
@@ -74,7 +74,7 @@
                   </UButton>
                 </div>
               </div>
-            </form>
+            </UForm>
           </UCard>
         </div>
       </template>
@@ -161,13 +161,22 @@ async function saveAccount() {
   }
 }
 
+function validatePassword(state: typeof passwordForm) {
+  const errors: { name: string; message: string }[] = []
+  if (!state.current_password) {
+    errors.push({ name: 'current_password', message: 'Current password is required' })
+  }
+  if (!state.new_password || state.new_password.length < 8) {
+    errors.push({ name: 'new_password', message: 'New password must be at least 8 characters' })
+  }
+  if (state.new_password !== state.confirm_password) {
+    errors.push({ name: 'confirm_password', message: 'Passwords do not match' })
+  }
+  return errors
+}
+
 async function handleChangePassword() {
   if (!user.value) return
-
-  if (passwordForm.new_password !== passwordForm.confirm_password) {
-    toast.add({ title: t('settings.messages.passwordMismatch'), color: 'error' })
-    return
-  }
 
   savingPassword.value = true
   try {

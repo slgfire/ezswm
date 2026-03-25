@@ -11,7 +11,7 @@
     </div>
 
     <UCard class="max-w-2xl">
-      <UForm :state="form" @submit.prevent="onSubmit">
+      <UForm :state="form" :validate="validate" novalidate @submit="onSubmit">
         <div class="space-y-4">
           <UFormField :label="$t('switches.fields.name') + ' *'" name="name">
             <UInput v-model="form.name" :placeholder="$t('switches.fields.name')" required class="w-full" />
@@ -152,8 +152,20 @@ const templateOptions = computed(() => {
   return options
 })
 
+function validate(state: typeof form): { name: string; message: string }[] {
+  const errors: { name: string; message: string }[] = []
+  if (!state.name?.trim()) {
+    errors.push({ name: 'name', message: 'Name is required' })
+  }
+  if (state.management_ip?.trim() && !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(state.management_ip.trim())) {
+    errors.push({ name: 'management_ip', message: 'Must be a valid IPv4 address (e.g. 192.168.1.1)' })
+  }
+  return errors
+}
+
 async function onSubmit() {
-  if (!form.name.trim()) return
+  const validationErrors = validate(form)
+  if (validationErrors.length > 0) return
 
   submitting.value = true
   try {
