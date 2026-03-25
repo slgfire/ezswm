@@ -16,3 +16,4 @@ dist/
 app/public/
 screenshots/
 .playwright-mcp/
+.claude/
