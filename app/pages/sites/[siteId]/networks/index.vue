@@ -32,9 +32,9 @@
     </div>
 
     <!-- Network List -->
-    <div v-if="sortedItems.length > 0" class="list-container rounded-lg bg-default">
+    <div v-if="sortedItems.length > 0">
       <!-- Sort header -->
-      <div class="flex items-center gap-4 border-b border-default px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400">
+      <div class="mb-2 flex items-center gap-4 rounded-t-lg border-b border-default bg-default px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400">
         <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('name')">
           Name
           <UIcon v-if="sortField === 'name'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
@@ -49,56 +49,62 @@
         </button>
       </div>
 
-      <!-- Rows -->
-      <NuxtLink
-        v-for="(net, i) in sortedItems"
-        :key="net.id"
-        :to="`/sites/${siteId}/networks/${net.id}`"
-        class="row-hover group flex items-stretch pr-5"
-        :class="i > 0 ? 'border-t border-default' : ''"
-      >
-        <!-- VLAN color left accent -->
-        <div
-          class="w-1 flex-shrink-0"
-          :style="getVlan(net.vlan_id) ? { backgroundColor: getVlan(net.vlan_id).color } : {}"
-          :class="[
-            !getVlan(net.vlan_id) ? 'bg-transparent' : '',
-            i === 0 ? 'rounded-tl-lg' : '',
-            i === sortedItems.length - 1 ? 'rounded-bl-lg' : ''
-          ]"
-        />
-
-        <!-- Main info -->
-        <div class="min-w-0 flex-1 py-3 pl-4">
-          <div class="flex items-center gap-2">
-            <span class="text-base font-semibold text-gray-900 dark:text-white">{{ net.name }}</span>
-            <UBadge v-if="siteId === 'all' && siteMap[net.site_id]" color="neutral" variant="outline" size="sm" class="shrink-0">
-              {{ siteMap[net.site_id] }}
-            </UBadge>
-            <code class="rounded bg-primary-50 px-2 py-0.5 text-sm font-medium text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">{{ net.subnet }}</code>
-          </div>
-          <div class="mt-0.5 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-            <span v-if="net.gateway" class="flex items-center gap-1 font-mono">
-              <UIcon name="i-heroicons-arrow-right-circle" class="h-3 w-3 text-gray-400" />
-              {{ net.gateway }}
-            </span>
-            <span v-if="getVlan(net.vlan_id)" class="flex items-center gap-1">
-              <UIcon name="i-heroicons-tag" class="h-3 w-3 text-gray-400" />
-              VLAN {{ getVlan(net.vlan_id).vlan_id }} · {{ getVlan(net.vlan_id).name }}
-            </span>
-            <span v-if="net.description" class="flex items-center gap-1 truncate">
-              <UIcon name="i-heroicons-document-text" class="h-3 w-3 flex-shrink-0 text-gray-400" />
-              {{ net.description }}
-            </span>
-          </div>
+      <div v-for="group in groupedItems" :key="group.siteId" class="mb-4">
+        <div v-if="groupedItems.length > 1" class="flex items-center gap-3 px-5 py-2">
+          <UIcon name="i-heroicons-building-office-2" class="h-4 w-4 text-gray-500" />
+          <span class="text-sm font-semibold text-gray-400">{{ group.siteName }}</span>
+          <div class="h-px flex-1 bg-default" />
         </div>
+        <div class="list-container rounded-lg bg-default">
+          <!-- Rows -->
+          <NuxtLink
+            v-for="(net, i) in group.items"
+            :key="net.id"
+            :to="`/sites/${siteId}/networks/${net.id}`"
+            class="row-hover group flex items-stretch pr-5"
+            :class="i > 0 ? 'border-t border-default' : ''"
+          >
+            <!-- VLAN color left accent -->
+            <div
+              class="w-1 flex-shrink-0"
+              :style="getVlan(net.vlan_id) ? { backgroundColor: getVlan(net.vlan_id).color } : {}"
+              :class="[
+                !getVlan(net.vlan_id) ? 'bg-transparent' : '',
+                i === 0 ? 'rounded-tl-lg' : '',
+                i === group.items.length - 1 ? 'rounded-bl-lg' : ''
+              ]"
+            />
 
-        <!-- Actions (on hover) -->
-        <div class="flex items-center gap-1 py-3 opacity-0 transition-opacity group-hover:opacity-100">
-          <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.prevent />
-          <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="openDeleteDialog(net)" />
+            <!-- Main info -->
+            <div class="min-w-0 flex-1 py-3 pl-4">
+              <div class="flex items-center gap-2">
+                <span class="text-base font-semibold text-gray-900 dark:text-white">{{ net.name }}</span>
+                <code class="rounded bg-primary-50 px-2 py-0.5 text-sm font-medium text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">{{ net.subnet }}</code>
+              </div>
+              <div class="mt-0.5 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                <span v-if="net.gateway" class="flex items-center gap-1 font-mono">
+                  <UIcon name="i-heroicons-arrow-right-circle" class="h-3 w-3 text-gray-400" />
+                  {{ net.gateway }}
+                </span>
+                <span v-if="getVlan(net.vlan_id)" class="flex items-center gap-1">
+                  <UIcon name="i-heroicons-tag" class="h-3 w-3 text-gray-400" />
+                  VLAN {{ getVlan(net.vlan_id).vlan_id }} · {{ getVlan(net.vlan_id).name }}
+                </span>
+                <span v-if="net.description" class="flex items-center gap-1 truncate">
+                  <UIcon name="i-heroicons-document-text" class="h-3 w-3 flex-shrink-0 text-gray-400" />
+                  {{ net.description }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Actions (on hover) -->
+            <div class="flex items-center gap-1 py-3 opacity-0 transition-opacity group-hover:opacity-100">
+              <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.prevent />
+              <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="openDeleteDialog(net)" />
+            </div>
+          </NuxtLink>
         </div>
-      </NuxtLink>
+      </div>
     </div>
 
     <SharedEmptyState
@@ -193,6 +199,21 @@ const sortedItems = computed(() => {
     return 0
   })
   return list
+})
+
+const groupedItems = computed(() => {
+  if (siteId.value !== 'all') return [{ siteId: '', siteName: '', items: sortedItems.value }]
+  const groups: { siteId: string; siteName: string; items: any[] }[] = []
+  const groupMap = new Map<string, any[]>()
+  for (const item of sortedItems.value) {
+    const sid = item.site_id || ''
+    if (!groupMap.has(sid)) groupMap.set(sid, [])
+    groupMap.get(sid)!.push(item)
+  }
+  for (const [sid, items] of groupMap) {
+    groups.push({ siteId: sid, siteName: siteMap.value[sid] || sid, items })
+  }
+  return groups
 })
 
 function openDeleteDialog(network: any) {

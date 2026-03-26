@@ -31,9 +31,9 @@
     </div>
 
     <!-- VLAN List -->
-    <div v-if="sortedItems.length > 0" class="list-container rounded-lg bg-default">
+    <div v-if="sortedItems.length > 0">
       <!-- Sort header -->
-      <div class="flex items-center gap-4 border-b border-default px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400">
+      <div class="mb-2 flex items-center gap-4 rounded-t-lg border-b border-default bg-default px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400">
         <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('vlan_id')">
           {{ $t('vlans.sortId') }}
           <UIcon v-if="sortField === 'vlan_id'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
@@ -48,59 +48,65 @@
         </button>
       </div>
 
-      <div
-        v-for="(vlan, i) in sortedItems"
-        :key="vlan.id"
-        class="row-hover group flex cursor-pointer items-stretch pr-5"
-        :class="i > 0 ? 'border-t border-default' : ''"
-        @click="openPanel(vlan, false)"
-      >
-        <!-- VLAN color left accent -->
-        <div
-          class="w-1 flex-shrink-0"
-          :style="{ backgroundColor: vlan.color }"
-          :class="[
-            i === 0 ? 'rounded-tl-lg' : '',
-            i === sortedItems.length - 1 ? 'rounded-bl-lg' : ''
-          ]"
-        />
-
-        <!-- Main info -->
-        <div class="min-w-0 flex-1 py-3 pl-4">
-          <div class="flex items-center gap-3">
-            <span class="text-lg font-bold" :style="{ color: vlan.color }">{{ vlan.vlan_id }}</span>
-            <span class="text-base font-semibold text-gray-900 dark:text-white">{{ vlan.name }}</span>
-            <UBadge v-if="siteId === 'all' && siteMap[vlan.site_id]" color="neutral" variant="outline" size="sm" class="shrink-0">
-              {{ siteMap[vlan.site_id] }}
-            </UBadge>
-            <UBadge :color="vlan.status === 'active' ? 'success' : 'neutral'" variant="subtle" size="sm">
-              {{ vlan.status === 'active' ? $t('common.active') : $t('common.inactive') }}
-            </UBadge>
-          </div>
-          <div class="mt-0.5 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-            <span v-if="getNetworksForVlan(vlan.id).length" class="flex items-center gap-1 text-primary-500">
-              <UIcon name="i-heroicons-globe-alt" class="h-3 w-3" />
-              {{ getNetworksForVlan(vlan.id).map(n => n.name).join(', ') }}
-            </span>
-            <span v-else class="flex items-center gap-1 text-yellow-500">
-              <UIcon name="i-heroicons-exclamation-triangle" class="h-3 w-3" />
-              {{ $t('vlans.noNetwork') }}
-            </span>
-            <span v-if="vlan.routing_device" class="flex items-center gap-1">
-              <UIcon name="i-heroicons-server" class="h-3 w-3 text-gray-400" />
-              {{ vlan.routing_device }}
-            </span>
-            <span v-if="vlan.description" class="flex items-center gap-1 truncate">
-              <UIcon name="i-heroicons-document-text" class="h-3 w-3 flex-shrink-0 text-gray-400" />
-              {{ vlan.description }}
-            </span>
-          </div>
+      <div v-for="group in groupedItems" :key="group.siteId" class="mb-4">
+        <div v-if="groupedItems.length > 1" class="flex items-center gap-3 px-5 py-2">
+          <UIcon name="i-heroicons-building-office-2" class="h-4 w-4 text-gray-500" />
+          <span class="text-sm font-semibold text-gray-400">{{ group.siteName }}</span>
+          <div class="h-px flex-1 bg-default" />
         </div>
+        <div class="list-container rounded-lg bg-default">
+          <div
+            v-for="(vlan, i) in group.items"
+            :key="vlan.id"
+            class="row-hover group flex cursor-pointer items-stretch pr-5"
+            :class="i > 0 ? 'border-t border-default' : ''"
+            @click="openPanel(vlan, false)"
+          >
+            <!-- VLAN color left accent -->
+            <div
+              class="w-1 flex-shrink-0"
+              :style="{ backgroundColor: vlan.color }"
+              :class="[
+                i === 0 ? 'rounded-tl-lg' : '',
+                i === group.items.length - 1 ? 'rounded-bl-lg' : ''
+              ]"
+            />
 
-        <!-- Actions (on hover) -->
-        <div class="flex items-center gap-1 py-3 opacity-0 transition-opacity group-hover:opacity-100">
-          <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.stop="openPanel(vlan, true)" />
-          <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.stop="openDeleteDialog(vlan)" />
+            <!-- Main info -->
+            <div class="min-w-0 flex-1 py-3 pl-4">
+              <div class="flex items-center gap-3">
+                <span class="text-lg font-bold" :style="{ color: vlan.color }">{{ vlan.vlan_id }}</span>
+                <span class="text-base font-semibold text-gray-900 dark:text-white">{{ vlan.name }}</span>
+                <UBadge :color="vlan.status === 'active' ? 'success' : 'neutral'" variant="subtle" size="sm">
+                  {{ vlan.status === 'active' ? $t('common.active') : $t('common.inactive') }}
+                </UBadge>
+              </div>
+              <div class="mt-0.5 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                <span v-if="getNetworksForVlan(vlan.id).length" class="flex items-center gap-1 text-primary-500">
+                  <UIcon name="i-heroicons-globe-alt" class="h-3 w-3" />
+                  {{ getNetworksForVlan(vlan.id).map(n => n.name).join(', ') }}
+                </span>
+                <span v-else class="flex items-center gap-1 text-yellow-500">
+                  <UIcon name="i-heroicons-exclamation-triangle" class="h-3 w-3" />
+                  {{ $t('vlans.noNetwork') }}
+                </span>
+                <span v-if="vlan.routing_device" class="flex items-center gap-1">
+                  <UIcon name="i-heroicons-server" class="h-3 w-3 text-gray-400" />
+                  {{ vlan.routing_device }}
+                </span>
+                <span v-if="vlan.description" class="flex items-center gap-1 truncate">
+                  <UIcon name="i-heroicons-document-text" class="h-3 w-3 flex-shrink-0 text-gray-400" />
+                  {{ vlan.description }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Actions (on hover) -->
+            <div class="flex items-center gap-1 py-3 opacity-0 transition-opacity group-hover:opacity-100">
+              <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.stop="openPanel(vlan, true)" />
+              <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.stop="openDeleteDialog(vlan)" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -330,6 +336,21 @@ const sortedItems = computed(() => {
     return 0
   })
   return list
+})
+
+const groupedItems = computed(() => {
+  if (siteId.value !== 'all') return [{ siteId: '', siteName: '', items: sortedItems.value }]
+  const groups: { siteId: string; siteName: string; items: any[] }[] = []
+  const groupMap = new Map<string, any[]>()
+  for (const item of sortedItems.value) {
+    const sid = item.site_id || ''
+    if (!groupMap.has(sid)) groupMap.set(sid, [])
+    groupMap.get(sid)!.push(item)
+  }
+  for (const [sid, items] of groupMap) {
+    groups.push({ siteId: sid, siteName: siteMap.value[sid] || sid, items })
+  }
+  return groups
 })
 
 function getNetworksForVlan(vlanId: string) {
