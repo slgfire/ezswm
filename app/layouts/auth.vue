@@ -3,12 +3,10 @@
     <!-- Theme toggle -->
     <div class="absolute right-4 top-4">
       <ClientOnly>
-        <UButton
-          variant="ghost"
-          color="neutral"
-          :icon="isDark ? 'i-heroicons-sun' : 'i-heroicons-moon'"
-          @click="toggleColorMode"
-        />
+        <UColorModeButton />
+        <template #fallback>
+          <div class="size-8" />
+        </template>
       </ClientOnly>
     </div>
 
@@ -23,12 +21,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-const colorMode = useColorMode()
-const isDark = computed(() => colorMode.value === 'dark')
-
-function toggleColorMode() {
-  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
-}
-</script>

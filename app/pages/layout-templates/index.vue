@@ -79,10 +79,10 @@
           </div>
 
           <!-- Hover actions -->
-          <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
-            <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="2xs" @click.stop="navigateTo(`/layout-templates/${tpl.id}/edit`)" />
-            <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="2xs" @click.stop="onDuplicate(tpl)" />
-            <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="2xs" @click.stop="confirmDelete(tpl)" />
+          <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
+            <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.stop="navigateTo(`/layout-templates/${tpl.id}/edit`)" />
+            <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.stop="onDuplicate(tpl)" />
+            <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.stop="confirmDelete(tpl)" />
           </div>
 
           <!-- Card Body -->

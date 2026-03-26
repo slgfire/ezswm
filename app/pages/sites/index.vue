@@ -21,9 +21,9 @@
         class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
       >
         <!-- Hover actions -->
-        <div class="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-white/95 px-1.5 py-1 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
-          <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="2xs" @click.prevent="editSite(site)" />
-          <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="2xs" @click.prevent="confirmDelete(site)" />
+        <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
+          <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="xs" @click.prevent="editSite(site)" />
+          <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="confirmDelete(site)" />
         </div>
 
         <!-- Header -->

@@ -151,12 +151,10 @@
     <div class="flex items-center gap-2">
       <!-- Theme toggle -->
       <ClientOnly>
-        <UButton
-          variant="ghost"
-          color="neutral"
-          :icon="isDark ? 'i-heroicons-sun' : 'i-heroicons-moon'"
-          @click="toggleColorMode"
-        />
+        <UColorModeButton />
+        <template #fallback>
+          <div class="size-8" />
+        </template>
       </ClientOnly>
 
       <!-- User menu -->
@@ -180,14 +178,7 @@ const { user, logout } = useAuth()
 const { currentSiteId: headerSiteId } = useCurrentSite()
 const searchSitePrefix = computed(() => `/sites/${headerSiteId.value}`)
 const router = useRouter()
-const colorMode = useColorMode()
 const { t } = useI18n()
-
-const isDark = computed(() => colorMode.value === 'dark')
-
-function toggleColorMode() {
-  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
-}
 
 // Search
 const searchQuery = ref('')
