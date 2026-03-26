@@ -70,7 +70,7 @@
           <div class="flex items-center gap-3">
             <span class="text-lg font-bold" :style="{ color: vlan.color }">{{ vlan.vlan_id }}</span>
             <span class="text-base font-semibold text-gray-900 dark:text-white">{{ vlan.name }}</span>
-            <UBadge v-if="siteId === 'all' && siteMap[vlan.site_id]" color="neutral" variant="outline" size="xs" class="shrink-0">
+            <UBadge v-if="siteId === 'all' && siteMap[vlan.site_id]" color="neutral" variant="outline" size="sm" class="shrink-0">
               {{ siteMap[vlan.site_id] }}
             </UBadge>
             <UBadge :color="vlan.status === 'active' ? 'success' : 'neutral'" variant="subtle" size="sm">

@@ -87,9 +87,9 @@
           >
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
-              <UButton icon="i-heroicons-bars-2" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="neutral" size="2xs" @click.prevent />
-              <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="2xs" @click.prevent="onDuplicate(sw)" />
-              <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="2xs" @click.prevent="confirmDelete(sw)" />
+              <UButton icon="i-heroicons-bars-2" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="neutral" size="xs" @click.prevent />
+              <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="onDuplicate(sw)" />
+              <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="confirmDelete(sw)" />
             </div>
 
             <!-- Header: Name + Subtitle + Role -->
@@ -99,7 +99,7 @@
                   <h3 class="truncate font-semibold text-gray-900 group-hover:text-primary-500 dark:text-white" :title="sw.name">
                     {{ sw.name }}
                   </h3>
-                  <UBadge v-if="siteId === 'all' && siteMap[sw.site_id]" color="neutral" variant="outline" size="xs" class="mt-0.5">
+                  <UBadge v-if="siteId === 'all' && siteMap[sw.site_id]" color="neutral" variant="outline" size="sm" class="mt-0.5">
                     {{ siteMap[sw.site_id] }}
                   </UBadge>
                   <p v-if="sw.manufacturer || sw.model" class="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
@@ -168,15 +168,15 @@
       >
         <!-- Hover actions -->
         <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
-          <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="2xs" @click.prevent="onDuplicate(sw)" />
-          <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="2xs" @click.prevent="confirmDelete(sw)" />
+          <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="onDuplicate(sw)" />
+          <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="confirmDelete(sw)" />
         </div>
 
         <!-- Info -->
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
             <h3 class="truncate font-semibold text-gray-900 dark:text-white">{{ sw.name }}</h3>
-            <UBadge v-if="siteId === 'all' && siteMap[sw.site_id]" color="neutral" variant="outline" size="xs" class="shrink-0">
+            <UBadge v-if="siteId === 'all' && siteMap[sw.site_id]" color="neutral" variant="outline" size="sm" class="shrink-0">
               {{ siteMap[sw.site_id] }}
             </UBadge>
             <UBadge v-if="sw.role" :color="roleColor(sw.role)" variant="subtle" size="sm">

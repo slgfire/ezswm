@@ -72,7 +72,7 @@
         <div class="min-w-0 flex-1 py-3 pl-4">
           <div class="flex items-center gap-2">
             <span class="text-base font-semibold text-gray-900 dark:text-white">{{ net.name }}</span>
-            <UBadge v-if="siteId === 'all' && siteMap[net.site_id]" color="neutral" variant="outline" size="xs" class="shrink-0">
+            <UBadge v-if="siteId === 'all' && siteMap[net.site_id]" color="neutral" variant="outline" size="sm" class="shrink-0">
               {{ siteMap[net.site_id] }}
             </UBadge>
             <code class="rounded bg-primary-50 px-2 py-0.5 text-sm font-medium text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">{{ net.subnet }}</code>

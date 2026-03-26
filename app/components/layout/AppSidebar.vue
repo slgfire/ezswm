@@ -95,15 +95,20 @@ const navSections = computed(() => [
 ])
 
 function isActive(path: string): boolean {
-  if (path.startsWith('/sites/') && path !== '/sites') {
-    // For site-scoped paths, check if current route starts with this path
-    // But for the dashboard (/sites/:id), only match exact
+  // Exact match for Sites management page
+  if (path === '/sites') {
+    return route.path === '/sites' || route.path === '/sites/'
+  }
+  // Site-scoped paths
+  if (path.startsWith('/sites/')) {
+    // Dashboard (/sites/:id) — exact match only
     const isDashboard = path.match(/^\/sites\/[^/]+$/)
     if (isDashboard) {
       return route.path === path || route.path === path + '/'
     }
     return route.path.startsWith(path)
   }
+  // Global paths
   return route.path === path || route.path.startsWith(path + '/')
 }
 </script>
