@@ -39,13 +39,15 @@ function toggleWithTransition(event: MouseEvent) {
   const y = rect.top + rect.height / 2
   const endRadius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y))
 
-  if (!document.startViewTransition) {
-    colorMode.preference = isDark.value ? 'light' : 'dark'
+  const switchingToDark = !isDark.value
+
+  if (!(document as any).startViewTransition) {
+    colorMode.preference = switchingToDark ? 'dark' : 'light'
     return
   }
 
-  const transition = document.startViewTransition(() => {
-    colorMode.preference = isDark.value ? 'light' : 'dark'
+  const transition = (document as any).startViewTransition(() => {
+    colorMode.preference = switchingToDark ? 'dark' : 'light'
   })
 
   transition.ready.then(() => {
@@ -54,11 +56,11 @@ function toggleWithTransition(event: MouseEvent) {
       `circle(${endRadius}px at ${x}px ${y}px)`
     ]
     document.documentElement.animate(
-      { clipPath: isDark.value ? clipPath : [...clipPath].reverse() },
+      { clipPath: switchingToDark ? [...clipPath].reverse() : clipPath },
       {
-        duration: 400,
+        duration: 500,
         easing: 'ease-in-out',
-        pseudoElement: isDark.value ? '::view-transition-new(root)' : '::view-transition-old(root)',
+        pseudoElement: switchingToDark ? '::view-transition-old(root)' : '::view-transition-new(root)',
       }
     )
   })

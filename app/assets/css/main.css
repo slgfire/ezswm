@@ -194,25 +194,17 @@ a, button {
 }
 
 /* Color mode view transition */
-::view-transition-old(root),
-::view-transition-new(root) {
+::view-transition-new(root),
+::view-transition-old(root) {
   animation: none;
   mix-blend-mode: normal;
 }
 
-::view-transition-old(root) {
-  z-index: 1;
-}
-
 ::view-transition-new(root) {
   z-index: 9999;
 }
 
-.dark::view-transition-old(root) {
-  z-index: 9999;
-}
-
-.dark::view-transition-new(root) {
+::view-transition-old(root) {
   z-index: 1;
 }
 
