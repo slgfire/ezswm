@@ -151,9 +151,9 @@
     <div class="flex items-center gap-2">
       <!-- Theme toggle -->
       <ClientOnly>
-        <UColorModeButton />
+        <UColorModeSwitch />
         <template #fallback>
-          <div class="size-8" />
+          <div class="h-5 w-9" />
         </template>
       </ClientOnly>
 

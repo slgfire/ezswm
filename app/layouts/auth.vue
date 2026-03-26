@@ -3,9 +3,9 @@
     <!-- Theme toggle -->
     <div class="absolute right-4 top-4">
       <ClientOnly>
-        <UColorModeButton />
+        <UColorModeSwitch />
         <template #fallback>
-          <div class="size-8" />
+          <div class="h-5 w-9" />
         </template>
       </ClientOnly>
     </div>
