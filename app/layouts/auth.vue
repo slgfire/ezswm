@@ -3,9 +3,15 @@
     <!-- Theme toggle -->
     <div class="absolute right-4 top-4">
       <ClientOnly>
-        <UColorModeSwitch />
+        <UButton
+          variant="ghost"
+          color="neutral"
+          :icon="isDark ? 'i-lucide-moon' : 'i-lucide-sun'"
+          :aria-label="`Switch to ${isDark ? 'light' : 'dark'} mode`"
+          @click="toggleWithTransition"
+        />
         <template #fallback>
-          <div class="h-5 w-9" />
+          <div class="size-8" />
         </template>
       </ClientOnly>
     </div>
@@ -21,3 +27,40 @@
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+const colorMode = useColorMode()
+const isDark = computed(() => colorMode.value === 'dark')
+
+function toggleWithTransition(event: MouseEvent) {
+  const el = event.currentTarget as HTMLElement
+  const rect = el.getBoundingClientRect()
+  const x = rect.left + rect.width / 2
+  const y = rect.top + rect.height / 2
+  const endRadius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y))
+
+  if (!document.startViewTransition) {
+    colorMode.preference = isDark.value ? 'light' : 'dark'
+    return
+  }
+
+  const transition = document.startViewTransition(() => {
+    colorMode.preference = isDark.value ? 'light' : 'dark'
+  })
+
+  transition.ready.then(() => {
+    const clipPath = [
+      `circle(0px at ${x}px ${y}px)`,
+      `circle(${endRadius}px at ${x}px ${y}px)`
+    ]
+    document.documentElement.animate(
+      { clipPath: isDark.value ? clipPath : [...clipPath].reverse() },
+      {
+        duration: 400,
+        easing: 'ease-in-out',
+        pseudoElement: isDark.value ? '::view-transition-new(root)' : '::view-transition-old(root)',
+      }
+    )
+  })
+}
+</script>
