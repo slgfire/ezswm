@@ -72,6 +72,9 @@
         <div class="min-w-0 flex-1 py-3 pl-4">
           <div class="flex items-center gap-2">
             <span class="text-base font-semibold text-gray-900 dark:text-white">{{ net.name }}</span>
+            <UBadge v-if="siteId === 'all' && siteMap[net.site_id]" color="neutral" variant="outline" size="xs" class="shrink-0">
+              {{ siteMap[net.site_id] }}
+            </UBadge>
             <code class="rounded bg-primary-50 px-2 py-0.5 text-sm font-medium text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">{{ net.subnet }}</code>
           </div>
           <div class="mt-0.5 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
@@ -128,6 +131,12 @@ useHead({ title: t('networks.title') })
 const toast = useToast()
 const { items, loading, fetch: fetchNetworks, remove } = useNetworks()
 const { items: vlans, fetch: fetchVlans } = useVlans()
+const { items: allSites, fetch: fetchAllSites } = useSites()
+const siteMap = computed(() => {
+  const map: Record<string, string> = {}
+  for (const s of allSites.value) map[s.id] = s.name
+  return map
+})
 
 const pageLoading = ref(true)
 const search = ref('')
@@ -208,7 +217,9 @@ async function confirmDelete() {
 watch([search, vlanFilter], () => {})
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 onMounted(async () => {
-  await Promise.all([fetchNetworks(siteParams.value), fetchVlans(siteParams.value)])
+  const fetches: Promise<any>[] = [fetchNetworks(siteParams.value), fetchVlans(siteParams.value)]
+  if (siteId.value === 'all') fetches.push(fetchAllSites())
+  await Promise.all(fetches)
   pageLoading.value = false
 })
 </script>

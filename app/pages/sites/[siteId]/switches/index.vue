@@ -17,7 +17,7 @@
         class="w-64"
       />
       <USelectMenu :search-input="false"
-        v-if="locationOptions.length > 1"
+        v-if="locationOptions.length > 0"
         v-model="locationFilter"
         :items="locationOptions"
         value-key="value"
@@ -36,7 +36,7 @@
         class="w-44"
       />
       <USelectMenu :search-input="false"
-        v-if="tagOptions.length > 1"
+        v-if="tagOptions.length > 0"
         v-model="tagFilter"
         :items="tagOptions"
         value-key="value"
@@ -99,6 +99,9 @@
                   <h3 class="truncate font-semibold text-gray-900 group-hover:text-primary-500 dark:text-white" :title="sw.name">
                     {{ sw.name }}
                   </h3>
+                  <UBadge v-if="siteId === 'all' && siteMap[sw.site_id]" color="neutral" variant="outline" size="xs" class="mt-0.5">
+                    {{ siteMap[sw.site_id] }}
+                  </UBadge>
                   <p v-if="sw.manufacturer || sw.model" class="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
                     {{ [sw.manufacturer, sw.model].filter(Boolean).join(' · ') }}
                   </p>
@@ -173,6 +176,9 @@
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
             <h3 class="truncate font-semibold text-gray-900 dark:text-white">{{ sw.name }}</h3>
+            <UBadge v-if="siteId === 'all' && siteMap[sw.site_id]" color="neutral" variant="outline" size="xs" class="shrink-0">
+              {{ siteMap[sw.site_id] }}
+            </UBadge>
             <UBadge v-if="sw.role" :color="roleColor(sw.role)" variant="subtle" size="sm">
               {{ $t(`switches.roles.${sw.role}`) }}
             </UBadge>
@@ -254,12 +260,18 @@ const { t } = useI18n()
 useHead({ title: t('switches.title') })
 const toast = useToast()
 const { items, loading, fetch: fetchSwitches, remove, duplicate } = useSwitches()
+const { items: allSites, fetch: fetchAllSites } = useSites()
+const siteMap = computed(() => {
+  const map: Record<string, string> = {}
+  for (const s of allSites.value) map[s.id] = s.name
+  return map
+})
 
 const viewMode = ref<'grid' | 'list'>('grid')
 const search = ref('')
-const locationFilter = ref('')
-const roleFilter = ref('')
-const tagFilter = ref('')
+const locationFilter = ref<string | null>(null)
+const roleFilter = ref<string | null>(null)
+const tagFilter = ref<string | null>(null)
 const showDeleteDialog = ref(false)
 const deleteTarget = ref<any>(null)
 const deleting = ref(false)
@@ -270,22 +282,19 @@ const sortedItems = ref<any[]>([])
 const allItems = computed(() => items.value)
 
 const roleOptions = computed(() => [
-  { value: '', label: t('switches.allRoles') },
   { value: 'core', label: t('switches.roles.core') },
   { value: 'distribution', label: t('switches.roles.distribution') },
   { value: 'access', label: t('switches.roles.access') },
   { value: 'management', label: t('switches.roles.management') }
 ])
 
-const locationOptions = computed(() => [
-  { value: '', label: t('switches.allLocations') },
-  ...availableLocations.value.map(l => ({ value: l, label: l }))
-])
+const locationOptions = computed(() =>
+  availableLocations.value.map(l => ({ value: l, label: l }))
+)
 
-const tagOptions = computed(() => [
-  { value: '', label: t('switches.allTags') },
-  ...availableTags.value.map(tg => ({ value: tg, label: tg }))
-])
+const tagOptions = computed(() =>
+  availableTags.value.map(tg => ({ value: tg, label: tg }))
+)
 
 const filteredItems = computed(() => {
   let result = [...allItems.value]
@@ -387,5 +396,8 @@ async function loadData() {
   } catch { /* silent */ }
 }
 
-onMounted(() => { loadData() })
+onMounted(() => {
+  loadData()
+  if (siteId.value === 'all') fetchAllSites()
+})
 </script>

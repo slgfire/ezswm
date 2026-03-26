@@ -70,6 +70,9 @@
           <div class="flex items-center gap-3">
             <span class="text-lg font-bold" :style="{ color: vlan.color }">{{ vlan.vlan_id }}</span>
             <span class="text-base font-semibold text-gray-900 dark:text-white">{{ vlan.name }}</span>
+            <UBadge v-if="siteId === 'all' && siteMap[vlan.site_id]" color="neutral" variant="outline" size="xs" class="shrink-0">
+              {{ siteMap[vlan.site_id] }}
+            </UBadge>
             <UBadge :color="vlan.status === 'active' ? 'success' : 'neutral'" variant="subtle" size="sm">
               {{ vlan.status === 'active' ? $t('common.active') : $t('common.inactive') }}
             </UBadge>
@@ -240,6 +243,12 @@ useHead({ title: t('vlans.title') })
 const toast = useToast()
 const { items, loading, fetch: fetchVlans, update, remove } = useVlans()
 const { items: allNetworks, fetch: fetchNetworks } = useNetworks()
+const { items: allSites, fetch: fetchAllSites } = useSites()
+const siteMap = computed(() => {
+  const map: Record<string, string> = {}
+  for (const s of allSites.value) map[s.id] = s.name
+  return map
+})
 
 const pageLoading = ref(true)
 const search = ref('')
@@ -416,7 +425,9 @@ watch([search, statusFilter], () => { page.value = 1 })
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 
 onMounted(async () => {
-  await Promise.all([fetchVlans(siteParams.value), fetchNetworks(siteParams.value)])
+  const fetches: Promise<any>[] = [fetchVlans(siteParams.value), fetchNetworks(siteParams.value)]
+  if (siteId.value === 'all') fetches.push(fetchAllSites())
+  await Promise.all(fetches)
   pageLoading.value = false
 })
 </script>
