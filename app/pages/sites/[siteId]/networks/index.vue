@@ -33,29 +33,28 @@
 
     <!-- Network List -->
     <div v-if="sortedItems.length > 0">
-      <!-- Sort header -->
-      <div class="mb-2 flex items-center gap-4 rounded-t-lg border-b border-default bg-default px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400">
-        <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('name')">
-          Name
-          <UIcon v-if="sortField === 'name'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
-        </button>
-        <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('subnet')">
-          Subnet
-          <UIcon v-if="sortField === 'subnet'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
-        </button>
-        <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('gateway')">
-          Gateway
-          <UIcon v-if="sortField === 'gateway'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
-        </button>
-      </div>
-
       <div v-for="group in groupedItems" :key="group.siteId" class="mb-4">
-        <div v-if="groupedItems.length > 1" class="flex items-center gap-3 px-5 py-2">
+        <div v-if="groupedItems.length > 1" class="mb-2 flex items-center gap-3">
           <UIcon name="i-heroicons-building-office-2" class="h-4 w-4 text-gray-500" />
           <span class="text-sm font-semibold text-gray-400">{{ group.siteName }}</span>
           <div class="h-px flex-1 bg-default" />
         </div>
         <div class="list-container rounded-lg bg-default">
+          <!-- Sort header -->
+          <div class="flex items-center gap-4 border-b border-default px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400">
+            <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('name')">
+              Name
+              <UIcon v-if="sortField === 'name'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
+            </button>
+            <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('subnet')">
+              Subnet
+              <UIcon v-if="sortField === 'subnet'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
+            </button>
+            <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('gateway')">
+              Gateway
+              <UIcon v-if="sortField === 'gateway'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
+            </button>
+          </div>
           <!-- Rows -->
           <NuxtLink
             v-for="(net, i) in group.items"

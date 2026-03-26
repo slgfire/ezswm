@@ -341,7 +341,9 @@ const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
 useHead({ title: t('switches.title') })
 const toast = useToast()
-const { items, loading, fetch: fetchSwitches, remove, duplicate } = useSwitches()
+const { items, loading: composableLoading, fetch: fetchSwitches, remove, duplicate } = useSwitches()
+const pageLoading = ref(true)
+const loading = computed(() => composableLoading.value || pageLoading.value)
 const { items: allSites, fetch: fetchAllSites } = useSites()
 const siteMap = computed(() => {
   const map: Record<string, string> = {}
@@ -493,8 +495,10 @@ async function loadData() {
   } catch { /* silent */ }
 }
 
-onMounted(() => {
-  loadData()
-  if (siteId.value === 'all') fetchAllSites()
+onMounted(async () => {
+  const fetches: Promise<any>[] = [loadData()]
+  if (siteId.value === 'all') fetches.push(fetchAllSites())
+  await Promise.all(fetches)
+  pageLoading.value = false
 })
 </script>
