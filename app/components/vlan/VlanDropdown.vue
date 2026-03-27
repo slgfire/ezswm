@@ -7,7 +7,14 @@
     placeholder="Select VLAN..."
     class="w-full"
     @update:model-value="onSelect"
-  />
+  >
+    <template v-if="selectedVlan" #leading>
+      <span
+        class="inline-block h-3 w-3 shrink-0 rounded-full"
+        :style="{ backgroundColor: selectedVlan.color }"
+      />
+    </template>
+  </USelectMenu>
 </template>
 
 <script setup lang="ts">
@@ -31,6 +38,11 @@ const selected = ref<number | null>(props.modelValue ?? null)
 
 watch(() => props.modelValue, (val) => {
   selected.value = val ?? null
+})
+
+const selectedVlan = computed(() => {
+  if (!selected.value) return null
+  return props.vlans.find(v => v.vlan_id === selected.value)
 })
 
 function onSelect(value: any) {
