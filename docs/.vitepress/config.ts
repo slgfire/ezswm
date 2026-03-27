@@ -6,7 +6,9 @@ export default withMermaid(
     title: 'ezSWM Docs',
     description: 'Documentation for ezSWM — Switch & IP Management',
     lang: 'en-US',
+    base: '/ezswm/',
     appearance: 'dark',
+    cleanUrls: true,
     lastUpdated: true,
 
     head: [
