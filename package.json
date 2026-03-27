@@ -8,7 +8,10 @@
     "build": "nuxt build",
     "preview": "nuxt preview",
     "generate": "nuxt generate",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "docs:dev": "npm run --prefix docs-site dev",
+    "docs:build": "npm run --prefix docs-site build",
+    "docs:preview": "npm run --prefix docs-site preview"
   },
   "dependencies": {
     "@nuxt/ui": "4.5.1",
