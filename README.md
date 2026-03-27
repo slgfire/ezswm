@@ -10,6 +10,8 @@
 
   **Document your switches, VLANs, and IPs — visually. No database required.**
 
+  [Documentation](https://slgfire.github.io/ezswm/) | [Installation](https://slgfire.github.io/ezswm/guide/installation) | [User Guide](https://slgfire.github.io/ezswm/guide/user-guide) | [API Reference](https://slgfire.github.io/ezswm/api/reference)
+
 </div>
 
 ---
@@ -26,8 +28,6 @@ All data is stored as flat JSON files. No database setup, no migrations, no exte
 
 ## Quick Start
 
-### Docker (recommended)
-
 ```bash
 git clone https://github.com/slgfire/ezswm.git
 cd ezswm
@@ -37,13 +37,8 @@ docker compose up -d
 
 Open http://localhost:3000 — follow the setup wizard to create your admin account.
 
-### Demo Data
-
-Populate with realistic demo data (switches, VLANs, networks, templates):
-
-```bash
-./scripts/seed-demo.sh
-```
+<details>
+<summary>More installation options</summary>
 
 ### Docker Pull (from GitHub Container Registry)
 
@@ -59,18 +54,13 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000
+### Demo Data
 
----
+```bash
+./scripts/seed-demo.sh
+```
 
-## Documentation
-
-Full documentation is available at the [ezSWM Docs](https://slgfire.github.io/ezswm/):
-
-- [Installation Guide](https://slgfire.github.io/ezswm/guide/installation) — Docker, local dev, configuration
-- [User Guide](https://slgfire.github.io/ezswm/guide/user-guide) — Switches, VLANs, networks, ports
-- [API Reference](https://slgfire.github.io/ezswm/api/reference) — All REST endpoints
-- [FAQ & Troubleshooting](https://slgfire.github.io/ezswm/guide/faq)
+</details>
 
 ---
 
@@ -91,10 +81,9 @@ Full documentation is available at the [ezSWM Docs](https://slgfire.github.io/ez
 
 ## Roadmap
 
-- **Sites / Locations** — Isolated sites with separate switches, VLANs, and networks per location (e.g. LAN party + data center)
-- **Rack Planning** — Visual 19" rack view with height-unit positioning for switches and devices
-- **Topology** — Interactive network topology diagram showing switch-to-switch connections
-- **LAG Groups** — Link Aggregation Group management with visual port indicators
+- **Rack Planning** — Visual 19" rack view with height-unit positioning
+- **Topology** — Interactive network topology diagram
+- **LAG Groups** — Link Aggregation Group management
 - **IPv6 Support** — IPv6 subnet and allocation tracking
 - **Print View** — Printable switch front panel layouts
 
@@ -103,8 +92,6 @@ Full documentation is available at the [ezSWM Docs](https://slgfire.github.io/ez
 ## Contributing
 
 Contributions are welcome! Please open an issue first to discuss what you'd like to change.
-
----
 
 ## License
 
