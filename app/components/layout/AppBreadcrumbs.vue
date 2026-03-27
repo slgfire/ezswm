@@ -19,6 +19,7 @@
 <script setup lang="ts">
 const route = useRoute()
 const { t } = useI18n()
+const { currentSite } = useCurrentSite()
 
 const labelMap: Record<string, string> = {
   '': 'nav.dashboard',
@@ -31,6 +32,7 @@ const labelMap: Record<string, string> = {
   'layout-templates': 'nav.layoutTemplates',
   'data-management': 'nav.dataManagement',
   'settings': 'nav.settings',
+  'sites': 'nav.sites',
   'create': 'common.create',
   'edit': 'common.edit'
 }
@@ -39,17 +41,53 @@ const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrid
 
 const crumbs = computed(() => {
   const parts = route.path.split('/').filter(Boolean)
-  const result = [{ path: '/', label: t('nav.dashboard') }]
+  const siteId = route.params.siteId as string
+  const result: { path: string; label: string }[] = []
 
-  let currentPath = ''
-  for (const part of parts) {
-    currentPath += `/${part}`
-    const key = labelMap[part]
-    const override = breadcrumbOverrides.value[currentPath]
-    result.push({
-      path: currentPath,
-      label: override || (key ? t(key) : part)
-    })
+  // If we're in a site-scoped route (/sites/:siteId/...)
+  if (parts[0] === 'sites' && siteId) {
+    // Dashboard link goes to the site dashboard
+    const siteBase = `/sites/${siteId}`
+    result.push({ path: siteBase, label: currentSite.value?.name || t('nav.dashboard') })
+
+    // Add remaining parts after /sites/:siteId/
+    const remainingParts = parts.slice(2) // skip 'sites' and siteId
+    let currentPath = siteBase
+    for (const part of remainingParts) {
+      currentPath += `/${part}`
+      const key = labelMap[part]
+      const override = breadcrumbOverrides.value[currentPath]
+      result.push({
+        path: currentPath,
+        label: override || (key ? t(key) : part)
+      })
+    }
+  } else if (parts[0] === 'sites' && !siteId) {
+    // /sites list page
+    result.push({ path: '/sites', label: t('nav.sites') })
+    const remainingParts = parts.slice(1)
+    let currentPath = '/sites'
+    for (const part of remainingParts) {
+      currentPath += `/${part}`
+      const key = labelMap[part]
+      result.push({
+        path: currentPath,
+        label: key ? t(key) : part
+      })
+    }
+  } else {
+    // Global routes (settings, layout-templates, etc.)
+    result.push({ path: '/', label: t('nav.dashboard') })
+    let currentPath = ''
+    for (const part of parts) {
+      currentPath += `/${part}`
+      const key = labelMap[part]
+      const override = breadcrumbOverrides.value[currentPath]
+      result.push({
+        path: currentPath,
+        label: override || (key ? t(key) : part)
+      })
+    }
   }
 
   return result

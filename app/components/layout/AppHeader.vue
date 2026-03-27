@@ -45,7 +45,7 @@
               <NuxtLink
                 v-for="(sw, i) in results.switches"
                 :key="sw.id"
-                :to="`/switches/${sw.id}`"
+                :to="`${searchSitePrefix}/switches/${sw.id}`"
                 :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('switches', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('switches', i)"
@@ -71,7 +71,7 @@
               <NuxtLink
                 v-for="(vlan, i) in results.vlans"
                 :key="vlan.id"
-                :to="`/vlans/${vlan.id}`"
+                :to="`${searchSitePrefix}/vlans/${vlan.id}`"
                 :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('vlans', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('vlans', i)"
@@ -89,7 +89,7 @@
               <NuxtLink
                 v-for="(net, i) in results.networks"
                 :key="net.id"
-                :to="`/networks/${net.id}`"
+                :to="`${searchSitePrefix}/networks/${net.id}`"
                 :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('networks', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('networks', i)"
@@ -149,14 +149,19 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <!-- Theme toggle -->
+      <!-- Theme toggle with view transition -->
       <ClientOnly>
         <UButton
+          ref="colorModeBtn"
           variant="ghost"
           color="neutral"
-          :icon="isDark ? 'i-heroicons-sun' : 'i-heroicons-moon'"
-          @click="toggleColorMode"
+          :icon="isDark ? 'i-lucide-moon' : 'i-lucide-sun'"
+          :aria-label="`Switch to ${isDark ? 'light' : 'dark'} mode`"
+          @click="toggleWithTransition"
         />
+        <template #fallback>
+          <div class="size-8" />
+        </template>
       </ClientOnly>
 
       <!-- User menu -->
@@ -177,15 +182,45 @@
 defineEmits<{ toggleSidebar: [] }>()
 
 const { user, logout } = useAuth()
-const router = useRouter()
 const colorMode = useColorMode()
-const { t } = useI18n()
-
 const isDark = computed(() => colorMode.value === 'dark')
+const colorModeBtn = ref<any>(null)
 
-function toggleColorMode() {
-  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+function toggleWithTransition(event: MouseEvent) {
+  const el = event.currentTarget as HTMLElement
+  const rect = el.getBoundingClientRect()
+  const x = rect.left + rect.width / 2
+  const y = rect.top + rect.height / 2
+  const endRadius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y))
+
+  // Capture state BEFORE transition
+  const switchingToDark = !isDark.value
+
+  // Fallback if View Transition API not supported
+  if (!(document as any).startViewTransition) {
+    colorMode.preference = switchingToDark ? 'dark' : 'light'
+    return
+  }
+
+  const transition = (document as any).startViewTransition(() => {
+    colorMode.preference = switchingToDark ? 'dark' : 'light'
+  })
+
+  transition.ready.then(() => {
+    document.documentElement.animate(
+      { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`] },
+      {
+        duration: 500,
+        easing: 'ease-in-out',
+        pseudoElement: '::view-transition-new(root)',
+      }
+    )
+  })
 }
+const { currentSiteId: headerSiteId } = useCurrentSite()
+const searchSitePrefix = computed(() => `/sites/${headerSiteId.value}`)
+const router = useRouter()
+const { t } = useI18n()
 
 // Search
 const searchQuery = ref('')
@@ -207,7 +242,9 @@ watch(searchQuery, (q) => {
   searching.value = true
   debounceTimer = setTimeout(async () => {
     try {
-      results.value = await $fetch('/api/search', { params: { q } })
+      const params: Record<string, string> = { q }
+      if (headerSiteId.value && headerSiteId.value !== 'all') params.site_id = headerSiteId.value
+      results.value = await $fetch('/api/search', { params })
     } catch {
       results.value = { switches: [], vlans: [], networks: [], allocations: [], templates: [] }
     } finally {
@@ -226,18 +263,19 @@ const hasResults = computed(() =>
 
 // Flat list of all results for keyboard navigation
 const flatResults = computed(() => {
+  const prefix = searchSitePrefix.value
   const items: { type: string; index: number; url: string }[] = []
   for (const sw of results.value.switches || []) {
-    items.push({ type: 'switches', index: items.length, url: `/switches/${sw.id}` })
+    items.push({ type: 'switches', index: items.length, url: `${prefix}/switches/${sw.id}` })
   }
   for (const v of results.value.vlans || []) {
-    items.push({ type: 'vlans', index: items.length, url: `/vlans/${v.id}` })
+    items.push({ type: 'vlans', index: items.length, url: `${prefix}/vlans/${v.id}` })
   }
   for (const n of results.value.networks || []) {
-    items.push({ type: 'networks', index: items.length, url: `/networks/${n.id}` })
+    items.push({ type: 'networks', index: items.length, url: `${prefix}/networks/${n.id}` })
   }
   for (const a of results.value.allocations || []) {
-    items.push({ type: 'allocations', index: items.length, url: `/networks/${a.network_id}` })
+    items.push({ type: 'allocations', index: items.length, url: `${prefix}/networks/${a.network_id}` })
   }
   for (const tpl of results.value.templates || []) {
     items.push({ type: 'templates', index: items.length, url: `/layout-templates/${tpl.id}` })
@@ -271,7 +309,7 @@ function navigateToSelected() {
 }
 
 function allocLink(alloc: any): string {
-  return alloc.network_id ? `/networks/${alloc.network_id}` : '#'
+  return alloc.network_id ? `${searchSitePrefix.value}/networks/${alloc.network_id}` : '#'
 }
 
 function highlight(text: string | undefined | null): string {

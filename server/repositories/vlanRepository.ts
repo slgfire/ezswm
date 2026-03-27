@@ -29,12 +29,13 @@ export const vlanRepository = {
   create(data: Omit<VLAN, 'id' | 'created_at' | 'updated_at' | 'is_favorite'>): VLAN {
     const vlans = this.list()
 
-    if (vlans.some(v => v.vlan_id === data.vlan_id)) {
-      throw createError({ statusCode: 409, message: `VLAN ID ${data.vlan_id} already exists` })
+    const siteVlans = vlans.filter(v => v.site_id === data.site_id)
+    if (siteVlans.some(v => v.vlan_id === data.vlan_id)) {
+      throw createError({ statusCode: 409, message: `VLAN ID ${data.vlan_id} already exists in this site` })
     }
 
-    if (vlans.some(v => v.color === data.color)) {
-      throw createError({ statusCode: 409, message: `Color ${data.color} is already used by another VLAN` })
+    if (siteVlans.some(v => v.color === data.color)) {
+      throw createError({ statusCode: 409, message: `Color ${data.color} is already used by another VLAN in this site` })
     }
 
     const now = new Date().toISOString()
@@ -58,15 +59,16 @@ export const vlanRepository = {
       throw createError({ statusCode: 404, message: 'VLAN not found' })
     }
 
+    const siteId = vlans[index].site_id
     if (data.vlan_id !== undefined && data.vlan_id !== vlans[index].vlan_id) {
-      if (vlans.some(v => v.vlan_id === data.vlan_id)) {
-        throw createError({ statusCode: 409, message: `VLAN ID ${data.vlan_id} already exists` })
+      if (vlans.some(v => v.site_id === siteId && v.vlan_id === data.vlan_id)) {
+        throw createError({ statusCode: 409, message: `VLAN ID ${data.vlan_id} already exists in this site` })
       }
     }
 
     if (data.color !== undefined && data.color !== vlans[index].color) {
-      if (vlans.some(v => v.color === data.color)) {
-        throw createError({ statusCode: 409, message: `Color ${data.color} is already used by another VLAN` })
+      if (vlans.some(v => v.site_id === siteId && v.color === data.color)) {
+        throw createError({ statusCode: 409, message: `Color ${data.color} is already used by another VLAN in this site` })
       }
     }
 

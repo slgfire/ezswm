@@ -130,8 +130,9 @@ export const switchRepository = {
   create(data: Omit<Switch, 'id' | 'ports' | 'created_at' | 'updated_at' | 'is_favorite'>): Switch {
     const switches = this.list()
 
-    if (switches.some(s => s.name === data.name)) {
-      throw createError({ statusCode: 409, message: `Switch name '${data.name}' already exists` })
+    const siteSwitches = switches.filter(s => s.site_id === data.site_id)
+    if (siteSwitches.some(s => s.name === data.name)) {
+      throw createError({ statusCode: 409, message: `Switch name '${data.name}' already exists in this site` })
     }
 
     const ports = data.layout_template_id
@@ -167,8 +168,9 @@ export const switchRepository = {
     }
 
     if (data.name && data.name !== switches[index].name) {
-      if (switches.some(s => s.name === data.name)) {
-        throw createError({ statusCode: 409, message: `Switch name '${data.name}' already exists` })
+      const siteId = switches[index].site_id
+      if (switches.some(s => s.site_id === siteId && s.name === data.name)) {
+        throw createError({ statusCode: 409, message: `Switch name '${data.name}' already exists in this site` })
       }
     }
 

@@ -4,6 +4,7 @@ export type SwitchRole = 'core' | 'distribution' | 'access' | 'management'
 
 export interface Switch {
   id: string
+  site_id: string
   name: string
   model?: string
   manufacturer?: string

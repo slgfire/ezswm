@@ -181,7 +181,14 @@ async function fetchSwitches() {
 }
 
 async function fetchVlans() {
-  try { const data = await apiFetch<any>('/api/vlans'); allVlans.value = (data.data || data).sort((a: any, b: any) => a.vlan_id - b.vlan_id) } catch { /* ignore */ }
+  try {
+    const route = useRoute()
+    const siteId = route.params.siteId as string
+    const params: Record<string, string> = {}
+    if (siteId && siteId !== 'all') params.site_id = siteId
+    const data = await apiFetch<any>('/api/vlans', { params })
+    allVlans.value = (data.data || data).sort((a: any, b: any) => a.vlan_id - b.vlan_id)
+  } catch { /* ignore */ }
 }
 
 async function fetchAllocations() {

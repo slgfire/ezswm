@@ -173,8 +173,8 @@ const previewPorts = computed(() => {
 
 function getPortTypeColor(type: string): string {
   const colors: Record<string, string> = {
-    rj45: 'blue', sfp: 'green', 'sfp+': 'purple', qsfp: 'pink',
-    console: 'yellow', management: 'orange'
+    rj45: 'primary', sfp: 'info', 'sfp+': 'info', qsfp: 'warning',
+    console: 'warning', management: 'success'
   }
   return colors[type] || 'neutral'
 }

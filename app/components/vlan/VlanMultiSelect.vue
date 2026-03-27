@@ -1,13 +1,12 @@
 <template>
-  <USelectMenu :search-input="false"
-    :model-value="selectedOptions"
+  <USelectMenu
+    v-model="selected"
     :items="options"
+    value-key="value"
     multiple
-    :searchable="vlans.length > 5"
-    searchable-placeholder="Search VLAN..."
-    
-    by="value"
-    :close-on-select="false"
+    placeholder="Select VLANs..."
+    class="w-full"
+    :ui="{ item: 'items-center' }"
     @update:model-value="onSelect"
   >
     <template #label>
@@ -15,21 +14,19 @@
         <span
           v-for="vid in modelValue"
           :key="vid"
-          class="inline-flex items-center gap-1 rounded bg-neutral-100 px-1.5 py-0.5 text-xs dark:bg-neutral-700"
+          class="inline-flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-0.5 text-xs dark:bg-neutral-800"
         >
-          <div class="h-2 w-2 rounded" :style="{ backgroundColor: getColor(vid) }" />
+          <span class="size-2 shrink-0 rounded-full" :style="{ backgroundColor: getColor(vid) }" />
           {{ vid }}
         </span>
       </div>
-      <span v-else class="text-gray-400">—</span>
+      <span v-else class="text-dimmed">Select VLANs...</span>
     </template>
-
-    <template #option="{ option }">
-      <div class="flex items-center gap-2">
-        <div class="h-3 w-3 flex-shrink-0 rounded" :style="{ backgroundColor: option.vlan?.color || '#888' }" />
-        <span class="font-medium">{{ option.vlan?.vlan_id }}</span>
-        <span class="text-xs text-gray-400">{{ option.vlan?.name }}</span>
-      </div>
+    <template #item-leading="{ item }">
+      <span
+        class="size-3 shrink-0 rounded-full"
+        :style="{ backgroundColor: colorMap[(item as any).value] || '#888' }"
+      />
     </template>
   </USelectMenu>
 </template>
@@ -47,20 +44,29 @@ const emit = defineEmits<{
 const options = computed(() =>
   props.vlans.map(v => ({
     label: `${v.vlan_id} · ${v.name}`,
-    value: v.vlan_id,
-    vlan: v
+    value: v.vlan_id
   }))
 )
 
-const selectedOptions = computed(() =>
-  options.value.filter(o => props.modelValue.includes(o.value))
-)
+const colorMap = computed(() => {
+  const map: Record<number, string> = {}
+  for (const v of props.vlans) map[v.vlan_id] = v.color
+  return map
+})
+
+const selected = ref<number[]>([...props.modelValue])
+
+watch(() => props.modelValue, (val) => {
+  selected.value = [...val]
+})
 
 function getColor(vlanId: number): string {
   return props.vlans.find(v => v.vlan_id === vlanId)?.color || '#888'
 }
 
-function onSelect(selected: any[]) {
-  emit('update:modelValue', selected.map(s => s.value))
+function onSelect(values: any) {
+  const ids = Array.isArray(values) ? values : []
+  selected.value = ids
+  emit('update:modelValue', ids)
 }
 </script>

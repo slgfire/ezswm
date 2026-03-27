@@ -12,7 +12,31 @@
     "dataManagement": "Datenverwaltung",
     "settings": "Einstellungen",
     "users": "Benutzer",
-    "layoutTemplates": "Layout-Vorlagen"
+    "layoutTemplates": "Layout-Vorlagen",
+    "sites": "Standorte"
+  },
+  "sites": {
+    "title": "Standorte",
+    "create": "Standort erstellen",
+    "edit": "Standort bearbeiten",
+    "delete": "Standort löschen",
+    "confirmDelete": "Möchten Sie diesen Standort wirklich löschen? Dies kann nicht rückgängig gemacht werden.",
+    "fields": {
+      "name": "Name",
+      "description": "Beschreibung"
+    },
+    "messages": {
+      "created": "Standort erstellt",
+      "updated": "Standort aktualisiert",
+      "deleted": "Standort gelöscht"
+    },
+    "allSites": "Alle Standorte",
+    "emptyTitle": "Noch keine Standorte",
+    "emptyDescription": "Erstellen Sie Ihren ersten Standort.",
+    "switchCount": "Switches",
+    "vlanCount": "VLANs",
+    "networkCount": "Netzwerke",
+    "cannotDelete": "Standort mit vorhandenen Entitäten kann nicht gelöscht werden."
   },
   "auth": {
     "login": "Anmelden",

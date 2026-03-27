@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const createSwitchSchema = z.object({
+  site_id: z.string().min(1),
   name: z.string().min(1).max(100),
   model: z.string().max(100).optional(),
   manufacturer: z.string().max(100).optional(),
@@ -16,6 +17,7 @@ export const createSwitchSchema = z.object({
 })
 
 export const updateSwitchSchema = z.object({
+  site_id: z.string().min(1).optional(),
   name: z.string().min(1).max(100).optional(),
   model: z.string().max(100).optional().nullable(),
   manufacturer: z.string().max(100).optional().nullable(),

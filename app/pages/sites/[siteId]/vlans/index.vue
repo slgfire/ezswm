@@ -2,11 +2,17 @@
   <div class="p-6">
     <div class="mb-4 flex items-center justify-between">
       <h1 class="text-xl font-bold">{{ $t('vlans.title') }}</h1>
-      <UButton to="/vlans/create" icon="i-heroicons-plus" size="sm">
+      <UButton :to="`/sites/${siteId}/vlans/create`" icon="i-heroicons-plus" size="sm">
         {{ $t('vlans.create') }}
       </UButton>
     </div>
 
+    <!-- Loading -->
+    <div v-if="pageLoading" class="flex justify-center py-12">
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
+    </div>
+
+    <template v-else>
     <!-- Filters -->
     <div class="mb-4 flex flex-wrap items-center gap-3">
       <UInput
@@ -25,73 +31,81 @@
     </div>
 
     <!-- VLAN List -->
-    <div v-if="sortedItems.length > 0" class="list-container rounded-lg bg-default">
-      <!-- Sort header -->
-      <div class="flex items-center gap-4 border-b border-default px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400">
-        <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('vlan_id')">
-          {{ $t('vlans.sortId') }}
-          <UIcon v-if="sortField === 'vlan_id'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
-        </button>
-        <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('name')">
-          {{ $t('vlans.sortName') }}
-          <UIcon v-if="sortField === 'name'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
-        </button>
-        <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('status')">
-          {{ $t('vlans.sortStatus') }}
-          <UIcon v-if="sortField === 'status'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
-        </button>
-      </div>
-
-      <div
-        v-for="(vlan, i) in sortedItems"
-        :key="vlan.id"
-        class="row-hover group flex cursor-pointer items-stretch pr-5"
-        :class="i > 0 ? 'border-t border-default' : ''"
-        @click="openPanel(vlan, false)"
-      >
-        <!-- VLAN color left accent -->
-        <div
-          class="w-1 flex-shrink-0"
-          :style="{ backgroundColor: vlan.color }"
-          :class="[
-            i === 0 ? 'rounded-tl-lg' : '',
-            i === sortedItems.length - 1 ? 'rounded-bl-lg' : ''
-          ]"
-        />
-
-        <!-- Main info -->
-        <div class="min-w-0 flex-1 py-3 pl-4">
-          <div class="flex items-center gap-3">
-            <span class="text-lg font-bold" :style="{ color: vlan.color }">{{ vlan.vlan_id }}</span>
-            <span class="text-base font-semibold text-gray-900 dark:text-white">{{ vlan.name }}</span>
-            <UBadge :color="vlan.status === 'active' ? 'success' : 'neutral'" variant="subtle" size="sm">
-              {{ vlan.status === 'active' ? $t('common.active') : $t('common.inactive') }}
-            </UBadge>
-          </div>
-          <div class="mt-0.5 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-            <span v-if="getNetworksForVlan(vlan.id).length" class="flex items-center gap-1 text-primary-500">
-              <UIcon name="i-heroicons-globe-alt" class="h-3 w-3" />
-              {{ getNetworksForVlan(vlan.id).map(n => n.name).join(', ') }}
-            </span>
-            <span v-else class="flex items-center gap-1 text-yellow-500">
-              <UIcon name="i-heroicons-exclamation-triangle" class="h-3 w-3" />
-              {{ $t('vlans.noNetwork') }}
-            </span>
-            <span v-if="vlan.routing_device" class="flex items-center gap-1">
-              <UIcon name="i-heroicons-server" class="h-3 w-3 text-gray-400" />
-              {{ vlan.routing_device }}
-            </span>
-            <span v-if="vlan.description" class="flex items-center gap-1 truncate">
-              <UIcon name="i-heroicons-document-text" class="h-3 w-3 flex-shrink-0 text-gray-400" />
-              {{ vlan.description }}
-            </span>
-          </div>
+    <div v-if="sortedItems.length > 0">
+      <div v-for="group in groupedItems" :key="group.siteId" class="mb-4">
+        <div v-if="groupedItems.length > 1" class="mb-2 flex items-center gap-3">
+          <UIcon name="i-heroicons-building-office-2" class="h-4 w-4 text-gray-500" />
+          <span class="text-sm font-semibold text-gray-400">{{ group.siteName }}</span>
+          <div class="h-px flex-1 bg-default" />
         </div>
+        <div class="list-container rounded-lg bg-default">
+          <!-- Sort header -->
+          <div class="flex items-center gap-4 border-b border-default px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400">
+            <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('vlan_id')">
+              {{ $t('vlans.sortId') }}
+              <UIcon v-if="sortField === 'vlan_id'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
+            </button>
+            <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('name')">
+              {{ $t('vlans.sortName') }}
+              <UIcon v-if="sortField === 'name'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
+            </button>
+            <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('status')">
+              {{ $t('vlans.sortStatus') }}
+              <UIcon v-if="sortField === 'status'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
+            </button>
+          </div>
+          <div
+            v-for="(vlan, i) in group.items"
+            :key="vlan.id"
+            class="row-hover group flex cursor-pointer items-stretch pr-5"
+            :class="i > 0 ? 'border-t border-default' : ''"
+            @click="openPanel(vlan, false)"
+          >
+            <!-- VLAN color left accent -->
+            <div
+              class="w-1 flex-shrink-0"
+              :style="{ backgroundColor: vlan.color }"
+              :class="[
+                i === 0 ? 'rounded-tl-lg' : '',
+                i === group.items.length - 1 ? 'rounded-bl-lg' : ''
+              ]"
+            />
 
-        <!-- Actions (on hover) -->
-        <div class="flex items-center gap-1 py-3 opacity-0 transition-opacity group-hover:opacity-100">
-          <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.stop="openPanel(vlan, true)" />
-          <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.stop="openDeleteDialog(vlan)" />
+            <!-- Main info -->
+            <div class="min-w-0 flex-1 py-3 pl-4">
+              <div class="flex items-center gap-3">
+                <span class="text-lg font-bold" :style="{ color: vlan.color }">{{ vlan.vlan_id }}</span>
+                <span class="text-base font-semibold text-gray-900 dark:text-white">{{ vlan.name }}</span>
+                <UBadge :color="vlan.status === 'active' ? 'success' : 'neutral'" variant="subtle" size="sm">
+                  {{ vlan.status === 'active' ? $t('common.active') : $t('common.inactive') }}
+                </UBadge>
+              </div>
+              <div class="mt-0.5 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                <span v-if="getNetworksForVlan(vlan.id).length" class="flex items-center gap-1 text-primary-500">
+                  <UIcon name="i-heroicons-globe-alt" class="h-3 w-3" />
+                  {{ getNetworksForVlan(vlan.id).map(n => n.name).join(', ') }}
+                </span>
+                <span v-else class="flex items-center gap-1 text-yellow-500">
+                  <UIcon name="i-heroicons-exclamation-triangle" class="h-3 w-3" />
+                  {{ $t('vlans.noNetwork') }}
+                </span>
+                <span v-if="vlan.routing_device" class="flex items-center gap-1">
+                  <UIcon name="i-heroicons-server" class="h-3 w-3 text-gray-400" />
+                  {{ vlan.routing_device }}
+                </span>
+                <span v-if="vlan.description" class="flex items-center gap-1 truncate">
+                  <UIcon name="i-heroicons-document-text" class="h-3 w-3 flex-shrink-0 text-gray-400" />
+                  {{ vlan.description }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Actions (on hover) -->
+            <div class="flex items-center gap-1 py-3 opacity-0 transition-opacity group-hover:opacity-100">
+              <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.stop="openPanel(vlan, true)" />
+              <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.stop="openDeleteDialog(vlan)" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -103,9 +117,10 @@
       :description="$t('vlans.emptyDescription')"
     >
       <template #action>
-        <UButton to="/vlans/create" icon="i-heroicons-plus">{{ $t('vlans.create') }}</UButton>
+        <UButton :to="`/sites/${siteId}/vlans/create`" icon="i-heroicons-plus">{{ $t('vlans.create') }}</UButton>
       </template>
     </SharedEmptyState>
+    </template>
 
     <!-- VLAN Side Panel -->
     <USlideover v-model:open="showPanel" :title="selectedVlan ? `VLAN ${selectedVlan.vlan_id} — ${selectedVlan.name}` : 'VLAN Details'" description="View and edit VLAN configuration">
@@ -166,7 +181,7 @@
               <NuxtLink
                 v-for="net in panelNetworks"
                 :key="net.id"
-                :to="`/networks/${net.id}`"
+                :to="`/sites/${siteId}/networks/${net.id}`"
                 class="block rounded px-2 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <span class="font-medium text-primary-500">{{ net.name }}</span>
@@ -226,12 +241,21 @@
 </template>
 
 <script setup lang="ts">
+const route = useRoute()
+const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
 useHead({ title: t('vlans.title') })
 const toast = useToast()
 const { items, loading, fetch: fetchVlans, update, remove } = useVlans()
 const { items: allNetworks, fetch: fetchNetworks } = useNetworks()
+const { items: allSites, fetch: fetchAllSites } = useSites()
+const siteMap = computed(() => {
+  const map: Record<string, string> = {}
+  for (const s of allSites.value) map[s.id] = s.name
+  return map
+})
 
+const pageLoading = ref(true)
 const search = ref('')
 const statusFilter = ref('all')
 const page = ref(1)
@@ -313,6 +337,21 @@ const sortedItems = computed(() => {
   return list
 })
 
+const groupedItems = computed(() => {
+  if (siteId.value !== 'all') return [{ siteId: '', siteName: '', items: sortedItems.value }]
+  const groups: { siteId: string; siteName: string; items: any[] }[] = []
+  const groupMap = new Map<string, any[]>()
+  for (const item of sortedItems.value) {
+    const sid = item.site_id || ''
+    if (!groupMap.has(sid)) groupMap.set(sid, [])
+    groupMap.get(sid)!.push(item)
+  }
+  for (const [sid, items] of groupMap) {
+    groups.push({ siteId: sid, siteName: siteMap.value[sid] || sid, items })
+  }
+  return groups
+})
+
 function getNetworksForVlan(vlanId: string) {
   return allNetworks.value.filter((n: any) => n.vlan_id === vlanId)
 }
@@ -369,7 +408,7 @@ async function onSave() {
     })
     toast.add({ title: t('vlans.messages.updated'), color: 'success' })
     panelEditing.value = false
-    await fetchVlans()
+    await fetchVlans(siteParams.value)
     // Update selected vlan with fresh data
     selectedVlan.value = items.value.find((v: any) => v.id === selectedVlan.value.id)
   } catch (err: any) {
@@ -393,7 +432,7 @@ async function confirmDelete() {
     toast.add({ title: t('vlans.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     showPanel.value = false
-    await fetchVlans()
+    await fetchVlans(siteParams.value)
   } catch (err: any) {
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
@@ -403,8 +442,12 @@ async function confirmDelete() {
 
 watch([search, statusFilter], () => { page.value = 1 })
 
-onMounted(() => {
-  fetchVlans()
-  fetchNetworks()
+const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
+
+onMounted(async () => {
+  const fetches: Promise<any>[] = [fetchVlans(siteParams.value), fetchNetworks(siteParams.value)]
+  if (siteId.value === 'all') fetches.push(fetchAllSites())
+  await Promise.all(fetches)
+  pageLoading.value = false
 })
 </script>

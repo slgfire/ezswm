@@ -1,5 +1,6 @@
 export interface Network {
   id: string
+  site_id: string
   name: string
   vlan_id?: string
   subnet: string

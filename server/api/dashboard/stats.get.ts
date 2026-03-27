@@ -6,13 +6,22 @@ import { ipRangeRepository } from '../../repositories/ipRangeRepository'
 import { activityRepository } from '../../repositories/activityRepository'
 import { parseSubnet } from '../../utils/ipv4'
 
-export default defineEventHandler(() => {
-  const switches = switchRepository.list()
-  const vlans = vlanRepository.list()
-  const networks = networkRepository.list()
+export default defineEventHandler((event) => {
+  const query = getQuery(event)
+  const siteId = query.site_id as string | undefined
+
+  let switches = switchRepository.list()
+  let vlans = vlanRepository.list()
+  let networks = networkRepository.list()
   const allocations = ipAllocationRepository.list()
   const ranges = ipRangeRepository.list()
   const { entries: recentActivity } = activityRepository.list(10)
+
+  if (siteId) {
+    switches = switches.filter(s => s.site_id === siteId)
+    vlans = vlans.filter(v => v.site_id === siteId)
+    networks = networks.filter(n => n.site_id === siteId)
+  }
 
   // Port status counts
   let portsUp = 0, portsDown = 0, portsDisabled = 0

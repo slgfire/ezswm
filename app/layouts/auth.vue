@@ -6,9 +6,13 @@
         <UButton
           variant="ghost"
           color="neutral"
-          :icon="isDark ? 'i-heroicons-sun' : 'i-heroicons-moon'"
-          @click="toggleColorMode"
+          :icon="isDark ? 'i-lucide-moon' : 'i-lucide-sun'"
+          :aria-label="`Switch to ${isDark ? 'light' : 'dark'} mode`"
+          @click="toggleWithTransition"
         />
+        <template #fallback>
+          <div class="size-8" />
+        </template>
       </ClientOnly>
     </div>
 
@@ -28,7 +32,33 @@
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
 
-function toggleColorMode() {
-  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+function toggleWithTransition(event: MouseEvent) {
+  const el = event.currentTarget as HTMLElement
+  const rect = el.getBoundingClientRect()
+  const x = rect.left + rect.width / 2
+  const y = rect.top + rect.height / 2
+  const endRadius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y))
+
+  const switchingToDark = !isDark.value
+
+  if (!(document as any).startViewTransition) {
+    colorMode.preference = switchingToDark ? 'dark' : 'light'
+    return
+  }
+
+  const transition = (document as any).startViewTransition(() => {
+    colorMode.preference = switchingToDark ? 'dark' : 'light'
+  })
+
+  transition.ready.then(() => {
+    document.documentElement.animate(
+      { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`] },
+      {
+        duration: 500,
+        easing: 'ease-in-out',
+        pseudoElement: '::view-transition-new(root)',
+      }
+    )
+  })
 }
 </script>

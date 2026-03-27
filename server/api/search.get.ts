@@ -7,6 +7,7 @@ import { layoutTemplateRepository } from '../repositories/layoutTemplateReposito
 export default defineEventHandler((event) => {
   const query = getQuery(event)
   const q = String(query.q || '').toLowerCase().trim()
+  const siteId = query.site_id as string | undefined
 
   if (!q || q.length < 2) {
     return { switches: [], vlans: [], networks: [], allocations: [], templates: [] }
@@ -14,7 +15,8 @@ export default defineEventHandler((event) => {
 
   const MAX_PER_TYPE = 10
 
-  const switches = switchRepository.list()
+  const allSwitches = switchRepository.list()
+  const switches = (siteId ? allSwitches.filter(s => s.site_id === siteId) : allSwitches)
     .filter(s =>
       s.name.toLowerCase().includes(q) ||
       s.model?.toLowerCase().includes(q) ||
@@ -30,7 +32,8 @@ export default defineEventHandler((event) => {
     .slice(0, MAX_PER_TYPE)
     .map(({ ports: _, ...s }) => s)
 
-  const vlans = vlanRepository.list()
+  const allVlans = vlanRepository.list()
+  const vlans = (siteId ? allVlans.filter(v => v.site_id === siteId) : allVlans)
     .filter(v =>
       String(v.vlan_id).includes(q) ||
       v.name.toLowerCase().includes(q) ||
@@ -39,7 +42,8 @@ export default defineEventHandler((event) => {
     )
     .slice(0, MAX_PER_TYPE)
 
-  const networks = networkRepository.list()
+  const allNetworks = networkRepository.list()
+  const networks = (siteId ? allNetworks.filter(n => n.site_id === siteId) : allNetworks)
     .filter(n =>
       n.name.toLowerCase().includes(q) ||
       n.subnet.toLowerCase().includes(q) ||

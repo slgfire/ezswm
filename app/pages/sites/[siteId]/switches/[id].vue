@@ -7,7 +7,7 @@
           icon="i-heroicons-arrow-left"
           variant="ghost"
           size="sm"
-          to="/switches"
+          :to="`/sites/${siteId}/switches`"
           :aria-label="$t('common.back')"
         />
         <h1 class="text-xl font-bold">
@@ -317,6 +317,7 @@
 const { t } = useI18n()
 const toast = useToast()
 const route = useRoute()
+const siteId = computed(() => route.params.siteId as string)
 
 const id = route.params.id as string
 const { item, loading, fetch: fetchSwitch, update } = useSwitch(id)
@@ -351,7 +352,7 @@ const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrid
 
 watch(item, (sw) => {
   if (sw?.name) {
-    breadcrumbOverrides.value[`/switches/${id}`] = sw.name
+    breadcrumbOverrides.value[`/sites/${siteId.value}/switches/${id}`] = sw.name
   }
 }, { immediate: true })
 
@@ -409,7 +410,7 @@ const editRoleOptions = computed(() => [
 ])
 
 function roleColor(role: string): string {
-  const map: Record<string, string> = { core: 'error', distribution: 'warning', access: 'info', management: 'secondary' }
+  const map: Record<string, string> = { core: 'error', distribution: 'info', access: 'success', management: 'warning' }
   return map[role] || 'neutral'
 }
 
@@ -499,7 +500,7 @@ async function onDuplicate() {
     const result = await duplicate(id)
     toast.add({ title: t('switches.messages.duplicated'), color: 'success' })
     if (result && (result as any).id) {
-      await navigateTo(`/switches/${(result as any).id}`)
+      await navigateTo(`/sites/${siteId.value}/switches/${(result as any).id}`)
     }
   } catch (e: any) {
     toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
@@ -512,7 +513,7 @@ async function onDelete() {
     await $fetch(`/api/switches/${id}`, { method: 'DELETE' })
     toast.add({ title: t('switches.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
-    await navigateTo('/switches')
+    await navigateTo(`/sites/${siteId.value}/switches`)
   } catch (e: any) {
     toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
@@ -529,9 +530,11 @@ watch([item, templates], () => {
   }
 }, { immediate: true })
 
+const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
+
 onMounted(() => {
   fetchSwitch()
   fetchTemplates()
-  fetchVlans()
+  fetchVlans(siteParams.value)
 })
 </script>
