@@ -29,10 +29,8 @@ All data is stored as flat JSON files. No database setup, no migrations, no exte
 ## Quick Start
 
 ```bash
-git clone https://github.com/slgfire/ezswm.git
-cd ezswm
-export JWT_SECRET=$(openssl rand -hex 32)
-docker compose up -d
+docker pull ghcr.io/slgfire/ezswm:latest
+docker run -d -p 3000:3000 -e JWT_SECRET=$(openssl rand -hex 32) -v ezswm-data:/app/data ghcr.io/slgfire/ezswm:latest
 ```
 
 Open http://localhost:3000 — follow the setup wizard to create your admin account.
@@ -40,16 +38,20 @@ Open http://localhost:3000 — follow the setup wizard to create your admin acco
 <details>
 <summary>More installation options</summary>
 
-### Docker Pull (from GitHub Container Registry)
+### Docker Compose (from source)
 
 ```bash
-docker pull ghcr.io/slgfire/ezswm:latest
-docker run -d -p 3000:3000 -e JWT_SECRET=$(openssl rand -hex 32) -v ezswm-data:/app/data ghcr.io/slgfire/ezswm:latest
+git clone https://github.com/slgfire/ezswm.git
+cd ezswm
+export JWT_SECRET=$(openssl rand -hex 32)
+docker compose up -d
 ```
 
 ### Local Development
 
 ```bash
+git clone https://github.com/slgfire/ezswm.git
+cd ezswm
 npm install
 npm run dev
 ```
