@@ -138,8 +138,8 @@
                   <span class="inline-block h-2 w-2 rounded-full bg-gray-400" />
                   {{ getPortStats(sw).down }}
                 </span>
-                <span v-if="getPortStats(sw).disabled" class="flex items-center gap-1 text-red-400">
-                  <span class="inline-block h-2 w-2 rounded-full bg-red-400" />
+                <span v-if="getPortStats(sw).disabled" class="flex items-center gap-1 text-red-500">
+                  <span class="inline-block h-2 w-2 rounded-full bg-red-500" />
                   {{ getPortStats(sw).disabled }}
                 </span>
               </div>
@@ -218,8 +218,8 @@
                   <span class="inline-block h-2 w-2 rounded-full bg-gray-400" />
                   {{ getPortStats(sw).down }}
                 </span>
-                <span v-if="getPortStats(sw).disabled" class="flex items-center gap-1 text-red-400">
-                  <span class="inline-block h-2 w-2 rounded-full bg-red-400" />
+                <span v-if="getPortStats(sw).disabled" class="flex items-center gap-1 text-red-500">
+                  <span class="inline-block h-2 w-2 rounded-full bg-red-500" />
                   {{ getPortStats(sw).disabled }}
                 </span>
               </div>
@@ -293,8 +293,8 @@
                   <span class="inline-block h-2 w-2 rounded-full bg-gray-400" />
                   {{ getPortStats(sw).down }}
                 </span>
-                <span v-if="getPortStats(sw).disabled" class="flex items-center gap-1 text-red-400">
-                  <span class="inline-block h-2 w-2 rounded-full bg-red-400" />
+                <span v-if="getPortStats(sw).disabled" class="flex items-center gap-1 text-red-500">
+                  <span class="inline-block h-2 w-2 rounded-full bg-red-500" />
                   {{ getPortStats(sw).disabled }}
                 </span>
               </div>
@@ -435,9 +435,9 @@ const groupedItems = computed(() => {
 function roleColor(role: string): string {
   const map: Record<string, string> = {
     core: 'error',
-    distribution: 'warning',
-    access: 'info',
-    management: 'secondary'
+    distribution: 'info',
+    access: 'success',
+    management: 'warning'
   }
   return map[role] || 'neutral'
 }

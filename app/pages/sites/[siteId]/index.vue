@@ -20,33 +20,33 @@
         </NuxtLink>
         <NuxtLink :to="`/sites/${siteId}/networks`" class="stagger-item card-glow block rounded-lg bg-default p-5">
           <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-sky-500/10">
-              <UIcon name="i-heroicons-globe-alt" class="h-6 w-6 text-sky-500" />
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-500/10">
+              <UIcon name="i-heroicons-globe-alt" class="h-6 w-6 text-cyan-500" />
             </div>
             <div>
-              <div class="font-display text-3xl font-bold text-sky-500">{{ stats.counts.networks }}</div>
+              <div class="font-display text-3xl font-bold text-cyan-500">{{ stats.counts.networks }}</div>
               <div class="text-sm text-gray-400">{{ $t('dashboard.networkCount') }}</div>
             </div>
           </div>
         </NuxtLink>
         <NuxtLink :to="`/sites/${siteId}/vlans`" class="stagger-item card-glow block rounded-lg bg-default p-5">
           <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-500/10">
-              <UIcon name="i-heroicons-tag" class="h-6 w-6 text-purple-500" />
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-violet-500/10">
+              <UIcon name="i-heroicons-tag" class="h-6 w-6 text-violet-500" />
             </div>
             <div>
-              <div class="font-display text-3xl font-bold text-purple-500">{{ stats.counts.vlans }}</div>
+              <div class="font-display text-3xl font-bold text-violet-500">{{ stats.counts.vlans }}</div>
               <div class="text-sm text-gray-400">{{ $t('dashboard.vlanCount') }}</div>
             </div>
           </div>
         </NuxtLink>
         <NuxtLink :to="`/sites/${siteId}/networks`" class="stagger-item card-glow block rounded-lg bg-default p-5">
           <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-500/10">
-              <UIcon name="i-heroicons-map-pin" class="h-6 w-6 text-orange-500" />
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500/10">
+              <UIcon name="i-heroicons-map-pin" class="h-6 w-6 text-amber-500" />
             </div>
             <div>
-              <div class="font-display text-3xl font-bold text-orange-500">{{ stats.counts.allocations }}</div>
+              <div class="font-display text-3xl font-bold text-amber-500">{{ stats.counts.allocations }}</div>
               <div class="text-sm text-gray-400">IP Allocations</div>
             </div>
           </div>

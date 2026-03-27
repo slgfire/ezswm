@@ -3,21 +3,18 @@
     :search-input="false"
     v-model="value"
     :items="options"
-    icon="i-heroicons-tag"
     placeholder="Select VLAN..."
     class="w-full"
   >
-    <template #leading>
+    <template v-if="selectedVlan" #leading>
       <span
-        v-if="selectedVlan"
-        class="inline-block h-3 w-3 shrink-0 rounded-full"
+        class="size-3 shrink-0 rounded-full"
         :style="{ backgroundColor: selectedVlan.color }"
       />
-      <UIcon v-else name="i-heroicons-tag" class="h-4 w-4 shrink-0 text-gray-400" />
     </template>
     <template #item-leading="{ item }">
       <span
-        class="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+        class="size-2.5 shrink-0 rounded-full"
         :style="{ backgroundColor: colorMap[(item as any).value] || '#888' }"
       />
     </template>

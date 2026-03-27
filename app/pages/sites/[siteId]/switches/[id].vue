@@ -410,7 +410,7 @@ const editRoleOptions = computed(() => [
 ])
 
 function roleColor(role: string): string {
-  const map: Record<string, string> = { core: 'error', distribution: 'warning', access: 'info', management: 'secondary' }
+  const map: Record<string, string> = { core: 'error', distribution: 'info', access: 'success', management: 'warning' }
   return map[role] || 'neutral'
 }
 

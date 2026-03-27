@@ -272,10 +272,10 @@ const filteredItems = computed(() => {
 })
 
 const portTypeColorMap: Record<string, string> = {
-  rj45: 'info',
+  rj45: 'primary',
   sfp: 'info',
-  'sfp+': 'secondary',
-  qsfp: 'secondary',
+  'sfp+': 'info',
+  qsfp: 'warning',
   console: 'warning',
   management: 'success'
 }
