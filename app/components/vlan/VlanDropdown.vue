@@ -1,23 +1,27 @@
 <template>
   <USelectMenu
     :search-input="false"
-    v-model="selected"
+    v-model="value"
     :items="options"
-    value-key="value"
     placeholder="Select VLAN..."
     class="w-full"
-    @update:model-value="onSelect"
   >
-    <template v-if="selectedVlan" #leading>
-      <span
-        class="inline-block h-3 w-3 shrink-0 rounded-full"
-        :style="{ backgroundColor: selectedVlan.color }"
+    <template #leading="{ modelValue, ui }">
+      <UChip
+        v-if="modelValue?.chip"
+        v-bind="modelValue.chip"
+        inset
+        standalone
+        :size="ui.itemLeadingChipSize()"
+        :class="ui.itemLeadingChip()"
       />
     </template>
   </USelectMenu>
 </template>
 
 <script setup lang="ts">
+import type { SelectMenuItem } from '@nuxt/ui'
+
 const props = defineProps<{
   modelValue: number | null | undefined
   vlans: any[]
@@ -29,24 +33,18 @@ const emit = defineEmits<{
 
 const options = computed(() =>
   props.vlans.map(v => ({
-    label: `VLAN ${v.vlan_id} · ${v.name}`,
-    value: v.vlan_id
-  }))
+    label: `${v.vlan_id} · ${v.name}`,
+    value: v.vlan_id,
+    chip: { color: v.color, style: { backgroundColor: v.color } }
+  } satisfies SelectMenuItem & { value: number }))
 )
 
-const selected = ref<number | null>(props.modelValue ?? null)
-
-watch(() => props.modelValue, (val) => {
-  selected.value = val ?? null
+const value = computed({
+  get() {
+    return options.value.find(o => o.value === props.modelValue) || undefined
+  },
+  set(val: any) {
+    emit('update:modelValue', val?.value ?? null)
+  }
 })
-
-const selectedVlan = computed(() => {
-  if (!selected.value) return null
-  return props.vlans.find(v => v.vlan_id === selected.value)
-})
-
-function onSelect(value: any) {
-  selected.value = value
-  emit('update:modelValue', value ?? null)
-}
 </script>
