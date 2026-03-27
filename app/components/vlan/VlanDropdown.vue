@@ -27,7 +27,8 @@ const emit = defineEmits<{
 const options = computed(() =>
   props.vlans.map(v => ({
     label: `${v.vlan_id} · ${v.name}`,
-    value: v.vlan_id
+    value: v.vlan_id,
+    color: v.color
   }))
 )
 
