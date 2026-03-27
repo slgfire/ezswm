@@ -5,8 +5,9 @@
     :items="options"
     value-key="value"
     multiple
-    placeholder="— Select VLANs —"
+    placeholder="Select VLANs..."
     class="w-full"
+    :ui="{ item: 'items-center' }"
     @update:model-value="onSelect"
   >
     <template #label>
@@ -14,13 +15,19 @@
         <span
           v-for="vid in modelValue"
           :key="vid"
-          class="inline-flex items-center gap-1 rounded bg-neutral-100 px-1.5 py-0.5 text-xs dark:bg-neutral-700"
+          class="inline-flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-0.5 text-xs dark:bg-neutral-800"
         >
-          <div class="h-2 w-2 rounded" :style="{ backgroundColor: getColor(vid) }" />
+          <span class="size-2 shrink-0 rounded-full" :style="{ backgroundColor: getColor(vid) }" />
           {{ vid }}
         </span>
       </div>
-      <span v-else class="text-gray-400">— Select VLANs —</span>
+      <span v-else class="text-dimmed">Select VLANs...</span>
+    </template>
+    <template #item-leading="{ item }">
+      <span
+        class="my-auto size-3 shrink-0 rounded-full"
+        :style="{ backgroundColor: colorMap[(item as any).value] || '#888' }"
+      />
     </template>
   </USelectMenu>
 </template>
@@ -41,6 +48,12 @@ const options = computed(() =>
     value: v.vlan_id
   }))
 )
+
+const colorMap = computed(() => {
+  const map: Record<number, string> = {}
+  for (const v of props.vlans) map[v.vlan_id] = v.color
+  return map
+})
 
 const selected = ref<number[]>([...props.modelValue])
 
