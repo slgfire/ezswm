@@ -5,6 +5,7 @@
     :items="options"
     placeholder="Select VLAN..."
     class="w-full"
+    :ui="{ item: 'items-center' }"
   >
     <template v-if="selectedVlan" #leading>
       <span
@@ -14,7 +15,7 @@
     </template>
     <template #item-leading="{ item }">
       <span
-        class="size-2.5 shrink-0 rounded-full"
+        class="my-auto size-3 shrink-0 self-center rounded-full"
         :style="{ backgroundColor: colorMap[(item as any).value] || '#888' }"
       />
     </template>
