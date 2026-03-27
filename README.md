@@ -130,15 +130,14 @@ Open http://localhost:3000
 
 ---
 
-## Configuration
+## Documentation
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `JWT_SECRET` | **Yes** | — | Secret for JWT token signing |
-| `PORT` | No | `3000` | HTTP port |
-| `DATA_DIR` | No | `/app/data` | JSON data storage path |
+Full documentation is available at the [ezSWM Docs](https://slgfire.github.io/ezswm/):
 
-In Docker, use `NUXT_JWT_SECRET` and `NUXT_DATA_DIR` (Nuxt runtime config prefix).
+- [Installation Guide](https://slgfire.github.io/ezswm/guide/installation) — Docker, local dev, configuration
+- [User Guide](https://slgfire.github.io/ezswm/guide/user-guide) — Switches, VLANs, networks, ports
+- [API Reference](https://slgfire.github.io/ezswm/api/reference) — All REST endpoints
+- [FAQ & Troubleshooting](https://slgfire.github.io/ezswm/guide/faq)
 
 ---
 
@@ -154,64 +153,6 @@ In Docker, use `NUXT_JWT_SECRET` and `NUXT_DATA_DIR` (Nuxt runtime config prefix
 | Container | Docker multi-stage (node:22-alpine) |
 | CI | GitHub Actions (auto Docker image build) |
 | i18n | Nuxt i18n (EN/DE) |
-
----
-
-## Architecture
-
-```
-app/                  # Frontend (pages, components, composables)
-server/
-  api/                # API routes (~70 endpoints)
-  repositories/       # Data access (JSON storage)
-  validators/         # Zod schemas
-  storage/            # Atomic JSON read/write
-types/                # Shared TypeScript interfaces
-i18n/locales/         # Translation files (EN, DE)
-data/                 # Runtime JSON data (gitignored)
-```
-
-All data lives in `data/` as JSON files. Storage writes are atomic
-(write to temp file, then rename) to prevent corruption.
-
----
-
-## Port Visualization
-
-Ports render based on **Layout Templates** — reusable switch model
-definitions with configurable blocks:
-
-| Port Type | Visual |
-|-----------|--------|
-| RJ45 | Square, standard size |
-| SFP / SFP+ | Taller, rounded top, "SFP+" label |
-| QSFP | Wide, rounded top, "QSFP" label |
-| Management | Teal border |
-| Console | Amber border |
-
-Each block supports:
-- **Row layout** modes: sequential, odd/even, even/odd
-- **Default speed**: applied to all ports in the block
-- **Smart labels**: trailing separators (`/`, `-`, `:`, `.`) append index directly
-
-Ports are color-tinted by their native VLAN color and show trunk
-indicators (yellow stripe) when tagged VLANs are assigned.
-
----
-
-## Connected Device Linking
-
-Ports support two connection modes:
-
-- **Freetext** — Type any device name and port
-- **Switch Reference** — Select a switch and port from dropdowns, creating a bidirectional link
-
-When linking via switch reference:
-- Remote port gets the reverse link automatically
-- Speed, VLANs, and status are synced to the remote side
-- Changing the connection removes the old link cleanly
-- Self-switch connections supported (for stacked switches)
-- Conflict warning shown if the target port is already connected
 
 ---
 
