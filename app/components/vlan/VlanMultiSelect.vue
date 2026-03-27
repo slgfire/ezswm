@@ -1,6 +1,5 @@
 <template>
   <USelectMenu
-    :search-input="false"
     v-model="selected"
     :items="options"
     value-key="value"
@@ -25,7 +24,7 @@
     </template>
     <template #item-leading="{ item }">
       <span
-        class="my-auto size-3 shrink-0 rounded-full"
+        class="size-3 shrink-0 rounded-full"
         :style="{ backgroundColor: colorMap[(item as any).value] || '#888' }"
       />
     </template>

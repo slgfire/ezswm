@@ -1,21 +1,20 @@
 <template>
   <USelectMenu
-    :search-input="false"
     v-model="value"
     :items="options"
     placeholder="Select VLAN..."
     class="w-full"
-    :ui="{ item: 'items-center' }"
+    :ui="{ item: 'items-center', base: selectedVlan ? 'ps-8' : '' }"
   >
     <template v-if="selectedVlan" #leading>
       <span
-        class="size-3 shrink-0 rounded-full"
+        class="mr-1.5 size-3 shrink-0 rounded-full"
         :style="{ backgroundColor: selectedVlan.color }"
       />
     </template>
     <template #item-leading="{ item }">
       <span
-        class="my-auto size-3 shrink-0 self-center rounded-full"
+        class="size-3 shrink-0 rounded-full"
         :style="{ backgroundColor: colorMap[(item as any).value] || '#888' }"
       />
     </template>
