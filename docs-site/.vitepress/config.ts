@@ -7,6 +7,7 @@ export default withMermaid(
     description: 'Documentation for ezSWM — Switch & IP Management',
     lang: 'en-US',
     appearance: 'dark',
+    lastUpdated: true,
 
     head: [
       ['link', { rel: 'icon', href: '/favicon.svg' }],
@@ -44,6 +45,15 @@ export default withMermaid(
           },
         ],
       },
+
+      editLink: {
+        pattern: 'https://github.com/slgfire/ezswm/edit/main/docs-site/:path',
+        text: 'Edit this page on GitHub',
+      },
+
+      socialLinks: [
+        { icon: 'github', link: 'https://github.com/slgfire/ezswm' },
+      ],
 
       search: {
         provider: 'local',
