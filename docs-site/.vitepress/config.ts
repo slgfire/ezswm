@@ -6,6 +6,7 @@ export default withMermaid(
     title: 'ezSWM Docs',
     description: 'Documentation for ezSWM — Switch & IP Management',
     lang: 'en-US',
+    appearance: 'dark',
 
     head: [
       ['link', { rel: 'icon', href: '/favicon.svg' }],
