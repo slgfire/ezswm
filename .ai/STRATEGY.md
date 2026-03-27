@@ -25,10 +25,10 @@ Reference UI template:
 - https://github.com/nuxt-ui-templates/dashboard
 
 Full specifications:
-- docs/specs/SPEC_DATA_MODEL.md
-- docs/specs/SPEC_BACKEND.md
-- docs/specs/SPEC_FRONTEND.md
-- docs/specs/SPEC_INFRASTRUCTURE.md
+- .ai/specs/SPEC_DATA_MODEL.md
+- .ai/specs/SPEC_BACKEND.md
+- .ai/specs/SPEC_FRONTEND.md
+- .ai/specs/SPEC_INFRASTRUCTURE.md
 
 ---
 

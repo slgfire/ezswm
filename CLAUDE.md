@@ -20,13 +20,13 @@ Scope:
 
 Before starting any task read:
 
-- docs/STRATEGY.md
-- docs/ARCHITECTURE.md
-- docs/MIGRATION_STATUS.md
-- docs/specs/SPEC_DATA_MODEL.md
-- docs/specs/SPEC_BACKEND.md
-- docs/specs/SPEC_FRONTEND.md
-- docs/specs/SPEC_INFRASTRUCTURE.md
+- .ai/STRATEGY.md
+- .ai/ARCHITECTURE.md
+- .ai/MIGRATION_STATUS.md
+- .ai/specs/SPEC_DATA_MODEL.md
+- .ai/specs/SPEC_BACKEND.md
+- .ai/specs/SPEC_FRONTEND.md
+- .ai/specs/SPEC_INFRASTRUCTURE.md
 
 These documents define roadmap, architecture, specifications and current state.
 
@@ -90,8 +90,8 @@ Commit the lockfile.
 
 Follow the architecture described in:
 
-- docs/ARCHITECTURE.md
-- docs/specs/SPEC_BACKEND.md
+- .ai/ARCHITECTURE.md
+- .ai/specs/SPEC_BACKEND.md
 
 ---
 
@@ -122,7 +122,7 @@ Always follow this order:
 
 1. Fix runtime/build errors
 2. Verify stability
-3. Update docs/MIGRATION_STATUS.md
+3. Update .ai/MIGRATION_STATUS.md
 4. Propose next task
 5. Implement exactly one task
 
@@ -158,10 +158,10 @@ A stage is complete only if:
 
 ## References
 
-- Project roadmap: docs/STRATEGY.md
-- Architecture definition: docs/ARCHITECTURE.md
-- Current implementation status: docs/MIGRATION_STATUS.md
-- Data model specification: docs/specs/SPEC_DATA_MODEL.md
-- Backend specification: docs/specs/SPEC_BACKEND.md
-- Frontend specification: docs/specs/SPEC_FRONTEND.md
-- Infrastructure specification: docs/specs/SPEC_INFRASTRUCTURE.md
+- Project roadmap: .ai/STRATEGY.md
+- Architecture definition: .ai/ARCHITECTURE.md
+- Current implementation status: .ai/MIGRATION_STATUS.md
+- Data model specification: .ai/specs/SPEC_DATA_MODEL.md
+- Backend specification: .ai/specs/SPEC_BACKEND.md
+- Frontend specification: .ai/specs/SPEC_FRONTEND.md
+- Infrastructure specification: .ai/specs/SPEC_INFRASTRUCTURE.md

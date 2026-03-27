@@ -5,12 +5,12 @@ This document defines the technical architecture of the ezSWM project.
 Related documents:
 
 - CLAUDE.md
-- docs/STRATEGY.md
-- docs/MIGRATION_STATUS.md
-- docs/specs/SPEC_DATA_MODEL.md
-- docs/specs/SPEC_BACKEND.md
-- docs/specs/SPEC_FRONTEND.md
-- docs/specs/SPEC_INFRASTRUCTURE.md
+- .ai/STRATEGY.md
+- .ai/MIGRATION_STATUS.md
+- .ai/specs/SPEC_DATA_MODEL.md
+- .ai/specs/SPEC_BACKEND.md
+- .ai/specs/SPEC_FRONTEND.md
+- .ai/specs/SPEC_INFRASTRUCTURE.md
 
 ---
 
@@ -110,7 +110,7 @@ types/                # TypeScript interfaces
 i18n/
   locales/            # en.json, de.json
 
-docs/
+.ai/
   specs/              # SPEC files
 
 data/                 # Local development data (gitignored)
@@ -193,7 +193,7 @@ server/api/import/
 server/api/export/
 ```
 
-Full route table: docs/specs/SPEC_BACKEND.md §3
+Full route table: .ai/specs/SPEC_BACKEND.md §3
 
 ---
 
@@ -269,7 +269,7 @@ Core entities:
 
 All interfaces live in `types/`.
 
-Full data model: docs/specs/SPEC_DATA_MODEL.md
+Full data model: .ai/specs/SPEC_DATA_MODEL.md
 
 ---
 
@@ -366,7 +366,7 @@ compose.yaml mounts only: `./data:/app/data`
 
 Health check: `GET /api/health`
 
-Full Docker configuration: docs/specs/SPEC_INFRASTRUCTURE.md
+Full Docker configuration: .ai/specs/SPEC_INFRASTRUCTURE.md
 
 ---
 
@@ -375,10 +375,10 @@ Full Docker configuration: docs/specs/SPEC_INFRASTRUCTURE.md
 Documents must stay aligned:
 
 - CLAUDE.md
-- docs/STRATEGY.md
-- docs/ARCHITECTURE.md
-- docs/MIGRATION_STATUS.md
-- docs/specs/SPEC_*.md
+- .ai/STRATEGY.md
+- .ai/ARCHITECTURE.md
+- .ai/MIGRATION_STATUS.md
+- .ai/specs/SPEC_*.md
 
 After each stage:
 
@@ -401,7 +401,7 @@ After each stage:
 9. Polish & validation
 10. Docker & production
 
-Full phase details: docs/STRATEGY.md and docs/specs/SPEC_INFRASTRUCTURE.md §13
+Full phase details: .ai/STRATEGY.md and .ai/specs/SPEC_INFRASTRUCTURE.md §13
 
 ---
 

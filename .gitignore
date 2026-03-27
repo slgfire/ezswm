@@ -17,8 +17,8 @@ app/public/
 screenshots/
 .playwright-mcp/
 .claude/
-docs/superpowers/
+.ai/superpowers/
 
-docs-site/node_modules/
-docs-site/.vitepress/cache/
-docs-site/.vitepress/dist/
+docs/node_modules/
+docs/.vitepress/cache/
+docs/.vitepress/dist/

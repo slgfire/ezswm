@@ -270,7 +270,7 @@ ezswm/
 │       └── de.json
 ├── public/
 │   └── favicon.ico
-├── docs/
+├── .ai/
 │   ├── STRATEGY.md
 │   ├── ARCHITECTURE.md
 │   ├── MIGRATION_STATUS.md
@@ -744,7 +744,7 @@ Based on STRATEGY.md, refined with SPEC decisions:
 
 After each phase:
 
-1. Update `docs/MIGRATION_STATUS.md` with:
+1. Update `.ai/MIGRATION_STATUS.md` with:
    - Stage name and date
    - Status (complete/in progress/blocked)
    - Changes made
@@ -755,6 +755,6 @@ After each phase:
 
 2. Ensure all four docs stay aligned:
    - CLAUDE.md
-   - docs/STRATEGY.md
-   - docs/ARCHITECTURE.md
-   - docs/MIGRATION_STATUS.md
+   - .ai/STRATEGY.md
+   - .ai/ARCHITECTURE.md
+   - .ai/MIGRATION_STATUS.md

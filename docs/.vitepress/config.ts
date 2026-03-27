@@ -47,7 +47,7 @@ export default withMermaid(
       },
 
       editLink: {
-        pattern: 'https://github.com/slgfire/ezswm/edit/main/docs-site/:path',
+        pattern: 'https://github.com/slgfire/ezswm/edit/main/docs/:path',
         text: 'Edit this page on GitHub',
       },
 
