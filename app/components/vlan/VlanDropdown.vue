@@ -4,7 +4,7 @@
     v-model="selected"
     :items="options"
     value-key="value"
-    placeholder="— None —"
+    placeholder="Select VLAN..."
     class="w-full"
     @update:model-value="onSelect"
   >

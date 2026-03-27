@@ -20,11 +20,11 @@
         </NuxtLink>
         <NuxtLink :to="`/sites/${siteId}/networks`" class="stagger-item card-glow block rounded-lg bg-default p-5">
           <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-green-500/10">
-              <UIcon name="i-heroicons-globe-alt" class="h-6 w-6 text-green-500" />
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-sky-500/10">
+              <UIcon name="i-heroicons-globe-alt" class="h-6 w-6 text-sky-500" />
             </div>
             <div>
-              <div class="font-display text-3xl font-bold text-green-500">{{ stats.counts.networks }}</div>
+              <div class="font-display text-3xl font-bold text-sky-500">{{ stats.counts.networks }}</div>
               <div class="text-sm text-gray-400">{{ $t('dashboard.networkCount') }}</div>
             </div>
           </div>
