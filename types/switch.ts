@@ -14,6 +14,7 @@ export interface Switch {
   management_ip?: string
   firmware_version?: string
   layout_template_id?: string
+  stack_size?: number
   role?: SwitchRole
   tags?: string[]
   ports: Port[]

@@ -1,3 +1,5 @@
+import type { PoeConfig } from './layoutTemplate'
+
 export type PortType = 'rj45' | 'sfp' | 'sfp+' | 'qsfp' | 'console' | 'management'
 export type PortSpeed = '100M' | '1G' | '2.5G' | '10G' | '100G'
 export type PortStatus = 'up' | 'down' | 'disabled'
@@ -22,4 +24,5 @@ export interface Port {
   description?: string
   mac_address?: string
   lag_group_id?: string
+  poe?: PoeConfig | null
 }
