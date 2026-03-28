@@ -5,6 +5,7 @@ import type { Port } from '../../types/port'
 import type { IPAllocation } from '../../types/ipAllocation'
 import { layoutTemplateRepository } from './layoutTemplateRepository'
 import { isValidIPv4, isIPInSubnet } from '../utils/ipv4'
+import { incrementMemberLabel } from '../utils/deviceLibrary'
 
 const FILE_NAME = 'switches.json'
 const ALLOC_FILE_NAME = 'ipAllocations.json'
@@ -82,25 +83,35 @@ function generatePortLabel(blockLabel: string | undefined, unitNumber: number, p
   return blockLabel.match(/[\/\-:.]$/) ? `${blockLabel}${portIndex}` : `${blockLabel} ${unitNumber}/${portIndex}`
 }
 
-function generatePortsFromTemplate(templateId: string): Port[] {
+function generatePortsFromTemplate(templateId: string, stackSize: number = 1): Port[] {
   const template = layoutTemplateRepository.getById(templateId)
   if (!template) return []
 
   const ports: Port[] = []
-  for (const unit of template.units) {
-    for (const block of unit.blocks) {
-      for (let i = 0; i < block.count; i++) {
-        const portIndex = block.start_index + i
-        ports.push({
-          id: nanoid(),
-          unit: unit.unit_number,
-          index: portIndex,
-          label: generatePortLabel(block.label, unit.unit_number, portIndex),
-          type: block.type,
-          speed: block.default_speed,
-          status: 'down',
-          tagged_vlans: []
-        })
+  const baseUnits = template.units
+
+  for (let member = 1; member <= stackSize; member++) {
+    for (const unit of baseUnits) {
+      const unitOffset = (member - 1) * baseUnits.length
+      for (const block of unit.blocks) {
+        const memberLabel = block.label
+          ? incrementMemberLabel(block.label, member)
+          : block.label
+
+        for (let i = 0; i < block.count; i++) {
+          const portIndex = block.start_index + i
+          ports.push({
+            id: nanoid(),
+            unit: unit.unit_number + unitOffset,
+            index: portIndex,
+            label: generatePortLabel(memberLabel, unit.unit_number + unitOffset, portIndex),
+            type: block.type,
+            speed: block.default_speed,
+            status: 'down',
+            tagged_vlans: [],
+            ...(block.poe ? { poe: { ...block.poe } } : {}),
+          })
+        }
       }
     }
   }
@@ -136,7 +147,7 @@ export const switchRepository = {
     }
 
     const ports = data.layout_template_id
-      ? generatePortsFromTemplate(data.layout_template_id)
+      ? generatePortsFromTemplate(data.layout_template_id, data.stack_size ?? 1)
       : []
 
     const now = new Date().toISOString()
@@ -174,10 +185,17 @@ export const switchRepository = {
       }
     }
 
-    // Regenerate ports if layout_template_id changed
+    // Regenerate ports if layout_template_id or stack_size changed
     let ports = switches[index].ports
-    if (data.layout_template_id && data.layout_template_id !== switches[index].layout_template_id) {
-      ports = generatePortsFromTemplate(data.layout_template_id)
+    if (
+      (data.layout_template_id && data.layout_template_id !== switches[index].layout_template_id) ||
+      (data.stack_size !== undefined && data.stack_size !== switches[index].stack_size)
+    ) {
+      const templateId = data.layout_template_id ?? switches[index].layout_template_id
+      const stackSize = data.stack_size ?? switches[index].stack_size ?? 1
+      if (templateId) {
+        ports = generatePortsFromTemplate(templateId, stackSize)
+      }
     }
 
     const oldSwitch = switches[index]
