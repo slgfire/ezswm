@@ -105,6 +105,16 @@
         <UFormField :label="$t('switches.ports.macAddress')">
           <UInput v-model="form.mac_address" placeholder="XX:XX:XX:XX:XX:XX" class="w-full" />
         </UFormField>
+
+        <UFormField :label="$t('templates.poe')">
+          <USelect
+            v-model="form.poe_selection"
+            :items="poeOptions"
+            value-key="value"
+            label-key="label"
+            class="w-full"
+          />
+        </UFormField>
       </div>
 
       <div v-if="showSetUpPrompt" class="mt-4 rounded-lg border border-primary-500/30 bg-primary-500/10 p-3">
@@ -162,6 +172,21 @@ const allVlans = ref<any[]>([])
 const allAllocations = ref<any[]>([])
 const selectedTaggedVlans = ref<number[]>([])
 
+const poeOptions = computed(() => [
+  { label: t('templates.poeNone'), value: '' },
+  { label: '802.3af (15.4W)', value: '802.3af' },
+  { label: '802.3at (30W)', value: '802.3at' },
+  { label: '802.3bt Type 3 (60W)', value: '802.3bt-type3' },
+  { label: '802.3bt Type 4 (100W)', value: '802.3bt-type4' },
+  { label: 'Passive 24V', value: 'passive-24v' },
+  { label: 'Passive 48V', value: 'passive-48v' },
+])
+
+const POE_WATTS: Record<string, number> = {
+  '802.3af': 15.4, '802.3at': 30, '802.3bt-type3': 60,
+  '802.3bt-type4': 100, 'passive-24v': 24, 'passive-48v': 48,
+}
+
 const form = reactive({
   status: '',
   speed: '',
@@ -171,7 +196,8 @@ const form = reactive({
   connected_device: '',
   connected_port: '',
   description: '',
-  mac_address: ''
+  mac_address: '',
+  poe_selection: '' as string
 })
 
 const taggedVlansStr = ref('')
@@ -253,6 +279,7 @@ watch(() => props.port, (p) => {
     form.access_vlan = p.access_vlan || null; form.native_vlan = p.native_vlan || null
     form.connected_device = p.connected_device || ''; form.connected_port = p.connected_port || ''
     form.description = p.description || ''; form.mac_address = p.mac_address || ''
+    form.poe_selection = p.poe?.type || ''
     taggedVlansStr.value = (p.tagged_vlans || []).join(','); selectedTaggedVlans.value = [...(p.tagged_vlans || [])]
     if (p.connected_device_id) {
       connectionMode.value = 'switch'; pendingSwitchId.value = p.connected_device_id; pendingPortId.value = p.connected_port_id || ''
@@ -282,6 +309,8 @@ async function onSaveClick() {
 async function save() {
   const tagged_vlans = allVlans.value.length ? [...selectedTaggedVlans.value] : taggedVlansStr.value ? taggedVlansStr.value.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v)) : []
   const body: Record<string, any> = { ...form, tagged_vlans }
+  body.poe = form.poe_selection ? { type: form.poe_selection, max_watts: POE_WATTS[form.poe_selection] } : null
+  delete body.poe_selection
   if (form.port_mode === 'access') { body.native_vlan = null; body.tagged_vlans = [] }
   if (form.port_mode === 'trunk') { body.access_vlan = null }
   if (connectionMode.value === 'switch' && selectedSwitchId.value) {
