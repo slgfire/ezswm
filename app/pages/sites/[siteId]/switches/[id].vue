@@ -259,6 +259,14 @@
             />
           </UFormField>
 
+          <UFormField v-if="editForm.layout_template_id" :label="$t('switches.stackSize')" name="stack_size">
+            <USelect
+              v-model="editForm.stack_size"
+              :items="stackSizeOptions"
+              class="w-full"
+            />
+          </UFormField>
+
           <UFormField :label="$t('switches.fields.role')" name="role">
             <USelectMenu :search-input="false"
               v-model="editForm.role"
@@ -398,8 +406,14 @@ const editForm = reactive({
   layout_template_id: '',
   role: '',
   tags: [] as string[],
-  notes: ''
+  notes: '',
+  stack_size: 1
 })
+
+const stackSizeOptions = Array.from({ length: 8 }, (_, i) => ({
+  label: String(i + 1),
+  value: i + 1
+}))
 
 const editRoleOptions = computed(() => [
   { label: '---', value: '' },
@@ -454,6 +468,7 @@ function openEditPanel() {
   editForm.role = item.value.role || ''
   editForm.tags = [...(item.value.tags || [])]
   editForm.notes = item.value.notes || ''
+  editForm.stack_size = (item.value as any).stack_size ?? 1
   editTagInput.value = ''
   editMode.value = true
 }
@@ -485,6 +500,7 @@ async function onSave() {
     if (body.layout_template_id === '') {
       delete body.layout_template_id
     }
+    body.stack_size = editForm.stack_size > 1 ? editForm.stack_size : undefined
     await update(body)
     toast.add({ title: t('switches.messages.updated'), color: 'success' })
     editMode.value = false
