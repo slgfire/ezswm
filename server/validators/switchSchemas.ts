@@ -11,6 +11,7 @@ export const createSwitchSchema = z.object({
   management_ip: z.string().optional(),
   firmware_version: z.string().max(100).optional(),
   layout_template_id: z.string().optional(),
+  stack_size: z.number().int().min(1).max(8).optional(),
   role: z.enum(['core', 'distribution', 'access', 'management']).optional(),
   tags: z.array(z.string().max(50)).max(20).optional(),
   notes: z.string().max(2000).optional()
@@ -27,6 +28,7 @@ export const updateSwitchSchema = z.object({
   management_ip: z.string().optional().nullable(),
   firmware_version: z.string().max(100).optional().nullable(),
   layout_template_id: z.string().optional().nullable(),
+  stack_size: z.number().int().min(1).max(8).optional().nullable(),
   role: z.enum(['core', 'distribution', 'access', 'management']).optional().nullable(),
   tags: z.array(z.string().max(50)).max(20).optional().nullable(),
   is_favorite: z.boolean().optional(),
@@ -47,7 +49,14 @@ export const updatePortSchema = z.object({
   connected_port: z.string().max(100).optional().nullable(),
   description: z.string().max(500).optional().nullable(),
   mac_address: z.string().optional().nullable(),
-  lag_group_id: z.string().optional().nullable()
+  lag_group_id: z.string().optional().nullable(),
+  poe: z.union([
+    z.object({
+      type: z.enum(['802.3af', '802.3at', '802.3bt-type3', '802.3bt-type4', 'passive-24v', 'passive-48v']),
+      max_watts: z.number().positive()
+    }),
+    z.null()
+  ]).optional()
 })
 
 export const bulkUpdatePortsSchema = z.object({
