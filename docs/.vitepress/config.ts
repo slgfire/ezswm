@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
 
+const GITHUB_REPO = 'https://github.com/slgfire/ezswm'
+
 export default withMermaid(
   defineConfig({
     title: 'ezSWM Docs',
@@ -21,10 +23,7 @@ export default withMermaid(
       nav: [
         { text: 'Guide', link: '/guide/installation' },
         { text: 'API Reference', link: '/api/reference' },
-        {
-          text: 'GitHub',
-          link: 'https://github.com/slgfire/ezswm',
-        },
+        { text: 'GitHub', link: GITHUB_REPO },
       ],
 
       sidebar: {
@@ -49,12 +48,12 @@ export default withMermaid(
       },
 
       editLink: {
-        pattern: 'https://github.com/slgfire/ezswm/edit/main/docs/:path',
+        pattern: `${GITHUB_REPO}/edit/main/docs/:path`,
         text: 'Edit this page on GitHub',
       },
 
       socialLinks: [
-        { icon: 'github', link: 'https://github.com/slgfire/ezswm' },
+        { icon: 'github', link: GITHUB_REPO },
       ],
 
       search: {
@@ -65,10 +64,6 @@ export default withMermaid(
         message: 'Released under the GPL-3.0 License.',
         copyright: 'Copyright © 2026 SaarLAN / SLG e.V.',
       },
-    },
-
-    mermaid: {
-      theme: 'dark',
     },
   })
 )
