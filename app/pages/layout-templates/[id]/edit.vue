@@ -29,6 +29,12 @@
               <UFormField :label="$t('templates.fields.description')">
                 <UInput v-model="form.description" :placeholder="$t('templates.fields.description')" class="w-full" />
               </UFormField>
+              <UFormField :label="$t('templates.datasheetUrl')">
+                <UInput v-model="form.datasheet_url" placeholder="https://..." class="w-full" />
+              </UFormField>
+              <UFormField :label="$t('templates.airflow')">
+                <USelect v-model="form.airflow" :items="airflowOptions" placeholder="—" class="w-full" />
+              </UFormField>
             </div>
           </div>
 
@@ -117,6 +123,12 @@
                       </UFormField>
                       <UFormField :label="$t('templates.blocks.defaultSpeed')">
                         <USelect v-model="block.default_speed" :items="speedOptions" placeholder="-- None --" class="w-full" />
+                      </UFormField>
+                      <UFormField :label="$t('templates.poe')">
+                        <USelect v-model="block.poe_selection" :items="poeOptions" class="w-full" />
+                      </UFormField>
+                      <UFormField v-if="block.type === 'management'" :label="$t('templates.physicalType')">
+                        <USelect v-model="block.physical_type" :items="physicalTypeOptions" class="w-full" />
                       </UFormField>
                     </div>
                   </div>
@@ -208,6 +220,36 @@ const speedOptions = [
   { label: '100G', value: '100G' }
 ]
 
+const airflowOptions = computed(() => [
+  { label: '—', value: '' },
+  { label: t('airflowOptions.front-to-rear'), value: 'front-to-rear' },
+  { label: t('airflowOptions.rear-to-front'), value: 'rear-to-front' },
+  { label: t('airflowOptions.left-to-right'), value: 'left-to-right' },
+  { label: t('airflowOptions.right-to-left'), value: 'right-to-left' },
+  { label: t('airflowOptions.passive'), value: 'passive' },
+  { label: t('airflowOptions.mixed'), value: 'mixed' },
+])
+
+const poeOptions = computed(() => [
+  { label: t('templates.poeNone'), value: '' },
+  { label: '802.3af (15.4W)', value: '802.3af' },
+  { label: '802.3at (30W)', value: '802.3at' },
+  { label: '802.3bt Type 3 (60W)', value: '802.3bt-type3' },
+  { label: '802.3bt Type 4 (100W)', value: '802.3bt-type4' },
+  { label: 'Passive 24V', value: 'passive-24v' },
+  { label: 'Passive 48V', value: 'passive-48v' },
+])
+
+const POE_WATTS: Record<string, number> = {
+  '802.3af': 15.4, '802.3at': 30, '802.3bt-type3': 60,
+  '802.3bt-type4': 100, 'passive-24v': 24, 'passive-48v': 48,
+}
+
+const physicalTypeOptions = [
+  { label: 'RJ45', value: 'rj45' },
+  { label: 'SFP', value: 'sfp' },
+]
+
 const form = ref<any>(null)
 
 const previewPorts = computed(() => {
@@ -263,7 +305,9 @@ function addBlock(unitIndex: number) {
     rows: 1,
     row_layout: 'sequential',
     default_speed: '',
-    label: ''
+    label: '',
+    poe_selection: '',
+    physical_type: '',
   })
 }
 
@@ -305,7 +349,23 @@ async function handleSubmit() {
       manufacturer: form.value.manufacturer || undefined,
       model: form.value.model || undefined,
       description: form.value.description || undefined,
-      units: form.value.units
+      datasheet_url: form.value.datasheet_url || undefined,
+      airflow: form.value.airflow || undefined,
+      units: form.value.units.map((u: any) => ({
+        unit_number: u.unit_number,
+        label: u.label || undefined,
+        blocks: u.blocks.map((b: any) => ({
+          type: b.type,
+          count: b.count,
+          start_index: b.start_index,
+          rows: b.rows,
+          row_layout: b.row_layout || undefined,
+          default_speed: b.default_speed || undefined,
+          label: b.label || undefined,
+          poe: b.poe_selection ? { type: b.poe_selection, max_watts: POE_WATTS[b.poe_selection] || 0 } : undefined,
+          physical_type: b.type === 'management' && b.physical_type ? b.physical_type : undefined,
+        }))
+      }))
     })
     toast.add({ title: t('templates.messages.updated'), color: 'success' })
     router.push(`/layout-templates/${route.params.id}`)
@@ -327,6 +387,8 @@ onMounted(async () => {
       manufacturer: data.manufacturer || '',
       model: data.model || '',
       description: data.description || '',
+      datasheet_url: data.datasheet_url || '',
+      airflow: data.airflow || '',
       units: (data.units || []).map((u: any) => ({
         unit_number: u.unit_number,
         label: u.label || '',
@@ -337,7 +399,9 @@ onMounted(async () => {
           rows: b.rows,
           row_layout: b.row_layout || 'sequential',
           default_speed: b.default_speed || '',
-          label: b.label || ''
+          label: b.label || '',
+          poe_selection: b.poe?.type || '',
+          physical_type: b.physical_type || '',
         }))
       }))
     }

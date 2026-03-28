@@ -43,6 +43,20 @@
           {{ getTotalPortCount() }} {{ $t('templates.infoBar.ports') }}
         </span>
         <span v-if="template.description" class="text-gray-400">— {{ template.description }}</span>
+        <span v-if="template.airflow" class="flex items-center gap-1">
+          <UIcon name="i-heroicons-arrow-right-circle" class="h-3.5 w-3.5" />
+          {{ $t('airflowOptions.' + template.airflow) }}
+        </span>
+        <a
+          v-if="template.datasheet_url"
+          :href="template.datasheet_url"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="flex items-center gap-1 text-primary hover:underline"
+        >
+          <UIcon name="i-heroicons-document-text" class="h-3.5 w-3.5" />
+          {{ $t('templates.datasheetUrl') }} ↗
+        </a>
       </div>
 
       <!-- Port Preview -->
@@ -90,6 +104,12 @@
                 </span>
                 <span v-if="block.label" class="text-gray-300">
                   <span class="text-gray-500">Label:</span> {{ block.label }}
+                </span>
+                <span v-if="block.poe?.type" class="text-yellow-400">
+                  <span class="text-gray-500">{{ $t('templates.poe') }}:</span> {{ block.poe.type }}<span v-if="block.poe.max_watts"> ({{ block.poe.max_watts }}W)</span>
+                </span>
+                <span v-if="block.type === 'management' && block.physical_type" class="text-gray-300">
+                  <span class="text-gray-500">{{ $t('templates.physicalType') }}:</span> {{ block.physical_type.toUpperCase() }}
                 </span>
               </div>
             </div>
