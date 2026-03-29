@@ -46,8 +46,7 @@
         </div>
       </div>
     </div>
-    <!-- PoE indicator: large transparent lightning as port background -->
-    <span v-if="port.poe" class="absolute inset-0 flex items-center justify-center text-amber-400/25 text-[22px] leading-none pointer-events-none select-none">⚡</span>
+    <!-- PoE glow is applied via portStyle computed (box-shadow) -->
     <!-- LAG indicator: colored bottom border -->
     <div v-if="port.lag_group_id" class="absolute inset-x-0 bottom-0 h-[3px] rounded-b" :style="{ backgroundColor: lagColor }" />
   </div>
@@ -119,6 +118,9 @@ const vlanDotColor = computed(() => {
 })
 
 const portStyle = computed(() => {
+  if (props.port.poe) {
+    return { boxShadow: '0 0 5px 1px rgba(251, 191, 36, 0.4)' }
+  }
   return {}
 })
 </script>
