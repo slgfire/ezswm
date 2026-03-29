@@ -5,24 +5,8 @@
       <h1 class="text-2xl font-bold">{{ $t('templates.create') }}</h1>
     </div>
 
-    <div class="flex gap-2 mb-4">
-      <UButton
-        :color="activeTab === 'manual' ? 'primary' : 'neutral'"
-        :variant="activeTab === 'manual' ? 'solid' : 'ghost'"
-        @click="activeTab = 'manual'"
-      >
-        {{ $t('templates.manual') }}
-      </UButton>
-      <UButton
-        :color="activeTab === 'import' ? 'primary' : 'neutral'"
-        :variant="activeTab === 'import' ? 'solid' : 'ghost'"
-        @click="activeTab = 'import'"
-      >
-        {{ $t('templates.importFromLibrary') }}
-      </UButton>
-    </div>
 
-    <div v-if="activeTab === 'import'">
+<div v-if="activeTab === 'import'">
       <UCard>
         <TemplateLibraryImport @import="handleLibraryImport" />
       </UCard>
@@ -214,7 +198,7 @@ const submitting = ref(false)
 const errors = ref<Record<string, string>>({})
 const cloneId = route.query.clone as string | undefined
 
-const activeTab = ref('manual')
+const activeTab = ref((route.query.mode as string) === 'import' ? 'import' : 'manual')
 
 const portTypeOptions = [
   { label: 'RJ45', value: 'rj45' },

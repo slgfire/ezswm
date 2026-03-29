@@ -334,6 +334,8 @@
     "detail": "Template Details",
     "importFromLibrary": "Import from Library",
     "manual": "Manual",
+    "manualDescription": "Create a template from scratch",
+    "importDescription": "Import from NetBox device library",
     "searchDevices": "Search devices... (e.g. Cisco 9200)",
     "libraryUnavailable": "Device library unavailable — no internet connection",
     "noResults": "No devices found for '{query}'",
