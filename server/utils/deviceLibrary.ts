@@ -369,8 +369,8 @@ export function groupInterfacesToBlocks(
     const firstInterface = group.members[0].iface
     const startIndex = getTrailingNumber(firstInterface.name)
 
-    const rows = count > 24 ? 2 : 1
-    const rowLayout = count > 24 ? 'odd-even' as const : undefined
+    const rows = count >= 24 ? 2 : 1
+    const rowLayout = count >= 24 ? 'odd-even' as const : 'sequential' as const
 
     const block: LayoutBlock = {
       id: generateBlockId(),

@@ -249,10 +249,21 @@ describe('groupInterfacesToBlocks — basic grouping', () => {
     assert.equal(blocks[0].type, 'rj45')
     assert.equal(blocks[0].count, 24)
     assert.equal(blocks[0].start_index, 1)
-    assert.equal(blocks[0].rows, 1)
+    assert.equal(blocks[0].rows, 2)
+    assert.equal(blocks[0].row_layout, 'odd-even')
   })
 
-  it('sets rows=2 and odd-even layout for >24 ports', () => {
+  it('sets rows=1 and sequential for <24 ports', () => {
+    const interfaces = Array.from({ length: 12 }, (_, i) => ({
+      name: `GigabitEthernet0/${i + 1}`,
+      type: '1000base-t',
+    }))
+    const blocks = groupInterfacesToBlocks(interfaces, [])
+    assert.equal(blocks[0].rows, 1)
+    assert.equal(blocks[0].row_layout, 'sequential')
+  })
+
+  it('sets rows=2 and odd-even layout for 48 ports', () => {
     const interfaces = Array.from({ length: 48 }, (_, i) => ({
       name: `GigabitEthernet0/${i + 1}`,
       type: '1000base-t',
