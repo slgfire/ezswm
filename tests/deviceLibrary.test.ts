@@ -379,18 +379,18 @@ describe('convertNetboxToTemplate', () => {
   }
 
   it('sets name as manufacturer + model', () => {
-    const tpl = convertNetboxToTemplate(minimalDevice)
+    const { template: tpl } = convertNetboxToTemplate(minimalDevice)
     assert.equal(tpl.name, 'Cisco Catalyst 2960')
   })
 
   it('sets manufacturer and model fields', () => {
-    const tpl = convertNetboxToTemplate(minimalDevice)
+    const { template: tpl } = convertNetboxToTemplate(minimalDevice)
     assert.equal(tpl.manufacturer, 'Cisco')
     assert.equal(tpl.model, 'Catalyst 2960')
   })
 
   it('produces a single unit with blocks', () => {
-    const tpl = convertNetboxToTemplate(minimalDevice)
+    const { template: tpl } = convertNetboxToTemplate(minimalDevice)
     assert.equal(tpl.units.length, 1)
     assert.ok(tpl.units[0].blocks.length > 0)
   })
@@ -400,30 +400,30 @@ describe('convertNetboxToTemplate', () => {
       ...minimalDevice,
       comments: 'See datasheet at https://example.com/datasheet.pdf for details.'
     }
-    const tpl = convertNetboxToTemplate(device)
+    const { template: tpl } = convertNetboxToTemplate(device)
     assert.equal(tpl.datasheet_url, 'https://example.com/datasheet.pdf')
   })
 
   it('leaves datasheet_url undefined when no URL in comments', () => {
     const device = { ...minimalDevice, comments: 'No URL here.' }
-    const tpl = convertNetboxToTemplate(device)
+    const { template: tpl } = convertNetboxToTemplate(device)
     assert.equal(tpl.datasheet_url, undefined)
   })
 
   it('leaves datasheet_url undefined when no comments', () => {
-    const tpl = convertNetboxToTemplate(minimalDevice)
+    const { template: tpl } = convertNetboxToTemplate(minimalDevice)
     assert.equal(tpl.datasheet_url, undefined)
   })
 
   it('maps valid airflow value', () => {
     const device = { ...minimalDevice, airflow: 'front-to-rear' }
-    const tpl = convertNetboxToTemplate(device)
+    const { template: tpl } = convertNetboxToTemplate(device)
     assert.equal(tpl.airflow, 'front-to-rear')
   })
 
   it('ignores invalid airflow value', () => {
     const device = { ...minimalDevice, airflow: 'sideways' }
-    const tpl = convertNetboxToTemplate(device)
+    const { template: tpl } = convertNetboxToTemplate(device)
     assert.equal(tpl.airflow, undefined)
   })
 })
