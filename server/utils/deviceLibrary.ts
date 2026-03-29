@@ -49,6 +49,7 @@ export interface MappedType {
 // ---------------------------------------------------------------------------
 
 const SKIP_TYPES = new Set([
+  // Stacking
   'cisco-stackwise',
   'cisco-stackwise-plus',
   'cisco-stackwise-480',
@@ -60,9 +61,26 @@ const SKIP_TYPES = new Set([
   'extreme-summitstack-128',
   'extreme-summitstack-256',
   'extreme-summitstack-512',
+  // Virtual/logical
   'virtual',
   'bridge',
-  'lag'
+  'lag',
+  // Wireless (not physical ports)
+  'ieee802.11a',
+  'ieee802.11g',
+  'ieee802.11n',
+  'ieee802.11ac',
+  'ieee802.11ad',
+  'ieee802.11ax',
+  'ieee802.11ay',
+  'ieee802.11be',
+])
+
+// Console port types to skip (USB variants are not relevant for front panel)
+const SKIP_CONSOLE_TYPES = new Set([
+  'usb-a', 'usb-b', 'usb-c',
+  'usb-mini-a', 'usb-mini-b',
+  'usb-micro-a', 'usb-micro-b', 'usb-micro-ab',
 ])
 
 // ---------------------------------------------------------------------------
@@ -464,12 +482,15 @@ export function groupInterfacesToBlocks(
     blocks.push(block)
   }
 
-  // Console ports block
-  if (typedConsolePorts.length > 0) {
+  // Console ports block (skip USB console ports)
+  const physicalConsolePorts = typedConsolePorts.filter(
+    cp => !cp.type || !SKIP_CONSOLE_TYPES.has(cp.type)
+  )
+  if (physicalConsolePorts.length > 0) {
     const block: LayoutBlock = {
       id: generateBlockId(),
       type: 'console',
-      count: typedConsolePorts.length,
+      count: physicalConsolePorts.length,
       start_index: 1,
       rows: 1,
       label: 'Console'
