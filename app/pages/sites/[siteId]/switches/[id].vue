@@ -543,14 +543,26 @@ watch([item, templates], () => {
     const stackSize = item.value?.stack_size ?? 1
 
     if (stackSize > 1 && baseUnits.length > 0) {
-      // Duplicate units for each stack member
+      // Increment first number in label for stacking (client-side version)
+      const incrementLabel = (label: string, memberIdx: number): string => {
+        if (memberIdx === 1) return label
+        const match = label.match(/^(.*?)(\d+)(.*)$/)
+        if (match) return `${match[1]}${parseInt(match[2], 10) + memberIdx - 1}${match[3]}`
+        return `${memberIdx}/${label}`
+      }
+
+      // Duplicate units for each stack member with incremented block labels
       const stacked: any[] = []
-      for (let member = 0; member < stackSize; member++) {
+      for (let member = 1; member <= stackSize; member++) {
         for (const unit of baseUnits) {
           stacked.push({
             ...unit,
-            unit_number: unit.unit_number + member * baseUnits.length,
-            label: unit.label ? `Member ${member + 1} - ${unit.label}` : `Member ${member + 1}`
+            unit_number: unit.unit_number + (member - 1) * baseUnits.length,
+            label: unit.label ? `Member ${member} - ${unit.label}` : `Member ${member}`,
+            blocks: unit.blocks.map((b: any) => ({
+              ...b,
+              label: b.label ? incrementLabel(b.label, member) : b.label
+            }))
           })
         }
       }
