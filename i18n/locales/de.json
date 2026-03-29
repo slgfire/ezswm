@@ -409,7 +409,9 @@
       "sequential": "Sequenziell",
       "oddEven": "Ungerade/Gerade",
       "evenOdd": "Gerade/Ungerade"
-    }
+    },
+    "skippedInterfacesTitle": "Einige Interfaces wurden übersprungen",
+    "skippedInterfacesDescription": "{count} Interfaces nicht unterstützt ({details}) — ezSWM unterstützt nur physische Switch-Ports."
   },
   "topology": {
     "title": "Netzwerk-Topologie",

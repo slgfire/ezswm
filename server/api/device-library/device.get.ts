@@ -35,6 +35,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 422, message: 'Could not parse device definition' })
   }
 
-  const template = convertNetboxToTemplate(device)
-  return { template }
+  const { template, skippedInterfaces } = convertNetboxToTemplate(device)
+  return { template, skippedInterfaces }
 })

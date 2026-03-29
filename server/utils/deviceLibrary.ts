@@ -517,10 +517,14 @@ const VALID_AIRFLOW_VALUES: AirflowDirection[] = [
 
 /**
  * Converts a parsed NetBox device YAML object to a partial ezSWM layout template.
+ * Also returns a list of skipped interface types and their counts.
  */
 export function convertNetboxToTemplate(
   device: NetboxDevice
-): Omit<LayoutTemplate, 'id' | 'created_at' | 'updated_at'> {
+): {
+  template: Omit<LayoutTemplate, 'id' | 'created_at' | 'updated_at'>
+  skippedInterfaces: { type: string; count: number }[]
+} {
   const name = `${device.manufacturer} ${device.model}`
 
   // Extract first URL from comments (strip trailing ) from markdown links)
@@ -538,6 +542,28 @@ export function convertNetboxToTemplate(
     airflow = device.airflow as AirflowDirection
   }
 
+  // Count skipped interfaces (stacking, virtual, wireless types)
+  const allInterfaces = device.interfaces ?? []
+  const skippedMap = new Map<string, number>()
+  for (const iface of allInterfaces) {
+    const result = mapNetboxType(iface)
+    if (result === null) {
+      const type = iface.type
+      skippedMap.set(type, (skippedMap.get(type) || 0) + 1)
+    }
+  }
+
+  // Count skipped USB console ports
+  const allConsole = device['console-ports'] ?? []
+  for (const cp of allConsole) {
+    if (cp.type && SKIP_CONSOLE_TYPES.has(cp.type)) {
+      const key = `console:${cp.type}`
+      skippedMap.set(key, (skippedMap.get(key) || 0) + 1)
+    }
+  }
+
+  const skippedInterfaces = Array.from(skippedMap.entries()).map(([type, count]) => ({ type, count }))
+
   // Build blocks — NetBox YAML uses 'console-ports' with hyphen
   const blocks = groupInterfacesToBlocks(
     device.interfaces ?? [],
@@ -549,7 +575,7 @@ export function convertNetboxToTemplate(
     blocks
   }
 
-  return {
+  const template = {
     name,
     manufacturer: device.manufacturer,
     model: device.model,
@@ -557,4 +583,6 @@ export function convertNetboxToTemplate(
     ...(airflow ? { airflow } : {}),
     units: [unit]
   }
+
+  return { template, skippedInterfaces }
 }

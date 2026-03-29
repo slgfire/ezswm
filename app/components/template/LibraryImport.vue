@@ -49,6 +49,14 @@
         <UButton :label="$t('templates.importDevice')" color="primary" @click="$emit('import', preview)" />
       </div>
 
+      <UAlert
+        v-if="skippedInterfaces.length > 0"
+        color="warning"
+        icon="i-heroicons-exclamation-triangle"
+        :title="$t('templates.skippedInterfacesTitle')"
+        :description="skippedDescription"
+      />
+
       <SwitchPortGrid
         v-if="previewPorts.length > 0"
         :ports="previewPorts"
@@ -79,6 +87,14 @@ const selected = ref<{ manufacturer: string; slug: string } | null>(null)
 const preview = ref<any>(null)
 const previewPorts = ref<any[]>([])
 const loadingPreview = ref(false)
+const skippedInterfaces = ref<{ type: string; count: number }[]>([])
+
+const skippedDescription = computed(() => {
+  if (skippedInterfaces.value.length === 0) return ''
+  const total = skippedInterfaces.value.reduce((s, i) => s + i.count, 0)
+  const details = skippedInterfaces.value.map(i => `${i.count}x ${i.type}`).join(', ')
+  return t('templates.skippedInterfacesDescription', { count: total, details })
+})
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -87,6 +103,7 @@ watch(searchQuery, (val) => {
   error.value = ''
   preview.value = null
   selected.value = null
+  skippedInterfaces.value = []
 
   if (val.trim().length < 2) {
     results.value = []
@@ -114,12 +131,14 @@ async function selectDevice(item: { manufacturer: string; slug: string }) {
   loadingPreview.value = true
   preview.value = null
   previewPorts.value = []
+  skippedInterfaces.value = []
 
   try {
     const data = await $fetch('/api/device-library/device', {
       params: { manufacturer: item.manufacturer, slug: item.slug }
     })
     preview.value = (data as any).template
+    skippedInterfaces.value = (data as any).skippedInterfaces || []
 
     // Generate preview ports for visualization
     const ports: any[] = []
