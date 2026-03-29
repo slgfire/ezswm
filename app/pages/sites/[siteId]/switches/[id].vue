@@ -540,7 +540,25 @@ async function onDelete() {
 watch([item, templates], () => {
   if (item.value?.layout_template_id) {
     const tpl = templates.value.find(t => t.id === item.value!.layout_template_id)
-    templateUnits.value = tpl?.units || []
+    const baseUnits = tpl?.units || []
+    const stackSize = item.value?.stack_size ?? 1
+
+    if (stackSize > 1 && baseUnits.length > 0) {
+      // Duplicate units for each stack member
+      const stacked: any[] = []
+      for (let member = 0; member < stackSize; member++) {
+        for (const unit of baseUnits) {
+          stacked.push({
+            ...unit,
+            unit_number: unit.unit_number + member * baseUnits.length,
+            label: unit.label ? `Member ${member + 1} - ${unit.label}` : `Member ${member + 1}`
+          })
+        }
+      }
+      templateUnits.value = stacked
+    } else {
+      templateUnits.value = baseUnits
+    }
   } else {
     templateUnits.value = []
   }
