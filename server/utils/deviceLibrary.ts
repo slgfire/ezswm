@@ -319,12 +319,55 @@ export function groupInterfacesToBlocks(
     mapped.push({ iface, mapped: result })
   }
 
-  // Sort by name (natural sort)
-  mapped.sort((a, b) => compareNatural(a.iface.name, b.iface.name))
+  // Deduplicate combo ports: ge-0/0/X and xe-0/0/X are the same physical port.
+  // Keep the higher-speed variant (sfp+ over sfp, sfp over rj45).
+  const SPEED_RANK: Record<string, number> = { '100M': 1, '1G': 2, '2.5G': 3, '10G': 4, '100G': 5 }
+  const portByNumber = new Map<string, MappedIface>()
+  for (const item of mapped) {
+    const trailingNum = getTrailingNumber(item.iface.name)
+    const prefix = getNamePrefixForGrouping(item.iface.name)
+    // Use trailing number as dedup key (only for non-management, same slot pattern)
+    // e.g. ge-0/0/5 and xe-0/0/5 share trailing number 5 with similar prefix pattern
+    const slotParts = item.iface.name.match(/^[a-z]+-(\d+\/\d+\/)(\d+)$/)
+    if (slotParts && !item.iface.mgmt_only) {
+      const slotKey = `${slotParts[1]}${slotParts[2]}`
+      const existing = portByNumber.get(slotKey)
+      if (existing) {
+        const existingRank = SPEED_RANK[existing.mapped.speed] || 0
+        const newRank = SPEED_RANK[item.mapped.speed] || 0
+        if (newRank > existingRank) {
+          portByNumber.set(slotKey, item)
+        }
+        // Skip — already have this physical port
+        continue
+      }
+      portByNumber.set(slotKey, item)
+    }
+  }
+
+  // Rebuild mapped list with deduplication applied
+  const deduped: MappedIface[] = []
+  const seen = new Set<string>()
+  for (const item of mapped) {
+    const slotParts = item.iface.name.match(/^[a-z]+-(\d+\/\d+\/)(\d+)$/)
+    if (slotParts && !item.iface.mgmt_only) {
+      const slotKey = `${slotParts[1]}${slotParts[2]}`
+      const winner = portByNumber.get(slotKey)
+      if (winner && winner.iface.name === item.iface.name && !seen.has(slotKey)) {
+        deduped.push(item)
+        seen.add(slotKey)
+      }
+    } else {
+      deduped.push(item)
+    }
+  }
+
+  // Sort by natural name (keeps same-prefix ports grouped together)
+  deduped.sort((a, b) => compareNatural(a.iface.name, b.iface.name))
 
   // Separate management from regular interfaces
-  const mgmtInterfaces = mapped.filter(m => m.mapped.type === 'management')
-  const regularInterfaces = mapped.filter(m => m.mapped.type !== 'management')
+  const mgmtInterfaces = deduped.filter(m => m.mapped.type === 'management')
+  const regularInterfaces = deduped.filter(m => m.mapped.type !== 'management')
 
   // Group regular interfaces by consecutive same-group key
   // Group key = type + name prefix
@@ -362,6 +405,14 @@ export function groupInterfacesToBlocks(
       })
     }
   }
+
+  // Sort groups by their first port's trailing number
+  // This ensures QSFP (et-0/0/48) comes after SFP+ (xe-0/0/0) regardless of alphabetical order
+  groups.sort((a, b) => {
+    const aStart = getTrailingNumber(a.members[0].iface.name)
+    const bStart = getTrailingNumber(b.members[0].iface.name)
+    return aStart - bStart
+  })
 
   // Convert groups to blocks
   for (const group of groups) {
