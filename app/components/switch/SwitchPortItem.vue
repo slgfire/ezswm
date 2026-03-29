@@ -46,8 +46,7 @@
         </div>
       </div>
     </div>
-    <!-- PoE indicator: lightning bolt to the right of the port -->
-    <span v-if="port.poe" class="absolute -right-2.5 top-1/2 -translate-y-1/2 text-amber-400 text-[8px] leading-none">⚡</span>
+    <!-- PoE is shown as "PoE" typeLabel, same as S+, CON, MGT -->
     <!-- LAG indicator: colored bottom border -->
     <div v-if="port.lag_group_id" class="absolute inset-x-0 bottom-0 h-[3px] rounded-b" :style="{ backgroundColor: lagColor }" />
   </div>
@@ -72,6 +71,7 @@ const typeLabel = computed(() => {
   if (props.port.type === 'sfp') return 'S'
   if (isConsole.value) return 'CON'
   if (isManagement.value) return 'MGT'
+  if (props.port.poe) return 'PoE'
   return ''
 })
 
