@@ -12,26 +12,24 @@ import type { PortType, PortSpeed } from '../../types/port'
 // Internal types for NetBox YAML structures
 // ---------------------------------------------------------------------------
 
-export interface NetboxInterfaceType {
-  value: string
-}
-
 export interface NetboxInterface {
   name: string
-  type: NetboxInterfaceType
-  mgmt_only: boolean
-  poe_mode?: { value: string }
+  type: string
+  mgmt_only?: boolean
+  poe_mode?: string
+  poe_type?: string
 }
 
 export interface NetboxConsolePort {
   name: string
+  type?: string
 }
 
 export interface NetboxDevice {
-  manufacturer: { name: string }
+  manufacturer: string
   model: string
   interfaces?: NetboxInterface[]
-  console_ports?: NetboxConsolePort[]
+  'console-ports'?: NetboxConsolePort[]
   comments?: string
   airflow?: string
 }
@@ -75,8 +73,8 @@ const SKIP_TYPES = new Set([
  * Maps a NetBox interface object to an ezSWM port type + speed.
  * Returns null for stacking/virtual types that should be skipped.
  */
-export function mapNetboxType(iface: { type: { value: string }; mgmt_only: boolean }): MappedType | null {
-  const value = iface.type.value
+export function mapNetboxType(iface: { type: string; mgmt_only?: boolean }): MappedType | null {
+  const value = iface.type
 
   // Skip stacking and virtual types
   if (SKIP_TYPES.has(value)) {
@@ -351,8 +349,8 @@ export function groupInterfacesToBlocks(
       last.members.push(item)
     } else {
       // Determine PoE from first interface in this group
-      const poe = item.iface.poe_mode
-        ? mapNetboxPoe(item.iface.poe_mode.value)
+      const poe = item.iface.poe_type
+        ? mapNetboxPoe(item.iface.poe_type)
         : undefined
 
       groups.push({
@@ -445,12 +443,12 @@ const VALID_AIRFLOW_VALUES: AirflowDirection[] = [
 export function convertNetboxToTemplate(
   device: NetboxDevice
 ): Omit<LayoutTemplate, 'id' | 'created_at' | 'updated_at'> {
-  const name = `${device.manufacturer.name} ${device.model}`
+  const name = `${device.manufacturer} ${device.model}`
 
-  // Extract first URL from comments
+  // Extract first URL from comments (strip trailing ) from markdown links)
   let datasheet_url: string | undefined
   if (device.comments) {
-    const urlMatch = device.comments.match(/https?:\/\/[^\s]+/)
+    const urlMatch = device.comments.match(/https?:\/\/[^\s)]+/)
     if (urlMatch) {
       datasheet_url = urlMatch[0]
     }
@@ -462,10 +460,10 @@ export function convertNetboxToTemplate(
     airflow = device.airflow as AirflowDirection
   }
 
-  // Build blocks
+  // Build blocks — NetBox YAML uses 'console-ports' with hyphen
   const blocks = groupInterfacesToBlocks(
     device.interfaces ?? [],
-    device.console_ports ?? []
+    device['console-ports'] ?? []
   )
 
   const unit: LayoutUnit = {
@@ -475,7 +473,7 @@ export function convertNetboxToTemplate(
 
   return {
     name,
-    manufacturer: device.manufacturer.name,
+    manufacturer: device.manufacturer,
     model: device.model,
     ...(datasheet_url ? { datasheet_url } : {}),
     ...(airflow ? { airflow } : {}),

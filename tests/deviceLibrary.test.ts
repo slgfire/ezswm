@@ -14,138 +14,138 @@ import {
 
 describe('mapNetboxType — RJ45 types', () => {
   it('maps 100base-tx to rj45 / 100M', () => {
-    const result = mapNetboxType({ type: { value: '100base-tx' }, mgmt_only: false })
+    const result = mapNetboxType({ type: '100base-tx' })
     assert.deepEqual(result, { type: 'rj45', speed: '100M' })
   })
 
   it('maps 1000base-t to rj45 / 1G', () => {
-    const result = mapNetboxType({ type: { value: '1000base-t' }, mgmt_only: false })
+    const result = mapNetboxType({ type: '1000base-t' })
     assert.deepEqual(result, { type: 'rj45', speed: '1G' })
   })
 
   it('maps 1000base-tx to rj45 / 1G', () => {
-    const result = mapNetboxType({ type: { value: '1000base-tx' }, mgmt_only: false })
+    const result = mapNetboxType({ type: '1000base-tx' })
     assert.deepEqual(result, { type: 'rj45', speed: '1G' })
   })
 
   it('maps 2.5gbase-t to rj45 / 2.5G', () => {
-    const result = mapNetboxType({ type: { value: '2.5gbase-t' }, mgmt_only: false })
+    const result = mapNetboxType({ type: '2.5gbase-t' })
     assert.deepEqual(result, { type: 'rj45', speed: '2.5G' })
   })
 
   it('maps 5gbase-t to rj45 / 10G', () => {
-    const result = mapNetboxType({ type: { value: '5gbase-t' }, mgmt_only: false })
+    const result = mapNetboxType({ type: '5gbase-t' })
     assert.deepEqual(result, { type: 'rj45', speed: '10G' })
   })
 
   it('maps 10gbase-t to rj45 / 10G', () => {
-    const result = mapNetboxType({ type: { value: '10gbase-t' }, mgmt_only: false })
+    const result = mapNetboxType({ type: '10gbase-t' })
     assert.deepEqual(result, { type: 'rj45', speed: '10G' })
   })
 })
 
 describe('mapNetboxType — SFP types', () => {
   it('maps 1000base-x-sfp to sfp / 1G', () => {
-    const result = mapNetboxType({ type: { value: '1000base-x-sfp' }, mgmt_only: false })
+    const result = mapNetboxType({ type: '1000base-x-sfp' })
     assert.deepEqual(result, { type: 'sfp', speed: '1G' })
   })
 
   it('maps 10gbase-x-sfpp to sfp+ / 10G', () => {
-    const result = mapNetboxType({ type: { value: '10gbase-x-sfpp' }, mgmt_only: false })
+    const result = mapNetboxType({ type: '10gbase-x-sfpp' })
     assert.deepEqual(result, { type: 'sfp+', speed: '10G' })
   })
 
   it('maps 25gbase-x-sfp28 to sfp+ / 10G', () => {
-    const result = mapNetboxType({ type: { value: '25gbase-x-sfp28' }, mgmt_only: false })
+    const result = mapNetboxType({ type: '25gbase-x-sfp28' })
     assert.deepEqual(result, { type: 'sfp+', speed: '10G' })
   })
 })
 
 describe('mapNetboxType — QSFP types', () => {
   it('maps 40gbase-x-qsfpp to qsfp / 100G', () => {
-    const result = mapNetboxType({ type: { value: '40gbase-x-qsfpp' }, mgmt_only: false })
+    const result = mapNetboxType({ type: '40gbase-x-qsfpp' })
     assert.deepEqual(result, { type: 'qsfp', speed: '100G' })
   })
 
   it('maps 100gbase-x-qsfp28 to qsfp / 100G', () => {
-    const result = mapNetboxType({ type: { value: '100gbase-x-qsfp28' }, mgmt_only: false })
+    const result = mapNetboxType({ type: '100gbase-x-qsfp28' })
     assert.deepEqual(result, { type: 'qsfp', speed: '100G' })
   })
 
   it('maps 100gbase-x-qsfpdd to qsfp / 100G', () => {
-    const result = mapNetboxType({ type: { value: '100gbase-x-qsfpdd' }, mgmt_only: false })
+    const result = mapNetboxType({ type: '100gbase-x-qsfpdd' })
     assert.deepEqual(result, { type: 'qsfp', speed: '100G' })
   })
 
   it('maps 200gbase-x-qsfp56 to qsfp / 100G', () => {
-    const result = mapNetboxType({ type: { value: '200gbase-x-qsfp56' }, mgmt_only: false })
+    const result = mapNetboxType({ type: '200gbase-x-qsfp56' })
     assert.deepEqual(result, { type: 'qsfp', speed: '100G' })
   })
 
   it('maps 400gbase-x-qsfpdd to qsfp / 100G', () => {
-    const result = mapNetboxType({ type: { value: '400gbase-x-qsfpdd' }, mgmt_only: false })
+    const result = mapNetboxType({ type: '400gbase-x-qsfpdd' })
     assert.deepEqual(result, { type: 'qsfp', speed: '100G' })
   })
 })
 
 describe('mapNetboxType — management interfaces', () => {
   it('maps mgmt_only + base-t to management / rj45 physical', () => {
-    const result = mapNetboxType({ type: { value: '1000base-t' }, mgmt_only: true })
+    const result = mapNetboxType({ type: '1000base-t', mgmt_only: true })
     assert.deepEqual(result, { type: 'management', speed: '1G', physical_type: 'rj45' })
   })
 
   it('maps mgmt_only + sfp to management / sfp physical', () => {
-    const result = mapNetboxType({ type: { value: '1000base-x-sfp' }, mgmt_only: true })
+    const result = mapNetboxType({ type: '1000base-x-sfp', mgmt_only: true })
     assert.deepEqual(result, { type: 'management', speed: '1G', physical_type: 'sfp' })
   })
 
   it('maps mgmt_only + 100base-tx to management / rj45 physical', () => {
-    const result = mapNetboxType({ type: { value: '100base-tx' }, mgmt_only: true })
+    const result = mapNetboxType({ type: '100base-tx', mgmt_only: true })
     assert.deepEqual(result, { type: 'management', speed: '1G', physical_type: 'rj45' })
   })
 })
 
 describe('mapNetboxType — stacking / virtual types (skip)', () => {
   it('returns null for cisco-stackwise', () => {
-    assert.equal(mapNetboxType({ type: { value: 'cisco-stackwise' }, mgmt_only: false }), null)
+    assert.equal(mapNetboxType({ type: 'cisco-stackwise' }), null)
   })
 
   it('returns null for cisco-stackwise-plus', () => {
-    assert.equal(mapNetboxType({ type: { value: 'cisco-stackwise-plus' }, mgmt_only: false }), null)
+    assert.equal(mapNetboxType({ type: 'cisco-stackwise-plus' }), null)
   })
 
   it('returns null for cisco-flexstack', () => {
-    assert.equal(mapNetboxType({ type: { value: 'cisco-flexstack' }, mgmt_only: false }), null)
+    assert.equal(mapNetboxType({ type: 'cisco-flexstack' }), null)
   })
 
   it('returns null for juniper-vcp', () => {
-    assert.equal(mapNetboxType({ type: { value: 'juniper-vcp' }, mgmt_only: false }), null)
+    assert.equal(mapNetboxType({ type: 'juniper-vcp' }), null)
   })
 
   it('returns null for extreme-summitstack', () => {
-    assert.equal(mapNetboxType({ type: { value: 'extreme-summitstack' }, mgmt_only: false }), null)
+    assert.equal(mapNetboxType({ type: 'extreme-summitstack' }), null)
   })
 
   it('returns null for extreme-summitstack-128', () => {
-    assert.equal(mapNetboxType({ type: { value: 'extreme-summitstack-128' }, mgmt_only: false }), null)
+    assert.equal(mapNetboxType({ type: 'extreme-summitstack-128' }), null)
   })
 
   it('returns null for virtual', () => {
-    assert.equal(mapNetboxType({ type: { value: 'virtual' }, mgmt_only: false }), null)
+    assert.equal(mapNetboxType({ type: 'virtual' }), null)
   })
 
   it('returns null for bridge', () => {
-    assert.equal(mapNetboxType({ type: { value: 'bridge' }, mgmt_only: false }), null)
+    assert.equal(mapNetboxType({ type: 'bridge' }), null)
   })
 
   it('returns null for lag', () => {
-    assert.equal(mapNetboxType({ type: { value: 'lag' }, mgmt_only: false }), null)
+    assert.equal(mapNetboxType({ type: 'lag' }), null)
   })
 })
 
 describe('mapNetboxType — fallback', () => {
   it('returns rj45 / 1G for unknown type', () => {
-    const result = mapNetboxType({ type: { value: 'some-unknown-type' }, mgmt_only: false })
+    const result = mapNetboxType({ type: 'some-unknown-type' })
     assert.deepEqual(result, { type: 'rj45', speed: '1G' })
   })
 })
@@ -242,8 +242,7 @@ describe('groupInterfacesToBlocks — basic grouping', () => {
   it('groups 24 identical rj45 interfaces into one block', () => {
     const interfaces = Array.from({ length: 24 }, (_, i) => ({
       name: `GigabitEthernet0/${i + 1}`,
-      type: { value: '1000base-t' },
-      mgmt_only: false
+      type: '1000base-t',
     }))
     const blocks = groupInterfacesToBlocks(interfaces, [])
     assert.equal(blocks.length, 1)
@@ -256,8 +255,7 @@ describe('groupInterfacesToBlocks — basic grouping', () => {
   it('sets rows=2 and odd-even layout for >24 ports', () => {
     const interfaces = Array.from({ length: 48 }, (_, i) => ({
       name: `GigabitEthernet0/${i + 1}`,
-      type: { value: '1000base-t' },
-      mgmt_only: false
+      type: '1000base-t',
     }))
     const blocks = groupInterfacesToBlocks(interfaces, [])
     assert.equal(blocks.length, 1)
@@ -270,13 +268,11 @@ describe('groupInterfacesToBlocks — basic grouping', () => {
     const interfaces = [
       ...Array.from({ length: 24 }, (_, i) => ({
         name: `GigabitEthernet0/${i + 1}`,
-        type: { value: '1000base-t' },
-        mgmt_only: false
+        type: '1000base-t',
       })),
       ...Array.from({ length: 4 }, (_, i) => ({
         name: `TenGigabitEthernet0/${i + 1}`,
-        type: { value: '10gbase-x-sfpp' },
-        mgmt_only: false
+        type: '10gbase-x-sfpp',
       }))
     ]
     const blocks = groupInterfacesToBlocks(interfaces, [])
@@ -293,11 +289,10 @@ describe('groupInterfacesToBlocks — basic grouping', () => {
     const interfaces = [
       ...Array.from({ length: 8 }, (_, i) => ({
         name: `GigabitEthernet0/${i + 1}`,
-        type: { value: '1000base-t' },
-        mgmt_only: false
+        type: '1000base-t',
       })),
-      { name: 'Stack1', type: { value: 'cisco-stackwise' }, mgmt_only: false },
-      { name: 'Stack2', type: { value: 'cisco-stackwise' }, mgmt_only: false }
+      { name: 'Stack1', type: 'cisco-stackwise' },
+      { name: 'Stack2', type: 'cisco-stackwise' }
     ]
     const blocks = groupInterfacesToBlocks(interfaces, [])
     assert.equal(blocks.length, 1)
@@ -315,7 +310,7 @@ describe('groupInterfacesToBlocks — basic grouping', () => {
 
   it('creates management block for mgmt_only interfaces', () => {
     const interfaces = [
-      { name: 'Management0/0', type: { value: '1000base-t' }, mgmt_only: true }
+      { name: 'Management0/0', type: '1000base-t', mgmt_only: true }
     ]
     const blocks = groupInterfacesToBlocks(interfaces, [])
     assert.equal(blocks.length, 1)
@@ -327,9 +322,8 @@ describe('groupInterfacesToBlocks — basic grouping', () => {
     const interfaces = [
       {
         name: `FastEthernet0/1`,
-        type: { value: '1000base-t' },
-        mgmt_only: false,
-        poe_mode: { value: 'type2-ieee802.3at' }
+        type: '1000base-t',
+        poe_type: 'type2-ieee802.3at'
       }
     ]
     const blocks = groupInterfacesToBlocks(interfaces, [])
@@ -342,8 +336,7 @@ describe('groupInterfacesToBlocks — start_index', () => {
   it('sets start_index from first port number in name', () => {
     const interfaces = Array.from({ length: 8 }, (_, i) => ({
       name: `Ethernet${i + 1}`,
-      type: { value: '1000base-t' },
-      mgmt_only: false
+      type: '1000base-t',
     }))
     const blocks = groupInterfacesToBlocks(interfaces, [])
     assert.equal(blocks[0].start_index, 1)
@@ -352,8 +345,7 @@ describe('groupInterfacesToBlocks — start_index', () => {
   it('sets correct label from name prefix', () => {
     const interfaces = Array.from({ length: 4 }, (_, i) => ({
       name: `GigabitEthernet1/${i + 1}`,
-      type: { value: '1000base-t' },
-      mgmt_only: false
+      type: '1000base-t',
     }))
     const blocks = groupInterfacesToBlocks(interfaces, [])
     assert.equal(blocks[0].label, 'GigabitEthernet1/')
@@ -366,13 +358,13 @@ describe('groupInterfacesToBlocks — start_index', () => {
 
 describe('convertNetboxToTemplate', () => {
   const minimalDevice = {
-    manufacturer: { name: 'Cisco' },
+    manufacturer: 'Cisco',
     model: 'Catalyst 2960',
     interfaces: [
-      { name: 'GigabitEthernet0/1', type: { value: '1000base-t' }, mgmt_only: false },
-      { name: 'GigabitEthernet0/2', type: { value: '1000base-t' }, mgmt_only: false }
+      { name: 'GigabitEthernet0/1', type: '1000base-t' },
+      { name: 'GigabitEthernet0/2', type: '1000base-t' }
     ],
-    console_ports: []
+    'console-ports': []
   }
 
   it('sets name as manufacturer + model', () => {
