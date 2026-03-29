@@ -130,7 +130,12 @@ function onPortClick(event: MouseEvent, portId: string) {
 
 function getPortsForBlock(unitNumber: number, block: any) {
   return props.ports
-    .filter(p => p.unit === unitNumber && p.index >= block.start_index && p.index < block.start_index + block.count)
+    .filter(p =>
+      p.unit === unitNumber &&
+      p.type === block.type &&
+      p.index >= block.start_index &&
+      p.index < block.start_index + block.count
+    )
     .sort((a, b) => a.index - b.index)
 }
 
