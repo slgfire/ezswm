@@ -271,7 +271,7 @@
             <USelectMenu :search-input="false"
               v-model="editForm.role"
               :items="editRoleOptions"
-
+              placeholder="---"
               value-key="value"
               class="w-full"
             />
@@ -416,7 +416,6 @@ const stackSizeOptions = Array.from({ length: 8 }, (_, i) => ({
 }))
 
 const editRoleOptions = computed(() => [
-  { label: '---', value: '' },
   { label: t('switches.roles.core'), value: 'core' },
   { label: t('switches.roles.distribution'), value: 'distribution' },
   { label: t('switches.roles.access'), value: 'access' },
@@ -500,7 +499,7 @@ async function onSave() {
     if (body.layout_template_id === '') {
       delete body.layout_template_id
     }
-    body.stack_size = editForm.stack_size > 1 ? editForm.stack_size : undefined
+    body.stack_size = editForm.stack_size || 1
     await update(body)
     toast.add({ title: t('switches.messages.updated'), color: 'success' })
     editMode.value = false
