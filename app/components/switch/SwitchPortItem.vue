@@ -119,7 +119,7 @@ const vlanDotColor = computed(() => {
 
 const portStyle = computed(() => {
   if (props.port.poe) {
-    return { boxShadow: '0 0 5px 1px rgba(251, 191, 36, 0.4)' }
+    return { boxShadow: '0 0 3px 0px rgba(251, 191, 36, 0.3)' }
   }
   return {}
 })
