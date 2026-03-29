@@ -22,7 +22,29 @@ Layout templates define reusable switch model definitions. Instead of manually c
 
 ### How to Create One
 
-Navigate to **Layout Templates** in the sidebar and click **Create**.
+Navigate to **Layout Templates** in the sidebar and click **Create Template**. A dialog offers two options:
+
+- **Manual** -- build a template from scratch
+- **Import from Library** -- import from the [NetBox Device Type Library](https://github.com/netbox-community/devicetype-library) (5,000+ devices from 270+ manufacturers)
+
+#### Import from Library
+
+Search for any device by manufacturer or model name (e.g., "Cisco 9200" or "MikroTik CRS328"). Select a device to see a port grid preview. Click **Import** to populate the create form with the device's port layout, which you can adjust before saving.
+
+The import automatically:
+- Maps NetBox interface types to ezSWM port types (RJ45, SFP, SFP+, QSFP, Console, Management)
+- Detects PoE capabilities and sets them on port blocks
+- Deduplicates combo ports (e.g., Juniper ge/xe on the same physical slot)
+- Filters out non-physical interfaces (WiFi, stacking, virtual)
+- Extracts datasheet URLs and airflow direction from device metadata
+
+If some interfaces are not supported, a warning banner shows which types were skipped.
+
+::: tip
+The library is fetched on-demand from GitHub. An internet connection is required. If unavailable, an error message is shown.
+:::
+
+#### Manual Creation
 
 **Basic fields:**
 
@@ -30,6 +52,8 @@ Navigate to **Layout Templates** in the sidebar and click **Create**.
 - **Manufacturer** -- e.g., "Ubiquiti"
 - **Model** -- e.g., "USW-48-PoE"
 - **Description** -- optional notes
+- **Datasheet URL** -- link to the manufacturer's datasheet (optional)
+- **Airflow** -- cooling direction: Front to Rear, Rear to Front, Passive, etc. (optional)
 
 **Units:**
 
@@ -49,6 +73,8 @@ Each block defines a group of ports within a unit:
   - **Even/Odd** -- even-numbered ports on top, odd on bottom
 - **Default Speed** -- 100M, 1G, 2.5G, 10G, or 100G
 - **Label** -- optional prefix for port labels
+- **PoE** -- Power over Ethernet type: 802.3af (15W), 802.3at (30W), 802.3bt Type 3 (60W), 802.3bt Type 4 (100W), Passive 24V, or Passive 48V. Ports generated from this block inherit the PoE setting. PoE ports are marked with a yellow "PoE" label in the port grid.
+- **Physical Type** -- (Management ports only) RJ45 or SFP, to indicate the physical connector type
 
 ### Smart Labels
 
@@ -75,6 +101,7 @@ Fields:
 - **Management IP** -- must be a valid IPv4 address
 - **Firmware Version** -- currently running firmware
 - **Layout Template** -- select a previously created template; this generates the port grid
+- **Stack Size** -- number of stacking members (1-8). Only visible when a template is selected. When set to more than 1, the template's ports are duplicated for each stack member with automatically incremented port labels (e.g., GigabitEthernet1/0/1 for member 1, GigabitEthernet2/0/1 for member 2). The port grid shows a visual divider between stack members.
 - **Role** -- Core, Distribution, Access, or Management
 - **Tags** -- freeform tags; type and press Enter to add, click a tag to remove
 - **Notes** -- freetext
@@ -92,6 +119,7 @@ Click any port in the grid to open a slideover panel. From there you can configu
 - **Speed** -- override the default speed
 - **Status** -- up, down, or disabled
 - **Connected Device** -- what is plugged into this port (see below)
+- **PoE** -- override or disable PoE for this specific port (inherited from the template block by default)
 - **Description** -- port-level notes
 
 ### Bulk Port Editing
