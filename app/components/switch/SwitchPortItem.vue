@@ -46,8 +46,8 @@
         </div>
       </div>
     </div>
-    <!-- PoE indicator: small lightning bolt at bottom center -->
-    <span v-if="port.poe" class="absolute bottom-0 left-1/2 -translate-x-1/2 text-amber-400 text-[8px] leading-none">⚡</span>
+    <!-- PoE indicator: lightning bolt to the right of the port -->
+    <span v-if="port.poe" class="absolute -right-2.5 top-1/2 -translate-y-1/2 text-amber-400 text-[8px] leading-none">⚡</span>
     <!-- LAG indicator: colored bottom border -->
     <div v-if="port.lag_group_id" class="absolute inset-x-0 bottom-0 h-[3px] rounded-b" :style="{ backgroundColor: lagColor }" />
   </div>
