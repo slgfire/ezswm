@@ -420,8 +420,14 @@ export function groupInterfacesToBlocks(
     const firstInterface = group.members[0].iface
     const startIndex = getTrailingNumber(firstInterface.name)
 
-    const rows = count >= 24 ? 2 : 1
-    const rowLayout = count >= 24 ? 'odd-even' as const : 'sequential' as const
+    // Determine row layout based on port count and type
+    // QSFP/SFP+ ports use 2 rows at lower counts since they're physically wider
+    const useDoubleRow = count >= 24
+      || (group.type === 'qsfp' && count >= 4)
+      || (group.type === 'sfp+' && count >= 8)
+      || (group.type === 'sfp' && count >= 8)
+    const rows = useDoubleRow ? 2 : 1
+    const rowLayout = useDoubleRow ? 'odd-even' as const : 'sequential' as const
 
     const block: LayoutBlock = {
       id: generateBlockId(),
