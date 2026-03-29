@@ -198,7 +198,7 @@
       :description="$t('templates.emptyDescription')"
     >
       <template #action>
-        <UButton to="/layout-templates/create" icon="i-heroicons-plus">
+        <UButton icon="i-heroicons-plus" @click="showCreateModal = true">
           {{ $t('templates.create') }}
         </UButton>
       </template>
@@ -211,7 +211,7 @@
       @confirm="handleDelete"
     />
 
-    <UModal v-model:open="showCreateModal" title="" description="">
+    <UModal v-model:open="showCreateModal" :title="$t('templates.create')" :description="$t('templates.manualDescription')">
       <template #body>
         <div class="p-2">
           <h2 class="text-lg font-semibold mb-4 text-center">{{ $t('templates.create') }}</h2>

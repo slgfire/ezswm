@@ -128,6 +128,7 @@
                         <USelect
                           v-model="block.poe_selection"
                           :items="poeOptions"
+                          :placeholder="$t('templates.poeNone')"
                           class="w-full"
                         />
                       </UFormField>
@@ -224,7 +225,6 @@ const speedOptions = [
 ]
 
 const airflowOptions = [
-  { label: '—', value: '' },
   { label: t('airflowOptions.front-to-rear'), value: 'front-to-rear' },
   { label: t('airflowOptions.rear-to-front'), value: 'rear-to-front' },
   { label: t('airflowOptions.left-to-right'), value: 'left-to-right' },
@@ -234,7 +234,6 @@ const airflowOptions = [
 ]
 
 const poeOptions = [
-  { label: t('templates.poeNone'), value: '' },
   { label: '802.3af (15.4W)', value: '802.3af' },
   { label: '802.3at (30W)', value: '802.3at' },
   { label: '802.3bt Type 3 (60W)', value: '802.3bt-type3' },

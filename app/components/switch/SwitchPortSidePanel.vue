@@ -110,8 +110,7 @@
           <USelect
             v-model="form.poe_selection"
             :items="poeOptions"
-            value-key="value"
-            label-key="label"
+            :placeholder="$t('templates.poeNone')"
             class="w-full"
           />
         </UFormField>
@@ -173,7 +172,6 @@ const allAllocations = ref<any[]>([])
 const selectedTaggedVlans = ref<number[]>([])
 
 const poeOptions = computed(() => [
-  { label: t('templates.poeNone'), value: '' },
   { label: '802.3af (15.4W)', value: '802.3af' },
   { label: '802.3at (30W)', value: '802.3at' },
   { label: '802.3bt Type 3 (60W)', value: '802.3bt-type3' },
