@@ -3,6 +3,12 @@
     <!-- Block-based rendering -->
     <template v-if="units && units.length">
       <div v-for="(unit, ui) in units" :key="unit.unit_number">
+        <!-- Stack member divider between stack members -->
+        <div v-if="shouldShowMemberDivider(ui)" class="col-span-full my-2 flex items-center gap-2">
+          <div class="h-px flex-1 bg-emerald-500/30"></div>
+          <span class="text-xs text-emerald-400 font-medium">{{ $t('switches.stackMember', { n: getMemberNumber(ui) }) }}</span>
+          <div class="h-px flex-1 bg-emerald-500/30"></div>
+        </div>
         <SwitchUnitDivider :label="unit.label || `Unit ${unit.unit_number}`" />
         <div class="rounded-lg border border-default bg-default/30 p-3">
           <div class="flex flex-wrap items-start gap-5">
@@ -105,6 +111,7 @@ const props = defineProps<{
   units?: any[]
   vlans?: any[]
   selectedPorts: string[]
+  stackSize?: number
 }>()
 
 const emit = defineEmits<{
@@ -123,7 +130,12 @@ function onPortClick(event: MouseEvent, portId: string) {
 
 function getPortsForBlock(unitNumber: number, block: any) {
   return props.ports
-    .filter(p => p.unit === unitNumber && p.index >= block.start_index && p.index < block.start_index + block.count)
+    .filter(p =>
+      p.unit === unitNumber &&
+      p.type === block.type &&
+      p.index >= block.start_index &&
+      p.index < block.start_index + block.count
+    )
     .sort((a, b) => a.index - b.index)
 }
 
@@ -159,6 +171,24 @@ function getRowsForBlock(unitNumber: number, block: any): any[][] {
 
 function needsExtraBottomSpace(_block: any): boolean {
   return false
+}
+
+// Stack member dividers: when stackSize > 1, insert a divider before every N-th unit
+const unitsPerMember = computed(() => {
+  if (!props.units?.length || !props.stackSize || props.stackSize <= 1) return 0
+  return Math.ceil(props.units.length / props.stackSize)
+})
+
+function shouldShowMemberDivider(unitIndex: number): boolean {
+  const n = unitsPerMember.value
+  if (!n) return false
+  return unitIndex > 0 && unitIndex % n === 0
+}
+
+function getMemberNumber(unitIndex: number): number {
+  const n = unitsPerMember.value
+  if (!n) return 1
+  return Math.floor(unitIndex / n) + 1
 }
 
 // VLANs actually used on ports (for legend)

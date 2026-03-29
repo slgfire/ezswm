@@ -57,6 +57,13 @@
             <UFormField :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
               <USelect v-model="form.layout_template_id" :items="templateOptions" :placeholder="$t('switches.fields.layoutTemplate')" value-key="value" class="w-full" />
             </UFormField>
+            <UFormField v-if="form.layout_template_id" :label="$t('switches.stackSize')" name="stack_size">
+              <USelect
+                v-model="form.stack_size"
+                :items="stackSizeOptions"
+                class="w-full"
+              />
+            </UFormField>
             <UFormField :label="$t('switches.fields.role')" name="role">
               <USelectMenu :search-input="false" v-model="form.role" :items="roleOptions" value-key="value" class="w-full" />
             </UFormField>
@@ -117,7 +124,8 @@ const form = reactive({
   layout_template_id: '',
   role: '',
   tags: [] as string[],
-  notes: ''
+  notes: '',
+  stack_size: 1
 })
 
 const roleOptions = computed(() => [
@@ -139,6 +147,11 @@ function addTag() {
 function removeTag(tag: string) {
   form.tags = form.tags.filter(t => t !== tag)
 }
+
+const stackSizeOptions = Array.from({ length: 8 }, (_, i) => ({
+  label: String(i + 1),
+  value: i + 1
+}))
 
 const templateOptions = computed(() => {
   const options: { label: string; value: string }[] = []
@@ -172,6 +185,7 @@ async function onSubmit() {
         delete body[key]
       }
     }
+    body.stack_size = form.stack_size > 1 ? form.stack_size : undefined
     if (siteId.value && siteId.value !== 'all') {
       body.site_id = siteId.value
     }

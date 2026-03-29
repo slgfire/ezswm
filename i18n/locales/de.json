@@ -120,6 +120,8 @@
     "edit": "Switch bearbeiten",
     "delete": "Switch löschen",
     "duplicate": "Switch duplizieren",
+    "stackSize": "Stack-Größe",
+    "stackMember": "Member {n}",
     "fields": {
       "name": "Name",
       "model": "Modell",
@@ -330,6 +332,21 @@
     "edit": "Vorlage bearbeiten",
     "delete": "Vorlage löschen",
     "detail": "Vorlagen-Details",
+    "importFromLibrary": "Aus Bibliothek importieren",
+    "manual": "Manuell",
+    "manualDescription": "Template von Grund auf erstellen",
+    "importDescription": "Aus der NetBox-Gerätebibliothek importieren",
+    "searchDevices": "Geräte suchen... (z.B. Cisco 9200)",
+    "libraryUnavailable": "Gerätebibliothek nicht verfügbar — keine Internetverbindung",
+    "noResults": "Keine Geräte gefunden für '{query}'",
+    "importDevice": "Importieren",
+    "preview": "Vorschau",
+    "datasheetUrl": "Datenblatt-URL",
+    "airflow": "Luftstrom",
+    "poe": "PoE",
+    "poeNone": "Keine",
+    "poeInherited": "Vom Template geerbt",
+    "physicalType": "Physischer Typ",
     "fields": {
       "name": "Name",
       "manufacturer": "Hersteller",
@@ -392,7 +409,9 @@
       "sequential": "Sequenziell",
       "oddEven": "Ungerade/Gerade",
       "evenOdd": "Gerade/Ungerade"
-    }
+    },
+    "skippedInterfacesTitle": "Einige Interfaces wurden übersprungen",
+    "skippedInterfacesDescription": "{count} Interfaces nicht unterstützt ({details}) — ezSWM unterstützt nur physische Switch-Ports."
   },
   "topology": {
     "title": "Netzwerk-Topologie",
@@ -538,5 +557,13 @@
     "qsfp": "QSFP",
     "console": "Konsole",
     "mgmt": "Mgmt"
+  },
+  "airflowOptions": {
+    "front-to-rear": "Front nach Hinten",
+    "rear-to-front": "Hinten nach Front",
+    "left-to-right": "Links nach Rechts",
+    "right-to-left": "Rechts nach Links",
+    "passive": "Passiv",
+    "mixed": "Gemischt"
   }
 }

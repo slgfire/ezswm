@@ -11,7 +11,8 @@
     <span class="text-xs font-semibold leading-none">{{ port.index }}</span>
     <span
       v-if="typeLabel"
-      class="mt-0.5 text-[7px] font-medium leading-none opacity-60"
+      class="mt-0.5 text-[7px] font-medium leading-none"
+      :class="port.poe ? 'text-amber-400' : 'opacity-60'"
     >{{ typeLabel }}</span>
     <!-- VLAN indicator (top-right): trunk = circle, access = square -->
     <div v-if="isTrunk" class="group/vlan absolute -top-2 -right-2 p-1">
@@ -46,6 +47,7 @@
         </div>
       </div>
     </div>
+    <!-- PoE is shown as "PoE" typeLabel, same as S+, CON, MGT -->
     <!-- LAG indicator: colored bottom border -->
     <div v-if="port.lag_group_id" class="absolute inset-x-0 bottom-0 h-[3px] rounded-b" :style="{ backgroundColor: lagColor }" />
   </div>
@@ -70,6 +72,7 @@ const typeLabel = computed(() => {
   if (props.port.type === 'sfp') return 'S'
   if (isConsole.value) return 'CON'
   if (isManagement.value) return 'MGT'
+  if (props.port.poe) return 'PoE'
   return ''
 })
 

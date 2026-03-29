@@ -259,11 +259,19 @@
             />
           </UFormField>
 
+          <UFormField v-if="editForm.layout_template_id" :label="$t('switches.stackSize')" name="stack_size">
+            <USelect
+              v-model="editForm.stack_size"
+              :items="stackSizeOptions"
+              class="w-full"
+            />
+          </UFormField>
+
           <UFormField :label="$t('switches.fields.role')" name="role">
             <USelectMenu :search-input="false"
               v-model="editForm.role"
               :items="editRoleOptions"
-
+              placeholder="---"
               value-key="value"
               class="w-full"
             />
@@ -398,11 +406,16 @@ const editForm = reactive({
   layout_template_id: '',
   role: '',
   tags: [] as string[],
-  notes: ''
+  notes: '',
+  stack_size: 1
 })
 
+const stackSizeOptions = Array.from({ length: 8 }, (_, i) => ({
+  label: String(i + 1),
+  value: i + 1
+}))
+
 const editRoleOptions = computed(() => [
-  { label: '---', value: '' },
   { label: t('switches.roles.core'), value: 'core' },
   { label: t('switches.roles.distribution'), value: 'distribution' },
   { label: t('switches.roles.access'), value: 'access' },
@@ -454,6 +467,7 @@ function openEditPanel() {
   editForm.role = item.value.role || ''
   editForm.tags = [...(item.value.tags || [])]
   editForm.notes = item.value.notes || ''
+  editForm.stack_size = (item.value as any).stack_size ?? 1
   editTagInput.value = ''
   editMode.value = true
 }
@@ -485,6 +499,7 @@ async function onSave() {
     if (body.layout_template_id === '') {
       delete body.layout_template_id
     }
+    body.stack_size = editForm.stack_size || 1
     await update(body)
     toast.add({ title: t('switches.messages.updated'), color: 'success' })
     editMode.value = false
@@ -524,7 +539,37 @@ async function onDelete() {
 watch([item, templates], () => {
   if (item.value?.layout_template_id) {
     const tpl = templates.value.find(t => t.id === item.value!.layout_template_id)
-    templateUnits.value = tpl?.units || []
+    const baseUnits = tpl?.units || []
+    const stackSize = item.value?.stack_size ?? 1
+
+    if (stackSize > 1 && baseUnits.length > 0) {
+      // Increment first number in label for stacking (client-side version)
+      const incrementLabel = (label: string, memberIdx: number): string => {
+        if (memberIdx === 1) return label
+        const match = label.match(/^(.*?)(\d+)(.*)$/)
+        if (match) return `${match[1]}${parseInt(match[2], 10) + memberIdx - 1}${match[3]}`
+        return `${memberIdx}/${label}`
+      }
+
+      // Duplicate units for each stack member with incremented block labels
+      const stacked: any[] = []
+      for (let member = 1; member <= stackSize; member++) {
+        for (const unit of baseUnits) {
+          stacked.push({
+            ...unit,
+            unit_number: unit.unit_number + (member - 1) * baseUnits.length,
+            label: unit.label ? `Member ${member} - ${unit.label}` : `Member ${member}`,
+            blocks: unit.blocks.map((b: any) => ({
+              ...b,
+              label: b.label ? incrementLabel(b.label, member) : b.label
+            }))
+          })
+        }
+      }
+      templateUnits.value = stacked
+    } else {
+      templateUnits.value = baseUnits
+    }
   } else {
     templateUnits.value = []
   }

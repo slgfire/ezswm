@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="mb-4 flex items-center justify-between">
       <h1 class="text-xl font-bold">{{ $t('templates.title') }}</h1>
-      <UButton to="/layout-templates/create" icon="i-heroicons-plus" size="sm">
+      <UButton icon="i-heroicons-plus" size="sm" @click="showCreateModal = true">
         {{ $t('templates.create') }}
       </UButton>
     </div>
@@ -198,7 +198,7 @@
       :description="$t('templates.emptyDescription')"
     >
       <template #action>
-        <UButton to="/layout-templates/create" icon="i-heroicons-plus">
+        <UButton icon="i-heroicons-plus" @click="showCreateModal = true">
           {{ $t('templates.create') }}
         </UButton>
       </template>
@@ -210,6 +210,35 @@
       :message="$t('templates.confirmDelete')"
       @confirm="handleDelete"
     />
+
+    <UModal v-model:open="showCreateModal" :title="$t('templates.create')" :description="$t('templates.manualDescription')">
+      <template #body>
+        <div class="p-2">
+          <h2 class="text-lg font-semibold mb-4 text-center">{{ $t('templates.create') }}</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Manual -->
+            <button
+              class="group flex flex-col items-center gap-3 p-6 rounded-xl border border-default hover:border-primary/50 hover:bg-primary/5 transition-all"
+              @click="navigateTo('/layout-templates/create')"
+            >
+              <UIcon name="i-heroicons-pencil-square" class="text-3xl text-primary" />
+              <span class="font-medium">{{ $t('templates.manual') }}</span>
+              <span class="text-sm text-dimmed text-center">{{ $t('templates.manualDescription') }}</span>
+            </button>
+
+            <!-- Library Import -->
+            <button
+              class="group flex flex-col items-center gap-3 p-6 rounded-xl border border-default hover:border-primary/50 hover:bg-primary/5 transition-all"
+              @click="navigateTo('/layout-templates/create?mode=import')"
+            >
+              <UIcon name="i-heroicons-cloud-arrow-down" class="text-3xl text-primary" />
+              <span class="font-medium">{{ $t('templates.importFromLibrary') }}</span>
+              <span class="text-sm text-dimmed text-center">{{ $t('templates.importDescription') }}</span>
+            </button>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
@@ -221,6 +250,7 @@ useHead({ title: t('templates.title') })
 const toast = useToast()
 const { items, loading, fetch, remove } = useLayoutTemplates()
 
+const showCreateModal = ref(false)
 const viewMode = ref<'grid' | 'table'>('grid')
 const searchQuery = ref('')
 const selectedManufacturer = ref('')
