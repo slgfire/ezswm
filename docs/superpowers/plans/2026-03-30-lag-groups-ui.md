@@ -12,7 +12,72 @@
 
 ---
 
-### Task 0: Backend — Rename LAG route param `[id]` → `[lagId]`
+### Task 0a: Shared utilities — resolvePortLabel + CSS lag-stripe class
+
+**Files:**
+- Create: `app/utils/ports.ts`
+- Modify: `app/assets/css/main.css`
+
+- [ ] **Step 1: Create port label utility**
+
+Create `app/utils/ports.ts`:
+
+```typescript
+/**
+ * Resolve a port ID to its human-readable label.
+ * Falls back to the raw ID if not found.
+ */
+export function resolvePortLabel(ports: { id: string; label?: string }[], portId: string): string {
+  return ports.find(p => p.id === portId)?.label || portId
+}
+```
+
+- [ ] **Step 2: Add `.lag-stripe` CSS class**
+
+In `app/assets/css/main.css`, add:
+
+```css
+.lag-stripe {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 5px,
+    rgba(148, 163, 184, 0.18) 5px,
+    rgba(148, 163, 184, 0.18) 7px
+  );
+}
+
+.lag-stripe-icon {
+  background-color: rgba(148, 163, 184, 0.1);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 2px,
+    rgba(148, 163, 184, 0.25) 2px,
+    rgba(148, 163, 184, 0.25) 3px
+  );
+}
+
+.lag-dimmed {
+  filter: brightness(0.5);
+}
+```
+
+- [ ] **Step 3: Verify build passes**
+
+Run: `npx nuxt build 2>&1 | tail -3`
+Expected: `✨ Build complete!`
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add app/utils/ports.ts app/assets/css/main.css
+git commit -m "feat(lag): add resolvePortLabel utility and lag-stripe CSS classes"
+```
+
+---
+
+### Task 0b: Backend — Rename LAG route param `[id]` → `[lagId]`
 
 **Files:**
 - Rename: `server/api/switches/[id]/lag-groups/[id].get.ts` → `server/api/switches/[id]/lag-groups/[lagId].get.ts`
@@ -240,7 +305,7 @@ export default defineEventHandler(async (event) => {
 
   const updated = lagGroupRepository.update(lagId, validated as Partial<Omit<LAGGroup, 'id' | 'switch_id' | 'created_at'>>)
 
-  // Compute port diff for metadata (server-side, don't trust client)
+  // Compute diff for metadata (server-side, don't trust client)
   const sw = switchRepository.getById(switchId)
   const resolveLabel = (pid: string) => sw?.ports.find(p => p.id === pid)?.label || pid
 
@@ -250,6 +315,13 @@ export default defineEventHandler(async (event) => {
     const removed = before.port_ids.filter(p => !validated.port_ids!.includes(p))
     if (added.length) metadata.added_ports = added.map(resolveLabel)
     if (removed.length) metadata.removed_ports = removed.map(resolveLabel)
+  }
+  // Log name/remote_device changes for audit trail
+  if (validated.name && validated.name !== before.name) {
+    metadata.before_name = before.name
+  }
+  if (validated.remote_device !== undefined && validated.remote_device !== before.remote_device) {
+    metadata.before_remote_device = before.remote_device || null
   }
 
   activityRepository.log({
@@ -518,31 +590,16 @@ const props = defineProps<{
 }>()
 ```
 
-Add diagonal stripe pattern as a computed style:
+Use the shared CSS classes instead of inline styles. In the root div's `:class` binding, add:
 ```typescript
-const lagPatternStyle = computed(() => {
-  if (!props.lagGroup) return {}
-  return {
-    backgroundImage: `repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(148,163,184,0.18) 5px, rgba(148,163,184,0.18) 7px)`
-  }
-})
+props.lagGroup ? 'lag-stripe' : '',
+props.dimmed ? 'lag-dimmed' : ''
 ```
 
-Merge `lagPatternStyle` into the existing `portStyle` computed:
+The `portStyle` computed can remain empty (or be removed if not used for other things):
 ```typescript
 const portStyle = computed(() => {
-  return { ...lagPatternStyle.value }
-})
-```
-
-Add dimming filter to the root element (uses `brightness` instead of `opacity` to keep text and status colors readable):
-```typescript
-// In the :style binding on root div, merge with portStyle:
-const portStyle = computed(() => {
-  return {
-    ...lagPatternStyle.value,
-    ...(props.dimmed ? { filter: 'brightness(0.5)' } : {}),
-  }
+  return {}
 })
 ```
 
@@ -563,15 +620,16 @@ Add a LAG hover tooltip. This tooltip is positioned **below** the port (VLAN too
 </div>
 ```
 
-Add computed for port label resolution (resolves port IDs to labels using the ports prop):
+Import and use the shared utility for port label resolution:
 ```typescript
+import { resolvePortLabel } from '~/utils/ports'
+
 const lagPortLabels = computed(() => {
-  if (!props.lagGroup) return []
-  // Port labels are resolved by the parent component and passed as enriched lagGroup
-  return props.lagGroup.port_ids?.map((pid: string) => {
-    // Label resolution happens in the parent (switch detail page) when building lagByPortId
-    return pid  // Will be enriched with labels in Task 8
-  }) || []
+  if (!props.lagGroup || !props.lagGroup.port_ids) return []
+  // Note: we need access to all ports for label resolution.
+  // The parent passes enriched lagGroup data with portLabels already resolved.
+  // Fallback to raw port_ids if portLabels not available.
+  return props.lagGroup.portLabels || props.lagGroup.port_ids
 })
 ```
 
@@ -668,8 +726,8 @@ After the existing legend `<div>`, add the LAG legend:
       @mouseleave="onLagLeave()"
       @click="$emit('edit-lag', lag)"
     >
-      <!-- Diagonal stripe icon -->
-      <span class="inline-block h-3 w-4 rounded-sm" style="background-image: repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(148,163,184,0.25) 2px, rgba(148,163,184,0.25) 3px); background-color: rgba(148,163,184,0.1);" />
+      <!-- Diagonal stripe icon (uses shared CSS class) -->
+      <span class="lag-stripe-icon inline-block h-3 w-4 rounded-sm" />
       <span class="font-medium text-gray-700 dark:text-gray-200">{{ lag.name }}</span>
       <span class="text-gray-400">{{ lag.port_ids.length }}p</span>
       <span v-if="lag.remote_device" class="text-gray-400">→ {{ lag.remote_device }}</span>
@@ -815,6 +873,7 @@ Create `app/components/switch/LagGroupSlideover.vue`:
 
 <script setup lang="ts">
 import type { LAGGroup } from '~~/types/lagGroup'
+import { resolvePortLabel } from '~/utils/ports'
 
 const props = defineProps<{
   switchId: string
@@ -842,8 +901,7 @@ const form = reactive({
 })
 
 function getPortLabel(portId: string): string {
-  const port = props.ports.find(p => p.id === portId)
-  return port?.label || portId
+  return resolvePortLabel(props.ports, portId)
 }
 
 function removePort(portId: string) {
@@ -991,19 +1049,20 @@ const canCreateLag = computed(() => {
 })
 ```
 
-Add the button in the selection bar, before the "Bulk Edit" button:
+Add the button in the selection bar, before the "Bulk Edit" button. Show an inline hint text when disabled (clearer than tooltip-only):
 ```html
-<UTooltip :text="canCreateLag.reason" :disabled="canCreateLag.allowed">
-  <UButton
-    size="xs"
-    variant="soft"
-    color="info"
-    :disabled="!canCreateLag.allowed"
-    @click="lagSlideoverRef?.openCreate(selectedPorts)"
-  >
-    {{ $t('lag.create') }}
-  </UButton>
-</UTooltip>
+<UButton
+  size="xs"
+  variant="soft"
+  color="info"
+  :disabled="!canCreateLag.allowed"
+  @click="lagSlideoverRef?.openCreate(selectedPorts)"
+>
+  {{ $t('lag.create') }}
+</UButton>
+<span v-if="!canCreateLag.allowed" class="text-xs text-amber-500">
+  {{ canCreateLag.reason }}
+</span>
 ```
 
 - [ ] **Step 3: Pass LAG data to SwitchPortGrid**
