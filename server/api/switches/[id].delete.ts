@@ -1,5 +1,6 @@
 import { switchRepository } from '../../repositories/switchRepository'
 import { activityRepository } from '../../repositories/activityRepository'
+import { lagGroupRepository } from '../../repositories/lagGroupRepository'
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params?.id
@@ -13,6 +14,9 @@ export default defineEventHandler(async (event) => {
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
   }
+
+  // Clean up LAG groups before deleting switch
+  lagGroupRepository.deleteBySwitchId(id)
 
   await switchRepository.delete(id)
 

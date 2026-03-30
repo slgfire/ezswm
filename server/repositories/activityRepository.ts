@@ -29,6 +29,7 @@ export const activityRepository = {
     entity_name: string
     changes?: Record<string, unknown>
     previous_state?: Record<string, unknown>
+    metadata?: Record<string, unknown>
   }): ActivityEntry {
     const entries = readJson<ActivityEntry[]>(FILE_NAME)
 
