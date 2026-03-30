@@ -565,5 +565,35 @@
     "right-to-left": "Right to Left",
     "passive": "Passive",
     "mixed": "Mixed"
+  },
+  "lag": {
+    "group": "LAG Group",
+    "create": "Create LAG",
+    "edit": "Edit LAG",
+    "delete": "Delete LAG",
+    "name": "Name",
+    "description": "Description",
+    "ports": "Ports",
+    "remoteDevice": "Remote Device",
+    "remoteDevicePlaceholder": "e.g. sw-core-01",
+    "removeFromLag": "Remove from LAG",
+    "noPortsSelected": "No ports selected",
+    "createDescription": "Group selected ports into a Link Aggregation",
+    "editDescription": "Modify LAG group properties",
+    "deleteConfirm": "Delete LAG \"{name}\"?",
+    "portsWillBeReleased": "The following ports will be released",
+    "showAll": "Show all ({n})",
+    "portCount": "{n} port | {n} ports",
+    "validation": {
+      "nameRequired": "Name is required",
+      "minPorts": "Select at least 2 ports",
+      "portInLag": "Port {port} is already in LAG \"{lag}\""
+    },
+    "messages": {
+      "created": "LAG group created",
+      "updated": "LAG group updated",
+      "deleted": "LAG group deleted",
+      "portRemoved": "Port removed from LAG"
+    }
   }
 }

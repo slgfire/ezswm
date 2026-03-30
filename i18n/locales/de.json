@@ -565,5 +565,35 @@
     "right-to-left": "Rechts nach Links",
     "passive": "Passiv",
     "mixed": "Gemischt"
+  },
+  "lag": {
+    "group": "LAG-Gruppe",
+    "create": "LAG erstellen",
+    "edit": "LAG bearbeiten",
+    "delete": "LAG löschen",
+    "name": "Name",
+    "description": "Beschreibung",
+    "ports": "Ports",
+    "remoteDevice": "Remote-Gerät",
+    "remoteDevicePlaceholder": "z.B. sw-core-01",
+    "removeFromLag": "Aus LAG entfernen",
+    "noPortsSelected": "Keine Ports ausgewählt",
+    "createDescription": "Ausgewählte Ports zu einer Link Aggregation gruppieren",
+    "editDescription": "LAG-Gruppe bearbeiten",
+    "deleteConfirm": "LAG \"{name}\" löschen?",
+    "portsWillBeReleased": "Folgende Ports werden freigegeben",
+    "showAll": "Alle anzeigen ({n})",
+    "portCount": "{n} Port | {n} Ports",
+    "validation": {
+      "nameRequired": "Name ist erforderlich",
+      "minPorts": "Mindestens 2 Ports auswählen",
+      "portInLag": "Port {port} ist bereits in LAG \"{lag}\""
+    },
+    "messages": {
+      "created": "LAG-Gruppe erstellt",
+      "updated": "LAG-Gruppe aktualisiert",
+      "deleted": "LAG-Gruppe gelöscht",
+      "portRemoved": "Port aus LAG entfernt"
+    }
   }
 }
