@@ -9,18 +9,29 @@
       props.dimmed ? 'lag-dimmed' : ''
     ]"
     :style="portStyle"
+    @mouseenter="hovered = true"
+    @mouseleave="hovered = false"
   >
-    <span class="text-xs font-semibold leading-none">{{ port.index }}</span>
+    <span class="relative z-10 text-xs font-semibold leading-none">{{ port.index }}</span>
     <span
       v-if="typeLabel"
-      class="mt-0.5 text-[7px] font-medium leading-none"
-      :class="port.poe ? 'text-amber-400' : 'opacity-60'"
+      class="relative z-10 mt-0.5 text-[7px] font-medium leading-none"
+      :class="port.poe ? 'text-amber-400' : 'opacity-80'"
     >{{ typeLabel }}</span>
-    <!-- VLAN indicator (top-right): trunk = circle, access = square -->
-    <div v-if="isTrunk" class="group/vlan absolute -top-2 -right-2 p-1">
+
+    <!-- VLAN indicator dot (top-right): trunk = circle with ring, access = sharp square -->
+    <div v-if="isTrunk" class="absolute -top-2 -right-2 p-1">
       <div class="h-3 w-3 rounded-full" :style="{ backgroundColor: vlanDotColor || '#FBBF24', boxShadow: '0 0 0 2px var(--ui-bg, #0a0a0a), 0 0 0 3px ' + (vlanDotColor || '#FBBF24') }" />
-      <div class="pointer-events-none absolute left-0 top-full z-50 hidden min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg group-hover/vlan:block">
-        <div class="space-y-1 text-xs">
+    </div>
+    <div v-else-if="vlanDotColor" class="absolute -top-2 -right-2 p-1">
+      <div class="h-2.5 w-2.5 ring-1 ring-white dark:ring-gray-900" style="border-radius: 0" :style="{ backgroundColor: vlanDotColor }" />
+    </div>
+
+    <!-- Combined hover tooltip (VLAN + LAG info) -->
+    <div v-if="hasTooltipContent" v-show="hovered" class="pointer-events-none absolute left-0 top-full z-[60] mt-1 min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg">
+      <div class="space-y-1.5 text-xs">
+        <!-- VLAN section -->
+        <template v-if="isTrunk">
           <div class="font-semibold text-gray-700 dark:text-gray-200">Trunk</div>
           <div v-if="port.native_vlan" class="flex items-center gap-1.5">
             <div class="h-2 w-2 flex-shrink-0 rounded" :style="{ backgroundColor: getVlanColor(port.native_vlan) }" />
@@ -33,33 +44,25 @@
             <span class="font-medium text-gray-700 dark:text-gray-200">{{ vid }}</span>
             <span class="truncate text-gray-400">{{ getVlanName(vid) }}</span>
           </div>
-        </div>
-      </div>
-    </div>
-    <div v-else-if="vlanDotColor" class="group/vlan absolute -top-2 -right-2 p-1">
-      <div class="h-2.5 w-2.5 ring-1 ring-white dark:ring-gray-900" style="border-radius: 0" :style="{ backgroundColor: vlanDotColor }" />
-      <div class="pointer-events-none absolute left-0 top-full z-50 hidden min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg group-hover/vlan:block">
-        <div class="space-y-1 text-xs">
+        </template>
+        <template v-else-if="vlanDotColor">
           <div class="font-semibold text-gray-700 dark:text-gray-200">Access</div>
           <div class="flex items-center gap-1.5">
             <div class="h-2 w-2 flex-shrink-0 rounded-sm" :style="{ backgroundColor: vlanDotColor }" />
             <span class="font-medium text-gray-700 dark:text-gray-200">{{ port.access_vlan || port.native_vlan }}</span>
             <span class="text-gray-400">{{ getVlanName(port.access_vlan || port.native_vlan) }}</span>
           </div>
-        </div>
-      </div>
-    </div>
-    <!-- PoE is shown as "PoE" typeLabel, same as S+, CON, MGT -->
-    <!-- LAG tooltip (below port) -->
-    <div v-if="lagGroup" class="group/lag absolute inset-0 z-10">
-      <div class="pointer-events-none absolute left-0 top-full z-[60] mt-1 hidden min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg group-hover/lag:block">
-        <div class="space-y-1 text-xs">
+        </template>
+
+        <!-- Separator if both VLAN and LAG -->
+        <div v-if="(isTrunk || vlanDotColor) && lagGroup" class="border-t border-default" />
+
+        <!-- LAG section -->
+        <template v-if="lagGroup">
           <div class="font-semibold text-gray-700 dark:text-gray-200">{{ lagGroup.name }}</div>
-          <div class="text-gray-400">
-            {{ lagGroup.port_ids?.length || 0 }} {{ $t('lag.ports') }}
-          </div>
+          <div class="text-gray-400">{{ lagGroup.port_ids?.length || 0 }} {{ $t('lag.ports') }}</div>
           <div v-if="lagGroup.remote_device" class="text-gray-400">→ {{ lagGroup.remote_device }}</div>
-        </div>
+        </template>
       </div>
     </div>
   </div>
@@ -74,11 +77,15 @@ const props = defineProps<{
   dimmed?: boolean
 }>()
 
+const hovered = ref(false)
 const isTrunk = computed(() => props.port.tagged_vlans && props.port.tagged_vlans.length > 0)
 const isQsfp = computed(() => props.port.type === 'qsfp')
 const isSfpType = computed(() => props.port.type === 'sfp' || props.port.type === 'sfp+')
 const isConsole = computed(() => props.port.type === 'console')
 const isManagement = computed(() => props.port.type === 'management')
+
+// Show tooltip if port has VLAN info or LAG info
+const hasTooltipContent = computed(() => isTrunk.value || vlanDotColor.value || props.lagGroup)
 
 const typeLabel = computed(() => {
   if (isQsfp.value) return 'Q'
@@ -117,7 +124,6 @@ function getVlanName(vlanId: number): string {
 
 const vlanDotColor = computed(() => {
   if (!props.vlans?.length) return null
-  // Access mode: use access_vlan, Trunk mode: use native_vlan
   const vlanId = props.port.access_vlan || props.port.native_vlan
   if (!vlanId) return null
   const vlan = props.vlans.find(v => v.vlan_id === vlanId)
