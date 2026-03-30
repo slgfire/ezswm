@@ -31,6 +31,8 @@
                   :port="port"
                   :vlans="vlans"
                   :selected="selectedPorts.includes(port.id)"
+                  :lag-group="lagByPortId?.get(port.id)"
+                  :dimmed="isDimmed(port.id)"
                   @click="onPortClick($event, port.id)"
                 />
               </div>
@@ -43,6 +45,8 @@
                 :port="port"
                 :vlans="vlans"
                 :selected="selectedPorts.includes(port.id)"
+                :lag-group="lagByPortId?.get(port.id)"
+                :dimmed="isDimmed(port.id)"
                 @click="onPortClick($event, port.id)"
               />
             </div>
@@ -60,6 +64,8 @@
         :port="port"
         :vlans="vlans"
         :selected="selectedPorts.includes(port.id)"
+        :lag-group="lagByPortId?.get(port.id)"
+        :dimmed="isDimmed(port.id)"
         @click="onPortClick($event, port.id)"
       />
     </div>
@@ -85,8 +91,8 @@
 
       <!-- Indicators -->
       <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.indicators') }}:</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-gray-400" /> Access</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-full bg-gray-400" /> Trunk</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 bg-gray-400" style="border-radius: 0" /> Access</span>
+      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-full bg-gray-400" style="box-shadow: 0 0 0 1.5px #0a0a0a, 0 0 0 2.5px #9ca3af" /> Trunk</span>
       <template v-if="vlans && vlans.length">
         <template v-for="vlan in usedVlans" :key="vlan.vlan_id">
           <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm" :style="{ backgroundColor: vlan.color }" /> VLAN {{ vlan.vlan_id }}</span>
@@ -100,6 +106,39 @@
         {{ $t('switches.ports.multiSelectHint') }}
       </span>
     </div>
+
+    <!-- LAG Legend -->
+    <div v-if="lagGroups?.length" class="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-default pt-3 text-[11px] text-gray-500 dark:text-gray-400">
+      <span class="font-semibold text-gray-600 dark:text-gray-300">LAG:</span>
+
+      <template v-for="lag in visibleLags" :key="lag.id">
+        <div
+          class="flex cursor-pointer items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 transition-all hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+          @mouseenter="onLagHover(lag.id)"
+          @mouseleave="onLagLeave()"
+          @click="$emit('edit-lag', lag)"
+        >
+          <span class="lag-stripe-icon inline-block h-3 w-4 rounded-sm" />
+          <span class="font-medium text-gray-700 dark:text-gray-200">{{ lag.name }}</span>
+          <span class="text-gray-400">{{ lag.port_ids.length }}p</span>
+          <span v-if="lag.remote_device" class="text-gray-400">&rarr; {{ lag.remote_device }}</span>
+          <button
+            class="ml-1 rounded p-0.5 text-gray-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/30"
+            @click.stop="$emit('delete-lag', lag)"
+          >
+            <UIcon name="i-heroicons-x-mark" class="h-3 w-3" />
+          </button>
+        </div>
+      </template>
+
+      <button
+        v-if="lagGroups.length > 3"
+        class="text-primary-500 hover:text-primary-400 text-[11px]"
+        @click="lagExpanded = !lagExpanded"
+      >
+        {{ lagExpanded ? $t('common.showLess') : $t('lag.showAll', { n: lagGroups.length }) }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -112,12 +151,42 @@ const props = defineProps<{
   vlans?: any[]
   selectedPorts: string[]
   stackSize?: number
+  lagGroups?: any[]
+  lagByPortId?: Map<string, any>
 }>()
 
 const emit = defineEmits<{
   'select-port': [portId: string]
   'toggle-select': [portId: string]
+  'edit-lag': [lag: any]
+  'delete-lag': [lag: any]
 }>()
+
+const highlightedLagId = ref<string | null>(null)
+
+function isDimmed(portId: string): boolean {
+  if (!highlightedLagId.value) return false
+  if (props.selectedPorts.length > 0) return false  // selection takes priority
+  const portLag = props.lagByPortId?.get(portId)
+  return !portLag || portLag.id !== highlightedLagId.value
+}
+
+const lagExpanded = ref(false)
+
+const visibleLags = computed(() => {
+  if (!props.lagGroups) return []
+  if (lagExpanded.value || props.lagGroups.length <= 3) return props.lagGroups
+  return props.lagGroups.slice(0, 3)
+})
+
+function onLagHover(lagId: string) {
+  if (props.selectedPorts.length > 0) return
+  highlightedLagId.value = lagId
+}
+
+function onLagLeave() {
+  highlightedLagId.value = null
+}
 
 function onPortClick(event: MouseEvent, portId: string) {
   if (event.ctrlKey || event.metaKey) {

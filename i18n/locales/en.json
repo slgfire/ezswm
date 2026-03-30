@@ -97,7 +97,8 @@
     "hideDetails": "Hide details",
     "showDetails": "Show details",
     "comingSoon": "Coming Soon",
-    "inDevelopment": "In Development"
+    "inDevelopment": "In Development",
+    "showLess": "Show less"
   },
   "dashboard": {
     "emptyTitle": "Welcome to ezSWM!",
