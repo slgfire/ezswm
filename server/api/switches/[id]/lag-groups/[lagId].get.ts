@@ -1,7 +1,7 @@
 import { lagGroupRepository } from '../../../../repositories/lagGroupRepository'
 
 export default defineEventHandler((event) => {
-  const lagId = event.context.params?.id
+  const lagId = event.context.params?.lagId
   if (!lagId) throw createError({ statusCode: 400, message: 'LAG group ID required' })
 
   const group = lagGroupRepository.getById(lagId)
