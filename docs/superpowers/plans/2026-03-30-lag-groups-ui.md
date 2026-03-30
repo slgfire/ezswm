@@ -12,6 +12,59 @@
 
 ---
 
+### Task 0: Backend — Rename LAG route param `[id]` → `[lagId]`
+
+**Files:**
+- Rename: `server/api/switches/[id]/lag-groups/[id].get.ts` → `server/api/switches/[id]/lag-groups/[lagId].get.ts`
+- Rename: `server/api/switches/[id]/lag-groups/[id].put.ts` → `server/api/switches/[id]/lag-groups/[lagId].put.ts`
+- Rename: `server/api/switches/[id]/lag-groups/[id].delete.ts` → `server/api/switches/[id]/lag-groups/[lagId].delete.ts`
+
+**Why:** The current routes use `[id]` for both switch and LAG params (`switches/[id]/lag-groups/[id]`). Nuxt can't reliably distinguish them via `event.context.params?.id`. The codebase already solves this for other nested routes: `ports/[portId]`, `allocations/[allocId]`, `ranges/[rangeId]`.
+
+- [ ] **Step 1: Rename files**
+
+```bash
+cd server/api/switches/[id]/lag-groups
+mv '[id].get.ts' '[lagId].get.ts'
+mv '[id].put.ts' '[lagId].put.ts'
+mv '[id].delete.ts' '[lagId].delete.ts'
+```
+
+- [ ] **Step 2: Update param access in each file**
+
+In all three renamed files, change `event.context.params?.id` to `event.context.params?.lagId` for the LAG ID:
+
+`[lagId].get.ts`:
+```typescript
+const lagId = event.context.params?.lagId
+```
+
+`[lagId].put.ts`:
+```typescript
+const lagId = event.context.params?.lagId
+```
+
+`[lagId].delete.ts`:
+```typescript
+const lagId = event.context.params?.lagId
+```
+
+The switch ID remains accessible via `event.context.params?.id` from the parent `switches/[id]/` segment.
+
+- [ ] **Step 3: Verify build passes**
+
+Run: `npx nuxt build 2>&1 | tail -3`
+Expected: `✨ Build complete!`
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add server/api/switches/\[id\]/lag-groups/
+git commit -m "refactor(lag): rename route param [id] to [lagId] for disambiguation"
+```
+
+---
+
 ### Task 1: Backend — ActivityEntry metadata field + switch delete cleanup
 
 **Files:**
@@ -115,8 +168,8 @@ git commit -m "feat(lag): add metadata field to ActivityEntry, cleanup LAGs on s
 
 **Files:**
 - Modify: `server/api/switches/[id]/lag-groups/index.post.ts`
-- Modify: `server/api/switches/[id]/lag-groups/[id].put.ts`
-- Modify: `server/api/switches/[id]/lag-groups/[id].delete.ts`
+- Modify: `server/api/switches/[id]/lag-groups/[lagId].put.ts`
+- Modify: `server/api/switches/[id]/lag-groups/[lagId].delete.ts`
 
 - [ ] **Step 1: Add activity logging to LAG create**
 
@@ -162,7 +215,7 @@ export default defineEventHandler(async (event) => {
 
 - [ ] **Step 2: Add activity logging to LAG update with port diff**
 
-Replace `server/api/switches/[id]/lag-groups/[id].put.ts`:
+Replace `server/api/switches/[id]/lag-groups/[lagId].put.ts`:
 
 ```typescript
 import { lagGroupRepository } from '../../../../repositories/lagGroupRepository'
@@ -175,7 +228,7 @@ export default defineEventHandler(async (event) => {
   const switchId = event.context.params?.id
   if (!switchId) throw createError({ statusCode: 400, message: 'Switch ID required' })
 
-  const lagId = getRouterParam(event, 'id')
+  const lagId = event.context.params?.lagId
   if (!lagId) throw createError({ statusCode: 400, message: 'LAG group ID required' })
 
   const body = await readBody(event)
@@ -187,7 +240,7 @@ export default defineEventHandler(async (event) => {
 
   const updated = lagGroupRepository.update(lagId, validated as Partial<Omit<LAGGroup, 'id' | 'switch_id' | 'created_at'>>)
 
-  // Compute port diff for metadata
+  // Compute port diff for metadata (server-side, don't trust client)
   const sw = switchRepository.getById(switchId)
   const resolveLabel = (pid: string) => sw?.ports.find(p => p.id === pid)?.label || pid
 
@@ -212,11 +265,9 @@ export default defineEventHandler(async (event) => {
 })
 ```
 
-Note: This handler uses `getRouterParam(event, 'id')` because both `switchId` and `lagId` come from `[id]` params. The first `event.context.params?.id` resolves to the switch ID based on Nuxt's route param resolution order. If this causes issues, the param names in the file path `switches/[id]/lag-groups/[id]` may need disambiguation — test this during implementation and adjust if needed (e.g., parse from the URL path directly).
-
 - [ ] **Step 3: Add activity logging to LAG delete**
 
-Replace `server/api/switches/[id]/lag-groups/[id].delete.ts`:
+Replace `server/api/switches/[id]/lag-groups/[lagId].delete.ts`:
 
 ```typescript
 import { lagGroupRepository } from '../../../../repositories/lagGroupRepository'
@@ -227,7 +278,7 @@ export default defineEventHandler((event) => {
   const switchId = event.context.params?.id
   if (!switchId) throw createError({ statusCode: 400, message: 'Switch ID required' })
 
-  const lagId = getRouterParam(event, 'id')
+  const lagId = event.context.params?.lagId
   if (!lagId) throw createError({ statusCode: 400, message: 'LAG group ID required' })
 
   // Get before delete for logging
@@ -484,22 +535,27 @@ const portStyle = computed(() => {
 })
 ```
 
-Add dimming class to the root element:
+Add dimming filter to the root element (uses `brightness` instead of `opacity` to keep text and status colors readable):
 ```typescript
-// In the :class binding on root div, add:
-dimmed ? 'brightness-50' : ''
+// In the :style binding on root div, merge with portStyle:
+const portStyle = computed(() => {
+  return {
+    ...lagPatternStyle.value,
+    ...(props.dimmed ? { filter: 'brightness(0.5)' } : {}),
+  }
+})
 ```
 
-Add a LAG hover tooltip (same pattern as VLAN tooltip, positioned below the port):
+Add a LAG hover tooltip. This tooltip is positioned **below** the port (VLAN tooltips are top-right) to avoid overlap. Uses `z-index: 60` (VLAN tooltips use `z-index: 50`):
 ```html
-<!-- LAG tooltip -->
-<div v-if="lagGroup" class="group/lag absolute -bottom-1 -left-1 p-1">
-  <div class="pointer-events-none absolute left-0 bottom-full z-50 mb-1 hidden min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg group-hover/lag:block">
+<!-- LAG tooltip (below port, higher z-index than VLAN tooltip) -->
+<div v-if="lagGroup" class="group/lag absolute inset-0 z-10">
+  <div class="pointer-events-none absolute left-0 top-full z-[60] mt-1 hidden min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg group-hover/lag:block">
     <div class="space-y-1 text-xs">
       <div class="font-semibold text-gray-700 dark:text-gray-200">{{ lagGroup.name }}</div>
-      <div v-if="lagGroup.portLabels" class="text-gray-400">
-        {{ lagGroup.portLabels.slice(0, 4).join(', ') }}
-        <span v-if="lagGroup.portLabels.length > 4"> +{{ lagGroup.portLabels.length - 4 }} more</span>
+      <div v-if="lagPortLabels.length" class="text-gray-400">
+        {{ lagPortLabels.slice(0, 4).join(', ') }}
+        <span v-if="lagPortLabels.length > 4"> +{{ lagPortLabels.length - 4 }} more</span>
       </div>
       <div v-if="lagGroup.remote_device" class="text-gray-400">→ {{ lagGroup.remote_device }}</div>
     </div>
@@ -507,7 +563,22 @@ Add a LAG hover tooltip (same pattern as VLAN tooltip, positioned below the port
 </div>
 ```
 
-Note: The tooltip should trigger on hovering the port itself, not a separate element. Adjust positioning so it doesn't overlap the VLAN tooltip (top-right). The LAG tooltip appears on hover of the entire port when the port is in a LAG.
+Add computed for port label resolution (resolves port IDs to labels using the ports prop):
+```typescript
+const lagPortLabels = computed(() => {
+  if (!props.lagGroup) return []
+  // Port labels are resolved by the parent component and passed as enriched lagGroup
+  return props.lagGroup.port_ids?.map((pid: string) => {
+    // Label resolution happens in the parent (switch detail page) when building lagByPortId
+    return pid  // Will be enriched with labels in Task 8
+  }) || []
+})
+```
+
+**Tooltip z-index hierarchy:**
+- VLAN tooltip (top-right): `z-50`
+- LAG tooltip (below port): `z-[60]`
+- Both use `pointer-events-none` + `group-hover` pattern, so only one shows at a time based on hover target area.
 
 - [ ] **Step 3: Remove old LAG color logic**
 
@@ -1023,25 +1094,29 @@ async function onLagSaved() {
 
 - [ ] **Step 6: Handle deep-link `?lag=` query parameter**
 
-Add auto-highlight/open logic for the `?lag=` query param:
+Use a `watch` on `lagById` instead of `nextTick` to handle the race condition where LAG data may not be loaded yet when `onMounted` runs:
 
 ```typescript
-onMounted(async () => {
-  await fetchSwitch()
-  await fetchTemplates()
-  await fetchVlans(siteParams.value)
-  await fetchLags()
+// Deep-link: ?lag=xyz opens the LAG slideover when data is ready
+const lagParam = route.query.lag as string | undefined
+if (lagParam) {
+  const stopWatch = watch(lagById, (map) => {
+    const lag = map.get(lagParam)
+    if (lag) {
+      lagSlideoverRef.value?.openEdit(lag)
+      stopWatch()  // only trigger once
+    }
+  }, { immediate: true })
+}
+```
 
-  // Deep-link: ?lag=xyz opens the LAG slideover
-  const lagParam = route.query.lag as string | undefined
-  if (lagParam) {
-    nextTick(() => {
-      const lag = lagById.value.get(lagParam)
-      if (lag) {
-        lagSlideoverRef.value?.openEdit(lag)
-      }
-    })
-  }
+Keep `onMounted` as before (without the `nextTick` block):
+```typescript
+onMounted(() => {
+  fetchSwitch()
+  fetchTemplates()
+  fetchVlans(siteParams.value)
+  fetchLags()
 })
 ```
 
