@@ -4,7 +4,9 @@
     :class="[
       portClasses,
       selected ? 'ring-2 ring-primary-500' : '',
-      portShapeClasses
+      portShapeClasses,
+      props.lagGroup ? 'lag-stripe' : '',
+      props.dimmed ? 'lag-dimmed' : ''
     ]"
     :style="portStyle"
   >
@@ -16,7 +18,7 @@
     >{{ typeLabel }}</span>
     <!-- VLAN indicator (top-right): trunk = circle, access = square -->
     <div v-if="isTrunk" class="group/vlan absolute -top-2 -right-2 p-1">
-      <div class="h-2.5 w-2.5 rounded-full ring-1 ring-white dark:ring-gray-900" :style="{ backgroundColor: vlanDotColor || '#FBBF24' }" />
+      <div class="h-3 w-3 rounded-full" :style="{ backgroundColor: vlanDotColor || '#FBBF24', boxShadow: '0 0 0 2px var(--ui-bg, #0a0a0a), 0 0 0 3px ' + (vlanDotColor || '#FBBF24') }" />
       <div class="pointer-events-none absolute left-0 top-full z-50 hidden min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg group-hover/vlan:block">
         <div class="space-y-1 text-xs">
           <div class="font-semibold text-gray-700 dark:text-gray-200">Trunk</div>
@@ -35,7 +37,7 @@
       </div>
     </div>
     <div v-else-if="vlanDotColor" class="group/vlan absolute -top-2 -right-2 p-1">
-      <div class="h-2.5 w-2.5 rounded-sm ring-1 ring-white dark:ring-gray-900" :style="{ backgroundColor: vlanDotColor }" />
+      <div class="h-2.5 w-2.5 ring-1 ring-white dark:ring-gray-900" style="border-radius: 0" :style="{ backgroundColor: vlanDotColor }" />
       <div class="pointer-events-none absolute left-0 top-full z-50 hidden min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg group-hover/vlan:block">
         <div class="space-y-1 text-xs">
           <div class="font-semibold text-gray-700 dark:text-gray-200">Access</div>
@@ -48,8 +50,18 @@
       </div>
     </div>
     <!-- PoE is shown as "PoE" typeLabel, same as S+, CON, MGT -->
-    <!-- LAG indicator: colored bottom border -->
-    <div v-if="port.lag_group_id" class="absolute inset-x-0 bottom-0 h-[3px] rounded-b" :style="{ backgroundColor: lagColor }" />
+    <!-- LAG tooltip (below port) -->
+    <div v-if="lagGroup" class="group/lag absolute inset-0 z-10">
+      <div class="pointer-events-none absolute left-0 top-full z-[60] mt-1 hidden min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg group-hover/lag:block">
+        <div class="space-y-1 text-xs">
+          <div class="font-semibold text-gray-700 dark:text-gray-200">{{ lagGroup.name }}</div>
+          <div class="text-gray-400">
+            {{ lagGroup.port_ids?.length || 0 }} {{ $t('lag.ports') }}
+          </div>
+          <div v-if="lagGroup.remote_device" class="text-gray-400">→ {{ lagGroup.remote_device }}</div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -58,6 +70,8 @@ const props = defineProps<{
   port: any
   vlans?: any[]
   selected: boolean
+  lagGroup?: any
+  dimmed?: boolean
 }>()
 
 const isTrunk = computed(() => props.port.tagged_vlans && props.port.tagged_vlans.length > 0)
@@ -74,15 +88,6 @@ const typeLabel = computed(() => {
   if (isManagement.value) return 'MGT'
   if (props.port.poe) return 'PoE'
   return ''
-})
-
-// Deterministic color from LAG group ID — same ID always gets same color
-const lagColors = ['#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#EF4444', '#06B6D4', '#84CC16']
-const lagColor = computed(() => {
-  if (!props.port.lag_group_id) return ''
-  let hash = 0
-  for (const ch of props.port.lag_group_id) hash = ((hash << 5) - hash + ch.charCodeAt(0)) | 0
-  return lagColors[Math.abs(hash) % lagColors.length]
 })
 
 const portShapeClasses = computed(() => {
