@@ -174,7 +174,7 @@ End-to-end tests: 11/11 passed
 ## Project Statistics
 
 - 21 pages
-- 14 components
+- 15 components
 - 8 composables
 - 67 API routes
 - 10 repositories
@@ -255,10 +255,63 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 14: LAG Groups UI (2026-03-31)
+
+**LAG Group Management:**
+- Upgraded useLagGroups composable with TypeScript types and precomputed lookup maps (lagById, lagByPortId)
+- Created LagGroupSlideover component for create/edit LAG (dynamic title, port badges, validation)
+- Added "Create LAG" button to port multi-select bulk action bar with inline validation hints
+- Added LAG legend section to port grid with collapse/expand (≤3 inline, >3 collapsible)
+- Added hover-highlight: hovering LAG in legend dims non-member ports (brightness filter)
+- Added LAG group display in port side panel with "Remove from LAG" action
+- Added LAG deep-link support (?lag=id opens edit slideover)
+
+**Port Visualization Fixes:**
+- Replaced LAG bottom-stripe indicator with diagonal stripe pattern (CSS class .lag-stripe)
+- Added LAG hover tooltip on ports (name, port count, remote device)
+- Fixed Access vs Trunk VLAN dot: Access = sharp square, Trunk = circle with outer ring
+
+**Backend Improvements:**
+- Added `metadata` field to ActivityEntry type for structured audit logging
+- Added activity logging to all LAG API routes (create/update/delete) with port labels and diffs
+- Added LAG cleanup on switch deletion (lagGroupRepository.deleteBySwitchId)
+- Renamed route param [id] to [lagId] for LAG routes (disambiguation)
+- Added LAG groups to global search API with deep-link URLs
+
+**Shared Utilities:**
+- Created app/utils/ports.ts with resolvePortLabel utility
+- Added .lag-stripe, .lag-stripe-icon, .lag-dimmed CSS classes
+
+**i18n:**
+- Added full LAG translation keys (EN + DE) with pluralization and validation messages
+
+**Files changed:**
+- `types/activity.ts` — metadata field
+- `server/repositories/activityRepository.ts` — metadata in log()
+- `server/api/switches/[id].delete.ts` — LAG cleanup
+- `server/api/switches/[id]/lag-groups/` — renamed to [lagId], added activity logging
+- `server/api/search.get.ts` — LAG search
+- `app/utils/ports.ts` — new utility
+- `app/assets/css/main.css` — LAG CSS classes
+- `app/composables/useLagGroups.ts` — typed with lookup maps
+- `app/components/switch/SwitchPortItem.vue` — diagonal stripes, tooltip, dot fix
+- `app/components/switch/SwitchPortGrid.vue` — LAG legend, hover-highlight
+- `app/components/switch/SwitchPortSidePanel.vue` — LAG display + remove
+- `app/components/switch/LagGroupSlideover.vue` — new component
+- `app/components/layout/AppHeader.vue` — LAG in search results
+- `app/pages/sites/[siteId]/switches/[id].vue` — LAG integration
+- `i18n/locales/en.json`, `i18n/locales/de.json` — LAG translations
+
+**Verification:**
+- `npx nuxt typecheck`: 0 errors
+- `npm run build`: Passes
+- Unit tests: 105/105 passing
+
+---
+
 ## Open Issues
 
 - Topology page: interactive network diagram (Coming Soon placeholder in UI)
-- LAG Groups: UI for creating/managing Link Aggregation Groups, assigning ports, visual indicator on port grid (bottom border/stripe prepared)
 - Print view CSS not implemented
 - Form validation is server-side only (no real-time client validation)
 - Dashboard widget reordering not implemented
@@ -283,7 +336,6 @@ End-to-end tests: 11/11 passed
 
 ### Larger Features
 - Topology: interactive graph visualization (v-network-graph or similar)
-- LAG Groups: CRUD API + UI for managing LAG groups per switch
 - Dashboard widgets customizable — drag & drop reorder KPI cards
 - PDF export — switch front panel as printable PDF
 - IPv6 support
