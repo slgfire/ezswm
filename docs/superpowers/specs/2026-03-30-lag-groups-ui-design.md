@@ -107,6 +107,7 @@ Below the port grid legend, add a LAG section showing all LAGs for this switch.
 - Non-member ports dim to `opacity: 0.3`
 - Provides instant visual feedback about which ports belong to which LAG
 - Same highlight applied when hovering a LAG port's tooltip
+- **Edge case — Selection vs Hover:** If ports are currently selected (multi-select active), hover-highlight is disabled. Selection always takes visual priority over hover to avoid visual chaos.
 
 **Delete UX:**
 - Confirmation dialog shows LAG name AND lists all member port labels that will be released
@@ -117,6 +118,7 @@ Below the port grid legend, add a LAG section showing all LAGs for this switch.
 When viewing a single port in the SwitchPortSidePanel:
 - Show "LAG Group" field (read-only display if member, or "None")
 - If port is in a LAG: show LAG name as a badge, with "Remove from LAG" action button
+- "Remove from LAG" is a direct API call (PUT to update LAG's port_ids) + toast notification — no additional confirmation needed since it's a non-destructive, easily reversible action
 - No LAG assignment dropdown in port editor (LAGs are managed via multi-select + create, not per-port assignment)
 
 ### 6. Composable Improvements
@@ -137,8 +139,15 @@ Upgrade `useLagGroups.ts`:
 **Activity logging:**
 - Add `activityRepository.log()` calls to all LAG API routes (create, update, delete)
 - Action types: `create`, `update`, `delete` with entity_type `lag_group`
-- Include `entity_name` (LAG name) and `previous_state` with port labels for meaningful audit trail
-- Example: `{ entity_type: 'lag_group', action: 'create', entity_name: 'LAG1', previous_state: { ports: ['Gi1/0/1', 'Gi1/0/2'] } }`
+- Use a new `metadata` field on ActivityEntry (not `previous_state`) for semantic correctness
+- Add `metadata?: Record<string, unknown>` to the ActivityEntry type
+
+Activity log metadata per action:
+```
+create:  { metadata: { ports: ['Gi1/0/1', 'Gi1/0/2'], port_count: 2 } }
+update:  { metadata: { added_ports: ['Gi1/0/3'], removed_ports: ['Gi1/0/1'] } }
+delete:  { metadata: { ports: ['Gi1/0/1', 'Gi1/0/2'], port_count: 2 } }
+```
 
 ### 8. i18n
 
@@ -157,7 +166,7 @@ Add LAG groups to the search API results with proper structure:
 - `type: 'lag_group'`
 - `title: lagName`
 - `subtitle: 'Switch {switchName} · {n} ports'`
-- `url: /sites/{siteId}/switches/{switchId}` (navigates to switch detail page)
+- `url: /sites/{siteId}/switches/{switchId}?lag={lagId}` (deep-links to switch with LAG highlighted/slideover open)
 
 ## Files to Modify
 
@@ -167,7 +176,7 @@ Add LAG groups to the search API results with proper structure:
 - `app/components/switch/SwitchPortSidePanel.vue` — Add LAG group display field with remove action
 
 **Frontend — New Components:**
-- `app/components/switch/LagGroupSlideover.vue` — Create/edit LAG form with port badges and validation
+- `app/components/switch/LagGroupSlideover.vue` — Create/edit LAG form with port badges and validation (dynamic title: "Create LAG" / "Edit LAG", dynamic button: "Create" / "Save")
 
 **Frontend — Pages:**
 - `app/pages/sites/[siteId]/switches/[id].vue` — Fetch LAGs, pass to grid, add "Create LAG" to bulk actions with validation
@@ -175,10 +184,13 @@ Add LAG groups to the search API results with proper structure:
 **Frontend — Composables:**
 - `app/composables/useLagGroups.ts` — Add types, lagById, lagByPortId computed maps
 
+**Backend — Types:**
+- `types/activity.ts` — Add `metadata?: Record<string, unknown>` to ActivityEntry
+
 **Backend — API:**
 - `server/api/switches/[id].delete.ts` — Add LAG cleanup
 - `server/api/switches/[id]/lag-groups/index.post.ts` — Add activity logging with metadata
-- `server/api/switches/[id]/lag-groups/[id].put.ts` — Add activity logging with metadata
+- `server/api/switches/[id]/lag-groups/[id].put.ts` — Add activity logging with metadata (added/removed ports)
 - `server/api/switches/[id]/lag-groups/[id].delete.ts` — Add activity logging with metadata
 - `server/api/search.get.ts` — Add LAG groups to search results
 
