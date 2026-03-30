@@ -98,7 +98,8 @@
     "showDetails": "Details anzeigen",
     "comingSoon": "Demnächst",
     "inDevelopment": "In Entwicklung",
-    "showLess": "Weniger anzeigen"
+    "showLess": "Weniger anzeigen",
+    "none": "Keine"
   },
   "dashboard": {
     "emptyTitle": "Willkommen bei ezSWM!",

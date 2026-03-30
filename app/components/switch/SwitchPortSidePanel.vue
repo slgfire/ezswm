@@ -114,6 +114,24 @@
             class="w-full"
           />
         </UFormField>
+
+        <USeparator />
+
+        <UFormField :label="$t('lag.group')">
+          <div v-if="lagGroup" class="flex items-center gap-2">
+            <UBadge color="info" variant="soft" size="sm">{{ lagGroup.name }}</UBadge>
+            <span v-if="lagGroup.remote_device" class="text-xs text-gray-400">→ {{ lagGroup.remote_device }}</span>
+            <UButton
+              size="xs"
+              variant="ghost"
+              color="error"
+              @click="onRemoveFromLag"
+            >
+              {{ $t('lag.removeFromLag') }}
+            </UButton>
+          </div>
+          <span v-else class="text-sm text-gray-400">{{ $t('common.none') }}</span>
+        </UFormField>
       </div>
 
       <div v-if="showSetUpPrompt" class="mt-4 rounded-lg border border-primary-500/30 bg-primary-500/10 p-3">
@@ -141,10 +159,12 @@
 const props = defineProps<{
   port: any
   switchId: string
+  lagGroup?: any
 }>()
 
 const emit = defineEmits<{
   saved: []
+  'remove-from-lag': [lagId: string, portId: string]
 }>()
 
 const isOpen = defineModel<boolean>()
@@ -322,6 +342,11 @@ async function save() {
     await $fetch(`/api/switches/${props.switchId}/ports/${props.port.id}`, { method: 'PUT', body })
     toast.add({ title: t('switches.ports.portUpdated'), color: 'success' }); emit('saved'); isOpen.value = false
   } catch (e: any) { toast.add({ title: e.data?.message || 'Failed', color: 'error' }) }
+}
+
+function onRemoveFromLag() {
+  if (!props.lagGroup || !props.port) return
+  emit('remove-from-lag', props.lagGroup.id, props.port.id)
 }
 
 async function resetPort() {
