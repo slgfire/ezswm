@@ -237,14 +237,14 @@ function relativeTime(timestamp: string): string {
   return `vor ${days}d`
 }
 
-function activityLink(entry: any): string | null {
-  if (!entry.entity_id) return null
+function activityLink(entry: any): string | undefined {
+  if (!entry.entity_id) return undefined
   const base = `/sites/${siteId.value}`
   switch (entry.entity_type) {
     case 'switch': return `${base}/switches/${entry.entity_id}`
     case 'vlan': return `${base}/vlans`
     case 'network': return `${base}/networks/${entry.entity_id}`
-    default: return null
+    default: return undefined
   }
 }
 

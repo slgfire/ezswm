@@ -9,6 +9,7 @@
     :ui="{ item: 'items-center' }"
     @update:model-value="onSelect"
   >
+    <!-- @vue-ignore -->
     <template #label>
       <div v-if="modelValue.length" class="flex flex-wrap items-center gap-1">
         <span

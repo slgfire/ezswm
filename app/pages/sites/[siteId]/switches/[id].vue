@@ -216,7 +216,7 @@
     <USlideover v-model:open="editMode" :title="$t('switches.edit')" description="Modify switch properties">
 
       <template #body>
-        <UForm ref="editFormRef" :state="editForm" :validate="validateEdit" :validate-on="['blur', 'submit']" novalidate class="space-y-4" @submit="onSave">
+        <UForm ref="editFormRef" :state="editForm" :validate="validateEdit" :validate-on="['blur', 'change']" novalidate class="space-y-4" @submit="onSave">
           <UFormField :label="$t('switches.fields.name') + ' *'" name="name" required>
             <UInput v-model="editForm.name" required class="w-full" />
           </UFormField>
@@ -376,7 +376,7 @@ async function bulkReset() {
   if (!window.confirm(t('switches.ports.confirmBulkReset', { count: selectedPorts.value.length }))) return
   try {
     for (const portId of selectedPorts.value) {
-      await $fetch(`/api/switches/${id}/ports/${portId}`, { method: 'DELETE' })
+      await $fetch(`/api/switches/${id}/ports/${portId}`, { method: 'DELETE' as any })
     }
     toast.add({ title: t('switches.ports.bulkResetDone', { count: selectedPorts.value.length }), color: 'success' })
     selectedPorts.value = []
@@ -422,7 +422,7 @@ const editRoleOptions = computed(() => [
   { label: t('switches.roles.management'), value: 'management' }
 ])
 
-function roleColor(role: string): string {
+function roleColor(role: string): any {
   const map: Record<string, string> = { core: 'error', distribution: 'info', access: 'success', management: 'warning' }
   return map[role] || 'neutral'
 }
@@ -525,7 +525,7 @@ async function onDuplicate() {
 async function onDelete() {
   deleting.value = true
   try {
-    await $fetch(`/api/switches/${id}`, { method: 'DELETE' })
+    await $fetch(`/api/switches/${id}`, { method: 'DELETE' as any })
     toast.add({ title: t('switches.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     await navigateTo(`/sites/${siteId.value}/switches`)
@@ -547,7 +547,7 @@ watch([item, templates], () => {
       const incrementLabel = (label: string, memberIdx: number): string => {
         if (memberIdx === 1) return label
         const match = label.match(/^(.*?)(\d+)(.*)$/)
-        if (match) return `${match[1]}${parseInt(match[2], 10) + memberIdx - 1}${match[3]}`
+        if (match) return `${match[1]}${parseInt(match[2]!, 10) + memberIdx - 1}${match[3]}`
         return `${memberIdx}/${label}`
       }
 

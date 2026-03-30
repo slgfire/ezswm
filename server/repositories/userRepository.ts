@@ -50,10 +50,10 @@ export const userRepository = {
       ...users[index],
       ...data,
       updated_at: new Date().toISOString()
-    }
+    } as User
 
     writeJson(FILE_NAME, users)
-    return users[index]
+    return users[index]!
   },
 
   delete(id: string): boolean {

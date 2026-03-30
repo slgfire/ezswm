@@ -191,7 +191,7 @@ const previewPorts = computed(() => {
   return ports
 })
 
-function getPortTypeColor(type: string): string {
+function getPortTypeColor(type: string): any {
   const colors: Record<string, string> = {
     rj45: 'primary', sfp: 'info', 'sfp+': 'info', qsfp: 'warning',
     console: 'warning', management: 'success'

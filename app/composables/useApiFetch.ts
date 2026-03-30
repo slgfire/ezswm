@@ -12,13 +12,13 @@ export function useApiFetch() {
   }
 
   async function apiFetch<T>(url: string, opts?: FetchOptions): Promise<T> {
-    return $fetch<T>(url, {
+    return $fetch(url, {
       ...opts,
       headers: {
         ...getHeaders(),
         ...(opts?.headers as Record<string, string> || {})
       }
-    } as any)
+    } as any) as unknown as T
   }
 
   return { apiFetch }

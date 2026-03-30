@@ -274,7 +274,7 @@ function getNamePrefixForGrouping(name: string): string {
   const match = name.match(/^(.*\D)(\d+)(\D*)$/)
   if (match) {
     // prefix = everything before last number + trailing non-digits
-    return match[1] + match[3]
+    return match[1]! + match[3]!
   }
   // Name starts with digits
   const matchDigitStart = name.match(/^(\d+)(\D.*)$|^(\d+)$/)
@@ -289,7 +289,7 @@ function getNamePrefixForGrouping(name: string): string {
  */
 function getTrailingNumber(name: string): number {
   const match = name.match(/(\d+)(\D*)$/)
-  if (match) return parseInt(match[1], 10)
+  if (match) return parseInt(match[1]!, 10)
   return 1
 }
 
@@ -427,15 +427,15 @@ export function groupInterfacesToBlocks(
   // Sort groups by their first port's trailing number
   // This ensures QSFP (et-0/0/48) comes after SFP+ (xe-0/0/0) regardless of alphabetical order
   groups.sort((a, b) => {
-    const aStart = getTrailingNumber(a.members[0].iface.name)
-    const bStart = getTrailingNumber(b.members[0].iface.name)
+    const aStart = getTrailingNumber(a.members[0]!.iface.name)
+    const bStart = getTrailingNumber(b.members[0]!.iface.name)
     return aStart - bStart
   })
 
   // Convert groups to blocks
   for (const group of groups) {
     const count = group.members.length
-    const firstInterface = group.members[0].iface
+    const firstInterface = group.members[0]!.iface
     const startIndex = getTrailingNumber(firstInterface.name)
 
     // Determine row layout based on port count and type
@@ -464,7 +464,7 @@ export function groupInterfacesToBlocks(
 
   // Management interfaces block
   if (mgmtInterfaces.length > 0) {
-    const firstMgmt = mgmtInterfaces[0]
+    const firstMgmt = mgmtInterfaces[0]!
     const startIndex = getTrailingNumber(firstMgmt.iface.name)
     const prefix = getNamePrefixForGrouping(firstMgmt.iface.name)
 

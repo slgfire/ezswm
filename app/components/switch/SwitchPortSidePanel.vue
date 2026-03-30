@@ -160,9 +160,9 @@ const portModeOptions = computed(() => [
 
 const connectionMode = ref<'switch' | 'device' | 'freetext'>('freetext')
 const connectionModes = computed(() => [
-  { label: t('switches.ports.connectedSwitch'), value: 'switch' },
-  { label: t('switches.ports.connectedDevice'), value: 'device' },
-  { label: t('switches.ports.freetext'), value: 'freetext' }
+  { label: t('switches.ports.connectedSwitch'), value: 'switch' as const },
+  { label: t('switches.ports.connectedDevice'), value: 'device' as const },
+  { label: t('switches.ports.freetext'), value: 'freetext' as const }
 ])
 const selectedSwitchId = ref('')
 const selectedPortId = ref('')
@@ -326,7 +326,7 @@ async function save() {
 
 async function resetPort() {
   try {
-    await $fetch(`/api/switches/${props.switchId}/ports/${props.port.id}`, { method: 'DELETE' })
+    await $fetch(`/api/switches/${props.switchId}/ports/${props.port.id}`, { method: 'DELETE' as any })
     toast.add({ title: t('switches.ports.portReset'), color: 'success' }); emit('saved'); isOpen.value = false
   } catch (e: any) { toast.add({ title: e.data?.message || 'Reset failed', color: 'error' }) }
 }

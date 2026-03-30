@@ -44,10 +44,10 @@ export const siteRepository = {
       ...sites[index],
       ...data,
       updated_at: new Date().toISOString()
-    }
+    } as Site
 
     writeJson(FILE_NAME, sites)
-    return sites[index]
+    return sites[index]!
   },
 
   delete(id: string): boolean {

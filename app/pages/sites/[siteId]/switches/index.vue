@@ -353,9 +353,9 @@ const siteMap = computed(() => {
 
 const viewMode = ref<'grid' | 'list'>('grid')
 const search = ref('')
-const locationFilter = ref<string | null>(null)
-const roleFilter = ref<string | null>(null)
-const tagFilter = ref<string | null>(null)
+const locationFilter = ref<string | undefined>(undefined)
+const roleFilter = ref<string | undefined>(undefined)
+const tagFilter = ref<string | undefined>(undefined)
 const showDeleteDialog = ref(false)
 const deleteTarget = ref<any>(null)
 const deleting = ref(false)
@@ -432,7 +432,7 @@ const groupedItems = computed(() => {
   return groups
 })
 
-function roleColor(role: string): string {
+function roleColor(role: string): any {
   const map: Record<string, string> = {
     core: 'error',
     distribution: 'info',

@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
     }
 
     for (const [key, fileName] of Object.entries(fileMap)) {
-      writeJson(fileName, body.data[key])
+      writeJson(fileName as string, body.data[key])
     }
 
     return { success: true, message: 'Backup restored successfully' }
@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
           layoutTemplates: 'layoutTemplates.json', lagGroups: 'lagGroups.json',
           activity: 'activity.json', settings: 'settings.json'
         }
-        writeJson(fileMap[key], data)
+        writeJson(fileMap[key]!, data)
       }
     } catch {
       // Best effort rollback

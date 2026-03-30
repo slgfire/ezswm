@@ -1,6 +1,7 @@
 import { switchRepository } from '../../../../repositories/switchRepository'
 import { bulkUpdatePortsSchema } from '../../../../validators/switchSchemas'
 import { activityRepository } from '../../../../repositories/activityRepository'
+import type { Port } from '../../../../../types/port'
 
 export default defineEventHandler(async (event) => {
   const switchId = event.context.params?.id
@@ -18,7 +19,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = bulkUpdatePortsSchema.parse(body)
 
-  const updatedPorts = await switchRepository.bulkUpdatePorts(switchId, parsed.port_ids, parsed.updates)
+  const updatedPorts = await switchRepository.bulkUpdatePorts(switchId, parsed.port_ids, parsed.updates as Partial<Omit<Port, 'id' | 'unit' | 'index'>>)
 
   await activityRepository.log({
     user_id: event.context.auth?.userId,
@@ -26,7 +27,7 @@ export default defineEventHandler(async (event) => {
     entity_type: 'switch',
     entity_id: switchId,
     entity_name: existing.name,
-    changes: { port_ids: parsed.port_ids, updates: parsed.updates },
+    changes: { port_ids: parsed.port_ids, updates: parsed.updates } as Record<string, unknown>,
   })
 
   return updatedPorts

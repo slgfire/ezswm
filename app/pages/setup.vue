@@ -9,7 +9,7 @@
           </div>
         </template>
 
-        <UForm :state="form" :validate="validate" :validate-on="['blur', 'submit']" novalidate @submit="onSubmit">
+        <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit="onSubmit">
           <div class="space-y-4">
             <UFormField :label="$t('auth.username')" name="username" required>
               <UInput v-model="form.username" class="w-full" />
@@ -96,7 +96,7 @@ async function onSubmit() {
       password: form.password,
       language: form.language
     })
-    await setLocale(form.language)
+    await setLocale(form.language as 'en' | 'de')
     await router.push('/')
   } catch (e: unknown) {
     const err = e as { data?: { message?: string } }

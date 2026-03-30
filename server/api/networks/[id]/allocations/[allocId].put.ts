@@ -1,6 +1,7 @@
 import { ipAllocationRepository } from '../../../../repositories/ipAllocationRepository'
 import { updateIpAllocationSchema } from '../../../../validators/ipAllocationSchemas'
 import { activityRepository } from '../../../../repositories/activityRepository'
+import type { IPAllocation } from '../../../../../types/ipAllocation'
 
 export default defineEventHandler(async (event) => {
   const allocId = event.context.params?.allocId
@@ -18,7 +19,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = updateIpAllocationSchema.parse(body)
 
-  const updated = ipAllocationRepository.update(allocId, parsed)
+  const updated = ipAllocationRepository.update(allocId, parsed as Partial<Omit<IPAllocation, 'id' | 'created_at' | 'network_id'>>)
 
   activityRepository.log({
     user_id: event.context.auth?.userId,

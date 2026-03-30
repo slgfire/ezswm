@@ -1,6 +1,7 @@
 import { vlanRepository } from '../../repositories/vlanRepository'
 import { updateVlanSchema } from '../../validators/vlanSchemas'
 import { activityRepository } from '../../repositories/activityRepository'
+import type { VLAN } from '../../../types/vlan'
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params?.id
@@ -18,7 +19,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = updateVlanSchema.parse(body)
 
-  const updated = vlanRepository.update(id, parsed)
+  const updated = vlanRepository.update(id, parsed as Partial<Omit<VLAN, 'id' | 'created_at'>>)
 
   activityRepository.log({
     user_id: event.context.auth?.userId,

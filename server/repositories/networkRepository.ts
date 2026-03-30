@@ -60,7 +60,7 @@ export const networkRepository = {
       throw createError({ statusCode: 400, message: 'Invalid CIDR notation' })
     }
 
-    const subnet = data.subnet || networks[index].subnet
+    const subnet = data.subnet || networks[index]!.subnet
 
     if (data.gateway && !isValidIPv4(data.gateway)) {
       throw createError({ statusCode: 400, message: 'Invalid gateway IP address' })
@@ -82,10 +82,10 @@ export const networkRepository = {
       ...networks[index],
       ...data,
       updated_at: new Date().toISOString()
-    }
+    } as Network
 
     writeJson(FILE_NAME, networks)
-    return networks[index]
+    return networks[index]!
   },
 
   delete(id: string): boolean {

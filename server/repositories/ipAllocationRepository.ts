@@ -81,12 +81,12 @@ export const ipAllocationRepository = {
       throw createError({ statusCode: 404, message: 'IP allocation not found' })
     }
 
-    if (data.ip_address && data.ip_address !== allocations[index].ip_address) {
+    if (data.ip_address && data.ip_address !== allocations[index]!.ip_address) {
       if (!isValidIPv4(data.ip_address)) {
         throw createError({ statusCode: 400, message: 'Invalid IP address' })
       }
 
-      const network = networkRepository.getById(allocations[index].network_id)
+      const network = networkRepository.getById(allocations[index]!.network_id)
       if (network && !isUsableHostIP(data.ip_address, network.subnet)) {
         const info = parseSubnet(network.subnet)
         if (!isIPInSubnet(data.ip_address, network.subnet)) {
@@ -108,10 +108,10 @@ export const ipAllocationRepository = {
       ...allocations[index],
       ...data,
       updated_at: new Date().toISOString()
-    }
+    } as IPAllocation
 
     writeJson(FILE_NAME, allocations)
-    return allocations[index]
+    return allocations[index]!
   },
 
   delete(id: string): boolean {

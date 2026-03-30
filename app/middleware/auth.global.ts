@@ -38,7 +38,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (user.value?.language) {
     try {
       const { setLocale } = useI18n()
-      await setLocale(user.value.language)
+      await setLocale(user.value.language as 'en' | 'de')
     } catch {
       // useI18n may not be available during SSR
     }

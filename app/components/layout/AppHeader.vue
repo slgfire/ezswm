@@ -283,11 +283,11 @@ const flatResults = computed(() => {
   return items
 })
 
-function flatIndex(type: string, i: number): number {
+function flatIndex(type: string, i: string | number): number {
   let offset = 0
   const order = ['switches', 'vlans', 'networks', 'allocations', 'templates']
   for (const t of order) {
-    if (t === type) return offset + i
+    if (t === type) return offset + Number(i)
     offset += (results.value[t]?.length || 0)
   }
   return -1
@@ -303,6 +303,7 @@ function moveSelection(dir: number) {
 function navigateToSelected() {
   if (selectedIndex.value >= 0 && selectedIndex.value < flatResults.value.length) {
     const item = flatResults.value[selectedIndex.value]
+    if (!item) return
     closeSearch()
     router.push(item.url)
   }

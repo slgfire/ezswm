@@ -71,7 +71,7 @@ export const ipRangeRepository = {
       throw createError({ statusCode: 404, message: 'IP range not found' })
     }
 
-    const current = ranges[index]
+    const current = ranges[index]!
     const startIp = data.start_ip || current.start_ip
     const endIp = data.end_ip || current.end_ip
 
@@ -108,10 +108,10 @@ export const ipRangeRepository = {
       ...current,
       ...data,
       updated_at: new Date().toISOString()
-    }
+    } as IPRange
 
     writeJson(FILE_NAME, ranges)
-    return ranges[index]
+    return ranges[index]!
   },
 
   delete(id: string): boolean {

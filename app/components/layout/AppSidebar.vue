@@ -16,7 +16,7 @@
     <!-- Navigation -->
     <nav class="flex-1 overflow-y-auto px-2 py-4">
       <ul class="space-y-1">
-        <template v-for="section in navSections" :key="section.label">
+        <template v-for="(section, sectionIdx) in navSections" :key="sectionIdx">
           <li v-if="section.divider" class="my-3 border-t border-default" />
           <li v-for="item in section.items" :key="item.to">
             <NuxtLink

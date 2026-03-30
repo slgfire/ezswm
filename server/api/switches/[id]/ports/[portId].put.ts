@@ -1,6 +1,7 @@
 import { switchRepository } from '../../../../repositories/switchRepository'
 import { updatePortSchema } from '../../../../validators/switchSchemas'
 import { activityRepository } from '../../../../repositories/activityRepository'
+import type { Port } from '../../../../../types/port'
 
 export default defineEventHandler(async (event) => {
   const switchId = event.context.params?.id
@@ -23,7 +24,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = updatePortSchema.parse(body)
 
-  const updatedPort = await switchRepository.updatePort(switchId, portId, parsed)
+  const updatedPort = await switchRepository.updatePort(switchId, portId, parsed as Partial<Omit<Port, 'id' | 'unit' | 'index'>>)
 
   await activityRepository.log({
     user_id: event.context.auth?.userId,
@@ -31,7 +32,7 @@ export default defineEventHandler(async (event) => {
     entity_type: 'switch',
     entity_id: switchId,
     entity_name: existing.name,
-    changes: { port_id: portId, ...parsed },
+    changes: { port_id: portId, ...parsed } as Record<string, unknown>,
   })
 
   return updatedPort

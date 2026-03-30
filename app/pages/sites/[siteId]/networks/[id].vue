@@ -11,7 +11,7 @@
           <UButton icon="i-heroicons-information-circle" :variant="showDetails ? 'solid' : 'ghost'" color="info" size="sm" @click="showDetails = !showDetails" />
         </UTooltip>
         <UTooltip :text="editing ? $t('common.cancel') : $t('common.edit')">
-          <UButton :icon="editing ? 'i-heroicons-x-mark' : 'i-heroicons-pencil'" :variant="editing ? 'solid' : 'ghost'" :color="editing ? 'gray' : 'primary'" size="sm" @click="editing ? editing = false : startEdit()" />
+          <UButton :icon="editing ? 'i-heroicons-x-mark' : 'i-heroicons-pencil'" :variant="editing ? 'solid' : 'ghost'" :color="editing ? 'neutral' : 'primary'" size="sm" @click="editing ? editing = false : startEdit()" />
         </UTooltip>
         <UTooltip :text="$t('common.delete')">
           <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" @click="showDeleteDialog = true" />
@@ -108,7 +108,7 @@
         </div>
 
         <!-- Edit form -->
-        <UForm v-if="editing" :state="editForm" :validate="validate" :validate-on="['blur', 'submit']" novalidate class="space-y-4" @submit="onSave">
+        <UForm v-if="editing" :state="editForm" :validate="validate" :validate-on="['blur', 'change']" novalidate class="space-y-4" @submit="onSave">
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <UFormField :label="$t('networks.fields.name') + ' *'" name="name" required>
               <UInput v-model="editForm.name" required class="w-full" />
@@ -382,7 +382,7 @@ const rangeForm = ref({ start_ip: '', end_ip: '', type: 'static', description: '
 // IP to numeric for sorting
 function ipToLong(ip: string): number {
   const parts = ip.split('.').map(Number)
-  return ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0
+  return ((parts[0]! << 24) | (parts[1]! << 16) | (parts[2]! << 8) | parts[3]!) >>> 0
 }
 
 const utilizationPercent = computed(() => {
@@ -491,7 +491,7 @@ const unifiedList = computed<UnifiedRow[]>(() => {
   return rows
 })
 
-function rangeTypeBadgeColor(type: string): string {
+function rangeTypeBadgeColor(type: string): any {
   if (type === 'dhcp') return 'info'
   if (type === 'static') return 'success'
   return 'warning'

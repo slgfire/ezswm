@@ -1,6 +1,7 @@
 import { ipRangeRepository } from '../../../../repositories/ipRangeRepository'
 import { updateIpRangeSchema } from '../../../../validators/ipRangeSchemas'
 import { activityRepository } from '../../../../repositories/activityRepository'
+import type { IPRange } from '../../../../../types/ipRange'
 
 export default defineEventHandler(async (event) => {
   const rangeId = event.context.params?.rangeId
@@ -18,7 +19,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = updateIpRangeSchema.parse(body)
 
-  const updated = ipRangeRepository.update(rangeId, parsed)
+  const updated = ipRangeRepository.update(rangeId, parsed as Partial<Omit<IPRange, 'id' | 'created_at' | 'network_id'>>)
 
   activityRepository.log({
     user_id: event.context.auth?.userId,

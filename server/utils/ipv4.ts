@@ -1,6 +1,6 @@
 export function ipToLong(ip: string): number {
   const parts = ip.split('.').map(Number)
-  return ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0
+  return ((parts[0]! << 24) | (parts[1]! << 16) | (parts[2]! << 8) | parts[3]!) >>> 0
 }
 
 export function longToIp(long: number): string {
@@ -24,7 +24,7 @@ export function isValidIPv4(ip: string): boolean {
 export function isValidCIDR(cidr: string): boolean {
   const parts = cidr.split('/')
   if (parts.length !== 2) return false
-  if (!isValidIPv4(parts[0])) return false
+  if (!isValidIPv4(parts[0]!)) return false
   const prefix = Number(parts[1])
   return Number.isInteger(prefix) && prefix >= 0 && prefix <= 32
 }
@@ -42,7 +42,7 @@ export interface SubnetInfo {
 }
 
 export function parseSubnet(cidr: string): SubnetInfo {
-  const [ip, prefixStr] = cidr.split('/')
+  const [ip, prefixStr] = cidr.split('/') as [string, string]
   const prefix = Number(prefixStr)
   const ipLong = ipToLong(ip)
   const mask = prefix === 0 ? 0 : (~0 << (32 - prefix)) >>> 0
@@ -66,7 +66,7 @@ export function parseSubnet(cidr: string): SubnetInfo {
 }
 
 export function isIPInSubnet(ip: string, cidr: string): boolean {
-  const [subnetIp, prefixStr] = cidr.split('/')
+  const [subnetIp, prefixStr] = cidr.split('/') as [string, string]
   const prefix = Number(prefixStr)
   const mask = prefix === 0 ? 0 : (~0 << (32 - prefix)) >>> 0
   const network = (ipToLong(subnetIp) & mask) >>> 0
@@ -80,7 +80,7 @@ export function isIPInSubnet(ip: string, cidr: string): boolean {
  */
 export function isUsableHostIP(ip: string, cidr: string): boolean {
   if (!isIPInSubnet(ip, cidr)) return false
-  const [subnetIp, prefixStr] = cidr.split('/')
+  const [subnetIp, prefixStr] = cidr.split('/') as [string, string]
   const prefix = Number(prefixStr)
   // /31 and /32 subnets: all addresses are usable (RFC 3021)
   if (prefix >= 31) return true

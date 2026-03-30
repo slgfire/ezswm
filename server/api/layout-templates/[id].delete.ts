@@ -21,8 +21,8 @@ export default defineEventHandler(async (event) => {
     entity_id: id,
     action: 'delete',
     user_id: event.context.auth?.userId,
-    details: `Deleted layout template "${existing.name}"`,
-    previous_state: existing,
+    entity_name: existing.name,
+    previous_state: existing as unknown as Record<string, unknown>,
   })
 
   setResponseStatus(event, 204)

@@ -232,7 +232,7 @@ function onBackupFileSelect(event: Event) {
 async function downloadBackup() {
   try {
     const response = await $fetch('/api/backup/export', { responseType: 'blob' })
-    downloadBlob(response as Blob, `ezswm-backup-${new Date().toISOString().slice(0, 10)}.json`)
+    downloadBlob(response as unknown as Blob, `ezswm-backup-${new Date().toISOString().slice(0, 10)}.json`)
     toast.add({ title: t('backup.messages.exported'), color: 'success' })
   } catch {
     toast.add({ title: t('errors.serverError'), color: 'error' })
@@ -268,7 +268,7 @@ async function downloadExport() {
     })
     const ext = exportFormat.value === 'csv' ? 'csv' : 'json'
     const timestamp = new Date().toISOString().slice(0, 10)
-    downloadBlob(response as Blob, `ezswm-${exportType.value}-${timestamp}.${ext}`)
+    downloadBlob(response as unknown as Blob, `ezswm-${exportType.value}-${timestamp}.${ext}`)
     toast.add({ title: t('dataManagement.export.success'), color: 'success' })
   } catch {
     toast.add({ title: t('errors.serverError'), color: 'error' })
@@ -288,13 +288,13 @@ function parseCsv(text: string): Record<string, unknown>[] {
   const stripped = text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text
   const lines = stripped.split('\n').map(l => l.trim()).filter(Boolean)
   if (lines.length < 2) return []
-  const headers = lines[0].split(',').map(h => h.trim())
+  const headers = lines[0]!.split(',').map(h => h.trim())
   const rows: Record<string, unknown>[] = []
   for (let i = 1; i < lines.length; i++) {
-    const values = parseCsvLine(lines[i])
+    const values = parseCsvLine(lines[i]!)
     const row: Record<string, unknown> = {}
     for (let j = 0; j < headers.length; j++) {
-      row[headers[j]] = values[j] ?? ''
+      row[headers[j]!] = values[j] ?? ''
     }
     rows.push(row)
   }
@@ -372,7 +372,7 @@ async function downloadTemplate() {
       params: { type: importType.value },
       responseType: 'blob'
     })
-    downloadBlob(response as Blob, `ezswm-${importType.value}-template.csv`)
+    downloadBlob(response as unknown as Blob, `ezswm-${importType.value}-template.csv`)
   } catch {
     toast.add({ title: t('errors.serverError'), color: 'error' })
   }
@@ -396,7 +396,7 @@ async function executeImport() {
       toast.add({ title: t('dataManagement.import.success', { count: importResults.value.imported }), color: 'success' })
     }
     if (importResults.value.errors.length > 0) {
-      toast.add({ title: t('dataManagement.import.hasErrors', { count: importResults.value.errors.length }), color: 'yellow' })
+      toast.add({ title: t('dataManagement.import.hasErrors', { count: importResults.value.errors.length }), color: 'warning' })
     }
   } catch (err: any) {
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })

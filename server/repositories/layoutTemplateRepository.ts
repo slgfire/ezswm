@@ -42,18 +42,18 @@ function syncPortsToTemplate(template: LayoutTemplate): void {
     const existingByUnit: Record<number, any[]> = {}
     for (const p of sw.ports) {
       if (!existingByUnit[p.unit]) existingByUnit[p.unit] = []
-      existingByUnit[p.unit].push(p)
+      existingByUnit[p.unit]!.push(p)
     }
     // Sort each unit's ports by index
     for (const unit of Object.keys(existingByUnit)) {
-      existingByUnit[Number(unit)].sort((a: any, b: any) => a.index - b.index)
+      existingByUnit[Number(unit)]!.sort((a: any, b: any) => a.index - b.index)
     }
 
     // Group expected ports by unit
     const expectedByUnit: Record<number, typeof expectedPorts> = {}
     for (const ep of expectedPorts) {
       if (!expectedByUnit[ep.unit]) expectedByUnit[ep.unit] = []
-      expectedByUnit[ep.unit].push(ep)
+      expectedByUnit[ep.unit]!.push(ep)
     }
 
     for (const ep of expectedPorts) {
@@ -159,7 +159,7 @@ export const layoutTemplateRepository = {
       throw createError({ statusCode: 404, message: 'Layout template not found' })
     }
 
-    if (data.name && data.name !== templates[index].name) {
+    if (data.name && data.name !== templates[index]!.name) {
       if (templates.some(t => t.name === data.name)) {
         throw createError({ statusCode: 409, message: `Template name '${data.name}' already exists` })
       }
@@ -179,16 +179,16 @@ export const layoutTemplateRepository = {
       ...templates[index],
       ...data,
       updated_at: new Date().toISOString()
-    }
+    } as LayoutTemplate
 
     writeJson(FILE_NAME, templates)
 
     // Sync ports to all switches using this template
     if (data.units) {
-      syncPortsToTemplate(templates[index])
+      syncPortsToTemplate(templates[index]!)
     }
 
-    return templates[index]
+    return templates[index]!
   },
 
   duplicate(id: string): LayoutTemplate {

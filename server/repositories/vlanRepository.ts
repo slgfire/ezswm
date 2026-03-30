@@ -59,14 +59,14 @@ export const vlanRepository = {
       throw createError({ statusCode: 404, message: 'VLAN not found' })
     }
 
-    const siteId = vlans[index].site_id
-    if (data.vlan_id !== undefined && data.vlan_id !== vlans[index].vlan_id) {
+    const siteId = vlans[index]!.site_id
+    if (data.vlan_id !== undefined && data.vlan_id !== vlans[index]!.vlan_id) {
       if (vlans.some(v => v.site_id === siteId && v.vlan_id === data.vlan_id)) {
         throw createError({ statusCode: 409, message: `VLAN ID ${data.vlan_id} already exists in this site` })
       }
     }
 
-    if (data.color !== undefined && data.color !== vlans[index].color) {
+    if (data.color !== undefined && data.color !== vlans[index]!.color) {
       if (vlans.some(v => v.site_id === siteId && v.color === data.color)) {
         throw createError({ statusCode: 409, message: `Color ${data.color} is already used by another VLAN in this site` })
       }
@@ -76,10 +76,10 @@ export const vlanRepository = {
       ...vlans[index],
       ...data,
       updated_at: new Date().toISOString()
-    }
+    } as VLAN
 
     writeJson(FILE_NAME, vlans)
-    return vlans[index]
+    return vlans[index]!
   },
 
   delete(id: string): boolean {

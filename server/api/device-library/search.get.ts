@@ -62,10 +62,11 @@ export default defineEventHandler(async (event) => {
     .map(entry => {
       // device-types/Cisco/cisco-c9200-24t.yaml
       const parts = entry.path.replace('device-types/', '').replace('.yaml', '').split('/')
+      const slug = parts[1] ?? parts[0] ?? ''
       return {
         manufacturer: parts[0],
-        slug: parts[1],
-        model: parts[1].replace(/^[^-]+-/, '').replace(/-/g, ' ').toUpperCase()
+        slug,
+        model: slug.replace(/^[^-]+-/, '').replace(/-/g, ' ').toUpperCase()
       }
     })
 

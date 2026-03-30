@@ -274,7 +274,7 @@ const previewPorts = computed(() => {
   const ports: any[] = []
   for (const unit of form.units) {
     for (let bi = 0; bi < unit.blocks.length; bi++) {
-      const block = unit.blocks[bi]
+      const block = unit.blocks[bi]!
       for (let i = 0; i < block.count; i++) {
         const portIndex = block.start_index + i
         const label = block.label
@@ -311,7 +311,7 @@ function removeUnit(index: number) {
 }
 
 function addBlock(unitIndex: number) {
-  const unit = form.units[unitIndex]
+  const unit = form.units[unitIndex]!
   const lastBlock = unit.blocks[unit.blocks.length - 1]
   const nextStartIndex = lastBlock
     ? lastBlock.start_index + lastBlock.count
@@ -330,7 +330,7 @@ function addBlock(unitIndex: number) {
 }
 
 function removeBlock(unitIndex: number, blockIndex: number) {
-  form.units[unitIndex].blocks.splice(blockIndex, 1)
+  form.units[unitIndex]!.blocks.splice(blockIndex, 1)
 }
 
 function validate(): boolean {
@@ -427,7 +427,7 @@ async function handleSubmit() {
 onMounted(async () => {
   if (cloneId) {
     try {
-      const data = await getById(cloneId)
+      const data = await getById(cloneId) as any
       form.name = `${data.name} (Copy)`
       form.manufacturer = data.manufacturer || ''
       form.model = data.model || ''

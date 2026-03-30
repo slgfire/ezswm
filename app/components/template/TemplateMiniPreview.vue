@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import type { LayoutTemplate, LayoutBlock } from '~/types/layoutTemplate'
+import type { LayoutTemplate, LayoutBlock } from '~~/types/layoutTemplate'
 
 defineProps<{
   template: LayoutTemplate

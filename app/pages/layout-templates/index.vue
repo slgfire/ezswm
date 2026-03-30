@@ -243,7 +243,7 @@
 </template>
 
 <script setup lang="ts">
-import type { LayoutTemplate } from '~/types/layoutTemplate'
+import type { LayoutTemplate } from '~~/types/layoutTemplate'
 
 const { t } = useI18n()
 useHead({ title: t('templates.title') })
@@ -293,8 +293,8 @@ const filteredItems = computed(() => {
   }
 
   if (selectedPortType.value) {
-    result = result.filter(t =>
-      t.units?.some(u => u.blocks?.some(b => b.type === selectedPortType.value))
+    result = result.filter((t: LayoutTemplate) =>
+      t.units?.some((u: any) => u.blocks?.some((b: any) => b.type === selectedPortType.value))
     )
   }
 
@@ -312,11 +312,11 @@ const portTypeColorMap: Record<string, string> = {
 
 function getTotalPortCount(template: LayoutTemplate): number {
   if (!template.units) return 0
-  return template.units.reduce((total, unit) =>
-    total + (unit.blocks || []).reduce((bt, b) => bt + (b.count || 0), 0), 0)
+  return template.units.reduce((total: number, unit: any) =>
+    total + (unit.blocks || []).reduce((bt: number, b: any) => bt + (b.count || 0), 0), 0)
 }
 
-function getPortTypes(template: LayoutTemplate): { type: string; label: string; color: string }[] {
+function getPortTypes(template: LayoutTemplate): { type: string; label: string; color: any }[] {
   const types = new Set<string>()
   for (const unit of template.units || []) {
     for (const block of unit.blocks || []) {

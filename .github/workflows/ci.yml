@@ -21,7 +21,6 @@ jobs:
         run: npm ci
 
       - name: Typecheck
-        continue-on-error: true
         run: npx nuxt typecheck
 
       - name: Unit tests

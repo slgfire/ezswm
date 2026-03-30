@@ -36,7 +36,7 @@ function onSiteChange(value: string) {
   setSite(value, site)
 
   const sitePathMatch = route.path.match(/\/sites\/[^/]+\/(.+)/)
-  const section = sitePathMatch ? sitePathMatch[1].split('/')[0] : ''
+  const section = sitePathMatch ? sitePathMatch[1]!.split('/')[0] : ''
 
   if (section) {
     router.push(`/sites/${value}/${section}`)

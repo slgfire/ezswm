@@ -55,7 +55,7 @@
 
             <div class="list-container rounded-lg bg-default p-5">
               <h3 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('settings.account.changePassword') }}</h3>
-              <UForm :state="passwordForm" :validate="validatePassword" :validate-on="['blur', 'submit']" novalidate @submit="handleChangePassword">
+              <UForm :state="passwordForm" :validate="validatePassword" :validate-on="['blur', 'change']" novalidate @submit="handleChangePassword">
                 <div class="space-y-4">
                   <UFormField :label="$t('settings.account.currentPassword')" name="current_password">
                     <UInput v-model="passwordForm.current_password" type="password" class="w-full" />
@@ -152,8 +152,8 @@ async function saveAccount() {
       display_name: accountForm.display_name,
       language: accountForm.language
     })
-    await setLocale(accountForm.language)
-    user.value = { ...user.value!, language: accountForm.language }
+    await setLocale(accountForm.language as 'en' | 'de')
+    ;(user as any).value = { ...user.value!, language: accountForm.language }
     toast.add({ title: t('settings.messages.profileUpdated'), color: 'success' })
   } catch {
     toast.add({ title: t('errors.serverError'), color: 'error' })

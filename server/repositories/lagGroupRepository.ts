@@ -69,7 +69,7 @@ export const lagGroupRepository = {
       throw createError({ statusCode: 404, message: 'LAG group not found' })
     }
 
-    const current = groups[index]
+    const current = groups[index]!
 
     if (data.port_ids) {
       const sw = switchRepository.getById(current.switch_id)
@@ -102,10 +102,10 @@ export const lagGroupRepository = {
       ...current,
       ...data,
       updated_at: new Date().toISOString()
-    }
+    } as LAGGroup
 
     writeJson(FILE_NAME, groups)
-    return groups[index]
+    return groups[index]!
   },
 
   delete(id: string): boolean {
@@ -113,7 +113,7 @@ export const lagGroupRepository = {
     const index = groups.findIndex(g => g.id === id)
     if (index === -1) return false
 
-    const group = groups[index]
+    const group = groups[index]!
 
     // Remove lag_group_id from ports
     for (const portId of group.port_ids) {

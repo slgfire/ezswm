@@ -90,7 +90,7 @@
                         <UBadge :color="block.type === 'rj45' ? 'primary' : block.type === 'sfp+' ? 'info' : block.type === 'qsfp' ? 'warning' : 'neutral'" variant="subtle" size="sm">
                           {{ (block.type || 'N/A').toUpperCase() }}
                         </UBadge>
-                        <span class="text-xs text-gray-500">#{{ blockIndex + 1 }}</span>
+                        <span class="text-xs text-gray-500">#{{ Number(blockIndex) + 1 }}</span>
                       </div>
                       <UButton
                         icon="i-heroicons-x-mark"
@@ -286,12 +286,12 @@ function addUnit() {
   })
 }
 
-function removeUnit(index: number) {
-  form.value.units.splice(index, 1)
+function removeUnit(index: string | number) {
+  form.value.units.splice(Number(index), 1)
 }
 
-function addBlock(unitIndex: number) {
-  const unit = form.value.units[unitIndex]
+function addBlock(unitIndex: string | number) {
+  const unit = form.value.units[Number(unitIndex)]
   const lastBlock = unit.blocks[unit.blocks.length - 1]
   const nextStartIndex = lastBlock
     ? lastBlock.start_index + lastBlock.count
@@ -309,8 +309,8 @@ function addBlock(unitIndex: number) {
   })
 }
 
-function removeBlock(unitIndex: number, blockIndex: number) {
-  form.value.units[unitIndex].blocks.splice(blockIndex, 1)
+function removeBlock(unitIndex: string | number, blockIndex: string | number) {
+  form.value.units[Number(unitIndex)].blocks.splice(Number(blockIndex), 1)
 }
 
 function validate(): boolean {
@@ -376,7 +376,7 @@ async function handleSubmit() {
 
 onMounted(async () => {
   try {
-    const data = await getById(route.params.id as string)
+    const data = await getById(route.params.id as string) as any
     if (data?.name) {
       breadcrumbOverrides.value[`/layout-templates/${route.params.id}`] = data.name
     }

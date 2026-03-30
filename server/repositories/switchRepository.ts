@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { readJson, writeJson } from '../storage/jsonStorage'
 import type { Switch } from '../../types/switch'
-import type { Port } from '../../types/port'
+import type { Port, PortSpeed } from '../../types/port'
 import type { IPAllocation } from '../../types/ipAllocation'
 import { layoutTemplateRepository } from './layoutTemplateRepository'
 import { isValidIPv4, isIPInSubnet } from '../utils/ipv4'
@@ -106,7 +106,7 @@ function generatePortsFromTemplate(templateId: string, stackSize: number = 1): P
             index: portIndex,
             label: generatePortLabel(memberLabel, unit.unit_number + unitOffset, portIndex),
             type: block.type,
-            speed: block.default_speed,
+            speed: block.default_speed as PortSpeed | undefined,
             status: 'down',
             tagged_vlans: [],
             ...(block.poe ? { poe: { ...block.poe } } : {}),
@@ -178,32 +178,33 @@ export const switchRepository = {
       throw createError({ statusCode: 404, message: 'Switch not found' })
     }
 
-    if (data.name && data.name !== switches[index].name) {
-      const siteId = switches[index].site_id
+    const current = switches[index]!
+
+    if (data.name && data.name !== current.name) {
+      const siteId = current.site_id
       if (switches.some(s => s.site_id === siteId && s.name === data.name)) {
         throw createError({ statusCode: 409, message: `Switch name '${data.name}' already exists in this site` })
       }
     }
 
     // Regenerate ports if layout_template_id or stack_size changed
-    let ports = switches[index].ports
+    let ports = current.ports
     if (
-      (data.layout_template_id && data.layout_template_id !== switches[index].layout_template_id) ||
-      (data.stack_size !== undefined && data.stack_size !== switches[index].stack_size)
+      (data.layout_template_id && data.layout_template_id !== current.layout_template_id) ||
+      (data.stack_size !== undefined && data.stack_size !== current.stack_size)
     ) {
-      const templateId = data.layout_template_id ?? switches[index].layout_template_id
-      const stackSize = data.stack_size ?? switches[index].stack_size ?? 1
+      const templateId = data.layout_template_id ?? current.layout_template_id
+      const stackSize = data.stack_size ?? current.stack_size ?? 1
       if (templateId) {
         ports = generatePortsFromTemplate(templateId, stackSize)
       }
     }
 
-    const oldSwitch = switches[index]
-    const oldManagementIp = oldSwitch.management_ip
-    const oldName = oldSwitch.name
+    const oldManagementIp = current.management_ip
+    const oldName = current.name
 
     switches[index] = {
-      ...switches[index],
+      ...current,
       ...data,
       ports,
       updated_at: new Date().toISOString()
@@ -212,13 +213,14 @@ export const switchRepository = {
     writeJson(FILE_NAME, switches)
 
     // Auto-update IP allocation for management IP changes
-    const newManagementIp = switches[index].management_ip
-    const newName = switches[index].name
+    const updated = switches[index]!
+    const newManagementIp = updated.management_ip
+    const newName = updated.name
     if (newManagementIp !== oldManagementIp || (newName !== oldName && newManagementIp)) {
-      syncManagementIpAllocation(switches[index].id, newName, newManagementIp, oldManagementIp)
+      syncManagementIpAllocation(updated.id, newName, newManagementIp, oldManagementIp)
     }
 
-    return switches[index]
+    return updated
   },
 
   updatePort(switchId: string, portId: string, data: Partial<Omit<Port, 'id' | 'unit' | 'index'>>): Port {
@@ -228,12 +230,13 @@ export const switchRepository = {
       throw createError({ statusCode: 404, message: 'Switch not found' })
     }
 
-    const portIndex = switches[swIndex].ports.findIndex(p => p.id === portId)
+    const sw = switches[swIndex]!
+    const portIndex = sw.ports.findIndex(p => p.id === portId)
     if (portIndex === -1) {
       throw createError({ statusCode: 404, message: 'Port not found' })
     }
 
-    const oldPort = switches[swIndex].ports[portIndex]
+    const oldPort = sw.ports[portIndex]!
 
     // Handle bidirectional link: remove old link if connection changed or removed
     if (oldPort.connected_device_id && oldPort.connected_port_id) {
@@ -246,12 +249,12 @@ export const switchRepository = {
       }
     }
 
-    switches[swIndex].ports[portIndex] = {
+    sw.ports[portIndex] = {
       ...oldPort,
       ...data
-    }
+    } as Port
 
-    const updatedPort = switches[swIndex].ports[portIndex]
+    const updatedPort = sw.ports[portIndex]!
 
     // Handle bidirectional link creation (after local port is updated so label/settings are current)
     if (data.connected_device_id && data.connected_port_id) {
@@ -263,9 +266,9 @@ export const switchRepository = {
       })
     }
 
-    switches[swIndex].updated_at = new Date().toISOString()
+    sw.updated_at = new Date().toISOString()
     writeJson(FILE_NAME, switches)
-    return switches[swIndex].ports[portIndex]
+    return updatedPort
   },
 
   bulkUpdatePorts(switchId: string, portIds: string[], updates: Partial<Omit<Port, 'id' | 'unit' | 'index'>>): Port[] {
@@ -275,19 +278,20 @@ export const switchRepository = {
       throw createError({ statusCode: 404, message: 'Switch not found' })
     }
 
+    const sw = switches[swIndex]!
     const updatedPorts: Port[] = []
     for (const portId of portIds) {
-      const portIndex = switches[swIndex].ports.findIndex(p => p.id === portId)
+      const portIndex = sw.ports.findIndex(p => p.id === portId)
       if (portIndex !== -1) {
-        switches[swIndex].ports[portIndex] = {
-          ...switches[swIndex].ports[portIndex],
+        sw.ports[portIndex] = {
+          ...sw.ports[portIndex]!,
           ...updates
-        }
-        updatedPorts.push(switches[swIndex].ports[portIndex])
+        } as Port
+        updatedPorts.push(sw.ports[portIndex]!)
       }
     }
 
-    switches[swIndex].updated_at = new Date().toISOString()
+    sw.updated_at = new Date().toISOString()
     writeJson(FILE_NAME, switches)
     return updatedPorts
   },
@@ -335,7 +339,7 @@ export const switchRepository = {
     if (index === -1) return false
 
     // Remove bidirectional links from connected switches
-    const sw = switches[index]
+    const sw = switches[index]!
     for (const port of sw.ports) {
       if (port.connected_device_id && port.connected_port_id) {
         this._removeRemoteLink(switches, port.connected_device_id, port.connected_port_id)

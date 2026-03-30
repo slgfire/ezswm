@@ -1,4 +1,4 @@
-export type ActivityAction = 'create' | 'update' | 'delete'
+export type ActivityAction = 'create' | 'update' | 'delete' | 'duplicate' | 'update_port' | 'bulk_update_ports'
 
 export interface ActivityEntry {
   id: string

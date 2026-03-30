@@ -1,6 +1,7 @@
 import { networkRepository } from '../../repositories/networkRepository'
 import { updateNetworkSchema } from '../../validators/networkSchemas'
 import { activityRepository } from '../../repositories/activityRepository'
+import type { Network } from '../../../types/network'
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params?.id
@@ -18,7 +19,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = updateNetworkSchema.parse(body)
 
-  const updated = networkRepository.update(id, parsed)
+  const updated = networkRepository.update(id, parsed as Partial<Omit<Network, 'id' | 'created_at'>>)
 
   activityRepository.log({
     user_id: event.context.auth?.userId,
