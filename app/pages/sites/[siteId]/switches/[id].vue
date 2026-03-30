@@ -167,6 +167,18 @@
           {{ selectedPorts.length }} port{{ selectedPorts.length > 1 ? 's' : '' }} selected
         </span>
         <div class="flex items-center gap-2">
+          <UButton
+            size="xs"
+            variant="soft"
+            color="info"
+            :disabled="!canCreateLag.allowed"
+            @click="lagSlideoverRef?.openCreate(selectedPorts)"
+          >
+            {{ $t('lag.create') }}
+          </UButton>
+          <span v-if="!canCreateLag.allowed" class="text-xs text-amber-500">
+            {{ canCreateLag.reason }}
+          </span>
           <UButton size="xs" variant="soft" @click="bulkEditorRef?.open()">
             {{ $t('switches.ports.bulkEdit') }}
           </UButton>
@@ -196,8 +208,12 @@
           :units="templateUnits"
           :vlans="vlans"
           :selected-ports="selectedPorts"
+          :lag-groups="lagGroups"
+          :lag-by-port-id="lagByPortId"
           @select-port="onSelectPort"
           @toggle-select="onToggleSelect"
+          @edit-lag="lagSlideoverRef?.openEdit($event)"
+          @delete-lag="onDeleteLagClick"
         />
         <p v-else class="text-sm text-gray-400">{{ $t('switches.ports.noPortsMessage') }}</p>
       </div>
@@ -209,7 +225,9 @@
       v-model="showPortPanel"
       :port="selectedPort"
       :switch-id="id"
+      :lag-group="selectedPort ? lagByPortId.get(selectedPort.id) : undefined"
       @saved="fetchSwitch"
+      @remove-from-lag="onRemovePortFromLag"
     />
 
     <!-- Edit Side Panel -->
@@ -318,6 +336,25 @@
       :loading="deleting"
       @confirm="onDelete"
     />
+
+    <!-- LAG Slideover -->
+    <SwitchLagGroupSlideover
+      ref="lagSlideoverRef"
+      :switch-id="id"
+      :ports="item?.ports || []"
+      :existing-lags="lagGroups"
+      @saved="onLagSaved"
+    />
+
+    <!-- LAG Delete confirmation -->
+    <SharedConfirmDialog
+      v-model="showLagDeleteDialog"
+      :title="$t('lag.delete')"
+      :message="lagDeleteMessage"
+      :confirm-label="$t('common.delete')"
+      :loading="deletingLag"
+      @confirm="onDeleteLag"
+    />
   </div>
 </template>
 
@@ -334,6 +371,12 @@ useHead({ title: computed(() => item.value?.name || t('switches.title')) })
 const { duplicate } = useSwitches()
 const { items: templates, fetch: fetchTemplates } = useLayoutTemplates()
 const { items: vlans, fetch: fetchVlans } = useVlans()
+const { items: lagGroups, loading: lagLoading, fetch: fetchLags, lagById, lagByPortId, update: updateLag, remove: removeLag } = useLagGroups(id)
+
+const lagSlideoverRef = ref<any>(null)
+const showLagDeleteDialog = ref(false)
+const lagToDelete = ref<any>(null)
+const deletingLag = ref(false)
 
 const editMode = ref(false)
 const saving = ref(false)
@@ -354,6 +397,18 @@ const portStats = computed(() => {
     down: ports.filter((p: any) => p.status === 'down').length,
     disabled: ports.filter((p: any) => p.status === 'disabled').length
   }
+})
+
+const canCreateLag = computed(() => {
+  if (selectedPorts.value.length < 2) return { allowed: false, reason: t('lag.validation.minPorts') }
+  for (const portId of selectedPorts.value) {
+    const existingLag = lagByPortId.value.get(portId)
+    if (existingLag) {
+      const port = item.value?.ports?.find((p: any) => p.id === portId)
+      return { allowed: false, reason: t('lag.validation.portInLag', { port: port?.label || portId, lag: existingLag.name }) }
+    }
+  }
+  return { allowed: true, reason: '' }
 })
 
 const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrides', () => ({}))
@@ -577,9 +632,78 @@ watch([item, templates], () => {
 
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 
+// LAG event handlers
+function onDeleteLagClick(lag: any) {
+  lagToDelete.value = lag
+  showLagDeleteDialog.value = true
+}
+
+const lagDeleteMessage = computed(() => {
+  if (!lagToDelete.value) return ''
+  const portLabels = lagToDelete.value.port_ids
+    .map((pid: string) => item.value?.ports?.find((p: any) => p.id === pid)?.label || pid)
+    .join(', ')
+  return `${t('lag.deleteConfirm', { name: lagToDelete.value.name })}\n\n${t('lag.portsWillBeReleased')}: ${portLabels}`
+})
+
+async function onDeleteLag() {
+  if (!lagToDelete.value) return
+  deletingLag.value = true
+  try {
+    await removeLag(lagToDelete.value.id)
+    toast.add({ title: t('lag.messages.deleted'), color: 'success' })
+    showLagDeleteDialog.value = false
+    lagToDelete.value = null
+    await fetchSwitch()
+    await fetchLags()
+  } catch (e: any) {
+    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
+  } finally {
+    deletingLag.value = false
+  }
+}
+
+async function onLagSaved() {
+  selectedPorts.value = []
+  await fetchSwitch()
+  await fetchLags()
+}
+
+async function onRemovePortFromLag(lagId: string, portId: string) {
+  const lag = lagById.value.get(lagId)
+  if (!lag) return
+  try {
+    const newPortIds = lag.port_ids.filter(pid => pid !== portId)
+    if (newPortIds.length < 2) {
+      await removeLag(lagId)
+      toast.add({ title: t('lag.messages.deleted'), color: 'success' })
+    } else {
+      await updateLag(lagId, { port_ids: newPortIds })
+      toast.add({ title: t('lag.messages.portRemoved'), color: 'success' })
+    }
+    await fetchSwitch()
+    await fetchLags()
+  } catch (e: any) {
+    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
+  }
+}
+
+// Deep-link: ?lag=xyz opens the LAG slideover when data is ready
+const lagParam = route.query.lag as string | undefined
+if (lagParam) {
+  const stopWatch = watch(lagById, (map) => {
+    const lag = map.get(lagParam)
+    if (lag) {
+      lagSlideoverRef.value?.openEdit(lag)
+      stopWatch()
+    }
+  }, { immediate: true })
+}
+
 onMounted(() => {
   fetchSwitch()
   fetchTemplates()
   fetchVlans(siteParams.value)
+  fetchLags()
 })
 </script>
