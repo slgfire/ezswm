@@ -139,6 +139,29 @@
                 </div>
               </NuxtLink>
             </template>
+
+            <!-- LAG Groups -->
+            <template v-if="results.lagGroups?.length">
+              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.lagGroups') }}</div>
+              <NuxtLink
+                v-for="(lg, i) in results.lagGroups"
+                :key="lg.id"
+                :to="`/sites/${lg.site_id}/switches/${lg.switch_id}?lag=${lg.id}`"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('lagGroups', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
+                @click="closeSearch"
+                @mouseenter="selectedIndex = flatIndex('lagGroups', i)"
+              >
+                <UIcon name="i-heroicons-link" class="h-4 w-4 flex-shrink-0 text-gray-400" />
+                <div class="min-w-0 flex-1">
+                  <div class="font-medium text-gray-900 dark:text-white" v-html="highlight(lg.name)" />
+                  <div class="flex items-center gap-2 text-xs text-gray-400">
+                    <span v-html="highlight(lg.switch_name)" />
+                    <span>·</span>
+                    <span>{{ lg.port_count }} {{ $t('lag.ports') }}</span>
+                  </div>
+                </div>
+              </NuxtLink>
+            </template>
           </div>
 
           <div v-else class="py-4 text-center text-sm text-gray-400">
@@ -228,7 +251,7 @@ const showResults = ref(false)
 const searching = ref(false)
 const selectedIndex = ref(-1)
 const searchInputRef = ref<any>(null)
-const results = ref<any>({ switches: [], vlans: [], networks: [], allocations: [], templates: [] })
+const results = ref<any>({ switches: [], vlans: [], networks: [], allocations: [], templates: [], lagGroups: [] })
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -236,7 +259,7 @@ watch(searchQuery, (q) => {
   if (debounceTimer) clearTimeout(debounceTimer)
   selectedIndex.value = -1
   if (!q || q.length < 2) {
-    results.value = { switches: [], vlans: [], networks: [], allocations: [], templates: [] }
+    results.value = { switches: [], vlans: [], networks: [], allocations: [], templates: [], lagGroups: [] }
     return
   }
   searching.value = true
@@ -246,7 +269,7 @@ watch(searchQuery, (q) => {
       if (headerSiteId.value && headerSiteId.value !== 'all') params.site_id = headerSiteId.value
       results.value = await $fetch('/api/search', { params })
     } catch {
-      results.value = { switches: [], vlans: [], networks: [], allocations: [], templates: [] }
+      results.value = { switches: [], vlans: [], networks: [], allocations: [], templates: [], lagGroups: [] }
     } finally {
       searching.value = false
     }
@@ -258,7 +281,8 @@ const hasResults = computed(() =>
   results.value.vlans?.length ||
   results.value.networks?.length ||
   results.value.allocations?.length ||
-  results.value.templates?.length
+  results.value.templates?.length ||
+  results.value.lagGroups?.length
 )
 
 // Flat list of all results for keyboard navigation
@@ -280,12 +304,15 @@ const flatResults = computed(() => {
   for (const tpl of results.value.templates || []) {
     items.push({ type: 'templates', index: items.length, url: `/layout-templates/${tpl.id}` })
   }
+  for (const lg of results.value.lagGroups || []) {
+    items.push({ type: 'lagGroups', index: items.length, url: `/sites/${lg.site_id}/switches/${lg.switch_id}?lag=${lg.id}` })
+  }
   return items
 })
 
 function flatIndex(type: string, i: string | number): number {
   let offset = 0
-  const order = ['switches', 'vlans', 'networks', 'allocations', 'templates']
+  const order = ['switches', 'vlans', 'networks', 'allocations', 'templates', 'lagGroups']
   for (const t of order) {
     if (t === type) return offset + Number(i)
     offset += (results.value[t]?.length || 0)

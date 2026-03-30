@@ -3,6 +3,7 @@ import { vlanRepository } from '../repositories/vlanRepository'
 import { networkRepository } from '../repositories/networkRepository'
 import { ipAllocationRepository } from '../repositories/ipAllocationRepository'
 import { layoutTemplateRepository } from '../repositories/layoutTemplateRepository'
+import { lagGroupRepository } from '../repositories/lagGroupRepository'
 
 export default defineEventHandler((event) => {
   const query = getQuery(event)
@@ -10,7 +11,7 @@ export default defineEventHandler((event) => {
   const siteId = query.site_id as string | undefined
 
   if (!q || q.length < 2) {
-    return { switches: [], vlans: [], networks: [], allocations: [], templates: [] }
+    return { switches: [], vlans: [], networks: [], allocations: [], templates: [], lagGroups: [] }
   }
 
   const MAX_PER_TYPE = 10
@@ -71,5 +72,33 @@ export default defineEventHandler((event) => {
     .slice(0, MAX_PER_TYPE)
     .map(({ units: _, ...t }) => t)
 
-  return { switches, vlans, networks, allocations, templates }
+  const allLagGroups = lagGroupRepository.list()
+  const lagGroups = allLagGroups
+    .filter(lg => {
+      if (siteId) {
+        const sw = allSwitches.find(s => s.id === lg.switch_id)
+        if (!sw || sw.site_id !== siteId) return false
+      }
+      return (
+        lg.name.toLowerCase().includes(q) ||
+        lg.description?.toLowerCase().includes(q) ||
+        lg.remote_device?.toLowerCase().includes(q)
+      )
+    })
+    .slice(0, MAX_PER_TYPE)
+    .map(lg => {
+      const sw = allSwitches.find(s => s.id === lg.switch_id)
+      return {
+        id: lg.id,
+        name: lg.name,
+        switch_id: lg.switch_id,
+        switch_name: sw?.name || '',
+        site_id: sw?.site_id || '',
+        port_count: lg.port_ids.length,
+        remote_device: lg.remote_device,
+        description: lg.description,
+      }
+    })
+
+  return { switches, vlans, networks, allocations, templates, lagGroups }
 })

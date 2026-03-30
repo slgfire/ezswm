@@ -543,6 +543,7 @@
     "networks": "Netzwerke",
     "ipAllocations": "IP-Zuweisungen",
     "templates": "Layout-Vorlagen",
+    "lagGroups": "LAG-Gruppen",
     "noResults": "Keine Ergebnisse gefunden"
   },
   "legend": {
