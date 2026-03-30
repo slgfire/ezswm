@@ -72,29 +72,51 @@ Same tooltip pattern as VLAN hover tooltips already used on ports.
 4. Clicking "Create LAG" opens a USlideover with:
    - Name (required, text input)
    - Description (optional, textarea)
-   - Ports (pre-filled from selection, displayed as badges, editable)
+   - Ports (pre-filled from selection, displayed as badges, removable)
    - Remote Device (optional, dropdown of other switches + freetext)
 5. On submit: POST to `/api/switches/{id}/lag-groups`, refresh port grid
 
+**UI Validation (before submit):**
+- Disable "Create LAG" button and show tooltip reason when:
+  - Fewer than 2 ports selected
+  - Any selected port is already in another LAG — show which LAG
+- These checks happen client-side for immediate feedback; backend validates ownership as additional safety net
+
+**Form behavior:**
+- Port changes (add/remove badges) are local state only
+- All changes applied on submit, not immediately
+- On submit: send final `port_ids` array to API
+
 ### 4. LAG Management — Legend
 
-Below the port grid legend, add a LAG section showing all LAGs for this switch:
+Below the port grid legend, add a LAG section showing all LAGs for this switch.
 
-```
-LAG: [stripe-icon] LAG1 — Uplink  4p → sw-core  [edit] [delete]
-     [stripe-icon] LAG2 — Server  4p → srv-db01  [edit] [delete]
-```
+**Layout:**
+- Flex-wrap row of LAG chips
+- Each chip shows: diagonal-stripe icon, name, port count, remote device (if set)
+- Click chip → opens edit slideover
+- Each chip has a small delete button (x icon)
 
-- Each LAG entry shows: stripe icon, name, description, port count, remote device
-- Click on LAG name/edit: opens edit slideover (same form as create, pre-filled)
-- Click delete: confirmation dialog, then DELETE API call
-- LAG entries are clickable chips in a flex row, consistent with existing legend styling
+**Collapsing for many LAGs:**
+- ≤3 LAGs: show all inline
+- \>3 LAGs: show first 3, then a "Show all (N)" toggle button to expand
+- Collapsed state persists per session (not saved)
+
+**Hover-Highlight (key UX feature):**
+- Hovering a LAG chip in the legend highlights its member ports in the grid
+- Non-member ports dim to `opacity: 0.3`
+- Provides instant visual feedback about which ports belong to which LAG
+- Same highlight applied when hovering a LAG port's tooltip
+
+**Delete UX:**
+- Confirmation dialog shows LAG name AND lists all member port labels that will be released
+- Example: "Delete LAG 'LAG1'? Ports Gi1/0/1, Gi1/0/2, Gi1/0/3, Gi1/0/4 will be released."
 
 ### 5. LAG in Port Side Panel
 
 When viewing a single port in the SwitchPortSidePanel:
 - Show "LAG Group" field (read-only display if member, or "None")
-- If port is in a LAG: show LAG name as a link/badge, with "Remove from LAG" action
+- If port is in a LAG: show LAG name as a badge, with "Remove from LAG" action button
 - No LAG assignment dropdown in port editor (LAGs are managed via multi-select + create, not per-port assignment)
 
 ### 6. Composable Improvements
@@ -102,6 +124,10 @@ When viewing a single port in the SwitchPortSidePanel:
 Upgrade `useLagGroups.ts`:
 - Add proper TypeScript typing (`LAGGroup[]` instead of `any[]`)
 - Import LAGGroup type from `~~/types/lagGroup`
+- Add precomputed lookup maps as computed properties:
+  - `lagById: ComputedRef<Map<string, LAGGroup>>` — O(1) lookup by LAG ID
+  - `lagByPortId: ComputedRef<Map<string, LAGGroup>>` — O(1) lookup by port ID (for hover tooltips, port side panel)
+- These maps prevent O(n) filtering on every hover/render
 
 ### 7. Backend Fixes
 
@@ -111,46 +137,58 @@ Upgrade `useLagGroups.ts`:
 **Activity logging:**
 - Add `activityRepository.log()` calls to all LAG API routes (create, update, delete)
 - Action types: `create`, `update`, `delete` with entity_type `lag_group`
+- Include `entity_name` (LAG name) and `previous_state` with port labels for meaningful audit trail
+- Example: `{ entity_type: 'lag_group', action: 'create', entity_name: 'LAG1', previous_state: { ports: ['Gi1/0/1', 'Gi1/0/2'] } }`
 
 ### 8. i18n
 
 Add translation keys for LAG-related UI text in both `en.json` and `de.json`:
-- LAG group labels, button text, form labels, tooltips, confirmation dialogs, toast messages, legend entries
+- Labels: LAG Group, Name, Description, Remote Device, Ports
+- Actions: Create LAG, Edit LAG, Delete LAG, Remove from LAG
+- Pluralization: `{n} port | {n} ports`
+- Toasts: LAG created, LAG updated, LAG deleted, Port removed from LAG
+- Validation: "Port already in LAG '{name}'", "Select at least 2 ports"
+- Delete dialog: "Delete LAG '{name}'?", "The following ports will be released:"
+- Legend: "Show all ({n})", LAG section label
 
 ### 9. Global Search
 
-Add LAG groups to the search API so they appear in global search results.
+Add LAG groups to the search API results with proper structure:
+- `type: 'lag_group'`
+- `title: lagName`
+- `subtitle: 'Switch {switchName} · {n} ports'`
+- `url: /sites/{siteId}/switches/{switchId}` (navigates to switch detail page)
 
 ## Files to Modify
 
 **Frontend — Components:**
 - `app/components/switch/SwitchPortItem.vue` — Replace bottom-stripe with diagonal pattern, add hover tooltip, fix access/trunk dot
-- `app/components/switch/SwitchPortGrid.vue` — Add LAG legend section, pass LAG data
-- `app/components/switch/SwitchPortSidePanel.vue` — Add LAG group display field
+- `app/components/switch/SwitchPortGrid.vue` — Add LAG legend section with collapse/expand and hover-highlight, pass LAG data
+- `app/components/switch/SwitchPortSidePanel.vue` — Add LAG group display field with remove action
 
 **Frontend — New Components:**
-- `app/components/switch/LagGroupSlideover.vue` — Create/edit LAG form
+- `app/components/switch/LagGroupSlideover.vue` — Create/edit LAG form with port badges and validation
 
 **Frontend — Pages:**
-- `app/pages/sites/[siteId]/switches/[id].vue` — Fetch LAGs, pass to grid, add "Create LAG" to bulk actions
+- `app/pages/sites/[siteId]/switches/[id].vue` — Fetch LAGs, pass to grid, add "Create LAG" to bulk actions with validation
 
 **Frontend — Composables:**
-- `app/composables/useLagGroups.ts` — Add types
+- `app/composables/useLagGroups.ts` — Add types, lagById, lagByPortId computed maps
 
 **Backend — API:**
 - `server/api/switches/[id].delete.ts` — Add LAG cleanup
-- `server/api/switches/[id]/lag-groups/index.post.ts` — Add activity logging
-- `server/api/switches/[id]/lag-groups/[id].put.ts` — Add activity logging
-- `server/api/switches/[id]/lag-groups/[id].delete.ts` — Add activity logging
+- `server/api/switches/[id]/lag-groups/index.post.ts` — Add activity logging with metadata
+- `server/api/switches/[id]/lag-groups/[id].put.ts` — Add activity logging with metadata
+- `server/api/switches/[id]/lag-groups/[id].delete.ts` — Add activity logging with metadata
 - `server/api/search.get.ts` — Add LAG groups to search results
 
 **i18n:**
-- `i18n/locales/en.json` — LAG translation keys
-- `i18n/locales/de.json` — LAG translation keys
+- `i18n/locales/en.json` — LAG translation keys with pluralization
+- `i18n/locales/de.json` — LAG translation keys with pluralization
 
 ## Out of Scope
 
 - LAG topology visualization (topology page not yet built)
 - LAG import/export (can be added later)
 - Per-LAG color coding (decided: uniform pattern, details via hover)
-- Port speed/VLAN consistency validation on LAG creation (backend already validates port ownership)
+- Port type incompatibility validation (mixed SFP+RJ45 LAGs are valid in practice)
