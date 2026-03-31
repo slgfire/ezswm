@@ -692,11 +692,46 @@ async function onRemovePortFromLag(lagId: string, portId: string) {
   if (!lag) return
   try {
     const newPortIds = lag.port_ids.filter(pid => pid !== portId)
+
     if (newPortIds.length < 2) {
+      // LAG would have < 2 ports — delete it and mirror LAG
+      if (lag.remote_device_id) {
+        try {
+          const remoteLags = await $fetch<any[]>(`/api/switches/${lag.remote_device_id}/lag-groups`)
+          const mirrorLag = remoteLags?.find((rl: any) => rl.remote_device_id === id)
+          if (mirrorLag) {
+            await $fetch(`/api/switches/${lag.remote_device_id}/lag-groups/${mirrorLag.id}`, { method: 'DELETE' })
+          }
+        } catch { /* best-effort */ }
+      }
       await removeLag(lagId)
       toast.add({ title: t('lag.messages.deleted'), color: 'success' })
     } else {
+      // Remove port from local LAG
       await updateLag(lagId, { port_ids: newPortIds })
+
+      // Sync mirror LAG: remove the corresponding remote port
+      if (lag.remote_device_id) {
+        try {
+          const remoteLags = await $fetch<any[]>(`/api/switches/${lag.remote_device_id}/lag-groups`)
+          const mirrorLag = remoteLags?.find((rl: any) => rl.remote_device_id === id)
+          if (mirrorLag) {
+            // Find which remote port was mapped to this local port
+            const localPort = item.value?.ports?.find((p: any) => p.id === portId)
+            const remotePortId = localPort?.connected_port_id
+            if (remotePortId) {
+              const newRemotePortIds = mirrorLag.port_ids.filter((pid: string) => pid !== remotePortId)
+              if (newRemotePortIds.length < 2) {
+                await $fetch(`/api/switches/${lag.remote_device_id}/lag-groups/${mirrorLag.id}`, { method: 'DELETE' })
+              } else {
+                await $fetch(`/api/switches/${lag.remote_device_id}/lag-groups/${mirrorLag.id}`, {
+                  method: 'PUT', body: { port_ids: newRemotePortIds }
+                })
+              }
+            }
+          }
+        } catch { /* best-effort */ }
+      }
       toast.add({ title: t('lag.messages.portRemoved'), color: 'success' })
     }
     await fetchSwitch()
