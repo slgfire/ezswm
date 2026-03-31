@@ -340,7 +340,7 @@
     "importDescription": "Import from NetBox device library",
     "searchDevices": "Search devices... (e.g. Cisco 9200)",
     "libraryUnavailable": "Device library unavailable — no internet connection",
-    "noResults": "No devices found for '{query}'",
+    "noResults": "No templates match your filters.",
     "importDevice": "Import",
     "preview": "Preview",
     "datasheetUrl": "Datasheet URL",
@@ -394,7 +394,6 @@
     "allPortTypes": "All Port Types",
     "viewGrid": "Card View",
     "viewList": "List View",
-    "noResults": "No templates match your filters.",
     "infoBar": {
       "units": "units",
       "ports": "ports",
@@ -405,7 +404,6 @@
       "speed": "Speed",
       "label": "Label"
     },
-    "preview": "Preview",
     "previewEmpty": "Add blocks to see the port layout preview.",
     "rowLayout": {
       "sequential": "Sequential",
@@ -597,6 +595,7 @@
       "updated": "LAG group updated",
       "deleted": "LAG group deleted",
       "portRemoved": "Port removed from LAG"
-    }
+    },
+    "portMapping": "Port Mapping"
   }
 }

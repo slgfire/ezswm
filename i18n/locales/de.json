@@ -340,7 +340,7 @@
     "importDescription": "Aus der NetBox-Gerätebibliothek importieren",
     "searchDevices": "Geräte suchen... (z.B. Cisco 9200)",
     "libraryUnavailable": "Gerätebibliothek nicht verfügbar — keine Internetverbindung",
-    "noResults": "Keine Geräte gefunden für '{query}'",
+    "noResults": "Keine Vorlagen entsprechen Ihren Filtern.",
     "importDevice": "Importieren",
     "preview": "Vorschau",
     "datasheetUrl": "Datenblatt-URL",
@@ -394,7 +394,6 @@
     "allPortTypes": "Alle Port-Typen",
     "viewGrid": "Kartenansicht",
     "viewList": "Listenansicht",
-    "noResults": "Keine Vorlagen entsprechen Ihren Filtern.",
     "infoBar": {
       "units": "Units",
       "ports": "Ports",
@@ -405,7 +404,6 @@
       "speed": "Geschwindigkeit",
       "label": "Bezeichnung"
     },
-    "preview": "Vorschau",
     "previewEmpty": "Fügen Sie Blöcke hinzu um die Port-Layout-Vorschau zu sehen.",
     "rowLayout": {
       "sequential": "Sequenziell",
@@ -597,6 +595,7 @@
       "updated": "LAG-Gruppe aktualisiert",
       "deleted": "LAG-Gruppe gelöscht",
       "portRemoved": "Port aus LAG entfernt"
-    }
+    },
+    "portMapping": "Port-Zuordnung"
   }
 }
