@@ -599,6 +599,10 @@
     "portMapping": "Port-Zuordnung",
     "portAlreadyConnected": "Port {port} ist bereits verbunden mit {device}. Bestehende Verbindung wird überschrieben.",
     "conflictWarning": "Einige Remote-Ports sind bereits verbunden. Bestehende Verbindungen werden beim Speichern überschrieben.",
-    "conflictConfirm": "Einige Remote-Ports haben bestehende Verbindungen, die überschrieben werden. Fortfahren?"
+    "conflictConfirm": "Einige Remote-Ports haben bestehende Verbindungen, die überschrieben werden. Fortfahren?",
+    "existingRemoteLag": "Auf {switch} existiert bereits eine LAG \"{name}\" die auf diesen Switch verweist. Sie wird ersetzt.",
+    "replaceRemoteLag": "Auf {switch} existiert bereits eine LAG \"{name}\" die hierher verweist. Mit der neuen Mirror-LAG ersetzen?",
+    "portInRemoteLag": "Dieser Port ist bereits in LAG \"{lag}\" auf dem Remote-Switch",
+    "deleteRemoteLagToo": "Die Mirror-LAG auf {switch} wird ebenfalls gelöscht."
   }
 }

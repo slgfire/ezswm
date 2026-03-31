@@ -599,6 +599,10 @@
     "portMapping": "Port Mapping",
     "portAlreadyConnected": "Port {port} is already connected to {device}. Existing connection will be overwritten.",
     "conflictWarning": "Some remote ports are already connected. Existing connections will be overwritten on save.",
-    "conflictConfirm": "Some remote ports have existing connections that will be overwritten. Continue?"
+    "conflictConfirm": "Some remote ports have existing connections that will be overwritten. Continue?",
+    "existingRemoteLag": "A LAG \"{name}\" already exists on {switch} linking back to this switch. It will be replaced.",
+    "replaceRemoteLag": "A LAG \"{name}\" on {switch} already links to this switch. Replace it with the new mirror LAG?",
+    "portInRemoteLag": "This port is already in LAG \"{lag}\" on the remote switch",
+    "deleteRemoteLagToo": "The mirror LAG on {switch} will also be deleted."
   }
 }

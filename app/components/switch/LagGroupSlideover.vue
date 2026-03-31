@@ -51,7 +51,6 @@
             >{{ mode.label }}</button>
           </div>
 
-          <!-- Switch from DB -->
           <USelectMenu
             v-if="remoteMode === 'switch'"
             :search-input="false"
@@ -62,7 +61,6 @@
             @update:model-value="onSwitchSelect"
           />
 
-          <!-- Freetext device name -->
           <UInput
             v-if="remoteMode === 'freetext'"
             v-model="form.remote_device"
@@ -70,6 +68,20 @@
             class="w-full"
           />
         </UFormField>
+
+        <!-- Existing remote LAG warning -->
+        <div v-if="existingRemoteLag" class="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+          <span class="font-semibold">{{ $t('common.warning') }}:</span>
+          {{ $t('lag.existingRemoteLag', { name: existingRemoteLag.name, switch: form.remote_device }) }}
+        </div>
+
+        <!-- Remote port LAG conflict (ports in a different LAG on remote switch) -->
+        <div v-if="remotePortLagConflicts.length" class="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+          <span class="font-semibold">{{ $t('common.warning') }}:</span>
+          <div v-for="c in remotePortLagConflicts" :key="c.portId" class="mt-1">
+            {{ c.portLabel }} → {{ $t('lag.portInRemoteLag', { lag: c.lagName }) }}
+          </div>
+        </div>
 
         <!-- Port mapping table -->
         <div v-if="showPortMapping && form.port_ids.length > 0" class="rounded-lg border border-default bg-default/50 p-3">
@@ -83,13 +95,11 @@
               class="space-y-1"
             >
               <div class="flex items-center gap-2">
-                <!-- Local port label -->
                 <span class="w-24 shrink-0 truncate text-xs font-medium text-gray-700 dark:text-gray-200">
                   {{ getPortLabel(portId) }}
                 </span>
                 <span class="text-xs text-gray-400">→</span>
 
-                <!-- Remote port: dropdown for switch, text for freetext -->
                 <USelectMenu
                   v-if="remoteMode === 'switch' && selectedRemoteSwitchId"
                   :search-input="false"
@@ -108,16 +118,16 @@
                   @update:model-value="(val: string) => setRemotePortFreetext(portId, val)"
                 />
               </div>
-              <!-- Conflict warning -->
+              <!-- Connection conflict warning -->
               <div v-if="getPortConflict(portId)" class="ml-[6.5rem] rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[10px] text-amber-400">
-                {{ $t('common.warning') }}: {{ getPortConflict(portId) }}
+                {{ getPortConflict(portId) }}
               </div>
             </div>
           </div>
         </div>
 
         <!-- Global conflict warning -->
-        <div v-if="hasConflicts" class="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+        <div v-if="hasConnectionConflicts" class="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
           <span class="font-semibold">{{ $t('common.warning') }}:</span>
           {{ $t('lag.conflictWarning') }}
         </div>
@@ -129,7 +139,7 @@
         <UButton color="neutral" variant="ghost" @click="isOpen = false">
           {{ $t('common.cancel') }}
         </UButton>
-        <UButton :loading="saving" icon="i-heroicons-check" @click="onSubmit">
+        <UButton :loading="saving" :disabled="remotePortLagConflicts.length > 0" icon="i-heroicons-check" @click="onSubmit">
           {{ isEdit ? $t('common.save') : $t('lag.create') }}
         </UButton>
       </div>
@@ -189,6 +199,8 @@ function onRemoteModeChange(mode: 'none' | 'switch' | 'freetext') {
 // All switches for remote device dropdown
 const allSwitches = ref<any[]>([])
 const selectedRemoteSwitchId = ref('')
+// LAGs on the remote switch
+const remoteLags = ref<LAGGroup[]>([])
 
 const switchOptions = computed(() => [
   { label: '— None —', value: '' },
@@ -201,16 +213,56 @@ const selectedSwitchOption = computed(() =>
   switchOptions.value.find(o => o.value === selectedRemoteSwitchId.value) || switchOptions.value[0]
 )
 
-function onSwitchSelect(option: any) {
+async function onSwitchSelect(option: any) {
   selectedRemoteSwitchId.value = option?.value || ''
   const sw = allSwitches.value.find(s => s.id === option?.value)
   form.remote_device = sw?.name || ''
   form.remote_device_id = option?.value || undefined
-  // Clear port mapping when switching remote device
   for (const key of Object.keys(portMapping)) delete portMapping[key]
+  // Fetch LAGs on the remote switch
+  if (option?.value) {
+    await fetchRemoteLags(option.value)
+  } else {
+    remoteLags.value = []
+  }
 }
 
-// Remote port options for selected switch (with conflict info)
+// Check if there's an existing LAG on the remote switch that links back to us
+const existingRemoteLag = computed(() => {
+  if (!selectedRemoteSwitchId.value) return null
+  return remoteLags.value.find(lag =>
+    lag.remote_device_id === props.switchId
+  ) || null
+})
+
+// Check if selected remote ports are in a DIFFERENT LAG on the remote switch
+const remotePortLagConflicts = computed(() => {
+  if (remoteMode.value !== 'switch' || !selectedRemoteSwitchId.value) return []
+  const conflicts: { portId: string; portLabel: string; lagName: string }[] = []
+  const allowedRemoteLagId = existingRemoteLag.value?.id
+
+  for (const localPortId of form.port_ids) {
+    const mapping = portMapping[localPortId]
+    if (!mapping?.remotePortId) continue
+
+    for (const rlag of remoteLags.value) {
+      // Skip the mirror LAG that belongs to us
+      if (rlag.id === allowedRemoteLagId) continue
+      if (rlag.port_ids.includes(mapping.remotePortId)) {
+        const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
+        const port = sw?.ports?.find((p: any) => p.id === mapping.remotePortId)
+        conflicts.push({
+          portId: mapping.remotePortId,
+          portLabel: port?.label || mapping.remotePortId,
+          lagName: rlag.name
+        })
+      }
+    }
+  }
+  return conflicts
+})
+
+// Remote port options for selected switch (with connection conflict info)
 const remotePortOptions = computed(() => {
   if (!selectedRemoteSwitchId.value) return []
   const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
@@ -219,12 +271,10 @@ const remotePortOptions = computed(() => {
     { label: '— None —', value: '', conflict: '' },
     ...sw.ports.map((p: any) => {
       const label = p.label || `${p.unit}/${p.index}`
-      // Check if this remote port is already connected to something else
       let conflict = ''
       if (p.connected_device_id && p.connected_device_id !== props.switchId) {
         conflict = `→ ${p.connected_device || 'Unknown'}`
       } else if (p.connected_device_id === props.switchId && p.connected_port_id) {
-        // Connected to our switch but maybe a different port (not in this LAG)
         const isOurLagPort = form.port_ids.includes(p.connected_port_id)
         if (!isOurLagPort) {
           const ourPort = props.ports.find((lp: any) => lp.id === p.connected_port_id)
@@ -266,7 +316,7 @@ function setRemotePortFreetext(localPortId: string, label: string) {
   }
 }
 
-// Conflict check per port
+// Connection conflict check per port (existing connections, not LAG conflicts)
 function getPortConflict(localPortId: string): string | null {
   if (remoteMode.value !== 'switch') return null
   const mapping = portMapping[localPortId]
@@ -278,11 +328,10 @@ function getPortConflict(localPortId: string): string | null {
   return null
 }
 
-const hasConflicts = computed(() => {
+const hasConnectionConflicts = computed(() => {
   return form.port_ids.some(pid => getPortConflict(pid) !== null)
 })
 
-// Show port mapping when a remote device is configured
 const showPortMapping = computed(() => {
   if (remoteMode.value === 'switch' && selectedRemoteSwitchId.value) return true
   if (remoteMode.value === 'freetext' && form.remote_device.trim()) return true
@@ -327,13 +376,19 @@ async function onSubmit() {
   const errors = validate(form)
   if (errors.length > 0) return
 
-  // Confirm if there are conflicts
-  if (hasConflicts.value) {
+  // Confirm if there are connection conflicts
+  if (hasConnectionConflicts.value) {
     if (!window.confirm(t('lag.conflictConfirm'))) return
+  }
+
+  // Confirm if existing remote LAG will be replaced
+  if (existingRemoteLag.value && !isEdit.value) {
+    if (!window.confirm(t('lag.replaceRemoteLag', { name: existingRemoteLag.value.name, switch: form.remote_device }))) return
   }
 
   saving.value = true
   try {
+    // 1. Create/update local LAG
     const body = {
       name: form.name.trim(),
       port_ids: [...form.port_ids],
@@ -348,7 +403,7 @@ async function onSubmit() {
       await create(body)
     }
 
-    // Update connected device + port mapping on all member ports
+    // 2. Update connected device + port mapping on all local member ports
     if (remoteMode.value !== 'none' && form.remote_device.trim()) {
       for (const portId of form.port_ids) {
         const mapping = portMapping[portId]
@@ -363,7 +418,6 @@ async function onSubmit() {
         } catch { /* best-effort */ }
       }
     } else if (remoteMode.value === 'none') {
-      // Clear connection on all member ports
       for (const portId of form.port_ids) {
         try {
           await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, {
@@ -372,6 +426,11 @@ async function onSubmit() {
           })
         } catch { /* best-effort */ }
       }
+    }
+
+    // 3. Create/update mirror LAG on remote switch (only for switch mode)
+    if (remoteMode.value === 'switch' && selectedRemoteSwitchId.value) {
+      await syncRemoteLag()
     }
 
     toast.add({
@@ -388,11 +447,56 @@ async function onSubmit() {
   }
 }
 
+async function syncRemoteLag() {
+  const remoteSwId = selectedRemoteSwitchId.value
+  if (!remoteSwId) return
+
+  // Collect remote port IDs from mapping
+  const remotePortIds = form.port_ids
+    .map(pid => portMapping[pid]?.remotePortId)
+    .filter(Boolean) as string[]
+
+  if (remotePortIds.length < 2) return // need at least 2 ports for a LAG
+
+  const localSw = allSwitches.value.find(s => s.id === props.switchId)
+  const localSwName = localSw?.name || props.switchId
+
+  const mirrorBody = {
+    name: form.name.trim(),
+    port_ids: remotePortIds,
+    description: form.description.trim() || undefined,
+    remote_device: localSwName,
+    remote_device_id: props.switchId,
+  }
+
+  // Delete existing remote LAG if it exists (replace it)
+  if (existingRemoteLag.value) {
+    try {
+      await $fetch(`/api/switches/${remoteSwId}/lag-groups/${existingRemoteLag.value.id}`, { method: 'DELETE' })
+    } catch { /* best-effort */ }
+  }
+
+  // Create mirror LAG on remote switch
+  try {
+    await $fetch(`/api/switches/${remoteSwId}/lag-groups`, { method: 'POST', body: mirrorBody })
+  } catch (e: any) {
+    toast.add({ title: `Mirror LAG: ${e?.data?.message || 'Failed'}`, color: 'warning' })
+  }
+}
+
 async function fetchSwitches() {
   try {
     const data = await apiFetch<any>('/api/switches')
     allSwitches.value = data.data || data
   } catch { /* ignore */ }
+}
+
+async function fetchRemoteLags(remoteSwitchId: string) {
+  try {
+    remoteLags.value = await apiFetch<LAGGroup[]>(`/api/switches/${remoteSwitchId}/lag-groups`)
+  } catch {
+    remoteLags.value = []
+  }
 }
 
 function initPortMapping() {
@@ -416,12 +520,13 @@ function openCreate(portIds: string[]) {
   form.remote_device_id = undefined
   remoteMode.value = 'none'
   selectedRemoteSwitchId.value = ''
+  remoteLags.value = []
   for (const key of Object.keys(portMapping)) delete portMapping[key]
   isOpen.value = true
   fetchSwitches()
 }
 
-function openEdit(lag: LAGGroup) {
+async function openEdit(lag: LAGGroup) {
   editingLag.value = lag
   form.name = lag.name
   form.description = lag.description || ''
@@ -442,7 +547,10 @@ function openEdit(lag: LAGGroup) {
   initPortMapping()
 
   isOpen.value = true
-  fetchSwitches()
+  await fetchSwitches()
+  if (lag.remote_device_id) {
+    await fetchRemoteLags(lag.remote_device_id)
+  }
 }
 
 defineExpose({ openCreate, openEdit })

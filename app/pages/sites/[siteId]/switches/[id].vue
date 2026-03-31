@@ -643,14 +643,32 @@ const lagDeleteMessage = computed(() => {
   const portLabels = lagToDelete.value.port_ids
     .map((pid: string) => item.value?.ports?.find((p: any) => p.id === pid)?.label || pid)
     .join(', ')
-  return `${t('lag.deleteConfirm', { name: lagToDelete.value.name })}\n\n${t('lag.portsWillBeReleased')}: ${portLabels}`
+  let msg = `${t('lag.deleteConfirm', { name: lagToDelete.value.name })}\n\n${t('lag.portsWillBeReleased')}: ${portLabels}`
+  // If there's a mirror LAG on the remote switch, mention it
+  if (lagToDelete.value.remote_device_id && lagToDelete.value.remote_device) {
+    msg += `\n\n${t('lag.deleteRemoteLagToo', { switch: lagToDelete.value.remote_device })}`
+  }
+  return msg
 })
 
 async function onDeleteLag() {
   if (!lagToDelete.value) return
   deletingLag.value = true
   try {
-    await removeLag(lagToDelete.value.id)
+    const lag = lagToDelete.value
+
+    // Delete mirror LAG on remote switch if it exists
+    if (lag.remote_device_id) {
+      try {
+        const remoteLags = await $fetch<any[]>(`/api/switches/${lag.remote_device_id}/lag-groups`)
+        const mirrorLag = remoteLags?.find((rl: any) => rl.remote_device_id === id)
+        if (mirrorLag) {
+          await $fetch(`/api/switches/${lag.remote_device_id}/lag-groups/${mirrorLag.id}`, { method: 'DELETE' })
+        }
+      } catch { /* best-effort */ }
+    }
+
+    await removeLag(lag.id)
     toast.add({ title: t('lag.messages.deleted'), color: 'success' })
     showLagDeleteDialog.value = false
     lagToDelete.value = null
