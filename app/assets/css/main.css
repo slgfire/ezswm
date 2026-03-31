@@ -253,3 +253,124 @@ a, button {
   filter: brightness(0.5);
 }
 
+/* ============================================
+   Print Styles
+   ============================================ */
+
+/* Print/screen visibility utilities */
+.print-only {
+  display: none !important;
+}
+.print-only-flex {
+  display: none !important;
+}
+
+/* Global page settings for print */
+@media print {
+  @page {
+    size: landscape;
+    margin: 10mm;
+  }
+}
+
+/* Scoped print rules — only active when body has .print-mode */
+body.print-mode {
+  @media print {
+    * {
+      print-color-adjust: exact !important;
+      -webkit-print-color-adjust: exact !important;
+    }
+
+    background: #fff !important;
+    color: #000 !important;
+
+    nav,
+    header,
+    footer,
+    aside,
+    [role="complementary"],
+    [role="banner"],
+    .no-print,
+    .screen-only,
+    [data-headlessui-state],
+    [class*="USlideover"],
+    [class*="UModal"],
+    [class*="Notification"],
+    [class*="DevTools"],
+    [class*="devtools"] {
+      display: none !important;
+    }
+
+    .print-only {
+      display: block !important;
+    }
+    .print-only-flex {
+      display: flex !important;
+    }
+
+    main,
+    [role="main"] {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+
+    .port-glow {
+      box-shadow: none !important;
+      border-color: #999 !important;
+      background-color: #fff !important;
+      color: #000 !important;
+    }
+
+    .port-glow[class*="bg-green"] {
+      background-color: #f0fdf4 !important;
+      border-color: #16a34a !important;
+      color: #000 !important;
+    }
+    .port-glow[class*="bg-red"],
+    .port-glow[class*="bg-neutral-800"][class*="border-red"] {
+      background-color: #fef2f2 !important;
+      border-color: #dc2626 !important;
+      color: #000 !important;
+    }
+
+    .lag-stripe {
+      background-image: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 3px,
+        rgba(0, 0, 0, 0.12) 3px,
+        rgba(0, 0, 0, 0.12) 5px
+      ) !important;
+    }
+
+    [class*="dark:bg-neutral"],
+    [class*="dark:bg-gray"] {
+      background-color: #fff !important;
+    }
+    [class*="dark:text-gray"],
+    [class*="dark:text-neutral"],
+    [class*="dark:text-white"] {
+      color: #000 !important;
+    }
+    [class*="dark:border-neutral"],
+    [class*="dark:border-gray"] {
+      border-color: #ccc !important;
+    }
+
+    .list-container {
+      border-color: #ccc !important;
+      background-color: #f9f9f9 !important;
+    }
+
+    .card-glow:hover {
+      box-shadow: none !important;
+    }
+
+    .print-page-break {
+      page-break-after: always;
+    }
+  }
+}
+
