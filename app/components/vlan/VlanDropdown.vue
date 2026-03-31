@@ -31,12 +31,13 @@ const emit = defineEmits<{
   'update:modelValue': [value: number | null]
 }>()
 
-const options = computed(() =>
-  props.vlans.map(v => ({
+const options = computed(() => [
+  { label: '— None —', value: 0 },
+  ...props.vlans.map(v => ({
     label: `${v.vlan_id} · ${v.name}`,
     value: v.vlan_id
   }))
-)
+])
 
 const colorMap = computed(() => {
   const map: Record<number, string> = {}
@@ -51,10 +52,11 @@ const selectedVlan = computed(() => {
 
 const value = computed({
   get() {
-    return options.value.find(o => o.value === props.modelValue) || undefined
+    return options.value.find(o => o.value === props.modelValue) || options.value[0]
   },
   set(val: any) {
-    emit('update:modelValue', val?.value ?? null)
+    // value 0 = "None" = clear the VLAN
+    emit('update:modelValue', val?.value ? val.value : null)
   }
 })
 </script>

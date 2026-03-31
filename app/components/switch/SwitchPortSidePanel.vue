@@ -340,7 +340,31 @@ async function save() {
   } else { body.connected_device_id = null; body.connected_port_id = null }
   try {
     await $fetch(`/api/switches/${props.switchId}/ports/${props.port.id}`, { method: 'PUT', body })
-    toast.add({ title: t('switches.ports.portUpdated'), color: 'success' }); emit('saved'); isOpen.value = false
+
+    // LAG sync: update VLAN/speed/status/connected_device on all other LAG member ports
+    if (props.lagGroup?.port_ids?.length > 1) {
+      const syncFields: Record<string, any> = {
+        status: body.status,
+        speed: body.speed,
+        port_mode: body.port_mode,
+        access_vlan: body.access_vlan,
+        native_vlan: body.native_vlan,
+        tagged_vlans: body.tagged_vlans,
+        connected_device: body.connected_device,
+        connected_device_id: body.connected_device_id,
+      }
+      const otherPortIds = props.lagGroup.port_ids.filter((pid: string) => pid !== props.port.id)
+      for (const portId of otherPortIds) {
+        try {
+          await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, { method: 'PUT', body: syncFields })
+        } catch { /* best-effort sync */ }
+      }
+      toast.add({ title: t('switches.ports.portUpdated') + ` (${otherPortIds.length + 1} LAG ports)`, color: 'success' })
+    } else {
+      toast.add({ title: t('switches.ports.portUpdated'), color: 'success' })
+    }
+
+    emit('saved'); isOpen.value = false
   } catch (e: any) { toast.add({ title: e.data?.message || 'Failed', color: 'error' }) }
 }
 
