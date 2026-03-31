@@ -14,7 +14,7 @@
           {{ item?.name || $t('common.loading') }}
         </h1>
       </div>
-      <div v-if="item" class="flex items-center gap-1">
+      <div v-if="item" class="flex items-center gap-1 screen-only">
         <UTooltip :text="showDetails ? $t('common.hideDetails') : $t('common.showDetails')">
           <UButton
             :variant="showDetails ? 'solid' : 'ghost'"
@@ -25,6 +25,16 @@
             <UIcon name="i-heroicons-chevron-down" :class="['h-4 w-4 transition-transform duration-200', showDetails ? 'rotate-180' : '']" />
             <span class="ml-1">{{ showDetails ? $t('common.hideDetails') : $t('common.showDetails') }}</span>
           </UButton>
+        </UTooltip>
+        <UTooltip :text="$t('common.print')">
+          <UButton
+            icon="i-heroicons-printer"
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            class="screen-only"
+            @click="onPrint"
+          />
         </UTooltip>
         <UTooltip :text="$t('common.edit')">
           <UButton
@@ -53,6 +63,20 @@
             @click="showDeleteDialog = true"
           />
         </UTooltip>
+      </div>
+    </div>
+
+    <!-- Print header -->
+    <div class="print-only-flex items-center justify-between border-b pb-2 mb-4" style="border-color: #ccc;">
+      <div>
+        <span class="text-lg font-bold" style="color: #000;">{{ item?.name }}</span>
+        <span class="ml-2 text-sm" style="color: #666;">
+          {{ [item?.manufacturer, item?.model].filter(Boolean).join(' ') }}
+          <template v-if="item?.management_ip"> · {{ item.management_ip }}</template>
+        </span>
+      </div>
+      <div class="text-xs" style="color: #999;">
+        ezSWM · {{ new Date().toLocaleDateString() }}
       </div>
     </div>
 
@@ -100,7 +124,7 @@
       </div>
 
       <!-- Details panel (toggled via info button in header) -->
-      <div v-show="showDetails" class="list-container rounded-lg bg-default p-4">
+      <div v-show="showDetails" class="list-container rounded-lg bg-default p-4 screen-only">
         <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
           <div>
             <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.name') }}</dt>
@@ -162,7 +186,7 @@
       </div>
 
       <!-- Selection bar (shown when ports are selected) -->
-      <div v-if="selectedPorts.length > 0" class="flex items-center justify-between rounded-lg border border-primary-300 bg-primary-50 px-4 py-2 dark:border-primary-500/30 dark:bg-primary-500/10">
+      <div v-if="selectedPorts.length > 0" class="flex items-center justify-between rounded-lg border border-primary-300 bg-primary-50 px-4 py-2 dark:border-primary-500/30 dark:bg-primary-500/10 screen-only">
         <span class="text-sm font-medium text-primary-700 dark:text-primary-300">
           {{ selectedPorts.length }} port{{ selectedPorts.length > 1 ? 's' : '' }} selected
         </span>
@@ -196,6 +220,7 @@
         ref="bulkEditorRef"
         :switch-id="id"
         :selected-ports="selectedPorts"
+        class="screen-only"
         @saved="fetchSwitch"
         @clear-selection="selectedPorts = []"
       />
@@ -214,6 +239,11 @@
           @toggle-select="onToggleSelect"
           @edit-lag="lagSlideoverRef?.openEdit($event)"
           @delete-lag="onDeleteLagClick"
+        />
+        <SwitchPrintLegend
+          v-if="item?.ports?.length"
+          :ports="item.ports"
+          :vlans="vlans"
         />
         <p v-else class="text-sm text-gray-400">{{ $t('switches.ports.noPortsMessage') }}</p>
       </div>
@@ -753,10 +783,24 @@ if (lagParam) {
   }, { immediate: true })
 }
 
+function onPrint() {
+  document.body.classList.add('print-mode')
+  window.print()
+}
+
+function onAfterPrint() {
+  document.body.classList.remove('print-mode')
+}
+
 onMounted(() => {
   fetchSwitch()
   fetchTemplates()
   fetchVlans(siteParams.value)
   fetchLags()
+  window.addEventListener('afterprint', onAfterPrint)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('afterprint', onAfterPrint)
 })
 </script>
