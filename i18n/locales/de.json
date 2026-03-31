@@ -99,7 +99,10 @@
     "comingSoon": "Demnächst",
     "inDevelopment": "In Entwicklung",
     "showLess": "Weniger anzeigen",
-    "none": "Keine"
+    "none": "Keine",
+    "print": "Drucken",
+    "selectAll": "Alle auswählen",
+    "deselectAll": "Alle abwählen"
   },
   "dashboard": {
     "emptyTitle": "Willkommen bei ezSWM!",
@@ -604,5 +607,11 @@
     "replaceRemoteLag": "Auf {switch} existiert bereits eine LAG \"{name}\" die hierher verweist. Mit der neuen Mirror-LAG ersetzen?",
     "portInRemoteLag": "Dieser Port ist bereits in LAG \"{lag}\" auf dem Remote-Switch",
     "deleteRemoteLagToo": "Die Mirror-LAG auf {switch} wird ebenfalls gelöscht."
+  },
+  "print": {
+    "selectForPrint": "Zum Drucken auswählen",
+    "printSelected": "{n} Switches drucken",
+    "switchCount": "{n} Switches zum Drucken ausgewählt",
+    "noSwitches": "Keine Switches zum Drucken ausgewählt"
   }
 }
