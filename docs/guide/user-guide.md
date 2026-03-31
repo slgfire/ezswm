@@ -10,15 +10,21 @@ title: User Guide
 
 When you launch ezSWM for the first time, a setup wizard guides you through creating an admin account. Enter a username, display name, and password. After setup, you are redirected to the login screen.
 
+![Login screen](/images/screenshot-login.png)
+
 ### Dashboard Overview
 
 After logging in, the dashboard provides a summary of your infrastructure: total switches, VLANs, networks, and IP utilization. The sidebar on the left gives access to all sections. The header bar contains global search, a theme toggle (dark/light), language selector, and user menu.
+
+![Dashboard](/images/screenshot-dashboard.png)
 
 ## Layout Templates
 
 ### What They Are
 
 Layout templates define reusable switch model definitions. Instead of manually configuring port layouts for every switch, you create a template once (e.g., "Cisco C9300-48P") and assign it to any number of switches. The template determines how many ports appear, their types, and how they are visually arranged.
+
+![Layout Templates](/images/screenshot-templates.png)
 
 ### How to Create One
 
@@ -88,6 +94,8 @@ As you configure units and blocks, a live port grid preview renders at the botto
 
 ### Creating a Switch
 
+![Switch list](/images/screenshot-switches.png)
+
 Navigate to **Switches** in the sidebar and click **Create**.
 
 Fields:
@@ -108,7 +116,9 @@ Fields:
 
 ### Port Visualization
 
-On a switch detail page, ports are rendered as a visual grid matching the layout template. Ports are color-coded by their assigned VLAN. Trunk ports (carrying multiple VLANs) display a striped indicator. Unassigned ports appear in a neutral color.
+On a switch detail page, ports are rendered as a visual grid matching the layout template. Ports are color-coded by their assigned VLAN. Trunk ports (carrying multiple VLANs) display a circle indicator with ring. Access ports show a square indicator. Unassigned ports appear in a neutral color.
+
+![Switch detail with port grid](/images/screenshot-switch-detail.png)
 
 ### Editing Ports
 
@@ -223,6 +233,8 @@ When viewing a LAG port in the side panel, a **LAG Group** field shows the LAG n
 
 ### Creating VLANs
 
+![VLAN list](/images/screenshot-vlans.png)
+
 Navigate to **VLANs** in the sidebar and click **Create**.
 
 Fields:
@@ -245,6 +257,8 @@ Click a VLAN in the list to view its details. From there you can edit all fields
 ## Networks & IP Management
 
 ### Creating Networks
+
+![Network list](/images/screenshot-networks.png)
 
 Navigate to **Networks** in the sidebar and click **Create**.
 
@@ -292,6 +306,8 @@ Use arrow keys to navigate results and Enter to jump to the selected item. LAG s
 
 ### Export and Import
 
+![Data Management](/images/screenshot-data-management.png)
+
 Each entity type (switches, VLANs, networks, layout templates) can be individually exported to JSON and imported back. This is useful for transferring specific data between instances.
 
 ### Full Backup and Restore
@@ -305,6 +321,8 @@ Backups are plain JSON files. They can be version-controlled, diffed, or edited 
 ## Settings
 
 ### General Settings
+
+![Settings](/images/screenshot-settings.png)
 
 Access settings via the user menu in the header or the sidebar. General settings cover application-level configuration.
 
