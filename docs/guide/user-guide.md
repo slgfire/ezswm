@@ -137,6 +137,88 @@ Each port can track what is connected to it. Two modes are available:
 
 On the switch list page, you can drag switches to reorder them. The sort order is persisted and reflected across all views.
 
+## LAG Groups (Link Aggregation)
+
+### What They Are
+
+LAG (Link Aggregation Group) combines multiple physical ports into a single logical link for increased bandwidth and redundancy. In LACP (Link Aggregation Control Protocol) setups, both sides of a link must be configured with matching LAG groups.
+
+![Port grid with LAG stripes](/images/screenshot-lag-portgrid.png)
+
+LAG ports are visually identified by a **diagonal stripe pattern** overlay. Hovering over a LAG port shows a tooltip with the LAG name, port count, and remote device.
+
+### Creating a LAG
+
+1. Navigate to a switch detail page
+2. **Ctrl+Click** two or more ports to multi-select them
+3. Click the **Create LAG** button in the selection bar
+4. Fill in the LAG details:
+   - **Name** (required) -- e.g., "Uplink-Core"
+   - **Description** -- optional notes
+   - **Remote Device** -- choose connection mode:
+     - **None** -- no remote device
+     - **Switch** -- select another switch from the database; enables port mapping
+     - **Freetext** -- type a device name manually
+5. **Port Mapping** -- when a remote device is set, map each local port to its corresponding remote port
+6. Click **Create**
+
+When creating a LAG with a remote switch, a **mirror LAG is automatically created** on the remote switch with the reverse port mapping.
+
+::: tip
+The create button is disabled with an inline hint if fewer than 2 ports are selected or if any selected port is already in another LAG.
+:::
+
+### Port Mapping
+
+When configuring a LAG with a remote switch, the slideover shows a mapping table:
+
+| Local Port | | Remote Port |
+|---|---|---|
+| Gi1/0/1 | → | Dropdown of remote ports |
+| Gi1/0/2 | → | Dropdown of remote ports |
+
+For freetext remote devices, text inputs replace the dropdowns.
+
+**Conflict detection:**
+- Remote ports already in another LAG on the remote switch are **blocked** (red warning)
+- Remote ports with existing connections show an **amber warning** with the current connection; you can still save after confirmation
+
+### Editing a LAG
+
+Click a LAG chip in the legend below the port grid to open the edit slideover. Changes to ports, remote device, or port mapping are applied to both the local and mirror LAG on save.
+
+### Deleting a LAG
+
+Click the **X** button on a LAG chip in the legend. The confirmation dialog shows:
+- Which local ports will be released
+- Whether a mirror LAG on the remote switch will also be deleted
+
+### LAG Legend
+
+![LAG hover highlight](/images/screenshot-lag-highlight.png)
+
+Below the port grid, the LAG legend shows all LAG groups for the switch. Each chip displays the LAG name, port count, and remote device.
+
+- **Hover** a LAG chip to highlight its member ports (non-members dim)
+- **Click** a chip to edit the LAG
+- **X button** to delete the LAG
+- When more than 3 LAGs exist, a **Show all (N)** toggle expands the full list
+
+### LAG Port Sync
+
+When editing a port that belongs to a LAG, the following settings are automatically synchronized to all other LAG member ports:
+
+| Synced | Individual |
+|--------|-----------|
+| VLAN config (native, tagged, access, port mode) | Description |
+| Speed | MAC address |
+| Status | Connected port (different physical port on same device) |
+| Connected device | |
+
+### LAG in Port Side Panel
+
+When viewing a LAG port in the side panel, a **LAG Group** field shows the LAG name and a **Remove from LAG** button. If removing the port would leave fewer than 2 members, the entire LAG is deleted.
+
 ## VLANs
 
 ### Creating VLANs
@@ -195,15 +277,16 @@ The network detail page displays utilization metrics: total addresses in the sub
 
 ## Global Search
 
-Press **Ctrl+K** (or click the search icon in the header) to open global search. It searches across:
+Press **/** or click the search bar in the header to open global search. It searches across:
 
 - Switches (by name, location, management IP, model, manufacturer, tags)
 - VLANs (by name, VLAN ID)
 - Networks (by name, subnet)
 - IP allocations (by IP, hostname)
 - Layout templates (by name)
+- LAG groups (by name, description, remote device)
 
-Use arrow keys to navigate results and Enter to jump to the selected item.
+Use arrow keys to navigate results and Enter to jump to the selected item. LAG search results deep-link to the switch detail page with the LAG edit slideover open.
 
 ## Data Management
 
