@@ -86,9 +86,9 @@ async function fetchData() {
       $fetch<any>('/api/layout-templates'),
     ])
 
-    const switchList = (Array.isArray(allSwitches) ? allSwitches : allSwitches?.data || []) as any[]
-    vlans.value = (Array.isArray(allVlans) ? allVlans : allVlans?.data || []) as any[]
-    templates.value = (Array.isArray(allTemplates) ? allTemplates : allTemplates?.data || []) as any[]
+    const switchList = (Array.isArray(allSwitches) ? allSwitches : allSwitches?.data || allSwitches?.items || []) as any[]
+    vlans.value = (Array.isArray(allVlans) ? allVlans : allVlans?.data || allVlans?.items || []) as any[]
+    templates.value = (Array.isArray(allTemplates) ? allTemplates : allTemplates?.data || allTemplates?.items || []) as any[]
 
     switches.value = ids.value
       .map(id => switchList.find((s: any) => s.id === id))
