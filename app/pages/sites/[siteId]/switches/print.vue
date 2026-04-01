@@ -37,6 +37,7 @@
         :units="getTemplateUnits(sw)"
         :vlans="vlans"
         :selected-ports="[]"
+        :stack-size="sw.stack_size || 1"
       />
       <p v-else class="text-sm" style="color: #999;">No ports</p>
     </div>
