@@ -172,6 +172,9 @@ const loading = ref(true)
 const vlan = ref<any>(null)
 
 useHead({ title: computed(() => vlan.value ? `VLAN ${vlan.value.vlan_id} — ${vlan.value.name}` : t('vlans.title')) })
+
+const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrides', () => ({}))
+watch(vlan, (v) => { if (v?.name) breadcrumbOverrides.value[`/sites/${siteId.value}/vlans/${id}`] = `VLAN ${v.vlan_id} — ${v.name}` }, { immediate: true })
 const editing = ref(false)
 const saving = ref(false)
 const showDeleteDialog = ref(false)

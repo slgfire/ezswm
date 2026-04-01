@@ -413,7 +413,7 @@ const reservedRangePercent = computed(() => {
 })
 
 const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrides', () => ({}))
-watch(network, (n) => { if (n?.name) breadcrumbOverrides.value[`/networks/${networkId}`] = n.name }, { immediate: true })
+watch(network, (n) => { if (n?.name) breadcrumbOverrides.value[`/sites/${siteId.value}/networks/${networkId}`] = n.name }, { immediate: true })
 
 const vlanOptions = computed(() => {
   const opts: { label: string; value: string }[] = []
