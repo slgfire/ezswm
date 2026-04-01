@@ -159,25 +159,27 @@
         <UCard v-if="stats.recentActivity.length" class="stagger-item">
           <template #header><h2 class="font-semibold">{{ $t('dashboard.recentActivity') }}</h2></template>
           <div class="space-y-1">
-            <div v-for="entry in stats.recentActivity" :key="entry.id" class="flex items-center gap-2 rounded px-1 py-1.5 text-sm alt-row">
-              <span
-                class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded"
-                :class="entry.action === 'create' ? 'bg-green-500/15 text-green-500' : entry.action === 'delete' ? 'bg-red-500/15 text-red-500' : 'bg-primary-500/15 text-primary-500'"
-              >
-                <UIcon
-                  :name="entry.action === 'create' ? 'i-heroicons-plus' : entry.action === 'delete' ? 'i-heroicons-minus' : 'i-heroicons-pencil'"
-                  class="h-3 w-3"
-                />
-              </span>
-              <span class="font-mono text-xs text-gray-500">{{ entry.entity_type }}</span>
-              <NuxtLink
-                v-if="activityLink(entry)"
-                :to="activityLink(entry)"
-                class="truncate font-medium hover:text-primary-400"
-              >{{ entry.entity_name }}</NuxtLink>
-              <span v-else class="truncate font-medium">{{ entry.entity_name }}</span>
-              <span v-if="formatActivitySummary(entry)" class="truncate text-xs text-gray-400">{{ formatActivitySummary(entry) }}</span>
-              <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relativeTime(entry.timestamp) }}</span>
+            <div v-for="entry in stats.recentActivity" :key="entry.id" class="rounded px-1 py-1.5 text-sm alt-row">
+              <div class="flex items-center gap-2">
+                <span
+                  class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded"
+                  :class="entry.action === 'create' ? 'bg-green-500/15 text-green-500' : entry.action === 'delete' ? 'bg-red-500/15 text-red-500' : 'bg-primary-500/15 text-primary-500'"
+                >
+                  <UIcon
+                    :name="entry.action === 'create' ? 'i-heroicons-plus' : entry.action === 'delete' ? 'i-heroicons-minus' : 'i-heroicons-pencil'"
+                    class="h-3 w-3"
+                  />
+                </span>
+                <span class="font-mono text-xs text-gray-500">{{ entry.entity_type }}</span>
+                <NuxtLink
+                  v-if="activityLink(entry)"
+                  :to="activityLink(entry)"
+                  class="truncate font-medium hover:text-primary-400"
+                >{{ entry.entity_name }}</NuxtLink>
+                <span v-else class="truncate font-medium">{{ entry.entity_name }}</span>
+                <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relativeTime(entry.timestamp) }}</span>
+              </div>
+              <div v-if="formatActivitySummary(entry)" class="ml-7 mt-0.5 truncate text-xs text-gray-400">{{ formatActivitySummary(entry) }}</div>
             </div>
           </div>
         </UCard>

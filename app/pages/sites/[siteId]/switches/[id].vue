@@ -224,13 +224,18 @@
         <p v-else class="text-sm text-gray-400">{{ $t('switches.ports.noPortsMessage') }}</p>
       </div>
 
-      <!-- Recent Activity for this switch -->
+      <!-- Recent Activity for this switch (collapsible, default collapsed) -->
       <div v-if="switchActivity.length" class="mt-6">
-        <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300">
+        <button
+          class="mb-3 flex w-full items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
+          @click="showActivity = !showActivity"
+        >
+          <UIcon name="i-heroicons-chevron-right" :class="['h-4 w-4 transition-transform', showActivity ? 'rotate-90' : '']" />
           <UIcon name="i-heroicons-clock" class="h-4 w-4" />
           {{ $t('switches.recentActivity') }}
-        </h3>
-        <div class="space-y-1">
+          <span class="text-xs font-normal text-gray-400">({{ switchActivity.length }})</span>
+        </button>
+        <div v-show="showActivity" class="space-y-1">
           <div v-for="entry in switchActivity" :key="entry.id" class="rounded px-3 py-2 text-sm alt-row">
             <div class="flex items-center gap-2">
               <span
@@ -799,6 +804,7 @@ if (lagParam) {
 
 
 // Activity log for this switch
+const showActivity = ref(false)
 const switchActivity = ref<any[]>([])
 const { apiFetch } = useApiFetch()
 
