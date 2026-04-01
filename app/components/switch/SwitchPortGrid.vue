@@ -33,6 +33,7 @@
                   :selected="selectedPorts.includes(port.id)"
                   :lag-group="lagByPortId?.get(port.id)"
                   :dimmed="isDimmed(port.id)"
+                  :print-mode="printMode"
                   @click="onPortClick($event, port.id)"
                 />
               </div>
@@ -47,6 +48,7 @@
                 :selected="selectedPorts.includes(port.id)"
                 :lag-group="lagByPortId?.get(port.id)"
                 :dimmed="isDimmed(port.id)"
+                  :print-mode="printMode"
                 @click="onPortClick($event, port.id)"
               />
             </div>
@@ -66,6 +68,7 @@
         :selected="selectedPorts.includes(port.id)"
         :lag-group="lagByPortId?.get(port.id)"
         :dimmed="isDimmed(port.id)"
+                  :print-mode="printMode"
         @click="onPortClick($event, port.id)"
       />
     </div>
@@ -153,6 +156,7 @@ const props = defineProps<{
   stackSize?: number
   lagGroups?: any[]
   lagByPortId?: Map<string, any>
+  printMode?: boolean
 }>()
 
 const emit = defineEmits<{

@@ -38,6 +38,7 @@
         :vlans="vlans"
         :selected-ports="[]"
         :stack-size="sw.stack_size || 1"
+        :print-mode="true"
       />
       <p v-else class="text-sm" style="color: #999;">No ports</p>
 
@@ -158,6 +159,11 @@ function incrementMemberLabel(label: string, memberIdx: number): string {
 }
 
 onMounted(() => {
+  // Set print-mode permanently on this page — the CSS rules inside
+  // body.print-mode only apply within @media print, so this doesn't
+  // affect the on-screen preview. It ensures that when the user hits
+  // Ctrl+P or clicks Print, the print CSS rules are active.
+  document.body.classList.add('print-mode')
   window.addEventListener('afterprint', onAfterPrint)
   fetchData()
 })

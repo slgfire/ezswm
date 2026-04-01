@@ -20,16 +20,25 @@
       :class="port.poe ? 'text-amber-400' : 'opacity-80'"
     >{{ typeLabel }}</span>
 
-    <!-- VLAN indicator dot (top-right): trunk = circle with ring, access = sharp square -->
-    <div v-if="isTrunk" class="absolute -top-2 -right-2 p-1">
-      <div class="h-3 w-3 rounded-full" :style="{ backgroundColor: vlanDotColor || '#FBBF24', boxShadow: '0 0 0 2px var(--ui-bg, #0a0a0a), 0 0 0 3px ' + (vlanDotColor || '#FBBF24') }" />
-    </div>
-    <div v-else-if="vlanDotColor" class="absolute -top-2 -right-2 p-1">
-      <div class="h-2.5 w-2.5 ring-1 ring-white dark:ring-gray-900" style="border-radius: 0" :style="{ backgroundColor: vlanDotColor }" />
-    </div>
+    <!-- VLAN indicator dot (top-right) -->
+    <template v-if="printMode">
+      <!-- Print mode: trunk = black dot, access = hidden (background shows color) -->
+      <div v-if="isTrunk" class="absolute -top-2 -right-2 p-1">
+        <div class="print-trunk-dot" style="width: 16px; height: 16px; border-radius: 50%; background: #000;" />
+      </div>
+    </template>
+    <template v-else>
+      <!-- Screen mode: trunk = circle with ring, access = sharp square -->
+      <div v-if="isTrunk" class="absolute -top-2 -right-2 p-1">
+        <div class="h-3 w-3 rounded-full" :style="{ backgroundColor: vlanDotColor || '#FBBF24', boxShadow: '0 0 0 2px var(--ui-bg, #0a0a0a), 0 0 0 3px ' + (vlanDotColor || '#FBBF24') }" />
+      </div>
+      <div v-else-if="vlanDotColor" class="absolute -top-2 -right-2 p-1">
+        <div class="h-2.5 w-2.5 ring-1 ring-white dark:ring-gray-900" style="border-radius: 0" :style="{ backgroundColor: vlanDotColor }" />
+      </div>
+    </template>
 
     <!-- Combined hover tooltip (VLAN + LAG info) -->
-    <div v-if="hasTooltipContent" v-show="hovered" class="pointer-events-none absolute left-0 top-full z-[60] mt-1 min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg">
+    <div v-if="hasTooltipContent && !printMode" v-show="hovered" class="pointer-events-none absolute left-0 top-full z-[60] mt-1 min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg">
       <div class="space-y-1.5 text-xs">
         <!-- VLAN section -->
         <template v-if="isTrunk">
@@ -76,6 +85,7 @@ const props = defineProps<{
   selected: boolean
   lagGroup?: any
   dimmed?: boolean
+  printMode?: boolean
 }>()
 
 const hovered = ref(false)
@@ -137,7 +147,7 @@ const vlanTintClass = computed(() => {
 
 const portStyle = computed(() => {
   if (vlanDotColor.value && !isTrunk.value) {
-    return { '--vlan-tint': vlanDotColor.value + '30' }
+    return { '--vlan-tint': vlanDotColor.value + 'D9' }
   }
   return {}
 })
