@@ -457,7 +457,7 @@ function onCardClick(swId: string) {
 }
 
 function printSingleSwitch(swId: string) {
-  navigateTo({ path: `/sites/${siteId.value}/switches/print`, query: { ids: swId } })
+  window.open(`/sites/${siteId.value}/switches/print?ids=${swId}`, '_blank')
 }
 
 function exitPrintSelectMode() {
@@ -468,7 +468,7 @@ function exitPrintSelectMode() {
 function openPrintPage() {
   if (selectedForPrint.value.length === 0) return
   const ids = selectedForPrint.value.join(',')
-  navigateTo({ path: `/sites/${siteId.value}/switches/print`, query: { ids } })
+  window.open(`/sites/${siteId.value}/switches/print?ids=${ids}`, '_blank')
 }
 
 const search = ref('')

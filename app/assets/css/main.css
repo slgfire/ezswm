@@ -345,23 +345,36 @@ body.print-mode {
       ) !important;
     }
 
-    [class*="dark:bg-neutral"],
-    [class*="dark:bg-gray"] {
-      background-color: #fff !important;
-    }
-    [class*="dark:text-gray"],
-    [class*="dark:text-neutral"],
-    [class*="dark:text-white"] {
+    /* Force light mode for print regardless of dark mode */
+    html, body, div, main, section, article, aside, p, span, h1, h2, h3, h4, h5, h6, li, td, th {
+      background-color: transparent !important;
       color: #000 !important;
     }
-    [class*="dark:border-neutral"],
-    [class*="dark:border-gray"] {
-      border-color: #ccc !important;
+
+    body {
+      background-color: #fff !important;
+    }
+
+    /* Restore specific backgrounds that need color */
+    .port-glow {
+      background-color: #fff !important;
+    }
+    .port-glow[class*="bg-green"],
+    .port-glow[class*="neutral-700"] {
+      background-color: #f0fdf4 !important;
     }
 
     .list-container {
       border-color: #ccc !important;
       background-color: #f9f9f9 !important;
+    }
+
+    /* Force all borders to visible light color */
+    * {
+      border-color: #ddd !important;
+    }
+    .port-glow {
+      border-color: #999 !important;
     }
 
     .card-glow:hover {

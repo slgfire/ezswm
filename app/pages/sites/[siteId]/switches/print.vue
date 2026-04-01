@@ -21,9 +21,6 @@
     <!-- No switches -->
     <div v-else-if="switches.length === 0" class="py-12 text-center text-gray-400">
       {{ $t('print.noSwitches') }}
-      <div class="mt-4 text-xs text-gray-500">
-        Debug: ids={{ ids.length }}, query={{ $route.query.ids || 'empty' }}
-      </div>
     </div>
 
     <!-- Each switch -->
@@ -101,16 +98,13 @@ function onAfterPrint() {
 }
 
 async function fetchData() {
-  console.log('[print] fetchData called, ids:', ids.value)
   if (ids.value.length === 0) {
-    console.log('[print] no ids, skipping')
     loading.value = false
     return
   }
 
   loading.value = true
   try {
-    console.log('[print] fetching data...')
     const [allSwitches, allVlans, allTemplates] = await Promise.all([
       apiFetch<any>('/api/switches'),
       apiFetch<any>('/api/vlans', { params: siteId !== 'all' ? { site_id: siteId } : {} }),
@@ -118,14 +112,12 @@ async function fetchData() {
     ])
 
     const switchList = (allSwitches.data || allSwitches) as any[]
-    console.log('[print] got', switchList.length, 'switches')
     vlans.value = (allVlans.data || allVlans) as any[]
     templates.value = (allTemplates.data || allTemplates) as any[]
 
     switches.value = ids.value
       .map(id => switchList.find(s => s.id === id))
       .filter(Boolean)
-    console.log('[print] matched', switches.value.length, 'switches from ids')
 
     for (const sw of switches.value) {
       try {
@@ -171,9 +163,6 @@ watch(loading, (isLoading) => {
 })
 
 onMounted(() => {
-  console.log('[print] mounted, route.query:', JSON.stringify(route.query))
-  console.log('[print] ids computed:', ids.value)
-  console.log('[print] siteId:', siteId)
   document.body.classList.add('print-mode')
   window.addEventListener('afterprint', onAfterPrint)
   fetchData()
