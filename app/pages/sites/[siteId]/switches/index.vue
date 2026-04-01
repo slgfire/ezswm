@@ -452,7 +452,7 @@ function onCardClick(swId: string) {
   if (isPrintSelectMode.value) {
     togglePrintSelect(swId)
   } else {
-    navigateTo(`/sites/${siteId}/switches/${swId}`)
+    navigateTo(`/sites/${siteId.value}/switches/${swId}`)
   }
 }
 
