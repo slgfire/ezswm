@@ -71,7 +71,7 @@
     </div>
 
     <!-- Legend -->
-    <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-default pt-3 text-[11px] text-gray-500 dark:text-gray-400">
+    <div class="port-legend flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-default pt-3 text-[11px] text-gray-500 dark:text-gray-400">
       <!-- Status -->
       <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.status') }}:</span>
       <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-green-400 bg-green-50 dark:bg-neutral-700" /> {{ $t('legend.up') }}</span>
@@ -108,7 +108,7 @@
     </div>
 
     <!-- LAG Legend -->
-    <div v-if="lagGroups?.length" class="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-default pt-3 text-[11px] text-gray-500 dark:text-gray-400">
+    <div v-if="lagGroups?.length" class="port-legend flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-default pt-3 text-[11px] text-gray-500 dark:text-gray-400">
       <span class="font-semibold text-gray-600 dark:text-gray-300">LAG:</span>
 
       <template v-for="lag in visibleLags" :key="lag.id">

@@ -315,9 +315,9 @@ a, button {
   border-color: #ddd !important;
 }
 
-/* Show print legend on screen too in print preview */
-.print-preview .print-only-flex {
-  display: flex !important;
+/* Hide port grid legends in print preview */
+.print-preview .port-legend {
+  display: none !important;
 }
 
 /* ============================================
