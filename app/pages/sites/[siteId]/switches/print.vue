@@ -105,27 +105,31 @@ async function fetchData() {
 
   loading.value = true
   try {
+    // Fetch all data using $fetch directly (avoids SSR header issues)
     const [allSwitches, allVlans, allTemplates] = await Promise.all([
-      apiFetch<any>('/api/switches'),
-      apiFetch<any>('/api/vlans', { params: siteId !== 'all' ? { site_id: siteId } : {} }),
-      apiFetch<any>('/api/layout-templates'),
+      $fetch<any>('/api/switches'),
+      $fetch<any>('/api/vlans', { params: siteId !== 'all' ? { site_id: siteId } : undefined }),
+      $fetch<any>('/api/layout-templates'),
     ])
 
-    const switchList = (allSwitches.data || allSwitches) as any[]
-    vlans.value = (allVlans.data || allVlans) as any[]
-    templates.value = (allTemplates.data || allTemplates) as any[]
+    const switchList = (Array.isArray(allSwitches) ? allSwitches : allSwitches?.data || []) as any[]
+    vlans.value = (Array.isArray(allVlans) ? allVlans : allVlans?.data || []) as any[]
+    templates.value = (Array.isArray(allTemplates) ? allTemplates : allTemplates?.data || []) as any[]
 
     switches.value = ids.value
-      .map(id => switchList.find(s => s.id === id))
+      .map(id => switchList.find((s: any) => s.id === id))
       .filter(Boolean)
 
     for (const sw of switches.value) {
       try {
-        lagGroupsMap.value[sw.id] = await apiFetch<any[]>(`/api/switches/${sw.id}/lag-groups`)
+        const lags = await $fetch<any>(`/api/switches/${sw.id}/lag-groups`)
+        lagGroupsMap.value[sw.id] = Array.isArray(lags) ? lags : lags?.data || []
       } catch {
         lagGroupsMap.value[sw.id] = []
       }
     }
+  } catch (e) {
+    console.error('[print] fetchData failed:', e)
   } finally {
     loading.value = false
   }
