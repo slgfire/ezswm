@@ -101,7 +101,6 @@
     "inDevelopment": "In Entwicklung",
     "showLess": "Weniger anzeigen",
     "none": "Keine",
-    "print": "Drucken",
     "selectAll": "Alle auswählen",
     "deselectAll": "Alle abwählen"
   },
@@ -610,9 +609,9 @@
     "deleteRemoteLagToo": "Die Mirror-LAG auf {switch} wird ebenfalls gelöscht."
   },
   "print": {
-    "selectForPrint": "Zum Drucken auswählen",
-    "printSelected": "{n} Switches drucken",
     "switchCount": "{n} Switches zum Drucken ausgewählt",
-    "noSwitches": "Keine Switches zum Drucken ausgewählt"
+    "noSwitches": "Keine Switches zum Drucken ausgewählt",
+    "printAll": "Alle drucken ({n})",
+    "printFiltered": "Gefilterte drucken ({n})"
   }
 }

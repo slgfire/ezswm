@@ -45,7 +45,15 @@
         size="sm"
         class="w-44"
       />
-      <div class="ml-auto flex items-center gap-1">
+      <div class="ml-auto flex items-center gap-2">
+        <!-- Print dropdown -->
+        <UDropdownMenu
+          :items="printMenuItems"
+          :ui="{ item: 'gap-2' }"
+        >
+          <UButton icon="i-heroicons-printer" variant="ghost" size="xs" />
+        </UDropdownMenu>
+
         <UTooltip :text="$t('switches.viewGrid')">
           <UButton
             icon="i-heroicons-squares-2x2"
@@ -65,31 +73,6 @@
       </div>
     </div>
 
-    <!-- Print selection bar -->
-    <div v-if="!loading && allItems.length > 0" class="mb-4 flex items-center gap-3">
-      <UButton
-        :icon="isPrintSelectMode ? 'i-heroicons-x-mark' : 'i-heroicons-printer'"
-        variant="ghost"
-        size="xs"
-        @click="isPrintSelectMode ? exitPrintSelectMode() : (isPrintSelectMode = true)"
-      >
-        {{ isPrintSelectMode ? $t('common.cancel') : $t('print.selectForPrint') }}
-      </UButton>
-      <template v-if="isPrintSelectMode">
-        <UButton size="xs" variant="ghost" @click="togglePrintSelectAll">
-          {{ selectedForPrint.length === filteredItems.length ? $t('common.deselectAll') : $t('common.selectAll') }}
-        </UButton>
-        <UButton
-          v-if="selectedForPrint.length > 0"
-          icon="i-heroicons-printer"
-          size="xs"
-          @click="openPrintPage"
-        >
-          {{ $t('print.printSelected', { n: selectedForPrint.length }) }}
-        </UButton>
-      </template>
-    </div>
-
     <!-- Loading -->
     <div v-if="loading" class="flex justify-center py-12">
       <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
@@ -107,26 +90,9 @@
           <NuxtLink
             v-for="sw in group.items"
             :key="sw.id"
-            :to="isPrintSelectMode ? '' : `/sites/${siteId}/switches/${sw.id}`"
+            :to="`/sites/${siteId}/switches/${sw.id}`"
             class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
-            @click.prevent="onCardClick(sw.id)"
           >
-            <!-- Print checkbox -->
-            <div
-              v-if="isPrintSelectMode"
-              class="absolute left-2 top-2 z-10"
-              @click.prevent.stop="togglePrintSelect(sw.id)"
-            >
-              <div
-                class="flex h-5 w-5 items-center justify-center rounded border-2 transition-colors"
-                :class="selectedForPrint.includes(sw.id)
-                  ? 'border-primary-500 bg-primary-500 text-white'
-                  : 'border-gray-400 bg-white dark:bg-neutral-700'"
-              >
-                <UIcon v-if="selectedForPrint.includes(sw.id)" name="i-heroicons-check" class="h-3 w-3" />
-              </div>
-            </div>
-
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
               <UButton icon="i-heroicons-printer" variant="ghost" color="neutral" size="xs" @click.prevent="printSingleSwitch(sw.id)" />
@@ -204,26 +170,9 @@
       >
         <template #item="{ element: sw }">
           <NuxtLink
-            :to="isPrintSelectMode ? '' : `/sites/${siteId}/switches/${sw.id}`"
+            :to="`/sites/${siteId}/switches/${sw.id}`"
             class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
-            @click.prevent="onCardClick(sw.id)"
           >
-            <!-- Print checkbox -->
-            <div
-              v-if="isPrintSelectMode"
-              class="absolute left-2 top-2 z-10"
-              @click.prevent.stop="togglePrintSelect(sw.id)"
-            >
-              <div
-                class="flex h-5 w-5 items-center justify-center rounded border-2 transition-colors"
-                :class="selectedForPrint.includes(sw.id)
-                  ? 'border-primary-500 bg-primary-500 text-white'
-                  : 'border-gray-400 bg-white dark:bg-neutral-700'"
-              >
-                <UIcon v-if="selectedForPrint.includes(sw.id)" name="i-heroicons-check" class="h-3 w-3" />
-              </div>
-            </div>
-
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
               <UButton icon="i-heroicons-bars-2" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="neutral" size="xs" @click.prevent />
@@ -311,22 +260,6 @@
             class="stagger-item card-glow group relative flex items-center gap-4 rounded-lg bg-default px-5 py-3"
             @click="isPrintSelectMode && togglePrintSelect(sw.id)"
           >
-            <!-- Print checkbox -->
-            <div
-              v-if="isPrintSelectMode"
-              class="absolute left-2 top-2 z-10"
-              @click.prevent.stop="togglePrintSelect(sw.id)"
-            >
-              <div
-                class="flex h-5 w-5 items-center justify-center rounded border-2 transition-colors"
-                :class="selectedForPrint.includes(sw.id)
-                  ? 'border-primary-500 bg-primary-500 text-white'
-                  : 'border-gray-400 bg-white dark:bg-neutral-700'"
-              >
-                <UIcon v-if="selectedForPrint.includes(sw.id)" name="i-heroicons-check" class="h-3 w-3" />
-              </div>
-            </div>
-
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
               <UButton icon="i-heroicons-printer" variant="ghost" color="neutral" size="xs" @click.prevent="printSingleSwitch(sw.id)" />
@@ -431,45 +364,36 @@ const siteMap = computed(() => {
 })
 
 const viewMode = ref<'grid' | 'list'>('grid')
-const selectedForPrint = ref<string[]>([])
-const isPrintSelectMode = ref(false)
-
-function togglePrintSelect(swId: string) {
-  const idx = selectedForPrint.value.indexOf(swId)
-  if (idx >= 0) selectedForPrint.value.splice(idx, 1)
-  else selectedForPrint.value.push(swId)
-}
-
-function togglePrintSelectAll() {
-  if (selectedForPrint.value.length === filteredItems.value.length) {
-    selectedForPrint.value = []
-  } else {
-    selectedForPrint.value = filteredItems.value.map((s: any) => s.id)
-  }
-}
-
-function onCardClick(swId: string) {
-  if (isPrintSelectMode.value) {
-    togglePrintSelect(swId)
-  } else {
-    navigateTo(`/sites/${siteId.value}/switches/${swId}`)
-  }
-}
-
 function printSingleSwitch(swId: string) {
   window.open(`/sites/${siteId.value}/switches/print?ids=${swId}`, '_blank')
 }
 
-function exitPrintSelectMode() {
-  isPrintSelectMode.value = false
-  selectedForPrint.value = []
+function printAllSwitches() {
+  const ids = allItems.value.map((s: any) => s.id).join(',')
+  if (ids) window.open(`/sites/${siteId.value}/switches/print?ids=${ids}`, '_blank')
 }
 
-function openPrintPage() {
-  if (selectedForPrint.value.length === 0) return
-  const ids = selectedForPrint.value.join(',')
-  window.open(`/sites/${siteId.value}/switches/print?ids=${ids}`, '_blank')
+function printFilteredSwitches() {
+  const ids = filteredItems.value.map((s: any) => s.id).join(',')
+  if (ids) window.open(`/sites/${siteId.value}/switches/print?ids=${ids}`, '_blank')
 }
+
+const printMenuItems = computed(() => {
+  const items: any[] = []
+  if (filteredItems.value.length > 0 && filteredItems.value.length < allItems.value.length) {
+    items.push({
+      label: t('print.printFiltered', { n: filteredItems.value.length }),
+      icon: 'i-heroicons-funnel',
+      onSelect: printFilteredSwitches
+    })
+  }
+  items.push({
+    label: t('print.printAll', { n: allItems.value.length }),
+    icon: 'i-heroicons-printer',
+    onSelect: printAllSwitches
+  })
+  return [items]
+})
 
 const search = ref('')
 const locationFilter = ref<string | undefined>(undefined)
