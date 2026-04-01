@@ -311,9 +311,8 @@
           <NuxtLink
             v-for="sw in group.items"
             :key="sw.id"
-            :to="isPrintSelectMode ? undefined : `/sites/${siteId}/switches/${sw.id}`"
+            :to="`/sites/${siteId}/switches/${sw.id}`"
             class="stagger-item card-glow group relative flex items-center gap-4 rounded-lg bg-default px-5 py-3"
-            @click="isPrintSelectMode && togglePrintSelect(sw.id)"
           >
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
