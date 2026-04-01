@@ -2,8 +2,8 @@
   <div class="print-preview" style="background: #fff; color: #000; min-height: 100vh; padding: 16px;">
     <!-- Toolbar -->
     <div class="mb-4 flex items-center gap-3" style="color: #333;">
-      <UButton icon="i-heroicons-arrow-left" variant="ghost" size="sm" @click="$router.back()">
-        {{ $t('common.back') }}
+      <UButton icon="i-heroicons-x-mark" variant="ghost" size="sm" @click="onClose">
+        {{ $t('common.close') }}
       </UButton>
       <span class="text-sm" style="color: #888;">
         {{ switches.length }} {{ switches.length === 1 ? 'Switch' : 'Switches' }}
@@ -61,7 +61,11 @@ const switches = ref<any[]>([])
 const vlans = ref<any[]>([])
 const templates = ref<any[]>([])
 
-useHead({ title: 'Print — ezSWM' })
+useHead({ title: 'Print — ezSWM', titleTemplate: '' })
+
+function onClose() {
+  window.close()
+}
 
 function onPrint() {
   document.body.classList.add('print-mode')
