@@ -30,7 +30,7 @@
           <UButton
             icon="i-heroicons-printer"
             variant="ghost"
-            color="neutral"
+            color="info"
             size="sm"
             class="screen-only"
             @click="onPrint"
