@@ -131,6 +131,10 @@ const vlanDotColor = computed(() => {
 })
 
 const portStyle = computed(() => {
+  // In print-preview: tint access ports with their VLAN color
+  if (vlanDotColor.value && !isTrunk.value) {
+    return { '--print-vlan-bg': vlanDotColor.value + '25' } // 25 = ~15% opacity hex
+  }
   return {}
 })
 </script>

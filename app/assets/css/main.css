@@ -320,6 +320,11 @@ a, button {
   display: none !important;
 }
 
+/* Tint access ports with VLAN color in print preview */
+.print-preview .port-glow[style*="--print-vlan-bg"] {
+  background-color: var(--print-vlan-bg) !important;
+}
+
 /* ============================================
    Print Styles
    ============================================ */
@@ -386,7 +391,7 @@ body.print-mode {
     .port-glow {
       box-shadow: none !important;
       border-color: #999 !important;
-      background-color: #fff !important;
+      background-color: var(--print-vlan-bg, #fff) !important;
       color: #000 !important;
     }
 
