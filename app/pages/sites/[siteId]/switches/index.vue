@@ -107,9 +107,9 @@
           <NuxtLink
             v-for="sw in group.items"
             :key="sw.id"
-            :to="isPrintSelectMode ? undefined : `/sites/${siteId}/switches/${sw.id}`"
+            :to="isPrintSelectMode ? '' : `/sites/${siteId}/switches/${sw.id}`"
             class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
-            @click="isPrintSelectMode && togglePrintSelect(sw.id)"
+            @click.prevent="onCardClick(sw.id)"
           >
             <!-- Print checkbox -->
             <div
@@ -129,6 +129,7 @@
 
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
+              <UButton icon="i-heroicons-printer" variant="ghost" color="neutral" size="xs" @click.prevent="printSingleSwitch(sw.id)" />
               <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="onDuplicate(sw)" />
               <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="confirmDelete(sw)" />
             </div>
@@ -203,9 +204,9 @@
       >
         <template #item="{ element: sw }">
           <NuxtLink
-            :to="isPrintSelectMode ? undefined : `/sites/${siteId}/switches/${sw.id}`"
+            :to="isPrintSelectMode ? '' : `/sites/${siteId}/switches/${sw.id}`"
             class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
-            @click="isPrintSelectMode && togglePrintSelect(sw.id)"
+            @click.prevent="onCardClick(sw.id)"
           >
             <!-- Print checkbox -->
             <div
@@ -226,6 +227,7 @@
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
               <UButton icon="i-heroicons-bars-2" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="neutral" size="xs" @click.prevent />
+              <UButton icon="i-heroicons-printer" variant="ghost" color="neutral" size="xs" @click.prevent="printSingleSwitch(sw.id)" />
               <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="onDuplicate(sw)" />
               <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="confirmDelete(sw)" />
             </div>
@@ -327,6 +329,7 @@
 
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
+              <UButton icon="i-heroicons-printer" variant="ghost" color="neutral" size="xs" @click.prevent="printSingleSwitch(sw.id)" />
               <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="onDuplicate(sw)" />
               <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="confirmDelete(sw)" />
             </div>
@@ -443,6 +446,18 @@ function togglePrintSelectAll() {
   } else {
     selectedForPrint.value = filteredItems.value.map((s: any) => s.id)
   }
+}
+
+function onCardClick(swId: string) {
+  if (isPrintSelectMode.value) {
+    togglePrintSelect(swId)
+  } else {
+    navigateTo(`/sites/${siteId}/switches/${swId}`)
+  }
+}
+
+function printSingleSwitch(swId: string) {
+  navigateTo(`/sites/${siteId}/switches/print?ids=${swId}`)
 }
 
 function exitPrintSelectMode() {
