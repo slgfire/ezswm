@@ -6,7 +6,8 @@
       selected ? 'ring-2 ring-primary-500' : '',
       portShapeClasses,
       props.lagGroup ? 'lag-stripe' : '',
-      props.dimmed ? 'lag-dimmed' : ''
+      props.dimmed ? 'lag-dimmed' : '',
+      vlanTintClass
     ]"
     :style="portStyle"
     @mouseenter="hovered = true"
@@ -130,10 +131,13 @@ const vlanDotColor = computed(() => {
   return vlan?.color || null
 })
 
+const vlanTintClass = computed(() => {
+  return (vlanDotColor.value && !isTrunk.value) ? 'has-vlan-tint' : ''
+})
+
 const portStyle = computed(() => {
-  // In print-preview: tint access ports with their VLAN color
   if (vlanDotColor.value && !isTrunk.value) {
-    return { '--print-vlan-bg': vlanDotColor.value + '25' } // 25 = ~15% opacity hex
+    return { '--vlan-tint': vlanDotColor.value + '30' }
   }
   return {}
 })
