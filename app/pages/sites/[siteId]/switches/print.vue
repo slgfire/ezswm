@@ -29,18 +29,7 @@
       :key="sw.id"
       :class="idx < switches.length - 1 ? 'print-page-break' : ''"
     >
-      <div class="mb-3 flex items-center justify-between border-b pb-2" style="border-color: #ccc;">
-        <div>
-          <span class="text-lg font-bold print:text-black">{{ sw.name }}</span>
-          <span class="ml-2 text-sm text-gray-500">
-            {{ [sw.manufacturer, sw.model].filter(Boolean).join(' ') }}
-            <template v-if="sw.management_ip"> · {{ sw.management_ip }}</template>
-          </span>
-        </div>
-        <div class="text-xs text-gray-400">
-          ezSWM · {{ printDate }}
-        </div>
-      </div>
+      <div class="mb-2 font-bold" style="font-size: 14px; color: #000;">{{ sw.name }}</div>
 
       <SwitchPortGrid
         v-if="sw.ports?.length"
@@ -51,13 +40,7 @@
         :lag-groups="getLagGroups(sw.id)"
         :lag-by-port-id="getLagByPortId(sw.id)"
       />
-      <p v-else class="text-sm text-gray-400">{{ $t('switches.ports.noPortsMessage') }}</p>
-
-      <SwitchPrintLegend
-        v-if="sw.ports?.length"
-        :ports="sw.ports"
-        :vlans="vlans"
-      />
+      <p v-else class="text-sm" style="color: #999;">{{ $t('switches.ports.noPortsMessage') }}</p>
 
       <div class="screen-only mb-8" />
     </div>

@@ -66,19 +66,8 @@
       </div>
     </div>
 
-    <!-- Print header -->
-    <div class="print-only-flex items-center justify-between border-b pb-2 mb-4" style="border-color: #ccc;">
-      <div>
-        <span class="text-lg font-bold" style="color: #000;">{{ item?.name }}</span>
-        <span class="ml-2 text-sm" style="color: #666;">
-          {{ [item?.manufacturer, item?.model].filter(Boolean).join(' ') }}
-          <template v-if="item?.management_ip"> · {{ item.management_ip }}</template>
-        </span>
-      </div>
-      <div class="text-xs" style="color: #999;">
-        ezSWM · {{ new Date().toLocaleDateString() }}
-      </div>
-    </div>
+    <!-- Print header (minimal: just the name) -->
+    <div class="print-only mb-2 font-bold" style="font-size: 14px; color: #000;">{{ item?.name }}</div>
 
     <!-- Loading state -->
     <div v-if="loading" class="flex items-center justify-center py-12">
