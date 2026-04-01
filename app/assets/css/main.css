@@ -321,7 +321,7 @@ a, button {
 }
 
 /* Tint access ports with VLAN color in print preview */
-.print-preview .port-glow.has-vlan-tint {
+.print-preview .port-glow.has-vlan-tint.has-vlan-tint {
   background-color: var(--vlan-tint, #fff) !important;
 }
 
