@@ -1,7 +1,7 @@
 <template>
-  <div class="p-4">
-    <!-- Screen-only toolbar -->
-    <div class="screen-only mb-4 flex items-center gap-3">
+  <div class="print-preview p-4" style="background: #fff; color: #000; min-height: 100vh;">
+    <!-- Toolbar (visible on screen, hidden when printing) -->
+    <div class="mb-4 flex items-center gap-3 screen-only">
       <UButton icon="i-heroicons-arrow-left" variant="ghost" size="sm" @click="$router.back()">
         {{ $t('common.back') }}
       </UButton>
@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-// Use default layout — print CSS hides sidebar/header via .print-mode
+definePageMeta({ layout: 'print' })
 
 const route = useRoute()
 const siteId = route.params.siteId as string
