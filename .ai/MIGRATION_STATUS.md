@@ -309,10 +309,45 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 15: Print CSS (2026-04-01)
+
+**Print Feature:**
+- Print CSS with scoped `.print-mode` class on body
+- Dedicated `print.vue` layout (no sidebar/header)
+- Multi-switch print page (`/sites/{siteId}/switches/print?ids=...`)
+- Switch picker popover with checkboxes grouped by site
+- Single switch print via hover icon on switch cards
+- Access ports tinted with VLAN color (85% opacity) in print
+- Trunk ports marked with black 16px dot in print
+- `printMode` prop on SwitchPortItem/SwitchPortGrid for print-specific rendering
+- Compact VLAN legend per switch in print output
+- A4 landscape format with page breaks between switches
+- Auto-opens in new tab via `window.open()`
+
+**Files created:**
+- `app/layouts/print.vue` — minimal print layout
+- `app/pages/sites/[siteId]/switches/print.vue` — multi-switch print page
+- `app/components/switch/SwitchPrintLegend.vue` — print VLAN legend
+
+**Files changed:**
+- `app/assets/css/main.css` — print CSS rules, `.print-preview` styles
+- `app/components/switch/SwitchPortItem.vue` — `printMode` prop, VLAN tint, trunk dot
+- `app/components/switch/SwitchPortGrid.vue` — `printMode` prop passthrough
+- `app/pages/sites/[siteId]/switches/index.vue` — print picker popover, hover print icon
+- `i18n/locales/en.json`, `i18n/locales/de.json` — print translations
+
+**Version:** 0.6.0
+
+**Verification:**
+- `npx nuxt typecheck`: 0 errors
+- `npm run build`: Passes
+- Unit tests: 105/105 passing
+
+---
+
 ## Open Issues
 
 - Topology page: interactive network diagram (Coming Soon placeholder in UI)
-- Print view CSS not implemented
 - Form validation is server-side only (no real-time client validation)
 - Dashboard widget reordering not implemented
 - IPv6 support not included (as per spec: post-MVP)

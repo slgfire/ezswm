@@ -147,6 +147,18 @@ Jeder Port kann erfassen, was an ihm angeschlossen ist. Zwei Modi sind verfügba
 
 Auf der Switch-Listenseite kannst du Switches per Drag & Drop umsortieren. Die Sortierreihenfolge wird gespeichert und in allen Ansichten angezeigt.
 
+### Switches drucken
+
+Du kannst Switch-Port-Grids für Beschriftung oder Dokumentation ausdrucken.
+
+**Einzelner Switch:** Fahre mit der Maus über eine Switch-Karte in der Liste und klicke auf das Drucker-Symbol (amber).
+
+**Mehrere Switches:** Klicke auf das Drucker-Symbol in der Toolbar, um den Druck-Picker zu öffnen. Wähle Switches über Checkboxen aus (bei Ansicht aller Standorte nach Site gruppiert) und klicke "Ausgewählte drucken". Bei aktiven Filtern werden nur gefilterte Switches angezeigt.
+
+Die Druckseite öffnet sich in einem neuen Tab und zeigt jeden Switch mit seinem Port-Grid auf weißem Hintergrund. Access-Ports sind mit ihrer VLAN-Farbe eingefärbt. Trunk-Ports sind mit einem schwarzen Punkt markiert. Eine kompakte VLAN-Legende unter jedem Switch zeigt die verwendeten VLANs.
+
+Klicke **Drucken** um den Druckdialog des Browsers zu öffnen, oder nutze **Strg+P**. Die Ausgabe ist für A4-Querformat formatiert, jeder Switch auf einer eigenen Seite.
+
 ## LAG-Gruppen (Link Aggregation)
 
 ### Was sie sind

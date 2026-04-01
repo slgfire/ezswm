@@ -147,6 +147,18 @@ Each port can track what is connected to it. Two modes are available:
 
 On the switch list page, you can drag switches to reorder them. The sort order is persisted and reflected across all views.
 
+### Printing Switches
+
+You can print switch port grids for labeling or documentation purposes.
+
+**Single switch:** Hover over a switch card in the list and click the printer icon (amber).
+
+**Multiple switches:** Click the printer icon in the toolbar to open the print picker. Select switches via checkboxes (grouped by site when viewing all sites), then click "Print selected". When filters are active, only filtered switches appear in the picker.
+
+The print page opens in a new tab showing each switch with its port grid on a white background. Access ports are tinted with their VLAN color. Trunk ports are marked with a black dot. A compact VLAN legend below each switch shows which VLANs are in use.
+
+Click **Print** to open the browser's print dialog, or use **Ctrl+P**. The output is formatted for A4 landscape with each switch on its own page.
+
 ## LAG Groups (Link Aggregation)
 
 ### What They Are
