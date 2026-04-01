@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: false })
+// Use default layout — print CSS hides sidebar/header via .print-mode
 
 const route = useRoute()
 const siteId = route.params.siteId as string
