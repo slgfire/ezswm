@@ -40,6 +40,15 @@
         :stack-size="sw.stack_size || 1"
       />
       <p v-else class="text-sm" style="color: #999;">No ports</p>
+
+      <!-- VLAN legend -->
+      <div v-if="getUsedVlans(sw).length" class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-2 text-[9px]" style="border-color: #ddd; color: #000;">
+        <span style="font-weight: bold; color: #555;">VLANs:</span>
+        <span v-for="vlan in getUsedVlans(sw)" :key="vlan.vlan_id" class="flex items-center gap-1">
+          <span class="inline-block h-2 w-2" style="border-radius: 1px; print-color-adjust: exact; -webkit-print-color-adjust: exact;" :style="{ backgroundColor: vlan.color }" />
+          <b>{{ vlan.vlan_id }}</b> {{ vlan.name }}
+        </span>
+      </div>
     </div>
   </div>
 </template>
@@ -102,6 +111,17 @@ async function fetchData() {
   } finally {
     loading.value = false
   }
+}
+
+function getUsedVlans(sw: any): any[] {
+  if (!vlans.value.length || !sw.ports?.length) return []
+  const usedIds = new Set<number>()
+  for (const p of sw.ports) {
+    if (p.native_vlan) usedIds.add(p.native_vlan)
+    if (p.access_vlan) usedIds.add(p.access_vlan)
+    if (p.tagged_vlans) for (const vid of p.tagged_vlans) usedIds.add(vid)
+  }
+  return vlans.value.filter(v => usedIds.has(v.vlan_id) && v.color).sort((a, b) => a.vlan_id - b.vlan_id)
 }
 
 function getTemplateUnits(sw: any): any[] {

@@ -48,7 +48,7 @@
       <div class="ml-auto flex items-center gap-2">
         <!-- Print popover with switch checkboxes -->
         <UPopover>
-          <UButton icon="i-heroicons-printer" variant="ghost" size="xs" />
+          <UButton icon="i-heroicons-printer" variant="ghost" color="info" size="xs" />
           <template #content>
             <div class="w-72 p-3">
               <div class="mb-2 flex items-center justify-between">
@@ -150,7 +150,7 @@
           >
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
-              <UButton icon="i-heroicons-printer" variant="ghost" color="neutral" size="xs" @click.prevent="printSingleSwitch(sw.id)" />
+              <UButton icon="i-heroicons-printer" variant="ghost" color="info" size="xs" @click.prevent="printSingleSwitch(sw.id)" />
               <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="onDuplicate(sw)" />
               <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="confirmDelete(sw)" />
             </div>
@@ -231,7 +231,7 @@
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
               <UButton icon="i-heroicons-bars-2" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="neutral" size="xs" @click.prevent />
-              <UButton icon="i-heroicons-printer" variant="ghost" color="neutral" size="xs" @click.prevent="printSingleSwitch(sw.id)" />
+              <UButton icon="i-heroicons-printer" variant="ghost" color="info" size="xs" @click.prevent="printSingleSwitch(sw.id)" />
               <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="onDuplicate(sw)" />
               <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="confirmDelete(sw)" />
             </div>
@@ -317,7 +317,7 @@
           >
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
-              <UButton icon="i-heroicons-printer" variant="ghost" color="neutral" size="xs" @click.prevent="printSingleSwitch(sw.id)" />
+              <UButton icon="i-heroicons-printer" variant="ghost" color="info" size="xs" @click.prevent="printSingleSwitch(sw.id)" />
               <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="onDuplicate(sw)" />
               <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="confirmDelete(sw)" />
             </div>
