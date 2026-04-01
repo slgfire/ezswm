@@ -133,7 +133,7 @@ export default withMermaid(
 
       footer: {
         message: 'Released under the GPL-3.0 License.',
-        copyright: 'Copyright © 2026 SaarLAN / SLG e.V.',
+        copyright: 'Copyright © 2026 Daniel Neudörfer',
       },
     },
   })
