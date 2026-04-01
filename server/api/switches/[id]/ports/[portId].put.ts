@@ -21,10 +21,28 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
   }
 
+  // Get old port state before update
+  const oldPort = existing.ports.find(p => p.id === portId)
+
   const body = await readBody(event)
   const parsed = updatePortSchema.parse(body)
 
   const updatedPort = await switchRepository.updatePort(switchId, portId, parsed as Partial<Omit<Port, 'id' | 'unit' | 'index'>>)
+
+  // Build changes diff — only log fields that actually changed
+  const changes: Record<string, unknown> = {}
+  const previousState: Record<string, unknown> = {}
+  if (oldPort) {
+    const fields = ['status', 'speed', 'port_mode', 'native_vlan', 'access_vlan', 'tagged_vlans', 'connected_device', 'connected_port', 'description', 'poe'] as const
+    for (const field of fields) {
+      const oldVal = (oldPort as any)[field]
+      const newVal = (parsed as any)[field]
+      if (newVal !== undefined && JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+        changes[field] = newVal
+        previousState[field] = oldVal
+      }
+    }
+  }
 
   await activityRepository.log({
     user_id: event.context.auth?.userId,
@@ -32,7 +50,12 @@ export default defineEventHandler(async (event) => {
     entity_type: 'switch',
     entity_id: switchId,
     entity_name: existing.name,
-    changes: { port_id: portId, ...parsed } as Record<string, unknown>,
+    metadata: {
+      port_id: portId,
+      port_label: oldPort?.label || portId,
+    },
+    changes: Object.keys(changes).length > 0 ? changes : undefined,
+    previous_state: Object.keys(previousState).length > 0 ? previousState : undefined,
   })
 
   return updatedPort

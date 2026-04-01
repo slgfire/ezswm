@@ -215,7 +215,8 @@
       "managementIp": "Management-IP",
       "ports": "Ports",
       "template": "Vorlage"
-    }
+    },
+    "recentActivity": "Letzte Aktivität"
   },
   "vlans": {
     "title": "VLANs",

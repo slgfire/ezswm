@@ -224,6 +224,42 @@
         <p v-else class="text-sm text-gray-400">{{ $t('switches.ports.noPortsMessage') }}</p>
       </div>
 
+      <!-- Recent Activity for this switch -->
+      <div v-if="switchActivity.length" class="mt-6">
+        <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300">
+          <UIcon name="i-heroicons-clock" class="h-4 w-4" />
+          {{ $t('switches.recentActivity') }}
+        </h3>
+        <div class="space-y-1">
+          <div v-for="entry in switchActivity" :key="entry.id" class="rounded px-3 py-2 text-sm alt-row">
+            <div class="flex items-center gap-2">
+              <span
+                class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded"
+                :class="entry.action === 'create' ? 'bg-green-500/15 text-green-500' : entry.action === 'delete' ? 'bg-red-500/15 text-red-500' : 'bg-primary-500/15 text-primary-500'"
+              >
+                <UIcon
+                  :name="entry.action === 'create' ? 'i-heroicons-plus' : entry.action === 'delete' ? 'i-heroicons-minus' : 'i-heroicons-pencil'"
+                  class="h-3 w-3"
+                />
+              </span>
+              <span class="font-mono text-xs text-gray-500">{{ entry.action }}</span>
+              <span v-if="entry.metadata?.port_label" class="text-xs font-medium">{{ entry.metadata.port_label }}</span>
+              <span v-if="formatActivitySummary(entry)" class="truncate text-xs text-gray-400">{{ formatActivitySummary(entry) }}</span>
+              <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relativeTime(entry.timestamp) }}</span>
+            </div>
+            <!-- Detailed diff -->
+            <div v-if="formatActivityDetail(entry).length" class="ml-7 mt-1 space-y-0.5">
+              <div v-for="diff in formatActivityDetail(entry)" :key="diff.field" class="flex gap-2 text-xs">
+                <span class="w-28 shrink-0 text-gray-500">{{ diff.field }}</span>
+                <span class="text-red-400 line-through">{{ diff.from }}</span>
+                <span class="text-gray-500">→</span>
+                <span class="text-green-400">{{ diff.to }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Port Side Panel -->
@@ -365,6 +401,8 @@
 </template>
 
 <script setup lang="ts">
+import { formatActivitySummary, formatActivityDetail } from '~/utils/activityFormat'
+
 const { t } = useI18n()
 const toast = useToast()
 const route = useRoute()
@@ -760,10 +798,33 @@ if (lagParam) {
 }
 
 
+// Activity log for this switch
+const switchActivity = ref<any[]>([])
+const { apiFetch } = useApiFetch()
+
+async function fetchActivity() {
+  try {
+    const data = await apiFetch<any>('/api/activity', { params: { entity_id: id, limit: 20 } })
+    switchActivity.value = data.data || []
+  } catch { /* ignore */ }
+}
+
+function relativeTime(timestamp: string): string {
+  const diff = Date.now() - new Date(timestamp).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'gerade eben'
+  if (mins < 60) return `vor ${mins}m`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `vor ${hours}h`
+  const days = Math.floor(hours / 24)
+  return `vor ${days}d`
+}
+
 onMounted(() => {
   fetchSwitch()
   fetchTemplates()
   fetchVlans(siteParams.value)
   fetchLags()
+  fetchActivity()
 })
 </script>

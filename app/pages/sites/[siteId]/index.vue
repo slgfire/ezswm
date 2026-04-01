@@ -176,6 +176,7 @@
                 class="truncate font-medium hover:text-primary-400"
               >{{ entry.entity_name }}</NuxtLink>
               <span v-else class="truncate font-medium">{{ entry.entity_name }}</span>
+              <span v-if="formatActivitySummary(entry)" class="truncate text-xs text-gray-400">{{ formatActivitySummary(entry) }}</span>
               <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relativeTime(entry.timestamp) }}</span>
             </div>
           </div>
