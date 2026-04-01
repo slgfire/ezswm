@@ -46,13 +46,68 @@
         class="w-44"
       />
       <div class="ml-auto flex items-center gap-2">
-        <!-- Print dropdown -->
-        <UDropdownMenu
-          :items="printMenuItems"
-          :ui="{ item: 'gap-2' }"
-        >
+        <!-- Print popover with switch checkboxes -->
+        <UPopover>
           <UButton icon="i-heroicons-printer" variant="ghost" size="xs" />
-        </UDropdownMenu>
+          <template #content>
+            <div class="w-72 p-3">
+              <div class="mb-2 flex items-center justify-between">
+                <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">{{ $t('common.print') }}</span>
+                <div class="flex gap-1">
+                  <UButton size="xs" variant="ghost" @click="printSelectedIds.length === filteredItems.length ? (printSelectedIds = []) : (printSelectedIds = filteredItems.map((s: any) => s.id))">
+                    {{ printSelectedIds.length === filteredItems.length ? $t('common.deselectAll') : $t('common.selectAll') }}
+                  </UButton>
+                </div>
+              </div>
+              <div class="max-h-60 overflow-y-auto space-y-0.5">
+                <template v-if="siteId === 'all'">
+                  <template v-for="group in groupedItems" :key="group.siteId">
+                    <div v-if="group.siteName" class="mt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">{{ group.siteName }}</div>
+                    <label
+                      v-for="sw in group.items"
+                      :key="sw.id"
+                      class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    >
+                      <input
+                        type="checkbox"
+                        :checked="printSelectedIds.includes(sw.id)"
+                        class="h-3.5 w-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                        @change="togglePrintId(sw.id)"
+                      />
+                      <span class="truncate text-xs">{{ sw.name }}</span>
+                    </label>
+                  </template>
+                </template>
+                <template v-else>
+                  <label
+                    v-for="sw in filteredItems"
+                    :key="sw.id"
+                    class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="printSelectedIds.includes(sw.id)"
+                      class="h-3.5 w-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                      @change="togglePrintId(sw.id)"
+                    />
+                    <span class="truncate text-xs">{{ sw.name }}</span>
+                  </label>
+                </template>
+              </div>
+              <div class="mt-2 border-t border-default pt-2">
+                <UButton
+                  icon="i-heroicons-printer"
+                  size="xs"
+                  block
+                  :disabled="printSelectedIds.length === 0"
+                  @click="openPrintPage"
+                >
+                  {{ $t('print.printSelected', { n: printSelectedIds.length }) }}
+                </UButton>
+              </div>
+            </div>
+          </template>
+        </UPopover>
 
         <UTooltip :text="$t('switches.viewGrid')">
           <UButton
@@ -364,36 +419,25 @@ const siteMap = computed(() => {
 })
 
 const viewMode = ref<'grid' | 'list'>('grid')
+const printSelectedIds = ref<string[]>([])
+
+function togglePrintId(swId: string) {
+  const idx = printSelectedIds.value.indexOf(swId)
+  if (idx >= 0) printSelectedIds.value.splice(idx, 1)
+  else printSelectedIds.value.push(swId)
+}
+
 function printSingleSwitch(swId: string) {
   window.open(`/sites/${siteId.value}/switches/print?ids=${swId}`, '_blank')
 }
 
-function printAllSwitches() {
-  const ids = allItems.value.map((s: any) => s.id).join(',')
-  if (ids) window.open(`/sites/${siteId.value}/switches/print?ids=${ids}`, '_blank')
+function openPrintPage() {
+  if (printSelectedIds.value.length === 0) return
+  const ids = printSelectedIds.value.join(',')
+  window.open(`/sites/${siteId.value}/switches/print?ids=${ids}`, '_blank')
 }
 
-function printFilteredSwitches() {
-  const ids = filteredItems.value.map((s: any) => s.id).join(',')
-  if (ids) window.open(`/sites/${siteId.value}/switches/print?ids=${ids}`, '_blank')
-}
-
-const printMenuItems = computed(() => {
-  const items: any[] = []
-  if (filteredItems.value.length > 0 && filteredItems.value.length < allItems.value.length) {
-    items.push({
-      label: t('print.printFiltered', { n: filteredItems.value.length }),
-      icon: 'i-heroicons-funnel',
-      onSelect: printFilteredSwitches
-    })
-  }
-  items.push({
-    label: t('print.printAll', { n: allItems.value.length }),
-    icon: 'i-heroicons-printer',
-    onSelect: printAllSwitches
-  })
-  return [items]
-})
+// Reuse groupedItems for print popover site grouping
 
 const search = ref('')
 const locationFilter = ref<string | undefined>(undefined)

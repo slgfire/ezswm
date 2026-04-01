@@ -612,6 +612,7 @@
     "switchCount": "{n} Switches zum Drucken ausgewählt",
     "noSwitches": "Keine Switches zum Drucken ausgewählt",
     "printAll": "Alle drucken ({n})",
-    "printFiltered": "Gefilterte drucken ({n})"
+    "printFiltered": "Gefilterte drucken ({n})",
+    "printSelected": "Ausgewählte drucken ({n})"
   }
 }
