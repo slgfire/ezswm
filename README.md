@@ -1,7 +1,7 @@
 <div align="center">
   <img src="public/logo.png" alt="ezSWM" width="400"/>
 
-  [![Version](https://img.shields.io/badge/Version-0.6.0-22c55e.svg)](https://github.com/slgfire/ezswm/releases)
+  [![Version](https://img.shields.io/badge/Version-0.7.0-22c55e.svg)](https://github.com/slgfire/ezswm/releases)
   [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
   [![Node](https://img.shields.io/badge/Node-22_LTS-green.svg)](https://nodejs.org)
   [![Nuxt](https://img.shields.io/badge/Nuxt-4.x-00DC82.svg)](https://nuxt.com)

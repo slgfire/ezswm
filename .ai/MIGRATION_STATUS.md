@@ -345,6 +345,25 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 16: Activity Log Details (2026-04-02)
+
+**Activity Log Improvements:**
+- Port updates now log previous_state with field-by-field diff (only changed fields)
+- Compact human-readable activity descriptions (e.g. "SFP+ 1/20: VLAN 100 assigned, activated")
+- Dashboard: short summary (max 3 changes per entry)
+- Switch detail: full summary (all changes) in collapsible "Recent Activity" section
+- Activity API supports ?entity_id filter for per-entity activity
+- All activity descriptions i18n-ready (EN + DE)
+- Relative time strings i18n-ready ("just now" / "gerade eben")
+
+**UI Fixes:**
+- PoE option only shown for RJ45 ports
+- Connection mode buttons renamed: Switch / Device / Custom
+
+**Version:** 0.7.0
+
+---
+
 ## Open Issues
 
 - Topology page: interactive network diagram (Coming Soon placeholder in UI)
