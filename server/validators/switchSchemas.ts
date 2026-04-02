@@ -50,6 +50,7 @@ export const updatePortSchema = z.object({
   description: z.string().max(500).optional().nullable(),
   mac_address: z.string().optional().nullable(),
   lag_group_id: z.string().optional().nullable(),
+  connected_allocation_id: z.string().optional().nullable(),
   poe: z.union([
     z.object({
       type: z.enum(['802.3af', '802.3at', '802.3bt-type3', '802.3bt-type4', 'passive-24v', 'passive-48v']),

@@ -321,7 +321,8 @@ export const switchRepository = {
         connected_device: undefined,
         connected_device_id: undefined,
         connected_port_id: undefined,
-        connected_port: undefined
+        connected_port: undefined,
+        connected_allocation_id: undefined
       })),
       is_favorite: false,
       created_at: now,
@@ -387,6 +388,7 @@ export const switchRepository = {
     remotePort.connected_device_id = localSwitchId
     remotePort.connected_port_id = localPortId
     remotePort.connected_port = localPort.label
+    remotePort.connected_allocation_id = undefined
 
     // Sync port settings to remote side
     if (syncSettings) {

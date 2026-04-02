@@ -16,6 +16,7 @@ export default defineEventHandler(async (event) => {
     connected_device_id: undefined,
     connected_port_id: undefined,
     connected_port: undefined,
+    connected_allocation_id: undefined,
     description: undefined,
     mac_address: undefined
   }

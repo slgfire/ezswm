@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
   const changes: Record<string, unknown> = {}
   const previousState: Record<string, unknown> = {}
   if (oldPort) {
-    const fields = ['status', 'speed', 'port_mode', 'native_vlan', 'access_vlan', 'tagged_vlans', 'connected_device', 'connected_port', 'description', 'poe'] as const
+    const fields = ['status', 'speed', 'port_mode', 'native_vlan', 'access_vlan', 'tagged_vlans', 'connected_device', 'connected_port', 'description', 'poe', 'connected_allocation_id'] as const
     for (const field of fields) {
       const oldVal = (oldPort as any)[field]
       const newVal = (parsed as any)[field]

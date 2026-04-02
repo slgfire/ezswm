@@ -24,5 +24,6 @@ export interface Port {
   description?: string
   mac_address?: string
   lag_group_id?: string
+  connected_allocation_id?: string
   poe?: PoeConfig | null
 }
