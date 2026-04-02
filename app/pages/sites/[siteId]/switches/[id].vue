@@ -247,19 +247,9 @@
                   class="h-3 w-3"
                 />
               </span>
-              <span class="font-mono text-xs text-gray-500">{{ entry.action }}</span>
-              <span v-if="entry.metadata?.port_label" class="text-xs font-medium">{{ entry.metadata.port_label }}</span>
-              <span v-if="formatActivitySummary(entry)" class="truncate text-xs text-gray-400">{{ formatActivitySummary(entry) }}</span>
+              <span v-if="formatActivitySummary(entry)" class="truncate text-xs text-gray-300">{{ formatActivitySummary(entry) }}</span>
+              <span v-else class="text-xs text-gray-500">{{ entry.action }}</span>
               <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relativeTime(entry.timestamp) }}</span>
-            </div>
-            <!-- Detailed diff -->
-            <div v-if="formatActivityDetail(entry).length" class="ml-7 mt-1 space-y-0.5">
-              <div v-for="diff in formatActivityDetail(entry)" :key="diff.field" class="flex gap-2 text-xs">
-                <span class="w-28 shrink-0 text-gray-500">{{ diff.field }}</span>
-                <span class="text-red-400 line-through">{{ diff.from }}</span>
-                <span class="text-gray-500">→</span>
-                <span class="text-green-400">{{ diff.to }}</span>
-              </div>
             </div>
           </div>
         </div>
