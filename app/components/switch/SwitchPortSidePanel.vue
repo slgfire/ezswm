@@ -106,7 +106,7 @@
           <UInput v-model="form.mac_address" placeholder="XX:XX:XX:XX:XX:XX" class="w-full" />
         </UFormField>
 
-        <UFormField :label="$t('templates.poe')">
+        <UFormField v-if="port?.type === 'rj45'" :label="$t('templates.poe')">
           <USelect
             v-model="form.poe_selection"
             :items="poeOptions"
