@@ -325,7 +325,23 @@
     </USlideover>
 
     <SharedConfirmDialog v-model="showDeleteDialog" :title="$t('networks.delete')" :message="network ? `${$t('networks.delete')}: ${network.name} (${network.subnet})?` : ''" :loading="deleting" @confirm="confirmDeleteNetwork" />
-    <SharedConfirmDialog v-model="showDeleteAllocDialog" :title="$t('networks.allocations.title')" :message="deleteAllocTarget ? `${$t('common.delete')}: ${deleteAllocTarget.ip_address}?` : ''" :loading="deletingAlloc" @confirm="confirmDeleteAlloc" />
+    <SharedConfirmDialog
+      v-model="showDeleteAllocDialog"
+      :title="$t('networks.allocations.title')"
+      :message="deleteAllocTarget
+        ? (allocDeleteRefs.length > 0 && allocDeleteRefs[0] !== '(could not check port references)'
+          ? `${$t('common.delete')}: ${deleteAllocTarget.ip_address}? — ${$t('networks.allocations.deleteWithRefs', {
+              count: allocDeleteRefs.length,
+              ports: allocDeleteRefs.length <= 5
+                ? allocDeleteRefs.join(', ')
+                : allocDeleteRefs.slice(0, 5).join(', ') + ' +' + (allocDeleteRefs.length - 5) + ' more'
+            })}`
+          : `${$t('common.delete')}: ${deleteAllocTarget.ip_address}?`)
+        : ''"
+      :loading="deletingAlloc"
+      @confirm="confirmDeleteAlloc"
+      @update:model-value="(v) => { if (!v) allocDeleteRefs = [] }"
+    />
     <SharedConfirmDialog v-model="showDeleteRangeDialog" :title="$t('networks.ranges.title')" :message="deleteRangeTarget ? `${$t('common.delete')}: ${deleteRangeTarget.start_ip} - ${deleteRangeTarget.end_ip}?` : ''" :loading="deletingRange" @confirm="confirmDeleteRange" />
   </div>
 </template>
@@ -358,6 +374,7 @@ const creatingAlloc = ref(false)
 const showDeleteAllocDialog = ref(false)
 const deleteAllocTarget = ref<any>(null)
 const deletingAlloc = ref(false)
+const allocDeleteRefs = ref<string[]>([])
 
 const ranges = ref<any[]>([])
 const creatingRange = ref(false)
@@ -644,11 +661,31 @@ function openDeleteRange(r: any) {
   showDeleteRangeDialog.value = true
 }
 
-function openDeleteAllocDialog(a: any) { deleteAllocTarget.value = a; showDeleteAllocDialog.value = true }
+async function checkAllocationRefs(allocId: string): Promise<string[]> {
+  try {
+    const data = await $fetch<any>(`/api/networks/${networkId}/allocations/${allocId}/references`)
+    return (data.ports || []).map((p: any) => `${p.switch_name} ${p.port_label}`)
+  } catch {
+    return ['(could not check port references)']
+  }
+}
+
+async function openDeleteAllocDialog(a: any) {
+  deleteAllocTarget.value = a
+  allocDeleteRefs.value = await checkAllocationRefs(a.id)
+  showDeleteAllocDialog.value = true
+}
+
 async function confirmDeleteAlloc() {
   if (!deleteAllocTarget.value) return
   deletingAlloc.value = true
-  try { await $fetch(`/api/networks/${networkId}/allocations/${deleteAllocTarget.value.id}`, { method: 'DELETE' }); toast.add({ title: t('networks.allocations.messages.deleted'), color: 'success' }); showDeleteAllocDialog.value = false; await fetchAllocations() }
+  try {
+    await $fetch(`/api/networks/${networkId}/allocations/${deleteAllocTarget.value.id}`, { method: 'DELETE' })
+    toast.add({ title: t('networks.allocations.messages.deleted'), color: 'success' })
+    showDeleteAllocDialog.value = false
+    allocDeleteRefs.value = []
+    await fetchAllocations()
+  }
   catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' }) }
   finally { deletingAlloc.value = false }
 }
