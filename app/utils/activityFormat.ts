@@ -38,15 +38,18 @@ export function formatActivitySummary(entry: any): string {
  * Format an activity entry into a detailed diff (for entity detail pages).
  */
 export function formatActivityDetail(entry: any): { field: string; from: string; to: string }[] {
-  const { changes, previous_state, action, metadata } = entry
+  const { changes, previous_state, action } = entry
   const diffs: { field: string; from: string; to: string }[] = []
 
-  if (!changes || action === 'create' || action === 'delete') return diffs
+  // Only show diffs when we have both changes AND previous_state (new format)
+  if (!changes || !previous_state || action === 'create' || action === 'delete') return diffs
 
   for (const key of Object.keys(changes)) {
     if (key === 'port_id' || key === 'updated_at') continue
-    const from = previous_state?.[key]
+    const from = previous_state[key]
     const to = changes[key]
+    // Skip if values are the same
+    if (JSON.stringify(from) === JSON.stringify(to)) continue
     diffs.push({
       field: formatFieldName(key),
       from: formatValue(from),
