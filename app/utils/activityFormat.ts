@@ -1,8 +1,10 @@
+type TranslateFn = (key: string, params?: Record<string, any>) => string
+
 /**
  * Format an activity entry into a compact human-readable description.
- * Used on both dashboard (without port label prefix) and switch detail page.
+ * Requires a translate function (t) for i18n support.
  */
-export function formatActivitySummary(entry: any): string {
+export function formatActivitySummary(entry: any, t: TranslateFn): string {
   const { action, entity_type, changes, metadata, previous_state } = entry
 
   if (action === 'create') {
@@ -17,25 +19,24 @@ export function formatActivitySummary(entry: any): string {
     if (!previous_state || !changes) {
       return metadata?.port_label || ''
     }
-    return formatPortChange(changes, previous_state, metadata)
+    return formatPortChange(changes, previous_state, metadata, t)
   }
 
   if (action === 'update' && changes && previous_state) {
-    return formatEntityChange(changes, previous_state)
+    return formatEntityChange(changes, previous_state, t)
   }
 
   return ''
 }
 
 /**
- * formatActivityDetail is no longer used — we show compact one-liners instead.
- * Kept for backwards compatibility but returns empty.
+ * No longer used — kept for backwards compatibility.
  */
 export function formatActivityDetail(_entry: any): { field: string; from: string; to: string }[] {
   return []
 }
 
-function formatPortChange(changes: any, prev: any, metadata: any): string {
+function formatPortChange(changes: any, prev: any, metadata: any, t: TranslateFn): string {
   const parts: string[] = []
   const port = metadata?.port_label || ''
 
@@ -43,28 +44,28 @@ function formatPortChange(changes: any, prev: any, metadata: any): string {
   const newVlan = changes.native_vlan ?? changes.access_vlan
   const oldVlan = prev?.native_vlan ?? prev?.access_vlan
   if (newVlan !== undefined || oldVlan !== undefined) {
-    if (newVlan && !oldVlan) parts.push(`VLAN ${newVlan} zugewiesen`)
-    else if (!newVlan && oldVlan) parts.push(`VLAN entfernt`)
+    if (newVlan && !oldVlan) parts.push(t('activity.vlanAssigned', { vlan: newVlan }))
+    else if (!newVlan && oldVlan) parts.push(t('activity.vlanRemoved'))
     else if (newVlan && oldVlan && newVlan !== oldVlan) parts.push(`VLAN ${oldVlan} → ${newVlan}`)
   }
 
   // Status changes
   if (changes.status !== undefined && prev?.status !== changes.status) {
-    if (changes.status === 'up') parts.push('aktiviert')
-    else if (changes.status === 'disabled') parts.push('deaktiviert')
+    if (changes.status === 'up') parts.push(t('activity.activated'))
+    else if (changes.status === 'disabled') parts.push(t('activity.disabled'))
     else if (changes.status === 'down') parts.push('down')
   }
 
   // Port mode
   if (changes.port_mode !== undefined && prev?.port_mode !== changes.port_mode) {
-    if (changes.port_mode === 'trunk') parts.push('Trunk konfiguriert')
-    else if (changes.port_mode === 'access') parts.push('Access konfiguriert')
+    if (changes.port_mode === 'trunk') parts.push(t('activity.trunkConfigured'))
+    else if (changes.port_mode === 'access') parts.push(t('activity.accessConfigured'))
   }
 
   // Connected device
   if (changes.connected_device !== undefined) {
     if (changes.connected_device && !prev?.connected_device) parts.push(`→ ${changes.connected_device}`)
-    else if (!changes.connected_device && prev?.connected_device) parts.push(`${prev.connected_device} getrennt`)
+    else if (!changes.connected_device && prev?.connected_device) parts.push(t('activity.disconnected', { device: prev.connected_device }))
     else if (changes.connected_device && prev?.connected_device && changes.connected_device !== prev.connected_device) {
       parts.push(`→ ${changes.connected_device}`)
     }
@@ -90,14 +91,14 @@ function formatPortChange(changes: any, prev: any, metadata: any): string {
   return prefix + parts.slice(0, 3).join(', ')
 }
 
-function formatEntityChange(changes: any, prev: any): string {
+function formatEntityChange(changes: any, prev: any, t: TranslateFn): string {
   const parts: string[] = []
 
   if (changes.name && prev?.name && changes.name !== prev.name) {
     parts.push(`${prev.name} → ${changes.name}`)
   }
   if (changes.management_ip !== undefined && prev?.management_ip !== changes.management_ip) {
-    parts.push(`IP: ${changes.management_ip || 'entfernt'}`)
+    parts.push(`IP: ${changes.management_ip || t('activity.removed')}`)
   }
   if (changes.status !== undefined && prev?.status !== changes.status) {
     parts.push(`Status: ${changes.status}`)

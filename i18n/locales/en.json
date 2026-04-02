@@ -528,11 +528,14 @@
     }
   },
   "activity": {
-    "title": "Activity",
-    "created": "created",
-    "updated": "updated",
-    "deleted": "deleted",
-    "undo": "Undo"
+    "vlanAssigned": "VLAN {vlan} assigned",
+    "vlanRemoved": "VLAN removed",
+    "activated": "activated",
+    "disabled": "disabled",
+    "trunkConfigured": "Trunk configured",
+    "accessConfigured": "Access configured",
+    "disconnected": "{device} disconnected",
+    "removed": "removed"
   },
   "errors": {
     "notFound": "Not found",

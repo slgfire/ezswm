@@ -247,7 +247,7 @@
                   class="h-3 w-3"
                 />
               </span>
-              <span v-if="formatActivitySummary(entry)" class="truncate text-xs text-gray-300">{{ formatActivitySummary(entry) }}</span>
+              <span v-if="formatActivity(entry)" class="truncate text-xs text-gray-300">{{ formatActivity(entry) }}</span>
               <span v-else class="text-xs text-gray-500">{{ entry.action }}</span>
               <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relativeTime(entry.timestamp) }}</span>
             </div>
@@ -396,9 +396,10 @@
 </template>
 
 <script setup lang="ts">
-import { formatActivitySummary, formatActivityDetail } from '~/utils/activityFormat'
+import { formatActivitySummary as _formatActivitySummary } from '~/utils/activityFormat'
 
 const { t } = useI18n()
+const formatActivity = (entry: any) => _formatActivitySummary(entry, t)
 const toast = useToast()
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)

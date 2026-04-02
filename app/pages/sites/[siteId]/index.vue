@@ -179,7 +179,7 @@
                 <span v-else class="truncate font-medium">{{ entry.entity_name }}</span>
                 <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relativeTime(entry.timestamp) }}</span>
               </div>
-              <div v-if="formatActivitySummary(entry)" class="ml-7 mt-0.5 truncate text-xs text-gray-400">{{ formatActivitySummary(entry) }}</div>
+              <div v-if="formatActivity(entry)" class="ml-7 mt-0.5 truncate text-xs text-gray-400">{{ formatActivity(entry) }}</div>
             </div>
           </div>
         </UCard>
@@ -204,6 +204,10 @@
 </template>
 
 <script setup lang="ts">
+import { formatActivitySummary as _formatActivitySummary } from '~/utils/activityFormat'
+
+const { t } = useI18n()
+const formatActivity = (entry: any) => _formatActivitySummary(entry, t)
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 useHead({ title: 'Dashboard' })
