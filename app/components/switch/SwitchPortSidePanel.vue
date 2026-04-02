@@ -82,10 +82,18 @@
 
         <template v-if="connectionMode === 'device'">
           <UFormField :label="$t('switches.ports.connectedDevice')">
-            <UInput v-model="form.connected_device" :placeholder="$t('switches.ports.devicePlaceholder')" class="w-full" />
-          </UFormField>
-          <UFormField :label="$t('switches.ports.connectedPort')">
-            <UInput v-model="form.connected_port" :placeholder="$t('switches.ports.portPlaceholder')" class="w-full" />
+            <div v-if="deviceHint" class="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+              {{ deviceHint }}
+            </div>
+            <USelectMenu
+              v-else
+              v-model="selectedAllocationOption"
+              :items="allocationOptions"
+              by="value"
+              :placeholder="$t('switches.ports.selectDevice')"
+              class="w-full"
+              @update:model-value="onAllocationSelect"
+            />
           </UFormField>
         </template>
 
@@ -189,6 +197,8 @@ const selectedPortId = ref('')
 const allSwitches = ref<any[]>([])
 const allVlans = ref<any[]>([])
 const allAllocations = ref<any[]>([])
+const allNetworks = ref<any[]>([])
+const selectedAllocationId = ref<string>('')
 const selectedTaggedVlans = ref<number[]>([])
 
 const poeOptions = computed(() => [
@@ -237,11 +247,49 @@ async function fetchVlans() {
 
 async function fetchAllocations() {
   try {
-    const nets = await apiFetch<any>('/api/networks')
-    const networkList = nets.data || nets || []
+    const route = useRoute()
+    const siteId = route.params.siteId as string
+    const params: Record<string, string> = {}
+    if (siteId && siteId !== 'all') params.site_id = siteId
+
+    // Fetch all networks (paged)
+    const allNets: any[] = []
+    let netPage = 1
+    while (true) {
+      const res = await apiFetch<any>('/api/networks', { params: { ...params, page: netPage, per_page: 100 } })
+      const items = res.data || res.items || res || []
+      if (!Array.isArray(items) || items.length === 0) break
+      allNets.push(...items)
+      if (items.length < 100) break
+      netPage++
+    }
+    allNetworks.value = allNets
+
+    // Fetch allocations from all networks in parallel
+    const allocResults = await Promise.all(
+      allNets.map(async (net) => {
+        const allocs: any[] = []
+        let page = 1
+        while (true) {
+          try {
+            const a = await apiFetch<any>(`/api/networks/${net.id}/allocations`, { params: { page, per_page: 100 } })
+            const items = a.data || a || []
+            if (!Array.isArray(items) || items.length === 0) break
+            allocs.push(...items)
+            if (items.length < 100) break
+            page++
+          } catch { break }
+        }
+        return allocs
+      })
+    )
+    // Deduplicate by id
+    const seen = new Set<string>()
     const allocs: any[] = []
-    for (const net of networkList) {
-      try { const a = await apiFetch<any>(`/api/networks/${net.id}/allocations`); allocs.push(...(a.data || a || [])) } catch { /* ignore */ }
+    for (const batch of allocResults) {
+      for (const a of batch) {
+        if (!seen.has(a.id)) { seen.add(a.id); allocs.push(a) }
+      }
     }
     allAllocations.value = allocs
   } catch { /* ignore */ }
@@ -264,7 +312,11 @@ const remotePortSearchOptions = computed(() => {
     ...sw.ports.filter((p: any) => !(selectedSwitchId.value === props.switchId && p.id === props.port?.id))
       .map((p: any) => {
         const label = p.label || `${p.unit}/${p.index}`
-        const connected = (p.connected_device_id && !(p.connected_device_id === props.switchId && p.connected_port_id === props.port?.id)) ? `→ ${p.connected_device}` : ''
+        const connected = (p.connected_device_id && !(p.connected_device_id === props.switchId && p.connected_port_id === props.port?.id))
+          ? `→ ${p.connected_device}`
+          : p.connected_allocation_id
+            ? `→ ${p.connected_device || 'Device'}`
+            : ''
         return { label, value: p.id, connected }
       })
   ]
@@ -283,13 +335,140 @@ const portConflict = computed(() => {
   if (!selectedSwitchId.value || !selectedPortId.value) return null
   const sw = allSwitches.value.find(s => s.id === selectedSwitchId.value)
   const port = sw?.ports?.find((p: any) => p.id === selectedPortId.value)
+  if (port?.connected_allocation_id) {
+    return { device: port.connected_device || 'Device', port: port.connected_port || '' }
+  }
   if (!port?.connected_device_id) return null
   if (port.connected_device_id === props.switchId && port.connected_port_id === props.port?.id) return null
   return { device: port.connected_device || 'Unknown', port: port.connected_port || 'Unknown port' }
 })
 
+// VLANs from form state, respecting port_mode
+const formVlanNumbers = computed(() => {
+  const vlans: number[] = []
+  if (form.port_mode === 'trunk') {
+    if (form.native_vlan) vlans.push(form.native_vlan)
+    if (selectedTaggedVlans.value.length) vlans.push(...selectedTaggedVlans.value)
+  } else {
+    if (form.access_vlan) vlans.push(form.access_vlan)
+  }
+  return [...new Set(vlans)]
+})
+
+const formVlanUuids = computed(() => {
+  return formVlanNumbers.value
+    .map(num => allVlans.value.find((v: any) => v.vlan_id === num))
+    .filter(Boolean)
+    .map((v: any) => v.id)
+})
+
+const formNetworks = computed(() => {
+  if (!formVlanUuids.value.length) return []
+  return allNetworks.value.filter((n: any) => n.vlan_id && formVlanUuids.value.includes(n.vlan_id))
+})
+
+const filteredAllocations = computed(() => {
+  if (!formNetworks.value.length) return []
+  const networkIds = new Set(formNetworks.value.map((n: any) => n.id))
+  return allAllocations.value.filter((a: any) => networkIds.has(a.network_id))
+})
+
+// Dropdown options with None, grouping, stale handling, sorted by IP
+const allocationOptions = computed(() => {
+  const options: { label: string; value: string; allocation: any }[] = [
+    { label: '— ' + t('common.none') + ' —', value: '', allocation: null }
+  ]
+
+  for (const net of formNetworks.value) {
+    const netAllocs = filteredAllocations.value
+      .filter((a: any) => a.network_id === net.id)
+      .sort((a: any, b: any) => {
+        // Sort by IP numerically
+        const aParts = a.ip_address.split('.').map(Number)
+        const bParts = b.ip_address.split('.').map(Number)
+        for (let i = 0; i < 4; i++) {
+          if (aParts[i] !== bParts[i]) return aParts[i] - bParts[i]
+        }
+        return 0
+      })
+    const prefix = formNetworks.value.length > 1 ? `[${net.name} ${net.subnet || ''}] ` : ''
+    for (const a of netAllocs) {
+      options.push({
+        label: prefix + (a.hostname ? `${a.hostname} (${a.ip_address})` : a.ip_address),
+        value: a.id,
+        allocation: a,
+      })
+    }
+  }
+
+  // Stale: selected allocation not in filtered list
+  if (selectedAllocationId.value && !options.find(o => o.value === selectedAllocationId.value)) {
+    const stale = allAllocations.value.find((a: any) => a.id === selectedAllocationId.value)
+    if (stale) {
+      options.splice(1, 0, {
+        label: `${stale.hostname ? `${stale.hostname} (${stale.ip_address})` : stale.ip_address} ⚠`,
+        value: stale.id,
+        allocation: stale,
+      })
+    } else if (form.connected_device) {
+      options.splice(1, 0, {
+        label: `${form.connected_device} (stale)`,
+        value: selectedAllocationId.value,
+        allocation: null,
+      })
+    }
+  }
+
+  return options
+})
+
+const selectedAllocationOption = computed(() => {
+  if (!selectedAllocationId.value) return allocationOptions.value[0]
+  return allocationOptions.value.find(o => o.value === selectedAllocationId.value) || allocationOptions.value[0]
+})
+
+const deviceHint = computed(() => {
+  if (formVlanNumbers.value.length === 0) return t('switches.ports.deviceHintNoVlan')
+  if (formNetworks.value.length === 0) return t('switches.ports.deviceHintNoNetwork')
+  if (filteredAllocations.value.length === 0 && !selectedAllocationId.value) return t('switches.ports.deviceHintNoDevices')
+  return ''
+})
+
+function onAllocationSelect(option: any) {
+  selectedAllocationId.value = option?.value || ''
+  if (option?.allocation) {
+    const a = option.allocation
+    form.connected_device = a.hostname ? `${a.hostname} (${a.ip_address})` : a.ip_address
+    form.connected_port = ''
+  } else {
+    form.connected_device = ''
+    form.connected_port = ''
+  }
+}
+
 const pendingSwitchId = ref('')
 const pendingPortId = ref('')
+
+let isRehydrating = true
+
+watch(connectionMode, (newMode, oldMode) => {
+  if (newMode === oldMode || isRehydrating) return
+  if (oldMode === 'device') {
+    selectedAllocationId.value = ''
+    form.connected_device = ''
+    form.connected_port = ''
+  }
+  if (oldMode === 'switch') {
+    selectedSwitchId.value = ''
+    selectedPortId.value = ''
+    form.connected_device = ''
+    form.connected_port = ''
+  }
+  if (oldMode === 'freetext') {
+    form.connected_device = ''
+    form.connected_port = ''
+  }
+})
 
 watch(() => props.port, (p) => {
   if (p) {
@@ -299,12 +478,32 @@ watch(() => props.port, (p) => {
     form.description = p.description || ''; form.mac_address = p.mac_address || ''
     form.poe_selection = p.poe?.type || ''
     taggedVlansStr.value = (p.tagged_vlans || []).join(','); selectedTaggedVlans.value = [...(p.tagged_vlans || [])]
-    if (p.connected_device_id) {
-      connectionMode.value = 'switch'; pendingSwitchId.value = p.connected_device_id; pendingPortId.value = p.connected_port_id || ''
-      if (allSwitches.value.length) { selectedSwitchId.value = p.connected_device_id; selectedPortId.value = p.connected_port_id || '' }
+    isRehydrating = true
+    if (p.connected_allocation_id) {
+      connectionMode.value = 'device'
+      selectedAllocationId.value = p.connected_allocation_id
+      selectedSwitchId.value = ''
+      selectedPortId.value = ''
+      pendingSwitchId.value = ''
+      pendingPortId.value = ''
+    } else if (p.connected_device_id) {
+      connectionMode.value = 'switch'
+      selectedAllocationId.value = ''
+      pendingSwitchId.value = p.connected_device_id
+      pendingPortId.value = p.connected_port_id || ''
+      if (allSwitches.value.length) {
+        selectedSwitchId.value = p.connected_device_id
+        selectedPortId.value = p.connected_port_id || ''
+      }
     } else {
-      connectionMode.value = 'freetext'; selectedSwitchId.value = ''; selectedPortId.value = ''; pendingSwitchId.value = ''; pendingPortId.value = ''
+      connectionMode.value = 'freetext'
+      selectedAllocationId.value = ''
+      selectedSwitchId.value = ''
+      selectedPortId.value = ''
+      pendingSwitchId.value = ''
+      pendingPortId.value = ''
     }
+    nextTick(() => { isRehydrating = false })
   }
 }, { immediate: true })
 
@@ -331,6 +530,18 @@ async function save() {
   delete body.poe_selection
   if (form.port_mode === 'access') { body.native_vlan = null; body.tagged_vlans = [] }
   if (form.port_mode === 'trunk') { body.access_vlan = null }
+  // Set connected_allocation_id based on mode
+  if (connectionMode.value === 'device') {
+    body.connected_allocation_id = selectedAllocationId.value || null
+    body.connected_device_id = null
+    body.connected_port_id = null
+    body.connected_port = null
+    if (!selectedAllocationId.value) {
+      body.connected_device = null
+    }
+  } else {
+    body.connected_allocation_id = null
+  }
   if (connectionMode.value === 'switch' && selectedSwitchId.value) {
     const sw = allSwitches.value.find(s => s.id === selectedSwitchId.value)
     body.connected_device = sw?.name || ''; body.connected_device_id = selectedSwitchId.value; body.connected_port_id = selectedPortId.value || null
@@ -352,6 +563,10 @@ async function save() {
         tagged_vlans: body.tagged_vlans,
         connected_device: body.connected_device,
         connected_device_id: body.connected_device_id,
+        connected_allocation_id: body.connected_allocation_id,
+      }
+      if (body.connected_allocation_id) {
+        syncFields.connected_port = null
       }
       const otherPortIds = props.lagGroup.port_ids.filter((pid: string) => pid !== props.port.id)
       for (const portId of otherPortIds) {
