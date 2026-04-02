@@ -12,8 +12,15 @@ export function formatActivitySummary(entry: any): string {
     return ''  // delete is self-explanatory from the action icon
   }
 
-  if (action === 'update_port' && changes) {
-    return formatPortChangeSummary(changes, previous_state, metadata)
+  if (action === 'update_port') {
+    // New format has metadata.port_label + changes/previous_state diff
+    if (metadata?.port_label && previous_state) {
+      return formatPortChangeSummary(changes || {}, previous_state, metadata)
+    }
+    // Old format: changes contains all port fields, no previous_state — just show port label
+    if (metadata?.port_label) return metadata.port_label
+    if (changes?.port_id) return ''
+    return ''
   }
 
   if (action === 'update' && changes) {
@@ -61,40 +68,38 @@ function formatPortChangeSummary(changes: any, prev: any, metadata: any): string
   const parts: string[] = []
   const portLabel = metadata?.port_label || ''
 
-  if (changes.native_vlan !== undefined) {
+  // Only show the most important change, skip trivial ones
+  if (changes.native_vlan !== undefined && (prev?.native_vlan || changes.native_vlan)) {
     parts.push(`VLAN ${prev?.native_vlan || '—'} → ${changes.native_vlan || '—'}`)
-  }
-  if (changes.access_vlan !== undefined) {
+  } else if (changes.access_vlan !== undefined && (prev?.access_vlan || changes.access_vlan)) {
     parts.push(`VLAN ${prev?.access_vlan || '—'} → ${changes.access_vlan || '—'}`)
   }
-  if (changes.status !== undefined) {
-    parts.push(`${prev?.status || '?'} → ${changes.status}`)
+  if (changes.status !== undefined && prev?.status && prev.status !== changes.status) {
+    parts.push(`${prev.status} → ${changes.status}`)
   }
-  if (changes.speed !== undefined) {
-    parts.push(`${prev?.speed || '?'} → ${changes.speed}`)
-  }
-  if (changes.connected_device !== undefined) {
-    parts.push(`→ ${changes.connected_device || 'disconnected'}`)
+  if (changes.connected_device !== undefined && changes.connected_device) {
+    parts.push(`→ ${changes.connected_device}`)
+  } else if (changes.connected_device === null && prev?.connected_device) {
+    parts.push(`${prev.connected_device} disconnected`)
   }
 
+  if (parts.length === 0) return portLabel ? portLabel : ''
   const prefix = portLabel ? `${portLabel}: ` : ''
-  return prefix + (parts.length > 0 ? parts.join(', ') : '')
+  return prefix + parts.slice(0, 2).join(', ')
 }
 
-function formatUpdateSummary(entityType: string, changes: any, prev: any): string {
+function formatUpdateSummary(_entityType: string, changes: any, prev: any): string {
   const parts: string[] = []
 
   if (changes.name && prev?.name && changes.name !== prev.name) {
     parts.push(`${prev.name} → ${changes.name}`)
-  }
-  if (changes.management_ip !== undefined) {
+  } else if (changes.management_ip !== undefined && prev?.management_ip !== changes.management_ip) {
     parts.push(`IP: ${changes.management_ip || '—'}`)
-  }
-  if (changes.status !== undefined) {
-    parts.push(`Status: ${changes.status}`)
+  } else if (changes.status !== undefined && prev?.status !== changes.status) {
+    parts.push(`${changes.status}`)
   }
 
-  return parts.join(', ')
+  return parts.slice(0, 1).join('')
 }
 
 function formatFieldName(key: string): string {
