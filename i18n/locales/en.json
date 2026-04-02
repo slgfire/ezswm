@@ -192,7 +192,11 @@
       "connectedSwitch": "Switch",
       "searchSwitch": "Search switch...",
       "searchPort": "Search port...",
-      "searchDevice": "Search or type device name..."
+      "searchDevice": "Search or type device name...",
+      "deviceHintNoVlan": "Assign a VLAN first to see available devices",
+      "deviceHintNoNetwork": "No network configured for this VLAN",
+      "deviceHintNoDevices": "No devices registered in this network",
+      "selectDevice": "Select device..."
     },
     "roles": {
       "core": "Core",
@@ -278,7 +282,8 @@
         "created": "IP allocation created successfully",
         "updated": "IP allocation updated successfully",
         "deleted": "IP allocation deleted successfully"
-      }
+      },
+      "deleteWithRefs": "This allocation is connected to {count} port(s): {ports}. Port references will be cleared."
     },
     "ranges": {
       "title": "IP Ranges",

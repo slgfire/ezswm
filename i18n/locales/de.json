@@ -192,7 +192,11 @@
       "connectedSwitch": "Switch",
       "searchSwitch": "Switch suchen...",
       "searchPort": "Port suchen...",
-      "searchDevice": "Gerät suchen oder eingeben..."
+      "searchDevice": "Gerät suchen oder eingeben...",
+      "deviceHintNoVlan": "Weise zuerst ein VLAN zu, um verfügbare Geräte zu sehen",
+      "deviceHintNoNetwork": "Kein Netzwerk für dieses VLAN konfiguriert",
+      "deviceHintNoDevices": "Keine Geräte in diesem Netzwerk registriert",
+      "selectDevice": "Gerät auswählen..."
     },
     "roles": {
       "core": "Core",
@@ -278,7 +282,8 @@
         "created": "IP-Zuweisung erfolgreich erstellt",
         "updated": "IP-Zuweisung erfolgreich aktualisiert",
         "deleted": "IP-Zuweisung erfolgreich gelöscht"
-      }
+      },
+      "deleteWithRefs": "Diese Allocation ist mit {count} Port(s) verbunden: {ports}. Port-Referenzen werden entfernt."
     },
     "ranges": {
       "title": "IP-Bereiche",
