@@ -400,7 +400,7 @@ import { formatActivitySummary as _formatActivitySummary } from '~/utils/activit
 import { relativeTime as _relativeTime } from '~/utils/timeFormat'
 
 const { t } = useI18n()
-const formatActivity = (entry: any) => _formatActivitySummary(entry, t)
+const formatActivity = (entry: any) => _formatActivitySummary(entry, t, true)
 const relTime = (ts: string) => _relativeTime(ts, t)
 const toast = useToast()
 const route = useRoute()

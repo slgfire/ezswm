@@ -2,9 +2,9 @@ type TranslateFn = (key: string, params?: Record<string, any>) => string
 
 /**
  * Format an activity entry into a compact human-readable description.
- * Requires a translate function (t) for i18n support.
+ * @param detailed - if true, show all changes (switch detail page). If false, max 2-3 (dashboard).
  */
-export function formatActivitySummary(entry: any, t: TranslateFn): string {
+export function formatActivitySummary(entry: any, t: TranslateFn, detailed: boolean = false): string {
   const { action, entity_type, changes, metadata, previous_state } = entry
 
   if (action === 'create') {
@@ -19,7 +19,7 @@ export function formatActivitySummary(entry: any, t: TranslateFn): string {
     if (!previous_state || !changes) {
       return metadata?.port_label || ''
     }
-    return formatPortChange(changes, previous_state, metadata, t)
+    return formatPortChange(changes, previous_state, metadata, t, detailed)
   }
 
   if (action === 'update' && changes && previous_state) {
@@ -36,7 +36,7 @@ export function formatActivityDetail(_entry: any): { field: string; from: string
   return []
 }
 
-function formatPortChange(changes: any, prev: any, metadata: any, t: TranslateFn): string {
+function formatPortChange(changes: any, prev: any, metadata: any, t: TranslateFn, detailed: boolean = false): string {
   const parts: string[] = []
   const port = metadata?.port_label || ''
 
@@ -88,7 +88,7 @@ function formatPortChange(changes: any, prev: any, metadata: any, t: TranslateFn
 
   if (parts.length === 0) return port
   const prefix = port ? `${port}: ` : ''
-  return prefix + parts.slice(0, 3).join(', ')
+  return prefix + (detailed ? parts : parts.slice(0, 3)).join(', ')
 }
 
 function formatEntityChange(changes: any, prev: any, t: TranslateFn): string {
