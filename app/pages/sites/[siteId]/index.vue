@@ -177,7 +177,7 @@
                   class="truncate font-medium hover:text-primary-400"
                 >{{ entry.entity_name }}</NuxtLink>
                 <span v-else class="truncate font-medium">{{ entry.entity_name }}</span>
-                <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relativeTime(entry.timestamp) }}</span>
+                <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relTime(entry.timestamp) }}</span>
               </div>
               <div v-if="formatActivity(entry)" class="ml-7 mt-0.5 truncate text-xs text-gray-400">{{ formatActivity(entry) }}</div>
             </div>
@@ -205,9 +205,11 @@
 
 <script setup lang="ts">
 import { formatActivitySummary as _formatActivitySummary } from '~/utils/activityFormat'
+import { relativeTime as _relativeTime } from '~/utils/timeFormat'
 
 const { t } = useI18n()
 const formatActivity = (entry: any) => _formatActivitySummary(entry, t)
+const relTime = (ts: string) => _relativeTime(ts, t)
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 useHead({ title: 'Dashboard' })
@@ -231,18 +233,6 @@ const portDisabledPercent = computed(() =>
   totalPorts.value > 0 ? (stats.value.portStatus.disabled / totalPorts.value) * 100 : 0
 )
 
-function relativeTime(timestamp: string): string {
-  const now = Date.now()
-  const then = new Date(timestamp).getTime()
-  const diff = now - then
-  const minutes = Math.floor(diff / 60000)
-  if (minutes < 1) return 'gerade eben'
-  if (minutes < 60) return `vor ${minutes}m`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `vor ${hours}h`
-  const days = Math.floor(hours / 24)
-  return `vor ${days}d`
-}
 
 function activityLink(entry: any): string | undefined {
   if (!entry.entity_id) return undefined

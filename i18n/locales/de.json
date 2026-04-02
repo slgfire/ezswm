@@ -618,5 +618,11 @@
     "printAll": "Alle drucken ({n})",
     "printFiltered": "Gefilterte drucken ({n})",
     "printSelected": "Ausgewählte drucken ({n})"
+  },
+  "time": {
+    "justNow": "gerade eben",
+    "minutesAgo": "vor {n}m",
+    "hoursAgo": "vor {n}h",
+    "daysAgo": "vor {n}d"
   }
 }

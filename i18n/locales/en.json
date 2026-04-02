@@ -618,5 +618,11 @@
     "printAll": "Print all ({n})",
     "printFiltered": "Print filtered ({n})",
     "printSelected": "Print selected ({n})"
+  },
+  "time": {
+    "justNow": "just now",
+    "minutesAgo": "{n}m ago",
+    "hoursAgo": "{n}h ago",
+    "daysAgo": "{n}d ago"
   }
 }

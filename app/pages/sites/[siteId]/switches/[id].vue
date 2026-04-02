@@ -249,7 +249,7 @@
               </span>
               <span v-if="formatActivity(entry)" class="truncate text-xs text-gray-300">{{ formatActivity(entry) }}</span>
               <span v-else class="text-xs text-gray-500">{{ entry.action }}</span>
-              <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relativeTime(entry.timestamp) }}</span>
+              <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relTime(entry.timestamp) }}</span>
             </div>
           </div>
         </div>
@@ -397,9 +397,11 @@
 
 <script setup lang="ts">
 import { formatActivitySummary as _formatActivitySummary } from '~/utils/activityFormat'
+import { relativeTime as _relativeTime } from '~/utils/timeFormat'
 
 const { t } = useI18n()
 const formatActivity = (entry: any) => _formatActivitySummary(entry, t)
+const relTime = (ts: string) => _relativeTime(ts, t)
 const toast = useToast()
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
@@ -806,16 +808,6 @@ async function fetchActivity() {
   } catch { /* ignore */ }
 }
 
-function relativeTime(timestamp: string): string {
-  const diff = Date.now() - new Date(timestamp).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'gerade eben'
-  if (mins < 60) return `vor ${mins}m`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `vor ${hours}h`
-  const days = Math.floor(hours / 24)
-  return `vor ${days}d`
-}
 
 onMounted(() => {
   fetchSwitch()
