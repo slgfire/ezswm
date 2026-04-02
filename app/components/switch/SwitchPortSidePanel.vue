@@ -80,15 +80,6 @@
           </UFormField>
         </template>
 
-        <template v-if="connectionMode === 'device'">
-          <UFormField :label="$t('switches.ports.connectedDevice')">
-            <UInput v-model="form.connected_device" :placeholder="$t('switches.ports.devicePlaceholder')" class="w-full" />
-          </UFormField>
-          <UFormField :label="$t('switches.ports.connectedPort')">
-            <UInput v-model="form.connected_port" :placeholder="$t('switches.ports.portPlaceholder')" class="w-full" />
-          </UFormField>
-        </template>
-
         <template v-if="connectionMode === 'freetext'">
           <UFormField :label="$t('switches.ports.connectedDevice')">
             <UInput v-model="form.connected_device" :placeholder="$t('switches.ports.devicePlaceholder')" class="w-full" />
@@ -178,10 +169,9 @@ const portModeOptions = computed(() => [
   { label: t('switches.ports.modeTrunk'), value: 'trunk' }
 ])
 
-const connectionMode = ref<'switch' | 'device' | 'freetext'>('freetext')
+const connectionMode = ref<'switch' | 'freetext'>('freetext')
 const connectionModes = computed(() => [
   { label: t('switches.ports.connectedSwitch'), value: 'switch' as const },
-  { label: t('switches.ports.connectedDevice'), value: 'device' as const },
   { label: t('switches.ports.freetext'), value: 'freetext' as const }
 ])
 const selectedSwitchId = ref('')
