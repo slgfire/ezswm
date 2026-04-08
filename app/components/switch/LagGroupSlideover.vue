@@ -481,6 +481,26 @@ async function syncRemoteLag() {
     await $fetch(`/api/switches/${remoteSwId}/lag-groups`, { method: 'POST', body: mirrorBody })
   } catch (e: any) {
     toast.add({ title: `Mirror LAG: ${e?.data?.message || 'Failed'}`, color: 'warning' })
+    return
+  }
+
+  // Update connected_device on remote member ports (mirror of Step 2)
+  for (const localPortId of form.port_ids) {
+    const mapping = portMapping[localPortId]
+    if (!mapping?.remotePortId) continue
+    const localPort = props.ports.find(p => p.id === localPortId)
+    const localPortLabel = localPort ? resolvePortLabel(props.ports, localPortId) : ''
+    try {
+      await $fetch(`/api/switches/${remoteSwId}/ports/${mapping.remotePortId}`, {
+        method: 'PUT',
+        body: {
+          connected_device: localSwName,
+          connected_device_id: props.switchId,
+          connected_port_id: localPortId,
+          connected_port: localPortLabel || null,
+        }
+      })
+    } catch { /* best-effort */ }
   }
 }
 
