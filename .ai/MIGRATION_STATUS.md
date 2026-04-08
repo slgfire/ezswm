@@ -373,6 +373,38 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 17: Device Allocation Dropdown (2026-04-02)
+
+**Device Connection Mode:**
+- Replaced freetext "Device" mode with dropdown of IP allocations filtered by port's VLAN/network
+- Access port: shows allocations from access_vlan network(s)
+- Trunk port: shows allocations from all tagged + native VLAN networks
+- No VLAN: shows hint "Assign a VLAN first"
+- Dropdown with search, sorted by IP, grouped by network prefix for trunk ports
+- "None" option to clear allocation
+- Stale allocation handling (VLAN changed after assignment shows ⚠ marker)
+
+**Backend:**
+- Added `connected_allocation_id` to Port type
+- New references endpoint: GET /api/networks/:id/allocations/:allocId/references
+- Allocation delete clears connected_allocation_id on referencing ports
+- Switch duplicate clears connected_allocation_id on all ports
+- Port reset clears connected_allocation_id
+- _createRemoteLink clears connected_allocation_id (prevents dual-state)
+- connected_allocation_id in audit diff logging
+
+**Frontend:**
+- Rehydration: port with connected_allocation_id auto-selects Device mode
+- Mode-switch clearing: switching modes clears previous mode's state
+- Form state re-loaded on panel open (cancel discards changes)
+- Port conflict detection includes allocation-occupied ports
+- LAG sync includes connected_allocation_id
+- Allocation delete warning shows affected ports via SharedConfirmDialog
+
+**Version:** 0.8.0
+
+---
+
 ## Feature Backlog
 
 ### Quick Wins
