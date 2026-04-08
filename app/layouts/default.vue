@@ -20,7 +20,7 @@
 
     <!-- Main content -->
     <div class="flex flex-1 flex-col overflow-hidden">
-      <LayoutAppHeader @toggle-sidebar="mobileSidebarOpen = !mobileSidebarOpen" />
+      <LayoutAppHeader ref="headerRef" @toggle-sidebar="mobileSidebarOpen = !mobileSidebarOpen" />
       <LayoutAppBreadcrumbs />
 
       <main id="main-content" class="flex-1 overflow-y-auto">
@@ -35,4 +35,31 @@
 <script setup lang="ts">
 const sidebarCollapsed = ref(false)
 const mobileSidebarOpen = ref(false)
+const headerRef = ref<{ dismissSearch: () => void; isSearchOpen: boolean } | null>(null)
+
+function onGlobalEsc(e: KeyboardEvent) {
+  if (e.key !== 'Escape') return
+
+  // 1. Search results open → dismiss (hide results, keep query)
+  if (headerRef.value?.isSearchOpen) {
+    headerRef.value.dismissSearch()
+    return
+  }
+
+  // 2. Mobile sidebar open → close it
+  if (mobileSidebarOpen.value) {
+    mobileSidebarOpen.value = false
+    return
+  }
+
+  // 3. Otherwise: let Nuxt UI handle modals/slideovers natively
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', onGlobalEsc)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', onGlobalEsc)
+})
 </script>
