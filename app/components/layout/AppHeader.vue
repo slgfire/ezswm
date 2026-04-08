@@ -7,6 +7,7 @@
         variant="ghost"
         color="neutral"
         icon="i-heroicons-bars-3"
+        data-testid="mobile-menu-button"
         @click="$emit('toggleSidebar')"
       />
 
@@ -18,10 +19,11 @@
             ref="searchInputRef"
             v-model="searchQuery"
             :placeholder="$t('common.search')"
+            data-testid="search-input"
             class="w-64 border-0 bg-transparent py-1.5 pl-2 font-mono text-sm text-gray-900 placeholder-gray-400 outline-none dark:text-white dark:placeholder-gray-500"
             autocomplete="off"
             @focus="showResults = true"
-            @keydown.escape="showResults = false"
+            @keydown.escape="dismissSearch"
             @keydown.down.prevent="moveSelection(1)"
             @keydown.up.prevent="moveSelection(-1)"
             @keydown.enter.prevent="navigateToSelected"
@@ -32,6 +34,7 @@
         <!-- Search results dropdown -->
         <div
           v-if="showResults && searchQuery.length >= 2"
+          data-testid="search-results"
           class="absolute left-0 top-full z-50 mt-1 w-96 rounded-lg border border-default bg-default shadow-lg"
         >
           <div v-if="searching" class="flex items-center justify-center py-4">
@@ -198,7 +201,7 @@
   </header>
 
   <!-- Click outside to close -->
-  <div v-if="showResults && searchQuery.length >= 2" class="fixed inset-0 z-40" @click="showResults = false" />
+  <div v-if="showResults && searchQuery.length >= 2" class="fixed inset-0 z-40" @click="dismissSearch" />
 </template>
 
 <script setup lang="ts">
@@ -352,6 +355,10 @@ function escapeHtml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
+function dismissSearch() {
+  showResults.value = false
+}
+
 function closeSearch() {
   showResults.value = false
   searchQuery.value = ''
@@ -365,6 +372,11 @@ onMounted(() => {
       searchInputRef.value?.focus()
     }
   })
+})
+
+defineExpose({
+  dismissSearch,
+  isSearchOpen: computed(() => showResults.value && searchQuery.value.length >= 2),
 })
 
 const userMenuItems = computed(() => [

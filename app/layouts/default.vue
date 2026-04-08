@@ -11,7 +11,7 @@
     </div>
 
     <!-- Mobile sidebar overlay -->
-    <div v-if="mobileSidebarOpen" class="fixed inset-0 z-40 lg:hidden">
+    <div v-if="mobileSidebarOpen" data-testid="mobile-sidebar-overlay" class="fixed inset-0 z-40 lg:hidden">
       <div class="absolute inset-0 bg-black/50" @click="mobileSidebarOpen = false" />
       <div class="relative z-50 h-full w-64">
         <LayoutAppSidebar :collapsed="false" @toggle="mobileSidebarOpen = false" />
