@@ -509,6 +509,30 @@ watch(() => props.port, (p) => {
 
 watch(isOpen, async (open) => {
   if (open) {
+    // Re-load form state from port data to discard any unsaved changes
+    const p = props.port
+    if (p) {
+      isRehydrating = true
+      form.status = p.status; form.speed = p.speed || ''; form.port_mode = p.port_mode || (p.tagged_vlans?.length ? 'trunk' : 'access')
+      form.access_vlan = p.access_vlan || null; form.native_vlan = p.native_vlan || null
+      form.connected_device = p.connected_device || ''; form.connected_port = p.connected_port || ''
+      form.description = p.description || ''; form.mac_address = p.mac_address || ''
+      form.poe_selection = p.poe?.type || ''
+      taggedVlansStr.value = (p.tagged_vlans || []).join(','); selectedTaggedVlans.value = [...(p.tagged_vlans || [])]
+      if (p.connected_allocation_id) {
+        connectionMode.value = 'device'
+        selectedAllocationId.value = p.connected_allocation_id
+        selectedSwitchId.value = ''; selectedPortId.value = ''; pendingSwitchId.value = ''; pendingPortId.value = ''
+      } else if (p.connected_device_id) {
+        connectionMode.value = 'switch'
+        selectedAllocationId.value = ''
+        pendingSwitchId.value = p.connected_device_id; pendingPortId.value = p.connected_port_id || ''
+      } else {
+        connectionMode.value = 'freetext'
+        selectedAllocationId.value = ''; selectedSwitchId.value = ''; selectedPortId.value = ''; pendingSwitchId.value = ''; pendingPortId.value = ''
+      }
+      nextTick(() => { isRehydrating = false })
+    }
     await Promise.all([fetchSwitches(), fetchVlans(), fetchAllocations()])
     if (pendingSwitchId.value) { selectedSwitchId.value = pendingSwitchId.value; selectedPortId.value = pendingPortId.value }
   }
