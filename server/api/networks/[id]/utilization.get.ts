@@ -20,17 +20,17 @@ export default defineEventHandler(async (event) => {
   const allocations = ipAllocationRepository.list(id)
   const ranges = ipRangeRepository.list(id)
 
-  const totalIps = subnetInfo.total_hosts
+  const usableIps = subnetInfo.usable_hosts
   const allocatedCount = allocations.length
   const rangesCount = ranges.length
-  const freeCount = Math.max(0, totalIps - allocatedCount)
+  const freeCount = Math.max(0, usableIps - allocatedCount)
 
   return {
-    total_ips: totalIps,
-    usable_ips: subnetInfo.usable_hosts,
+    total_ips: subnetInfo.total_hosts,
+    usable_ips: usableIps,
     allocated_count: allocatedCount,
     ranges_count: rangesCount,
     free_count: freeCount,
-    utilization_percent: totalIps > 0 ? Math.round((allocatedCount / totalIps) * 10000) / 100 : 0,
+    utilization_percent: usableIps > 0 ? Math.round((allocatedCount / usableIps) * 10000) / 100 : 0,
   }
 })

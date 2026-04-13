@@ -125,7 +125,7 @@
 
       <!-- IP Utilization + Recent Activity side by side -->
       <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <UCard v-if="stats.networkUtilization.length" class="stagger-item">
+        <UCard v-if="stats.networkUtilization.length" class="stagger-item h-full flex flex-col" :ui="{ body: 'flex-1' }">
           <template #header><h2 class="font-semibold">{{ $t('dashboard.ipUtilization') }}</h2></template>
           <div class="space-y-4">
             <div v-for="net in stats.networkUtilization" :key="net.id" class="space-y-1">
@@ -137,14 +137,21 @@
                 </div>
                 <span class="font-mono text-sm" :class="net.percentage > 80 ? 'text-red-400' : net.percentage > 50 ? 'text-yellow-400' : 'text-gray-400'">{{ net.percentage }}%</span>
               </div>
-              <div class="h-2 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
+              <div class="flex h-2 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
                 <div
-                  class="h-2 rounded-full transition-all"
-                  :style="{
-                    width: `${Math.min(net.percentage, 100)}%`,
-                    backgroundColor: net.percentage > 80 ? undefined : net.vlan_color || undefined
-                  }"
-                  :class="net.percentage > 80 ? 'bg-red-500' : net.percentage > 50 ? 'bg-yellow-500' : net.vlan_color ? '' : 'bg-primary-500'"
+                  class="h-full transition-all"
+                  :class="net.percentage > 80 ? 'bg-red-500' : 'bg-green-500'"
+                  :style="{ width: `${Math.min(net.percentage, 100)}%` }"
+                />
+                <div
+                  v-if="net.dhcp_percent > 0"
+                  class="h-full bg-blue-500/60 transition-all"
+                  :style="{ width: `${Math.min(net.dhcp_percent, 100 - net.percentage)}%` }"
+                />
+                <div
+                  v-if="net.reserved_percent > 0"
+                  class="h-full bg-yellow-500/50 transition-all"
+                  :style="{ width: `${Math.min(net.reserved_percent, 100 - net.percentage - net.dhcp_percent)}%` }"
                 />
               </div>
             </div>
@@ -153,6 +160,14 @@
             <UIcon name="i-heroicons-light-bulb" class="h-3.5 w-3.5 text-yellow-500" />
             <NuxtLink :to="`/sites/${siteId}/networks/create`" class="hover:text-primary-400">Add more networks to track utilization</NuxtLink>
           </div>
+          <template #footer>
+            <div v-if="stats.networkUtilization.some((n: any) => n.dhcp_percent > 0 || n.reserved_percent > 0)" class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-gray-400">
+              <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-green-500" /> Allocated</span>
+              <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-blue-500/60" /> DHCP</span>
+              <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-yellow-500/50" /> Reserved</span>
+              <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-gray-500/30" /> Free</span>
+            </div>
+          </template>
         </UCard>
 
         <!-- Recent Activity -->

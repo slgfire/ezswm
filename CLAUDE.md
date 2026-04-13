@@ -45,8 +45,8 @@ Codebase rules:
 
 - Prompts may be German
 - Code, comments, UI and documentation must be English
-- Use Nuxt 3.x with `compatibilityVersion: 4`
-- UI built with Nuxt UI v2 Dashboard template
+- Use Nuxt 4.x
+- UI built with Nuxt UI v4
 - No database
 - JSON storage only
 
@@ -60,9 +60,9 @@ Persistent storage path:
 
 Use exactly:
 
-- Nuxt 3.x (with `compatibilityVersion: 4`)
+- Nuxt 4.x
 - TypeScript (strict mode)
-- Nuxt UI v2
+- Nuxt UI v4
 - Nuxt i18n
 - Tailwind CSS (via Nuxt UI)
 - Zod (request validation)
@@ -97,11 +97,7 @@ Follow the architecture described in:
 
 ## UI Layout
 
-The UI must follow the official Nuxt UI v2 dashboard template architecture.
-
-Reference:
-
-https://github.com/nuxt-ui-templates/dashboard
+The UI follows a dashboard-style layout built with Nuxt UI v4.
 
 Required structure:
 

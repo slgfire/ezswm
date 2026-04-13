@@ -4,7 +4,7 @@ import { networkRepository } from '../../repositories/networkRepository'
 import { ipAllocationRepository } from '../../repositories/ipAllocationRepository'
 import { ipRangeRepository } from '../../repositories/ipRangeRepository'
 import { activityRepository } from '../../repositories/activityRepository'
-import { parseSubnet } from '../../utils/ipv4'
+import { parseSubnet, ipToLong } from '../../utils/ipv4'
 
 export default defineEventHandler((event) => {
   const query = getQuery(event)
@@ -38,17 +38,30 @@ export default defineEventHandler((event) => {
   const networkUtilization = networks.map(n => {
     const info = parseSubnet(n.subnet)
     const allocated = allocations.filter(a => a.network_id === n.id).length
-    const rangeCount = ranges.filter(r => r.network_id === n.id).length
+    const networkRanges = ranges.filter(r => r.network_id === n.id)
     const percentage = info.usable_hosts > 0 ? Math.round((allocated / info.usable_hosts) * 100) : 0
     const vlan = n.vlan_id ? vlanMap.get(n.vlan_id) : null
+
+    let dhcpIps = 0
+    let reservedIps = 0
+    for (const r of networkRanges) {
+      const count = ipToLong(r.end_ip) - ipToLong(r.start_ip) + 1
+      if (r.type === 'dhcp') dhcpIps += count
+      else if (r.type === 'reserved') reservedIps += count
+    }
+    const dhcpPercent = info.usable_hosts > 0 ? Math.round((dhcpIps / info.usable_hosts) * 100) : 0
+    const reservedPercent = info.usable_hosts > 0 ? Math.round((reservedIps / info.usable_hosts) * 100) : 0
+
     return {
       id: n.id,
       name: n.name,
       subnet: n.subnet,
       total_hosts: info.usable_hosts,
       allocated,
-      ranges: rangeCount,
+      ranges: networkRanges.length,
       percentage,
+      dhcp_percent: dhcpPercent,
+      reserved_percent: reservedPercent,
       vlan_color: vlan?.color || null,
       vlan_name: vlan?.name || null,
       vlan_id: vlan?.vlan_id || null
