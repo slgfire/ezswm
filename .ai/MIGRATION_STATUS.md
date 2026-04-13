@@ -2,8 +2,8 @@
 
 ## Latest Stage
 
-Date: 2026-03-16
-Stage: Phases 1-10 — Full MVP Implementation
+Date: 2026-04-09
+Stage: Phase 18 — Keyboard Shortcuts
 Status: Complete
 
 ---
@@ -405,13 +405,41 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 18: Keyboard Shortcuts (2026-04-09)
+
+**Global keyboard shortcuts:**
+- `/` focuses search input (existing, unchanged)
+- `Esc` dismisses search results globally (even when input not focused), keeps query intact
+- `Esc` closes mobile sidebar overlay
+- Modals and slideovers already handle Esc natively via Reka UI
+- Priority order: search results → mobile sidebar → native Nuxt UI
+
+**Implementation:**
+- `dismissSearch()` + `isSearchOpen` exposed from AppHeader via defineExpose
+- Existing dismiss paths (`@keydown.escape`, click-outside overlay) deduplicated to use `dismissSearch()`
+- Global keydown listener in default.vue layout with headerRef
+- `data-testid` attributes added for search-input, search-results, mobile-menu-button, mobile-sidebar-overlay
+
+**Files changed:**
+- `app/components/layout/AppHeader.vue` — dismissSearch, defineExpose, data-testid attrs, dedup dismiss paths
+- `app/layouts/default.vue` — global Esc listener with headerRef, data-testid on sidebar overlay
+
+**Files created:**
+- `tests/e2e/keyboard-shortcuts.spec.ts` — 4 E2E tests (/ focus, Esc input-scoped, Esc global, mobile sidebar)
+
+**Verification:**
+- `npm run typecheck`: Passes (exit 0)
+- `npm run build`: Passes
+- E2E tests: keyboard-shortcuts.spec.ts passing
+
+---
+
 ## Feature Backlog
 
 ### Quick Wins
 - Port utilization bar on switch cards (% ports up/configured)
 - Favoriten/Pinned switches — star icon, pinned cards shown first
 - CSV export for switches, VLANs, networks
-- Keyboard shortcuts — `/` to focus search, `Esc` to close panels
 - Port table view — collapsible table below port grid for copy-paste
 
 ### Medium Effort
