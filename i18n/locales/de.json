@@ -220,7 +220,17 @@
       "ports": "Ports",
       "template": "Vorlage"
     },
-    "recentActivity": "Letzte Aktivität"
+    "recentActivity": "Letzte Aktivität",
+    "portTable": {
+      "title": "Port-Tabelle",
+      "port": "Port",
+      "status": "Status",
+      "mode": "Modus",
+      "vlan": "VLAN",
+      "connectedDevice": "Verbundenes Gerät",
+      "connectedPort": "Verbundener Port",
+      "description": "Beschreibung"
+    }
   },
   "vlans": {
     "title": "VLANs",
