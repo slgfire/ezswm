@@ -220,7 +220,17 @@
       "ports": "Ports",
       "template": "Template"
     },
-    "recentActivity": "Recent Activity"
+    "recentActivity": "Recent Activity",
+    "portTable": {
+      "title": "Port Table",
+      "port": "Port",
+      "status": "Status",
+      "mode": "Mode",
+      "vlan": "VLAN",
+      "connectedDevice": "Connected Device",
+      "connectedPort": "Connected Port",
+      "description": "Description"
+    }
   },
   "vlans": {
     "title": "VLANs",

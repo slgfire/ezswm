@@ -59,9 +59,10 @@
                   </UButton>
                 </div>
               </div>
+              <UInput v-model="printSearch" :placeholder="$t('common.search') + '...'" size="xs" class="mb-2 w-full" icon="i-heroicons-magnifying-glass" />
               <div class="max-h-60 overflow-y-auto space-y-0.5">
                 <template v-if="siteId === 'all'">
-                  <template v-for="group in groupedItems" :key="group.siteId">
+                  <template v-for="group in printFilteredGroups" :key="group.siteId">
                     <div v-if="group.siteName" class="mt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">{{ group.siteName }}</div>
                     <label
                       v-for="sw in group.items"
@@ -80,7 +81,7 @@
                 </template>
                 <template v-else>
                   <label
-                    v-for="sw in filteredItems"
+                    v-for="sw in printFilteredItems"
                     :key="sw.id"
                     class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   >
@@ -419,6 +420,21 @@ const siteMap = computed(() => {
 
 const viewMode = ref<'grid' | 'list'>('grid')
 const printSelectedIds = ref<string[]>([])
+const printSearch = ref('')
+
+const printFilteredItems = computed(() => {
+  const q = printSearch.value.toLowerCase().trim()
+  if (!q) return filteredItems.value
+  return filteredItems.value.filter((sw: any) => sw.name.toLowerCase().includes(q))
+})
+
+const printFilteredGroups = computed(() => {
+  const q = printSearch.value.toLowerCase().trim()
+  if (!q) return groupedItems.value
+  return groupedItems.value
+    .map((g: any) => ({ ...g, items: g.items.filter((sw: any) => sw.name.toLowerCase().includes(q)) }))
+    .filter((g: any) => g.items.length > 0)
+})
 
 function togglePrintId(swId: string) {
   const idx = printSelectedIds.value.indexOf(swId)

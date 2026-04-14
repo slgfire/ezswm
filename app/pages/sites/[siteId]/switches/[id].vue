@@ -224,6 +224,15 @@
         <p v-else class="text-sm text-gray-400">{{ $t('switches.ports.noPortsMessage') }}</p>
       </div>
 
+      <!-- Port Table View (collapsible, default collapsed) -->
+      <div v-if="item.ports?.length" class="mt-6">
+        <SwitchPortTable
+          :ports="item.ports"
+          :vlans="vlans"
+          @select-port="onSelectPort"
+        />
+      </div>
+
       <!-- Recent Activity for this switch (collapsible, default collapsed) -->
       <div v-if="switchActivity.length" class="mt-6">
         <button
