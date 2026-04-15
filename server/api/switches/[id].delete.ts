@@ -1,6 +1,7 @@
 import { switchRepository } from '../../repositories/switchRepository'
 import { activityRepository } from '../../repositories/activityRepository'
 import { lagGroupRepository } from '../../repositories/lagGroupRepository'
+import { publicTokenRepository } from '../../repositories/publicTokenRepository'
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params?.id
@@ -17,6 +18,7 @@ export default defineEventHandler(async (event) => {
 
   // Clean up LAG groups before deleting switch
   lagGroupRepository.deleteBySwitchId(id)
+  publicTokenRepository.deleteBySwitchId(id)
 
   await switchRepository.delete(id)
 

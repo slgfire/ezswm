@@ -14,6 +14,9 @@ export default defineEventHandler((event) => {
   // Only apply to API routes
   if (!path.startsWith('/api/')) return
 
+  // Public API routes with dynamic segments
+  if (path.startsWith('/api/p/')) return
+
   // Skip public paths
   if (PUBLIC_PATHS.some(p => path === p)) return
 
