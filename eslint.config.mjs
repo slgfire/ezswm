@@ -9,9 +9,10 @@ export default withNuxt({
     // Vue rules - relaxed for existing codebase
     'vue/multi-word-component-names': 'off',
     'vue/no-multiple-template-root': 'off',
-    // Downgrade to warnings - fix incrementally
-    '@typescript-eslint/no-explicit-any': 'warn',
-    '@typescript-eslint/no-dynamic-delete': 'warn',
-    '@typescript-eslint/no-require-imports': 'warn'
+    '@typescript-eslint/no-explicit-any': 'error',
+    // Safe in this project: v-html with own data, dynamic delete on own objects
+    'vue/no-v-html': 'off',
+    '@typescript-eslint/no-dynamic-delete': 'off',
+    '@typescript-eslint/no-require-imports': 'off'
   }
 })

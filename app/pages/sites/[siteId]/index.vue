@@ -221,15 +221,28 @@
 <script setup lang="ts">
 import { formatActivitySummary as _formatActivitySummary } from '~/utils/activityFormat'
 import { relativeTime as _relativeTime } from '~/utils/timeFormat'
+import type { ActivityEntry } from '~~/types/activity'
 
 const { t } = useI18n()
-const formatActivity = (entry: any) => _formatActivitySummary(entry, t)
+
+interface DashboardStats {
+  counts: { switches: number; vlans: number; networks: number; allocations: number }
+  portStatus: { up: number; down: number; disabled: number }
+  networkUtilization: { id: string; name: string; subnet: string; total_hosts: number; allocated: number; ranges: number; percentage: number; dhcp_percent: number; reserved_percent: number; vlan_color: string | null; vlan_name: string | null; vlan_id: number | null }[]
+  orphanVlans: { id: string; vlan_id: number; name: string }[]
+  highUsageNetworks: { id: string; name: string; subnet: string; percentage: number }[]
+  duplicateIps: string[]
+  favorites: { switches: Record<string, unknown>[]; networks: Record<string, unknown>[] }
+  recentActivity: ActivityEntry[]
+}
+
+const formatActivity = (entry: ActivityEntry) => _formatActivitySummary(entry, t)
 const relTime = (ts: string) => _relativeTime(ts, t)
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 useHead({ title: 'Dashboard' })
 
-const stats = ref<any>(null)
+const stats = ref<DashboardStats | null>(null)
 const loading = ref(true)
 
 const hasSomeData = computed(() =>
@@ -241,15 +254,15 @@ const totalPorts = computed(() =>
 )
 
 const portUpPercent = computed(() =>
-  totalPorts.value > 0 ? (stats.value.portStatus.up / totalPorts.value) * 100 : 0
+  totalPorts.value > 0 ? (stats.value!.portStatus!.up / totalPorts.value) * 100 : 0
 )
 
 const portDisabledPercent = computed(() =>
-  totalPorts.value > 0 ? (stats.value.portStatus.disabled / totalPorts.value) * 100 : 0
+  totalPorts.value > 0 ? (stats.value!.portStatus!.disabled / totalPorts.value) * 100 : 0
 )
 
 
-function activityLink(entry: any): string | undefined {
+function activityLink(entry: ActivityEntry): string | undefined {
   if (!entry.entity_id) return undefined
   const base = `/sites/${siteId.value}`
   switch (entry.entity_type) {

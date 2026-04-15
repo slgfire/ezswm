@@ -164,10 +164,17 @@
 </template>
 
 <script setup lang="ts">
+import type { Port } from '~~/types/port'
+import type { VLAN } from '~~/types/vlan'
+import type { Switch } from '~~/types/switch'
+import type { Network } from '~~/types/network'
+import type { IPAllocation } from '~~/types/ipAllocation'
+import type { LAGGroup } from '~~/types/lagGroup'
+
 const props = defineProps<{
-  port: any
+  port: Port
   switchId: string
-  lagGroup?: any
+  lagGroup?: LAGGroup
 }>()
 
 const emit = defineEmits<{
@@ -194,10 +201,10 @@ const connectionModes = computed(() => [
 ])
 const selectedSwitchId = ref('')
 const selectedPortId = ref('')
-const allSwitches = ref<any[]>([])
-const allVlans = ref<any[]>([])
-const allAllocations = ref<any[]>([])
-const allNetworks = ref<any[]>([])
+const allSwitches = ref<Switch[]>([])
+const allVlans = ref<VLAN[]>([])
+const allAllocations = ref<IPAllocation[]>([])
+const allNetworks = ref<Network[]>([])
 const selectedAllocationId = ref<string>('')
 const selectedTaggedVlans = ref<number[]>([])
 
@@ -231,7 +238,7 @@ const form = reactive({
 const taggedVlansStr = ref('')
 
 async function fetchSwitches() {
-  try { const data = await apiFetch<any>('/api/switches'); allSwitches.value = data.data || data } catch { /* ignore */ }
+  try { const data = await apiFetch<{ data?: Switch[] } | Switch[]>('/api/switches'); allSwitches.value = (Array.isArray(data) ? data : data.data) || [] } catch { /* ignore */ }
 }
 
 async function fetchVlans() {
@@ -240,8 +247,8 @@ async function fetchVlans() {
     const siteId = route.params.siteId as string
     const params: Record<string, string> = {}
     if (siteId && siteId !== 'all') params.site_id = siteId
-    const data = await apiFetch<any>('/api/vlans', { params })
-    allVlans.value = (data.data || data).sort((a: any, b: any) => a.vlan_id - b.vlan_id)
+    const data = await apiFetch<{ data?: VLAN[] } | VLAN[]>('/api/vlans', { params })
+    allVlans.value = (Array.isArray(data) ? data : data.data || []).sort((a: VLAN, b: VLAN) => a.vlan_id - b.vlan_id)
   } catch { /* ignore */ }
 }
 
@@ -253,11 +260,11 @@ async function fetchAllocations() {
     if (siteId && siteId !== 'all') params.site_id = siteId
 
     // Fetch all networks (paged)
-    const allNets: any[] = []
+    const allNets: Network[] = []
     let netPage = 1
     while (true) {
-      const res = await apiFetch<any>('/api/networks', { params: { ...params, page: netPage, per_page: 100 } })
-      const items = res.data || res.items || res || []
+      const res = await apiFetch<{ data?: Network[]; items?: Network[] } | Network[]>('/api/networks', { params: { ...params, page: netPage, per_page: 100 } })
+      const items = Array.isArray(res) ? res : (res.data || res.items || [])
       if (!Array.isArray(items) || items.length === 0) break
       allNets.push(...items)
       if (items.length < 100) break
@@ -268,12 +275,12 @@ async function fetchAllocations() {
     // Fetch allocations from all networks in parallel
     const allocResults = await Promise.all(
       allNets.map(async (net) => {
-        const allocs: any[] = []
+        const allocs: IPAllocation[] = []
         let page = 1
         while (true) {
           try {
-            const a = await apiFetch<any>(`/api/networks/${net.id}/allocations`, { params: { page, per_page: 100 } })
-            const items = a.data || a || []
+            const a = await apiFetch<{ data?: IPAllocation[] } | IPAllocation[]>(`/api/networks/${net.id}/allocations`, { params: { page, per_page: 100 } })
+            const items = Array.isArray(a) ? a : (a.data || [])
             if (!Array.isArray(items) || items.length === 0) break
             allocs.push(...items)
             if (items.length < 100) break
@@ -285,7 +292,7 @@ async function fetchAllocations() {
     )
     // Deduplicate by id
     const seen = new Set<string>()
-    const allocs: any[] = []
+    const allocs: IPAllocation[] = []
     for (const batch of allocResults) {
       for (const a of batch) {
         if (!seen.has(a.id)) { seen.add(a.id); allocs.push(a) }
@@ -296,12 +303,12 @@ async function fetchAllocations() {
 }
 
 const switchSearchOptions = computed(() => [
-  { label: '—', value: '', sw: null },
-  ...allSwitches.value.map(s => ({ label: s.id === props.switchId ? `${s.name} (this switch)` : s.name, value: s.id, sw: s }))
+  { label: '—', value: '', sw: null as Switch | null },
+  ...allSwitches.value.map(s => ({ label: s.id === props.switchId ? `${s.name} (this switch)` : s.name, value: s.id, sw: s as Switch | null }))
 ])
 
 const selectedSwitchOption = computed(() => switchSearchOptions.value.find(o => o.value === selectedSwitchId.value) || switchSearchOptions.value[0])
-function onSwitchSelect(option: any) { selectedSwitchId.value = option?.value || ''; selectedPortId.value = '' }
+function onSwitchSelect(option: { label: string; value: string; sw: Switch | null } | undefined) { selectedSwitchId.value = option?.value || ''; selectedPortId.value = '' }
 
 const remotePortSearchOptions = computed(() => {
   if (!selectedSwitchId.value) return []
@@ -309,8 +316,8 @@ const remotePortSearchOptions = computed(() => {
   if (!sw?.ports) return []
   return [
     { label: '—', value: '', connected: '' },
-    ...sw.ports.filter((p: any) => !(selectedSwitchId.value === props.switchId && p.id === props.port?.id))
-      .map((p: any) => {
+    ...sw.ports.filter((p: Port) => !(selectedSwitchId.value === props.switchId && p.id === props.port?.id))
+      .map((p: Port) => {
         const label = p.label || `${p.unit}/${p.index}`
         const connected = (p.connected_device_id && !(p.connected_device_id === props.switchId && p.connected_port_id === props.port?.id))
           ? `→ ${p.connected_device}`
@@ -322,14 +329,14 @@ const remotePortSearchOptions = computed(() => {
   ]
 })
 
-const selectedPortOption = computed(() => remotePortSearchOptions.value.find(o => o.value === selectedPortId.value) || null)
-function onPortSelect(option: any) { selectedPortId.value = option?.value || '' }
+const selectedPortOption = computed(() => remotePortSearchOptions.value.find(o => o.value === selectedPortId.value) || undefined)
+function onPortSelect(option: { label: string; value: string; connected: string } | undefined) { selectedPortId.value = option?.value || '' }
 
 
 const portConflict = computed(() => {
   if (!selectedSwitchId.value || !selectedPortId.value) return null
   const sw = allSwitches.value.find(s => s.id === selectedSwitchId.value)
-  const port = sw?.ports?.find((p: any) => p.id === selectedPortId.value)
+  const port = sw?.ports?.find((p: Port) => p.id === selectedPortId.value)
   if (port?.connected_allocation_id) {
     return { device: port.connected_device || 'Device', port: port.connected_port || '' }
   }
@@ -352,37 +359,37 @@ const formVlanNumbers = computed(() => {
 
 const formVlanUuids = computed(() => {
   return formVlanNumbers.value
-    .map(num => allVlans.value.find((v: any) => v.vlan_id === num))
-    .filter(Boolean)
-    .map((v: any) => v.id)
+    .map(num => allVlans.value.find((v) => v.vlan_id === num))
+    .filter((v): v is VLAN => !!v)
+    .map((v) => v.id)
 })
 
 const formNetworks = computed(() => {
   if (!formVlanUuids.value.length) return []
-  return allNetworks.value.filter((n: any) => n.vlan_id && formVlanUuids.value.includes(n.vlan_id))
+  return allNetworks.value.filter((n) => n.vlan_id && formVlanUuids.value.includes(n.vlan_id))
 })
 
 const filteredAllocations = computed(() => {
   if (!formNetworks.value.length) return []
-  const networkIds = new Set(formNetworks.value.map((n: any) => n.id))
-  return allAllocations.value.filter((a: any) => networkIds.has(a.network_id))
+  const networkIds = new Set(formNetworks.value.map((n) => n.id))
+  return allAllocations.value.filter((a) => networkIds.has(a.network_id))
 })
 
 // Dropdown options with None, grouping, stale handling, sorted by IP
 const allocationOptions = computed(() => {
-  const options: { label: string; value: string; allocation: any }[] = [
+  const options: { label: string; value: string; allocation: IPAllocation | null }[] = [
     { label: '— ' + t('common.none') + ' —', value: '', allocation: null }
   ]
 
   for (const net of formNetworks.value) {
     const netAllocs = filteredAllocations.value
-      .filter((a: any) => a.network_id === net.id)
-      .sort((a: any, b: any) => {
+      .filter((a) => a.network_id === net.id)
+      .sort((a, b) => {
         // Sort by IP numerically
         const aParts = a.ip_address.split('.').map(Number)
         const bParts = b.ip_address.split('.').map(Number)
         for (let i = 0; i < 4; i++) {
-          if (aParts[i] !== bParts[i]) return aParts[i] - bParts[i]
+          if (aParts[i] !== bParts[i]) return aParts[i]! - bParts[i]!
         }
         return 0
       })
@@ -398,7 +405,7 @@ const allocationOptions = computed(() => {
 
   // Stale: selected allocation not in filtered list
   if (selectedAllocationId.value && !options.find(o => o.value === selectedAllocationId.value)) {
-    const stale = allAllocations.value.find((a: any) => a.id === selectedAllocationId.value)
+    const stale = allAllocations.value.find((a) => a.id === selectedAllocationId.value)
     if (stale) {
       options.splice(1, 0, {
         label: `${stale.hostname ? `${stale.hostname} (${stale.ip_address})` : stale.ip_address} ⚠`,
@@ -429,7 +436,7 @@ const deviceHint = computed(() => {
   return ''
 })
 
-function onAllocationSelect(option: any) {
+function onAllocationSelect(option: { label: string; value: string; allocation: IPAllocation | null } | undefined) {
   selectedAllocationId.value = option?.value || ''
   if (option?.allocation) {
     const a = option.allocation
@@ -544,7 +551,7 @@ async function onSaveClick() {
 
 async function save() {
   const tagged_vlans = allVlans.value.length ? [...selectedTaggedVlans.value] : taggedVlansStr.value ? taggedVlansStr.value.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v)) : []
-  const body: Record<string, any> = { ...form, tagged_vlans }
+  const body: Record<string, unknown> = { ...form, tagged_vlans }
   body.poe = form.poe_selection ? { type: form.poe_selection, max_watts: POE_WATTS[form.poe_selection] } : null
   delete body.poe_selection
   if (form.port_mode === 'access') { body.native_vlan = null; body.tagged_vlans = [] }
@@ -564,7 +571,7 @@ async function save() {
   if (connectionMode.value === 'switch' && selectedSwitchId.value) {
     const sw = allSwitches.value.find(s => s.id === selectedSwitchId.value)
     body.connected_device = sw?.name || ''; body.connected_device_id = selectedSwitchId.value; body.connected_port_id = selectedPortId.value || null
-    if (selectedPortId.value) { const port = sw?.ports?.find((p: any) => p.id === selectedPortId.value); body.connected_port = port?.label || '' } else { body.connected_port = null }
+    if (selectedPortId.value) { const port = sw?.ports?.find((p: Port) => p.id === selectedPortId.value); body.connected_port = port?.label || '' } else { body.connected_port = null }
   } else if (connectionMode.value === 'switch') {
     body.connected_device = null; body.connected_device_id = null; body.connected_port_id = null; body.connected_port = null
   } else { body.connected_device_id = null; body.connected_port_id = null }
@@ -572,8 +579,8 @@ async function save() {
     await $fetch(`/api/switches/${props.switchId}/ports/${props.port.id}`, { method: 'PUT', body })
 
     // LAG sync: update VLAN/speed/status/connected_device on all other LAG member ports
-    if (props.lagGroup?.port_ids?.length > 1) {
-      const syncFields: Record<string, any> = {
+    if ((props.lagGroup?.port_ids?.length ?? 0) > 1) {
+      const syncFields: Record<string, unknown> = {
         status: body.status,
         speed: body.speed,
         port_mode: body.port_mode,
@@ -587,7 +594,7 @@ async function save() {
       if (body.connected_allocation_id) {
         syncFields.connected_port = null
       }
-      const otherPortIds = props.lagGroup.port_ids.filter((pid: string) => pid !== props.port.id)
+      const otherPortIds = props.lagGroup!.port_ids!.filter((pid: string) => pid !== props.port.id)
       for (const portId of otherPortIds) {
         try {
           await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, { method: 'PUT', body: syncFields })
@@ -599,7 +606,7 @@ async function save() {
     }
 
     emit('saved'); isOpen.value = false
-  } catch (e: any) { toast.add({ title: e.data?.message || 'Failed', color: 'error' }) }
+  } catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.add({ title: err.data?.message || 'Failed', color: 'error' }) }
 }
 
 function onRemoveFromLag() {
@@ -609,8 +616,8 @@ function onRemoveFromLag() {
 
 async function resetPort() {
   try {
-    await $fetch(`/api/switches/${props.switchId}/ports/${props.port.id}`, { method: 'DELETE' as any })
+    await ($fetch as typeof globalThis.fetch)(`/api/switches/${props.switchId}/ports/${props.port.id}`, { method: 'DELETE' })
     toast.add({ title: t('switches.ports.portReset'), color: 'success' }); emit('saved'); isOpen.value = false
-  } catch (e: any) { toast.add({ title: e.data?.message || 'Reset failed', color: 'error' }) }
+  } catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.add({ title: err.data?.message || 'Reset failed', color: 'error' }) }
 }
 </script>

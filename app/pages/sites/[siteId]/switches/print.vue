@@ -55,6 +55,10 @@
 </template>
 
 <script setup lang="ts">
+import type { Switch } from '~~/types/switch'
+import type { VLAN } from '~~/types/vlan'
+import type { LayoutTemplate, LayoutUnit } from '~~/types/layoutTemplate'
+
 definePageMeta({ layout: 'print' })
 
 const route = useRoute()
@@ -67,9 +71,9 @@ const ids = computed(() => {
 })
 
 const loading = ref(true)
-const switches = ref<any[]>([])
-const vlans = ref<any[]>([])
-const templates = ref<any[]>([])
+const switches = ref<Switch[]>([])
+const vlans = ref<VLAN[]>([])
+const templates = ref<LayoutTemplate[]>([])
 
 useHead({ title: 'Print — ezSWM', titleTemplate: '' })
 
@@ -95,18 +99,18 @@ async function fetchData() {
   loading.value = true
   try {
     const [allSwitches, allVlans, allTemplates] = await Promise.all([
-      $fetch<any>('/api/switches'),
-      $fetch<any>('/api/vlans', { params: siteId !== 'all' ? { site_id: siteId } : undefined }),
-      $fetch<any>('/api/layout-templates'),
+      $fetch<{ data?: Switch[]; items?: Switch[] } | Switch[]>('/api/switches'),
+      $fetch<{ data?: VLAN[]; items?: VLAN[] } | VLAN[]>('/api/vlans', { params: siteId !== 'all' ? { site_id: siteId } : undefined }),
+      $fetch<{ data?: LayoutTemplate[]; items?: LayoutTemplate[] } | LayoutTemplate[]>('/api/layout-templates'),
     ])
 
-    const switchList = (Array.isArray(allSwitches) ? allSwitches : allSwitches?.data || allSwitches?.items || []) as any[]
-    vlans.value = (Array.isArray(allVlans) ? allVlans : allVlans?.data || allVlans?.items || []) as any[]
-    templates.value = (Array.isArray(allTemplates) ? allTemplates : allTemplates?.data || allTemplates?.items || []) as any[]
+    const switchList = (Array.isArray(allSwitches) ? allSwitches : allSwitches?.data || allSwitches?.items || []) as Switch[]
+    vlans.value = (Array.isArray(allVlans) ? allVlans : allVlans?.data || allVlans?.items || []) as VLAN[]
+    templates.value = (Array.isArray(allTemplates) ? allTemplates : allTemplates?.data || allTemplates?.items || []) as LayoutTemplate[]
 
     switches.value = ids.value
-      .map(id => switchList.find((s: any) => s.id === id))
-      .filter(Boolean)
+      .map(id => switchList.find((s) => s.id === id))
+      .filter((s): s is Switch => !!s)
   } catch (e) {
     console.error('[print] fetchData failed:', e)
   } finally {
@@ -114,7 +118,7 @@ async function fetchData() {
   }
 }
 
-function getUsedVlans(sw: any): any[] {
+function getUsedVlans(sw: Switch): VLAN[] {
   if (!vlans.value.length || !sw.ports?.length) return []
   const usedIds = new Set<number>()
   for (const p of sw.ports) {
@@ -125,21 +129,21 @@ function getUsedVlans(sw: any): any[] {
   return vlans.value.filter(v => usedIds.has(v.vlan_id) && v.color).sort((a, b) => a.vlan_id - b.vlan_id)
 }
 
-function getTemplateUnits(sw: any): any[] {
+function getTemplateUnits(sw: Switch): LayoutUnit[] {
   if (!sw.layout_template_id) return []
   const tpl = templates.value.find(t => t.id === sw.layout_template_id)
   const baseUnits = tpl?.units || []
   const stackSize = sw.stack_size ?? 1
 
   if (stackSize > 1 && baseUnits.length > 0) {
-    const stacked: any[] = []
+    const stacked: LayoutUnit[] = []
     for (let member = 1; member <= stackSize; member++) {
       for (const unit of baseUnits) {
         stacked.push({
           ...unit,
           unit_number: unit.unit_number + (member - 1) * baseUnits.length,
           label: unit.label ? `Member ${member} - ${unit.label}` : `Member ${member}`,
-          blocks: unit.blocks.map((b: any) => ({
+          blocks: unit.blocks.map((b) => ({
             ...b,
             label: b.label ? incrementMemberLabel(b.label, member) : b.label
           }))

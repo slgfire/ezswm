@@ -57,6 +57,8 @@
 </template>
 
 <script setup lang="ts">
+import type { Network } from '~~/types/network'
+
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
@@ -79,13 +81,13 @@ const form = ref({
 
 const vlanOptions = computed(() => {
   const options: { label: string; value: string }[] = []
-  vlans.value.forEach((v: any) => {
+  vlans.value.forEach((v) => {
     options.push({ label: `VLAN ${v.vlan_id} - ${v.name}`, value: v.id })
   })
   return options
 })
 
-function validate(state: any) {
+function validate(state: typeof form.value) {
   const errors: { name: string; message: string }[] = []
   if (!state.name?.trim()) {
     errors.push({ name: 'name', message: 'Name is required' })
@@ -106,7 +108,7 @@ function parseDns(): string[] {
 async function onSubmit() {
   submitting.value = true
   try {
-    const body: Record<string, any> = {
+    const body: Record<string, unknown> = {
       name: form.value.name.trim(),
       subnet: form.value.subnet.trim(),
       gateway: form.value.gateway.trim() || undefined,
@@ -119,9 +121,10 @@ async function onSubmit() {
     }
     const result = await create(body)
     toast.add({ title: t('networks.messages.created'), color: 'success' })
-    await router.push(`/sites/${siteId.value}/networks/${(result as any).id}`)
-  } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
+    await router.push(`/sites/${siteId.value}/networks/${(result as Network).id}`)
+  } catch (err: unknown) {
+    const error = err as { data?: { message?: string } }
+    toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     submitting.value = false
   }

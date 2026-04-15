@@ -30,9 +30,12 @@
 </template>
 
 <script setup lang="ts">
+import type { Port } from '~~/types/port'
+import type { VLAN } from '~~/types/vlan'
+
 const props = defineProps<{
-  ports: any[]
-  vlans: any[]
+  ports: Port[]
+  vlans: VLAN[]
 }>()
 
 const usedVlans = computed(() => {

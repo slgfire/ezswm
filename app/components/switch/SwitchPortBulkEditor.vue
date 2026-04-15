@@ -59,6 +59,8 @@
 </template>
 
 <script setup lang="ts">
+import type { VLAN } from '~~/types/vlan'
+
 const props = defineProps<{
   switchId: string
   selectedPorts: string[]
@@ -70,7 +72,7 @@ const toast = useToast()
 const { apiFetch } = useApiFetch()
 
 const isOpen = ref(false)
-const allVlans = ref<any[]>([])
+const allVlans = ref<VLAN[]>([])
 const selectedTaggedVlans = ref<number[]>([])
 
 
@@ -80,8 +82,8 @@ async function fetchVlans() {
     const siteId = route.params.siteId as string
     const params: Record<string, string> = {}
     if (siteId && siteId !== 'all') params.site_id = siteId
-    const data = await apiFetch<any>('/api/vlans', { params })
-    allVlans.value = (data.data || data).sort((a: any, b: any) => a.vlan_id - b.vlan_id)
+    const data = await apiFetch<{ data?: VLAN[] } | VLAN[]>('/api/vlans', { params })
+    allVlans.value = (Array.isArray(data) ? data : data.data || []).sort((a: VLAN, b: VLAN) => a.vlan_id - b.vlan_id)
   } catch { /* ignore */ }
 }
 
@@ -127,7 +129,7 @@ function close() {
 }
 
 async function apply() {
-  const updates: Record<string, any> = {}
+  const updates: Record<string, string | number | number[] | null> = {}
   if (form.status) updates.status = form.status
   if (form.speed) updates.speed = form.speed
   if (form.port_mode) {
@@ -165,8 +167,9 @@ async function apply() {
     selectedTaggedVlans.value = []
     emit('saved')
     close()
-  } catch (e: any) {
-    toast.add({ title: e.data?.message || 'Failed', color: 'error' })
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    toast.add({ title: err.data?.message || 'Failed', color: 'error' })
   }
 }
 </script>

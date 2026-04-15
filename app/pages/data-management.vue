@@ -250,8 +250,9 @@ async function restoreBackup() {
     await $fetch('/api/backup/import', { method: 'POST', body: backup })
     toast.add({ title: t('backup.messages.imported'), color: 'success' })
     backupFile.value = null
-  } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
+  } catch (err: unknown) {
+    const message = (err as { data?: { message?: string } })?.data?.message
+    toast.add({ title: message || t('errors.serverError'), color: 'error' })
   } finally {
     showRestoreDialog.value = false
   }
@@ -401,8 +402,9 @@ async function executeImport() {
     if (importResults.value.errors.length > 0) {
       toast.add({ title: t('dataManagement.import.hasErrors', { count: importResults.value.errors.length }), color: 'warning' })
     }
-  } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
+  } catch (err: unknown) {
+    const message = (err as { data?: { message?: string } })?.data?.message
+    toast.add({ title: message || t('errors.serverError'), color: 'error' })
   }
 }
 </script>

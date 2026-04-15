@@ -269,7 +269,7 @@
     <!-- Port Side Panel -->
     <SwitchPortSidePanel
       v-model="showPortPanel"
-      :port="selectedPort"
+      :port="selectedPort!"
       :switch-id="id"
       :lag-group="selectedPort ? lagByPortId.get(selectedPort.id) : undefined"
       @saved="fetchSwitch"
@@ -407,11 +407,15 @@ v-model="editForm.role"
 </template>
 
 <script setup lang="ts">
+import type { Port } from '~~/types/port'
+import type { LAGGroup } from '~~/types/lagGroup'
+import type { LayoutUnit } from '~~/types/layoutTemplate'
+import type { ActivityEntry } from '~~/types/activity'
 import { formatActivitySummary as _formatActivitySummary } from '~/utils/activityFormat'
 import { relativeTime as _relativeTime } from '~/utils/timeFormat'
 
 const { t } = useI18n()
-const formatActivity = (entry: any) => _formatActivitySummary(entry, t, true)
+const formatActivity = (entry: ActivityEntry) => _formatActivitySummary(entry, t, true)
 const relTime = (ts: string) => _relativeTime(ts, t)
 const toast = useToast()
 const route = useRoute()
@@ -426,9 +430,9 @@ const { items: templates, fetch: fetchTemplates } = useLayoutTemplates()
 const { items: vlans, fetch: fetchVlans } = useVlans()
 const { items: lagGroups, fetch: fetchLags, lagById, lagByPortId, update: updateLag, remove: removeLag } = useLagGroups(id)
 
-const lagSlideoverRef = ref<any>(null)
+const lagSlideoverRef = ref<{ openEdit: (lag: LAGGroup) => void; openCreate: (ports: string[]) => void } | null>(null)
 const showLagDeleteDialog = ref(false)
-const lagToDelete = ref<any>(null)
+const lagToDelete = ref<LAGGroup | null>(null)
 const deletingLag = ref(false)
 
 const editMode = ref(false)
@@ -439,16 +443,16 @@ const deleting = ref(false)
 const showDetails = ref(false)
 
 const selectedPorts = ref<string[]>([])
-const bulkEditorRef = ref<any>(null)
+const bulkEditorRef = ref<{ submit: () => void; open: () => void } | null>(null)
 const showPortPanel = ref(false)
-const selectedPort = ref<any>(null)
-const templateUnits = ref<any[]>([])
+const selectedPort = ref<Port | null>(null)
+const templateUnits = ref<LayoutUnit[]>([])
 const portStats = computed(() => {
   const ports = item.value?.ports || []
   return {
-    up: ports.filter((p: any) => p.status === 'up').length,
-    down: ports.filter((p: any) => p.status === 'down').length,
-    disabled: ports.filter((p: any) => p.status === 'disabled').length
+    up: ports.filter((p) => p.status === 'up').length,
+    down: ports.filter((p) => p.status === 'down').length,
+    disabled: ports.filter((p) => p.status === 'disabled').length
   }
 })
 
@@ -457,7 +461,7 @@ const canCreateLag = computed(() => {
   for (const portId of selectedPorts.value) {
     const existingLag = lagByPortId.value.get(portId)
     if (existingLag) {
-      const port = item.value?.ports?.find((p: any) => p.id === portId)
+      const port = item.value?.ports?.find((p) => p.id === portId)
       return { allowed: false, reason: t('lag.validation.portInLag', { port: port?.label || portId, lag: existingLag.name }) }
     }
   }
@@ -473,7 +477,7 @@ watch(item, (sw) => {
 }, { immediate: true })
 
 function onSelectPort(portId: string) {
-  const port = item.value?.ports?.find((p: any) => p.id === portId)
+  const port = item.value?.ports?.find((p) => p.id === portId)
   if (port) {
     selectedPort.value = port
     showPortPanel.value = true
@@ -484,13 +488,14 @@ async function bulkReset() {
   if (!window.confirm(t('switches.ports.confirmBulkReset', { count: selectedPorts.value.length }))) return
   try {
     for (const portId of selectedPorts.value) {
-      await $fetch(`/api/switches/${id}/ports/${portId}`, { method: 'DELETE' as any })
+      await ($fetch as typeof globalThis.fetch)(`/api/switches/${id}/ports/${portId}`, { method: 'DELETE' })
     }
     toast.add({ title: t('switches.ports.bulkResetDone', { count: selectedPorts.value.length }), color: 'success' })
     selectedPorts.value = []
     await fetchSwitch()
-  } catch (e: any) {
-    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   }
 }
 
@@ -530,8 +535,10 @@ const editRoleOptions = computed(() => [
   { label: t('switches.roles.management'), value: 'management' }
 ])
 
-function roleColor(role: string): any {
-  const map: Record<string, string> = { core: 'error', distribution: 'info', access: 'success', management: 'warning' }
+type BadgeColor = 'error' | 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'neutral'
+
+function roleColor(role: string): BadgeColor {
+  const map: Record<string, BadgeColor> = { core: 'error', distribution: 'info', access: 'success', management: 'warning' }
   return map[role] || 'neutral'
 }
 
@@ -575,12 +582,12 @@ function openEditPanel() {
   editForm.role = item.value.role || ''
   editForm.tags = [...(item.value.tags || [])]
   editForm.notes = item.value.notes || ''
-  editForm.stack_size = (item.value as any).stack_size ?? 1
+  editForm.stack_size = item.value.stack_size ?? 1
   editTagInput.value = ''
   editMode.value = true
 }
 
-function validateEdit(state: any) {
+function validateEdit(state: typeof editForm) {
   const errors: { name: string; message: string }[] = []
   if (!state.name?.trim()) {
     errors.push({ name: 'name', message: 'Name is required' })
@@ -594,7 +601,7 @@ function validateEdit(state: any) {
 async function onSave() {
   saving.value = true
   try {
-    const body: Record<string, any> = { ...editForm, tags: [...editForm.tags] }
+    const body: Record<string, unknown> = { ...editForm, tags: [...editForm.tags] }
     // Remove empty optional fields but keep layout_template_id to allow clearing
     for (const key of Object.keys(body)) {
       if (body[key] === '' && key !== 'layout_template_id') {
@@ -611,8 +618,9 @@ async function onSave() {
     await update(body)
     toast.add({ title: t('switches.messages.updated'), color: 'success' })
     editMode.value = false
-  } catch (e: any) {
-    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     saving.value = false
   }
@@ -622,23 +630,25 @@ async function onDuplicate() {
   try {
     const result = await duplicate(id)
     toast.add({ title: t('switches.messages.duplicated'), color: 'success' })
-    if (result && (result as any).id) {
-      await navigateTo(`/sites/${siteId.value}/switches/${(result as any).id}`)
+    if (result?.id) {
+      await navigateTo(`/sites/${siteId.value}/switches/${result.id}`)
     }
-  } catch (e: any) {
-    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   }
 }
 
 async function onDelete() {
   deleting.value = true
   try {
-    await $fetch(`/api/switches/${id}`, { method: 'DELETE' as any })
+    await ($fetch as typeof globalThis.fetch)(`/api/switches/${id}`, { method: 'DELETE' })
     toast.add({ title: t('switches.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     await navigateTo(`/sites/${siteId.value}/switches`)
-  } catch (e: any) {
-    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     deleting.value = false
   }
@@ -660,14 +670,14 @@ watch([item, templates], () => {
       }
 
       // Duplicate units for each stack member with incremented block labels
-      const stacked: any[] = []
+      const stacked: LayoutUnit[] = []
       for (let member = 1; member <= stackSize; member++) {
         for (const unit of baseUnits) {
           stacked.push({
             ...unit,
             unit_number: unit.unit_number + (member - 1) * baseUnits.length,
             label: unit.label ? `Member ${member} - ${unit.label}` : `Member ${member}`,
-            blocks: unit.blocks.map((b: any) => ({
+            blocks: unit.blocks.map((b) => ({
               ...b,
               label: b.label ? incrementLabel(b.label, member) : b.label
             }))
@@ -686,7 +696,7 @@ watch([item, templates], () => {
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 
 // LAG event handlers
-function onDeleteLagClick(lag: any) {
+function onDeleteLagClick(lag: LAGGroup) {
   lagToDelete.value = lag
   showLagDeleteDialog.value = true
 }
@@ -694,7 +704,7 @@ function onDeleteLagClick(lag: any) {
 const lagDeleteMessage = computed(() => {
   if (!lagToDelete.value) return ''
   const portLabels = lagToDelete.value.port_ids
-    .map((pid: string) => item.value?.ports?.find((p: any) => p.id === pid)?.label || pid)
+    .map((pid: string) => item.value?.ports?.find((p) => p.id === pid)?.label || pid)
     .join(', ')
   let msg = `${t('lag.deleteConfirm', { name: lagToDelete.value.name })}\n\n${t('lag.portsWillBeReleased')}: ${portLabels}`
   // If there's a mirror LAG on the remote switch, mention it
@@ -713,8 +723,8 @@ async function onDeleteLag() {
     // Delete mirror LAG on remote switch if it exists
     if (lag.remote_device_id) {
       try {
-        const remoteLags = await $fetch<any[]>(`/api/switches/${lag.remote_device_id}/lag-groups`)
-        const mirrorLag = remoteLags?.find((rl: any) => rl.remote_device_id === id)
+        const remoteLags = await $fetch<LAGGroup[]>(`/api/switches/${lag.remote_device_id}/lag-groups`)
+        const mirrorLag = remoteLags?.find((rl) => rl.remote_device_id === id)
         if (mirrorLag) {
           await $fetch(`/api/switches/${lag.remote_device_id}/lag-groups/${mirrorLag.id}`, { method: 'DELETE' })
         }
@@ -727,8 +737,9 @@ async function onDeleteLag() {
     lagToDelete.value = null
     await fetchSwitch()
     await fetchLags()
-  } catch (e: any) {
-    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     deletingLag.value = false
   }
@@ -750,8 +761,8 @@ async function onRemovePortFromLag(lagId: string, portId: string) {
       // LAG would have < 2 ports — delete it and mirror LAG
       if (lag.remote_device_id) {
         try {
-          const remoteLags = await $fetch<any[]>(`/api/switches/${lag.remote_device_id}/lag-groups`)
-          const mirrorLag = remoteLags?.find((rl: any) => rl.remote_device_id === id)
+          const remoteLags = await $fetch<LAGGroup[]>(`/api/switches/${lag.remote_device_id}/lag-groups`)
+          const mirrorLag = remoteLags?.find((rl) => rl.remote_device_id === id)
           if (mirrorLag) {
             await $fetch(`/api/switches/${lag.remote_device_id}/lag-groups/${mirrorLag.id}`, { method: 'DELETE' })
           }
@@ -766,14 +777,14 @@ async function onRemovePortFromLag(lagId: string, portId: string) {
       // Sync mirror LAG: remove the corresponding remote port
       if (lag.remote_device_id) {
         try {
-          const remoteLags = await $fetch<any[]>(`/api/switches/${lag.remote_device_id}/lag-groups`)
-          const mirrorLag = remoteLags?.find((rl: any) => rl.remote_device_id === id)
+          const remoteLags = await $fetch<LAGGroup[]>(`/api/switches/${lag.remote_device_id}/lag-groups`)
+          const mirrorLag = remoteLags?.find((rl) => rl.remote_device_id === id)
           if (mirrorLag) {
             // Find which remote port was mapped to this local port
-            const localPort = item.value?.ports?.find((p: any) => p.id === portId)
+            const localPort = item.value?.ports?.find((p) => p.id === portId)
             const remotePortId = localPort?.connected_port_id
             if (remotePortId) {
-              const newRemotePortIds = mirrorLag.port_ids.filter((pid: string) => pid !== remotePortId)
+              const newRemotePortIds = mirrorLag.port_ids.filter((pid) => pid !== remotePortId)
               if (newRemotePortIds.length < 2) {
                 await $fetch(`/api/switches/${lag.remote_device_id}/lag-groups/${mirrorLag.id}`, { method: 'DELETE' })
               } else {
@@ -789,8 +800,9 @@ async function onRemovePortFromLag(lagId: string, portId: string) {
     }
     await fetchSwitch()
     await fetchLags()
-  } catch (e: any) {
-    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   }
 }
 
@@ -809,12 +821,12 @@ if (lagParam) {
 
 // Activity log for this switch
 const showActivity = ref(false)
-const switchActivity = ref<any[]>([])
+const switchActivity = ref<ActivityEntry[]>([])
 const { apiFetch } = useApiFetch()
 
 async function fetchActivity() {
   try {
-    const data = await apiFetch<any>('/api/activity', { params: { entity_id: id, limit: 20 } })
+    const data = await apiFetch<{ data?: ActivityEntry[] }>('/api/activity', { params: { entity_id: id, limit: 20 } })
     switchActivity.value = data.data || []
   } catch { /* ignore */ }
 }

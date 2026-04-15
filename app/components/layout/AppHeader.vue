@@ -210,7 +210,7 @@ defineEmits<{ toggleSidebar: [] }>()
 const { user, logout } = useAuth()
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
-const colorModeBtn = ref<any>(null)
+const colorModeBtn = ref<{ $el: HTMLElement } | null>(null)
 
 function toggleWithTransition(event: MouseEvent) {
   const el = event.currentTarget as HTMLElement
@@ -223,12 +223,12 @@ function toggleWithTransition(event: MouseEvent) {
   const switchingToDark = !isDark.value
 
   // Fallback if View Transition API not supported
-  if (!(document as any).startViewTransition) {
+  if (!(document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } }).startViewTransition) {
     colorMode.preference = switchingToDark ? 'dark' : 'light'
     return
   }
 
-  const transition = (document as any).startViewTransition(() => {
+  const transition = (document as Document & { startViewTransition: (cb: () => void) => { ready: Promise<void> } }).startViewTransition(() => {
     colorMode.preference = switchingToDark ? 'dark' : 'light'
   })
 
@@ -253,8 +253,19 @@ const searchQuery = ref('')
 const showResults = ref(false)
 const searching = ref(false)
 const selectedIndex = ref(-1)
-const searchInputRef = ref<any>(null)
-const results = ref<any>({ switches: [], vlans: [], networks: [], allocations: [], templates: [], lagGroups: [] })
+const searchInputRef = ref<HTMLInputElement | null>(null)
+
+interface SearchResults {
+  switches: Array<{ id: string; name: string; manufacturer?: string; model?: string; management_ip?: string; role?: string; tags?: string[] }>
+  vlans: Array<{ id: string; vlan_id: number; name: string; color: string }>
+  networks: Array<{ id: string; name: string; subnet: string }>
+  allocations: Array<{ id: string; ip_address: string; hostname?: string; network_id: string }>
+  templates: Array<{ id: string; name: string; manufacturer?: string; model?: string }>
+  lagGroups: Array<{ id: string; name: string; switch_id: string; site_id: string; switch_name: string; port_count: number; remote_device?: string }>
+  [key: string]: unknown[]
+}
+
+const results = ref<SearchResults>({ switches: [], vlans: [], networks: [], allocations: [], templates: [], lagGroups: [] })
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -339,7 +350,7 @@ function navigateToSelected() {
   }
 }
 
-function allocLink(alloc: any): string {
+function allocLink(alloc: { network_id?: string }): string {
   return alloc.network_id ? `${searchSitePrefix.value}/networks/${alloc.network_id}` : '#'
 }
 

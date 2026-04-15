@@ -63,7 +63,7 @@ async function onSubmit() {
 
   submitting.value = true
   try {
-    const result = await $fetch<any>('/api/sites', {
+    const result = await $fetch<{ id: string }>('/api/sites', {
       method: 'POST',
       body: {
         name: form.name.trim(),
@@ -76,8 +76,9 @@ async function onSubmit() {
     } else {
       await navigateTo('/sites')
     }
-  } catch (e: any) {
-    toast.add({ title: e?.data?.message || t('errors.serverError', 'Server error'), color: 'error' })
+  } catch (e: unknown) {
+    const message = (e as { data?: { message?: string } })?.data?.message
+    toast.add({ title: message || t('errors.serverError', 'Server error'), color: 'error' })
   } finally {
     submitting.value = false
   }

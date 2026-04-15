@@ -13,12 +13,14 @@
 </template>
 
 <script setup lang="ts">
+import type { Site } from '~~/types/site'
+
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
 const { setSite } = useCurrentSite()
 
-const sites = ref<any[]>([])
+const sites = ref<Site[]>([])
 const selectedSiteId = ref('all')
 
 const siteOptions = computed(() => {
@@ -32,7 +34,7 @@ const siteOptions = computed(() => {
 })
 
 function onSiteChange(value: string) {
-  const site = sites.value.find((s: any) => s.id === value)
+  const site = sites.value.find((s) => s.id === value)
   setSite(value, site)
 
   const sitePathMatch = route.path.match(/\/sites\/[^/]+\/(.+)/)
@@ -47,8 +49,8 @@ function onSiteChange(value: string) {
 
 async function loadSites() {
   try {
-    const res = await $fetch<any>('/api/sites')
-    sites.value = res?.data || res || []
+    const res = await $fetch<{ data?: Site[] } | Site[]>('/api/sites')
+    sites.value = (Array.isArray(res) ? res : res?.data) || []
   } catch {
     sites.value = []
   }
@@ -57,15 +59,15 @@ async function loadSites() {
   const siteId = route.params.siteId as string
   if (siteId && siteId !== 'all') {
     selectedSiteId.value = siteId
-    const site = sites.value.find((s: any) => s.id === siteId)
+    const site = sites.value.find((s) => s.id === siteId)
     setSite(siteId, site || undefined)
   } else if (siteId === 'all') {
     selectedSiteId.value = 'all'
     setSite('all', undefined)
   } else if (sites.value.length > 0) {
     // Not on a site page — default to first site
-    selectedSiteId.value = sites.value[0].id
-    setSite(sites.value[0].id, sites.value[0])
+    selectedSiteId.value = sites.value[0]!.id
+    setSite(sites.value[0]!.id, sites.value[0]!)
   }
 }
 
@@ -73,8 +75,8 @@ async function loadSites() {
 watch(() => route.params.siteId, (siteId) => {
   if (siteId && typeof siteId === 'string') {
     selectedSiteId.value = siteId
-    const site = sites.value.find((s: any) => s.id === siteId)
-    setSite(siteId, site || null)
+    const site = sites.value.find((s) => s.id === siteId)
+    setSite(siteId, site || undefined)
   }
 })
 

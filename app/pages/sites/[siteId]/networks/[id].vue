@@ -167,39 +167,39 @@
             <!-- Allocation rows -->
             <template v-else-if="row.kind === 'allocation'">
               <div class="w-40 shrink-0">
-                <code class="font-mono text-xs text-gray-900 dark:text-white">{{ row.data.ip_address }}</code>
+                <code class="font-mono text-xs text-gray-900 dark:text-white">{{ (row.data as IPAllocation).ip_address }}</code>
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span v-if="row.data.hostname" class="text-sm font-medium text-gray-900 dark:text-white">{{ row.data.hostname }}</span>
-                  <span v-if="row.data.device_type" class="text-xs text-gray-500">{{ row.data.device_type }}</span>
-                  <UBadge :color="row.data.status === 'active' ? 'success' : row.data.status === 'reserved' ? 'warning' : 'neutral'" variant="subtle" size="sm">{{ row.data.status }}</UBadge>
+                  <span v-if="(row.data as IPAllocation).hostname" class="text-sm font-medium text-gray-900 dark:text-white">{{ (row.data as IPAllocation).hostname }}</span>
+                  <span v-if="(row.data as IPAllocation).device_type" class="text-xs text-gray-500">{{ (row.data as IPAllocation).device_type }}</span>
+                  <UBadge :color="(row.data as IPAllocation).status === 'active' ? 'success' : (row.data as IPAllocation).status === 'reserved' ? 'warning' : 'neutral'" variant="subtle" size="sm">{{ (row.data as IPAllocation).status }}</UBadge>
                 </div>
               </div>
               <div class="flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100">
-                <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click="openEditAlloc(row.data)" />
-                <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="openDeleteAllocDialog(row.data)" />
+                <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click="openEditAlloc(row.data as IPAllocation)" />
+                <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="openDeleteAllocDialog(row.data as IPAllocation)" />
               </div>
             </template>
 
             <!-- Range rows -->
             <template v-else-if="row.kind === 'range'">
               <div class="w-40 shrink-0">
-                <code class="font-mono text-xs text-gray-900 dark:text-white">{{ row.data.start_ip }} &ndash; {{ abbreviateEndIp(row.data.start_ip, row.data.end_ip) }}</code>
+                <code class="font-mono text-xs text-gray-900 dark:text-white">{{ (row.data as IPRange).start_ip }} &ndash; {{ abbreviateEndIp((row.data as IPRange).start_ip, (row.data as IPRange).end_ip) }}</code>
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
-                  <UBadge :color="rangeTypeBadgeColor(row.data.type)" variant="subtle" size="sm">{{ $t(`networks.ranges.types.${row.data.type}`) }}</UBadge>
-                  <span class="font-mono text-[11px] text-gray-400">{{ rangeIpCount(row.data) }} IPs</span>
-                  <span v-if="row.data.description" class="text-xs text-gray-500 dark:text-gray-400">{{ row.data.description }}</span>
-                  <span v-if="row.data.type !== 'dhcp' && countAllocsInRange(row.data) > 0" class="text-xs text-gray-400">
-                    ({{ $t('networks.ranges.ipsDocumented', { count: countAllocsInRange(row.data) }) }})
+                  <UBadge :color="rangeTypeBadgeColor((row.data as IPRange).type)" variant="subtle" size="sm">{{ $t(`networks.ranges.types.${(row.data as IPRange).type}`) }}</UBadge>
+                  <span class="font-mono text-[11px] text-gray-400">{{ rangeIpCount(row.data as IPRange) }} IPs</span>
+                  <span v-if="(row.data as IPRange).description" class="text-xs text-gray-500 dark:text-gray-400">{{ (row.data as IPRange).description }}</span>
+                  <span v-if="(row.data as IPRange).type !== 'dhcp' && countAllocsInRange(row.data as IPRange) > 0" class="text-xs text-gray-400">
+                    ({{ $t('networks.ranges.ipsDocumented', { count: countAllocsInRange(row.data as IPRange) }) }})
                   </span>
                 </div>
               </div>
               <div class="flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100">
-                <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click="openRangeEdit(row.data)" />
-                <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="openDeleteRange(row.data)" />
+                <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click="openRangeEdit(row.data as IPRange)" />
+                <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="openDeleteRange(row.data as IPRange)" />
               </div>
             </template>
           </div>
@@ -347,6 +347,10 @@
 </template>
 
 <script setup lang="ts">
+import type { Network } from '~~/types/network'
+import type { IPAllocation } from '~~/types/ipAllocation'
+import type { IPRange } from '~~/types/ipRange'
+
 const { t } = useI18n()
 const toast = useToast()
 const route = useRoute()
@@ -357,7 +361,7 @@ const { update: updateNetwork, remove: removeNetwork } = useNetworks()
 const { items: vlans, fetch: fetchVlans } = useVlans()
 
 const pageLoading = ref(true)
-const network = ref<any>(null)
+const network = ref<Network | null>(null)
 
 useHead({ title: computed(() => network.value?.name || t('networks.title')) })
 const editing = ref(false)
@@ -366,30 +370,30 @@ const showDetails = ref(false)
 const showDeleteDialog = ref(false)
 const deleting = ref(false)
 
-const allocations = ref<any[]>([])
+const allocations = ref<IPAllocation[]>([])
 const showAddPanel = ref(false)
 const addPanelMode = ref<'ip' | 'range'>('ip')
 const addPanelError = ref('')
 const creatingAlloc = ref(false)
 const showDeleteAllocDialog = ref(false)
-const deleteAllocTarget = ref<any>(null)
+const deleteAllocTarget = ref<IPAllocation | null>(null)
 const deletingAlloc = ref(false)
 const allocDeleteRefs = ref<string[]>([])
 
-const ranges = ref<any[]>([])
+const ranges = ref<IPRange[]>([])
 const creatingRange = ref(false)
 const showDeleteRangeDialog = ref(false)
-const deleteRangeTarget = ref<any>(null)
+const deleteRangeTarget = ref<IPRange | null>(null)
 const deletingRange = ref(false)
 
 // Range edit slideover
 const showRangeEdit = ref(false)
-const rangeEditTarget = ref<any>(null)
+const rangeEditTarget = ref<IPRange | null>(null)
 const rangeEditForm = ref({ start_ip: '', end_ip: '', type: 'static', description: '' })
 const rangeEditError = ref('')
 const savingRangeEdit = ref(false)
 
-const editAllocTarget = ref<any>(null)
+const editAllocTarget = ref<IPAllocation | null>(null)
 
 const editForm = ref({ name: '', subnet: '', gateway: '', vlan_id: '', description: '' })
 const editDnsInput = ref('')
@@ -434,13 +438,13 @@ watch(network, (n) => { if (n?.name) breadcrumbOverrides.value[`/sites/${siteId.
 
 const vlanOptions = computed(() => {
   const opts: { label: string; value: string }[] = []
-  vlans.value.forEach((v: any) => { opts.push({ label: `VLAN ${v.vlan_id} - ${v.name}`, value: v.id }) })
+  vlans.value.forEach((v) => { opts.push({ label: `VLAN ${v.vlan_id} - ${v.name}`, value: v.id }) })
   return opts
 })
 
 const associatedVlan = computed(() => {
   if (!network.value?.vlan_id) return null
-  return vlans.value.find((v: any) => v.id === network.value.vlan_id)
+  return vlans.value.find((v) => v.id === network.value!.vlan_id)
 })
 
 const deviceTypeOptions = [{ label: 'Server', value: 'server' }, { label: 'Switch', value: 'switch' }, { label: 'Printer', value: 'printer' }, { label: 'Phone', value: 'phone' }, { label: 'AP', value: 'ap' }, { label: 'Camera', value: 'camera' }, { label: 'Other', value: 'other' }]
@@ -452,9 +456,9 @@ const subnetInfo = computed(() => {
   if (!network.value?.subnet) return { network: '-', broadcast: '-', mask: '-', totalHosts: 0, usableHosts: 0 }
   const parts = network.value.subnet.split('/')
   if (parts.length !== 2) return { network: '-', broadcast: '-', mask: '-', totalHosts: 0, usableHosts: 0 }
-  const prefix = parseInt(parts[1], 10)
-  const ipParts = parts[0].split('.').map(Number)
-  const ipNum = ((ipParts[0] << 24) | (ipParts[1] << 16) | (ipParts[2] << 8) | ipParts[3]) >>> 0
+  const prefix = parseInt(parts[1]!, 10)
+  const ipParts = parts[0]!.split('.').map(Number)
+  const ipNum = ((ipParts[0]! << 24) | (ipParts[1]! << 16) | (ipParts[2]! << 8) | ipParts[3]!) >>> 0
   const maskNum = prefix === 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0
   const networkNum = (ipNum & maskNum) >>> 0
   const broadcastNum = (networkNum | (~maskNum >>> 0)) >>> 0
@@ -471,7 +475,7 @@ interface UnifiedRow {
   sortIp: number
   ip?: string
   label?: string
-  data?: any
+  data?: IPAllocation | IPRange
 }
 
 const unifiedList = computed<UnifiedRow[]>(() => {
@@ -503,7 +507,9 @@ const unifiedList = computed<UnifiedRow[]>(() => {
   return rows
 })
 
-function rangeTypeBadgeColor(type: string): any {
+type BadgeColor = 'error' | 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'neutral'
+
+function rangeTypeBadgeColor(type: string): BadgeColor {
   if (type === 'dhcp') return 'info'
   if (type === 'static') return 'success'
   return 'warning'
@@ -522,7 +528,7 @@ function abbreviateEndIp(startIp: string, endIp: string): string {
   return endIp
 }
 
-function rangeIpCount(range: any): number {
+function rangeIpCount(range: IPRange): number {
   return ipToLong(range.end_ip) - ipToLong(range.start_ip) + 1
 }
 
@@ -531,7 +537,7 @@ function rowClass(row: UnifiedRow): string {
     return 'bg-elevated'
   }
   if (row.kind === 'range') {
-    const type = row.data?.type
+    const type = (row.data as IPRange | undefined)?.type
     if (type === 'dhcp') return 'border-l-2 border-l-blue-500 bg-blue-500/5 dark:bg-blue-500/5'
     if (type === 'static') return 'border-l-2 border-l-green-500 bg-green-500/5 dark:bg-green-500/5'
     if (type === 'reserved') return 'border-l-2 border-l-yellow-500 bg-yellow-500/5 dark:bg-yellow-500/5'
@@ -539,7 +545,7 @@ function rowClass(row: UnifiedRow): string {
   return 'row-hover'
 }
 
-function countAllocsInRange(range: any): number {
+function countAllocsInRange(range: IPRange): number {
   const start = ipToLong(range.start_ip)
   const end = ipToLong(range.end_ip)
   return allocations.value.filter(a => {
@@ -548,7 +554,7 @@ function countAllocsInRange(range: any): number {
   }).length
 }
 
-function openRangeEdit(range: any) {
+function openRangeEdit(range: IPRange) {
   rangeEditTarget.value = range
   rangeEditForm.value = {
     start_ip: range.start_ip,
@@ -561,13 +567,14 @@ function openRangeEdit(range: any) {
 }
 
 function startEdit() {
+  if (!network.value) return
   editForm.value = { name: network.value.name, subnet: network.value.subnet, gateway: network.value.gateway || '', vlan_id: network.value.vlan_id || '', description: network.value.description || '' }
   editDnsInput.value = network.value.dns_servers?.join(', ') || ''
   editing.value = true
   showDetails.value = true
 }
 
-function validate(state: any) {
+function validate(state: typeof editForm.value) {
   const errors: { name: string; message: string }[] = []
   if (!state.name?.trim()) {
     errors.push({ name: 'name', message: 'Name is required' })
@@ -591,19 +598,19 @@ async function onSave() {
     toast.add({ title: t('networks.messages.updated'), color: 'success' })
     editing.value = false
     await loadNetwork()
-  } catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' }) }
+  } catch (err: unknown) { const error = err as { data?: { message?: string } }; toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' }) }
   finally { saving.value = false }
 }
 
 async function confirmDeleteNetwork() {
   deleting.value = true
   try { await removeNetwork(networkId); toast.add({ title: t('networks.messages.deleted'), color: 'success' }); showDeleteDialog.value = false; await router.push(`/sites/${siteId.value}/networks`) }
-  catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' }) }
+  catch (err: unknown) { const error = err as { data?: { message?: string } }; toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' }) }
   finally { deleting.value = false }
 }
 
 async function fetchAllocations() {
-  try { const data = await $fetch<any>(`/api/networks/${networkId}/allocations`); allocations.value = data.data || data || [] }
+  try { const data = await $fetch<{ data?: IPAllocation[] } | IPAllocation[]>(`/api/networks/${networkId}/allocations`); allocations.value = (data as { data?: IPAllocation[] }).data || data as IPAllocation[] || [] }
   catch { allocations.value = [] }
 }
 
@@ -630,13 +637,14 @@ async function onCreateAllocation() {
     editAllocTarget.value = null
     allocForm.value = { ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' }
     await fetchAllocations()
-  } catch (err: any) {
-    addPanelError.value = err?.data?.message || t('errors.serverError')
+  } catch (err: unknown) {
+    const error = err as { data?: { message?: string } }
+    addPanelError.value = error?.data?.message || t('errors.serverError')
   }
   finally { creatingAlloc.value = false }
 }
 
-function openEditAlloc(a: any) {
+function openEditAlloc(a: IPAllocation) {
   editAllocTarget.value = a
   allocForm.value = {
     ip_address: a.ip_address,
@@ -651,21 +659,21 @@ function openEditAlloc(a: any) {
   showAddPanel.value = true
 }
 
-function openDeleteRange(r: any) {
+function openDeleteRange(r: IPRange) {
   deleteRangeTarget.value = r
   showDeleteRangeDialog.value = true
 }
 
 async function checkAllocationRefs(allocId: string): Promise<string[]> {
   try {
-    const data = await $fetch<any>(`/api/networks/${networkId}/allocations/${allocId}/references`)
-    return (data.ports || []).map((p: any) => `${p.switch_name} ${p.port_label}`)
+    const data = await $fetch<{ ports?: { switch_name: string; port_label: string }[] }>(`/api/networks/${networkId}/allocations/${allocId}/references`)
+    return (data.ports || []).map((p) => `${p.switch_name} ${p.port_label}`)
   } catch {
     return ['(could not check port references)']
   }
 }
 
-async function openDeleteAllocDialog(a: any) {
+async function openDeleteAllocDialog(a: IPAllocation) {
   deleteAllocTarget.value = a
   allocDeleteRefs.value = await checkAllocationRefs(a.id)
   showDeleteAllocDialog.value = true
@@ -681,12 +689,12 @@ async function confirmDeleteAlloc() {
     allocDeleteRefs.value = []
     await fetchAllocations()
   }
-  catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' }) }
+  catch (err: unknown) { const error = err as { data?: { message?: string } }; toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' }) }
   finally { deletingAlloc.value = false }
 }
 
 async function fetchRanges() {
-  try { const data = await $fetch<any>(`/api/networks/${networkId}/ranges`); ranges.value = data.data || data || [] }
+  try { const data = await $fetch<{ data?: IPRange[] } | IPRange[]>(`/api/networks/${networkId}/ranges`); ranges.value = (data as { data?: IPRange[] }).data || data as IPRange[] || [] }
   catch { ranges.value = [] }
 }
 
@@ -699,13 +707,14 @@ async function onCreateRange() {
     showAddPanel.value = false
     rangeForm.value = { start_ip: '', end_ip: '', type: 'static', description: '' }
     await fetchRanges()
-  } catch (err: any) {
-    addPanelError.value = err?.data?.message || t('errors.serverError')
+  } catch (err: unknown) {
+    const error = err as { data?: { message?: string } }
+    addPanelError.value = error?.data?.message || t('errors.serverError')
   }
   finally { creatingRange.value = false }
 }
 
-function openDeleteRangeDialog(r: any) {
+function openDeleteRangeDialog(r: IPRange) {
   deleteRangeTarget.value = r
   showDeleteRangeDialog.value = true
   showRangeEdit.value = false
@@ -715,7 +724,7 @@ async function confirmDeleteRange() {
   if (!deleteRangeTarget.value) return
   deletingRange.value = true
   try { await $fetch(`/api/networks/${networkId}/ranges/${deleteRangeTarget.value.id}`, { method: 'DELETE' }); toast.add({ title: t('networks.ranges.messages.deleted'), color: 'success' }); showDeleteRangeDialog.value = false; await fetchRanges() }
-  catch (err: any) { toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' }) }
+  catch (err: unknown) { const error = err as { data?: { message?: string } }; toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' }) }
   finally { deletingRange.value = false }
 }
 
@@ -736,15 +745,16 @@ async function onSaveRangeEdit() {
     toast.add({ title: t('networks.ranges.messages.updated'), color: 'success' })
     showRangeEdit.value = false
     await fetchRanges()
-  } catch (err: any) {
-    rangeEditError.value = err?.data?.message || t('errors.serverError')
+  } catch (err: unknown) {
+    const error = err as { data?: { message?: string } }
+    rangeEditError.value = error?.data?.message || t('errors.serverError')
   }
   finally { savingRangeEdit.value = false }
 }
 
 async function loadNetwork() {
   pageLoading.value = true
-  try { network.value = await $fetch<any>(`/api/networks/${networkId}`) }
+  try { network.value = await $fetch<Network>(`/api/networks/${networkId}`) }
   catch { toast.add({ title: t('errors.notFound'), color: 'error' }); await router.push(`/sites/${siteId.value}/networks`) }
   finally { pageLoading.value = false }
 }

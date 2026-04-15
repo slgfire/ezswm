@@ -22,5 +22,6 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ sw: any }>()
+import type { Switch } from '~~/types/switch'
+defineProps<{ sw: Switch }>()
 </script>

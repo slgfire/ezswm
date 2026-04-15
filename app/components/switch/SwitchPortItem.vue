@@ -60,7 +60,7 @@
           <div class="flex items-center gap-1.5">
             <div class="h-2 w-2 flex-shrink-0 rounded-sm" :style="{ backgroundColor: vlanDotColor }" />
             <span class="font-medium text-gray-700 dark:text-gray-200">{{ port.access_vlan || port.native_vlan }}</span>
-            <span class="text-gray-400">{{ getVlanName(port.access_vlan || port.native_vlan) }}</span>
+            <span class="text-gray-400">{{ getVlanName((port.access_vlan || port.native_vlan)!) }}</span>
           </div>
         </template>
 
@@ -79,11 +79,15 @@
 </template>
 
 <script setup lang="ts">
+import type { Port } from '~~/types/port'
+import type { VLAN } from '~~/types/vlan'
+import type { LAGGroup } from '~~/types/lagGroup'
+
 const props = defineProps<{
-  port: any
-  vlans?: any[]
+  port: Port
+  vlans?: VLAN[]
   selected: boolean
-  lagGroup?: any
+  lagGroup?: LAGGroup
   dimmed?: boolean
   printMode?: boolean
 }>()

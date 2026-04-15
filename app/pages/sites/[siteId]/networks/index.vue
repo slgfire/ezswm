@@ -129,6 +129,8 @@
 </template>
 
 <script setup lang="ts">
+import type { Network } from '~~/types/network'
+
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
@@ -147,7 +149,7 @@ const pageLoading = ref(true)
 const search = ref('')
 const vlanFilter = ref('all')
 const showDeleteDialog = ref(false)
-const deleteTarget = ref<any>(null)
+const deleteTarget = ref<Network | null>(null)
 const deleteMessage = ref('')
 const deleting = ref(false)
 
@@ -164,33 +166,33 @@ const vlanFilterOptions = computed(() => {
     { label: t('common.all'), value: 'all' },
     { label: '-', value: 'none' }
   ]
-  vlans.value.forEach((v: any) => {
+  vlans.value.forEach((v) => {
     options.push({ label: `VLAN ${v.vlan_id} - ${v.name}`, value: v.id })
   })
   return options
 })
 
-function getVlan(vlanId: string) {
+function getVlan(vlanId: string | undefined) {
   if (!vlanId) return null
-  return vlans.value.find((v: any) => v.id === vlanId)
+  return vlans.value.find((v) => v.id === vlanId)
 }
 
 const filteredItems = computed(() => {
   let result = items.value
-  if (vlanFilter.value === 'none') result = result.filter((n: any) => !n.vlan_id)
-  else if (vlanFilter.value !== 'all') result = result.filter((n: any) => n.vlan_id === vlanFilter.value)
+  if (vlanFilter.value === 'none') result = result.filter((n) => !n.vlan_id)
+  else if (vlanFilter.value !== 'all') result = result.filter((n) => n.vlan_id === vlanFilter.value)
   if (search.value) {
     const q = search.value.toLowerCase()
-    result = result.filter((n: any) => n.name?.toLowerCase().includes(q) || n.subnet?.toLowerCase().includes(q))
+    result = result.filter((n) => n.name?.toLowerCase().includes(q) || n.subnet?.toLowerCase().includes(q))
   }
   return result
 })
 
 const sortedItems = computed(() => {
   const list = [...filteredItems.value]
-  list.sort((a: any, b: any) => {
-    let va = a[sortField.value] || ''
-    let vb = b[sortField.value] || ''
+  list.sort((a, b) => {
+    let va: string = (a[sortField.value] as string) || ''
+    let vb: string = (b[sortField.value] as string) || ''
     if (typeof va === 'string') va = va.toLowerCase()
     if (typeof vb === 'string') vb = vb.toLowerCase()
     if (va < vb) return sortAsc.value ? -1 : 1
@@ -202,8 +204,8 @@ const sortedItems = computed(() => {
 
 const groupedItems = computed(() => {
   if (siteId.value !== 'all') return [{ siteId: '', siteName: '', items: sortedItems.value }]
-  const groups: { siteId: string; siteName: string; items: any[] }[] = []
-  const groupMap = new Map<string, any[]>()
+  const groups: { siteId: string; siteName: string; items: Network[] }[] = []
+  const groupMap = new Map<string, Network[]>()
   for (const item of sortedItems.value) {
     const sid = item.site_id || ''
     if (!groupMap.has(sid)) groupMap.set(sid, [])
@@ -215,7 +217,7 @@ const groupedItems = computed(() => {
   return groups
 })
 
-function openDeleteDialog(network: any) {
+function openDeleteDialog(network: Network) {
   deleteTarget.value = network
   deleteMessage.value = `${t('networks.delete')}: ${network.name} (${network.subnet})?`
   showDeleteDialog.value = true
@@ -229,15 +231,16 @@ async function confirmDelete() {
     toast.add({ title: t('networks.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     await fetchNetworks(siteParams.value)
-  } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
+  } catch (err: unknown) {
+    const error = err as { data?: { message?: string } }
+    toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
   } finally { deleting.value = false }
 }
 
 watch([search, vlanFilter], () => {})
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 onMounted(async () => {
-  const fetches: Promise<any>[] = [fetchNetworks(siteParams.value), fetchVlans(siteParams.value)]
+  const fetches: Promise<void>[] = [fetchNetworks(siteParams.value), fetchVlans(siteParams.value)]
   if (siteId.value === 'all') fetches.push(fetchAllSites())
   await Promise.all(fetches)
   pageLoading.value = false

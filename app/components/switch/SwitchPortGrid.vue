@@ -146,22 +146,27 @@
 </template>
 
 <script setup lang="ts">
+import type { Port } from '~~/types/port'
+import type { VLAN } from '~~/types/vlan'
+import type { LAGGroup } from '~~/types/lagGroup'
+import type { LayoutUnit, LayoutBlock } from '~~/types/layoutTemplate'
+
 const props = defineProps<{
-  ports: any[]
-  units?: any[]
-  vlans?: any[]
+  ports: Port[]
+  units?: LayoutUnit[]
+  vlans?: VLAN[]
   selectedPorts: string[]
   stackSize?: number
-  lagGroups?: any[]
-  lagByPortId?: Map<string, any>
+  lagGroups?: LAGGroup[]
+  lagByPortId?: Map<string, LAGGroup>
   printMode?: boolean
 }>()
 
 const emit = defineEmits<{
   'select-port': [portId: string]
   'toggle-select': [portId: string]
-  'edit-lag': [lag: any]
-  'delete-lag': [lag: any]
+  'edit-lag': [lag: LAGGroup]
+  'delete-lag': [lag: LAGGroup]
 }>()
 
 const highlightedLagId = ref<string | null>(null)
@@ -199,7 +204,7 @@ function onPortClick(event: MouseEvent, portId: string) {
   }
 }
 
-function getPortsForBlock(unitNumber: number, block: any) {
+function getPortsForBlock(unitNumber: number, block: LayoutBlock) {
   return props.ports
     .filter(p =>
       p.unit === unitNumber &&
@@ -210,7 +215,7 @@ function getPortsForBlock(unitNumber: number, block: any) {
     .sort((a, b) => a.index - b.index)
 }
 
-function getRowsForBlock(unitNumber: number, block: any): any[][] {
+function getRowsForBlock(unitNumber: number, block: LayoutBlock): Port[][] {
   const ports = getPortsForBlock(unitNumber, block)
   if (ports.length === 0) return []
 
@@ -231,14 +236,14 @@ function getRowsForBlock(unitNumber: number, block: any): any[][] {
 
   // Sequential: split into N rows of equal size
   const perRow = Math.ceil(ports.length / rows)
-  const result: any[][] = []
+  const result: Port[][] = []
   for (let r = 0; r < rows; r++) {
     result.push(ports.slice(r * perRow, (r + 1) * perRow))
   }
   return result
 }
 
-function needsExtraBottomSpace(_block: any): boolean {
+function needsExtraBottomSpace(_block: LayoutBlock): boolean {
   return false
 }
 

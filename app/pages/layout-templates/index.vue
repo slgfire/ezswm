@@ -107,7 +107,7 @@ v-model="selectedPortType"
               <UBadge
                 v-for="pt in getPortTypes(tpl)"
                 :key="pt.type"
-                :color="pt.color"
+                :color="(pt.color as any)"
                 variant="subtle"
                 size="xs"
               >
@@ -157,7 +157,7 @@ v-model="selectedPortType"
               <UBadge
                 v-for="pt in getPortTypes(tpl)"
                 :key="pt.type"
-                :color="pt.color"
+                :color="(pt.color as any)"
                 variant="subtle"
                 size="xs"
               >
@@ -245,7 +245,7 @@ v-model="selectedPortType"
 </template>
 
 <script setup lang="ts">
-import type { LayoutTemplate } from '~~/types/layoutTemplate'
+import type { LayoutTemplate, LayoutUnit, LayoutBlock } from '~~/types/layoutTemplate'
 
 const { t } = useI18n()
 useHead({ title: t('templates.title') })
@@ -258,7 +258,7 @@ const searchQuery = ref('')
 const selectedManufacturer = ref('')
 const selectedPortType = ref('')
 const showDeleteDialog = ref(false)
-const deleteTarget = ref<any>(null)
+const deleteTarget = ref<(LayoutTemplate & { switch_count?: number }) | null>(null)
 const manufacturers = ref<string[]>([])
 
 const allItems = computed(() => items.value as (LayoutTemplate & { switch_count?: number })[])
@@ -296,7 +296,7 @@ const filteredItems = computed(() => {
 
   if (selectedPortType.value) {
     result = result.filter((t: LayoutTemplate) =>
-      t.units?.some((u: any) => u.blocks?.some((b: any) => b.type === selectedPortType.value))
+      t.units?.some((u: LayoutUnit) => u.blocks?.some((b: LayoutBlock) => b.type === selectedPortType.value))
     )
   }
 
@@ -314,11 +314,11 @@ const portTypeColorMap: Record<string, string> = {
 
 function getTotalPortCount(template: LayoutTemplate): number {
   if (!template.units) return 0
-  return template.units.reduce((total: number, unit: any) =>
-    total + (unit.blocks || []).reduce((bt: number, b: any) => bt + (b.count || 0), 0), 0)
+  return template.units.reduce((total: number, unit: LayoutUnit) =>
+    total + (unit.blocks || []).reduce((bt: number, b: LayoutBlock) => bt + (b.count || 0), 0), 0)
 }
 
-function getPortTypes(template: LayoutTemplate): { type: string; label: string; color: any }[] {
+function getPortTypes(template: LayoutTemplate): { type: string; label: string; color: string }[] {
   const types = new Set<string>()
   for (const unit of template.units || []) {
     for (const block of unit.blocks || []) {
@@ -332,11 +332,11 @@ function getPortTypes(template: LayoutTemplate): { type: string; label: string; 
   }))
 }
 
-function onDuplicate(row: any) {
+function onDuplicate(row: LayoutTemplate & { switch_count?: number }) {
   navigateTo(`/layout-templates/create?clone=${row.id}`)
 }
 
-function confirmDelete(row: any) {
+function confirmDelete(row: LayoutTemplate & { switch_count?: number }) {
   deleteTarget.value = row
   showDeleteDialog.value = true
 }
@@ -368,7 +368,7 @@ const { apiFetch } = useApiFetch()
 async function loadData() {
   await fetch()
   try {
-    const response = await apiFetch<any>('/api/layout-templates', { params: { per_page: 999 } })
+    const response = await apiFetch<{ manufacturers?: string[] }>('/api/layout-templates', { params: { per_page: 999 } })
     manufacturers.value = response?.manufacturers || []
   } catch { /* silent */ }
 }

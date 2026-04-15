@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test'
 
+interface ApiItem {
+  id: string
+  name: string
+  [key: string]: unknown
+}
+
 /**
  * Tests that editing objects uses inline edit on the same page (no new window/tab/page).
  * Tests save/cancel behavior and data persistence after save.
@@ -22,7 +28,7 @@ test.describe('Edit Behavior — Inline Edit', () => {
       // Fetch the network we created
       const list = await context.request.get('http://localhost:3000/api/networks')
       const networks = await list.json()
-      const net = (networks.data || networks).find((n: any) => n.name === 'EditTest-Net')
+      const net = (networks.data || networks).find((n: ApiItem) => n.name === 'EditTest-Net')
       expect(net).toBeTruthy()
 
       await page.goto(`/networks/${net.id}`)
@@ -55,7 +61,7 @@ test.describe('Edit Behavior — Inline Edit', () => {
     test('cancel edit hides form without saving', async ({ page, context }) => {
       const list = await context.request.get('http://localhost:3000/api/networks')
       const networks = await list.json()
-      const net = (networks.data || networks).find((n: any) => n.name === 'EditTest-Net')
+      const net = (networks.data || networks).find((n: ApiItem) => n.name === 'EditTest-Net')
 
       await page.goto(`/networks/${net.id}`)
       await page.waitForLoadState('networkidle')
@@ -76,7 +82,7 @@ test.describe('Edit Behavior — Inline Edit', () => {
     test('save edit persists changes', async ({ page, context }) => {
       const list = await context.request.get('http://localhost:3000/api/networks')
       const networks = await list.json()
-      const net = (networks.data || networks).find((n: any) => n.name === 'EditTest-Net')
+      const net = (networks.data || networks).find((n: ApiItem) => n.name === 'EditTest-Net')
 
       await page.goto(`/networks/${net.id}`)
       await page.waitForLoadState('networkidle')
@@ -103,7 +109,7 @@ test.describe('Edit Behavior — Inline Edit', () => {
     test('changes persist after page reload', async ({ page, context }) => {
       const list = await context.request.get('http://localhost:3000/api/networks')
       const networks = await list.json()
-      const net = (networks.data || networks).find((n: any) => n.name === 'EditTest-Net-Updated')
+      const net = (networks.data || networks).find((n: ApiItem) => n.name === 'EditTest-Net-Updated')
       expect(net).toBeTruthy()
 
       await page.goto(`/networks/${net.id}`)
@@ -114,7 +120,7 @@ test.describe('Edit Behavior — Inline Edit', () => {
     test('cleanup: delete test network', async ({ context }) => {
       const list = await context.request.get('http://localhost:3000/api/networks')
       const networks = await list.json()
-      const net = (networks.data || networks).find((n: any) => n.name.startsWith('EditTest-Net'))
+      const net = (networks.data || networks).find((n: ApiItem) => n.name.startsWith('EditTest-Net'))
       if (net) {
         await context.request.delete(`http://localhost:3000/api/networks/${net.id}`)
       }
@@ -134,7 +140,7 @@ test.describe('Edit Behavior — Inline Edit', () => {
     test('edit button reveals inline form, does NOT open new page', async ({ page, context }) => {
       const list = await context.request.get('http://localhost:3000/api/vlans')
       const vlans = await list.json()
-      const vlan = (vlans.data || vlans).find((v: any) => v.name === 'EditTest-VLAN')
+      const vlan = (vlans.data || vlans).find((v: ApiItem) => v.name === 'EditTest-VLAN')
       expect(vlan).toBeTruthy()
 
       await page.goto(`/vlans/${vlan.id}`)
@@ -159,7 +165,7 @@ test.describe('Edit Behavior — Inline Edit', () => {
     test('save edit updates VLAN name', async ({ page, context }) => {
       const list = await context.request.get('http://localhost:3000/api/vlans')
       const vlans = await list.json()
-      const vlan = (vlans.data || vlans).find((v: any) => v.name === 'EditTest-VLAN')
+      const vlan = (vlans.data || vlans).find((v: ApiItem) => v.name === 'EditTest-VLAN')
 
       await page.goto(`/vlans/${vlan.id}`)
       await page.waitForLoadState('networkidle')
@@ -187,7 +193,7 @@ test.describe('Edit Behavior — Inline Edit', () => {
     test('cleanup: delete test VLAN', async ({ context }) => {
       const list = await context.request.get('http://localhost:3000/api/vlans')
       const vlans = await list.json()
-      const vlan = (vlans.data || vlans).find((v: any) => v.name.startsWith('EditTest-VLAN'))
+      const vlan = (vlans.data || vlans).find((v: ApiItem) => v.name.startsWith('EditTest-VLAN'))
       if (vlan) {
         await context.request.delete(`http://localhost:3000/api/vlans/${vlan.id}`)
       }
@@ -219,7 +225,7 @@ test.describe('Edit Behavior — Inline Edit', () => {
     test('edit button reveals inline form on same page', async ({ page, context }) => {
       const list = await context.request.get('http://localhost:3000/api/switches')
       const switches = await list.json()
-      const sw = (switches.data || switches).find((s: any) => s.name === 'EditTest-Switch')
+      const sw = (switches.data || switches).find((s: ApiItem) => s.name === 'EditTest-Switch')
       expect(sw).toBeTruthy()
 
       await page.goto(`/switches/${sw.id}`)
@@ -246,7 +252,7 @@ test.describe('Edit Behavior — Inline Edit', () => {
     test('save switch edit persists name change', async ({ page, context }) => {
       const list = await context.request.get('http://localhost:3000/api/switches')
       const switches = await list.json()
-      const sw = (switches.data || switches).find((s: any) => s.name === 'EditTest-Switch')
+      const sw = (switches.data || switches).find((s: ApiItem) => s.name === 'EditTest-Switch')
 
       await page.goto(`/switches/${sw.id}`)
       await page.waitForLoadState('networkidle')
@@ -272,7 +278,7 @@ test.describe('Edit Behavior — Inline Edit', () => {
       const list = await context.request.get('http://localhost:3000/api/switches')
       const switches = await list.json()
       const allSwitches = switches.data || switches
-      const sw = allSwitches.find((s: any) => s.name === 'EditTest-Switch-Updated') || allSwitches.find((s: any) => s.name === 'EditTest-Switch')
+      const sw = allSwitches.find((s: ApiItem) => s.name === 'EditTest-Switch-Updated') || allSwitches.find((s: ApiItem) => s.name === 'EditTest-Switch')
 
       await page.goto(`/switches/${sw.id}`)
       await page.waitForLoadState('networkidle')
@@ -334,7 +340,7 @@ test.describe('Edit Behavior — Inline Edit', () => {
     test('edit button navigates to /edit subpage (documents current behavior)', async ({ page, context }) => {
       const list = await context.request.get('http://localhost:3000/api/layout-templates')
       const templates = await list.json()
-      const tpl = (templates.items || templates.data || templates).find((t: any) => t.name === 'EditTest-Template')
+      const tpl = (templates.items || templates.data || templates).find((t: ApiItem) => t.name === 'EditTest-Template')
       expect(tpl).toBeTruthy()
 
       await page.goto(`/layout-templates/${tpl.id}`)
@@ -352,7 +358,7 @@ test.describe('Edit Behavior — Inline Edit', () => {
     test('save template edit persists changes', async ({ page, context }) => {
       const list = await context.request.get('http://localhost:3000/api/layout-templates')
       const templates = await list.json()
-      const tpl = (templates.items || templates.data || templates).find((t: any) => t.name === 'EditTest-Template')
+      const tpl = (templates.items || templates.data || templates).find((t: ApiItem) => t.name === 'EditTest-Template')
 
       await page.goto(`/layout-templates/${tpl.id}/edit`)
       await page.waitForLoadState('networkidle')
@@ -371,7 +377,7 @@ test.describe('Edit Behavior — Inline Edit', () => {
     test('cleanup: delete test template', async ({ context }) => {
       const list = await context.request.get('http://localhost:3000/api/layout-templates')
       const templates = await list.json()
-      const tpl = (templates.items || templates.data || templates).find((t: any) => t.name.startsWith('EditTest-Template'))
+      const tpl = (templates.items || templates.data || templates).find((t: ApiItem) => t.name.startsWith('EditTest-Template'))
       if (tpl) {
         await context.request.delete(`http://localhost:3000/api/layout-templates/${tpl.id}`)
       }

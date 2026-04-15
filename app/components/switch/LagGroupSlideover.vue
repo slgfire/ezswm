@@ -108,7 +108,7 @@
                   by="value"
                   placeholder="Select port..."
                   class="w-full"
-                  @update:model-value="(val: any) => setRemotePort(portId, val)"
+                  @update:model-value="(val: { label: string; value: string; conflict: string } | undefined) => setRemotePort(portId, val)"
                 />
                 <UInput
                   v-else-if="remoteMode === 'freetext'"
@@ -149,11 +149,13 @@
 
 <script setup lang="ts">
 import type { LAGGroup } from '~~/types/lagGroup'
+import type { Port } from '~~/types/port'
+import type { Switch } from '~~/types/switch'
 import { resolvePortLabel } from '~/utils/ports'
 
 const props = defineProps<{
   switchId: string
-  ports: any[]
+  ports: Port[]
   existingLags: LAGGroup[]
 }>()
 
@@ -197,7 +199,7 @@ function onRemoteModeChange(mode: 'none' | 'switch' | 'freetext') {
 }
 
 // All switches for remote device dropdown
-const allSwitches = ref<any[]>([])
+const allSwitches = ref<Switch[]>([])
 const selectedRemoteSwitchId = ref('')
 // LAGs on the remote switch
 const remoteLags = ref<LAGGroup[]>([])
@@ -213,7 +215,7 @@ const selectedSwitchOption = computed(() =>
   switchOptions.value.find(o => o.value === selectedRemoteSwitchId.value) || switchOptions.value[0]
 )
 
-async function onSwitchSelect(option: any) {
+async function onSwitchSelect(option: { label: string; value: string } | undefined) {
   selectedRemoteSwitchId.value = option?.value || ''
   const sw = allSwitches.value.find(s => s.id === option?.value)
   form.remote_device = sw?.name || ''
@@ -250,7 +252,7 @@ const remotePortLagConflicts = computed(() => {
       if (rlag.id === allowedRemoteLagId) continue
       if (rlag.port_ids.includes(mapping.remotePortId)) {
         const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
-        const port = sw?.ports?.find((p: any) => p.id === mapping.remotePortId)
+        const port = sw?.ports?.find((p: Port) => p.id === mapping.remotePortId)
         conflicts.push({
           portId: mapping.remotePortId,
           portLabel: port?.label || mapping.remotePortId,
@@ -269,7 +271,7 @@ const remotePortOptions = computed(() => {
   if (!sw?.ports) return []
   return [
     { label: '— None —', value: '', conflict: '' },
-    ...sw.ports.map((p: any) => {
+    ...sw.ports.map((p: Port) => {
       const label = p.label || `${p.unit}/${p.index}`
       let conflict = ''
       if (p.connected_device_id && p.connected_device_id !== props.switchId) {
@@ -277,7 +279,7 @@ const remotePortOptions = computed(() => {
       } else if (p.connected_device_id === props.switchId && p.connected_port_id) {
         const isOurLagPort = form.port_ids.includes(p.connected_port_id)
         if (!isOurLagPort) {
-          const ourPort = props.ports.find((lp: any) => lp.id === p.connected_port_id)
+          const ourPort = props.ports.find((lp: Port) => lp.id === p.connected_port_id)
           conflict = `→ ${ourPort?.label || 'this switch'}`
         }
       }
@@ -299,10 +301,10 @@ function getRemotePortOption(localPortId: string) {
   return remotePortOptions.value.find(o => o.value === mapping.remotePortId) || remotePortOptions.value[0]
 }
 
-function setRemotePort(localPortId: string, option: any) {
+function setRemotePort(localPortId: string, option: { label: string; value: string; conflict: string } | undefined) {
   const portId = option?.value || ''
   const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
-  const remotePort = sw?.ports?.find((p: any) => p.id === portId)
+  const remotePort = sw?.ports?.find((p: Port) => p.id === portId)
   portMapping[localPortId] = {
     remotePortId: portId,
     remotePortLabel: remotePort?.label || option?.label?.replace(/\s+⚠.*/, '') || ''
@@ -347,7 +349,7 @@ function removePort(portId: string) {
   delete portMapping[portId]
 }
 
-function validate(state: any) {
+function validate(state: { name?: string; port_ids: string[] }) {
   const errors: { name: string; message: string }[] = []
   if (!state.name?.trim()) {
     errors.push({ name: 'name', message: t('lag.validation.nameRequired') })
@@ -407,7 +409,7 @@ async function onSubmit() {
     if (remoteMode.value !== 'none' && form.remote_device.trim()) {
       for (const portId of form.port_ids) {
         const mapping = portMapping[portId]
-        const portBody: Record<string, any> = {
+        const portBody: Record<string, string | null> = {
           connected_device: form.remote_device.trim(),
           connected_device_id: remoteMode.value === 'switch' ? (selectedRemoteSwitchId.value || null) : null,
           connected_port_id: mapping?.remotePortId || null,
@@ -440,8 +442,9 @@ async function onSubmit() {
 
     isOpen.value = false
     emit('saved')
-  } catch (e: any) {
-    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     saving.value = false
   }
@@ -479,8 +482,9 @@ async function syncRemoteLag() {
   // Create mirror LAG on remote switch
   try {
     await $fetch(`/api/switches/${remoteSwId}/lag-groups`, { method: 'POST', body: mirrorBody })
-  } catch (e: any) {
-    toast.add({ title: `Mirror LAG: ${e?.data?.message || 'Failed'}`, color: 'warning' })
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    toast.add({ title: `Mirror LAG: ${err?.data?.message || 'Failed'}`, color: 'warning' })
     return
   }
 
@@ -506,8 +510,8 @@ async function syncRemoteLag() {
 
 async function fetchSwitches() {
   try {
-    const data = await apiFetch<any>('/api/switches')
-    allSwitches.value = data.data || data
+    const data = await apiFetch<{ data?: Switch[] } | Switch[]>('/api/switches')
+    allSwitches.value = (Array.isArray(data) ? data : data.data) || []
   } catch { /* ignore */ }
 }
 
