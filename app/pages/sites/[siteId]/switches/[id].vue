@@ -264,6 +264,15 @@
         </div>
       </div>
 
+      <!-- Public QR Access -->
+      <div class="mt-6">
+        <SwitchPublicAccess
+          :switch-id="item.id"
+          :switch-name="item.name"
+          :switch-location="item.location"
+        />
+      </div>
+
     </div>
 
     <!-- Port Side Panel -->
