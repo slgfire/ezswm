@@ -4,8 +4,10 @@ export type { PortType, PortSpeed, PortStatus, Port } from './port'
 
 export type { Switch } from './switch'
 
-export type { VlanStatus, VLAN } from './vlan'
+export type { VlanStatus, VlanDisplayInfo, VLAN } from './vlan'
 export { VLAN_COLOR_POOL } from './vlan'
+
+export type { PublicToken } from './publicToken'
 
 export type { Network } from './network'
 
