@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
     }
 
     return { success: true, message: 'Backup restored successfully' }
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Attempt to restore pre-backup state
     try {
       for (const [key, data] of Object.entries(preRestoreBackup)) {
@@ -61,9 +61,10 @@ export default defineEventHandler(async (event) => {
         }
         writeJson(fileMap[key]!, data)
       }
-    } catch {
+    } catch { /* ignore */
       // Best effort rollback
     }
-    throw createError({ statusCode: 500, message: `Restore failed: ${error.message}` })
+    const message = error instanceof Error ? error.message : String(error)
+    throw createError({ statusCode: 500, message: `Restore failed: ${message}` })
   }
 })

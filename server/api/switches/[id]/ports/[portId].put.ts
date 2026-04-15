@@ -35,8 +35,8 @@ export default defineEventHandler(async (event) => {
   if (oldPort) {
     const fields = ['status', 'speed', 'port_mode', 'native_vlan', 'access_vlan', 'tagged_vlans', 'connected_device', 'connected_port', 'description', 'poe', 'connected_allocation_id'] as const
     for (const field of fields) {
-      const oldVal = (oldPort as any)[field]
-      const newVal = (parsed as any)[field]
+      const oldVal = oldPort[field]
+      const newVal = (parsed as Record<string, unknown>)[field]
       if (newVal !== undefined && JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
         changes[field] = newVal
         previousState[field] = oldVal

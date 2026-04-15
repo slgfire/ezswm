@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid'
 import { readJson, writeJson } from '../storage/jsonStorage'
 import type { LayoutTemplate } from '../../types/layoutTemplate'
+import type { Port, PortType } from '../../types/port'
 import type { Switch } from '../../types/switch'
 
 const FILE_NAME = 'layoutTemplates.json'
@@ -19,7 +20,7 @@ function syncPortsToTemplate(template: LayoutTemplate): void {
     if (sw.layout_template_id !== template.id) continue
 
     // Build map of what ports SHOULD exist based on new template
-    const expectedPorts: { unit: number; index: number; type: string; label: string; blockLabel?: string }[] = []
+    const expectedPorts: { unit: number; index: number; type: PortType; label: string; blockLabel?: string }[] = []
     for (const unit of template.units) {
       for (const block of unit.blocks) {
         for (let i = 0; i < block.count; i++) {
@@ -37,15 +38,15 @@ function syncPortsToTemplate(template: LayoutTemplate): void {
 
     // Match existing ports by unit+position-in-block (not by index)
     // This preserves settings when start_index changes
-    const newPorts: any[] = []
-    const existingByUnit: Record<number, any[]> = {}
+    const newPorts: Port[] = []
+    const existingByUnit: Record<number, Port[]> = {}
     for (const p of sw.ports) {
       if (!existingByUnit[p.unit]) existingByUnit[p.unit] = []
       existingByUnit[p.unit]!.push(p)
     }
     // Sort each unit's ports by index
     for (const unit of Object.keys(existingByUnit)) {
-      existingByUnit[Number(unit)]!.sort((a: any, b: any) => a.index - b.index)
+      existingByUnit[Number(unit)]!.sort((a, b) => a.index - b.index)
     }
 
     // Group expected ports by unit
@@ -84,7 +85,6 @@ function syncPortsToTemplate(template: LayoutTemplate): void {
         }
       } else {
         // New port (template has more ports than before)
-        const { nanoid } = require('nanoid')
         newPorts.push({
           id: nanoid(),
           unit: ep.unit,
@@ -98,7 +98,7 @@ function syncPortsToTemplate(template: LayoutTemplate): void {
       }
     }
 
-    if (JSON.stringify(sw.ports.map((p: any) => p.index)) !== JSON.stringify(newPorts.map((p: any) => p.index))) {
+    if (JSON.stringify(sw.ports.map((p) => p.index)) !== JSON.stringify(newPorts.map((p) => p.index))) {
       changed = true
     }
 

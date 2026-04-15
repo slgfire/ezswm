@@ -1,6 +1,7 @@
 import { defineEventHandler, getQuery, createError } from 'h3'
 import { parse as parseYaml } from 'yaml'
 import { convertNetboxToTemplate } from '../../utils/deviceLibrary'
+import type { NetboxDevice } from '../../utils/deviceLibrary'
 
 export default defineEventHandler(async (event) => {
   const { manufacturer, slug } = getQuery(event) as { manufacturer?: string; slug?: string }
@@ -28,9 +29,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const yamlText = await response.text()
-  let device: any
+  let device: NetboxDevice
   try {
-    device = parseYaml(yamlText)
+    device = parseYaml(yamlText) as NetboxDevice
   } catch {
     throw createError({ statusCode: 422, message: 'Could not parse device definition' })
   }

@@ -68,9 +68,9 @@ export const siteRepository = {
     const networks = readJson<Network[]>('networks.json')
 
     return {
-      switches: switches.filter((s: any) => s.site_id === siteId).length,
-      vlans: vlans.filter((v: any) => v.site_id === siteId).length,
-      networks: networks.filter((n: any) => n.site_id === siteId).length
+      switches: switches.filter((s) => s.site_id === siteId).length,
+      vlans: vlans.filter((v) => v.site_id === siteId).length,
+      networks: networks.filter((n) => n.site_id === siteId).length
     }
   },
 

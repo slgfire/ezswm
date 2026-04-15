@@ -45,8 +45,8 @@ export default defineEventHandler(async (event) => {
   let tree: TreeEntry[]
   try {
     tree = await fetchDeviceTree()
-  } catch (e: any) {
-    if (e.statusCode === 503) throw e
+  } catch (e: unknown) {
+    if (e && typeof e === 'object' && 'statusCode' in e && (e as { statusCode: number }).statusCode === 503) throw e
     throw createError({ statusCode: 503, message: 'Device library unavailable — no internet connection' })
   }
 
