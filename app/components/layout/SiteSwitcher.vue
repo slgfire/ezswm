@@ -16,7 +16,7 @@
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
-const { currentSiteId, setSite } = useCurrentSite()
+const { setSite } = useCurrentSite()
 
 const sites = ref<any[]>([])
 const selectedSiteId = ref('all')

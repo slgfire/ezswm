@@ -179,7 +179,7 @@ const previewPorts = computed(() => {
           id: `preview-${unit.unit_number}-${idx}`,
           unit: unit.unit_number,
           index: idx,
-          label: block.label ? (block.label.match(/[\/\-:.]$/) ? `${block.label}${idx}` : `${idx}`) : `${idx}`,
+          label: block.label ? (block.label.match(/[/\-:.]$/) ? `${block.label}${idx}` : `${idx}`) : `${idx}`,
           type: block.type,
           speed: block.default_speed || '',
           status: 'down',

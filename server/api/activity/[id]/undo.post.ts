@@ -2,8 +2,6 @@ import { activityRepository } from '../../../repositories/activityRepository'
 import { switchRepository } from '../../../repositories/switchRepository'
 import { vlanRepository } from '../../../repositories/vlanRepository'
 import { networkRepository } from '../../../repositories/networkRepository'
-import { ipAllocationRepository } from '../../../repositories/ipAllocationRepository'
-import { ipRangeRepository } from '../../../repositories/ipRangeRepository'
 import { layoutTemplateRepository } from '../../../repositories/layoutTemplateRepository'
 import { readJson, writeJson } from '../../../storage/jsonStorage'
 

@@ -109,7 +109,7 @@
                   v-model="editForm.color"
                   type="color"
                   class="h-10 w-14 cursor-pointer rounded border border-gray-700 bg-gray-900"
-                />
+                >
                 <UInput v-model="editForm.color" class="w-32" />
                 <VlanColorSwatch :color="editForm.color" size="lg" />
               </div>
@@ -164,7 +164,7 @@ const toast = useToast()
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 const router = useRouter()
-const { items: allVlans, fetch: fetchVlans, update, remove } = useVlans()
+const { update, remove } = useVlans()
 const { items: allNetworks, fetch: fetchNetworks } = useNetworks()
 
 const id = route.params.id as string
@@ -265,7 +265,7 @@ async function loadVlan() {
   try {
     const data = await $fetch<any>(`/api/vlans/${id}`)
     vlan.value = data
-  } catch {
+  } catch { // ignore
     toast.add({ title: t('errors.notFound'), color: 'error' })
     await router.push(`/sites/${siteId.value}/vlans`)
   } finally {

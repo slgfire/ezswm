@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { readJson, writeJson } from '../storage/jsonStorage'
 import type { Network } from '../../types/network'
-import { isValidCIDR, isValidIPv4, isIPInSubnet, subnetRangeError } from '../utils/ipv4'
+import { isValidCIDR, isValidIPv4, isIPInSubnet } from '../utils/ipv4'
 
 const FILE_NAME = 'networks.json'
 

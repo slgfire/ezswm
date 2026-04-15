@@ -314,8 +314,9 @@
           </UFormField>
 
           <UFormField :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
-            <USelectMenu :search-input="false"
-              v-model="editForm.layout_template_id"
+            <USelectMenu
+v-model="editForm.layout_template_id"
+              :search-input="false"
               :items="templateOptions"
 
               value-key="value"
@@ -332,8 +333,9 @@
           </UFormField>
 
           <UFormField :label="$t('switches.fields.role')" name="role">
-            <USelectMenu :search-input="false"
-              v-model="editForm.role"
+            <USelectMenu
+v-model="editForm.role"
+              :search-input="false"
               :items="editRoleOptions"
               placeholder="---"
               value-key="value"
@@ -345,8 +347,8 @@
             <UInput
               v-model="editTagInput"
               :placeholder="$t('switches.tagsPlaceholder')"
-              @keydown.enter.prevent="addEditTag"
               class="w-full"
+              @keydown.enter.prevent="addEditTag"
             />
             <div v-if="editForm.tags.length > 0" class="mt-2 flex flex-wrap gap-1">
               <UBadge v-for="tg in editForm.tags" :key="tg" color="neutral" variant="soft" size="sm" class="cursor-pointer" @click="removeEditTag(tg)">
@@ -422,7 +424,7 @@ useHead({ title: computed(() => item.value?.name || t('switches.title')) })
 const { duplicate } = useSwitches()
 const { items: templates, fetch: fetchTemplates } = useLayoutTemplates()
 const { items: vlans, fetch: fetchVlans } = useVlans()
-const { items: lagGroups, loading: lagLoading, fetch: fetchLags, lagById, lagByPortId, update: updateLag, remove: removeLag } = useLagGroups(id)
+const { items: lagGroups, fetch: fetchLags, lagById, lagByPortId, update: updateLag, remove: removeLag } = useLagGroups(id)
 
 const lagSlideoverRef = ref<any>(null)
 const showLagDeleteDialog = ref(false)

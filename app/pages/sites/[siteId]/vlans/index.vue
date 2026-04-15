@@ -192,7 +192,7 @@
         </div>
 
         <!-- Edit form -->
-        <UForm ref="editFormRef" v-if="panelEditing" :state="editForm" :validate="validate" :validate-on="['blur', 'change']" novalidate class="space-y-4" @submit="onSave">
+        <UForm v-if="panelEditing" ref="editFormRef" :state="editForm" :validate="validate" :validate-on="['blur', 'change']" novalidate class="space-y-4" @submit="onSave">
           <UFormField :label="$t('vlans.fields.vlanId') + ' *'" name="vlan_id" required>
             <UInput v-model.number="editForm.vlan_id" type="number" :min="1" :max="4094" required class="w-full" />
           </UFormField>
@@ -214,7 +214,7 @@
                 v-model="editForm.color"
                 type="color"
                 class="h-9 w-12 cursor-pointer rounded border border-default bg-elevated"
-              />
+              >
               <UInput v-model="editForm.color" class="w-28" size="sm" />
             </div>
           </UFormField>
@@ -259,7 +259,7 @@ const pageLoading = ref(true)
 const search = ref('')
 const statusFilter = ref('all')
 const page = ref(1)
-const perPage = 25
+const _perPage = 25
 
 // Panel state
 const showPanel = ref(false)

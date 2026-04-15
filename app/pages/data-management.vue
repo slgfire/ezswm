@@ -33,7 +33,7 @@
                     accept=".json"
                     class="hidden"
                     @change="onBackupFileSelect"
-                  />
+                  >
                 </div>
                 <UButton
                   size="sm"
@@ -55,8 +55,9 @@
           <div class="list-container rounded-lg bg-default p-5">
             <div class="space-y-4 max-w-lg">
               <UFormField :label="$t('dataManagement.export.selectType')">
-                <USelectMenu :search-input="false"
-                  v-model="exportType"
+                <USelectMenu
+v-model="exportType"
+                  :search-input="false"
                   :items="entityTypeOptions"
                   value-key="value"
 
@@ -66,8 +67,9 @@
               </UFormField>
 
               <UFormField :label="$t('dataManagement.export.selectFormat')">
-                <USelectMenu :search-input="false"
-                  v-model="exportFormat"
+                <USelectMenu
+v-model="exportFormat"
+                  :search-input="false"
                   :items="formatOptions"
                   value-key="value"
 
@@ -96,8 +98,9 @@
           <div class="list-container rounded-lg bg-default p-5">
             <div class="space-y-4 max-w-lg">
               <UFormField :label="$t('dataManagement.export.selectType')">
-                <USelectMenu :search-input="false"
-                  v-model="importType"
+                <USelectMenu
+v-model="importType"
+                  :search-input="false"
                   :items="entityTypeOptions"
                   value-key="value"
 
@@ -133,7 +136,7 @@
                   accept=".json,.csv"
                   class="hidden"
                   @change="onImportFileSelect"
-                />
+                >
               </div>
 
               <!-- Preview -->

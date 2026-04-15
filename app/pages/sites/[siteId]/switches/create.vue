@@ -65,10 +65,10 @@
               />
             </UFormField>
             <UFormField :label="$t('switches.fields.role')" name="role">
-              <USelectMenu :search-input="false" v-model="form.role" :items="roleOptions" value-key="value" class="w-full" />
+              <USelectMenu v-model="form.role" :search-input="false" :items="roleOptions" value-key="value" class="w-full" />
             </UFormField>
             <UFormField :label="$t('switches.fields.tags')" name="tags" class="md:col-span-2">
-              <UInput v-model="tagInput" :placeholder="$t('switches.tagsPlaceholder')" @keydown.enter.prevent="addTag" class="w-full" />
+              <UInput v-model="tagInput" :placeholder="$t('switches.tagsPlaceholder')" class="w-full" @keydown.enter.prevent="addTag" />
               <div v-if="form.tags.length > 0" class="mt-2 flex flex-wrap gap-1">
                 <UBadge v-for="tg in form.tags" :key="tg" color="neutral" variant="soft" size="sm" class="cursor-pointer" @click="removeTag(tg)">
                   {{ tg }} <UIcon name="i-heroicons-x-mark" class="ml-0.5 h-3 w-3" />

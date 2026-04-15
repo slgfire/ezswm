@@ -5,9 +5,9 @@
       <div v-for="(unit, ui) in units" :key="unit.unit_number">
         <!-- Stack member divider between stack members -->
         <div v-if="shouldShowMemberDivider(ui)" class="col-span-full my-2 flex items-center gap-2">
-          <div class="h-px flex-1 bg-emerald-500/30"></div>
+          <div class="h-px flex-1 bg-emerald-500/30"/>
           <span class="text-xs text-emerald-400 font-medium">{{ $t('switches.stackMember', { n: getMemberNumber(ui) }) }}</span>
-          <div class="h-px flex-1 bg-emerald-500/30"></div>
+          <div class="h-px flex-1 bg-emerald-500/30"/>
         </div>
         <SwitchUnitDivider :label="unit.label || `Unit ${unit.unit_number}`" />
         <div class="rounded-lg border border-default bg-default/30 p-3">
@@ -146,8 +146,6 @@
 </template>
 
 <script setup lang="ts">
-const { t } = useI18n()
-
 const props = defineProps<{
   ports: any[]
   units?: any[]
@@ -218,8 +216,6 @@ function getRowsForBlock(unitNumber: number, block: any): any[][] {
 
   const rows = block.rows || 2
   const mode = block.row_layout || 'sequential'
-  const startIdx = block.start_index || 0
-
   if (mode === 'odd-even') {
     // Use relative position in block: first port = position 0
     const topRow = ports.filter((_, i) => i % 2 === 0)

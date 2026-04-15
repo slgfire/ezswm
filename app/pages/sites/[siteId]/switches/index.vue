@@ -16,9 +16,10 @@
         size="sm"
         class="w-64"
       />
-      <USelectMenu :search-input="false"
-        v-if="locationOptions.length > 0"
+      <USelectMenu
+v-if="locationOptions.length > 0"
         v-model="locationFilter"
+        :search-input="false"
         :items="locationOptions"
         value-key="value"
         
@@ -26,8 +27,9 @@
         size="sm"
         class="w-48"
       />
-      <USelectMenu :search-input="false"
-        v-model="roleFilter"
+      <USelectMenu
+v-model="roleFilter"
+        :search-input="false"
         :items="roleOptions"
         value-key="value"
         
@@ -35,9 +37,10 @@
         size="sm"
         class="w-44"
       />
-      <USelectMenu :search-input="false"
-        v-if="tagOptions.length > 0"
+      <USelectMenu
+v-if="tagOptions.length > 0"
         v-model="tagFilter"
+        :search-input="false"
         :items="tagOptions"
         value-key="value"
         
@@ -74,7 +77,7 @@
                         :checked="printSelectedIds.includes(sw.id)"
                         class="h-3.5 w-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
                         @change="togglePrintId(sw.id)"
-                      />
+                      >
                       <span class="truncate text-xs">{{ sw.name }}</span>
                     </label>
                   </template>
@@ -90,7 +93,7 @@
                       :checked="printSelectedIds.includes(sw.id)"
                       class="h-3.5 w-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
                       @change="togglePrintId(sw.id)"
-                    />
+                    >
                     <span class="truncate text-xs">{{ sw.name }}</span>
                   </label>
                 </template>

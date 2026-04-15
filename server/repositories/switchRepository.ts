@@ -80,7 +80,7 @@ function syncManagementIpAllocation(switchId: string, switchName: string, newIp:
 
 function generatePortLabel(blockLabel: string | undefined, unitNumber: number, portIndex: number): string {
   if (!blockLabel) return `${unitNumber}/${portIndex}`
-  return blockLabel.match(/[\/\-:.]$/) ? `${blockLabel}${portIndex}` : `${blockLabel} ${unitNumber}/${portIndex}`
+  return blockLabel.match(/[/\-:.]$/) ? `${blockLabel}${portIndex}` : `${blockLabel} ${unitNumber}/${portIndex}`
 }
 
 function generatePortsFromTemplate(templateId: string, stackSize: number = 1): Port[] {

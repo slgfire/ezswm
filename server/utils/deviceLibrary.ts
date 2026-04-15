@@ -242,27 +242,6 @@ function compareNatural(a: string, b: string): number {
   return 0
 }
 
-// ---------------------------------------------------------------------------
-// Extract name prefix (everything before the last number)
-// ---------------------------------------------------------------------------
-
-function getNamePrefix(name: string): string {
-  const match = name.match(/^(.*?)(\d+)([^0-9]*)$/)
-  if (!match) return name
-
-  // prefix is everything up to and including all parts before the last number
-  // We want "everything before the trailing number sequence"
-  // e.g. "GigabitEthernet0/1" → last digits are "1", trailing = "" → prefix = "GigabitEthernet0/"
-  // e.g. "Ethernet1" → last digits are "1", trailing = "" → prefix = "Ethernet"
-  return match[1] + (match[3] ? match[3] : '')
-}
-
-// More robust: find the "group key" which is type + prefix
-function getGroupKey(iface: NetboxInterface, mapped: MappedType): string {
-  const prefix = getNamePrefixForGrouping(iface.name)
-  return `${mapped.type}::${prefix}`
-}
-
 /**
  * Returns the prefix used for grouping — everything before the trailing number.
  * Example: "GigabitEthernet0/12" → "GigabitEthernet0/"
@@ -342,8 +321,6 @@ export function groupInterfacesToBlocks(
   const SPEED_RANK: Record<string, number> = { '100M': 1, '1G': 2, '2.5G': 3, '10G': 4, '100G': 5 }
   const portByNumber = new Map<string, MappedIface>()
   for (const item of mapped) {
-    const trailingNum = getTrailingNumber(item.iface.name)
-    const prefix = getNamePrefixForGrouping(item.iface.name)
     // Use trailing number as dedup key (only for non-management, same slot pattern)
     // e.g. ge-0/0/5 and xe-0/0/5 share trailing number 5 with similar prefix pattern
     const slotParts = item.iface.name.match(/^[a-z]+-(\d+\/\d+\/)(\d+)$/)

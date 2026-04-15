@@ -18,9 +18,10 @@
         class="w-64"
         @update:model-value="onSearch"
       />
-      <USelectMenu :search-input="false"
-        v-if="manufacturers.length > 0"
+      <USelectMenu
+v-if="manufacturers.length > 0"
         v-model="selectedManufacturer"
+        :search-input="false"
         :items="manufacturerOptions"
         value-key="value"
         
@@ -29,8 +30,9 @@
         class="w-48"
         @update:model-value="onFilter"
       />
-      <USelectMenu :search-input="false"
-        v-model="selectedPortType"
+      <USelectMenu
+v-model="selectedPortType"
+        :search-input="false"
         :items="portTypeOptions"
         value-key="value"
         

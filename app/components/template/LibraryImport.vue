@@ -73,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-const emit = defineEmits<{
+defineEmits<{
   import: [template: any]
 }>()
 

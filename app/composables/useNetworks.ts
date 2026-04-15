@@ -10,7 +10,7 @@ export function useNetworks() {
       const data = await apiFetch<any>('/api/networks', { params })
       items.value = data?.data || data || []
       total.value = data?.meta?.total || data?.total || items.value.length
-    } catch {
+    } catch { /* ignore */
     } finally {
       loading.value = false
     }

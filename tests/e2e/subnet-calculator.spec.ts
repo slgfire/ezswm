@@ -151,7 +151,6 @@ test.describe('Subnet Calculator', () => {
 
     const card = page.locator('main .grid.grid-cols-2')
     // The network address should be masked, not the input IP
-    const networkRow = card.locator('div').first()
     await expect(card).toContainText('255.255.255.0', { timeout: 5000 })
   })
 
