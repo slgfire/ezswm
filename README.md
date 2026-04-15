@@ -7,6 +7,7 @@
   [![Nuxt](https://img.shields.io/badge/Nuxt-4.x-00DC82.svg)](https://nuxt.com)
   [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](compose.yaml)
   [![Built with Claude Code](https://img.shields.io/badge/Built_with-Claude_Code-6B5CE7.svg)](https://claude.ai/claude-code)
+  [![Dependabot](https://img.shields.io/badge/Dependabot-enabled-0366d6.svg?logo=dependabot)](https://github.com/slgfire/ezswm/security/dependabot)
 
   **Document your switches, VLANs, and IPs — visually. No database required.**
 
