@@ -25,7 +25,7 @@
     "tailwindcss": "4.2.2",
     "vuedraggable": "4.1.0",
     "yaml": "2.8.3",
-    "zod": "3.24.4"
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@nuxt/eslint": "1.15.2",
