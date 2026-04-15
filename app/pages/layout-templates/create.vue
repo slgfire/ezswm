@@ -188,6 +188,7 @@
 </template>
 
 <script setup lang="ts">
+import type { AirflowDirection, LayoutUnit } from '~~/types/layoutTemplate'
 const { t } = useI18n()
 useHead({ title: t('templates.create') })
 const toast = useToast()
@@ -393,7 +394,7 @@ async function handleSubmit() {
       model: form.model || undefined,
       description: form.description || undefined,
       datasheet_url: form.datasheet_url || undefined,
-      airflow: form.airflow || undefined,
+      airflow: (form.airflow || undefined) as AirflowDirection | undefined,
       units: form.units.map(u => ({
         unit_number: u.unit_number,
         label: u.label || undefined,
@@ -408,7 +409,7 @@ async function handleSubmit() {
           poe: b.poe_selection ? { type: b.poe_selection, max_watts: POE_WATTS[b.poe_selection] || 0 } : undefined,
           physical_type: b.type === 'management' && b.physical_type ? b.physical_type : undefined,
         }))
-      }))
+      })) as LayoutUnit[]
     })
     toast.add({ title: t('templates.messages.created'), color: 'success' })
     const id = (result as any).id || (result as any).data?.id

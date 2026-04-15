@@ -1,5 +1,3 @@
-import type { FetchOptions } from 'ofetch'
-
 export function useApiFetch() {
   function getHeaders(): Record<string, string> {
     if (import.meta.server) {
@@ -11,14 +9,14 @@ export function useApiFetch() {
     return {}
   }
 
-  async function apiFetch<T>(url: string, opts?: FetchOptions): Promise<T> {
+  async function apiFetch<T>(url: string, opts?: Record<string, unknown>): Promise<T> {
     return $fetch(url, {
       ...opts,
       headers: {
         ...getHeaders(),
         ...(opts?.headers as Record<string, string> || {})
       }
-    } as any) as unknown as T
+    }) as unknown as T
   }
 
   return { apiFetch }

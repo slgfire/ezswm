@@ -159,6 +159,7 @@
 </template>
 
 <script setup lang="ts">
+import type { VlanStatus } from '~~/types/vlan'
 const { t } = useI18n()
 const toast = useToast()
 const route = useRoute()
@@ -232,7 +233,7 @@ async function onSave() {
       vlan_id: editForm.value.vlan_id,
       name: editForm.value.name.trim(),
       description: editForm.value.description.trim() || undefined,
-      status: editForm.value.status,
+      status: editForm.value.status as VlanStatus,
       routing_device: editForm.value.routing_device.trim() || undefined,
       color: editForm.value.color.toUpperCase()
     })

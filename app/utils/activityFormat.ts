@@ -1,10 +1,12 @@
-type TranslateFn = (key: string, params?: Record<string, any>) => string
+import type { ActivityEntry } from '~~/types/activity'
+
+type TranslateFn = (key: string, params?: Record<string, string | number>) => string
 
 /**
  * Format an activity entry into a compact human-readable description.
  * @param detailed - if true, show all changes (switch detail page). If false, max 2-3 (dashboard).
  */
-export function formatActivitySummary(entry: any, t: TranslateFn, detailed: boolean = false): string {
+export function formatActivitySummary(entry: ActivityEntry, t: TranslateFn, detailed: boolean = false): string {
   const { action, entity_type, changes, metadata, previous_state } = entry
 
   if (action === 'create') {
@@ -17,7 +19,7 @@ export function formatActivitySummary(entry: any, t: TranslateFn, detailed: bool
 
   if (action === 'update_port') {
     if (!previous_state || !changes) {
-      return metadata?.port_label || ''
+      return (metadata?.port_label as string) || ''
     }
     return formatPortChange(changes, previous_state, metadata, t, detailed)
   }
@@ -32,17 +34,17 @@ export function formatActivitySummary(entry: any, t: TranslateFn, detailed: bool
 /**
  * No longer used — kept for backwards compatibility.
  */
-export function formatActivityDetail(_entry: any): { field: string; from: string; to: string }[] {
+export function formatActivityDetail(_entry: ActivityEntry): { field: string; from: string; to: string }[] {
   return []
 }
 
-function formatPortChange(changes: any, prev: any, metadata: any, t: TranslateFn, detailed: boolean = false): string {
+function formatPortChange(changes: Record<string, unknown>, prev: Record<string, unknown>, metadata: Record<string, unknown> | undefined, t: TranslateFn, detailed: boolean = false): string {
   const parts: string[] = []
-  const port = metadata?.port_label || ''
+  const port = (metadata?.port_label as string) || ''
 
   // VLAN changes
-  const newVlan = changes.native_vlan ?? changes.access_vlan
-  const oldVlan = prev?.native_vlan ?? prev?.access_vlan
+  const newVlan = (changes.native_vlan ?? changes.access_vlan) as number | undefined
+  const oldVlan = (prev?.native_vlan ?? prev?.access_vlan) as number | undefined
   if (newVlan !== undefined || oldVlan !== undefined) {
     if (newVlan && !oldVlan) parts.push(t('activity.vlanAssigned', { vlan: newVlan }))
     else if (!newVlan && oldVlan) parts.push(t('activity.vlanRemoved'))
@@ -65,7 +67,7 @@ function formatPortChange(changes: any, prev: any, metadata: any, t: TranslateFn
   // Connected device
   if (changes.connected_device !== undefined) {
     if (changes.connected_device && !prev?.connected_device) parts.push(`→ ${changes.connected_device}`)
-    else if (!changes.connected_device && prev?.connected_device) parts.push(t('activity.disconnected', { device: prev.connected_device }))
+    else if (!changes.connected_device && prev?.connected_device) parts.push(t('activity.disconnected', { device: prev.connected_device as string }))
     else if (changes.connected_device && prev?.connected_device && changes.connected_device !== prev.connected_device) {
       parts.push(`→ ${changes.connected_device}`)
     }
@@ -91,7 +93,7 @@ function formatPortChange(changes: any, prev: any, metadata: any, t: TranslateFn
   return prefix + (detailed ? parts : parts.slice(0, 3)).join(', ')
 }
 
-function formatEntityChange(changes: any, prev: any, t: TranslateFn): string {
+function formatEntityChange(changes: Record<string, unknown>, prev: Record<string, unknown>, t: TranslateFn): string {
   const parts: string[] = []
 
   if (changes.name && prev?.name && changes.name !== prev.name) {
