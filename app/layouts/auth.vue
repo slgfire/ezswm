@@ -41,12 +41,12 @@ function toggleWithTransition(event: MouseEvent) {
 
   const switchingToDark = !isDark.value
 
-  if (!(document as any).startViewTransition) {
+  if (!(document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } }).startViewTransition) {
     colorMode.preference = switchingToDark ? 'dark' : 'light'
     return
   }
 
-  const transition = (document as any).startViewTransition(() => {
+  const transition = (document as Document & { startViewTransition: (cb: () => void) => { ready: Promise<void> } }).startViewTransition(() => {
     colorMode.preference = switchingToDark ? 'dark' : 'light'
   })
 

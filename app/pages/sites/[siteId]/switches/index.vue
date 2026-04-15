@@ -57,7 +57,7 @@ v-if="tagOptions.length > 0"
               <div class="mb-2 flex items-center justify-between">
                 <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">{{ $t('common.print') }}</span>
                 <div class="flex gap-1">
-                  <UButton size="xs" variant="ghost" @click="printSelectedIds.length === filteredItems.length ? (printSelectedIds = []) : (printSelectedIds = filteredItems.map((s: any) => s.id))">
+                  <UButton size="xs" variant="ghost" @click="printSelectedIds.length === filteredItems.length ? (printSelectedIds = []) : (printSelectedIds = filteredItems.map((s) => s.id))">
                     {{ printSelectedIds.length === filteredItems.length ? $t('common.deselectAll') : $t('common.selectAll') }}
                   </UButton>
                 </div>
@@ -404,6 +404,7 @@ v-if="tagOptions.length > 0"
 </template>
 
 <script setup lang="ts">
+import type { Switch } from '~~/types/switch'
 import draggable from 'vuedraggable'
 
 const route = useRoute()
@@ -428,15 +429,15 @@ const printSearch = ref('')
 const printFilteredItems = computed(() => {
   const q = printSearch.value.toLowerCase().trim()
   if (!q) return filteredItems.value
-  return filteredItems.value.filter((sw: any) => sw.name.toLowerCase().includes(q))
+  return filteredItems.value.filter((sw) => sw.name.toLowerCase().includes(q))
 })
 
 const printFilteredGroups = computed(() => {
   const q = printSearch.value.toLowerCase().trim()
   if (!q) return groupedItems.value
   return groupedItems.value
-    .map((g: any) => ({ ...g, items: g.items.filter((sw: any) => sw.name.toLowerCase().includes(q)) }))
-    .filter((g: any) => g.items.length > 0)
+    .map((g) => ({ ...g, items: g.items.filter((sw) => sw.name.toLowerCase().includes(q)) }))
+    .filter((g) => g.items.length > 0)
 })
 
 function togglePrintId(swId: string) {
@@ -462,12 +463,12 @@ const locationFilter = ref<string | undefined>(undefined)
 const roleFilter = ref<string | undefined>(undefined)
 const tagFilter = ref<string | undefined>(undefined)
 const showDeleteDialog = ref(false)
-const deleteTarget = ref<any>(null)
+const deleteTarget = ref<Switch | null>(null)
 const deleting = ref(false)
 const availableLocations = ref<string[]>([])
 const availableTags = ref<string[]>([])
 
-const sortedItems = ref<any[]>([])
+const sortedItems = ref<Switch[]>([])
 const allItems = computed(() => items.value)
 
 const roleOptions = computed(() => [
@@ -490,7 +491,7 @@ const filteredItems = computed(() => {
 
   if (search.value) {
     const q = search.value.toLowerCase()
-    result = result.filter((s: any) =>
+    result = result.filter((s) =>
       s.name?.toLowerCase().includes(q) || s.model?.toLowerCase().includes(q) ||
       s.management_ip?.toLowerCase().includes(q) || s.serial_number?.toLowerCase().includes(q) ||
       s.manufacturer?.toLowerCase().includes(q)
@@ -498,15 +499,15 @@ const filteredItems = computed(() => {
   }
 
   if (locationFilter.value) {
-    result = result.filter((s: any) => s.location === locationFilter.value)
+    result = result.filter((s) => s.location === locationFilter.value)
   }
 
   if (roleFilter.value) {
-    result = result.filter((s: any) => s.role === roleFilter.value)
+    result = result.filter((s) => s.role === roleFilter.value)
   }
 
   if (tagFilter.value) {
-    result = result.filter((s: any) => s.tags?.includes(tagFilter.value))
+    result = result.filter((s) => s.tags?.includes(tagFilter.value!))
   }
 
   return result
@@ -524,8 +525,8 @@ watch(filteredItems, (fi) => {
 
 const groupedItems = computed(() => {
   if (siteId.value !== 'all') return [{ siteId: '', siteName: '', items: filteredItems.value }]
-  const groups: { siteId: string; siteName: string; items: any[] }[] = []
-  const groupMap = new Map<string, any[]>()
+  const groups: { siteId: string; siteName: string; items: Switch[] }[] = []
+  const groupMap = new Map<string, Switch[]>()
   for (const item of filteredItems.value) {
     const sid = item.site_id || ''
     if (!groupMap.has(sid)) groupMap.set(sid, [])
@@ -537,8 +538,10 @@ const groupedItems = computed(() => {
   return groups
 })
 
-function roleColor(role: string): any {
-  const map: Record<string, string> = {
+type BadgeColor = 'error' | 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'neutral'
+
+function roleColor(role: string): BadgeColor {
+  const map: Record<string, BadgeColor> = {
     core: 'error',
     distribution: 'info',
     access: 'success',
@@ -547,17 +550,17 @@ function roleColor(role: string): any {
   return map[role] || 'neutral'
 }
 
-function getPortStats(sw: any) {
+function getPortStats(sw: Switch) {
   const ports = sw.ports || []
   return {
-    up: ports.filter((p: any) => p.status === 'up').length,
-    down: ports.filter((p: any) => p.status === 'down').length,
-    disabled: ports.filter((p: any) => p.status === 'disabled').length
+    up: ports.filter((p) => p.status === 'up').length,
+    down: ports.filter((p) => p.status === 'down').length,
+    disabled: ports.filter((p) => p.status === 'disabled').length
   }
 }
 
 async function saveSortOrder() {
-  const order = sortedItems.value.map((s: any) => s.id)
+  const order = sortedItems.value.map((s) => s.id)
   try {
     await $fetch('/api/switches/sort', { method: 'PUT', body: { order } })
   } catch { /* silent */ }
@@ -565,7 +568,7 @@ async function saveSortOrder() {
 
 const deleteMessage = computed(() => deleteTarget.value ? `${t('switches.delete')}: ${deleteTarget.value.name}?` : '')
 
-function confirmDelete(row: any) { deleteTarget.value = row; showDeleteDialog.value = true }
+function confirmDelete(row: Switch) { deleteTarget.value = row; showDeleteDialog.value = true }
 
 async function onDelete() {
   if (!deleteTarget.value) return
@@ -575,17 +578,17 @@ async function onDelete() {
     toast.add({ title: t('switches.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     await loadData()
-  } catch (e: any) { toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' }) }
+  } catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' }) }
   finally { deleting.value = false }
 }
 
-async function onDuplicate(row: any) {
+async function onDuplicate(row: Switch) {
   try {
     const result = await duplicate(row.id)
     toast.add({ title: t('switches.messages.duplicated'), color: 'success' })
     await loadData()
-    if (result && (result as any).id) await navigateTo(`/sites/${siteId.value}/switches/${(result as any).id}`)
-  } catch (e: any) { toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' }) }
+    if (result?.id) await navigateTo(`/sites/${siteId.value}/switches/${result.id}`)
+  } catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' }) }
 }
 
 const { apiFetch } = useApiFetch()
@@ -594,14 +597,14 @@ const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { sit
 async function loadData() {
   await fetchSwitches(siteParams.value)
   try {
-    const response = await apiFetch<any>('/api/switches', { params: { per_page: 1, ...siteParams.value } })
+    const response = await apiFetch<{ filters?: { locations?: string[]; tags?: string[] } }>('/api/switches', { params: { per_page: 1, ...siteParams.value } })
     availableLocations.value = response?.filters?.locations || []
     availableTags.value = response?.filters?.tags || []
   } catch { /* silent */ }
 }
 
 onMounted(async () => {
-  const fetches: Promise<any>[] = [loadData()]
+  const fetches: Promise<void>[] = [loadData()]
   if (siteId.value === 'all') fetches.push(fetchAllSites())
   await Promise.all(fetches)
   pageLoading.value = false

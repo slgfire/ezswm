@@ -59,7 +59,7 @@
 
       <SwitchPortGrid
         v-if="previewPorts.length > 0"
-        :ports="previewPorts"
+        :ports="(previewPorts as Port[])"
         :units="preview.units"
         :selected-ports="[]"
       />
@@ -73,8 +73,11 @@
 </template>
 
 <script setup lang="ts">
+import type { LayoutTemplate } from '~~/types/layoutTemplate'
+import type { Port, PortSpeed } from '~~/types/port'
+
 defineEmits<{
-  import: [template: any]
+  import: [template: LayoutTemplate]
 }>()
 
 const { t } = useI18n()
@@ -84,8 +87,8 @@ const results = ref<{ manufacturer: string; slug: string; model: string }[]>([])
 const searching = ref(false)
 const error = ref('')
 const selected = ref<{ manufacturer: string; slug: string } | null>(null)
-const preview = ref<any>(null)
-const previewPorts = ref<any[]>([])
+const preview = ref<LayoutTemplate | null>(null)
+const previewPorts = ref<Partial<Port>[]>([])
 const loadingPreview = ref(false)
 const skippedInterfaces = ref<{ type: string; count: number }[]>([])
 
@@ -113,10 +116,10 @@ watch(searchQuery, (val) => {
   searching.value = true
   searchTimeout = setTimeout(async () => {
     try {
-      const data = await $fetch('/api/device-library/search', { params: { q: val } })
-      results.value = (data as any).items
-    } catch (e: any) {
-      if (e.statusCode === 503) {
+      const data = await $fetch('/api/device-library/search', { params: { q: val } }) as { items: { manufacturer: string; slug: string; model: string }[] }
+      results.value = data.items
+    } catch (e: unknown) {
+      if ((e as { statusCode?: number }).statusCode === 503) {
         error.value = t('templates.libraryUnavailable')
       }
       results.value = []
@@ -136,14 +139,14 @@ async function selectDevice(item: { manufacturer: string; slug: string }) {
   try {
     const data = await $fetch('/api/device-library/device', {
       params: { manufacturer: item.manufacturer, slug: item.slug }
-    })
-    preview.value = (data as any).template
-    skippedInterfaces.value = (data as any).skippedInterfaces || []
+    }) as { template: LayoutTemplate; skippedInterfaces?: { type: string; count: number }[] }
+    preview.value = data.template
+    skippedInterfaces.value = data.skippedInterfaces || []
 
     // Generate preview ports for visualization
-    const ports: any[] = []
+    const ports: Partial<Port>[] = []
     let portId = 0
-    for (const unit of (data as any).template.units ?? []) {
+    for (const unit of data.template.units ?? []) {
       for (const block of unit.blocks ?? []) {
         for (let i = 0; i < block.count; i++) {
           ports.push({
@@ -151,7 +154,7 @@ async function selectDevice(item: { manufacturer: string; slug: string }) {
             unit: unit.unit_number,
             index: block.start_index + i,
             type: block.type,
-            speed: block.default_speed,
+            speed: block.default_speed as PortSpeed | undefined,
             status: 'down',
             tagged_vlans: [],
             poe: block.poe ?? undefined,
@@ -160,8 +163,8 @@ async function selectDevice(item: { manufacturer: string; slug: string }) {
       }
     }
     previewPorts.value = ports
-  } catch (e: any) {
-    if (e.statusCode === 503) {
+  } catch (e: unknown) {
+    if ((e as { statusCode?: number }).statusCode === 503) {
       error.value = t('templates.libraryUnavailable')
     }
   } finally {

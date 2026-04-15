@@ -153,7 +153,7 @@ async function saveAccount() {
       language: accountForm.language as 'en' | 'de'
     })
     await setLocale(accountForm.language as 'en' | 'de')
-    ;(user as any).value = { ...user.value!, language: accountForm.language }
+    Object.assign(user.value!, { language: accountForm.language })
     toast.add({ title: t('settings.messages.profileUpdated'), color: 'success' })
   } catch {
     toast.add({ title: t('errors.serverError'), color: 'error' })
@@ -189,8 +189,9 @@ async function handleChangePassword() {
     passwordForm.current_password = ''
     passwordForm.new_password = ''
     passwordForm.confirm_password = ''
-  } catch (e: any) {
-    toast.add({ title: e.data?.message || t('errors.serverError'), color: 'error' })
+  } catch (e: unknown) {
+    const message = e instanceof Error ? (e as Error & { data?: { message?: string } }).data?.message : undefined
+    toast.add({ title: message || t('errors.serverError'), color: 'error' })
   } finally {
     savingPassword.value = false
   }

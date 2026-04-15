@@ -178,7 +178,7 @@ async function onSubmit() {
 
   submitting.value = true
   try {
-    const body: Record<string, any> = { ...form, tags: [...form.tags] }
+    const body: Record<string, unknown> = { ...form, tags: [...form.tags] }
     // Remove empty optional fields
     for (const key of Object.keys(body)) {
       if (body[key] === '' || (Array.isArray(body[key]) && body[key].length === 0)) {
@@ -191,13 +191,14 @@ async function onSubmit() {
     }
     const result = await create(body)
     toast.add({ title: t('switches.messages.created'), color: 'success' })
-    if (result && (result as any).id) {
-      await navigateTo(`/sites/${siteId.value}/switches/${(result as any).id}`)
+    if (result?.id) {
+      await navigateTo(`/sites/${siteId.value}/switches/${result.id}`)
     } else {
       await navigateTo(`/sites/${siteId.value}/switches`)
     }
-  } catch (e: any) {
-    toast.add({ title: e?.data?.message || t('errors.serverError'), color: 'error' })
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     submitting.value = false
   }

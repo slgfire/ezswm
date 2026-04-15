@@ -241,7 +241,7 @@
 </template>
 
 <script setup lang="ts">
-import type { VlanStatus } from '~~/types/vlan'
+import type { VLAN, VlanStatus } from '~~/types/vlan'
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
@@ -264,13 +264,13 @@ const _perPage = 25
 
 // Panel state
 const showPanel = ref(false)
-const selectedVlan = ref<any>(null)
+const selectedVlan = ref<VLAN | null>(null)
 const panelEditing = ref(false)
 const saving = ref(false)
 
 // Delete state
 const showDeleteDialog = ref(false)
-const deleteTarget = ref<any>(null)
+const deleteTarget = ref<VLAN | null>(null)
 const deleteMessage = ref('')
 const deleting = ref(false)
 
@@ -299,11 +299,11 @@ const editStatusOptions = computed(() => [
 const filteredItems = computed(() => {
   let result = items.value
   if (statusFilter.value !== 'all') {
-    result = result.filter((v: any) => v.status === statusFilter.value)
+    result = result.filter((v) => v.status === statusFilter.value)
   }
   if (search.value) {
     const q = search.value.toLowerCase()
-    result = result.filter((v: any) =>
+    result = result.filter((v) =>
       String(v.vlan_id).includes(q) ||
       v.name?.toLowerCase().includes(q) ||
       v.routing_device?.toLowerCase().includes(q)
@@ -326,9 +326,9 @@ function toggleSort(field: 'vlan_id' | 'name' | 'status') {
 
 const sortedItems = computed(() => {
   const list = [...filteredItems.value]
-  list.sort((a: any, b: any) => {
-    let va = a[sortField.value]
-    let vb = b[sortField.value]
+  list.sort((a, b) => {
+    let va: string | number = a[sortField.value] as string | number
+    let vb: string | number = b[sortField.value] as string | number
     if (typeof va === 'string') va = va.toLowerCase()
     if (typeof vb === 'string') vb = vb.toLowerCase()
     if (va < vb) return sortAsc.value ? -1 : 1
@@ -340,8 +340,8 @@ const sortedItems = computed(() => {
 
 const groupedItems = computed(() => {
   if (siteId.value !== 'all') return [{ siteId: '', siteName: '', items: sortedItems.value }]
-  const groups: { siteId: string; siteName: string; items: any[] }[] = []
-  const groupMap = new Map<string, any[]>()
+  const groups: { siteId: string; siteName: string; items: VLAN[] }[] = []
+  const groupMap = new Map<string, VLAN[]>()
   for (const item of sortedItems.value) {
     const sid = item.site_id || ''
     if (!groupMap.has(sid)) groupMap.set(sid, [])
@@ -354,15 +354,15 @@ const groupedItems = computed(() => {
 })
 
 function getNetworksForVlan(vlanId: string) {
-  return allNetworks.value.filter((n: any) => n.vlan_id === vlanId)
+  return allNetworks.value.filter((n) => n.vlan_id === vlanId)
 }
 
 const panelNetworks = computed(() => {
   if (!selectedVlan.value) return []
-  return allNetworks.value.filter((n: any) => n.vlan_id === selectedVlan.value.id)
+  return allNetworks.value.filter((n) => n.vlan_id === selectedVlan.value!.id)
 })
 
-function openPanel(vlan: any, edit: boolean) {
+function openPanel(vlan: VLAN, edit: boolean) {
   selectedVlan.value = vlan
   panelEditing.value = edit
   if (edit) startEdit()
@@ -382,7 +382,7 @@ function startEdit() {
   panelEditing.value = true
 }
 
-function validate(state: any) {
+function validate(state: typeof editForm.value) {
   const errors: { name: string; message: string }[] = []
   if (!state.vlan_id || state.vlan_id < 1 || state.vlan_id > 4094) {
     errors.push({ name: 'vlan_id', message: 'VLAN ID must be between 1 and 4094' })
@@ -399,7 +399,7 @@ function validate(state: any) {
 async function onSave() {
   saving.value = true
   try {
-    await update(selectedVlan.value.id, {
+    await update(selectedVlan.value!.id, {
       vlan_id: editForm.value.vlan_id,
       name: editForm.value.name.trim(),
       description: editForm.value.description.trim() || undefined,
@@ -411,15 +411,16 @@ async function onSave() {
     panelEditing.value = false
     await fetchVlans(siteParams.value)
     // Update selected vlan with fresh data
-    selectedVlan.value = items.value.find((v: any) => v.id === selectedVlan.value.id)
-  } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
+    selectedVlan.value = items.value.find((v) => v.id === selectedVlan.value!.id) || null
+  } catch (err: unknown) {
+    const error = err as { data?: { message?: string } }
+    toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     saving.value = false
   }
 }
 
-function openDeleteDialog(vlan: any) {
+function openDeleteDialog(vlan: VLAN) {
   deleteTarget.value = vlan
   deleteMessage.value = `${t('vlans.delete')}: ${vlan.name} (VLAN ${vlan.vlan_id})?`
   showDeleteDialog.value = true
@@ -434,8 +435,9 @@ async function confirmDelete() {
     showDeleteDialog.value = false
     showPanel.value = false
     await fetchVlans(siteParams.value)
-  } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
+  } catch (err: unknown) {
+    const error = err as { data?: { message?: string } }
+    toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     deleting.value = false
   }
@@ -446,7 +448,7 @@ watch([search, statusFilter], () => { page.value = 1 })
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 
 onMounted(async () => {
-  const fetches: Promise<any>[] = [fetchVlans(siteParams.value), fetchNetworks(siteParams.value)]
+  const fetches: Promise<void>[] = [fetchVlans(siteParams.value), fetchNetworks(siteParams.value)]
   if (siteId.value === 'all') fetches.push(fetchAllSites())
   await Promise.all(fetches)
   pageLoading.value = false

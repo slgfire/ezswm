@@ -40,7 +40,20 @@
 useHead({ title: 'Subnet Calculator' })
 
 const cidr = ref('')
-const result = ref<any>(null)
+interface SubnetResult {
+  cidr: string
+  network_address: string
+  broadcast_address: string
+  subnet_mask: string
+  wildcard_mask: string
+  first_usable: string
+  last_usable: string
+  total_hosts: number
+  usable_hosts: number
+  prefix_length: number
+}
+
+const result = ref<SubnetResult | null>(null)
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 let requestId = 0

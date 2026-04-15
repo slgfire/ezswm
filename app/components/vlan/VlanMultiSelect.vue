@@ -26,7 +26,7 @@
     <template #item-leading="{ item }">
       <span
         class="size-3 shrink-0 rounded-full"
-        :style="{ backgroundColor: colorMap[(item as any).value] || '#888' }"
+        :style="{ backgroundColor: colorMap[(item as { value: number }).value] || '#888' }"
       />
     </template>
   </USelectMenu>
@@ -35,7 +35,7 @@
 <script setup lang="ts">
 const props = defineProps<{
   modelValue: number[]
-  vlans: any[]
+  vlans: { vlan_id: number; name: string; color: string }[]
 }>()
 
 const emit = defineEmits<{
@@ -65,7 +65,7 @@ function getColor(vlanId: number): string {
   return props.vlans.find(v => v.vlan_id === vlanId)?.color || '#888'
 }
 
-function onSelect(values: any) {
+function onSelect(values: number[] | unknown) {
   const ids = Array.isArray(values) ? values : []
   selected.value = ids
   emit('update:modelValue', ids)

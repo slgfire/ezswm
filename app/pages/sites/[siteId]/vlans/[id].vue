@@ -159,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-import type { VlanStatus } from '~~/types/vlan'
+import type { VLAN, VlanStatus } from '~~/types/vlan'
 const { t } = useI18n()
 const toast = useToast()
 const route = useRoute()
@@ -170,7 +170,7 @@ const { items: allNetworks, fetch: fetchNetworks } = useNetworks()
 
 const id = route.params.id as string
 const loading = ref(true)
-const vlan = ref<any>(null)
+const vlan = ref<VLAN | null>(null)
 
 useHead({ title: computed(() => vlan.value ? `VLAN ${vlan.value.vlan_id} — ${vlan.value.name}` : t('vlans.title')) })
 
@@ -197,10 +197,11 @@ const statusOptions = computed(() => [
 
 const associatedNetworks = computed(() => {
   if (!vlan.value) return []
-  return allNetworks.value.filter((n: any) => n.vlan_id === vlan.value.id)
+  return allNetworks.value.filter((n) => n.vlan_id === vlan.value!.id)
 })
 
 function startEdit() {
+  if (!vlan.value) return
   editForm.value = {
     vlan_id: vlan.value.vlan_id,
     name: vlan.value.name,
@@ -212,7 +213,7 @@ function startEdit() {
   editing.value = true
 }
 
-function validate(state: any) {
+function validate(state: typeof editForm.value) {
   const errors: { name: string; message: string }[] = []
   if (!state.vlan_id || state.vlan_id < 1 || state.vlan_id > 4094) {
     errors.push({ name: 'vlan_id', message: 'VLAN ID must be between 1 and 4094' })
@@ -240,8 +241,9 @@ async function onSave() {
     toast.add({ title: t('vlans.messages.updated'), color: 'success' })
     editing.value = false
     await loadVlan()
-  } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
+  } catch (err: unknown) {
+    const error = err as { data?: { message?: string } }
+    toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     saving.value = false
   }
@@ -254,8 +256,9 @@ async function confirmDelete() {
     toast.add({ title: t('vlans.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     await router.push(`/sites/${siteId.value}/vlans`)
-  } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
+  } catch (err: unknown) {
+    const error = err as { data?: { message?: string } }
+    toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     deleting.value = false
   }
@@ -264,7 +267,7 @@ async function confirmDelete() {
 async function loadVlan() {
   loading.value = true
   try {
-    const data = await $fetch<any>(`/api/vlans/${id}`)
+    const data = await $fetch<VLAN>(`/api/vlans/${id}`)
     vlan.value = data
   } catch { // ignore
     toast.add({ title: t('errors.notFound'), color: 'error' })

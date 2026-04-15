@@ -51,6 +51,8 @@
 </template>
 
 <script setup lang="ts">
+import type { VLAN } from '~~/types/vlan'
+
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
@@ -78,7 +80,7 @@ const statusOptions = computed(() => [
 // Try to fetch suggested color on mount
 onMounted(async () => {
   try {
-    const suggestion = await $fetch<any>('/api/vlans/suggest-color')
+    const suggestion = await $fetch<{ color?: string }>('/api/vlans/suggest-color')
     if (suggestion?.color) {
       form.value.color = suggestion.color
     }
@@ -87,7 +89,7 @@ onMounted(async () => {
   }
 })
 
-function validate(state: any) {
+function validate(state: typeof form.value) {
   const errors: { name: string; message: string }[] = []
   if (!state.vlan_id || state.vlan_id < 1 || state.vlan_id > 4094) {
     errors.push({ name: 'vlan_id', message: 'VLAN ID must be between 1 and 4094' })
@@ -104,7 +106,7 @@ function validate(state: any) {
 async function onSubmit() {
   submitting.value = true
   try {
-    const body: Record<string, any> = {
+    const body: Record<string, unknown> = {
       vlan_id: form.value.vlan_id,
       name: form.value.name.trim(),
       description: form.value.description.trim() || undefined,
@@ -117,9 +119,10 @@ async function onSubmit() {
     }
     const result = await create(body)
     toast.add({ title: t('vlans.messages.created'), color: 'success' })
-    await router.push(`/sites/${siteId.value}/vlans/${(result as any).id}`)
-  } catch (err: any) {
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
+    await router.push(`/sites/${siteId.value}/vlans/${(result as VLAN).id}`)
+  } catch (err: unknown) {
+    const error = err as { data?: { message?: string } }
+    toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     submitting.value = false
   }

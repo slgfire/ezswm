@@ -108,18 +108,24 @@
 </template>
 
 <script setup lang="ts">
+import type { Site } from '~~/types/site'
+
 useHead({ title: 'Sites' })
 const toast = useToast()
 const { t } = useI18n()
 
-const sites = ref<any[]>([])
+interface SiteWithCounts extends Site {
+  _counts?: { switches: number; vlans: number; networks: number }
+}
+
+const sites = ref<SiteWithCounts[]>([])
 const loading = ref(true)
 const showEdit = ref(false)
 const saving = ref(false)
-const editTarget = ref<any>(null)
+const editTarget = ref<SiteWithCounts | null>(null)
 const editForm = reactive({ name: '', description: '' })
 const showDeleteDialog = ref(false)
-const deleteTarget = ref<any>(null)
+const deleteTarget = ref<SiteWithCounts | null>(null)
 const deleting = ref(false)
 
 const deleteMessage = computed(() =>
@@ -129,8 +135,8 @@ const deleteMessage = computed(() =>
 async function loadSites() {
   loading.value = true
   try {
-    const res = await $fetch<any>('/api/sites')
-    sites.value = res?.data || res || []
+    const res = await $fetch<{ data: SiteWithCounts[] }>('/api/sites')
+    sites.value = res?.data || []
   } catch {
     sites.value = []
   } finally {
@@ -138,7 +144,7 @@ async function loadSites() {
   }
 }
 
-function editSite(site: any) {
+function editSite(site: SiteWithCounts) {
   editTarget.value = site
   editForm.name = site.name
   editForm.description = site.description || ''
@@ -149,21 +155,22 @@ async function onSave() {
   if (!editForm.name.trim()) return
   saving.value = true
   try {
-    await $fetch(`/api/sites/${editTarget.value.id}`, {
+    await $fetch(`/api/sites/${editTarget.value!.id}`, {
       method: 'PUT',
       body: { name: editForm.name.trim(), description: editForm.description.trim() || undefined }
     })
     toast.add({ title: t('sites.messages.updated', 'Site updated'), color: 'success' })
     showEdit.value = false
     await loadSites()
-  } catch (e: any) {
-    toast.add({ title: e?.data?.message || t('errors.serverError', 'Server error'), color: 'error' })
+  } catch (e: unknown) {
+    const message = (e as { data?: { message?: string } })?.data?.message
+    toast.add({ title: message || t('errors.serverError', 'Server error'), color: 'error' })
   } finally {
     saving.value = false
   }
 }
 
-function confirmDelete(site: any) {
+function confirmDelete(site: SiteWithCounts) {
   deleteTarget.value = site
   showDeleteDialog.value = true
 }
@@ -176,8 +183,9 @@ async function onDelete() {
     toast.add({ title: t('sites.messages.deleted', 'Site deleted'), color: 'success' })
     showDeleteDialog.value = false
     await loadSites()
-  } catch (e: any) {
-    toast.add({ title: e?.data?.message || t('errors.serverError', 'Server error'), color: 'error' })
+  } catch (e: unknown) {
+    const message = (e as { data?: { message?: string } })?.data?.message
+    toast.add({ title: message || t('errors.serverError', 'Server error'), color: 'error' })
   } finally {
     deleting.value = false
   }

@@ -147,8 +147,8 @@
             <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('templates.preview') }}</h2>
             <div v-if="previewPorts.length" class="rounded-lg border border-default bg-elevated p-4">
               <SwitchPortGrid
-                :ports="previewPorts"
-                :units="form.units"
+                :ports="(previewPorts as any[])"
+                :units="(form.units as any[])"
                 :selected-ports="[]"
               />
             </div>
@@ -184,6 +184,46 @@
 </template>
 
 <script setup lang="ts">
+import type { LayoutTemplate, LayoutUnit, LayoutBlock, AirflowDirection } from '~~/types/layoutTemplate'
+
+interface FormBlock {
+  type: string
+  count: number
+  start_index: number
+  rows: number
+  row_layout: string
+  default_speed: string
+  label: string
+  poe_selection: string
+  physical_type: string
+}
+
+interface FormUnit {
+  unit_number: number
+  label: string
+  blocks: FormBlock[]
+}
+
+interface EditForm {
+  name: string
+  manufacturer: string
+  model: string
+  description: string
+  datasheet_url: string
+  airflow: string
+  units: FormUnit[]
+}
+
+interface PreviewPort {
+  id: string
+  unit: number
+  index: number
+  label: string
+  type: string
+  status: string
+  tagged_vlans: string[]
+}
+
 const { t } = useI18n()
 const toast = useToast()
 const route = useRoute()
@@ -248,11 +288,11 @@ const physicalTypeOptions = [
   { label: 'SFP', value: 'sfp' },
 ]
 
-const form = ref<any>(null)
+const form = ref<EditForm | null>(null)
 
 const previewPorts = computed(() => {
   if (!form.value?.units) return []
-  const ports: any[] = []
+  const ports: PreviewPort[] = []
   for (const unit of form.value.units) {
     for (const block of unit.blocks || []) {
       for (let i = 0; i < block.count; i++) {
@@ -276,8 +316,9 @@ const previewPorts = computed(() => {
 })
 
 function addUnit() {
+  if (!form.value) return
   const nextNumber = form.value.units.length > 0
-    ? Math.max(...form.value.units.map((u: any) => u.unit_number)) + 1
+    ? Math.max(...form.value.units.map((u: FormUnit) => u.unit_number)) + 1
     : 1
   form.value.units.push({
     unit_number: nextNumber,
@@ -287,11 +328,14 @@ function addUnit() {
 }
 
 function removeUnit(index: string | number) {
+  if (!form.value) return
   form.value.units.splice(Number(index), 1)
 }
 
 function addBlock(unitIndex: string | number) {
+  if (!form.value) return
   const unit = form.value.units[Number(unitIndex)]
+  if (!unit) return
   const lastBlock = unit.blocks[unit.blocks.length - 1]
   const nextStartIndex = lastBlock
     ? lastBlock.start_index + lastBlock.count
@@ -310,7 +354,8 @@ function addBlock(unitIndex: string | number) {
 }
 
 function removeBlock(unitIndex: string | number, blockIndex: string | number) {
-  form.value.units[Number(unitIndex)].blocks.splice(Number(blockIndex), 1)
+  if (!form.value) return
+  form.value!.units[Number(unitIndex)]!.blocks.splice(Number(blockIndex), 1)
 }
 
 function validate(): boolean {
@@ -321,11 +366,11 @@ function validate(): boolean {
   if (!form.value?.units?.length) {
     errors.value.units = 'At least one unit is required'
   }
-  form.value?.units?.forEach((unit: any, ui: number) => {
+  form.value?.units?.forEach((unit: FormUnit, ui: number) => {
     if (!unit.blocks?.length) {
       errors.value[`units[${ui}].blocks`] = 'Each unit must have at least one block'
     }
-    unit.blocks?.forEach((block: any, bi: number) => {
+    unit.blocks?.forEach((block: FormBlock, bi: number) => {
       if (!block.count || block.count < 1) {
         errors.value[`units[${ui}].blocks[${bi}].count`] = 'Count must be greater than 0'
       }
@@ -340,19 +385,20 @@ function validate(): boolean {
 async function handleSubmit() {
   if (!validate()) return
 
+  if (!form.value) return
   submitting.value = true
   try {
     await update(route.params.id as string, {
-      name: form.value.name,
-      manufacturer: form.value.manufacturer || undefined,
-      model: form.value.model || undefined,
-      description: form.value.description || undefined,
-      datasheet_url: form.value.datasheet_url || undefined,
-      airflow: form.value.airflow || undefined,
-      units: form.value.units.map((u: any) => ({
+      name: form.value!.name,
+      manufacturer: form.value!.manufacturer || undefined,
+      model: form.value!.model || undefined,
+      description: form.value!.description || undefined,
+      datasheet_url: form.value!.datasheet_url || undefined,
+      airflow: (form.value!.airflow || undefined) as AirflowDirection | undefined,
+      units: form.value!.units.map((u: FormUnit) => ({
         unit_number: u.unit_number,
         label: u.label || undefined,
-        blocks: u.blocks.map((b: any) => ({
+        blocks: u.blocks.map((b: FormBlock) => ({
           type: b.type,
           count: b.count,
           start_index: b.start_index,
@@ -363,7 +409,7 @@ async function handleSubmit() {
           poe: b.poe_selection ? { type: b.poe_selection, max_watts: POE_WATTS[b.poe_selection] || 0 } : undefined,
           physical_type: b.type === 'management' && b.physical_type ? b.physical_type : undefined,
         }))
-      }))
+      })) as LayoutUnit[]
     })
     toast.add({ title: t('templates.messages.updated'), color: 'success' })
     router.push(`/layout-templates/${route.params.id}`)
@@ -376,7 +422,7 @@ async function handleSubmit() {
 
 onMounted(async () => {
   try {
-    const data = await getById(route.params.id as string) as any
+    const data = await getById(route.params.id as string) as LayoutTemplate
     if (data?.name) {
       breadcrumbOverrides.value[`/layout-templates/${route.params.id}`] = data.name
     }
@@ -387,10 +433,10 @@ onMounted(async () => {
       description: data.description || '',
       datasheet_url: data.datasheet_url || '',
       airflow: data.airflow || '',
-      units: (data.units || []).map((u: any) => ({
+      units: (data.units || []).map((u: LayoutUnit) => ({
         unit_number: u.unit_number,
         label: u.label || '',
-        blocks: (u.blocks || []).map((b: any) => ({
+        blocks: (u.blocks || []).map((b: LayoutBlock) => ({
           type: b.type,
           count: b.count,
           start_index: b.start_index,

@@ -64,7 +64,7 @@
         <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('templates.preview') }}</h2>
         <div class="rounded-lg border border-default bg-elevated p-4">
           <SwitchPortGrid
-            :ports="previewPorts"
+            :ports="(previewPorts as any[])"
             :units="template.units"
             :selected-ports="[]"
           />
@@ -89,7 +89,7 @@
               :key="blockIdx"
               class="flex items-center gap-4 rounded-md border border-default/50 bg-elevated/50 px-4 py-3"
             >
-              <UBadge :color="getPortTypeColor(block.type)" variant="subtle" size="sm" class="w-24 justify-center font-mono">
+              <UBadge :color="(getPortTypeColor(block.type) as any)" variant="subtle" size="sm" class="w-24 justify-center font-mono">
                 {{ block.type.toUpperCase() }}
               </UBadge>
               <div class="flex flex-1 flex-wrap gap-x-6 gap-y-1 font-mono text-xs">
@@ -141,13 +141,26 @@
 </template>
 
 <script setup lang="ts">
+import type { LayoutTemplate, LayoutUnit, LayoutBlock } from '~~/types/layoutTemplate'
+
+interface PreviewPort {
+  id: string
+  unit: number
+  index: number
+  label: string
+  type: string
+  speed: string
+  status: string
+  tagged_vlans: string[]
+}
+
 const { t } = useI18n()
 const toast = useToast()
 const router = useRouter()
 const route = useRoute()
 const { getById, remove } = useLayoutTemplates()
 
-const template = ref<any>(null)
+const template = ref<LayoutTemplate | null>(null)
 const loading = ref(true)
 
 useHead({ title: computed(() => template.value?.name || t('templates.title')) })
@@ -158,19 +171,19 @@ watch(template, (tpl) => {
   if (tpl?.name) breadcrumbOverrides.value[`/layout-templates/${route.params.id}`] = tpl.name
 }, { immediate: true })
 
-function getUnitPortCount(unit: any): number {
+function getUnitPortCount(unit: LayoutUnit): number {
   if (!unit.blocks) return 0
-  return unit.blocks.reduce((total: number, block: any) => total + (block.count || 0), 0)
+  return unit.blocks.reduce((total: number, block: LayoutBlock) => total + (block.count || 0), 0)
 }
 
 function getTotalPortCount(): number {
   if (!template.value?.units) return 0
-  return template.value.units.reduce((t: number, u: any) => t + getUnitPortCount(u), 0)
+  return template.value.units.reduce((sum: number, u: LayoutUnit) => sum + getUnitPortCount(u), 0)
 }
 
 const previewPorts = computed(() => {
   if (!template.value?.units) return []
-  const ports: any[] = []
+  const ports: PreviewPort[] = []
   for (const unit of template.value.units) {
     for (const block of unit.blocks || []) {
       for (let i = 0; i < (block.count || 0); i++) {
@@ -191,7 +204,7 @@ const previewPorts = computed(() => {
   return ports
 })
 
-function getPortTypeColor(type: string): any {
+function getPortTypeColor(type: string): string {
   const colors: Record<string, string> = {
     rj45: 'primary', sfp: 'info', 'sfp+': 'info', qsfp: 'warning',
     console: 'warning', management: 'success'

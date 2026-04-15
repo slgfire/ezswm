@@ -161,8 +161,8 @@
               <h2 class="mb-3 text-lg font-semibold">{{ $t('templates.preview') }}</h2>
               <div v-if="previewPorts.length" class="rounded-lg border border-default bg-elevated p-4">
                 <SwitchPortGrid
-                  :ports="previewPorts"
-                  :units="form.units"
+                  :ports="(previewPorts as any[])"
+                  :units="(form.units as any[])"
                   :selected-ports="[]"
                 />
               </div>
@@ -188,7 +188,18 @@
 </template>
 
 <script setup lang="ts">
-import type { AirflowDirection, LayoutUnit } from '~~/types/layoutTemplate'
+import type { AirflowDirection, LayoutTemplate, LayoutUnit } from '~~/types/layoutTemplate'
+
+interface PreviewPort {
+  id: string
+  unit: number
+  index: number
+  label: string
+  type: string
+  status: string
+  tagged_vlans: string[]
+}
+
 const { t } = useI18n()
 useHead({ title: t('templates.create') })
 const toast = useToast()
@@ -272,7 +283,7 @@ const form = reactive({
 })
 
 const previewPorts = computed(() => {
-  const ports: any[] = []
+  const ports: PreviewPort[] = []
   for (const unit of form.units) {
     for (let bi = 0; bi < unit.blocks.length; bi++) {
       const block = unit.blocks[bi]!
@@ -358,17 +369,17 @@ function validate(): boolean {
   return Object.keys(errors.value).length === 0
 }
 
-function handleLibraryImport(template: any) {
+function handleLibraryImport(template: Partial<LayoutTemplate> & { units?: { unit_number: number; label?: string; blocks?: { type: string; count: number; start_index: number; rows: number; row_layout?: string; default_speed?: string; label?: string; poe?: { type: string }; physical_type?: string }[] }[] }) {
   form.name = template.name ?? ''
   form.manufacturer = template.manufacturer ?? ''
   form.model = template.model ?? ''
   form.description = ''
   form.datasheet_url = template.datasheet_url ?? ''
   form.airflow = template.airflow ?? ''
-  form.units = (template.units ?? []).map((u: any) => ({
+  form.units = (template.units ?? []).map((u) => ({
     unit_number: u.unit_number,
     label: u.label || '',
-    blocks: (u.blocks || []).map((b: any) => ({
+    blocks: (u.blocks || []).map((b) => ({
       type: b.type,
       count: b.count,
       start_index: b.start_index,
@@ -412,7 +423,8 @@ async function handleSubmit() {
       })) as LayoutUnit[]
     })
     toast.add({ title: t('templates.messages.created'), color: 'success' })
-    const id = (result as any).id || (result as any).data?.id
+    const created = result as LayoutTemplate
+    const id = created.id
     if (id) {
       router.push(`/layout-templates/${id}`)
     } else {
@@ -428,17 +440,17 @@ async function handleSubmit() {
 onMounted(async () => {
   if (cloneId) {
     try {
-      const data = await getById(cloneId) as any
+      const data = await getById(cloneId) as LayoutTemplate
       form.name = `${data.name} (Copy)`
       form.manufacturer = data.manufacturer || ''
       form.model = data.model || ''
       form.description = data.description || ''
       form.datasheet_url = data.datasheet_url || ''
       form.airflow = data.airflow || ''
-      form.units = (data.units || []).map((u: any) => ({
+      form.units = (data.units || []).map((u) => ({
         unit_number: u.unit_number,
         label: u.label || '',
-        blocks: (u.blocks || []).map((b: any) => ({
+        blocks: (u.blocks || []).map((b) => ({
           type: b.type,
           count: b.count,
           start_index: b.start_index,
