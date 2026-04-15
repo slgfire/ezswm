@@ -133,7 +133,7 @@ async function saveGeneral() {
   try {
     await updateSettings({
       app_name: generalForm.app_name,
-      default_port_status: generalForm.default_port_status,
+      default_port_status: generalForm.default_port_status as 'disabled' | 'up' | 'down',
       pagination_size: generalForm.pagination_size
     })
     toast.add({ title: t('settings.messages.updated'), color: 'success' })
@@ -150,7 +150,7 @@ async function saveAccount() {
   try {
     await updateUser(user.value.id, {
       display_name: accountForm.display_name,
-      language: accountForm.language
+      language: accountForm.language as 'en' | 'de'
     })
     await setLocale(accountForm.language as 'en' | 'de')
     ;(user as any).value = { ...user.value!, language: accountForm.language }

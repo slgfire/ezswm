@@ -1,4 +1,4 @@
-type TranslateFn = (key: string, params?: Record<string, any>) => string
+type TranslateFn = (key: string, params?: Record<string, string | number>) => string
 
 export function relativeTime(timestamp: string, t: TranslateFn): string {
   const diff = Date.now() - new Date(timestamp).getTime()

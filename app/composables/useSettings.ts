@@ -1,19 +1,21 @@
+import type { AppSettings } from '~~/types/settings'
+
 export function useSettings() {
-  const settings = ref<any>(null)
+  const settings = ref<AppSettings | null>(null)
   const loading = ref(false)
   const { apiFetch } = useApiFetch()
 
   async function fetch() {
     loading.value = true
     try {
-      settings.value = await apiFetch('/api/settings')
+      settings.value = await apiFetch<AppSettings>('/api/settings')
     } finally {
       loading.value = false
     }
   }
 
-  async function update(body: Record<string, any>) {
-    settings.value = await apiFetch('/api/settings', { method: 'PUT', body })
+  async function update(body: Partial<AppSettings>) {
+    settings.value = await apiFetch<AppSettings>('/api/settings', { method: 'PUT', body })
     return settings.value
   }
 

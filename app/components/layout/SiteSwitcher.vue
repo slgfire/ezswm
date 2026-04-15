@@ -58,10 +58,10 @@ async function loadSites() {
   if (siteId && siteId !== 'all') {
     selectedSiteId.value = siteId
     const site = sites.value.find((s: any) => s.id === siteId)
-    setSite(siteId, site || null)
+    setSite(siteId, site || undefined)
   } else if (siteId === 'all') {
     selectedSiteId.value = 'all'
-    setSite('all', null)
+    setSite('all', undefined)
   } else if (sites.value.length > 0) {
     // Not on a site page — default to first site
     selectedSiteId.value = sites.value[0].id
