@@ -265,7 +265,7 @@ onMounted(async () => {
     const params: Record<string, string> = {}
     if (siteId.value && siteId.value !== 'all') params.site_id = siteId.value
     stats.value = await $fetch('/api/dashboard/stats', { params })
-  } catch {
+  } catch { /* ignore */
   } finally {
     loading.value = false
   }

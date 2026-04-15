@@ -10,15 +10,12 @@ test.describe('Edit Behavior — Inline Edit', () => {
   // ─── Networks ──────────────────────────────────────────────────
 
   test.describe.serial('Network edit', () => {
-    let networkId: string
-
-    test('create a test network via API', async ({ page, context }) => {
+    test('create a test network via API', async ({ context }) => {
       const res = await context.request.post('http://localhost:3000/api/networks', {
         data: { name: 'EditTest-Net', subnet: '10.99.0.0/24', gateway: '10.99.0.1' }
       })
       expect(res.status()).toBe(201)
-      const body = await res.json()
-      networkId = body.id
+      await res.json()
     })
 
     test('edit button reveals inline form, does NOT open new page', async ({ page, context }) => {
@@ -170,7 +167,6 @@ test.describe('Edit Behavior — Inline Edit', () => {
       await page.getByRole('button', { name: /edit|bearbeiten/i }).first().click()
 
       // The name input for VLAN (second field in edit, after vlan_id)
-      const nameInput = page.locator('form input[type="text"], form input:not([type])').first()
       // Find the input that contains the VLAN name
       const allInputs = page.locator('form input')
       const count = await allInputs.count()

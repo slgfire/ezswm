@@ -20,6 +20,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Prepare Nuxt
+        run: npx nuxt prepare
+
+      - name: Lint
+        run: npm run lint
+
       - name: Typecheck
         run: npx nuxt typecheck
 

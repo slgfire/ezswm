@@ -1,6 +1,6 @@
 import { userRepository } from '../../repositories/userRepository'
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (_event) => {
   const users = userRepository.list()
 
   return users.map((user) => {

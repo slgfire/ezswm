@@ -447,11 +447,6 @@ const deviceTypeOptions = [{ label: 'Server', value: 'server' }, { label: 'Switc
 const allocStatusOptions = computed(() => [{ label: t('common.active'), value: 'active' }, { label: 'Reserved', value: 'reserved' }, { label: t('common.inactive'), value: 'inactive' }])
 const rangeTypeOptions = [{ label: 'DHCP', value: 'dhcp' }, { label: 'Static', value: 'static' }, { label: 'Reserved', value: 'reserved' }]
 
-// Add menu for the "+" dropdown
-const addMenuItems = computed(() => [[
-  { label: t('networks.unified.addIp'), icon: 'i-heroicons-computer-desktop', click: () => { addPanelMode.value = 'ip'; addPanelError.value = ''; showAddPanel.value = true } },
-  { label: t('networks.unified.addRange'), icon: 'i-heroicons-bars-3-bottom-left', click: () => { addPanelMode.value = 'range'; addPanelError.value = ''; showAddPanel.value = true } }
-]])
 
 const subnetInfo = computed(() => {
   if (!network.value?.subnet) return { network: '-', broadcast: '-', mask: '-', totalHosts: 0, usableHosts: 0 }

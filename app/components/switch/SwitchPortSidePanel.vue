@@ -58,8 +58,8 @@
               :items="switchSearchOptions"
 
               by="value"
-              @update:model-value="onSwitchSelect"
               class="w-full"
+              @update:model-value="onSwitchSelect"
             />
           </UFormField>
           <UFormField v-if="selectedSwitchId" :label="$t('switches.ports.connectedPort')">
@@ -69,8 +69,8 @@
               :items="remotePortSearchOptions"
 
               by="value"
-              @update:model-value="onPortSelect"
               class="w-full"
+              @update:model-value="onPortSelect"
             />
             <div v-if="portConflict" class="mt-1 rounded-md bg-yellow-500/10 border border-yellow-500/30 px-3 py-2 text-xs text-yellow-400">
               <span class="font-semibold">{{ $t('common.warning') }}:</span> {{ $t('switches.ports.portConflict') }}
@@ -325,11 +325,6 @@ const remotePortSearchOptions = computed(() => {
 const selectedPortOption = computed(() => remotePortSearchOptions.value.find(o => o.value === selectedPortId.value) || null)
 function onPortSelect(option: any) { selectedPortId.value = option?.value || '' }
 
-const selectedPortLabel = computed(() => {
-  const sw = allSwitches.value.find(s => s.id === selectedSwitchId.value)
-  const port = sw?.ports?.find((p: any) => p.id === selectedPortId.value)
-  return port?.label || `${port?.unit}/${port?.index}` || selectedPortId.value
-})
 
 const portConflict = computed(() => {
   if (!selectedSwitchId.value || !selectedPortId.value) return null

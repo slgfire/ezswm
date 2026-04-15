@@ -27,7 +27,7 @@
             @keydown.down.prevent="moveSelection(1)"
             @keydown.up.prevent="moveSelection(-1)"
             @keydown.enter.prevent="navigateToSelected"
-          />
+          >
           <kbd class="ml-auto hidden rounded border border-default bg-default px-1.5 py-0.5 font-mono text-[10px] text-gray-500 lg:inline-block">/</kbd>
         </div>
 

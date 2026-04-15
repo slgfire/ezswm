@@ -278,7 +278,7 @@ const previewPorts = computed(() => {
       for (let i = 0; i < block.count; i++) {
         const portIndex = block.start_index + i
         const label = block.label
-          ? (block.label.match(/[\/\-:.]$/) ? `${block.label}${portIndex}` : `${block.label} ${unit.unit_number}/${portIndex}`)
+          ? (block.label.match(/[/\-:.]$/) ? `${block.label}${portIndex}` : `${block.label} ${unit.unit_number}/${portIndex}`)
           : `${unit.unit_number}/${portIndex}`
         ports.push({
           id: `p-${unit.unit_number}-b${bi}-${portIndex}`,

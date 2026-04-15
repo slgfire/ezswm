@@ -8,7 +8,7 @@ const SWITCHES_FILE = 'switches.json'
 
 function generatePortLabel(blockLabel: string | undefined, unitNumber: number, portIndex: number): string {
   if (!blockLabel) return `${unitNumber}/${portIndex}`
-  return blockLabel.match(/[\/\-:.]$/) ? `${blockLabel}${portIndex}` : `${blockLabel} ${unitNumber}/${portIndex}`
+  return blockLabel.match(/[/\-:.]$/) ? `${blockLabel}${portIndex}` : `${blockLabel} ${unitNumber}/${portIndex}`
 }
 
 function syncPortsToTemplate(template: LayoutTemplate): void {
@@ -38,7 +38,6 @@ function syncPortsToTemplate(template: LayoutTemplate): void {
     // Match existing ports by unit+position-in-block (not by index)
     // This preserves settings when start_index changes
     const newPorts: any[] = []
-    let existingIdx = 0
     const existingByUnit: Record<number, any[]> = {}
     for (const p of sw.ports) {
       if (!existingByUnit[p.unit]) existingByUnit[p.unit] = []

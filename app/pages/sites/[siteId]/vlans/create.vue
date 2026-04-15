@@ -29,7 +29,7 @@
             </UFormField>
             <UFormField :label="$t('vlans.fields.color')" name="color" required>
               <div class="flex items-center gap-3">
-                <input v-model="form.color" type="color" class="h-10 w-14 cursor-pointer rounded border border-default bg-default" />
+                <input v-model="form.color" type="color" class="h-10 w-14 cursor-pointer rounded border border-default bg-default" >
                 <UInput v-model="form.color" placeholder="#FF5733" class="w-32" />
                 <VlanColorSwatch :color="form.color" size="lg" />
               </div>

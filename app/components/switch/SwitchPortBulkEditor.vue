@@ -73,11 +73,6 @@ const isOpen = ref(false)
 const allVlans = ref<any[]>([])
 const selectedTaggedVlans = ref<number[]>([])
 
-function toggleTaggedVlan(vlanId: number) {
-  const idx = selectedTaggedVlans.value.indexOf(vlanId)
-  if (idx >= 0) selectedTaggedVlans.value.splice(idx, 1)
-  else selectedTaggedVlans.value.push(vlanId)
-}
 
 async function fetchVlans() {
   try {
