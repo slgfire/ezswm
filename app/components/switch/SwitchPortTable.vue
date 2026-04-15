@@ -94,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Port } from '~/types'
+import type { Port } from '~~/types'
 
 const props = defineProps<{
   ports: Port[]
