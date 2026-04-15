@@ -1,7 +1,8 @@
 <template>
   <div
-    class="port-glow group relative flex cursor-pointer flex-col items-center justify-center font-mono transition-all"
+    class="port-glow group relative flex flex-col items-center justify-center font-mono transition-all"
     :class="[
+      publicMode ? 'cursor-default' : 'cursor-pointer',
       portClasses,
       selected ? 'ring-2 ring-primary-500' : '',
       portShapeClasses,
@@ -38,7 +39,7 @@
     </template>
 
     <!-- Combined hover tooltip (VLAN + LAG info) -->
-    <div v-if="hasTooltipContent && !printMode" v-show="hovered" class="pointer-events-none absolute left-0 top-full z-[60] mt-1 min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg">
+    <div v-if="hasTooltipContent && !printMode && !publicMode" v-show="hovered" class="pointer-events-none absolute left-0 top-full z-[60] mt-1 min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg">
       <div class="space-y-1.5 text-xs">
         <!-- VLAN section -->
         <template v-if="isTrunk">
@@ -75,21 +76,50 @@
         </template>
       </div>
     </div>
+
+    <!-- Public mode: read-only info tooltip -->
+    <div v-if="hasTooltipContent && publicMode" v-show="hovered" class="pointer-events-none absolute left-0 top-full z-[60] mt-1 min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg">
+      <div class="space-y-1.5 text-xs">
+        <template v-if="isTrunk">
+          <div class="font-semibold text-gray-700 dark:text-gray-200">Trunk</div>
+          <div v-if="port.native_vlan" class="flex items-center gap-1.5">
+            <div class="h-2 w-2 flex-shrink-0 rounded" :style="{ backgroundColor: getVlanColor(port.native_vlan) }" />
+            <span class="font-medium text-gray-700 dark:text-gray-200">{{ port.native_vlan }}</span>
+            <span class="truncate text-gray-400">{{ getVlanName(port.native_vlan) }}</span>
+            <span class="ml-auto flex-shrink-0 text-[10px] text-primary-500">N</span>
+          </div>
+          <div v-for="vid in port.tagged_vlans" :key="vid" class="flex items-center gap-1.5">
+            <div class="h-2 w-2 flex-shrink-0 rounded" :style="{ backgroundColor: getVlanColor(vid) }" />
+            <span class="font-medium text-gray-700 dark:text-gray-200">{{ vid }}</span>
+            <span class="truncate text-gray-400">{{ getVlanName(vid) }}</span>
+          </div>
+        </template>
+        <template v-else-if="vlanDotColor">
+          <div class="font-semibold text-gray-700 dark:text-gray-200">Access</div>
+          <div class="flex items-center gap-1.5">
+            <div class="h-2 w-2 flex-shrink-0 rounded-sm" :style="{ backgroundColor: vlanDotColor }" />
+            <span class="font-medium text-gray-700 dark:text-gray-200">{{ port.access_vlan || port.native_vlan }}</span>
+            <span class="text-gray-400">{{ getVlanName((port.access_vlan || port.native_vlan)!) }}</span>
+          </div>
+        </template>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { Port } from '~~/types/port'
-import type { VLAN } from '~~/types/vlan'
+import type { VlanDisplayInfo } from '~~/types/vlan'
 import type { LAGGroup } from '~~/types/lagGroup'
 
 const props = defineProps<{
   port: Port
-  vlans?: VLAN[]
+  vlans?: VlanDisplayInfo[]
   selected: boolean
   lagGroup?: LAGGroup
   dimmed?: boolean
   printMode?: boolean
+  publicMode?: boolean
 }>()
 
 const hovered = ref(false)
