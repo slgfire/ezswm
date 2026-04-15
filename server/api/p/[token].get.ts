@@ -67,7 +67,7 @@ export default defineEventHandler(async (event) => {
   }))
 
   // Build public layout units (synthetic block IDs)
-  let publicUnits: any[] = []
+  let publicUnits: Record<string, unknown>[] = []
   if (sw.layout_template_id) {
     const template = layoutTemplateRepository.getById(sw.layout_template_id)
     if (template) {

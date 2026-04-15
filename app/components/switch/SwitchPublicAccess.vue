@@ -145,8 +145,8 @@ async function handleGenerate() {
   try {
     await createToken()
     toast.add({ title: t('public.admin.generated'), color: 'success' })
-  } catch (e: any) {
-    toast.add({ title: e?.data?.message || 'Failed to generate token', color: 'error' })
+  } catch {
+    toast.add({ title: 'Failed to generate token', color: 'error' })
   }
 }
 
@@ -155,8 +155,8 @@ async function handleRevoke() {
   try {
     await revokeToken()
     toast.add({ title: t('public.admin.revokedSuccess'), color: 'success' })
-  } catch (e: any) {
-    toast.add({ title: e?.data?.message || 'Failed to revoke token', color: 'error' })
+  } catch {
+    toast.add({ title: 'Failed to revoke token', color: 'error' })
   }
 }
 
@@ -184,7 +184,7 @@ async function handleDownloadSvg() {
     a.download = `qr-${props.switchName.replace(/\s+/g, '-')}.svg`
     a.click()
     URL.revokeObjectURL(url)
-  } catch (e) {
+  } catch {
     toast.add({ title: 'Failed to download SVG', color: 'error' })
   }
 }
@@ -201,7 +201,7 @@ async function handleDownloadPng() {
     a.href = dataUrl
     a.download = `qr-${props.switchName.replace(/\s+/g, '-')}.png`
     a.click()
-  } catch (e) {
+  } catch {
     toast.add({ title: 'Failed to download PNG', color: 'error' })
   }
 }
@@ -248,11 +248,11 @@ async function handlePrintSticker() {
       <div class="brand">ezSWM</div>
     </div>
   </div>
-  <script>window.onload = function() { window.print(); window.close(); }<\/script>
+  <script>window.onload = function() { window.print(); window.close(); }<${'/'}script>
 </body>
 </html>`)
     win.document.close()
-  } catch (e) {
+  } catch {
     toast.add({ title: 'Failed to open print dialog', color: 'error' })
   }
 }

@@ -34,7 +34,7 @@ export const publicTokenRepository = {
   create(switchId: string): PublicToken {
     const existing = this.getBySwitchId(switchId)
     if (existing) {
-      const err = new Error('Switch already has an active public token') as any
+      const err: Error & { statusCode?: number } = new Error('Switch already has an active public token')
       err.statusCode = 409
       throw err
     }
@@ -58,7 +58,7 @@ export const publicTokenRepository = {
     const all = readAll()
     const index = all.findIndex(t => t.id === id)
     if (index === -1) {
-      const err = new Error('Token not found') as any
+      const err: Error & { statusCode?: number } = new Error('Token not found')
       err.statusCode = 404
       throw err
     }

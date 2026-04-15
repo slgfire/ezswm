@@ -6,7 +6,7 @@ import { join } from 'node:path'
 const TEST_DATA_DIR = join(import.meta.dirname, '.test-data-public-token')
 
 // Stub useRuntimeConfig before any imports that use jsonStorage
-;(globalThis as any).useRuntimeConfig = () => ({ dataDir: TEST_DATA_DIR })
+;(globalThis as unknown as Record<string, unknown>).useRuntimeConfig = () => ({ dataDir: TEST_DATA_DIR })
 
 describe('publicTokenRepository', () => {
   let publicTokenRepository: typeof import('../server/repositories/publicTokenRepository').publicTokenRepository
@@ -33,7 +33,7 @@ describe('publicTokenRepository', () => {
     publicTokenRepository.create('switch-1')
     assert.throws(
       () => publicTokenRepository.create('switch-1'),
-      (err: any) => err.statusCode === 409
+      (err: unknown) => (err as { statusCode?: number }).statusCode === 409
     )
   })
 

@@ -10,8 +10,8 @@ export function usePublicToken(switchId: Ref<string> | string) {
     try {
       const data = await $fetch<PublicToken>(`/api/switches/${id}/public-token`)
       token.value = data
-    } catch (e: any) {
-      if (e?.statusCode === 404) {
+    } catch (e: unknown) {
+      if ((e as { statusCode?: number })?.statusCode === 404) {
         token.value = null
       }
     } finally {
