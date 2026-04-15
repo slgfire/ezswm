@@ -14,7 +14,8 @@ export default defineEventHandler((event) => {
       layoutTemplates: readJson('layoutTemplates.json'),
       lagGroups: readJson('lagGroups.json'),
       activity: readJson('activity.json'),
-      settings: readJson('settings.json')
+      settings: readJson('settings.json'),
+      publicTokens: readJson('publicTokens.json')
     }
   }
 
