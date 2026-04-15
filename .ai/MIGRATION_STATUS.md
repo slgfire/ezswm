@@ -434,6 +434,61 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 19: Public QR Switch View (2026-04-15)
+
+**Public read-only switch view via QR code:**
+- New `publicTokens.json` storage with dedicated repository
+- Public API route `GET /api/p/:token` — returns sanitized switch data (no auth)
+- Admin API routes for token lifecycle (create/get/revoke)
+- QR code generation (SVG + PNG) via `qrcode` package
+- Print sticker dialog (~62x29mm label format)
+- Public mobile-first page at `/p/:token` — dark theme, port grid + port list
+- Reuses `SwitchPortGrid`/`SwitchPortItem` with `publicMode` prop
+- `PublicPortList` component with filter tabs (All/Occupied/Unused)
+- `VlanDisplayInfo` interface for widened component props
+- Auth bypass in both server and client middleware
+- Backup/restore includes `publicTokens.json` (backwards compatible)
+- Switch delete cascades to token deletion
+- Security: 32-char tokens, `noindex`, `no-store`, no internal IDs leaked
+- Full i18n (EN + DE)
+
+**Files created:**
+- `types/publicToken.ts`
+- `server/repositories/publicTokenRepository.ts`
+- `server/validators/publicTokenSchemas.ts`
+- `server/api/p/[token].get.ts`
+- `server/api/switches/[id]/public-token/` (3 routes)
+- `app/composables/usePublicToken.ts`
+- `app/layouts/public.vue`
+- `app/pages/p/[token].vue`
+- `app/components/public/PublicPortList.vue`
+- `app/components/switch/SwitchPublicAccess.vue`
+- `tests/public-token.test.ts`
+- `tests/e2e/public-switch-view.spec.ts`
+
+**Files changed:**
+- `types/vlan.ts` — VlanDisplayInfo interface
+- `types/index.ts` — barrel exports
+- `server/middleware/auth.ts` — /api/p/ bypass
+- `app/middleware/auth.global.ts` — /p/ bypass
+- `server/plugins/initData.ts` — publicTokens.json init
+- `server/api/switches/[id].delete.ts` — cascade delete
+- `server/api/backup/export.get.ts` — include publicTokens
+- `server/api/backup/import.post.ts` — restore publicTokens
+- `app/components/switch/SwitchPortGrid.vue` — publicMode, VlanDisplayInfo
+- `app/components/switch/SwitchPortItem.vue` — publicMode, VlanDisplayInfo
+- `app/pages/sites/[siteId]/switches/[id].vue` — QR section
+- `i18n/locales/en.json`, `i18n/locales/de.json` — public.* keys
+
+**Version:** 0.10.0
+
+**Verification:**
+- `npm run build`: Passes
+- Unit tests: public-token.test.ts passing (8/8)
+- E2E tests: public-switch-view.spec.ts (5 tests)
+
+---
+
 ## Feature Backlog
 
 ### Quick Wins
