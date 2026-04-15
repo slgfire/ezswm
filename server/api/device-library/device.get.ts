@@ -28,9 +28,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const yamlText = await response.text()
-  let device: any
+  let device: Record<string, unknown>
   try {
-    device = parseYaml(yamlText)
+    device = parseYaml(yamlText) as Record<string, unknown>
   } catch {
     throw createError({ statusCode: 422, message: 'Could not parse device definition' })
   }

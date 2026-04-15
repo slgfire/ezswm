@@ -43,8 +43,8 @@ export default defineEventHandler((event) => {
         }
         const fileName = fileMap[entityType]
         if (fileName) {
-          const items = readJson<any[]>(fileName)
-          const idx = items.findIndex((i: any) => i.id === entityId)
+          const items = readJson<Record<string, unknown>[]>(fileName)
+          const idx = items.findIndex((i) => i.id === entityId)
           if (idx !== -1) {
             items[idx] = entry.previous_state
             writeJson(fileName, items)
@@ -63,7 +63,7 @@ export default defineEventHandler((event) => {
         }
         const fileName = fileMap[entityType]
         if (fileName) {
-          const items = readJson<any[]>(fileName)
+          const items = readJson<Record<string, unknown>[]>(fileName)
           items.push(entry.previous_state)
           writeJson(fileName, items)
         }
@@ -72,7 +72,8 @@ export default defineEventHandler((event) => {
     }
 
     return { success: true, action: entry.action, entity_type: entityType }
-  } catch (err: any) {
-    throw createError({ statusCode: 500, message: `Undo failed: ${err.message}` })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    throw createError({ statusCode: 500, message: `Undo failed: ${message}` })
   }
 })

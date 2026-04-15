@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const fileName = ENTITY_FILE_MAP[entity]
-  const existing = readJson<any[]>(fileName)
+  const existing = readJson<Record<string, unknown>[]>(fileName)
   const now = new Date().toISOString()
 
   let imported = 0
@@ -41,8 +41,8 @@ export default defineEventHandler(async (event) => {
       }
       existing.push(item)
       imported++
-    } catch (e: any) {
-      errors.push({ row: i + 1, message: e.message })
+    } catch (e: unknown) {
+      errors.push({ row: i + 1, message: e instanceof Error ? e.message : String(e) })
     }
   }
 
