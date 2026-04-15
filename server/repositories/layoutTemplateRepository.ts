@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { readJson, writeJson } from '../storage/jsonStorage'
 import type { LayoutTemplate } from '../../types/layoutTemplate'
-import type { Port } from '../../types/port'
+import type { Port, PortType } from '../../types/port'
 import type { Switch } from '../../types/switch'
 
 const FILE_NAME = 'layoutTemplates.json'
@@ -20,7 +20,7 @@ function syncPortsToTemplate(template: LayoutTemplate): void {
     if (sw.layout_template_id !== template.id) continue
 
     // Build map of what ports SHOULD exist based on new template
-    const expectedPorts: { unit: number; index: number; type: string; label: string; blockLabel?: string }[] = []
+    const expectedPorts: { unit: number; index: number; type: PortType; label: string; blockLabel?: string }[] = []
     for (const unit of template.units) {
       for (const block of unit.blocks) {
         for (let i = 0; i < block.count; i++) {
