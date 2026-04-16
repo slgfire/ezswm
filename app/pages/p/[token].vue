@@ -50,8 +50,8 @@
         </div>
       </div>
 
-      <!-- Port List (helper-friendly) -->
-      <PublicPortList :ports="data.ports" :vlans="data.vlans" :always-expanded="isMobile" />
+      <!-- Port List (always visible, VLAN-focused) -->
+      <PublicPortList :ports="data.ports" :vlans="data.vlans" />
 
       <!-- Footer -->
       <div class="border-t border-gray-800 pt-4 text-center text-[10px] text-gray-600">
@@ -74,9 +74,4 @@ const tokenStr = route.params.token as string
 useHead({ title: 'Switch Port Map' })
 
 const { data, pending, error } = useFetch(`/api/p/${tokenStr}`, { server: false })
-
-const isMobile = ref(false)
-onMounted(() => {
-  isMobile.value = window.innerWidth < 768
-})
 </script>
