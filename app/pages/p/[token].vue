@@ -29,14 +29,16 @@
         </p>
       </div>
 
-      <!-- Port Grid -->
-      <SwitchPortGrid
-        :ports="data.ports"
-        :units="data.units"
-        :vlans="data.vlans"
-        :selected-ports="[]"
-        :public-mode="true"
-      />
+      <!-- Port Grid: desktop only, horizontal scroll on overflow -->
+      <div class="hidden md:block overflow-x-auto">
+        <SwitchPortGrid
+          :ports="data.ports"
+          :units="data.units"
+          :vlans="data.vlans"
+          :selected-ports="[]"
+          :public-mode="true"
+        />
+      </div>
 
       <!-- Compact VLAN Legend -->
       <div v-if="data.vlans.length" class="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
@@ -48,7 +50,7 @@
       </div>
 
       <!-- Port List -->
-      <PublicPortList :ports="data.ports" :vlans="data.vlans" />
+      <PublicPortList :ports="data.ports" :vlans="data.vlans" :default-expanded="isMobile" />
 
       <!-- Footer -->
       <div class="border-t border-gray-800 pt-4 text-center text-[10px] text-gray-600">
@@ -70,4 +72,9 @@ const tokenStr = route.params.token as string
 useHead({ title: 'Switch Port Map' })
 
 const { data, pending, error } = useFetch(`/api/p/${tokenStr}`, { server: false })
+
+const isMobile = ref(false)
+onMounted(() => {
+  isMobile.value = window.innerWidth < 768
+})
 </script>

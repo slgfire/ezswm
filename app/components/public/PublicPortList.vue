@@ -87,10 +87,11 @@ interface PublicPort {
 const props = defineProps<{
   ports: PublicPort[]
   vlans: VlanDisplayInfo[]
+  defaultExpanded?: boolean
 }>()
 
 const { t } = useI18n()
-const expanded = ref(false)
+const expanded = ref(props.defaultExpanded ?? false)
 const activeFilter = ref<'all' | 'occupied' | 'unused'>('occupied')
 
 function isOccupied(port: PublicPort): boolean {
