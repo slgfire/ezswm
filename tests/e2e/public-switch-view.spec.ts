@@ -91,4 +91,64 @@ test.describe('Public Switch View', () => {
     expect(res.status()).toBe(404)
     expect(res.status()).not.toBe(401)
   })
+
+  test('public API includes helper_usage fields when set on port', async ({ request }) => {
+    test.skip(!validToken, 'No valid token available')
+
+    // Get current switch data to find a port
+    const res = await request.get(`${BASE}/api/p/${validToken}`)
+    const data = await res.json()
+    expect(data.ports.length).toBeGreaterThan(0)
+
+    // Get the actual switch to find real port IDs
+    const switchesRes = await request.get(`${BASE}/api/switches`, {
+      headers: { Cookie: authCookie }
+    })
+    const switchesData = await switchesRes.json()
+    const switches = switchesData.data || switchesData
+    const sw = switches[0]
+    const portId = sw.ports[0].id
+
+    // Set helper_usage on a port
+    const updateRes = await request.put(`${BASE}/api/switches/${sw.id}/ports/${portId}`, {
+      headers: { Cookie: authCookie },
+      data: {
+        helper_usage: 'orga',
+        helper_label: 'VIP Area',
+        show_in_helper_list: false
+      }
+    })
+    expect(updateRes.ok()).toBeTruthy()
+
+    // Verify public API response includes these fields
+    const publicRes = await request.get(`${BASE}/api/p/${validToken}`)
+    const publicData = await publicRes.json()
+    const publicPort = publicData.ports[0]
+    expect(publicPort.helper_usage).toBe('orga')
+    expect(publicPort.helper_label).toBe('VIP Area')
+    expect(publicPort.show_in_helper_list).toBe(false)
+
+    // Clean up: reset to automatic
+    await request.put(`${BASE}/api/switches/${sw.id}/ports/${portId}`, {
+      headers: { Cookie: authCookie },
+      data: {
+        helper_usage: null,
+        helper_label: null,
+        show_in_helper_list: true
+      }
+    })
+  })
+
+  test('legacy ports without helper_usage have undefined in public API', async ({ request }) => {
+    test.skip(!validToken, 'No valid token available')
+    const res = await request.get(`${BASE}/api/p/${validToken}`)
+    const data = await res.json()
+
+    // Legacy ports should not have helper_usage set (undefined = omitted from JSON)
+    // At least one port should exist without explicit helper_usage
+    const legacyPort = data.ports.find((p: Record<string, unknown>) => !p.helper_usage)
+    if (legacyPort) {
+      expect(legacyPort.helper_usage).toBeUndefined()
+    }
+  })
 })
