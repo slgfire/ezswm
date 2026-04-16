@@ -136,7 +136,9 @@ function getVlanLabel(port: PublicPort): string | null {
   const vid = port.access_vlan || port.native_vlan
   if (!vid) return null
   const vlan = getVlan(vid)
-  return vlan ? `VLAN ${vid}` : null
+  if (!vlan) return null
+  // Access port: "VLAN 100 Server-VLAN"
+  return `VLAN ${vid} ${vlan.name}`
 }
 
 function getPortDetails(port: PublicPort): string | null {
@@ -144,7 +146,11 @@ function getPortDetails(port: PublicPort): string | null {
   if (port.connected_device) parts.push(port.connected_device)
   if (port.speed) parts.push(port.speed)
   if (port.tagged_vlans.length > 0) {
-    parts.push(`${t('public.port.vlans')} ${port.tagged_vlans.join(',')}`)
+    // Trunk: show VLAN names instead of numbers
+    const names = port.tagged_vlans
+      .map(vid => getVlan(vid)?.name || String(vid))
+      .join(', ')
+    parts.push(names)
   }
   return parts.length > 0 ? parts.join(' · ') : null
 }

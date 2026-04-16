@@ -3,7 +3,7 @@
     <Head>
       <Meta name="robots" content="noindex" />
     </Head>
-    <div class="mx-auto max-w-lg px-4 py-6 md:max-w-3xl lg:max-w-5xl xl:max-w-6xl">
+    <div class="mx-auto max-w-lg px-4 py-6 md:max-w-none md:px-8 lg:px-12">
       <slot />
     </div>
   </div>
