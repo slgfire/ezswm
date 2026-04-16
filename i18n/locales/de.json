@@ -691,5 +691,19 @@
       "printFailed": "Druckdialog konnte nicht geöffnet werden",
       "linkLabel": "Öffentlicher Link für diesen Switch"
     }
+  },
+  "helperUsage": {
+    "label": "Helfer-Ansicht Rolle",
+    "automatic": "Automatisch",
+    "participant": "Teilnehmer",
+    "phone_passthrough": "Telefon + PC",
+    "ap": "Access Point",
+    "printer": "Drucker",
+    "orga": "Orga",
+    "uplink": "Uplink (Nur Technik)",
+    "helperLabel": "Eigenes Label",
+    "helperLabelPlaceholder": "Automatisch",
+    "showInHelperList": "In Helfer-Portliste anzeigen",
+    "helperSection": "Öffentliche Helfer-Ansicht"
   }
 }

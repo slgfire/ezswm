@@ -691,5 +691,19 @@
       "printFailed": "Failed to open print dialog",
       "linkLabel": "Public link for this switch"
     }
+  },
+  "helperUsage": {
+    "label": "Helper view role",
+    "automatic": "Automatic",
+    "participant": "Participant",
+    "phone_passthrough": "Phone + PC",
+    "ap": "Access Point",
+    "printer": "Printer",
+    "orga": "Orga",
+    "uplink": "Uplink (Tech only)",
+    "helperLabel": "Custom label",
+    "helperLabelPlaceholder": "Automatic",
+    "showInHelperList": "Show in helper port list",
+    "helperSection": "Public Helper View"
   }
 }
