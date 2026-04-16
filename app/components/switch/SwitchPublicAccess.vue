@@ -233,54 +233,11 @@ async function handleDownloadPng() {
   }
 }
 
-async function handlePrintSticker() {
+function handlePrintSticker() {
   if (!token.value) return
-  try {
-    const dataUrl = await QRCode.toDataURL(publicUrl.value, {
-      width: 300,
-      margin: 1,
-      color: { dark: '#000000', light: '#ffffff' }
-    })
-    const win = window.open('', '_blank')
-    if (!win) return
-    const location = props.switchLocation ? `<div style="font-size:9px;color:#555;">${props.switchLocation}</div>` : ''
-    win.document.write(`<!DOCTYPE html>
-<html>
-<head>
-  <title>Switch QR Sticker</title>
-  <style>
-    @page { size: 62mm 29mm; margin: 0; }
-    body { margin: 0; padding: 0; font-family: sans-serif; }
-    .sticker {
-      width: 62mm; height: 29mm;
-      display: flex; align-items: center; gap: 3mm;
-      padding: 2mm;
-      box-sizing: border-box;
-    }
-    img { width: 23mm; height: 23mm; display: block; }
-    .info { flex: 1; overflow: hidden; }
-    .name { font-size: 11px; font-weight: bold; line-height: 1.2; }
-    .loc { font-size: 9px; color: #555; margin-top: 1mm; }
-    .url { font-size: 7px; color: #888; margin-top: 2mm; word-break: break-all; }
-    .brand { font-size: 7px; color: #aaa; margin-top: auto; }
-  </style>
-</head>
-<body>
-  <div class="sticker">
-    <img src="${dataUrl}" />
-    <div class="info">
-      <div class="name">${props.switchName}</div>
-      ${location}
-      <div class="url">${publicUrl.value}</div>
-      <div class="brand">ezSWM</div>
-    </div>
-  </div>
-  <script>window.onload = function() { window.print(); window.close(); }<${'/'}script>
-</body>
-</html>`)
-    win.document.close()
-  } catch {
-    toast.add({ title: t('public.admin.printFailed'), color: 'error' })
-  }
+  // Use the same qr-print page as bulk print for consistent output
+  const route = useRoute()
+  const siteId = route.params.siteId || 'all'
+  window.open(`/sites/${siteId}/switches/qr-print?ids=${props.switchId}`, '_blank')
 }
 </script>
