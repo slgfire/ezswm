@@ -24,3 +24,4 @@ docs/.vitepress/cache/
 docs/.vitepress/dist/
 .superpowers/
 tests/.test-data-*
+docs/superpowers/reviews/
