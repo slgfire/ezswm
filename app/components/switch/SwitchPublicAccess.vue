@@ -1,95 +1,109 @@
 <template>
-  <div class="rounded-lg border border-default bg-default/30 p-4">
-    <button class="flex w-full items-center justify-between text-left" @click="expanded = !expanded">
-      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200">{{ $t('public.admin.title') }}</h3>
-      <UIcon :name="expanded ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-4 w-4 text-gray-400" />
-    </button>
+  <!-- Trigger button (placed in header by parent) -->
+  <UTooltip :text="$t('public.admin.title')">
+    <UButton
+      icon="i-heroicons-qr-code"
+      variant="ghost"
+      color="neutral"
+      size="sm"
+      @click="openDrawer"
+    />
+  </UTooltip>
 
-    <div v-if="expanded" class="mt-4 space-y-4">
-      <!-- Loading state -->
-      <div v-if="loading" class="flex items-center gap-2 text-sm text-gray-400">
-        <UIcon name="i-heroicons-arrow-path" class="h-4 w-4 animate-spin" />
-        <span>{{ $t('common.loading') }}</span>
-      </div>
+  <!-- Slideover drawer -->
+  <USlideover v-model:open="drawerOpen" :title="$t('public.admin.title')" :description="$t('public.admin.linkLabel')">
+    <template #body>
+      <div class="space-y-6">
+        <!-- Loading -->
+        <div v-if="loading" class="flex items-center justify-center py-8">
+          <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
+        </div>
 
-      <!-- No token state -->
-      <div v-else-if="!token" class="space-y-2">
-        <p class="text-xs text-gray-500">{{ $t('public.admin.linkLabel') }}</p>
-        <UButton size="sm" color="primary" variant="soft" icon="i-heroicons-qr-code" :loading="loading" @click="handleGenerate">
-          {{ $t('public.admin.generate') }}
-        </UButton>
-      </div>
+        <!-- No token -->
+        <div v-else-if="!token" class="space-y-4 py-4">
+          <div class="rounded-lg border border-dashed border-gray-600 p-6 text-center">
+            <UIcon name="i-heroicons-qr-code" class="mx-auto mb-3 h-10 w-10 text-gray-500" />
+            <p class="text-sm text-gray-400">{{ $t('public.admin.linkLabel') }}</p>
+            <UButton class="mt-4" color="primary" icon="i-heroicons-qr-code" :loading="loading" @click="handleGenerate">
+              {{ $t('public.admin.generate') }}
+            </UButton>
+          </div>
+        </div>
 
-      <!-- Revoked state -->
-      <div v-else-if="token.revoked_at" class="space-y-3">
-        <p class="text-xs text-amber-500">
-          {{ $t('public.admin.revoked', { date: new Date(token.revoked_at).toLocaleString() }) }}
-        </p>
-        <UButton size="sm" color="primary" variant="soft" icon="i-heroicons-qr-code" :loading="loading" @click="handleGenerate">
-          {{ $t('public.admin.generateNew') }}
-        </UButton>
-      </div>
+        <!-- Revoked -->
+        <div v-else-if="token.revoked_at" class="space-y-4 py-4">
+          <div class="rounded-lg border border-dashed border-amber-600/40 p-6 text-center">
+            <UIcon name="i-heroicons-exclamation-triangle" class="mx-auto mb-3 h-10 w-10 text-amber-500" />
+            <p class="text-sm text-amber-400">{{ $t('public.admin.revoked', { date: new Date(token.revoked_at).toLocaleString() }) }}</p>
+            <UButton class="mt-4" color="primary" icon="i-heroicons-qr-code" :loading="loading" @click="handleGenerate">
+              {{ $t('public.admin.generateNew') }}
+            </UButton>
+          </div>
+        </div>
 
-      <!-- Active token state -->
-      <div v-else class="space-y-4">
-        <!-- QR Code preview -->
-        <ClientOnly>
-          <div class="flex items-start gap-4">
-            <div class="rounded-lg border border-default bg-white p-2">
-              <canvas ref="qrCanvas" class="block" style="width:120px;height:120px;" />
+        <!-- Active token -->
+        <div v-else class="space-y-5">
+          <!-- QR Code -->
+          <ClientOnly>
+            <div class="flex justify-center">
+              <div class="rounded-xl bg-white p-4">
+                <canvas ref="qrCanvas" class="block" style="width:180px;height:180px;" />
+              </div>
             </div>
-            <div class="flex-1 space-y-2 min-w-0">
-              <!-- Public URL -->
-              <div>
-                <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('public.admin.publicUrl') }}</div>
-                <p class="mt-0.5 truncate font-mono text-xs text-gray-300">{{ publicUrl }}</p>
+            <template #fallback>
+              <div class="flex justify-center">
+                <div class="h-[212px] w-[212px] rounded-xl bg-gray-800" />
               </div>
-              <!-- Meta -->
-              <div class="flex gap-4 text-xs text-gray-500">
-                <div>
-                  <span class="text-gray-600">{{ $t('public.admin.createdAt') }}: </span>
-                  {{ new Date(token.created_at).toLocaleDateString() }}
-                </div>
-                <div>
-                  <span class="text-gray-600">{{ $t('public.admin.lastAccess') }}: </span>
-                  {{ token.last_access_at ? new Date(token.last_access_at).toLocaleString() : $t('public.admin.lastAccessNever') }}
-                </div>
-              </div>
+            </template>
+          </ClientOnly>
+
+          <!-- Public URL -->
+          <div class="space-y-1.5">
+            <label class="text-[10px] uppercase tracking-wider text-gray-500">{{ $t('public.admin.publicUrl') }}</label>
+            <div class="flex items-center gap-2">
+              <code class="flex-1 truncate rounded-md bg-gray-800 px-3 py-2 font-mono text-xs text-gray-300">{{ publicUrl }}</code>
+              <UButton icon="i-heroicons-clipboard" size="sm" color="neutral" variant="soft" @click="handleCopy" />
             </div>
           </div>
-          <template #fallback>
-            <div class="h-[120px] w-[120px] rounded-lg border border-default bg-gray-800" />
-          </template>
-        </ClientOnly>
 
-        <!-- Action buttons -->
-        <div class="flex flex-wrap gap-2">
-          <UButton size="xs" color="neutral" variant="soft" icon="i-heroicons-clipboard" @click="handleCopy">
-            {{ $t('public.admin.copyLink') }}
-          </UButton>
-          <UButton size="xs" color="neutral" variant="soft" icon="i-heroicons-arrow-down-tray" @click="handleDownloadSvg">
-            {{ $t('public.admin.downloadSvg') }}
-          </UButton>
-          <UButton size="xs" color="neutral" variant="soft" icon="i-heroicons-photo" @click="handleDownloadPng">
-            {{ $t('public.admin.downloadPng') }}
-          </UButton>
-          <UButton size="xs" color="neutral" variant="soft" icon="i-heroicons-printer" @click="handlePrintSticker">
-            {{ $t('public.admin.printSticker') }}
-          </UButton>
-          <UButton size="xs" color="error" variant="soft" icon="i-heroicons-x-mark" @click="showRevokeConfirm = true">
-            {{ $t('public.admin.revoke') }}
-          </UButton>
+          <!-- Meta -->
+          <div class="grid grid-cols-2 gap-3 rounded-lg bg-gray-800/50 p-3 text-xs">
+            <div>
+              <div class="text-gray-500">{{ $t('public.admin.createdAt') }}</div>
+              <div class="mt-0.5 text-gray-300">{{ new Date(token.created_at).toLocaleDateString() }}</div>
+            </div>
+            <div>
+              <div class="text-gray-500">{{ $t('public.admin.lastAccess') }}</div>
+              <div class="mt-0.5 text-gray-300">{{ token.last_access_at ? new Date(token.last_access_at).toLocaleString() : $t('public.admin.lastAccessNever') }}</div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="grid grid-cols-2 gap-2">
+            <UButton block size="sm" color="neutral" variant="soft" icon="i-heroicons-arrow-down-tray" @click="handleDownloadSvg">
+              {{ $t('public.admin.downloadSvg') }}
+            </UButton>
+            <UButton block size="sm" color="neutral" variant="soft" icon="i-heroicons-photo" @click="handleDownloadPng">
+              {{ $t('public.admin.downloadPng') }}
+            </UButton>
+            <UButton block size="sm" color="neutral" variant="soft" icon="i-heroicons-printer" @click="handlePrintSticker">
+              {{ $t('public.admin.printSticker') }}
+            </UButton>
+            <UButton block size="sm" color="error" variant="soft" icon="i-heroicons-x-mark" @click="showRevokeConfirm = true">
+              {{ $t('public.admin.revoke') }}
+            </UButton>
+          </div>
         </div>
       </div>
-    </div>
+    </template>
+  </USlideover>
 
-    <SharedConfirmDialog
-      v-model="showRevokeConfirm"
-      :title="$t('public.admin.revoke')"
-      :message="$t('public.admin.revokeConfirm')"
-      @confirm="handleRevoke"
-    />
-  </div>
+  <SharedConfirmDialog
+    v-model="showRevokeConfirm"
+    :title="$t('public.admin.revoke')"
+    :message="$t('public.admin.revokeConfirm')"
+    @confirm="handleRevoke"
+  />
 </template>
 
 <script setup lang="ts">
@@ -104,7 +118,7 @@ const props = defineProps<{
 const { t } = useI18n()
 const toast = useToast()
 
-const expanded = ref(false)
+const drawerOpen = ref(false)
 const showRevokeConfirm = ref(false)
 const qrCanvas = ref<HTMLCanvasElement | null>(null)
 
@@ -118,12 +132,12 @@ const publicUrl = computed(() => {
   return `/p/${token.value.token}`
 })
 
-// Fetch token when expanded
-watch(expanded, async (val) => {
-  if (val && token.value === null && !loading.value) {
-    await fetchToken()
+function openDrawer() {
+  drawerOpen.value = true
+  if (token.value === null && !loading.value) {
+    fetchToken()
   }
-})
+}
 
 // Render QR code when token becomes available and canvas is mounted
 watch([token, qrCanvas], async ([tok, canvas]) => {
@@ -131,12 +145,12 @@ watch([token, qrCanvas], async ([tok, canvas]) => {
     await nextTick()
     try {
       await QRCode.toCanvas(canvas, publicUrl.value, {
-        width: 120,
+        width: 180,
         margin: 1,
         color: { dark: '#000000', light: '#ffffff' }
       })
-    } catch (e) {
-      console.error('QR render failed:', e)
+    } catch {
+      // QR render failed silently
     }
   }
 })
