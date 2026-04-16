@@ -57,7 +57,10 @@ export const updatePortSchema = z.object({
       max_watts: z.number().positive()
     }),
     z.null()
-  ]).optional()
+  ]).optional(),
+  helper_usage: z.enum(['participant', 'phone_passthrough', 'ap', 'printer', 'orga', 'uplink']).nullable().optional(),
+  helper_label: z.string().max(100).nullable().optional(),
+  show_in_helper_list: z.boolean().optional()
 })
 
 export const bulkUpdatePortsSchema = z.object({
@@ -69,6 +72,7 @@ export const bulkUpdatePortsSchema = z.object({
     native_vlan: z.number().int().min(1).max(4094).optional().nullable(),
     tagged_vlans: z.array(z.number().int().min(1).max(4094)).optional(),
     speed: z.preprocess(v => v === '' ? null : v, z.enum(['100M', '1G', '2.5G', '10G', '100G']).optional().nullable()),
-    description: z.string().max(500).optional().nullable()
+    description: z.string().max(500).optional().nullable(),
+    helper_usage: z.enum(['participant', 'phone_passthrough', 'ap', 'printer', 'orga', 'uplink']).nullable().optional()
   })
 })
