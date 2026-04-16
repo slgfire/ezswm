@@ -160,7 +160,7 @@ async function handleGenerate() {
     await createToken()
     toast.add({ title: t('public.admin.generated'), color: 'success' })
   } catch {
-    toast.add({ title: 'Failed to generate token', color: 'error' })
+    toast.add({ title: t('public.admin.generateFailed'), color: 'error' })
   }
 }
 
@@ -170,16 +170,29 @@ async function handleRevoke() {
     await revokeToken()
     toast.add({ title: t('public.admin.revokedSuccess'), color: 'success' })
   } catch {
-    toast.add({ title: 'Failed to revoke token', color: 'error' })
+    toast.add({ title: t('public.admin.revokeFailed'), color: 'error' })
   }
 }
 
 async function handleCopy() {
   try {
-    await navigator.clipboard.writeText(publicUrl.value)
+    // Try modern clipboard API first
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(publicUrl.value)
+    } else {
+      // Fallback for HTTP / non-secure contexts
+      const textarea = document.createElement('textarea')
+      textarea.value = publicUrl.value
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+    }
     toast.add({ title: t('public.admin.copied'), color: 'success' })
   } catch {
-    toast.add({ title: 'Failed to copy', color: 'error' })
+    toast.add({ title: t('public.admin.copyFailed'), color: 'error' })
   }
 }
 
@@ -199,7 +212,7 @@ async function handleDownloadSvg() {
     a.click()
     URL.revokeObjectURL(url)
   } catch {
-    toast.add({ title: 'Failed to download SVG', color: 'error' })
+    toast.add({ title: t('public.admin.downloadFailed'), color: 'error' })
   }
 }
 
@@ -216,7 +229,7 @@ async function handleDownloadPng() {
     a.download = `qr-${props.switchName.replace(/\s+/g, '-')}.png`
     a.click()
   } catch {
-    toast.add({ title: 'Failed to download PNG', color: 'error' })
+    toast.add({ title: t('public.admin.downloadFailed'), color: 'error' })
   }
 }
 
@@ -267,7 +280,7 @@ async function handlePrintSticker() {
 </html>`)
     win.document.close()
   } catch {
-    toast.add({ title: 'Failed to open print dialog', color: 'error' })
+    toast.add({ title: t('public.admin.printFailed'), color: 'error' })
   }
 }
 </script>

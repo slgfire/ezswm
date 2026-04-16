@@ -684,6 +684,11 @@
       "generated": "Öffentlicher Link erstellt",
       "revokedSuccess": "Öffentlicher Link widerrufen",
       "copied": "Link in Zwischenablage kopiert",
+      "copyFailed": "Link konnte nicht kopiert werden",
+      "generateFailed": "Token konnte nicht erstellt werden",
+      "revokeFailed": "Token konnte nicht widerrufen werden",
+      "downloadFailed": "Download fehlgeschlagen",
+      "printFailed": "Druckdialog konnte nicht geöffnet werden",
       "linkLabel": "Öffentlicher Link für diesen Switch"
     }
   }

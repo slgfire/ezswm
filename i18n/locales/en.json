@@ -684,6 +684,11 @@
       "generated": "Public link generated",
       "revokedSuccess": "Public link revoked",
       "copied": "Link copied to clipboard",
+      "copyFailed": "Failed to copy link",
+      "generateFailed": "Failed to generate token",
+      "revokeFailed": "Failed to revoke token",
+      "downloadFailed": "Failed to download",
+      "printFailed": "Failed to open print dialog",
       "linkLabel": "Public link for this switch"
     }
   }
