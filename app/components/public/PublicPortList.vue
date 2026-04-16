@@ -1,42 +1,66 @@
 <template>
   <div class="space-y-3">
-    <div class="flex gap-1 text-xs">
-      <button
-        v-for="f in filters"
-        :key="f.key"
-        class="rounded-md px-3 py-1.5 transition-colors"
-        :class="activeFilter === f.key ? 'bg-gray-700 text-gray-100' : 'text-gray-500 hover:bg-gray-800 hover:text-gray-300'"
-        @click="activeFilter = f.key"
-      >{{ f.label }} ({{ f.count }})</button>
-    </div>
+    <!-- Section header with toggle -->
+    <button
+      class="flex w-full items-center justify-between rounded-lg bg-gray-800/50 px-3 py-2 text-left text-sm font-semibold text-gray-300 transition-colors hover:bg-gray-800"
+      @click="expanded = !expanded"
+    >
+      <span>{{ $t('public.title') }} ({{ occupiedCount }}/{{ ports.length }})</span>
+      <UIcon
+        :name="expanded ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
+        class="h-4 w-4 text-gray-500"
+      />
+    </button>
 
-    <div class="space-y-1.5">
-      <div
-        v-for="port in filteredPorts"
-        :key="port.id"
-        class="rounded-lg border p-3 transition-colors"
-        :class="isOccupied(port) ? 'border-gray-700 bg-[#161616]' : 'border-gray-800/50 bg-[#111] opacity-50'"
-        :style="isOccupied(port) && getPortVlanColor(port) ? { borderLeftWidth: '3px', borderLeftColor: getPortVlanColor(port)! } : {}"
-      >
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-bold">{{ port.label || `${port.unit}/${port.index}` }}</span>
-            <span
-              class="text-[11px]"
-              :class="port.status === 'up' ? 'text-green-500' : port.status === 'disabled' ? 'text-red-400' : 'text-gray-600'"
-            >
-              &#9679; {{ port.status.toUpperCase() }}
-            </span>
-          </div>
-          <span v-if="getVlanLabel(port)" class="text-[11px]" :style="{ color: getPortVlanColor(port) || '#888' }">
-            {{ getVlanLabel(port) }}
-          </span>
-        </div>
-        <div v-if="getPortDetails(port)" class="mt-1 text-xs text-gray-500">
-          {{ getPortDetails(port) }}
-        </div>
+    <template v-if="expanded">
+      <!-- Filter tabs -->
+      <div class="flex gap-1 text-xs">
+        <button
+          v-for="f in filters"
+          :key="f.key"
+          class="rounded-md px-3 py-1.5 transition-colors"
+          :class="activeFilter === f.key ? 'bg-gray-700 text-gray-100' : 'text-gray-500 hover:bg-gray-800 hover:text-gray-300'"
+          @click="activeFilter = f.key"
+        >{{ f.label }} ({{ f.count }})</button>
       </div>
-    </div>
+
+      <!-- Port cards -->
+      <div class="grid grid-cols-1 gap-1.5 md:grid-cols-2">
+        <template v-for="port in filteredPorts" :key="port.id">
+          <!-- Occupied port: full card -->
+          <div
+            v-if="isOccupied(port)"
+            class="rounded-lg border border-gray-700 bg-[#161616] p-3"
+            :style="getPortVlanColor(port) ? { borderLeftWidth: '3px', borderLeftColor: getPortVlanColor(port)! } : {}"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold">{{ port.label || `${port.unit}/${port.index}` }}</span>
+                <span
+                  class="text-[11px]"
+                  :class="port.status === 'up' ? 'text-green-500' : port.status === 'disabled' ? 'text-red-400' : 'text-gray-600'"
+                >&#9679; {{ port.status.toUpperCase() }}</span>
+              </div>
+              <span v-if="getVlanLabel(port)" class="text-[11px]" :style="{ color: getPortVlanColor(port) || '#888' }">
+                {{ getVlanLabel(port) }}
+              </span>
+            </div>
+            <div v-if="getPortDetails(port)" class="mt-1 text-xs text-gray-500">
+              {{ getPortDetails(port) }}
+            </div>
+          </div>
+
+          <!-- Unused port: compact single line -->
+          <div
+            v-else
+            class="flex items-center justify-between rounded-lg border border-gray-800/30 bg-[#111] px-3 py-1.5 opacity-40"
+          >
+            <span class="text-xs text-gray-600">{{ port.label || `${port.unit}/${port.index}` }}</span>
+            <span class="text-[10px] text-gray-700">{{ port.status.toUpperCase() }}</span>
+          </div>
+        </template>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -57,7 +81,7 @@ interface PublicPort {
   tagged_vlans: number[]
   connected_device?: string
   description?: string
-  poe?: any
+  poe?: unknown
 }
 
 const props = defineProps<{
@@ -66,7 +90,8 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
-const activeFilter = ref<'all' | 'occupied' | 'unused'>('all')
+const expanded = ref(false)
+const activeFilter = ref<'all' | 'occupied' | 'unused'>('occupied')
 
 function isOccupied(port: PublicPort): boolean {
   return (
@@ -78,12 +103,13 @@ function isOccupied(port: PublicPort): boolean {
   )
 }
 
+const occupiedCount = computed(() => props.ports.filter(isOccupied).length)
+
 const filters = computed(() => {
-  const occupied = props.ports.filter(isOccupied).length
   return [
     { key: 'all' as const, label: t('public.filter.all'), count: props.ports.length },
-    { key: 'occupied' as const, label: t('public.filter.occupied'), count: occupied },
-    { key: 'unused' as const, label: t('public.filter.unused'), count: props.ports.length - occupied }
+    { key: 'occupied' as const, label: t('public.filter.occupied'), count: occupiedCount.value },
+    { key: 'unused' as const, label: t('public.filter.unused'), count: props.ports.length - occupiedCount.value }
   ]
 })
 
