@@ -51,7 +51,7 @@
       </div>
 
       <!-- Port List -->
-      <PublicPortList :ports="data.ports" :vlans="data.vlans" :default-expanded="isMobile" />
+      <PublicPortList :ports="data.ports" :vlans="data.vlans" :always-expanded="isMobile" />
 
       <!-- Footer -->
       <div class="border-t border-gray-800 pt-4 text-center text-[10px] text-gray-600">

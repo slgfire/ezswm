@@ -1,7 +1,8 @@
 <template>
   <div class="space-y-3">
-    <!-- Section header with toggle -->
+    <!-- Section header with toggle (desktop only) -->
     <button
+      v-if="!alwaysExpanded"
       class="flex w-full items-center justify-between rounded-lg bg-gray-800/50 px-3 py-2 text-left text-sm font-semibold text-gray-300 transition-colors hover:bg-gray-800"
       @click="expanded = !expanded"
     >
@@ -12,7 +13,7 @@
       />
     </button>
 
-    <template v-if="expanded">
+    <template v-if="expanded || alwaysExpanded">
       <!-- Filter tabs -->
       <div class="flex gap-1 text-xs">
         <button
@@ -88,6 +89,7 @@ const props = defineProps<{
   ports: PublicPort[]
   vlans: VlanDisplayInfo[]
   defaultExpanded?: boolean
+  alwaysExpanded?: boolean
 }>()
 
 const { t } = useI18n()
