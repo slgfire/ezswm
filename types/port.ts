@@ -4,6 +4,7 @@ export type PortType = 'rj45' | 'sfp' | 'sfp+' | 'qsfp' | 'console' | 'managemen
 export type PortSpeed = '100M' | '1G' | '2.5G' | '10G' | '100G'
 export type PortStatus = 'up' | 'down' | 'disabled'
 export type PortMode = 'access' | 'trunk'
+export type PortHelperUsage = 'participant' | 'phone_passthrough' | 'ap' | 'printer' | 'orga' | 'uplink'
 
 export interface Port {
   id: string
@@ -26,4 +27,7 @@ export interface Port {
   lag_group_id?: string
   connected_allocation_id?: string
   poe?: PoeConfig | null
+  helper_usage?: PortHelperUsage
+  helper_label?: string
+  show_in_helper_list?: boolean
 }
