@@ -34,7 +34,7 @@
       <div class="hidden md:block overflow-x-auto">
         <SwitchPortGrid
           :ports="data.ports"
-          :units="data.units"
+          :units="(data.units as unknown as import('~~/types/layoutTemplate').LayoutUnit[])"
           :vlans="data.vlans"
           :selected-ports="[]"
           :public-mode="true"

@@ -159,6 +159,28 @@ The print page opens in a new tab showing each switch with its port grid on a wh
 
 Click **Print** to open the browser's print dialog, or use **Ctrl+P**. The output is formatted for A4 landscape with each switch on its own page.
 
+### Public QR Access
+
+Generate a QR code for any switch that links to a public, read-only mobile view — no login required. Ideal for LAN parties or events where non-technical helpers need to see the port layout.
+
+**Generating a QR code:** Open a switch detail page and click the **QR code icon** in the top-right action bar. A drawer opens where you can:
+- **Generate Public Link** — creates a unique 32-character token
+- **Copy Link** — copies the public URL to clipboard
+- **Download SVG / PNG** — downloads the QR code as an image file
+- **Print Sticker** — opens a print-optimized sticker page
+- **Revoke Token** — invalidates the QR code immediately
+
+**Bulk QR printing:** In the Switches overview, click the **QR code icon** in the toolbar. Select switches via checkboxes, then click "Print Sticker". Tokens are automatically created for switches that don't have one yet. The print page shows a 3-column sticker grid with QR code, switch name, model, and location.
+
+**Public mobile view:** When someone scans the QR code, they see a mobile-friendly page showing:
+- Switch name, model, and location
+- All ports with their VLAN assignment and purpose
+- Filter chips to show only specific VLANs (e.g. Gaming, Server, Sleeping)
+- Clear "Tech only — do not use" warnings for infrastructure ports
+- On desktop: the full port grid visualization is also shown
+
+The public view does not require login, does not show sensitive data (no management IPs, serial numbers, or internal IDs), and is marked with `noindex` to prevent search engine indexing.
+
 ## LAG Groups (Link Aggregation)
 
 ### What They Are
