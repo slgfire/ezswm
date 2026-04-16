@@ -36,7 +36,7 @@
             <div class="sticker-name">{{ sticker.name }}</div>
             <div v-if="sticker.model" class="sticker-model">{{ sticker.model }}</div>
             <div v-if="sticker.location" class="sticker-location">{{ sticker.location }}</div>
-            <div class="sticker-url">{{ sticker.url }}</div>
+            <div class="sticker-brand">ezSWM</div>
           </div>
         </div>
       </div>
@@ -74,9 +74,11 @@ function setCanvasRef(id: string, el: HTMLCanvasElement | null) {
 
 onMounted(async () => {
   try {
-    // Fetch switches and their tokens
-    const switchesRes = await $fetch<{ id: string; name: string; model?: string; location?: string; manufacturer?: string }[]>('/api/switches')
-    const switchList = Array.isArray(switchesRes) ? switchesRes : []
+    // Fetch switches (API returns { data: [...] } envelope)
+    const switchesRes = await $fetch<{ data: { id: string; name: string; model?: string; location?: string; manufacturer?: string }[] }>('/api/switches', {
+      params: { per_page: 1000 }
+    })
+    const switchList = switchesRes?.data || []
 
     const result: Sticker[] = []
     for (const swId of ids.value) {
@@ -84,7 +86,15 @@ onMounted(async () => {
       if (!sw) continue
 
       try {
-        const tokenData = await $fetch<{ token: string; revoked_at: string | null }>(`/api/switches/${swId}/public-token`)
+        // Try to get existing token
+        let tokenData: { token: string; revoked_at: string | null }
+        try {
+          tokenData = await $fetch<{ token: string; revoked_at: string | null }>(`/api/switches/${swId}/public-token`)
+        } catch {
+          // No token yet — create one automatically
+          tokenData = await $fetch<{ token: string; revoked_at: string | null }>(`/api/switches/${swId}/public-token`, { method: 'POST' })
+        }
+
         if (tokenData && !tokenData.revoked_at) {
           result.push({
             id: sw.id,
@@ -94,9 +104,20 @@ onMounted(async () => {
             url: `${window.location.origin}/p/${tokenData.token}`,
             token: tokenData.token
           })
+        } else if (tokenData?.revoked_at) {
+          // Token was revoked — create a new one
+          const newToken = await $fetch<{ token: string; revoked_at: string | null }>(`/api/switches/${swId}/public-token`, { method: 'POST' })
+          result.push({
+            id: sw.id,
+            name: sw.name,
+            model: [sw.manufacturer, sw.model].filter(Boolean).join(' ') || undefined,
+            location: sw.location,
+            url: `${window.location.origin}/p/${newToken.token}`,
+            token: newToken.token
+          })
         }
       } catch {
-        // No token for this switch — skip
+        // Failed to get or create token — skip this switch
       }
     }
 
@@ -187,12 +208,10 @@ function onClose() {
   white-space: nowrap;
 }
 
-.sticker-url {
+.sticker-brand {
   font-size: 8px;
-  color: #aaa;
+  color: #bbb;
   margin-top: 4px;
-  word-break: break-all;
-  line-height: 1.2;
 }
 
 @media print {
