@@ -64,7 +64,10 @@ export default defineEventHandler(async (event) => {
     connected_device: port.connected_device,
     description: port.description,
     poe: port.poe ?? null,
-    is_uplink: !!port.connected_device_id
+    is_uplink: !!port.connected_device_id,
+    helper_usage: port.helper_usage,
+    helper_label: port.helper_label,
+    show_in_helper_list: port.show_in_helper_list
   }))
 
   // Build public layout units (synthetic block IDs)
