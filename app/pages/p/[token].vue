@@ -1,4 +1,5 @@
 <template>
+  <ClientOnly>
   <div>
     <!-- Loading -->
     <div v-if="pending" class="flex min-h-[60vh] items-center justify-center">
@@ -61,6 +62,7 @@
       </div>
     </div>
   </div>
+  </ClientOnly>
 </template>
 
 <script setup lang="ts">
