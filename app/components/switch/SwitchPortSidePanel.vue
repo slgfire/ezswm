@@ -123,6 +123,25 @@
           />
         </UFormField>
 
+        <!-- Helper View Settings -->
+        <div class="border-t border-default pt-4 mt-4">
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
+            {{ $t('helperUsage.helperSection') }}
+          </h4>
+
+          <UFormField :label="$t('helperUsage.label')" name="helper_usage" class="mb-3">
+            <USelect v-model="form.helper_usage" :items="helperUsageOptions" class="w-full" />
+          </UFormField>
+
+          <UFormField :label="$t('helperUsage.helperLabel')" name="helper_label" class="mb-3">
+            <UInput v-model="form.helper_label" :placeholder="$t('helperUsage.helperLabelPlaceholder')" class="w-full" />
+          </UFormField>
+
+          <UFormField name="show_in_helper_list">
+            <UCheckbox v-model="form.show_in_helper_list" :label="$t('helperUsage.showInHelperList')" />
+          </UFormField>
+        </div>
+
         <USeparator />
 
         <UFormField :label="$t('lag.group')">
@@ -232,8 +251,21 @@ const form = reactive({
   connected_port: '',
   description: '',
   mac_address: '',
-  poe_selection: '' as string
+  poe_selection: '' as string,
+  helper_usage: '' as string,
+  helper_label: '',
+  show_in_helper_list: true
 })
+
+const helperUsageOptions = computed(() => [
+  { value: '', label: t('helperUsage.automatic') },
+  { value: 'participant', label: t('helperUsage.participant') },
+  { value: 'phone_passthrough', label: t('helperUsage.phone_passthrough') },
+  { value: 'ap', label: t('helperUsage.ap') },
+  { value: 'printer', label: t('helperUsage.printer') },
+  { value: 'orga', label: t('helperUsage.orga') },
+  { value: 'uplink', label: t('helperUsage.uplink') },
+])
 
 const taggedVlansStr = ref('')
 
@@ -479,6 +511,9 @@ watch(() => props.port, (p) => {
     form.connected_device = p.connected_device || ''; form.connected_port = p.connected_port || ''
     form.description = p.description || ''; form.mac_address = p.mac_address || ''
     form.poe_selection = p.poe?.type || ''
+    form.helper_usage = p.helper_usage || ''
+    form.helper_label = p.helper_label || ''
+    form.show_in_helper_list = p.show_in_helper_list ?? true
     taggedVlansStr.value = (p.tagged_vlans || []).join(','); selectedTaggedVlans.value = [...(p.tagged_vlans || [])]
     isRehydrating = true
     if (p.connected_allocation_id) {
@@ -520,6 +555,9 @@ watch(isOpen, async (open) => {
       form.connected_device = p.connected_device || ''; form.connected_port = p.connected_port || ''
       form.description = p.description || ''; form.mac_address = p.mac_address || ''
       form.poe_selection = p.poe?.type || ''
+      form.helper_usage = p.helper_usage || ''
+      form.helper_label = p.helper_label || ''
+      form.show_in_helper_list = p.show_in_helper_list ?? true
       taggedVlansStr.value = (p.tagged_vlans || []).join(','); selectedTaggedVlans.value = [...(p.tagged_vlans || [])]
       if (p.connected_allocation_id) {
         connectionMode.value = 'device'
@@ -554,6 +592,9 @@ async function save() {
   const body: Record<string, unknown> = { ...form, tagged_vlans }
   body.poe = form.poe_selection ? { type: form.poe_selection, max_watts: POE_WATTS[form.poe_selection] } : null
   delete body.poe_selection
+  body.helper_usage = form.helper_usage || null
+  body.helper_label = form.helper_label || null
+  body.show_in_helper_list = form.show_in_helper_list
   if (form.port_mode === 'access') { body.native_vlan = null; body.tagged_vlans = [] }
   if (form.port_mode === 'trunk') { body.access_vlan = null }
   // Set connected_allocation_id based on mode
