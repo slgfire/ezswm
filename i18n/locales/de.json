@@ -639,5 +639,57 @@
     "minutesAgo": "vor {n}m",
     "hoursAgo": "vor {n}h",
     "daysAgo": "vor {n}d"
+  },
+  "public": {
+    "title": "Switch-Portbelegung",
+    "error": "Dieser Link ist nicht mehr gültig.",
+    "loading": "Lade Switch-Daten...",
+    "footer": "Powered by ezSWM",
+    "lastUpdated": "Zuletzt aktualisiert: {date}",
+    "filter": {
+      "all": "Alle",
+      "occupied": "Belegt",
+      "unused": "Frei"
+    },
+    "port": {
+      "trunk": "Trunk",
+      "vlans": "VLANs"
+    },
+    "helperTitle": "Portübersicht",
+    "helper": {
+      "hint": "Wähle dein Netz und nutze einen freien Port. Nicht in Ports mit 'Nur Technik' einstecken!",
+      "free": "Frei",
+      "occupied": "Belegt",
+      "techOnly": "Nur Technik",
+      "doNotUse": "Nicht benutzen — reserviert für Infrastruktur",
+      "noNetwork": "Kein Netz zugewiesen",
+      "specialDevice": "Spezialgerät",
+      "noPortsForFilter": "Keine Ports für diesen Filter gefunden."
+    },
+    "admin": {
+      "title": "Öffentlicher QR-Zugang",
+      "generate": "Öffentlichen Link erstellen",
+      "generateNew": "Neuen Link erstellen",
+      "copyLink": "Link kopieren",
+      "downloadSvg": "SVG herunterladen",
+      "downloadPng": "PNG herunterladen",
+      "printSticker": "Sticker drucken",
+      "revoke": "Token widerrufen",
+      "revokeConfirm": "Möchten Sie diesen öffentlichen Link wirklich widerrufen? Der QR-Code-Sticker funktioniert dann nicht mehr.",
+      "revoked": "Token widerrufen am {date}",
+      "createdAt": "Erstellt",
+      "lastAccess": "Letzter Zugriff",
+      "lastAccessNever": "Nie",
+      "publicUrl": "Öffentliche URL",
+      "generated": "Öffentlicher Link erstellt",
+      "revokedSuccess": "Öffentlicher Link widerrufen",
+      "copied": "Link in Zwischenablage kopiert",
+      "copyFailed": "Link konnte nicht kopiert werden",
+      "generateFailed": "Token konnte nicht erstellt werden",
+      "revokeFailed": "Token konnte nicht widerrufen werden",
+      "downloadFailed": "Download fehlgeschlagen",
+      "printFailed": "Druckdialog konnte nicht geöffnet werden",
+      "linkLabel": "Öffentlicher Link für diesen Switch"
+    }
   }
 }

@@ -32,7 +32,8 @@ export default defineNitroPlugin(() => {
     'layoutTemplates.json',
     'lagGroups.json',
     'activity.json',
-    'sites.json'
+    'sites.json',
+    'publicTokens.json'
   ]
 
   for (const file of arrayFiles) {

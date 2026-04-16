@@ -159,6 +159,28 @@ Die Druckseite öffnet sich in einem neuen Tab und zeigt jeden Switch mit seinem
 
 Klicke **Drucken** um den Druckdialog des Browsers zu öffnen, oder nutze **Strg+P**. Die Ausgabe ist für A4-Querformat formatiert, jeder Switch auf einer eigenen Seite.
 
+### Öffentlicher QR-Zugang
+
+Erzeuge einen QR-Code für jeden Switch, der zu einer öffentlichen, schreibgeschützten Mobilansicht führt — kein Login nötig. Ideal für LAN-Partys oder Events, bei denen nicht-technische Helfer die Portbelegung sehen müssen.
+
+**QR-Code erzeugen:** Öffne eine Switch-Detailseite und klicke auf das **QR-Code-Symbol** in der Aktionsleiste oben rechts. Ein Drawer öffnet sich, in dem du:
+- **Öffentlichen Link erstellen** — erzeugt einen einzigartigen 32-Zeichen-Token
+- **Link kopieren** — kopiert die öffentliche URL in die Zwischenablage
+- **SVG / PNG herunterladen** — lädt den QR-Code als Bilddatei herunter
+- **Sticker drucken** — öffnet eine druckoptimierte Sticker-Seite
+- **Token widerrufen** — macht den QR-Code sofort ungültig
+
+**Sammel-QR-Druck:** Klicke in der Switches-Übersicht auf das **QR-Code-Symbol** in der Toolbar. Wähle Switches über Checkboxen aus und klicke "Sticker drucken". Tokens werden automatisch für Switches erstellt, die noch keinen haben. Die Druckseite zeigt ein 3-Spalten-Sticker-Raster mit QR-Code, Switch-Name, Modell und Standort.
+
+**Öffentliche Mobilansicht:** Beim Scannen des QR-Codes erscheint eine mobilfreundliche Seite mit:
+- Switch-Name, Modell und Standort
+- Alle Ports mit ihrer VLAN-Zuordnung und Zweck
+- Filter-Chips zur Anzeige bestimmter VLANs (z.B. Gaming, Server, Sleeping)
+- Klare "Nur Technik — nicht benutzen" Warnungen für Infrastruktur-Ports
+- Auf Desktop: zusätzlich die visuelle Port-Grid-Darstellung
+
+Die öffentliche Ansicht erfordert keinen Login, zeigt keine sensiblen Daten (keine Management-IPs, Seriennummern oder interne IDs) und ist mit `noindex` markiert, um Suchmaschinen-Indexierung zu verhindern.
+
 ## LAG-Gruppen (Link Aggregation)
 
 ### Was sie sind

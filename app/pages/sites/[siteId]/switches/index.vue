@@ -113,6 +113,70 @@ v-if="tagOptions.length > 0"
           </template>
         </UPopover>
 
+        <!-- QR Sticker popover with switch checkboxes -->
+        <UPopover>
+          <UButton icon="i-heroicons-qr-code" variant="ghost" color="neutral" size="xs" />
+          <template #content>
+            <div class="w-72 p-3">
+              <div class="mb-2 flex items-center justify-between">
+                <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">{{ $t('public.admin.title') }}</span>
+                <div class="flex gap-1">
+                  <UButton size="xs" variant="ghost" @click="qrSelectedIds.length === filteredItems.length ? (qrSelectedIds = []) : (qrSelectedIds = filteredItems.map((s) => s.id))">
+                    {{ qrSelectedIds.length === filteredItems.length ? $t('common.deselectAll') : $t('common.selectAll') }}
+                  </UButton>
+                </div>
+              </div>
+              <UInput v-model="qrSearch" :placeholder="$t('common.search') + '...'" size="xs" class="mb-2 w-full" icon="i-heroicons-magnifying-glass" />
+              <div class="max-h-60 overflow-y-auto space-y-0.5">
+                <template v-if="siteId === 'all'">
+                  <template v-for="group in qrFilteredGroups" :key="group.siteId">
+                    <div v-if="group.siteName" class="mt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">{{ group.siteName }}</div>
+                    <label
+                      v-for="sw in group.items"
+                      :key="sw.id"
+                      class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    >
+                      <input
+                        type="checkbox"
+                        :checked="qrSelectedIds.includes(sw.id)"
+                        class="h-3.5 w-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                        @change="toggleQrId(sw.id)"
+                      >
+                      <span class="truncate text-xs">{{ sw.name }}</span>
+                    </label>
+                  </template>
+                </template>
+                <template v-else>
+                  <label
+                    v-for="sw in qrFilteredItems"
+                    :key="sw.id"
+                    class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="qrSelectedIds.includes(sw.id)"
+                      class="h-3.5 w-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                      @change="toggleQrId(sw.id)"
+                    >
+                    <span class="truncate text-xs">{{ sw.name }}</span>
+                  </label>
+                </template>
+              </div>
+              <div class="mt-2 border-t border-default pt-2">
+                <UButton
+                  icon="i-heroicons-qr-code"
+                  size="xs"
+                  block
+                  :disabled="qrSelectedIds.length === 0"
+                  @click="openQrPrintPage"
+                >
+                  {{ $t('public.admin.printSticker') }} ({{ qrSelectedIds.length }})
+                </UButton>
+              </div>
+            </div>
+          </template>
+        </UPopover>
+
         <UTooltip :text="$t('switches.viewGrid')">
           <UButton
             icon="i-heroicons-squares-2x2"
@@ -425,6 +489,35 @@ const siteMap = computed(() => {
 const viewMode = ref<'grid' | 'list'>('grid')
 const printSelectedIds = ref<string[]>([])
 const printSearch = ref('')
+
+const qrSelectedIds = ref<string[]>([])
+const qrSearch = ref('')
+
+const qrFilteredItems = computed(() => {
+  const q = qrSearch.value.toLowerCase().trim()
+  if (!q) return filteredItems.value
+  return filteredItems.value.filter((sw) => sw.name.toLowerCase().includes(q))
+})
+
+const qrFilteredGroups = computed(() => {
+  const q = qrSearch.value.toLowerCase().trim()
+  if (!q) return groupedItems.value
+  return groupedItems.value
+    .map((g) => ({ ...g, items: g.items.filter((sw) => sw.name.toLowerCase().includes(q)) }))
+    .filter((g) => g.items.length > 0)
+})
+
+function toggleQrId(swId: string) {
+  const idx = qrSelectedIds.value.indexOf(swId)
+  if (idx >= 0) qrSelectedIds.value.splice(idx, 1)
+  else qrSelectedIds.value.push(swId)
+}
+
+function openQrPrintPage() {
+  if (qrSelectedIds.value.length === 0) return
+  const ids = qrSelectedIds.value.join(',')
+  window.open(`/sites/${siteId.value}/switches/qr-print?ids=${ids}`, '_blank')
+}
 
 const printFilteredItems = computed(() => {
   const q = printSearch.value.toLowerCase().trim()

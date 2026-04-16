@@ -26,6 +26,11 @@
             <span class="ml-1">{{ showDetails ? $t('common.hideDetails') : $t('common.showDetails') }}</span>
           </UButton>
         </UTooltip>
+        <SwitchPublicAccess
+          :switch-id="id"
+          :switch-name="item.name"
+          :switch-location="item.location"
+        />
         <UTooltip :text="$t('common.edit')">
           <UButton
             icon="i-heroicons-pencil"

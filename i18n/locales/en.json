@@ -639,5 +639,57 @@
     "minutesAgo": "{n}m ago",
     "hoursAgo": "{n}h ago",
     "daysAgo": "{n}d ago"
+  },
+  "public": {
+    "title": "Switch Port Map",
+    "error": "This link is no longer valid.",
+    "loading": "Loading switch data...",
+    "footer": "Powered by ezSWM",
+    "lastUpdated": "Last updated: {date}",
+    "filter": {
+      "all": "All",
+      "occupied": "Occupied",
+      "unused": "Unused"
+    },
+    "port": {
+      "trunk": "Trunk",
+      "vlans": "VLANs"
+    },
+    "helperTitle": "Port Overview",
+    "helper": {
+      "hint": "Pick your network and use a free port. Do not plug into ports marked as 'Tech only'.",
+      "free": "Free",
+      "occupied": "In use",
+      "techOnly": "Tech only",
+      "doNotUse": "Do not use — reserved for infrastructure",
+      "noNetwork": "No network assigned",
+      "specialDevice": "Special device",
+      "noPortsForFilter": "No ports match this filter."
+    },
+    "admin": {
+      "title": "Public QR Access",
+      "generate": "Generate Public Link",
+      "generateNew": "Generate New Link",
+      "copyLink": "Copy Link",
+      "downloadSvg": "Download SVG",
+      "downloadPng": "Download PNG",
+      "printSticker": "Print Sticker",
+      "revoke": "Revoke Token",
+      "revokeConfirm": "Are you sure you want to revoke this public link? The QR code sticker will stop working.",
+      "revoked": "Token revoked on {date}",
+      "createdAt": "Created",
+      "lastAccess": "Last accessed",
+      "lastAccessNever": "Never",
+      "publicUrl": "Public URL",
+      "generated": "Public link generated",
+      "revokedSuccess": "Public link revoked",
+      "copied": "Link copied to clipboard",
+      "copyFailed": "Failed to copy link",
+      "generateFailed": "Failed to generate token",
+      "revokeFailed": "Failed to revoke token",
+      "downloadFailed": "Failed to download",
+      "printFailed": "Failed to open print dialog",
+      "linkLabel": "Public link for this switch"
+    }
   }
 }

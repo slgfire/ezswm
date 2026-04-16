@@ -1,4 +1,7 @@
 export default defineNuxtRouteMiddleware(async (to) => {
+  // Public routes — no auth required
+  if (to.path.startsWith('/p/')) return
+
   const { user, fetchUser, checkSetup, setupCompleted } = useAuth()
 
   // Check setup status on first load

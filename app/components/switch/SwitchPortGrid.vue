@@ -74,6 +74,7 @@
     </div>
 
     <!-- Legend -->
+    <template v-if="!publicMode">
     <div class="port-legend flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-default pt-3 text-[11px] text-gray-500 dark:text-gray-400">
       <!-- Status -->
       <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.status') }}:</span>
@@ -109,8 +110,10 @@
         {{ $t('switches.ports.multiSelectHint') }}
       </span>
     </div>
+    </template>
 
     <!-- LAG Legend -->
+    <template v-if="!publicMode">
     <div v-if="lagGroups?.length" class="port-legend flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-default pt-3 text-[11px] text-gray-500 dark:text-gray-400">
       <span class="font-semibold text-gray-600 dark:text-gray-300">LAG:</span>
 
@@ -142,24 +145,26 @@
         {{ lagExpanded ? $t('common.showLess') : $t('lag.showAll', { n: lagGroups.length }) }}
       </button>
     </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { Port } from '~~/types/port'
-import type { VLAN } from '~~/types/vlan'
+import type { VlanDisplayInfo } from '~~/types/vlan'
 import type { LAGGroup } from '~~/types/lagGroup'
 import type { LayoutUnit, LayoutBlock } from '~~/types/layoutTemplate'
 
 const props = defineProps<{
   ports: Port[]
   units?: LayoutUnit[]
-  vlans?: VLAN[]
+  vlans?: VlanDisplayInfo[]
   selectedPorts: string[]
   stackSize?: number
   lagGroups?: LAGGroup[]
   lagByPortId?: Map<string, LAGGroup>
   printMode?: boolean
+  publicMode?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -196,6 +201,7 @@ function onLagLeave() {
 }
 
 function onPortClick(event: MouseEvent, portId: string) {
+  if (props.publicMode) return
   if (event.ctrlKey || event.metaKey) {
     event.preventDefault()
     emit('toggle-select', portId)

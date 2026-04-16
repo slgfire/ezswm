@@ -23,3 +23,6 @@ docs/node_modules/
 docs/.vitepress/cache/
 docs/.vitepress/dist/
 .superpowers/
+tests/.test-data-*
+docs/superpowers/reviews/
+docs/superpowers/

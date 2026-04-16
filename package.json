@@ -1,6 +1,6 @@
 {
   "name": "ezswm",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "type": "module",
   "private": true,
   "scripts": {
@@ -18,10 +18,12 @@
   "dependencies": {
     "@nuxt/ui": "4.6.1",
     "@nuxtjs/i18n": "10.2.4",
+    "@types/qrcode": "1.5.5",
     "bcryptjs": "3.0.3",
     "jsonwebtoken": "9.0.3",
     "nanoid": "5.1.7",
     "nuxt": "4.4.2",
+    "qrcode": "1.5.4",
     "tailwindcss": "4.2.2",
     "vuedraggable": "4.1.0",
     "yaml": "2.8.3",

@@ -1,5 +1,12 @@
 export type VlanStatus = 'active' | 'inactive'
 
+// Shared interface for VLAN display data (used by port grid/item components)
+export interface VlanDisplayInfo {
+  vlan_id: number
+  name: string
+  color: string
+}
+
 // Tailwind CSS colors for consistent theming
 export const VLAN_COLOR_POOL: string[] = [
   '#EF4444', '#F97316', '#EAB308', '#22C55E', '#14B8A6', // red-500, orange-500, yellow-500, green-500, teal-500
