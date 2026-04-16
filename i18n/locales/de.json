@@ -655,6 +655,16 @@
       "trunk": "Trunk",
       "vlans": "VLANs"
     },
+    "helperTitle": "Portübersicht",
+    "helper": {
+      "hint": "Wähle dein Netz und nutze einen freien Port. Nicht in Ports mit 'Nur Technik' einstecken!",
+      "free": "Frei",
+      "occupied": "Belegt",
+      "techOnly": "Nur Technik",
+      "doNotUse": "Nicht benutzen — reserviert für Infrastruktur",
+      "noNetwork": "Kein Netz zugewiesen",
+      "noPortsForFilter": "Keine Ports für diesen Filter gefunden."
+    },
     "admin": {
       "title": "Öffentlicher QR-Zugang",
       "generate": "Öffentlichen Link erstellen",

@@ -6,7 +6,7 @@
       class="flex w-full items-center justify-between rounded-lg bg-gray-800/50 px-3 py-2 text-left text-sm font-semibold text-gray-300 transition-colors hover:bg-gray-800"
       @click="expanded = !expanded"
     >
-      <span>{{ $t('public.title') }} ({{ occupiedCount }}/{{ ports.length }})</span>
+      <span>{{ $t('public.helperTitle') }} ({{ freeCount }} {{ $t('public.helper.free') }})</span>
       <UIcon
         :name="expanded ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
         class="h-4 w-4 text-gray-500"
@@ -14,52 +14,92 @@
     </button>
 
     <template v-if="expanded || alwaysExpanded">
-      <!-- Filter tabs -->
-      <div class="flex gap-1 text-xs">
+      <!-- Helper hint -->
+      <div class="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs text-emerald-400">
+        {{ $t('public.helper.hint') }}
+      </div>
+
+      <!-- Network filter pills -->
+      <div class="flex flex-wrap gap-1.5">
         <button
-          v-for="f in filters"
+          v-for="f in networkFilters"
           :key="f.key"
-          class="rounded-md px-3 py-1.5 transition-colors"
-          :class="activeFilter === f.key ? 'bg-gray-700 text-gray-100' : 'text-gray-500 hover:bg-gray-800 hover:text-gray-300'"
+          class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
+          :class="activeFilter === f.key
+            ? 'bg-gray-600 text-white ring-1 ring-gray-500'
+            : 'bg-gray-800/60 text-gray-400 hover:bg-gray-700 hover:text-gray-200'"
           @click="activeFilter = f.key"
-        >{{ f.label }} ({{ f.count }})</button>
+        >
+          <span v-if="f.color" class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: f.color }" />
+          {{ f.label }}
+          <span class="text-[10px] opacity-60">({{ f.count }})</span>
+        </button>
       </div>
 
       <!-- Port cards -->
-      <div class="grid grid-cols-1 gap-1.5 md:grid-cols-2">
-        <template v-for="port in filteredPorts" :key="port.id">
-          <!-- Occupied port: full card -->
+      <div class="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
+        <template v-for="port in sortedPorts" :key="port.id">
+          <!-- Free usable port -->
           <div
-            v-if="isOccupied(port)"
-            class="rounded-lg border border-gray-700 bg-[#161616] p-3"
-            :style="getPortVlanColor(port) ? { borderLeftWidth: '3px', borderLeftColor: getPortVlanColor(port)! } : {}"
+            v-if="getPortCategory(port) === 'free'"
+            class="rounded-lg border-2 border-emerald-500/40 bg-emerald-500/5 p-3"
           >
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-bold">{{ port.label || `${port.unit}/${port.index}` }}</span>
-                <span
-                  class="text-[11px]"
-                  :class="port.status === 'up' ? 'text-green-500' : port.status === 'disabled' ? 'text-red-400' : 'text-gray-600'"
-                >&#9679; {{ port.status.toUpperCase() }}</span>
-              </div>
-              <span v-if="getVlanLabel(port)" class="text-[11px]" :style="{ color: getPortVlanColor(port) || '#888' }">
-                {{ getVlanLabel(port) }}
+              <span class="text-base font-bold text-gray-100">{{ portLabel(port) }}</span>
+              <span class="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
+                {{ $t('public.helper.free') }}
               </span>
             </div>
-            <div v-if="getPortDetails(port)" class="mt-1 text-xs text-gray-500">
-              {{ getPortDetails(port) }}
+            <div class="mt-1.5 flex items-center gap-2">
+              <span v-if="getNetworkName(port)" class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium" :style="networkBadgeStyle(port)">
+                <span class="inline-block h-2 w-2 rounded-full" :style="{ backgroundColor: getPortVlanColor(port) || '#888' }" />
+                {{ getNetworkName(port) }}
+              </span>
+              <span v-else class="text-[11px] text-gray-500">{{ $t('public.helper.noNetwork') }}</span>
             </div>
           </div>
 
-          <!-- Unused port: compact single line -->
+          <!-- Occupied port -->
+          <div
+            v-else-if="getPortCategory(port) === 'occupied'"
+            class="rounded-lg border border-gray-700/50 bg-[#161616] p-3 opacity-60"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-semibold text-gray-400">{{ portLabel(port) }}</span>
+              <span class="rounded-full bg-gray-700 px-2.5 py-0.5 text-[10px] font-medium text-gray-400">
+                {{ $t('public.helper.occupied') }}
+              </span>
+            </div>
+            <div class="mt-1 flex items-center gap-2 text-[11px] text-gray-600">
+              <span v-if="getNetworkName(port)" class="inline-flex items-center gap-1">
+                <span class="inline-block h-1.5 w-1.5 rounded-full" :style="{ backgroundColor: getPortVlanColor(port) || '#555' }" />
+                {{ getNetworkName(port) }}
+              </span>
+              <span v-if="port.connected_device" class="truncate">· {{ port.connected_device }}</span>
+            </div>
+          </div>
+
+          <!-- Technical / do-not-touch port -->
           <div
             v-else
-            class="flex items-center justify-between rounded-lg border border-gray-800/30 bg-[#111] px-3 py-1.5 opacity-40"
+            class="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3"
           >
-            <span class="text-xs text-gray-600">{{ port.label || `${port.unit}/${port.index}` }}</span>
-            <span class="text-[10px] text-gray-700">{{ port.status.toUpperCase() }}</span>
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-semibold text-gray-400">{{ portLabel(port) }}</span>
+              <span class="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-amber-400">
+                {{ $t('public.helper.techOnly') }}
+              </span>
+            </div>
+            <div class="mt-1 text-[11px] text-amber-500/70">
+              {{ $t('public.helper.doNotUse') }}
+            </div>
           </div>
         </template>
+      </div>
+
+      <!-- Empty state when filter has no results -->
+      <div v-if="sortedPorts.length === 0" class="py-6 text-center text-sm text-gray-500">
+        {{ $t('public.helper.noPortsForFilter') }}
       </div>
     </template>
   </div>
@@ -85,6 +125,8 @@ interface PublicPort {
   poe?: unknown
 }
 
+type PortCategory = 'free' | 'occupied' | 'technical'
+
 const props = defineProps<{
   ports: PublicPort[]
   vlans: VlanDisplayInfo[]
@@ -94,33 +136,7 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const expanded = ref(props.defaultExpanded ?? false)
-const activeFilter = ref<'all' | 'occupied' | 'unused'>('occupied')
-
-function isOccupied(port: PublicPort): boolean {
-  return (
-    port.status === 'up' ||
-    !!port.connected_device ||
-    !!port.access_vlan ||
-    !!port.native_vlan ||
-    port.tagged_vlans.length > 0
-  )
-}
-
-const occupiedCount = computed(() => props.ports.filter(isOccupied).length)
-
-const filters = computed(() => {
-  return [
-    { key: 'all' as const, label: t('public.filter.all'), count: props.ports.length },
-    { key: 'occupied' as const, label: t('public.filter.occupied'), count: occupiedCount.value },
-    { key: 'unused' as const, label: t('public.filter.unused'), count: props.ports.length - occupiedCount.value }
-  ]
-})
-
-const filteredPorts = computed(() => {
-  if (activeFilter.value === 'occupied') return props.ports.filter(isOccupied)
-  if (activeFilter.value === 'unused') return props.ports.filter(p => !isOccupied(p))
-  return props.ports
-})
+const activeFilter = ref<string>('free')
 
 function getVlan(vlanId: number): VlanDisplayInfo | undefined {
   return props.vlans.find(v => v.vlan_id === vlanId)
@@ -129,31 +145,105 @@ function getVlan(vlanId: number): VlanDisplayInfo | undefined {
 function getPortVlanColor(port: PublicPort): string | null {
   const vid = port.access_vlan || port.native_vlan
   if (vid) return getVlan(vid)?.color ?? null
-  if (port.tagged_vlans.length > 0) return getVlan(port.tagged_vlans[0]!)?.color ?? null
   return null
 }
 
-function getVlanLabel(port: PublicPort): string | null {
-  if (port.tagged_vlans.length > 0) return t('public.port.trunk')
+function portLabel(port: PublicPort): string {
+  return port.label || `Port ${port.unit}/${port.index}`
+}
+
+// Categorise ports for non-technical helpers
+function getPortCategory(port: PublicPort): PortCategory {
+  // Trunk / uplink / multi-VLAN = technical, don't touch
+  if (port.tagged_vlans.length > 0) return 'technical'
+  // Console / management ports = technical
+  if (port.type === 'console' || port.type === 'management') return 'technical'
+  // Disabled = technical
+  if (port.status === 'disabled') return 'technical'
+  // Has a connected device or is up with a device = occupied
+  if (port.connected_device) return 'occupied'
+  if (port.status === 'up' && (port.access_vlan || port.native_vlan)) return 'occupied'
+  // Has a VLAN assigned but no device = free participant port
+  if (port.access_vlan || port.native_vlan) return 'free'
+  // No VLAN, down, no device = free (unconfigured)
+  if (port.status === 'down' && !port.connected_device) return 'free'
+  return 'occupied'
+}
+
+function getNetworkName(port: PublicPort): string | null {
   const vid = port.access_vlan || port.native_vlan
   if (!vid) return null
   const vlan = getVlan(vid)
-  if (!vlan) return null
-  // Access port: "VLAN 100 Server-VLAN"
-  return `VLAN ${vid} ${vlan.name}`
+  return vlan?.name ?? null
 }
 
-function getPortDetails(port: PublicPort): string | null {
-  const parts: string[] = []
-  if (port.connected_device) parts.push(port.connected_device)
-  if (port.speed) parts.push(port.speed)
-  if (port.tagged_vlans.length > 0) {
-    // Trunk: show VLAN names instead of numbers
-    const names = port.tagged_vlans
-      .map(vid => getVlan(vid)?.name || String(vid))
-      .join(', ')
-    parts.push(names)
-  }
-  return parts.length > 0 ? parts.join(' · ') : null
+function getNetworkVlanId(port: PublicPort): number | null {
+  return port.access_vlan || port.native_vlan || null
 }
+
+function networkBadgeStyle(port: PublicPort): Record<string, string> {
+  const color = getPortVlanColor(port) || '#888'
+  return {
+    backgroundColor: color + '20',
+    color: color,
+    borderColor: color + '40'
+  }
+}
+
+// Build filter options from actual VLAN usage
+const networkFilters = computed(() => {
+  const filters: { key: string; label: string; color: string | null; count: number }[] = []
+
+  // "Free" filter first
+  const freePorts = props.ports.filter(p => getPortCategory(p) === 'free')
+  filters.push({ key: 'free', label: t('public.helper.free'), color: null, count: freePorts.length })
+
+  // Network-specific filters (from VLANs on participant ports)
+  const vlanCounts = new Map<number, number>()
+  for (const port of props.ports) {
+    if (getPortCategory(port) === 'technical') continue
+    const vid = getNetworkVlanId(port)
+    if (vid) vlanCounts.set(vid, (vlanCounts.get(vid) || 0) + 1)
+  }
+  for (const [vid, count] of vlanCounts) {
+    const vlan = getVlan(vid)
+    if (vlan) {
+      filters.push({ key: `vlan-${vid}`, label: vlan.name, color: vlan.color, count })
+    }
+  }
+
+  // "Occupied" and "All" at the end
+  const occupiedPorts = props.ports.filter(p => getPortCategory(p) === 'occupied')
+  filters.push({ key: 'occupied', label: t('public.helper.occupied'), color: null, count: occupiedPorts.length })
+  filters.push({ key: 'all', label: t('public.filter.all'), color: null, count: props.ports.length })
+
+  return filters
+})
+
+const freeCount = computed(() => props.ports.filter(p => getPortCategory(p) === 'free').length)
+
+const sortedPorts = computed(() => {
+  let filtered: PublicPort[]
+
+  if (activeFilter.value === 'free') {
+    filtered = props.ports.filter(p => getPortCategory(p) === 'free')
+  } else if (activeFilter.value === 'occupied') {
+    filtered = props.ports.filter(p => getPortCategory(p) === 'occupied')
+  } else if (activeFilter.value === 'all') {
+    filtered = [...props.ports]
+  } else if (activeFilter.value.startsWith('vlan-')) {
+    const vid = parseInt(activeFilter.value.replace('vlan-', ''))
+    filtered = props.ports.filter(p => {
+      const cat = getPortCategory(p)
+      if (cat === 'technical') return false
+      return getNetworkVlanId(p) === vid
+    })
+  } else {
+    filtered = [...props.ports]
+  }
+
+  // Sort: free first, then occupied, then technical
+  const catOrder: Record<PortCategory, number> = { free: 0, occupied: 1, technical: 2 }
+  return filtered.sort((a, b) => catOrder[getPortCategory(a)] - catOrder[getPortCategory(b)])
+})
 </script>

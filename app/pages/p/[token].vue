@@ -30,7 +30,7 @@
         </p>
       </div>
 
-      <!-- Port Grid: desktop only, horizontal scroll on overflow -->
+      <!-- Port Grid: desktop only -->
       <div class="hidden md:block overflow-x-auto">
         <SwitchPortGrid
           :ports="data.ports"
@@ -41,8 +41,8 @@
         />
       </div>
 
-      <!-- Compact VLAN Legend -->
-      <div v-if="data.vlans.length" class="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+      <!-- VLAN Legend: desktop only (technical) -->
+      <div v-if="data.vlans.length" class="hidden md:flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
         <div v-for="vlan in data.vlans" :key="vlan.vlan_id" class="flex items-center gap-1.5">
           <div class="h-2.5 w-2.5 rounded-sm" :style="{ backgroundColor: vlan.color }" />
           <span class="text-gray-400">VLAN {{ vlan.vlan_id }}</span>
@@ -50,7 +50,7 @@
         </div>
       </div>
 
-      <!-- Port List -->
+      <!-- Port List (helper-friendly) -->
       <PublicPortList :ports="data.ports" :vlans="data.vlans" :always-expanded="isMobile" />
 
       <!-- Footer -->
