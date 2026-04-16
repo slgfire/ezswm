@@ -663,6 +663,7 @@
       "techOnly": "Tech only",
       "doNotUse": "Do not use — reserved for infrastructure",
       "noNetwork": "No network assigned",
+      "specialDevice": "Special device",
       "noPortsForFilter": "No ports match this filter."
     },
     "admin": {

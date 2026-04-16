@@ -663,6 +663,7 @@
       "techOnly": "Nur Technik",
       "doNotUse": "Nicht benutzen — reserviert für Infrastruktur",
       "noNetwork": "Kein Netz zugewiesen",
+      "specialDevice": "Spezialgerät",
       "noPortsForFilter": "Keine Ports für diesen Filter gefunden."
     },
     "admin": {

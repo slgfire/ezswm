@@ -17,7 +17,7 @@
         @click="activeFilter = f.key"
       >
         <span v-if="f.color" class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: f.color }" />
-        <span v-else-if="f.key === 'technical'" class="inline-block h-2.5 w-2.5 rounded-full bg-amber-500" />
+        <span v-else-if="f.key === 'forbidden'" class="inline-block h-2.5 w-2.5 rounded-full bg-amber-500" />
         {{ f.label }}
         <span class="text-[10px] opacity-60">{{ f.count }}</span>
       </button>
@@ -26,34 +26,9 @@
     <!-- Port cards -->
     <div class="grid grid-cols-1 gap-1.5 md:grid-cols-2 lg:grid-cols-3">
       <template v-for="port in filteredPorts" :key="port.id">
-        <!-- Normal participant port (has VLAN) -->
+        <!-- Forbidden infrastructure port -->
         <div
-          v-if="getPortCategory(port) !== 'technical'"
-          class="rounded-lg border bg-[#161616] p-3"
-          :style="vlanBorderStyle(port)"
-        >
-          <!-- Row 1: port label + VLAN badge -->
-          <div class="flex items-center justify-between gap-2">
-            <span class="text-sm font-bold text-gray-200">{{ portLabel(port) }}</span>
-            <span
-              v-if="getPortVlanId(port)"
-              class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-              :style="vlanChipStyle(port)"
-            >VLAN {{ getPortVlanId(port) }}</span>
-          </div>
-          <!-- Row 2: VLAN name / purpose -->
-          <div class="mt-1 text-sm font-medium" :style="{ color: getPortVlanColor(port) || '#888' }">
-            {{ getNetworkName(port) || $t('public.helper.noNetwork') }}
-          </div>
-          <!-- Row 3: secondary info -->
-          <div v-if="port.connected_device" class="mt-1 text-[11px] text-gray-500">
-            {{ port.connected_device }}
-          </div>
-        </div>
-
-        <!-- Technical / do-not-touch port -->
-        <div
-          v-else
+          v-if="getHelperUsage(port) === 'forbidden'"
           class="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3"
         >
           <div class="flex items-center justify-between gap-2">
@@ -64,6 +39,37 @@
           </div>
           <div class="mt-1 text-[11px] text-amber-500/70">
             {{ $t('public.helper.doNotUse') }}
+          </div>
+        </div>
+
+        <!-- Normal or special-device port -->
+        <div
+          v-else
+          class="rounded-lg border bg-[#161616] p-3"
+          :style="portBorderStyle(port)"
+        >
+          <!-- Row 1: port label + VLAN badge -->
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-sm font-bold text-gray-200">{{ portLabel(port) }}</span>
+            <span
+              v-if="getPrimaryVlanId(port)"
+              class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+              :style="vlanChipStyle(port)"
+            >VLAN {{ getPrimaryVlanId(port) }}</span>
+            <span
+              v-else-if="getHelperUsage(port) === 'special'"
+              class="shrink-0 rounded-full bg-sky-500/20 px-2 py-0.5 text-[10px] font-semibold text-sky-400"
+            >{{ $t('public.helper.specialDevice') }}</span>
+          </div>
+
+          <!-- Row 2: VLAN name / purpose or special purpose -->
+          <div class="mt-1 text-sm font-medium" :style="{ color: getPrimaryVlanColor(port) || '#888' }">
+            {{ getPortPurpose(port) }}
+          </div>
+
+          <!-- Row 3: secondary info (description, device, tagged VLANs) -->
+          <div v-if="getSecondaryInfo(port)" class="mt-1 text-[11px] text-gray-500">
+            {{ getSecondaryInfo(port) }}
           </div>
         </div>
       </template>
@@ -94,9 +100,11 @@ interface PublicPort {
   connected_device?: string
   description?: string
   poe?: unknown
+  is_uplink?: boolean
 }
 
-type PortCategory = 'participant' | 'technical'
+// Helper-facing usage classification
+type HelperUsage = 'normal' | 'special' | 'forbidden'
 
 const props = defineProps<{
   ports: PublicPort[]
@@ -114,52 +122,110 @@ function portLabel(port: PublicPort): string {
   return port.label || `Port ${port.unit}/${port.index}`
 }
 
-function getPortCategory(port: PublicPort): PortCategory {
-  if (port.tagged_vlans.length > 0) return 'technical'
-  if (port.type === 'console' || port.type === 'management') return 'technical'
-  if (port.status === 'disabled') return 'technical'
-  return 'participant'
+// Classify port for helper view
+function getHelperUsage(port: PublicPort): HelperUsage {
+  // Console / management ports = always forbidden
+  if (port.type === 'console' || port.type === 'management') return 'forbidden'
+  // Disabled ports = forbidden
+  if (port.status === 'disabled') return 'forbidden'
+  // Switch uplink (connected to another switch) = forbidden
+  if (port.is_uplink) return 'forbidden'
+  // Trunk port that is NOT an uplink = special device (phone, AP, etc.)
+  if (port.tagged_vlans.length > 0) return 'special'
+  // Everything else = normal participant port
+  return 'normal'
 }
 
-function getPortVlanId(port: PublicPort): number | null {
+// Primary VLAN: access/native for normal ports, native for trunk/special
+function getPrimaryVlanId(port: PublicPort): number | null {
   return port.access_vlan || port.native_vlan || null
 }
 
-function getPortVlanColor(port: PublicPort): string | null {
-  const vid = getPortVlanId(port)
+function getPrimaryVlanColor(port: PublicPort): string | null {
+  const vid = getPrimaryVlanId(port)
   if (!vid) return null
   return getVlan(vid)?.color ?? null
 }
 
-function getNetworkName(port: PublicPort): string | null {
-  const vid = getPortVlanId(port)
+function getPrimaryVlanName(port: PublicPort): string | null {
+  const vid = getPrimaryVlanId(port)
   if (!vid) return null
   return getVlan(vid)?.name ?? null
 }
 
-function vlanBorderStyle(port: PublicPort): Record<string, string> {
-  const color = getPortVlanColor(port)
+// What to show as the main purpose line
+function getPortPurpose(port: PublicPort): string {
+  const usage = getHelperUsage(port)
+
+  if (usage === 'special') {
+    // Show description if available (e.g. "Phone + PC", "Access Point")
+    if (port.description) return port.description
+    // Fallback: show tagged VLAN names
+    const names = port.tagged_vlans
+      .map(vid => getVlan(vid)?.name || `VLAN ${vid}`)
+      .join(', ')
+    const native = getPrimaryVlanName(port)
+    return native ? `${native} + ${names}` : names
+  }
+
+  // Normal port: show VLAN name
+  return getPrimaryVlanName(port) || t('public.helper.noNetwork')
+}
+
+// Secondary info line
+function getSecondaryInfo(port: PublicPort): string | null {
+  const parts: string[] = []
+  const usage = getHelperUsage(port)
+
+  // For normal ports, show description if set
+  if (usage === 'normal' && port.description) {
+    parts.push(port.description)
+  }
+
+  // Show connected device if present
+  if (port.connected_device) parts.push(port.connected_device)
+
+  // For special ports, show tagged VLANs as secondary metadata
+  if (usage === 'special' && !port.description) {
+    // Already shown in purpose line
+  } else if (usage === 'special' && port.description) {
+    // Description is in purpose, show VLANs here
+    const names = port.tagged_vlans
+      .map(vid => getVlan(vid)?.name || `VLAN ${vid}`)
+      .join(', ')
+    if (names) parts.push(names)
+  }
+
+  return parts.length > 0 ? parts.join(' · ') : null
+}
+
+function portBorderStyle(port: PublicPort): Record<string, string> {
+  const usage = getHelperUsage(port)
+  if (usage === 'special') {
+    return { borderLeftWidth: '3px', borderLeftColor: '#38bdf8', borderColor: 'rgba(55,65,81,0.5)' }
+  }
+  const color = getPrimaryVlanColor(port)
   if (!color) return { borderColor: 'rgba(55,65,81,0.5)' }
   return { borderLeftWidth: '3px', borderLeftColor: color, borderColor: 'rgba(55,65,81,0.5)' }
 }
 
 function vlanChipStyle(port: PublicPort): Record<string, string> {
-  const color = getPortVlanColor(port) || '#888'
+  const color = getPrimaryVlanColor(port) || '#888'
   return { backgroundColor: color + '25', color }
 }
 
-// Build filter chips from VLANs
+// Build filter chips
 const filterChips = computed(() => {
   const chips: { key: string; label: string; color: string | null; count: number }[] = []
 
   // "All" first
   chips.push({ key: 'all', label: t('public.filter.all'), color: null, count: props.ports.length })
 
-  // Per-VLAN filters
+  // Per-VLAN filters (from non-forbidden ports)
   const vlanCounts = new Map<number, number>()
   for (const port of props.ports) {
-    if (getPortCategory(port) === 'technical') continue
-    const vid = getPortVlanId(port)
+    if (getHelperUsage(port) === 'forbidden') continue
+    const vid = getPrimaryVlanId(port)
     if (vid) vlanCounts.set(vid, (vlanCounts.get(vid) || 0) + 1)
   }
   for (const [vid, count] of vlanCounts) {
@@ -169,10 +235,16 @@ const filterChips = computed(() => {
     }
   }
 
+  // "Special device" if any
+  const specialCount = props.ports.filter(p => getHelperUsage(p) === 'special').length
+  if (specialCount > 0) {
+    chips.push({ key: 'special', label: t('public.helper.specialDevice'), color: '#38bdf8', count: specialCount })
+  }
+
   // "Tech only" at the end
-  const techCount = props.ports.filter(p => getPortCategory(p) === 'technical').length
-  if (techCount > 0) {
-    chips.push({ key: 'technical', label: t('public.helper.techOnly'), color: null, count: techCount })
+  const forbiddenCount = props.ports.filter(p => getHelperUsage(p) === 'forbidden').length
+  if (forbiddenCount > 0) {
+    chips.push({ key: 'forbidden', label: t('public.helper.techOnly'), color: null, count: forbiddenCount })
   }
 
   return chips
@@ -183,20 +255,23 @@ const filteredPorts = computed(() => {
 
   if (activeFilter.value === 'all') {
     ports = [...props.ports]
-  } else if (activeFilter.value === 'technical') {
-    ports = props.ports.filter(p => getPortCategory(p) === 'technical')
+  } else if (activeFilter.value === 'forbidden') {
+    ports = props.ports.filter(p => getHelperUsage(p) === 'forbidden')
+  } else if (activeFilter.value === 'special') {
+    ports = props.ports.filter(p => getHelperUsage(p) === 'special')
   } else if (activeFilter.value.startsWith('vlan-')) {
     const vid = parseInt(activeFilter.value.replace('vlan-', ''))
-    ports = props.ports.filter(p => getPortCategory(p) === 'participant' && getPortVlanId(p) === vid)
+    ports = props.ports.filter(p => getHelperUsage(p) !== 'forbidden' && getPrimaryVlanId(p) === vid)
   } else {
     ports = [...props.ports]
   }
 
-  // Sort: participant ports first (by VLAN, then index), technical last
+  // Sort: normal first, then special, then forbidden — within each group by unit/index
+  const usageOrder: Record<HelperUsage, number> = { normal: 0, special: 1, forbidden: 2 }
   return ports.sort((a, b) => {
-    const catA = getPortCategory(a) === 'participant' ? 0 : 1
-    const catB = getPortCategory(b) === 'participant' ? 0 : 1
-    if (catA !== catB) return catA - catB
+    const ua = usageOrder[getHelperUsage(a)]
+    const ub = usageOrder[getHelperUsage(b)]
+    if (ua !== ub) return ua - ub
     return a.unit * 1000 + a.index - (b.unit * 1000 + b.index)
   })
 })
