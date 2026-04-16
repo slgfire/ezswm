@@ -46,6 +46,10 @@
         <UFormField :label="$t('common.description')">
           <UInput v-model="form.description" :placeholder="$t('common.noChange')" class="w-full" />
         </UFormField>
+
+        <UFormField :label="$t('helperUsage.label')">
+          <USelect v-model="form.helper_usage" :items="bulkHelperUsageOptions" class="w-full" />
+        </UFormField>
       </div>
     </template>
 
@@ -106,6 +110,17 @@ const portModeOptions = computed(() => [
   { label: t('switches.ports.modeTrunk'), value: 'trunk' }
 ])
 
+const bulkHelperUsageOptions = computed(() => [
+  { value: '_no_change', label: '—' },
+  { value: '_automatic', label: t('helperUsage.automatic') },
+  { value: 'participant', label: t('helperUsage.participant') },
+  { value: 'phone_passthrough', label: t('helperUsage.phone_passthrough') },
+  { value: 'ap', label: t('helperUsage.ap') },
+  { value: 'printer', label: t('helperUsage.printer') },
+  { value: 'orga', label: t('helperUsage.orga') },
+  { value: 'uplink', label: t('helperUsage.uplink') },
+])
+
 const form = reactive({
   status: '',
   speed: '',
@@ -113,7 +128,8 @@ const form = reactive({
   access_vlan: null as number | null,
   native_vlan: null as number | null,
   tagged_vlans_str: '',
-  description: ''
+  description: '',
+  helper_usage: '_no_change'
 })
 
 function open() {
@@ -149,6 +165,9 @@ async function apply() {
     }
   }
   if (form.description) updates.description = form.description
+  if (form.helper_usage !== '_no_change') {
+    updates.helper_usage = form.helper_usage === '_automatic' ? null : form.helper_usage
+  }
 
   try {
     await $fetch(`/api/switches/${props.switchId}/ports/bulk`, {
@@ -164,6 +183,7 @@ async function apply() {
     form.native_vlan = null
     form.tagged_vlans_str = ''
     form.description = ''
+    form.helper_usage = '_no_change'
     selectedTaggedVlans.value = []
     emit('saved')
     close()
