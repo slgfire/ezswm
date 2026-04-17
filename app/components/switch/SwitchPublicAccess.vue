@@ -180,15 +180,17 @@ async function handleCopy() {
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(publicUrl.value)
     } else {
-      // Fallback for HTTP / non-secure contexts
-      const textarea = document.createElement('textarea')
-      textarea.value = publicUrl.value
-      textarea.style.position = 'fixed'
-      textarea.style.opacity = '0'
-      document.body.appendChild(textarea)
-      textarea.select()
+      // Fallback for HTTP / non-secure / iOS contexts
+      const el = document.createElement('textarea')
+      el.value = publicUrl.value
+      el.setAttribute('readonly', '')
+      el.style.position = 'fixed'
+      el.style.opacity = '0'
+      document.body.appendChild(el)
+      // iOS requires setSelectionRange instead of select()
+      el.setSelectionRange(0, el.value.length)
       document.execCommand('copy')
-      document.body.removeChild(textarea)
+      document.body.removeChild(el)
     }
     toast.add({ title: t('public.admin.copied'), color: 'success' })
   } catch {
