@@ -175,27 +175,42 @@ async function handleRevoke() {
 }
 
 async function handleCopy() {
-  try {
-    // Try modern clipboard API first
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(publicUrl.value)
-    } else {
-      // Fallback for HTTP / non-secure / iOS contexts
+  const text = publicUrl.value
+  let copied = false
+
+  // Try clipboard API first (works on HTTPS + user gesture)
+  if (navigator.clipboard) {
+    try {
+      await navigator.clipboard.writeText(text)
+      copied = true
+    } catch { /* fall through */ }
+  }
+
+  // Fallback: textarea + execCommand (desktop HTTP, older browsers)
+  if (!copied) {
+    try {
       const el = document.createElement('textarea')
-      el.value = publicUrl.value
+      el.value = text
       el.setAttribute('readonly', '')
+      el.contentEditable = 'true'
       el.style.position = 'fixed'
       el.style.opacity = '0'
+      el.style.fontSize = '16px' // prevent iOS zoom
       document.body.appendChild(el)
-      // iOS requires setSelectionRange instead of select()
+      el.focus()
       el.setSelectionRange(0, el.value.length)
-      document.execCommand('copy')
+      copied = document.execCommand('copy')
       document.body.removeChild(el)
-    }
-    toast.add({ title: t('public.admin.copied'), color: 'success' })
-  } catch {
-    toast.add({ title: t('public.admin.copyFailed'), color: 'error' })
+    } catch { /* fall through */ }
   }
+
+  // Last resort: prompt user to copy manually
+  if (!copied) {
+    window.prompt(t('public.admin.copyFailed'), text)
+    return
+  }
+
+  toast.add({ title: t('public.admin.copied'), color: 'success' })
 }
 
 async function handleDownloadSvg() {
