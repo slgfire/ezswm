@@ -35,8 +35,8 @@
     </nav>
 
     <!-- Footer info + collapse toggle -->
-    <div class="border-t border-default p-2">
-      <div v-if="!collapsed" class="flex items-center justify-center gap-2 px-2 pb-2 font-mono text-xs text-neutral-500">
+    <div class="flex items-center border-t border-default p-2" :class="collapsed ? 'justify-center' : 'justify-between'">
+      <div v-if="!collapsed" class="flex items-center gap-2 px-1 font-mono text-xs text-neutral-500">
         <span>v{{ version }}</span>
         <span class="text-neutral-600">&middot;</span>
         <span>GPL</span>
@@ -49,8 +49,7 @@
         variant="ghost"
         color="neutral"
         :icon="collapsed ? 'i-heroicons-chevron-right' : 'i-heroicons-chevron-left'"
-        size="sm"
-        block
+        size="xs"
         @click="$emit('toggle')"
       />
     </div>
