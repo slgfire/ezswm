@@ -258,7 +258,7 @@ const form = reactive({
 })
 
 const helperUsageOptions = computed(() => [
-  { value: '', label: t('helperUsage.automatic') },
+  { value: '_automatic', label: t('helperUsage.automatic') },
   { value: 'participant', label: t('helperUsage.participant') },
   { value: 'phone_passthrough', label: t('helperUsage.phone_passthrough') },
   { value: 'ap', label: t('helperUsage.ap') },
@@ -511,7 +511,7 @@ watch(() => props.port, (p) => {
     form.connected_device = p.connected_device || ''; form.connected_port = p.connected_port || ''
     form.description = p.description || ''; form.mac_address = p.mac_address || ''
     form.poe_selection = p.poe?.type || ''
-    form.helper_usage = p.helper_usage || ''
+    form.helper_usage = p.helper_usage || '_automatic'
     form.helper_label = p.helper_label || ''
     form.show_in_helper_list = p.show_in_helper_list ?? true
     taggedVlansStr.value = (p.tagged_vlans || []).join(','); selectedTaggedVlans.value = [...(p.tagged_vlans || [])]
@@ -555,7 +555,7 @@ watch(isOpen, async (open) => {
       form.connected_device = p.connected_device || ''; form.connected_port = p.connected_port || ''
       form.description = p.description || ''; form.mac_address = p.mac_address || ''
       form.poe_selection = p.poe?.type || ''
-      form.helper_usage = p.helper_usage || ''
+      form.helper_usage = p.helper_usage || '_automatic'
       form.helper_label = p.helper_label || ''
       form.show_in_helper_list = p.show_in_helper_list ?? true
       taggedVlansStr.value = (p.tagged_vlans || []).join(','); selectedTaggedVlans.value = [...(p.tagged_vlans || [])]
@@ -592,7 +592,7 @@ async function save() {
   const body: Record<string, unknown> = { ...form, tagged_vlans }
   body.poe = form.poe_selection ? { type: form.poe_selection, max_watts: POE_WATTS[form.poe_selection] } : null
   delete body.poe_selection
-  body.helper_usage = form.helper_usage || null
+  body.helper_usage = form.helper_usage === '_automatic' ? null : (form.helper_usage || null)
   body.helper_label = form.helper_label || null
   body.show_in_helper_list = form.show_in_helper_list
   if (form.port_mode === 'access') { body.native_vlan = null; body.tagged_vlans = [] }
