@@ -435,12 +435,17 @@
   "topology": {
     "title": "Network Topology",
     "emptyTitle": "No switch connections found",
-    "emptyDescription": "Connect switches to see the topology.",
-    "exportPdf": "Export PDF",
+    "emptyDescription": "Connect switches via port connections to see the network topology.",
+    "selectSiteTitle": "Select a site",
+    "selectSiteDescription": "Topology is site-scoped. Please select a specific site to view its network topology.",
     "exportPng": "Export PNG",
-    "comingSoon": "Coming Soon",
-    "comingSoonDescription": "Interactive network topology diagram showing switch-to-switch connections based on port links. Auto-layout, clickable nodes, and VLAN edge labels.",
-    "inDevelopment": "In Development"
+    "fit": "Fit",
+    "resetLayout": "Reset Layout",
+    "openSwitch": "Open Switch",
+    "connections": "Connections",
+    "ports": "ports",
+    "switchInfo": "Switch Info",
+    "crossSite": "Cross-site"
   },
   "tools": {
     "subnetCalculator": {

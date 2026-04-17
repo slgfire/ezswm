@@ -82,7 +82,7 @@ const navSections = computed(() => [
   {
     divider: true,
     items: [
-      { to: '/topology', icon: 'i-heroicons-share', label: 'nav.topology' },
+      ...(currentSiteId.value !== 'all' ? [{ to: `${sitePrefix.value}/topology`, icon: 'i-heroicons-share', label: 'nav.topology' }] : []),
       { to: '/tools/subnet-calculator', icon: 'i-heroicons-calculator', label: 'nav.subnetCalculator' }
     ]
   },
