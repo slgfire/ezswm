@@ -1,6 +1,6 @@
 export type { User } from './user'
 
-export type { PortType, PortSpeed, PortStatus, Port } from './port'
+export type { PortType, PortSpeed, PortStatus, PortHelperUsage, Port } from './port'
 
 export type { Switch } from './switch'
 

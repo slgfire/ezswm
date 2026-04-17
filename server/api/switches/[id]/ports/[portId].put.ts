@@ -27,13 +27,12 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = updatePortSchema.parse(body)
 
-  const updatedPort = await switchRepository.updatePort(switchId, portId, parsed as Partial<Omit<Port, 'id' | 'unit' | 'index'>>)
-
+  // Build changes diff BEFORE normalization — so "clear to automatic" appears in activity as null
   // Build changes diff — only log fields that actually changed
   const changes: Record<string, unknown> = {}
   const previousState: Record<string, unknown> = {}
   if (oldPort) {
-    const fields = ['status', 'speed', 'port_mode', 'native_vlan', 'access_vlan', 'tagged_vlans', 'connected_device', 'connected_port', 'description', 'poe', 'connected_allocation_id'] as const
+    const fields = ['status', 'speed', 'port_mode', 'native_vlan', 'access_vlan', 'tagged_vlans', 'connected_device', 'connected_port', 'description', 'poe', 'connected_allocation_id', 'helper_usage', 'helper_label', 'show_in_helper_list'] as const
     for (const field of fields) {
       const oldVal = oldPort[field]
       const newVal = (parsed as Record<string, unknown>)[field]
@@ -43,6 +42,12 @@ export default defineEventHandler(async (event) => {
       }
     }
   }
+
+  // Normalize null → undefined for clearable helper fields (so they are omitted from stored JSON)
+  if (parsed.helper_usage === null) parsed.helper_usage = undefined
+  if (parsed.helper_label === null) parsed.helper_label = undefined
+
+  const updatedPort = await switchRepository.updatePort(switchId, portId, parsed as Partial<Omit<Port, 'id' | 'unit' | 'index'>>)
 
   await activityRepository.log({
     user_id: event.context.auth?.userId,

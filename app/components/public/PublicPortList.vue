@@ -24,7 +24,7 @@
     </div>
 
     <!-- Port cards -->
-    <div class="grid grid-cols-1 gap-1.5 md:grid-cols-2 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-1.5 sm:grid-cols-2 md:grid-cols-3">
       <template v-for="port in filteredPorts" :key="port.id">
         <!-- Forbidden infrastructure port -->
         <div
@@ -84,6 +84,7 @@
 
 <script setup lang="ts">
 import type { VlanDisplayInfo } from '~~/types/vlan'
+import type { PortHelperUsage } from '~~/types/port'
 
 interface PublicPort {
   id: string
@@ -101,6 +102,9 @@ interface PublicPort {
   description?: string
   poe?: unknown
   is_uplink?: boolean
+  helper_usage?: PortHelperUsage
+  helper_label?: string
+  show_in_helper_list?: boolean
 }
 
 // Helper-facing usage classification
@@ -122,18 +126,26 @@ function portLabel(port: PublicPort): string {
   return port.label || `Port ${port.unit}/${port.index}`
 }
 
+// Centralized effective usage: explicit helper_usage or backwards-compatible fallback
+function getEffectiveUsage(port: PublicPort): string {
+  if (port.helper_usage) return port.helper_usage
+  // Backwards-compatible fallback for legacy ports
+  if (port.is_uplink) return 'uplink'
+  if (port.tagged_vlans.length > 0) return '_legacy_special'
+  return 'participant'
+}
+
 // Classify port for helper view
 function getHelperUsage(port: PublicPort): HelperUsage {
   // Console / management ports = always forbidden
   if (port.type === 'console' || port.type === 'management') return 'forbidden'
   // Disabled ports = forbidden
   if (port.status === 'disabled') return 'forbidden'
-  // Switch uplink (connected to another switch) = forbidden
-  if (port.is_uplink) return 'forbidden'
-  // Trunk port that is NOT an uplink = special device (phone, AP, etc.)
-  if (port.tagged_vlans.length > 0) return 'special'
-  // Everything else = normal participant port
-  return 'normal'
+
+  const usage = getEffectiveUsage(port)
+  if (usage === 'uplink') return 'forbidden'
+  if (usage === 'participant') return 'normal'
+  return 'special' // phone_passthrough, ap, printer, orga, _legacy_special
 }
 
 // Primary VLAN: access/native for normal ports, native for trunk/special
@@ -155,12 +167,19 @@ function getPrimaryVlanName(port: PublicPort): string | null {
 
 // What to show as the main purpose line
 function getPortPurpose(port: PublicPort): string {
-  const usage = getHelperUsage(port)
+  // Custom label overrides everything
+  if (port.helper_label) return port.helper_label
 
-  if (usage === 'special') {
-    // Show description if available (e.g. "Phone + PC", "Access Point")
+  const usage = getEffectiveUsage(port)
+
+  // Special roles: show i18n label
+  if (['phone_passthrough', 'ap', 'printer', 'orga'].includes(usage)) {
+    return t(`helperUsage.${usage}`)
+  }
+
+  // Legacy special (trunk without explicit role): show description or VLAN names
+  if (usage === '_legacy_special') {
     if (port.description) return port.description
-    // Fallback: show tagged VLAN names
     const names = port.tagged_vlans
       .map(vid => getVlan(vid)?.name || `VLAN ${vid}`)
       .join(', ')
@@ -168,7 +187,7 @@ function getPortPurpose(port: PublicPort): string {
     return native ? `${native} + ${names}` : names
   }
 
-  // Normal port: show VLAN name
+  // Participant / uplink: show VLAN name
   return getPrimaryVlanName(port) || t('public.helper.noNetwork')
 }
 
@@ -214,16 +233,21 @@ function vlanChipStyle(port: PublicPort): Record<string, string> {
   return { backgroundColor: color + '25', color }
 }
 
+// Filter out hidden ports (show_in_helper_list === false)
+const visiblePorts = computed(() =>
+  props.ports.filter(p => p.show_in_helper_list !== false)
+)
+
 // Build filter chips
 const filterChips = computed(() => {
   const chips: { key: string; label: string; color: string | null; count: number }[] = []
 
   // "All" first
-  chips.push({ key: 'all', label: t('public.filter.all'), color: null, count: props.ports.length })
+  chips.push({ key: 'all', label: t('public.filter.all'), color: null, count: visiblePorts.value.length })
 
   // Per-VLAN filters (from non-forbidden ports)
   const vlanCounts = new Map<number, number>()
-  for (const port of props.ports) {
+  for (const port of visiblePorts.value) {
     if (getHelperUsage(port) === 'forbidden') continue
     const vid = getPrimaryVlanId(port)
     if (vid) vlanCounts.set(vid, (vlanCounts.get(vid) || 0) + 1)
@@ -235,14 +259,22 @@ const filterChips = computed(() => {
     }
   }
 
-  // "Special device" if any
-  const specialCount = props.ports.filter(p => getHelperUsage(p) === 'special').length
-  if (specialCount > 0) {
-    chips.push({ key: 'special', label: t('public.helper.specialDevice'), color: '#38bdf8', count: specialCount })
+  // Per-role filter chips for special roles that have ports
+  const roleCounts = new Map<string, number>()
+  for (const port of visiblePorts.value) {
+    if (getHelperUsage(port) !== 'special') continue
+    const usage = getEffectiveUsage(port)
+    roleCounts.set(usage, (roleCounts.get(usage) || 0) + 1)
+  }
+  for (const [role, count] of roleCounts) {
+    const label = role === '_legacy_special'
+      ? t('public.helper.specialDevice')
+      : t(`helperUsage.${role}`)
+    chips.push({ key: `role-${role}`, label, color: '#38bdf8', count })
   }
 
   // "Tech only" at the end
-  const forbiddenCount = props.ports.filter(p => getHelperUsage(p) === 'forbidden').length
+  const forbiddenCount = visiblePorts.value.filter(p => getHelperUsage(p) === 'forbidden').length
   if (forbiddenCount > 0) {
     chips.push({ key: 'forbidden', label: t('public.helper.techOnly'), color: null, count: forbiddenCount })
   }
@@ -254,16 +286,17 @@ const filteredPorts = computed(() => {
   let ports: PublicPort[]
 
   if (activeFilter.value === 'all') {
-    ports = [...props.ports]
+    ports = [...visiblePorts.value]
   } else if (activeFilter.value === 'forbidden') {
-    ports = props.ports.filter(p => getHelperUsage(p) === 'forbidden')
-  } else if (activeFilter.value === 'special') {
-    ports = props.ports.filter(p => getHelperUsage(p) === 'special')
+    ports = visiblePorts.value.filter(p => getHelperUsage(p) === 'forbidden')
+  } else if (activeFilter.value.startsWith('role-')) {
+    const role = activeFilter.value.replace('role-', '')
+    ports = visiblePorts.value.filter(p => getHelperUsage(p) === 'special' && getEffectiveUsage(p) === role)
   } else if (activeFilter.value.startsWith('vlan-')) {
     const vid = parseInt(activeFilter.value.replace('vlan-', ''))
-    ports = props.ports.filter(p => getHelperUsage(p) !== 'forbidden' && getPrimaryVlanId(p) === vid)
+    ports = visiblePorts.value.filter(p => getHelperUsage(p) !== 'forbidden' && getPrimaryVlanId(p) === vid)
   } else {
-    ports = [...props.ports]
+    ports = [...visiblePorts.value]
   }
 
   // Sort: normal first, then special, then forbidden — within each group by unit/index

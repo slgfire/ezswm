@@ -181,6 +181,15 @@ Erzeuge einen QR-Code für jeden Switch, der zu einer öffentlichen, schreibgesc
 
 Die öffentliche Ansicht erfordert keinen Login, zeigt keine sensiblen Daten (keine Management-IPs, Seriennummern oder interne IDs) und ist mit `noindex` markiert, um Suchmaschinen-Indexierung zu verhindern.
 
+**Helfer-Nutzung (Port-Klassifikation):** Jeder Port kann explizit für die öffentliche Helfer-Ansicht klassifiziert werden. Öffne das Seitenpanel eines Ports und scrolle zum Abschnitt "Öffentliche Helfer-Ansicht":
+- **Helfer-Ansicht Rolle** — wähle zwischen Automatisch, Teilnehmer, Telefon + PC, Access Point, Drucker, Orga oder Uplink (Nur Technik)
+- **Eigenes Label** — überschreibt das Standard-Rollen-Label (z.B. "VIP-Bereich" statt "Orga")
+- **In Helfer-Portliste anzeigen** — deaktivieren, um den Port aus der Helfer-Portliste auszublenden (im Desktop-Grid bleibt er sichtbar)
+
+Bei "Automatisch" wird der Port per Legacy-Inferenz klassifiziert: Uplinks → Nur Technik, Trunk-Ports → Spezialgerät, Access-Ports → Teilnehmer.
+
+Die Helfer-Rolle kann auch per Bulk-Editor auf mehrere Ports gleichzeitig gesetzt werden.
+
 ## LAG-Gruppen (Link Aggregation)
 
 ### Was sie sind

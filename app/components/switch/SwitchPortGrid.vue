@@ -10,8 +10,9 @@
           <div class="h-px flex-1 bg-emerald-500/30"/>
         </div>
         <SwitchUnitDivider :label="unit.label || `Unit ${unit.unit_number}`" />
-        <div class="rounded-lg border border-default bg-default/30 p-3">
-          <div class="flex flex-wrap items-start gap-5">
+        <div class="port-grid-unit rounded-lg border border-default bg-default/30 p-2 lg:p-3">
+          <div class="overflow-x-auto">
+          <div class="flex flex-wrap items-start gap-5 w-max lg:w-auto">
             <div v-for="block in unit.blocks" :key="block.id" class="flex flex-col gap-1">
               <div v-if="block.label" class="text-[10px] font-medium text-gray-400 dark:text-gray-500">{{ block.label }}</div>
             <!-- Multi-row block with layout modes -->
@@ -53,6 +54,7 @@
               />
             </div>
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -122,7 +124,7 @@
           class="flex cursor-pointer items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 transition-all hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
           @mouseenter="onLagHover(lag.id)"
           @mouseleave="onLagLeave()"
-          @click="$emit('edit-lag', lag)"
+          @click="isTouch ? $emit('view-lag', lag) : $emit('edit-lag', lag)"
         >
           <span class="lag-stripe-icon inline-block h-3 w-4 rounded-sm" />
           <span class="font-medium text-gray-700 dark:text-gray-200">{{ lag.name }}</span>
@@ -171,8 +173,14 @@ const emit = defineEmits<{
   'select-port': [portId: string]
   'toggle-select': [portId: string]
   'edit-lag': [lag: LAGGroup]
+  'view-lag': [lag: LAGGroup]
   'delete-lag': [lag: LAGGroup]
 }>()
+
+const isTouch = ref(false)
+onMounted(() => {
+  isTouch.value = window.matchMedia('(pointer: coarse)').matches
+})
 
 const highlightedLagId = ref<string | null>(null)
 

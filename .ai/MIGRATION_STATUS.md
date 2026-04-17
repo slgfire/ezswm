@@ -489,6 +489,44 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 20: Port Helper Usage (2026-04-17)
+
+**Explicit port classification for public helper view:**
+- New `PortHelperUsage` type with 6 roles: participant, phone_passthrough, ap, printer, orga, uplink
+- Three new optional fields on Port: `helper_usage`, `helper_label`, `show_in_helper_list`
+- Side panel editor: "Public Helper View" section with role dropdown, custom label, visibility checkbox
+- Bulk editor: three-state helper_usage dropdown (no change / automatic / explicit role)
+- Public API passes through all three fields
+- PublicPortList rewritten with centralized `getEffectiveUsage()` for both category and purpose
+- Backwards-compatible fallback: legacy ports without helper_usage use inference (is_uplink → uplink, tagged_vlans → special, else → participant)
+- `show_in_helper_list: false` hides port from helper list (still visible in desktop grid)
+- `helper_label` overrides default role label in public view
+- Activity logging tracks helper field changes; null→undefined normalization preserves clear-to-automatic in audit log
+- Per-role filter chips in public view (Phone + PC, Orga, etc.)
+- Full i18n (EN + DE)
+
+**Files changed:**
+- `types/port.ts` — PortHelperUsage type, 3 new Port fields
+- `types/index.ts` — barrel export
+- `server/validators/switchSchemas.ts` — Zod schemas for single + bulk update
+- `server/api/p/[token].get.ts` — include helper fields in public response
+- `server/api/switches/[id]/ports/[portId].put.ts` — diff allowlist, null normalization
+- `server/api/switches/[id]/ports/bulk.put.ts` — null normalization
+- `app/components/switch/SwitchPortSidePanel.vue` — helper view section
+- `app/components/switch/SwitchPortBulkEditor.vue` — helper_usage dropdown
+- `app/components/public/PublicPortList.vue` — rewritten classification logic
+- `tests/e2e/public-switch-view.spec.ts` — helper_usage tests
+- `i18n/locales/en.json`, `i18n/locales/de.json` — helperUsage.* keys
+
+**Version:** 0.11.0
+
+**Verification:**
+- `npm run build`: Passes
+- Unit tests: all passing
+- E2E tests: public-switch-view.spec.ts updated
+
+---
+
 ## Feature Backlog
 
 ### Quick Wins

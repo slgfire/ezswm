@@ -181,6 +181,15 @@ Generate a QR code for any switch that links to a public, read-only mobile view 
 
 The public view does not require login, does not show sensitive data (no management IPs, serial numbers, or internal IDs), and is marked with `noindex` to prevent search engine indexing.
 
+**Helper Usage (Port Classification):** Each port can be explicitly classified for the public helper view. Open a port's side panel and scroll to the "Public Helper View" section:
+- **Helper view role** — choose from Automatic, Participant, Phone + PC, Access Point, Printer, Orga, or Uplink (Tech only)
+- **Custom label** — override the default role label (e.g. "VIP Area" instead of "Orga")
+- **Show in helper port list** — uncheck to hide the port from the helper port list (it still appears in the desktop grid)
+
+If set to "Automatic", the port is classified using the legacy inference: uplinks → Tech only, trunk ports → Special device, access ports → Participant.
+
+You can also set the helper usage role in bulk via the bulk editor.
+
 ## LAG Groups (Link Aggregation)
 
 ### What They Are

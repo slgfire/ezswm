@@ -105,6 +105,24 @@ h1, h2, h3, h4 {
   box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
 }
 
+/* Port grid scroll fade hint on tablet */
+@media (max-width: 1023px) {
+  .port-grid-unit {
+    position: relative;
+  }
+  .port-grid-unit::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 2rem;
+    pointer-events: none;
+    background: linear-gradient(to right, transparent, rgba(10, 10, 10, 0.85));
+    border-radius: 0 0.5rem 0.5rem 0;
+  }
+}
+
 /* KPI number gradient — dark mode only, solid green in light */
 .kpi-number {
   color: #22c55e;

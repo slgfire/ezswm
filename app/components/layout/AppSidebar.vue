@@ -34,14 +34,19 @@
       </ul>
     </nav>
 
-    <!-- Collapse toggle -->
-    <div class="border-t border-default p-2">
+    <!-- Footer info + collapse toggle -->
+    <div class="flex items-center border-t border-default p-2 justify-center gap-3">
+      <div v-if="!collapsed" class="flex items-center gap-2.5 px-1 font-mono text-sm text-neutral-500">
+        <span>v{{ version }}</span>
+        <a href="https://github.com/slgfire/ezswm" target="_blank" rel="noopener" class="text-neutral-400 hover:text-primary-500 transition-colors">
+          <UIcon name="i-simple-icons-github" class="h-4.5 w-4.5" />
+        </a>
+      </div>
       <UButton
         variant="ghost"
         color="neutral"
         :icon="collapsed ? 'i-heroicons-chevron-right' : 'i-heroicons-chevron-left'"
-        size="sm"
-        block
+        size="xs"
         @click="$emit('toggle')"
       />
     </div>
@@ -51,6 +56,9 @@
 <script setup lang="ts">
 defineProps<{ collapsed: boolean }>()
 defineEmits<{ toggle: [] }>()
+
+const config = useRuntimeConfig()
+const version = config.public.appVersion
 
 const route = useRoute()
 const { currentSiteId } = useCurrentSite()

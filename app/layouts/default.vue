@@ -26,8 +26,6 @@
       <main id="main-content" class="flex-1 overflow-y-auto">
         <slot />
       </main>
-
-      <LayoutAppFooter />
     </div>
   </div>
 </template>
