@@ -527,6 +527,53 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 21: Network Topology Visualization (2026-04-18)
+
+**Site-scoped interactive topology:**
+- v-network-graph (Vue 3 SVG library) with custom node rendering
+- Site-scoped page at `/sites/[siteId]/topology`
+- Custom SVG nodes: switch name, role badge, model, port status dots
+- One edge per physical port connection (bidirectional dedup)
+- LAG members as parallel edges with `edge.gap` spacing
+- Cross-site links: ghost nodes with dashed borders
+- Detail panel: switch info, port footer, connections grouped by LAG
+- Hierarchical auto-layout (Core → Distribution → Access)
+- Drag-to-reposition with persistent positions (topologyLayouts.json)
+- Reset layout (DELETE endpoint), Fit to screen, PNG export (SVG→Canvas)
+- Toolbar, role legend, stats badge
+- Topology nav hidden in All Sites context
+- Full i18n (EN + DE)
+
+**Files created:**
+- `types/topology.ts` — TopologyNode, TopologyLink, TopologyGhostNode, TopologyLayout
+- `app/plugins/v-network-graph.ts` — Nuxt plugin
+- `app/pages/sites/[siteId]/topology.vue` — main page
+- `app/components/topology/TopologyGraph.vue` — graph component
+- `app/components/topology/TopologyDetailPanel.vue` — detail panel
+- `app/composables/useTopology.ts` — data fetching composable
+- `server/api/sites/[siteId]/topology/` — 4 API endpoints (data, layout GET/PUT/DELETE)
+- `server/repositories/topologyLayoutRepository.ts` — layout storage
+- `server/validators/topologySchemas.ts` — Zod validation
+
+**Files changed:**
+- `server/plugins/initData.ts` — topologyLayouts.json init
+- `server/api/backup/export.get.ts` — include in backup
+- `server/api/backup/import.post.ts` — include in restore
+- `server/api/sites/[id].delete.ts` — cleanup on site deletion
+- `app/components/layout/AppSidebar.vue` — site-scoped nav
+- `i18n/locales/en.json`, `de.json` — topology keys
+
+**Files removed:**
+- `app/pages/topology.vue` — replaced by site-scoped
+- `server/api/topology.get.ts` — replaced by site-scoped
+
+**Version:** 0.12.0
+
+**Verification:**
+- `npm run build`: Passes
+
+---
+
 ## Feature Backlog
 
 ### Quick Wins
