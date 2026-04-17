@@ -34,8 +34,18 @@
       </ul>
     </nav>
 
-    <!-- Collapse toggle -->
+    <!-- Footer info + collapse toggle -->
     <div class="border-t border-default p-2">
+      <div v-if="!collapsed" class="px-2 pb-2 text-center font-mono text-[10px] text-neutral-500">
+        <div><span class="text-primary-500/60">ez</span>SWM v{{ version }}</div>
+        <div class="mt-0.5 flex items-center justify-center gap-2">
+          <span>GPL License</span>
+          <a href="https://github.com/slgfire/ezswm" target="_blank" rel="noopener" class="inline-flex items-center gap-0.5 text-neutral-400 hover:text-primary-500 transition-colors">
+            <UIcon name="i-simple-icons-github" class="h-3 w-3" />
+            <span>GitHub</span>
+          </a>
+        </div>
+      </div>
       <UButton
         variant="ghost"
         color="neutral"
@@ -51,6 +61,9 @@
 <script setup lang="ts">
 defineProps<{ collapsed: boolean }>()
 defineEmits<{ toggle: [] }>()
+
+const config = useRuntimeConfig()
+const version = config.public.appVersion
 
 const route = useRoute()
 const { currentSiteId } = useCurrentSite()
