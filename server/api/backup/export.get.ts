@@ -15,7 +15,8 @@ export default defineEventHandler((event) => {
       lagGroups: readJson('lagGroups.json'),
       activity: readJson('activity.json'),
       settings: readJson('settings.json'),
-      publicTokens: readJson('publicTokens.json')
+      publicTokens: readJson('publicTokens.json'),
+      topologyLayouts: readJson('topologyLayouts.json')
     }
   }
 
