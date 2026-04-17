@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Validate required keys
-  const requiredKeys = ['users', 'switches', 'vlans', 'networks', 'ipAllocations', 'ipRanges', 'layoutTemplates', 'lagGroups', 'activity', 'settings', 'topologyLayouts']
+  const requiredKeys = ['users', 'switches', 'vlans', 'networks', 'ipAllocations', 'ipRanges', 'layoutTemplates', 'lagGroups', 'activity', 'settings']
   for (const key of requiredKeys) {
     if (!(key in body.data)) {
       throw createError({ statusCode: 400, message: `Missing data key: ${key}` })
