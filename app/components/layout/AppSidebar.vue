@@ -36,13 +36,10 @@
 
     <!-- Footer info + collapse toggle -->
     <div class="flex items-center border-t border-default p-2" :class="collapsed ? 'justify-center' : 'justify-between'">
-      <div v-if="!collapsed" class="flex items-center gap-2 px-1 font-mono text-xs text-neutral-500">
+      <div v-if="!collapsed" class="flex items-center gap-2.5 px-1 font-mono text-sm text-neutral-500">
         <span>v{{ version }}</span>
-        <span class="text-neutral-600">&middot;</span>
-        <span>GPL</span>
-        <span class="text-neutral-600">&middot;</span>
         <a href="https://github.com/slgfire/ezswm" target="_blank" rel="noopener" class="text-neutral-400 hover:text-primary-500 transition-colors">
-          <UIcon name="i-simple-icons-github" class="h-4 w-4" />
+          <UIcon name="i-simple-icons-github" class="h-4.5 w-4.5" />
         </a>
       </div>
       <UButton
