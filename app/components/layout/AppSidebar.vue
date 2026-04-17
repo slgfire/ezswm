@@ -36,15 +36,13 @@
 
     <!-- Footer info + collapse toggle -->
     <div class="border-t border-default p-2">
-      <div v-if="!collapsed" class="px-2 pb-2 text-center font-mono text-[10px] text-neutral-500">
-        <div><span class="text-primary-500/60">ez</span>SWM v{{ version }}</div>
-        <div class="mt-0.5 flex items-center justify-center gap-2">
-          <span>GPL License</span>
-          <a href="https://github.com/slgfire/ezswm" target="_blank" rel="noopener" class="inline-flex items-center gap-0.5 text-neutral-400 hover:text-primary-500 transition-colors">
-            <UIcon name="i-simple-icons-github" class="h-3 w-3" />
-            <span>GitHub</span>
-          </a>
-        </div>
+      <div v-if="!collapsed" class="flex items-center justify-center gap-1.5 px-2 pb-2 font-mono text-[10px] text-neutral-500">
+        <span><span class="text-primary-500/60">ez</span>SWM v{{ version }}</span>
+        <span class="text-neutral-600">&middot;</span>
+        <span>GPL</span>
+        <a href="https://github.com/slgfire/ezswm" target="_blank" rel="noopener" class="text-neutral-400 hover:text-primary-500 transition-colors">
+          <UIcon name="i-simple-icons-github" class="h-3.5 w-3.5" />
+        </a>
       </div>
       <UButton
         variant="ghost"
