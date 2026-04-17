@@ -219,6 +219,7 @@
           @select-port="onSelectPort"
           @toggle-select="onToggleSelect"
           @edit-lag="lagSlideoverRef?.openEdit($event)"
+          @view-lag="onViewLag"
           @delete-lag="onDeleteLagClick"
         />
         <SwitchPrintLegend
@@ -390,6 +391,34 @@ v-model="editForm.role"
       @confirm="onDelete"
     />
 
+    <!-- LAG Detail Modal (touch devices) -->
+    <UModal v-model:open="showLagDetail" :title="viewingLag?.name || 'LAG'" :description="$t('lag.group')">
+      <template #body>
+        <div v-if="viewingLag" class="space-y-3">
+          <div v-if="viewingLag.description" class="text-sm text-gray-400">{{ viewingLag.description }}</div>
+          <div class="flex items-center gap-2 text-sm">
+            <span class="text-gray-500">{{ $t('lag.ports') }}:</span>
+            <span class="font-medium">{{ viewingLag.port_ids.length }}</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            <UBadge v-for="pid in viewingLag.port_ids" :key="pid" variant="subtle" size="sm">
+              {{ getPortLabel(pid) }}
+            </UBadge>
+          </div>
+          <div v-if="viewingLag.remote_device" class="flex items-center gap-2 text-sm">
+            <span class="text-gray-500">{{ $t('lag.remoteDevice') }}:</span>
+            <span class="font-medium">{{ viewingLag.remote_device }}</span>
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UButton variant="ghost" color="neutral" @click="showLagDetail = false">{{ $t('common.close') }}</UButton>
+          <UButton @click="showLagDetail = false; lagSlideoverRef?.openEdit(viewingLag!)">{{ $t('lag.edit') }}</UButton>
+        </div>
+      </template>
+    </UModal>
+
     <!-- LAG Slideover -->
     <SwitchLagGroupSlideover
       ref="lagSlideoverRef"
@@ -439,6 +468,19 @@ const lagSlideoverRef = ref<{ openEdit: (lag: LAGGroup) => void; openCreate: (po
 const showLagDeleteDialog = ref(false)
 const lagToDelete = ref<LAGGroup | null>(null)
 const deletingLag = ref(false)
+const showLagDetail = ref(false)
+const viewingLag = ref<LAGGroup | null>(null)
+
+function onViewLag(lag: LAGGroup) {
+  viewingLag.value = lag
+  showLagDetail.value = true
+}
+
+function getPortLabel(portId: string): string {
+  const port = item.value?.ports?.find((p: Port) => p.id === portId)
+  if (!port) return portId
+  return port.label || `${port.unit}/${port.index}`
+}
 
 const editMode = ref(false)
 const saving = ref(false)
