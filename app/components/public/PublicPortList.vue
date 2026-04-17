@@ -24,7 +24,7 @@
     </div>
 
     <!-- Port cards -->
-    <div class="grid grid-cols-1 gap-1.5 md:grid-cols-2 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-1.5 sm:grid-cols-2 md:grid-cols-3">
       <template v-for="port in filteredPorts" :key="port.id">
         <!-- Forbidden infrastructure port -->
         <div
