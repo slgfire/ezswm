@@ -458,51 +458,23 @@ const graphEdges = computed(() => {
 // --- Auto-layout ---
 
 function calculateAutoLayout(): Record<string, { x: number; y: number }> {
-  // Categorize nodes into tiers
-  const tierBuckets: string[][] = [[], [], []] // core, distribution, access/other
+  const tiers: Record<number, string[]> = { 0: [], 1: [], 2: [] }
+
   for (const n of props.nodes) {
-    if (n.role === 'core') tierBuckets[0]!.push(n.id)
-    else if (n.role === 'distribution') tierBuckets[1]!.push(n.id)
-    else tierBuckets[2]!.push(n.id)
+    if (n.role === 'core') tiers[0]!.push(n.id)
+    else if (n.role === 'distribution') tiers[1]!.push(n.id)
+    else tiers[2]!.push(n.id)
   }
 
-  // Sort lower-tier nodes by their primary connection's x-position
-  // to minimize edge crossings
-  const upperIds = new Set([...tierBuckets[0]!, ...tierBuckets[1]!])
-  if (tierBuckets[2]!.length > 1 && upperIds.size > 0) {
-    // Find primary connected upper node for each lower node
-    const primaryUpper = new Map<string, string>()
-    for (const link of props.links) {
-      const src = link.source_switch_id
-      const tgt = link.target_switch_id
-      if (upperIds.has(src) && !upperIds.has(tgt) && !primaryUpper.has(tgt)) {
-        primaryUpper.set(tgt, src)
-      }
-      if (upperIds.has(tgt) && !upperIds.has(src) && !primaryUpper.has(src)) {
-        primaryUpper.set(src, tgt)
-      }
-    }
-
-    // Sort upper tier for stable x reference
-    const upperOrder = [...tierBuckets[0]!, ...tierBuckets[1]!]
-    const upperXIndex = new Map<string, number>()
-    upperOrder.forEach((id, i) => upperXIndex.set(id, i))
-
-    tierBuckets[2]!.sort((a, b) => {
-      const aUpper = primaryUpper.get(a)
-      const bUpper = primaryUpper.get(b)
-      const aIdx = aUpper ? (upperXIndex.get(aUpper) ?? 999) : 999
-      const bIdx = bUpper ? (upperXIndex.get(bUpper) ?? 999) : 999
-      return aIdx - bIdx
-    })
+  // Skip empty tiers
+  const activeTiers: string[][] = []
+  for (const t of [tiers[0]!, tiers[1]!, tiers[2]!]) {
+    if (t.length > 0) activeTiers.push(t)
   }
-
-  // Skip empty tiers so nodes don't float with huge gaps
-  const activeTiers = tierBuckets.filter(t => t.length > 0)
 
   const positions: Record<string, { x: number; y: number }> = {}
   const xSpacing = 210
-  const ySpacing = 200
+  const ySpacing = 220
 
   for (let tierIdx = 0; tierIdx < activeTiers.length; tierIdx++) {
     const nodeIds = activeTiers[tierIdx]!
@@ -517,7 +489,6 @@ function calculateAutoLayout(): Record<string, { x: number; y: number }> {
     }
   }
 
-  // Ghost nodes below the last tier
   const lastTierY = (activeTiers.length - 1) * ySpacing
   const ghostY = lastTierY + ySpacing
   let ghostX = -(props.ghostNodes.length - 1) * xSpacing / 2
@@ -608,7 +579,7 @@ const graphConfigs = computed(() => defineConfigs({
       color: 'rgba(34,197,94,0.6)',
       width: 3.5
     },
-    margin: 2
+    margin: null
   }
 }))
 
