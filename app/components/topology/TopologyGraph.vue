@@ -34,16 +34,6 @@
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <!-- Selection glow (green, stronger) -->
-          <filter id="glow-selected" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="4" result="blur" />
-            <feFlood flood-color="#22c55e" flood-opacity="0.2" />
-            <feComposite in2="blur" operator="in" />
-            <feMerge>
-              <feMergeNode />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
 
         <!-- Custom node rendering -->
@@ -324,18 +314,6 @@ function getNodeSize(nodeId: string): { w: number; h: number } {
 }
 
 function getNodeStroke(nodeId: string): string {
-  if (selectedNodeId.value === nodeId) {
-    // Selected: use role color at strong opacity, or green fallback
-    const role = getNodeRole(nodeId)
-    if (role) {
-      const color = roleBadgeColor(role)
-      const r = parseInt(color.slice(1, 3), 16)
-      const g = parseInt(color.slice(3, 5), 16)
-      const b = parseInt(color.slice(5, 7), 16)
-      return `rgba(${r},${g},${b},0.55)`
-    }
-    return 'rgba(34,197,94,0.45)'
-  }
   const role = getNodeRole(nodeId)
   const hovered = hoveredNodeId.value === nodeId
   return roleNodeBorder(role, hovered)
@@ -343,7 +321,6 @@ function getNodeStroke(nodeId: string): string {
 
 function getNodeFilter(nodeId: string): string | undefined {
   if (isGhostNode(nodeId)) return undefined
-  if (selectedNodeId.value === nodeId) return 'url(#glow-selected)'
   if (hoveredNodeId.value === nodeId && getNodeRole(nodeId)) {
     return `url(#glow-${getNodeRole(nodeId)})`
   }
@@ -521,7 +498,7 @@ const graphConfigs = computed(() => defineConfigs({
     fitContentMargin: { top: 20, bottom: 60, left: 60, right: 60 }
   },
   node: {
-    selectable: false,
+    selectable: true,
     draggable: (nodeId: string) => !isGhostNode(nodeId),
     label: {
       visible: false
@@ -531,13 +508,19 @@ const graphConfigs = computed(() => defineConfigs({
       width: 168,
       height: 82,
       borderRadius: 8,
-      color: 'transparent'
+      color: 'transparent',
+      strokeColor: 'transparent',
+      strokeWidth: 0
     },
     hover: {
-      color: 'transparent'
+      color: 'transparent',
+      strokeColor: 'transparent',
+      strokeWidth: 0
     },
     selected: {
-      color: 'transparent'
+      color: 'transparent',
+      strokeColor: isDark.value ? 'rgba(34,197,94,0.35)' : 'rgba(34,197,94,0.5)',
+      strokeWidth: 1.5
     }
   },
   edge: {
