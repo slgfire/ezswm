@@ -36,7 +36,7 @@
           </filter>
         </defs>
 
-        <!-- Custom node rendering -->
+        <!-- Custom node rendering (matches switch card design from switches/index) -->
         <template #override-node="{ nodeId, scale, config, ...slotProps }">
           <g
             :class="{ 'cursor-pointer': !isGhostNode(nodeId) }"
@@ -46,7 +46,7 @@
             @pointerenter="hoveredNodeId = nodeId"
             @pointerleave="hoveredNodeId = null"
           >
-            <!-- Node card background -->
+            <!-- Card background -->
             <rect
               :x="-getNodeSize(nodeId).w / 2 * scale"
               :y="-getNodeSize(nodeId).h / 2 * scale"
@@ -58,37 +58,25 @@
               :stroke-width="selectedNodeId === nodeId ? 2 : hoveredNodeId === nodeId ? 1.5 : 1"
               :stroke-dasharray="isGhostNode(nodeId) ? '4,4' : 'none'"
             />
-            <!-- Role accent bar (left edge) -->
-            <rect
-              v-if="getNodeRole(nodeId) && !isGhostNode(nodeId)"
-              :x="-getNodeSize(nodeId).w / 2 * scale"
-              :y="(-getNodeSize(nodeId).h / 2 + 8) * scale"
-              :width="(getNodeRole(nodeId) === 'core' ? 4 : 3) * scale"
-              :height="(getNodeSize(nodeId).h - 16) * scale"
-              :rx="1.5 * scale"
-              :fill="roleBadgeColor(getNodeRole(nodeId)!)"
-              :opacity="getNodeRole(nodeId) === 'core' ? 0.8 : getNodeRole(nodeId) === 'distribution' ? 0.5 : 0.35"
-            />
 
-            <!-- Name (left-aligned) -->
+            <!-- Header: Name + Role badge (like switch cards) -->
             <text
-              :y="(-getNodeSize(nodeId).h / 2 + 19) * scale"
-              :x="(-getNodeSize(nodeId).w / 2 + 12) * scale"
-              :font-size="(getNodeRole(nodeId) === 'core' ? 13 : 12) * scale"
+              :y="(-getNodeSize(nodeId).h / 2 + 18) * scale"
+              :x="(-getNodeSize(nodeId).w / 2 + 14) * scale"
+              :font-size="12 * scale"
               font-weight="600"
               fill="currentColor"
               class="text-gray-900 dark:text-white"
               dominant-baseline="middle"
             >
-              {{ truncateText(getNodeData(nodeId)?.name || '', getNodeRole(nodeId) === 'core' ? 20 : getNodeRole(nodeId) === 'distribution' ? 17 : 16) }}
+              {{ truncateText(getNodeData(nodeId)?.name || '', getNodeRole(nodeId) ? getNameMaxChars(nodeId) : getNameMaxChars(nodeId) + 5) }}
             </text>
 
-            <!-- Role badge (top-right) -->
             <g v-if="getNodeRole(nodeId)">
               <rect
-                :x="(getNodeSize(nodeId).w / 2 - 48) * scale"
-                :y="(-getNodeSize(nodeId).h / 2 + 9) * scale"
-                :width="40 * scale"
+                :x="(getNodeSize(nodeId).w / 2 - 46) * scale"
+                :y="(-getNodeSize(nodeId).h / 2 + 8) * scale"
+                :width="38 * scale"
                 :height="16 * scale"
                 :rx="4 * scale"
                 :fill="roleBadgeBg(getNodeRole(nodeId)!)"
@@ -96,8 +84,8 @@
                 stroke-width="0.5"
               />
               <text
-                :x="(getNodeSize(nodeId).w / 2 - 28) * scale"
-                :y="(-getNodeSize(nodeId).h / 2 + 19) * scale"
+                :x="(getNodeSize(nodeId).w / 2 - 27) * scale"
+                :y="(-getNodeSize(nodeId).h / 2 + 18) * scale"
                 :font-size="8 * scale"
                 :fill="roleBadgeColor(getNodeRole(nodeId)!)"
                 text-anchor="middle"
@@ -108,17 +96,17 @@
               </text>
             </g>
 
-            <!-- Model subtitle (left-aligned like name) -->
+            <!-- Subtitle: Manufacturer · Model (like switch cards) -->
             <text
               v-if="getNodeModel(nodeId)"
-              :y="(-getNodeSize(nodeId).h / 2 + 35) * scale"
-              :x="(-getNodeSize(nodeId).w / 2 + 12) * scale"
+              :y="(-getNodeSize(nodeId).h / 2 + 34) * scale"
+              :x="(-getNodeSize(nodeId).w / 2 + 14) * scale"
               :font-size="9 * scale"
               fill="currentColor"
-              class="text-gray-500"
+              class="text-gray-500 dark:text-gray-400"
               dominant-baseline="middle"
             >
-              {{ truncateText(getNodeModel(nodeId)!, getNodeRole(nodeId) === 'core' ? 30 : 24) }}
+              {{ truncateText(getNodeModel(nodeId)!, Math.floor(getNodeSize(nodeId).w / 7)) }}
             </text>
 
             <!-- Ghost node: site name -->
@@ -136,54 +124,53 @@
               </text>
             </template>
 
-            <!-- Port status bar -->
+            <!-- Port footer (same as switch cards: "XX ports" left, colored dots right) -->
             <template v-else>
+              <!-- border-t separator -->
               <line
-                :x1="(-getNodeSize(nodeId).w / 2 + 10) * scale"
-                :y1="(getNodeSize(nodeId).h / 2 - 24) * scale"
-                :x2="(getNodeSize(nodeId).w / 2 - 10) * scale"
-                :y2="(getNodeSize(nodeId).h / 2 - 24) * scale"
-                :stroke="nodeBorder"
-                stroke-width="0.5"
+                :x1="(-getNodeSize(nodeId).w / 2) * scale"
+                :y1="(getNodeSize(nodeId).h / 2 - 22) * scale"
+                :x2="(getNodeSize(nodeId).w / 2) * scale"
+                :y2="(getNodeSize(nodeId).h / 2 - 22) * scale"
+                stroke="#222"
+                stroke-width="1"
               />
-              <!-- Port count label -->
+              <!-- "XX ports" label -->
               <text
-                :x="(-getNodeSize(nodeId).w / 2 + 12) * scale"
-                :y="(getNodeSize(nodeId).h / 2 - 10) * scale"
-                :font-size="9 * scale"
-                fill="currentColor"
-                class="text-gray-500"
+                :x="(-getNodeSize(nodeId).w / 2 + 14) * scale"
+                :y="(getNodeSize(nodeId).h / 2 - 9) * scale"
+                :font-size="8 * scale"
+                fill="#9ca3af"
                 font-family="ui-monospace,monospace"
                 dominant-baseline="middle"
+                font-weight="500"
+                letter-spacing="0.05em"
               >
-                {{ getPortCount(nodeId) }}p
+                {{ getPortCount(nodeId) }} PORTS
               </text>
-              <!-- Up -->
-              <g :transform="`translate(${(-getNodeSize(nodeId).w / 2 + 44) * scale}, ${(getNodeSize(nodeId).h / 2 - 10) * scale})`">
-                <template v-if="(getNodeData(nodeId) as TopologyNode)?.ports_up">
-                  <polygon :points="portTriangleUp(scale)" fill="#22c55e" />
-                  <text :x="6 * scale" :font-size="9 * scale" fill="#22c55e" font-family="ui-monospace,monospace" dominant-baseline="middle">
-                    {{ (getNodeData(nodeId) as TopologyNode).ports_up }}
-                  </text>
-                </template>
-              </g>
-              <!-- Down -->
-              <g :transform="`translate(${6 * scale}, ${(getNodeSize(nodeId).h / 2 - 10) * scale})`">
-                <template v-if="(getNodeData(nodeId) as TopologyNode)?.ports_down">
-                  <line :x1="-3 * scale" :y1="0" :x2="3 * scale" :y2="0" stroke="#6b7280" :stroke-width="2 * scale" stroke-linecap="round" />
-                  <text :x="6 * scale" :font-size="9 * scale" fill="#6b7280" font-family="ui-monospace,monospace" dominant-baseline="middle">
-                    {{ (getNodeData(nodeId) as TopologyNode).ports_down }}
-                  </text>
-                </template>
-              </g>
-              <!-- Disabled -->
-              <g :transform="`translate(${(getNodeSize(nodeId).w / 2 - 36) * scale}, ${(getNodeSize(nodeId).h / 2 - 10) * scale})`">
-                <template v-if="(getNodeData(nodeId) as TopologyNode)?.ports_disabled">
-                  <polygon :points="portTriangleDown(scale)" fill="#ef4444" />
-                  <text :x="6 * scale" :font-size="9 * scale" fill="#ef4444" font-family="ui-monospace,monospace" dominant-baseline="middle">
+              <!-- Colored dots + counts (right-aligned, same as switch cards) -->
+              <g :transform="`translate(${(getNodeSize(nodeId).w / 2 - 14) * scale}, ${(getNodeSize(nodeId).h / 2 - 9) * scale})`">
+                <!-- Disabled (rightmost) -->
+                <g v-if="(getNodeData(nodeId) as TopologyNode)?.ports_disabled" :transform="`translate(0, 0)`">
+                  <circle :r="3 * scale" fill="#ef4444" :cx="-3 * scale" />
+                  <text :x="-10 * scale" :font-size="8.5 * scale" fill="#ef4444" font-family="ui-monospace,monospace" dominant-baseline="middle" text-anchor="end">
                     {{ (getNodeData(nodeId) as TopologyNode).ports_disabled }}
                   </text>
-                </template>
+                </g>
+                <!-- Down -->
+                <g v-if="(getNodeData(nodeId) as TopologyNode)?.ports_down" :transform="`translate(${(getNodeData(nodeId) as TopologyNode)?.ports_disabled ? -32 * scale : 0}, 0)`">
+                  <circle :r="3 * scale" fill="#9ca3af" :cx="-3 * scale" />
+                  <text :x="-10 * scale" :font-size="8.5 * scale" fill="#9ca3af" font-family="ui-monospace,monospace" dominant-baseline="middle" text-anchor="end">
+                    {{ (getNodeData(nodeId) as TopologyNode).ports_down }}
+                  </text>
+                </g>
+                <!-- Up -->
+                <g v-if="(getNodeData(nodeId) as TopologyNode)?.ports_up" :transform="`translate(${getPortDotsOffset(nodeId, scale)}, 0)`">
+                  <circle :r="3 * scale" fill="#22c55e" :cx="-3 * scale" />
+                  <text :x="-10 * scale" :font-size="8.5 * scale" fill="#22c55e" font-family="ui-monospace,monospace" dominant-baseline="middle" text-anchor="end">
+                    {{ (getNodeData(nodeId) as TopologyNode).ports_up }}
+                  </text>
+                </g>
               </g>
             </template>
           </g>
@@ -361,20 +348,25 @@ const selectedNodeId = computed(() => props.selectedNodeId)
 
 // --- Port helpers ---
 
-function portTriangleUp(scale: number): string {
-  const s = 3.5 * scale
-  return `0,${-s} ${s},${s} ${-s},${s}`
-}
-
-function portTriangleDown(scale: number): string {
-  const s = 3.5 * scale
-  return `0,${s} ${s},${-s} ${-s},${-s}`
-}
-
 function getPortCount(nodeId: string): number {
   const n = nodeMap.value.get(nodeId)
   if (!n) return 0
   return (n as TopologyNode).port_count || 0
+}
+
+function getNameMaxChars(nodeId: string): number {
+  const w = getNodeSize(nodeId).w
+  // Approximate: ~7px per char at 12px font, minus badge space (~50px)
+  return Math.floor((w - 60) / 7)
+}
+
+function getPortDotsOffset(nodeId: string, scale: number): number {
+  const n = nodeMap.value.get(nodeId) as TopologyNode | undefined
+  if (!n) return 0
+  let offset = 0
+  if (n.ports_disabled) offset -= 32 * scale
+  if (n.ports_down) offset -= 32 * scale
+  return offset
 }
 
 // --- Node data helpers ---
