@@ -485,7 +485,7 @@ function calculateAutoLayout(): Record<string, { x: number; y: number }> {
   }
 
   const positions: Record<string, { x: number; y: number }> = {}
-  const xSpacing = 210
+  const xSpacing = 200
   const ySpacing = 220
 
   for (let tierIdx = 0; tierIdx < activeTiers.length; tierIdx++) {
@@ -544,7 +544,7 @@ const graphConfigs = computed(() => defineConfigs({
     minZoomLevel: 0.2,
     maxZoomLevel: 3,
     autoPanAndZoomOnLoad: 'fit-content',
-    fitContentMargin: { top: 30, bottom: 50, left: 50, right: 50 }
+    fitContentMargin: { top: 20, bottom: 40, left: 40, right: 40 }
   },
   node: {
     selectable: true,

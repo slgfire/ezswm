@@ -773,6 +773,17 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 21j: Mini Layout Polish (2026-04-18)
+
+- fitContentMargin tightened: top 20, bottom 40, sides 40 (was 30/50/50)
+- xSpacing 200 (was 210) — slightly denser horizontal layout
+
+**Files changed:**
+- `app/components/topology/TopologyGraph.vue`
+- `.ai/MIGRATION_STATUS.md`
+
+---
+
 ## Feature Backlog
 
 ### Quick Wins
