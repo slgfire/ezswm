@@ -521,7 +521,7 @@ const graphConfigs = computed(() => defineConfigs({
     fitContentMargin: { top: 20, bottom: 60, left: 60, right: 60 }
   },
   node: {
-    selectable: true,
+    selectable: false,
     draggable: (nodeId: string) => !isGhostNode(nodeId),
     label: {
       visible: false
