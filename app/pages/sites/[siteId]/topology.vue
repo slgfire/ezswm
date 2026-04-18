@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-[calc(100vh-4rem)] overflow-hidden">
+  <div class="flex h-full overflow-hidden">
     <!-- Empty state: all sites -->
     <div v-if="isAllContext" class="flex flex-1 flex-col items-center justify-center p-6 text-center">
       <UIcon name="i-heroicons-share" class="mb-4 h-16 w-16 text-gray-500" />
