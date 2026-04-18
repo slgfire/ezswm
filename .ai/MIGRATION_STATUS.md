@@ -648,6 +648,28 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 21e: Selection Polish + Panel Re-fit (2026-04-18)
+
+**Selection state:**
+- Selected node uses role-colored border at 0.55 opacity (was uniform green 0.5)
+- Dedicated `glow-selected` SVG filter with green glow (stdDeviation 4, opacity 0.2)
+- Selection feels integrated with role colors instead of a disconnected overlay
+- Guard against NaN SVG attributes when scale is briefly undefined during transitions
+
+**Panel integration:**
+- Graph auto-re-fits when detail panel opens or closes via `watch(panelOpen)`
+- All nodes remain visible even with the 290px panel taking canvas space
+
+**Files changed:**
+- `app/components/topology/TopologyGraph.vue`
+- `app/pages/sites/[siteId]/topology.vue`
+- `.ai/MIGRATION_STATUS.md`
+
+**Verification:**
+- `npm run build`: Passes
+
+---
+
 ## Feature Backlog
 
 ### Quick Wins

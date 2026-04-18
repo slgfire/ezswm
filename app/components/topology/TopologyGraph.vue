@@ -24,9 +24,20 @@
       >
         <!-- SVG defs for glow filters -->
         <defs>
+          <!-- Hover glow per role -->
           <filter v-for="r in ['core', 'distribution', 'access', 'management']" :id="`glow-${r}`" :key="r" x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur stdDeviation="3" result="blur" />
             <feFlood :flood-color="roleBadgeColor(r)" flood-opacity="0.15" />
+            <feComposite in2="blur" operator="in" />
+            <feMerge>
+              <feMergeNode />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <!-- Selection glow (green, stronger) -->
+          <filter id="glow-selected" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feFlood flood-color="#22c55e" flood-opacity="0.2" />
             <feComposite in2="blur" operator="in" />
             <feMerge>
               <feMergeNode />
@@ -39,7 +50,7 @@
         <template #override-node="{ nodeId, scale, config, ...slotProps }">
           <g
             :class="{ 'cursor-pointer': !isGhostNode(nodeId) }"
-            :filter="hoveredNodeId === nodeId && !isGhostNode(nodeId) && getNodeRole(nodeId) ? `url(#glow-${getNodeRole(nodeId)})` : undefined"
+            :filter="getNodeFilter(nodeId)"
           >
             <!-- Node card background -->
             <rect
@@ -313,10 +324,30 @@ function getNodeSize(nodeId: string): { w: number; h: number } {
 }
 
 function getNodeStroke(nodeId: string): string {
-  if (selectedNodeId.value === nodeId) return 'rgba(34,197,94,0.5)'
+  if (selectedNodeId.value === nodeId) {
+    // Selected: use role color at strong opacity, or green fallback
+    const role = getNodeRole(nodeId)
+    if (role) {
+      const color = roleBadgeColor(role)
+      const r = parseInt(color.slice(1, 3), 16)
+      const g = parseInt(color.slice(3, 5), 16)
+      const b = parseInt(color.slice(5, 7), 16)
+      return `rgba(${r},${g},${b},0.55)`
+    }
+    return 'rgba(34,197,94,0.45)'
+  }
   const role = getNodeRole(nodeId)
   const hovered = hoveredNodeId.value === nodeId
   return roleNodeBorder(role, hovered)
+}
+
+function getNodeFilter(nodeId: string): string | undefined {
+  if (isGhostNode(nodeId)) return undefined
+  if (selectedNodeId.value === nodeId) return 'url(#glow-selected)'
+  if (hoveredNodeId.value === nodeId && getNodeRole(nodeId)) {
+    return `url(#glow-${getNodeRole(nodeId)})`
+  }
+  return undefined
 }
 
 const selectedNodeId = computed(() => props.selectedNodeId)
