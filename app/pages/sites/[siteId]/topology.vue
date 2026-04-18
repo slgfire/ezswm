@@ -22,32 +22,36 @@
       <p class="max-w-md text-sm text-gray-500">{{ $t('topology.emptyDescription') }}</p>
     </div>
 
-    <!-- Graph + Panel -->
-    <template v-else>
-      <div class="flex-1">
-        <TopologyGraph
-          ref="graphRef"
-          :nodes="data!.nodes"
-          :links="data!.links"
-          :ghost-nodes="data!.ghost_nodes"
-          :saved-positions="layout?.node_positions ?? null"
-          :selected-node-id="selectedNodeId"
-          @select-node="onSelectNode"
-          @select-edge="onSelectEdge"
-          @positions-changed="onPositionsChanged"
-          @reset="onReset"
-        />
-      </div>
-      <TopologyDetailPanel
-        :node="selectedNode"
-        :links="data!.links"
+    <!-- Graph (full width, panel overlays via USlideover) -->
+    <div v-else class="flex-1">
+      <TopologyGraph
+        ref="graphRef"
         :nodes="data!.nodes"
+        :links="data!.links"
         :ghost-nodes="data!.ghost_nodes"
-        :site-id="siteId"
+        :saved-positions="layout?.node_positions ?? null"
+        :selected-node-id="selectedNodeId"
         :highlight-edge-id="highlightEdgeId"
         @select-node="onSelectNode"
+        @select-edge="onSelectEdge"
+        @positions-changed="onPositionsChanged"
+        @reset="onReset"
       />
-    </template>
+    </div>
+
+    <!-- Detail panel (USlideover overlay) -->
+    <TopologyDetailPanel
+      v-if="data"
+      :node="selectedNode"
+      :links="data.links"
+      :nodes="data.nodes"
+      :ghost-nodes="data.ghost_nodes"
+      :site-id="siteId"
+      :highlight-edge-id="highlightEdgeId"
+      @select-node="onSelectNode"
+      @highlight-edge="onHighlightEdge"
+      @close="onClosePanel"
+    />
   </div>
 </template>
 
@@ -83,6 +87,15 @@ function onSelectEdge(edgeId: string) {
   highlightEdgeId.value = edgeId
 }
 
+function onHighlightEdge(edgeId: string) {
+  highlightEdgeId.value = edgeId || null
+}
+
+function onClosePanel() {
+  selectedNodeId.value = null
+  highlightEdgeId.value = null
+}
+
 function onPositionsChanged(positions: Record<string, { x: number; y: number }>) {
   saveLayout(positions)
 }
@@ -109,5 +122,4 @@ watch(siteId, (newId) => {
     fetchTopology()
   }
 })
-
 </script>

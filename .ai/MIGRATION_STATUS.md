@@ -670,6 +670,34 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 21f: Panel Reuse + Edge Highlighting + Node Differentiation (2026-04-18)
+
+**Panel → USlideover:**
+- Replaced custom `w-[290px]` div with `<USlideover>` matching the app's standard side panel
+- Title/description props, `#body` + `#footer` slots, standard close behavior
+- Graph gets full canvas width (panel overlays, no longer pushes)
+- Connection cards emit `highlight-edge` on hover for edge highlighting
+
+**Edge highlighting:**
+- Panel connection hover → edge selected in graph via `setSelectedEdges()`
+- Edge selection style: green `rgba(34,197,94,0.6)` width 3.5
+
+**Node differentiation:**
+- Role accent bar: 3px vertical stripe on left edge in role color (Core 0.7 opacity, others 0.4)
+- Wider size gap: Core 176x86, Dist 160x78, Access 148x72 (was 168/156/148)
+- Combined with role-colored borders → clear hierarchy at a glance
+
+**Files changed:**
+- `app/components/topology/TopologyDetailPanel.vue` — rewritten to USlideover
+- `app/components/topology/TopologyGraph.vue` — accent bar, highlight-edge, size update
+- `app/pages/sites/[siteId]/topology.vue` — new events, panel overlay layout
+- `.ai/MIGRATION_STATUS.md`
+
+**Verification:**
+- `npm run build`: Passes
+
+---
+
 ## Feature Backlog
 
 ### Quick Wins

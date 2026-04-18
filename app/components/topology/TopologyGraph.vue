@@ -54,6 +54,17 @@
               :stroke-width="selectedNodeId === nodeId ? 2 : hoveredNodeId === nodeId ? 1.5 : 1"
               :stroke-dasharray="isGhostNode(nodeId) ? '4,4' : 'none'"
             />
+            <!-- Role accent bar (left edge) -->
+            <rect
+              v-if="getNodeRole(nodeId) && !isGhostNode(nodeId)"
+              :x="-getNodeSize(nodeId).w / 2 * scale"
+              :y="(-getNodeSize(nodeId).h / 2 + 8) * scale"
+              :width="3 * scale"
+              :height="(getNodeSize(nodeId).h - 16) * scale"
+              :rx="1.5 * scale"
+              :fill="roleBadgeColor(getNodeRole(nodeId)!)"
+              :opacity="getNodeRole(nodeId) === 'core' ? 0.7 : 0.4"
+            />
 
             <!-- Name (left-aligned) -->
             <text
@@ -232,6 +243,7 @@ const props = defineProps<{
   ghostNodes: TopologyGhostNode[]
   savedPositions: Record<string, { x: number; y: number }> | null
   selectedNodeId: string | null
+  highlightEdgeId?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -308,8 +320,8 @@ function truncateText(text: string, max: number): string {
 function getNodeSize(nodeId: string): { w: number; h: number } {
   const role = getNodeRole(nodeId)
   if (isGhostNode(nodeId)) return { w: 130, h: 58 }
-  if (role === 'core') return { w: 168, h: 82 }
-  if (role === 'distribution') return { w: 156, h: 76 }
+  if (role === 'core') return { w: 176, h: 86 }
+  if (role === 'distribution') return { w: 160, h: 78 }
   return { w: 148, h: 72 }
 }
 
@@ -508,8 +520,8 @@ const graphConfigs = computed(() => defineConfigs({
     },
     normal: {
       type: 'rect',
-      width: 168,
-      height: 82,
+      width: 176,
+      height: 86,
       borderRadius: 8,
       color: 'transparent',
       strokeColor: 'transparent',
@@ -585,6 +597,16 @@ const eventHandlers = {
     }
   }
 }
+
+// --- Edge highlighting from panel hover ---
+watch(() => props.highlightEdgeId, (edgeId) => {
+  if (!graphRef.value) return
+  if (edgeId) {
+    graphRef.value.setSelectedEdges([edgeId])
+  } else {
+    graphRef.value.setSelectedEdges([])
+  }
+})
 
 // --- Public methods ---
 
