@@ -698,6 +698,26 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 21g: Side Panel UX Improvements (2026-04-18)
+
+**Panel content restructuring:**
+- Role badge moved into USlideover description ("Core · Juniper · QFX5100")
+- Connections grouped by target switch — one card per switch instead of per link
+- Port mappings as compact monospace rows (local ↔ remote) inside each card
+- LAG sub-groups shown as labeled sections within switch cards
+- VLANs deduplicated per target switch, shown once at bottom of card
+- Port stats dots reduced from 2px to 1.5px, tighter spacing
+- Overall vertical density significantly improved
+
+**Files changed:**
+- `app/components/topology/TopologyDetailPanel.vue`
+- `.ai/MIGRATION_STATUS.md`
+
+**Verification:**
+- `npm run build`: Passes
+
+---
+
 ## Feature Backlog
 
 ### Quick Wins
