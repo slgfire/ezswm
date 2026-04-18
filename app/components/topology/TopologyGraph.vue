@@ -588,8 +588,16 @@ const graphConfigs = computed(() => defineConfigs({
       }
     },
     hover: {
-      color: isDark.value ? '#999' : '#888',
-      width: 3.5
+      color: (edge: { isLag?: boolean; isTrunk?: boolean }) => {
+        if (edge.isLag) return isDark.value ? '#a0b0c0' : '#7799bb'
+        if (edge.isTrunk) return isDark.value ? '#999' : '#777'
+        return isDark.value ? '#888' : '#888'
+      },
+      width: (edge: { isLag?: boolean; isTrunk?: boolean }) => {
+        if (edge.isLag) return 4.5
+        if (edge.isTrunk) return 3
+        return 2.5
+      }
     },
     selected: {
       color: 'rgba(34,197,94,0.6)',
