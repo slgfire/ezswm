@@ -599,6 +599,30 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 21c: Topology UI Polish Refinement (2026-04-18)
+
+**Focused polish pass:**
+- Native fit-to-view via `autoPanAndZoomOnLoad: 'fit-content'` with `fitContentMargin: 50` (replaces manual setTimeout)
+- Node bounding box matches largest node (168x82) preventing right-edge clipping
+- Slightly larger nodes: Access 148x72 (was 140x68), Dist 156x76 (was 150x74), Core 168x82 (was 164x80)
+- Edge fanout: `gap: 12` + `margin: 8` for cleaner parallel link spacing
+- Dist border opacity 0.25 vs Access 0.15 for stronger visual differentiation
+- Model text left-aligned (matching name) instead of centered
+- Port count label (`48p`) added for context next to status symbols
+- Toolbar + bottom bar: `backdrop-blur-sm`, `shadow-md`, `bg-elevated/90` for cohesive floating look
+- Stats merged into legend bar (single bottom element instead of two)
+- Tier y-spacing 260 (was 250) for better vertical distribution
+
+**Files changed:**
+- `app/components/topology/TopologyGraph.vue`
+- `.ai/MIGRATION_STATUS.md`
+
+**Verification:**
+- `npm run build`: Passes
+- Zero console errors
+
+---
+
 ## Feature Backlog
 
 ### Quick Wins
