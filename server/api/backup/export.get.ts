@@ -2,7 +2,7 @@ import { readJson } from '../../storage/jsonStorage'
 
 export default defineEventHandler((event) => {
   const backup = {
-    version: '0.1.0',
+    version: useRuntimeConfig().public.appVersion,
     created_at: new Date().toISOString(),
     data: {
       users: readJson('users.json'),
