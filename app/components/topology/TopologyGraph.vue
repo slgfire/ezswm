@@ -41,6 +41,10 @@
           <g
             :class="{ 'cursor-pointer': !isGhostNode(nodeId) }"
             :filter="getNodeFilter(nodeId)"
+            style="pointer-events: all"
+            @click.stop="onNodeClick(nodeId)"
+            @pointerenter="hoveredNodeId = nodeId"
+            @pointerleave="hoveredNodeId = null"
           >
             <!-- Node card background -->
             <rect
@@ -560,18 +564,14 @@ const graphConfigs = computed(() => defineConfigs({
 
 // --- Event handlers ---
 
+// Node click from SVG template (override-node has pointer-events: all)
+function onNodeClick(nodeId: string) {
+  if (!isGhostNode(nodeId)) {
+    emit('select-node', nodeId)
+  }
+}
+
 const eventHandlers = {
-  'node:click': ({ node }: { node: string }) => {
-    if (!isGhostNode(node)) {
-      emit('select-node', node)
-    }
-  },
-  'node:pointerover': ({ node }: { node: string }) => {
-    hoveredNodeId.value = node
-  },
-  'node:pointerout': () => {
-    hoveredNodeId.value = null
-  },
   'edge:click': ({ edge }: { edge: string }) => {
     const link = edgeMap.value.get(edge)
     if (link) {
