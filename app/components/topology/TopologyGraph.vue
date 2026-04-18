@@ -139,6 +139,7 @@
 
         <template #edge-label="{ edge, ...slotProps }">
           <v-edge-label
+            v-if="getEdgeSourceLabel(edge)"
             :text="getEdgeSourceLabel(edge)"
             align="source"
             :vertical-align="0"
@@ -147,6 +148,7 @@
             fill="#6b7280"
           />
           <v-edge-label
+            v-if="getEdgeTargetLabel(edge)"
             :text="getEdgeTargetLabel(edge)"
             align="target"
             :vertical-align="0"

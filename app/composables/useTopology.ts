@@ -21,7 +21,7 @@ export function useTopology(siteId: Ref<string> | string) {
     try {
       const [topoData, layoutData] = await Promise.all([
         apiFetch<TopologyData>(`/api/sites/${id.value}/topology`),
-        apiFetch<TopologyLayout>(`/api/sites/${id.value}/topology/layout`)
+        apiFetch<TopologyLayout>(`/api/sites/${id.value}/topology-layout`)
       ])
       data.value = topoData
       layout.value = layoutData
@@ -34,7 +34,7 @@ export function useTopology(siteId: Ref<string> | string) {
 
   async function saveLayout(positions: Record<string, { x: number; y: number }>) {
     try {
-      await apiFetch(`/api/sites/${id.value}/topology/layout`, {
+      await apiFetch(`/api/sites/${id.value}/topology-layout`, {
         method: 'PUT',
         body: { node_positions: positions }
       })
@@ -45,7 +45,7 @@ export function useTopology(siteId: Ref<string> | string) {
 
   async function resetLayout() {
     try {
-      await apiFetch(`/api/sites/${id.value}/topology/layout`, {
+      await apiFetch(`/api/sites/${id.value}/topology-layout`, {
         method: 'DELETE'
       })
       layout.value = null

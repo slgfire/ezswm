@@ -1,5 +1,5 @@
-import { topologyLayoutRepository } from '../../../../repositories/topologyLayoutRepository'
-import { siteRepository } from '../../../../repositories/siteRepository'
+import { topologyLayoutRepository } from '../../../repositories/topologyLayoutRepository'
+import { siteRepository } from '../../../repositories/siteRepository'
 
 export default defineEventHandler((event) => {
   const siteId = event.context.params?.siteId
@@ -11,6 +11,7 @@ export default defineEventHandler((event) => {
     throw createError({ statusCode: 404, statusMessage: 'Site not found' })
   }
 
-  const layout = topologyLayoutRepository.getBySiteId(siteId)
-  return layout ?? { node_positions: {} }
+  topologyLayoutRepository.deleteBySiteId(siteId)
+  setResponseStatus(event, 204)
+  return null
 })

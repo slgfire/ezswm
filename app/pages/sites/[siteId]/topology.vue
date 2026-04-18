@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-[calc(100vh-4rem)] overflow-hidden">
     <!-- Empty state: all sites -->
-    <div v-if="isAllSites()" class="flex flex-1 flex-col items-center justify-center p-6 text-center">
+    <div v-if="isAllContext" class="flex flex-1 flex-col items-center justify-center p-6 text-center">
       <UIcon name="i-heroicons-share" class="mb-4 h-16 w-16 text-gray-500" />
       <h2 class="mb-2 text-xl font-semibold text-gray-300">{{ $t('topology.selectSiteTitle') }}</h2>
       <p class="max-w-md text-sm text-gray-500">{{ $t('topology.selectSiteDescription') }}</p>
@@ -56,7 +56,7 @@ useHead({ title: 'Topology' })
 
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
-const { isAllSites } = useCurrentSite()
+const isAllContext = computed(() => siteId.value === 'all')
 
 const { data, layout, loading, fetchTopology, saveLayout, resetLayout } = useTopology(siteId)
 
@@ -97,7 +97,7 @@ async function onReset() {
 
 // Fetch client-side only (v-network-graph is client-only)
 onMounted(() => {
-  if (!isAllSites()) {
+  if (!isAllContext.value) {
     fetchTopology()
   }
 })

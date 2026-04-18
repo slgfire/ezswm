@@ -1,7 +1,7 @@
-import { topologyLayoutRepository } from '../../../../repositories/topologyLayoutRepository'
-import { siteRepository } from '../../../../repositories/siteRepository'
-import { switchRepository } from '../../../../repositories/switchRepository'
-import { saveLayoutSchema } from '../../../../validators/topologySchemas'
+import { topologyLayoutRepository } from '../../../repositories/topologyLayoutRepository'
+import { siteRepository } from '../../../repositories/siteRepository'
+import { switchRepository } from '../../../repositories/switchRepository'
+import { saveLayoutSchema } from '../../../validators/topologySchemas'
 
 export default defineEventHandler(async (event) => {
   const siteId = event.context.params?.siteId
