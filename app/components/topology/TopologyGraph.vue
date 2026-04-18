@@ -504,9 +504,7 @@ const graphConfigs = computed(() => defineConfigs({
       visible: false
     },
     focusring: {
-      color: isDark.value ? 'rgba(34,197,94,0.2)' : 'rgba(34,197,94,0.3)',
-      width: 2,
-      padding: 2
+      visible: false
     },
     normal: {
       type: 'rect',
