@@ -216,6 +216,16 @@
           <span class="inline-block h-2 w-2 rounded-full" style="background: #eab308" /> Mgmt
         </span>
         <div class="h-3 w-px bg-default" />
+        <span class="flex items-center gap-1.5 text-xs text-gray-500">
+          <span class="inline-block w-3 border-t border-gray-500" /> Link
+        </span>
+        <span class="flex items-center gap-1.5 text-xs text-gray-500">
+          <span class="inline-block w-3 border-t border-dashed border-gray-400" /> Trunk
+        </span>
+        <span class="flex items-center gap-1.5 text-xs text-gray-500">
+          <span class="inline-block w-3 border-t-2 border-[#7a8999]" /> LAG
+        </span>
+        <div class="h-3 w-px bg-default" />
         <span class="font-mono text-xs text-gray-500">
           {{ Object.keys(graphNodes).length }} switches · {{ Object.keys(graphEdges).length }} links
         </span>
@@ -437,11 +447,13 @@ const graphNodes = computed(() => {
 })
 
 const graphEdges = computed(() => {
-  const result: Record<string, { source: string; target: string }> = {}
+  const result: Record<string, { source: string; target: string; isLag: boolean; isTrunk: boolean }> = {}
   for (const link of props.links) {
     result[link.id] = {
       source: link.source_switch_id,
-      target: link.target_switch_id
+      target: link.target_switch_id,
+      isLag: !!link.lag_group_id,
+      isTrunk: link.vlans.length > 1
     }
   }
   return result
@@ -560,16 +572,28 @@ const graphConfigs = computed(() => defineConfigs({
     gap: 14,
     keepOrder: 'vertical',
     normal: {
-      color: isDark.value ? '#555' : '#bbb',
-      width: 2
+      color: (edge: { isLag?: boolean; isTrunk?: boolean }) => {
+        if (edge.isLag) return isDark.value ? '#7a8999' : '#8899aa'
+        if (edge.isTrunk) return isDark.value ? '#666' : '#aaa'
+        return isDark.value ? '#555' : '#bbb'
+      },
+      width: (edge: { isLag?: boolean; isTrunk?: boolean }) => {
+        if (edge.isLag) return 3
+        if (edge.isTrunk) return 2
+        return 1.5
+      },
+      dasharray: (edge: { isLag?: boolean; isTrunk?: boolean }) => {
+        if (edge.isTrunk && !edge.isLag) return '6 3'
+        return 0
+      }
     },
     hover: {
       color: isDark.value ? '#999' : '#888',
-      width: 3
+      width: 3.5
     },
     selected: {
       color: 'rgba(34,197,94,0.6)',
-      width: 3.5
+      width: 4
     },
     margin: null
   }

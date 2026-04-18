@@ -748,6 +748,31 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 21i: Edge Type Differentiation + Card Design Alignment (2026-04-18)
+
+**Node card design aligned with switch overview:**
+- Identical structure: Name + Badge header, Model subtitle, port footer
+- Port footer matches switch cards: "XX PORTS" left, colored dots right, border-t separator
+- Removed accent bar and triangle port symbols
+- Dynamic name truncation based on node width
+
+**Edge type visual differentiation:**
+- Normal links: thin (1.5px), solid, `#555`
+- Trunk links (multiple VLANs): medium (2px), dashed `6,3`, `#666`
+- LAG links: thick (3px), solid, `#7a8999` (blue-gray)
+- Per-edge styling via v-network-graph function configs
+- Custom edge data (`isLag`, `isTrunk`) passed to graphEdges
+- Legend updated with edge type indicators (solid/dashed/thick lines)
+
+**Files changed:**
+- `app/components/topology/TopologyGraph.vue`
+- `.ai/MIGRATION_STATUS.md`
+
+**Verification:**
+- `npm run build`: Passes
+
+---
+
 ## Feature Backlog
 
 ### Quick Wins
