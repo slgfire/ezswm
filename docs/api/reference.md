@@ -146,7 +146,15 @@ erDiagram
 | GET | `/api/dashboard/stats` | Get dashboard statistics |
 | GET | `/api/search` | Global search across all entities |
 | GET | `/api/subnet-calculator` | Calculate subnet details from CIDR |
-| GET | `/api/topology` | Get network topology data |
+
+### Topology
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/sites/:siteId/topology` | Get topology data (nodes, links, ghost nodes) for a site |
+| GET | `/api/sites/:siteId/topology-layout` | Get saved node positions for a site |
+| PUT | `/api/sites/:siteId/topology-layout` | Save node positions |
+| DELETE | `/api/sites/:siteId/topology-layout` | Reset saved layout |
 
 ## Data Management
 

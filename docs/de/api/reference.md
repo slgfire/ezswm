@@ -146,7 +146,15 @@ erDiagram
 | GET | `/api/dashboard/stats` | Dashboard-Statistiken abrufen |
 | GET | `/api/search` | Globale Suche über alle Entitäten |
 | GET | `/api/subnet-calculator` | Subnetz-Details aus CIDR berechnen |
-| GET | `/api/topology` | Netzwerktopologie-Daten abrufen |
+
+### Topologie
+
+| Methode | Endpunkt | Beschreibung |
+|---------|----------|-------------|
+| GET | `/api/sites/:siteId/topology` | Topologie-Daten (Nodes, Links, Ghost-Nodes) für einen Standort |
+| GET | `/api/sites/:siteId/topology-layout` | Gespeicherte Node-Positionen abrufen |
+| PUT | `/api/sites/:siteId/topology-layout` | Node-Positionen speichern |
+| DELETE | `/api/sites/:siteId/topology-layout` | Gespeichertes Layout zurücksetzen |
 
 ## Datenverwaltung
 

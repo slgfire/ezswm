@@ -784,6 +784,38 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 21k: Documentation Audit + Release Readiness (2026-04-19)
+
+**README.md:**
+- Version badge updated: 0.8.0 → 0.12.0
+- Roadmap: Topology, LAG Groups, Print View marked as completed with version tags
+- Rack Planning and IPv6 remain as planned
+
+**User Guide (EN + DE):**
+- Added full "Network Topology" section (EN: ~60 lines, DE: ~60 lines)
+- Covers: overview, graph layout, edge types (Link/Trunk/LAG), detail panel, toolbar, saved positions
+- Two new topology screenshots added
+
+**API Reference (EN + DE):**
+- Removed stale `GET /api/topology` global endpoint
+- Added 4 site-scoped topology endpoints: data, layout GET/PUT/DELETE
+
+**Screenshots:**
+- `screenshot-topology.png` — full topology graph view
+- `screenshot-topology-detail.png` — topology with detail panel open
+
+**Files changed:**
+- `README.md`
+- `docs/guide/user-guide.md`
+- `docs/de/guide/user-guide.md`
+- `docs/api/reference.md`
+- `docs/de/api/reference.md`
+- `docs/public/images/screenshot-topology.png` (new)
+- `docs/public/images/screenshot-topology-detail.png` (new)
+- `.ai/MIGRATION_STATUS.md`
+
+---
+
 ## Feature Backlog
 
 ### Quick Wins
