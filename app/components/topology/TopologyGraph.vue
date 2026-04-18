@@ -200,36 +200,44 @@
       </v-network-graph>
     </ClientOnly>
 
-    <!-- Bottom bar: Legend + Stats unified -->
-    <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-      <div class="pointer-events-auto flex items-center gap-3 rounded-lg border border-default bg-elevated/90 px-3 py-1.5 shadow-md backdrop-blur-sm">
-        <span class="flex items-center gap-1.5 text-xs text-gray-400">
-          <span class="inline-block h-2 w-2 rounded-full" style="background: #ef4444" /> Core
-        </span>
-        <span class="flex items-center gap-1.5 text-xs text-gray-400">
-          <span class="inline-block h-2 w-2 rounded-full" style="background: #3b82f6" /> Dist
-        </span>
-        <span class="flex items-center gap-1.5 text-xs text-gray-400">
-          <span class="inline-block h-2 w-2 rounded-full" style="background: #22c55e" /> Access
-        </span>
-        <span class="flex items-center gap-1.5 text-xs text-gray-400">
-          <span class="inline-block h-2 w-2 rounded-full" style="background: #eab308" /> Mgmt
-        </span>
-        <div class="h-3 w-px bg-default" />
-        <span class="flex items-center gap-1.5 text-xs text-gray-500">
-          <span class="inline-block w-3 border-t border-gray-500" /> Link
-        </span>
-        <span class="flex items-center gap-1.5 text-xs text-gray-500">
-          <span class="inline-block w-3 border-t border-dashed border-gray-400" /> Trunk
-        </span>
-        <span class="flex items-center gap-1.5 text-xs text-gray-500">
-          <span class="inline-block w-3 border-t-2 border-[#7a8999]" /> LAG
-        </span>
-        <div class="h-3 w-px bg-default" />
-        <span class="font-mono text-xs text-gray-500">
-          {{ Object.keys(graphNodes).length }} switches · {{ Object.keys(graphEdges).length }} links
-        </span>
+    <!-- Bottom bar: Legend (matching app chip style) -->
+    <div class="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 pointer-events-none text-[11px] text-gray-500 dark:text-gray-400">
+      <!-- Role chips -->
+      <div class="pointer-events-auto flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 dark:bg-neutral-800">
+        <span class="inline-block h-2 w-2 rounded-full" style="background: #ef4444" />
+        <span class="font-medium text-gray-700 dark:text-gray-200">Core</span>
       </div>
+      <div class="pointer-events-auto flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 dark:bg-neutral-800">
+        <span class="inline-block h-2 w-2 rounded-full" style="background: #3b82f6" />
+        <span class="font-medium text-gray-700 dark:text-gray-200">Dist</span>
+      </div>
+      <div class="pointer-events-auto flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 dark:bg-neutral-800">
+        <span class="inline-block h-2 w-2 rounded-full" style="background: #22c55e" />
+        <span class="font-medium text-gray-700 dark:text-gray-200">Access</span>
+      </div>
+      <div class="pointer-events-auto flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 dark:bg-neutral-800">
+        <span class="inline-block h-2 w-2 rounded-full" style="background: #eab308" />
+        <span class="font-medium text-gray-700 dark:text-gray-200">Mgmt</span>
+      </div>
+      <span class="text-gray-600 dark:text-gray-500">|</span>
+      <!-- Edge type chips -->
+      <div class="pointer-events-auto flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 dark:bg-neutral-800">
+        <span class="inline-block w-3 border-t border-gray-500" />
+        <span>Link</span>
+      </div>
+      <div class="pointer-events-auto flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 dark:bg-neutral-800">
+        <span class="inline-block w-3 border-t border-dashed border-gray-400" />
+        <span>Trunk</span>
+      </div>
+      <div class="pointer-events-auto flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 dark:bg-neutral-800">
+        <span class="inline-block w-3 border-t-2 border-[#7a8999]" />
+        <span>LAG</span>
+      </div>
+      <span class="text-gray-600 dark:text-gray-500">|</span>
+      <!-- Stats -->
+      <span class="font-mono text-gray-500">
+        {{ Object.keys(graphNodes).length }} switches · {{ Object.keys(graphEdges).length }} links
+      </span>
     </div>
   </div>
 </template>
