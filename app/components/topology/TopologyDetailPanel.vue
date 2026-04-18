@@ -64,11 +64,9 @@
                 class="card-glow rounded-lg p-3"
                 :class="[
                   group.isGhost ? 'opacity-60 cursor-default' : 'cursor-pointer',
-                  highlightEdgeId === link.id ? 'ring-1 ring-green-500/40' : ''
+                  ''
                 ]"
                 @click="!group.isGhost && $emit('select-node', group.targetId)"
-                @pointerenter="$emit('highlight-edge', link.id)"
-                @pointerleave="$emit('highlight-edge', '')"
               >
                 <div class="flex items-center justify-between mb-1">
                   <span class="text-sm font-medium text-gray-900 dark:text-white">
@@ -138,12 +136,10 @@ const props = defineProps<{
   nodes: TopologyNode[]
   ghostNodes: TopologyGhostNode[]
   siteId: string
-  highlightEdgeId?: string | null
 }>()
 
 const emit = defineEmits<{
   'select-node': [nodeId: string]
-  'highlight-edge': [edgeId: string]
   'close': []
 }>()
 

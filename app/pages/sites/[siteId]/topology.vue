@@ -31,7 +31,6 @@
         :ghost-nodes="data!.ghost_nodes"
         :saved-positions="layout?.node_positions ?? null"
         :selected-node-id="selectedNodeId"
-        :highlight-edge-id="highlightEdgeId"
         @select-node="onSelectNode"
         @select-edge="onSelectEdge"
         @positions-changed="onPositionsChanged"
@@ -47,9 +46,7 @@
       :nodes="data.nodes"
       :ghost-nodes="data.ghost_nodes"
       :site-id="siteId"
-      :highlight-edge-id="highlightEdgeId"
       @select-node="onSelectNode"
-      @highlight-edge="onHighlightEdge"
       @close="onClosePanel"
     />
   </div>
@@ -66,7 +63,6 @@ const { data, layout, loading, fetchTopology, saveLayout, resetLayout } = useTop
 
 const graphRef = ref<{ fitToContents: () => void } | null>(null)
 const selectedNodeId = ref<string | null>(null)
-const highlightEdgeId = ref<string | null>(null)
 
 const selectedNode = computed(() => {
   if (!selectedNodeId.value || !data.value) return null
@@ -74,26 +70,15 @@ const selectedNode = computed(() => {
 })
 
 function onSelectNode(nodeId: string) {
-  if (!nodeId) {
-    selectedNodeId.value = null
-    highlightEdgeId.value = null
-  } else {
-    selectedNodeId.value = nodeId
-    highlightEdgeId.value = null
-  }
+  selectedNodeId.value = nodeId || null
 }
 
-function onSelectEdge(edgeId: string) {
-  highlightEdgeId.value = edgeId
-}
-
-function onHighlightEdge(edgeId: string) {
-  highlightEdgeId.value = edgeId || null
+function onSelectEdge(_edgeId: string) {
+  // Edge click handled by library selection style
 }
 
 function onClosePanel() {
   selectedNodeId.value = null
-  highlightEdgeId.value = null
 }
 
 function onPositionsChanged(positions: Record<string, { x: number; y: number }>) {
@@ -104,7 +89,6 @@ async function onReset() {
   await resetLayout()
   await fetchTopology()
   selectedNodeId.value = null
-  highlightEdgeId.value = null
   nextTick(() => graphRef.value?.fitToContents())
 }
 
@@ -118,7 +102,6 @@ onMounted(() => {
 watch(siteId, (newId) => {
   if (newId && newId !== 'all') {
     selectedNodeId.value = null
-    highlightEdgeId.value = null
     fetchTopology()
   }
 })

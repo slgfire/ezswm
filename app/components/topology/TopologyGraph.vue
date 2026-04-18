@@ -598,16 +598,6 @@ const eventHandlers = {
   }
 }
 
-// --- Edge highlighting from panel hover ---
-watch(() => props.highlightEdgeId, (edgeId) => {
-  if (!graphRef.value) return
-  if (edgeId) {
-    graphRef.value.setSelectedEdges([edgeId])
-  } else {
-    graphRef.value.setSelectedEdges([])
-  }
-})
-
 // --- Public methods ---
 
 function fitToContents() {
