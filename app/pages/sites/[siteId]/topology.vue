@@ -95,10 +95,12 @@ async function onReset() {
   nextTick(() => graphRef.value?.fitToContents())
 }
 
-// Fetch on mount (only for real sites)
-if (!isAllSites()) {
-  fetchTopology()
-}
+// Fetch client-side only (v-network-graph is client-only)
+onMounted(() => {
+  if (!isAllSites()) {
+    fetchTopology()
+  }
+})
 
 watch(siteId, (newId) => {
   if (newId && newId !== 'all') {
