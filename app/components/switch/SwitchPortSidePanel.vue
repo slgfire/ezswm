@@ -191,7 +191,7 @@ import type { IPAllocation } from '~~/types/ipAllocation'
 import type { LAGGroup } from '~~/types/lagGroup'
 
 const props = defineProps<{
-  port: Port
+  port: Port | null
   switchId: string
   lagGroup?: LAGGroup
 }>()
