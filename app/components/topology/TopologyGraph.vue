@@ -37,7 +37,7 @@
         </defs>
 
         <!-- Custom node rendering (matches switch card design from switches/index) -->
-        <template #override-node="{ nodeId, scale, config, ...slotProps }">
+        <template #override-node="{ nodeId, scale }">
           <g
             :class="{ 'cursor-pointer': !isGhostNode(nodeId) }"
             :filter="getNodeFilter(nodeId)"
@@ -177,7 +177,7 @@
         </template>
 
         <!-- Edge labels -->
-        <template #edge-label="{ edge, ...slotProps }">
+        <template #edge-label="{ edge }">
           <v-edge-label
             v-if="getEdgeSourceLabel(edge)"
             :text="getEdgeSourceLabel(edge)"
@@ -244,6 +244,7 @@
 
 <script setup lang="ts">
 import { defineConfigs } from 'v-network-graph'
+import type { Edge } from 'v-network-graph'
 import type { TopologyNode, TopologyLink, TopologyGhostNode } from '~~/types/topology'
 
 const props = defineProps<{
@@ -262,6 +263,7 @@ const emit = defineEmits<{
   'reset': []
 }>()
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const graphRef = ref<any>(null)
 const hoveredNodeId = ref<string | null>(null)
 
@@ -548,7 +550,7 @@ const graphConfigs = computed(() => defineConfigs({
   },
   node: {
     selectable: true,
-    draggable: (nodeId: string) => !isGhostNode(nodeId),
+    draggable: true,
     label: {
       visible: false
     },
@@ -580,28 +582,28 @@ const graphConfigs = computed(() => defineConfigs({
     gap: 14,
     keepOrder: 'vertical',
     normal: {
-      color: (edge: { isLag?: boolean; isTrunk?: boolean }) => {
+      color: (edge: Edge) => {
         if (edge.isLag) return isDark.value ? '#7a8999' : '#8899aa'
         if (edge.isTrunk) return isDark.value ? '#666' : '#aaa'
         return isDark.value ? '#555' : '#bbb'
       },
-      width: (edge: { isLag?: boolean; isTrunk?: boolean }) => {
+      width: (edge: Edge) => {
         if (edge.isLag) return 3
         if (edge.isTrunk) return 2
         return 1.5
       },
-      dasharray: (edge: { isLag?: boolean; isTrunk?: boolean }) => {
+      dasharray: (edge: Edge) => {
         if (edge.isTrunk && !edge.isLag) return '6 3'
         return 0
       }
     },
     hover: {
-      color: (edge: { isLag?: boolean; isTrunk?: boolean }) => {
+      color: (edge: Edge) => {
         if (edge.isLag) return isDark.value ? '#a0b0c0' : '#7799bb'
         if (edge.isTrunk) return isDark.value ? '#999' : '#777'
         return isDark.value ? '#888' : '#888'
       },
-      width: (edge: { isLag?: boolean; isTrunk?: boolean }) => {
+      width: (edge: Edge) => {
         if (edge.isLag) return 4.5
         if (edge.isTrunk) return 3
         return 2.5

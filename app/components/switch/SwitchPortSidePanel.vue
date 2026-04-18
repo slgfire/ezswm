@@ -617,7 +617,7 @@ async function save() {
     body.connected_device = null; body.connected_device_id = null; body.connected_port_id = null; body.connected_port = null
   } else { body.connected_device_id = null; body.connected_port_id = null }
   try {
-    await $fetch(`/api/switches/${props.switchId}/ports/${props.port.id}`, { method: 'PUT', body })
+    await $fetch(`/api/switches/${props.switchId}/ports/${props.port!.id}`, { method: 'PUT', body })
 
     // LAG sync: update VLAN/speed/status/connected_device on all other LAG member ports
     if ((props.lagGroup?.port_ids?.length ?? 0) > 1) {
@@ -635,7 +635,7 @@ async function save() {
       if (body.connected_allocation_id) {
         syncFields.connected_port = null
       }
-      const otherPortIds = props.lagGroup!.port_ids!.filter((pid: string) => pid !== props.port.id)
+      const otherPortIds = props.lagGroup!.port_ids!.filter((pid: string) => pid !== props.port!.id)
       for (const portId of otherPortIds) {
         try {
           await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, { method: 'PUT', body: syncFields })
@@ -652,12 +652,12 @@ async function save() {
 
 function onRemoveFromLag() {
   if (!props.lagGroup || !props.port) return
-  emit('remove-from-lag', props.lagGroup.id, props.port.id)
+  emit('remove-from-lag', props.lagGroup.id, props.port!.id)
 }
 
 async function resetPort() {
   try {
-    await ($fetch as typeof globalThis.fetch)(`/api/switches/${props.switchId}/ports/${props.port.id}`, { method: 'DELETE' })
+    await ($fetch as typeof globalThis.fetch)(`/api/switches/${props.switchId}/ports/${props.port!.id}`, { method: 'DELETE' })
     toast.add({ title: t('switches.ports.portReset'), color: 'success' }); emit('saved'); isOpen.value = false
   } catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.add({ title: err.data?.message || 'Reset failed', color: 'error' }) }
 }
