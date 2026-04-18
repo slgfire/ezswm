@@ -41,12 +41,10 @@
           <g
             :class="{ 'cursor-pointer': !isGhostNode(nodeId) }"
             :filter="getNodeFilter(nodeId)"
-            style="pointer-events: all"
-            @click.stop="onNodeClick(nodeId)"
             @pointerenter="hoveredNodeId = nodeId"
             @pointerleave="hoveredNodeId = null"
           >
-            <!-- Card background -->
+            <!-- Card background (pointer-events here so library drag still works on the outer g) -->
             <rect
               :x="-getNodeSize(nodeId).w / 2 * scale"
               :y="-getNodeSize(nodeId).h / 2 * scale"
@@ -57,6 +55,8 @@
               :stroke="getNodeStroke(nodeId)"
               :stroke-width="selectedNodeId === nodeId ? 2 : hoveredNodeId === nodeId ? 1.5 : 1"
               :stroke-dasharray="isGhostNode(nodeId) ? '4,4' : 'none'"
+              style="pointer-events: all; cursor: pointer"
+              @click="onNodeClick(nodeId)"
             />
 
             <!-- Header: Name + Role badge (like switch cards) -->
@@ -65,8 +65,7 @@
               :x="(-getNodeSize(nodeId).w / 2 + 14) * scale"
               :font-size="12 * scale"
               font-weight="600"
-              fill="currentColor"
-              class="text-gray-900 dark:text-white"
+              :fill="isDark ? '#fff' : '#111'"
               dominant-baseline="middle"
             >
               {{ truncateText(getNodeData(nodeId)?.name || '', getNodeRole(nodeId) ? getNameMaxChars(nodeId) : getNameMaxChars(nodeId) + 5) }}
@@ -102,8 +101,7 @@
               :y="(-getNodeSize(nodeId).h / 2 + 34) * scale"
               :x="(-getNodeSize(nodeId).w / 2 + 14) * scale"
               :font-size="9 * scale"
-              fill="currentColor"
-              class="text-gray-500 dark:text-gray-400"
+              :fill="isDark ? '#9ca3af' : '#6b7280'"
               dominant-baseline="middle"
             >
               {{ truncateText(getNodeModel(nodeId)!, Math.floor(getNodeSize(nodeId).w / 7)) }}
@@ -115,8 +113,7 @@
                 :y="(getNodeSize(nodeId).h / 2 - 14) * scale"
                 :x="0"
                 :font-size="9 * scale"
-                fill="currentColor"
-                class="text-gray-500"
+                :fill="isDark ? '#6b7280' : '#6b7280'"
                 text-anchor="middle"
                 dominant-baseline="middle"
               >
