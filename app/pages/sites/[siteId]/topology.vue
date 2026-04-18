@@ -110,9 +110,4 @@ watch(siteId, (newId) => {
   }
 })
 
-// Re-fit graph when detail panel opens/closes (canvas size changes)
-const panelOpen = computed(() => !!selectedNode.value)
-watch(panelOpen, () => {
-  setTimeout(() => graphRef.value?.fitToContents(), 150)
-})
 </script>
