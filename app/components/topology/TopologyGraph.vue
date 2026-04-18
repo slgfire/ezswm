@@ -329,16 +329,16 @@ function getNodeSize(nodeId: string): { w: number; h: number } {
   return { w: 164, h: 72 }
 }
 
-// Subtle background tint per role
+// Subtle background tint per role (opaque to fully occlude edges behind cards)
 function nodeBackgroundForRole(nodeId: string): string {
   if (isGhostNode(nodeId)) return nodeBackground.value
   const role = getNodeRole(nodeId)
   if (!role || !isDark.value) return nodeBackground.value
   const tints: Record<string, string> = {
-    core: 'rgba(239,68,68,0.03)',
-    distribution: 'rgba(59,130,246,0.02)',
-    access: 'rgba(34,197,94,0.015)',
-    management: 'rgba(234,179,8,0.02)'
+    core: '#100e0e',
+    distribution: '#0e0e10',
+    access: '#0e0f0e',
+    management: '#0f0e0e'
   }
   return tints[role] || nodeBackground.value
 }
