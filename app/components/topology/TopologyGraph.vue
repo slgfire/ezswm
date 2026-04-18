@@ -134,9 +134,9 @@
               <text
                 :x="(-getNodeSize(nodeId).w / 2 + 12) * scale"
                 :y="(getNodeSize(nodeId).h / 2 - 10) * scale"
-                :font-size="8 * scale"
+                :font-size="9 * scale"
                 fill="currentColor"
-                class="text-gray-600"
+                class="text-gray-500"
                 font-family="ui-monospace,monospace"
                 dominant-baseline="middle"
               >
@@ -487,7 +487,7 @@ const graphConfigs = computed(() => defineConfigs({
     minZoomLevel: 0.2,
     maxZoomLevel: 3,
     autoPanAndZoomOnLoad: 'fit-content',
-    fitContentMargin: 50
+    fitContentMargin: { top: 20, bottom: 60, left: 60, right: 60 }
   },
   node: {
     selectable: true,
@@ -511,7 +511,7 @@ const graphConfigs = computed(() => defineConfigs({
   },
   edge: {
     selectable: true,
-    gap: 12,
+    gap: 14,
     keepOrder: 'vertical',
     normal: {
       color: isDark.value ? '#555' : '#bbb',
@@ -525,7 +525,7 @@ const graphConfigs = computed(() => defineConfigs({
       color: 'rgba(34,197,94,0.6)',
       width: 3.5
     },
-    margin: 8
+    margin: null
   }
 }))
 

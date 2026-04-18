@@ -623,6 +623,31 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 21d: Topology Final Layout + Edge Attachment Fix (2026-04-18)
+
+**Layout polish:**
+- Asymmetric fitContentMargin `{ top: 20, bottom: 60, left: 60, right: 60 }` — graph sits higher, less empty space above
+- Bottom/side padding prevents node clipping near edges and legend bar
+- Edge gap increased to 14 for cleaner parallel link fanout from core
+
+**Edge-to-node attachment fix:**
+- Root cause: node config `width/height` (168x82) was larger than actual SVG rects (148x72 for Access), causing edges to terminate at the config boundary instead of the visual card edge
+- Fix: `edge.margin: null` — edges now extend to node center, visually clipped by the opaque node background rect drawn in the `#override-node` slot
+- Edges attach flush to all node sizes regardless of role
+
+**Minor:**
+- Port count label font bumped to 9px (was 8px) for readability
+
+**Files changed:**
+- `app/components/topology/TopologyGraph.vue`
+- `.ai/MIGRATION_STATUS.md`
+
+**Verification:**
+- `npm run build`: Passes
+- Zero console errors
+
+---
+
 ## Feature Backlog
 
 ### Quick Wins
