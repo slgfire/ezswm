@@ -574,6 +574,31 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 21b: Topology UI/UX Polish (2026-04-18)
+
+**Visual improvements to topology graph:**
+- Edge visibility: normal color `#555` (was `#2a2a2a`), hover `#999`, selected green with width 3.5
+- Removed duplicate node labels (v-network-graph default label hidden via `label.visible: false`)
+- Role-based node sizing: Core 164x80, Distribution 150x74, Access 140x68
+- Role-colored node borders: subtle tint matching role color, stronger on hover
+- Node hover state: border opacity increase + SVG glow filter in role color
+- Port status symbols: ▲ up (green), — down (gray), ▼ disabled (red) instead of identical circles
+- Auto-fit on page load (`fitToContents()` after 200ms mount delay)
+- Compact icon toolbar: +/− zoom, fit, reset, export as icon-only buttons with dividers
+- Improved legend: filled circles + port status symbol explanation in bottom bar
+- Better auto-layout spacing: 220px horizontal, 250px vertical (was 200/200)
+
+**Files changed:**
+- `app/components/topology/TopologyGraph.vue` — complete UI overhaul
+- `i18n/locales/en.json` — added zoomIn, zoomOut keys
+- `i18n/locales/de.json` — added zoomIn, zoomOut keys
+
+**Verification:**
+- `npm run build`: Passes
+- Zero console errors
+
+---
+
 ## Feature Backlog
 
 ### Quick Wins

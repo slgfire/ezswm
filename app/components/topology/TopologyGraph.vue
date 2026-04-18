@@ -1,16 +1,14 @@
 <template>
   <div class="relative h-full w-full">
-    <!-- Toolbar -->
-    <div class="absolute left-4 top-4 z-10 flex gap-1.5">
-      <UButton size="xs" color="neutral" variant="subtle" @click="fitToContents">
-        {{ $t('topology.fit') }}
-      </UButton>
-      <UButton size="xs" color="neutral" variant="subtle" @click="exportPng">
-        {{ $t('topology.exportPng') }}
-      </UButton>
-      <UButton size="xs" color="neutral" variant="subtle" @click="$emit('reset')">
-        {{ $t('topology.resetLayout') }}
-      </UButton>
+    <!-- Floating Toolbar -->
+    <div class="absolute left-3 top-3 z-10 flex items-center gap-px rounded-lg border border-default bg-elevated p-1">
+      <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-plus" :title="$t('topology.zoomIn')" @click="zoomIn" />
+      <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-minus" :title="$t('topology.zoomOut')" @click="zoomOut" />
+      <div class="mx-1 h-4 w-px bg-default" />
+      <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-arrows-pointing-out" :title="$t('topology.fit')" @click="fitToContents" />
+      <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-arrow-path" :title="$t('topology.resetLayout')" @click="$emit('reset')" />
+      <div class="mx-1 h-4 w-px bg-default" />
+      <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-arrow-down-tray" :title="$t('topology.exportPng')" @click="exportPng" />
     </div>
 
     <!-- Graph -->
@@ -24,37 +22,56 @@
         :event-handlers="eventHandlers"
         class="h-full w-full"
       >
+        <!-- SVG defs for glow filters -->
+        <defs>
+          <filter v-for="r in ['core', 'distribution', 'access', 'management']" :id="`glow-${r}`" :key="r" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feFlood :flood-color="roleBadgeColor(r)" flood-opacity="0.15" />
+            <feComposite in2="blur" operator="in" />
+            <feMerge>
+              <feMergeNode />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
         <!-- Custom node rendering -->
         <template #override-node="{ nodeId, scale, config, ...slotProps }">
-          <g :class="{ 'cursor-pointer': !isGhostNode(nodeId) }">
+          <g
+            :class="{ 'cursor-pointer': !isGhostNode(nodeId) }"
+            :filter="hoveredNodeId === nodeId && !isGhostNode(nodeId) && getNodeRole(nodeId) ? `url(#glow-${getNodeRole(nodeId)})` : undefined"
+          >
+            <!-- Node card background -->
             <rect
-              :x="-70 * scale"
-              :y="-35 * scale"
-              :width="140 * scale"
-              :height="70 * scale"
+              :x="-getNodeSize(nodeId).w / 2 * scale"
+              :y="-getNodeSize(nodeId).h / 2 * scale"
+              :width="getNodeSize(nodeId).w * scale"
+              :height="getNodeSize(nodeId).h * scale"
               :rx="8 * scale"
               :fill="nodeBackground"
-              :stroke="selectedNodeId === nodeId ? 'rgba(34,197,94,0.4)' : nodeBorder"
-              :stroke-width="selectedNodeId === nodeId ? 2 : 1"
+              :stroke="getNodeStroke(nodeId)"
+              :stroke-width="selectedNodeId === nodeId ? 2 : hoveredNodeId === nodeId ? 1.5 : 1"
               :stroke-dasharray="isGhostNode(nodeId) ? '4,4' : 'none'"
             />
 
+            <!-- Name -->
             <text
-              :y="-10 * scale"
-              :x="-55 * scale"
-              :font-size="12 * scale"
+              :y="(-getNodeSize(nodeId).h / 2 + 18) * scale"
+              :x="(-getNodeSize(nodeId).w / 2 + 12) * scale"
+              :font-size="(getNodeRole(nodeId) === 'core' ? 13 : 12) * scale"
               font-weight="600"
               fill="currentColor"
               class="text-gray-900 dark:text-white"
               dominant-baseline="middle"
             >
-              {{ truncateText(getNodeData(nodeId)?.name || '', 14) }}
+              {{ truncateText(getNodeData(nodeId)?.name || '', getNodeRole(nodeId) === 'core' ? 16 : 14) }}
             </text>
 
+            <!-- Role badge -->
             <g v-if="getNodeRole(nodeId)">
               <rect
-                :x="20 * scale"
-                :y="-20 * scale"
+                :x="(getNodeSize(nodeId).w / 2 - 48) * scale"
+                :y="(-getNodeSize(nodeId).h / 2 + 8) * scale"
                 :width="40 * scale"
                 :height="16 * scale"
                 :rx="4 * scale"
@@ -63,8 +80,8 @@
                 stroke-width="0.5"
               />
               <text
-                :x="40 * scale"
-                :y="-10 * scale"
+                :x="(getNodeSize(nodeId).w / 2 - 28) * scale"
+                :y="(-getNodeSize(nodeId).h / 2 + 18) * scale"
                 :font-size="8 * scale"
                 :fill="roleBadgeColor(getNodeRole(nodeId)!)"
                 text-anchor="middle"
@@ -75,22 +92,24 @@
               </text>
             </g>
 
+            <!-- Model subtitle -->
             <text
               v-if="getNodeModel(nodeId)"
-              :y="2 * scale"
+              :y="(-getNodeSize(nodeId).h / 2 + 34) * scale"
               :x="0"
               :font-size="9 * scale"
               fill="currentColor"
-              class="text-gray-400"
+              class="text-gray-500"
               text-anchor="middle"
               dominant-baseline="middle"
             >
-              {{ truncateText(getNodeModel(nodeId)!, 22) }}
+              {{ truncateText(getNodeModel(nodeId)!, getNodeRole(nodeId) === 'core' ? 26 : 22) }}
             </text>
 
+            <!-- Ghost node: site name -->
             <template v-if="isGhostNode(nodeId)">
               <text
-                :y="20 * scale"
+                :y="(getNodeSize(nodeId).h / 2 - 14) * scale"
                 :x="0"
                 :font-size="9 * scale"
                 fill="currentColor"
@@ -102,33 +121,39 @@
               </text>
             </template>
 
+            <!-- Port status bar -->
             <template v-else>
               <line
-                :x1="-55 * scale" :y1="14 * scale"
-                :x2="55 * scale" :y2="14 * scale"
+                :x1="(-getNodeSize(nodeId).w / 2 + 10) * scale"
+                :y1="(getNodeSize(nodeId).h / 2 - 22) * scale"
+                :x2="(getNodeSize(nodeId).w / 2 - 10) * scale"
+                :y2="(getNodeSize(nodeId).h / 2 - 22) * scale"
                 :stroke="nodeBorder"
                 stroke-width="0.5"
               />
-              <g :transform="`translate(${-40 * scale}, ${26 * scale})`">
-                <template v-if="getNodeData(nodeId)?.ports_up">
-                  <circle :r="3 * scale" fill="#22c55e" />
-                  <text :x="6 * scale" :font-size="9 * scale" fill="#22c55e" font-family="ui-monospace,monospace" dominant-baseline="middle">
+              <!-- Up -->
+              <g :transform="`translate(${(-getNodeSize(nodeId).w / 2 + 18) * scale}, ${(getNodeSize(nodeId).h / 2 - 10) * scale})`">
+                <template v-if="(getNodeData(nodeId) as TopologyNode)?.ports_up">
+                  <polygon :points="portTriangleUp(scale)" fill="#22c55e" />
+                  <text :x="7 * scale" :font-size="9 * scale" fill="#22c55e" font-family="ui-monospace,monospace" dominant-baseline="middle">
                     {{ (getNodeData(nodeId) as TopologyNode).ports_up }}
                   </text>
                 </template>
               </g>
-              <g :transform="`translate(${-10 * scale}, ${26 * scale})`">
-                <template v-if="getNodeData(nodeId)?.ports_down">
-                  <circle :r="3 * scale" fill="#9ca3af" />
-                  <text :x="6 * scale" :font-size="9 * scale" fill="#9ca3af" font-family="ui-monospace,monospace" dominant-baseline="middle">
+              <!-- Down -->
+              <g :transform="`translate(${(-4) * scale}, ${(getNodeSize(nodeId).h / 2 - 10) * scale})`">
+                <template v-if="(getNodeData(nodeId) as TopologyNode)?.ports_down">
+                  <line :x1="-3 * scale" :y1="0" :x2="3 * scale" :y2="0" stroke="#6b7280" :stroke-width="2 * scale" stroke-linecap="round" />
+                  <text :x="7 * scale" :font-size="9 * scale" fill="#6b7280" font-family="ui-monospace,monospace" dominant-baseline="middle">
                     {{ (getNodeData(nodeId) as TopologyNode).ports_down }}
                   </text>
                 </template>
               </g>
-              <g :transform="`translate(${20 * scale}, ${26 * scale})`">
-                <template v-if="getNodeData(nodeId)?.ports_disabled">
-                  <circle :r="3 * scale" fill="#ef4444" />
-                  <text :x="6 * scale" :font-size="9 * scale" fill="#ef4444" font-family="ui-monospace,monospace" dominant-baseline="middle">
+              <!-- Disabled -->
+              <g :transform="`translate(${(getNodeSize(nodeId).w / 2 - 40) * scale}, ${(getNodeSize(nodeId).h / 2 - 10) * scale})`">
+                <template v-if="(getNodeData(nodeId) as TopologyNode)?.ports_disabled">
+                  <polygon :points="portTriangleDown(scale)" fill="#ef4444" />
+                  <text :x="7 * scale" :font-size="9 * scale" fill="#ef4444" font-family="ui-monospace,monospace" dominant-baseline="middle">
                     {{ (getNodeData(nodeId) as TopologyNode).ports_disabled }}
                   </text>
                 </template>
@@ -137,6 +162,7 @@
           </g>
         </template>
 
+        <!-- Edge labels -->
         <template #edge-label="{ edge, ...slotProps }">
           <v-edge-label
             v-if="getEdgeSourceLabel(edge)"
@@ -145,7 +171,7 @@
             :vertical-align="0"
             :font-size="9"
             font-family="ui-monospace,monospace"
-            fill="#6b7280"
+            :fill="isDark ? '#888' : '#666'"
           />
           <v-edge-label
             v-if="getEdgeTargetLabel(edge)"
@@ -154,31 +180,37 @@
             :vertical-align="0"
             :font-size="9"
             font-family="ui-monospace,monospace"
-            fill="#6b7280"
+            :fill="isDark ? '#888' : '#666'"
           />
         </template>
       </v-network-graph>
     </ClientOnly>
 
-    <!-- Legend -->
-    <div class="absolute bottom-4 left-4 flex gap-2 rounded-md border border-default bg-elevated px-3 py-2">
-      <span class="flex items-center gap-1.5 text-xs text-gray-400">
-        <span class="inline-block h-2.5 w-2.5 rounded-sm border-2" style="border-color: #ef4444" /> Core
-      </span>
-      <span class="flex items-center gap-1.5 text-xs text-gray-400">
-        <span class="inline-block h-2.5 w-2.5 rounded-sm border-2" style="border-color: #3b82f6" /> Dist
-      </span>
-      <span class="flex items-center gap-1.5 text-xs text-gray-400">
-        <span class="inline-block h-2.5 w-2.5 rounded-sm border-2" style="border-color: #22c55e" /> Access
-      </span>
-      <span class="flex items-center gap-1.5 text-xs text-gray-400">
-        <span class="inline-block h-2.5 w-2.5 rounded-sm border-2" style="border-color: #eab308" /> Mgmt
-      </span>
-    </div>
-
-    <!-- Stats -->
-    <div class="absolute bottom-4 right-4 rounded-md border border-default bg-elevated px-3 py-2 font-mono text-xs text-gray-500">
-      {{ Object.keys(graphNodes).length }} switches · {{ Object.keys(graphEdges).length }} links
+    <!-- Legend + Stats (bottom bar) -->
+    <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+      <div class="flex items-center gap-3 rounded-lg border border-default bg-elevated px-3 py-1.5">
+        <span class="flex items-center gap-1.5 text-xs text-gray-400">
+          <span class="inline-block h-2 w-2 rounded-full" style="background: #ef4444" /> Core
+        </span>
+        <span class="flex items-center gap-1.5 text-xs text-gray-400">
+          <span class="inline-block h-2 w-2 rounded-full" style="background: #3b82f6" /> Dist
+        </span>
+        <span class="flex items-center gap-1.5 text-xs text-gray-400">
+          <span class="inline-block h-2 w-2 rounded-full" style="background: #22c55e" /> Access
+        </span>
+        <span class="flex items-center gap-1.5 text-xs text-gray-400">
+          <span class="inline-block h-2 w-2 rounded-full" style="background: #eab308" /> Mgmt
+        </span>
+        <div class="h-3 w-px bg-default" />
+        <span class="flex items-center gap-1.5 text-xs text-gray-500">
+          <span style="color: #22c55e">▲</span> up
+          <span style="color: #6b7280">—</span> down
+          <span style="color: #ef4444">▼</span> disabled
+        </span>
+      </div>
+      <div class="rounded-lg border border-default bg-elevated px-3 py-1.5 font-mono text-xs text-gray-500">
+        {{ Object.keys(graphNodes).length }} switches · {{ Object.keys(graphEdges).length }} links
+      </div>
     </div>
   </div>
 </template>
@@ -203,12 +235,15 @@ const emit = defineEmits<{
 }>()
 
 const graphRef = ref<any>(null)
+const hoveredNodeId = ref<string | null>(null)
 
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
 
 const nodeBackground = computed(() => isDark.value ? '#0e0e0e' : '#ffffff')
 const nodeBorder = computed(() => isDark.value ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)')
+
+// --- Role color helpers ---
 
 function roleBadgeColor(role: string): string {
   const map: Record<string, string> = {
@@ -233,6 +268,24 @@ function roleBadgeBorder(role: string): string {
   return map[role] || 'rgba(100,116,139,0.2)'
 }
 
+function roleNodeBorder(role: string | undefined, hovered: boolean): string {
+  if (!role) return nodeBorder.value
+  const base: Record<string, [number, number]> = {
+    core: [0.3, 0.45],
+    distribution: [0.2, 0.35],
+    access: [0.15, 0.25],
+    management: [0.15, 0.25]
+  }
+  const [normal, hover] = base[role] || [0.08, 0.15]
+  const opacity = hovered ? hover : normal
+  const color = roleBadgeColor(role)
+  // Convert hex to rgba
+  const r = parseInt(color.slice(1, 3), 16)
+  const g = parseInt(color.slice(3, 5), 16)
+  const b = parseInt(color.slice(5, 7), 16)
+  return `rgba(${r},${g},${b},${opacity})`
+}
+
 function roleShortLabel(role: string): string {
   const map: Record<string, string> = {
     core: 'Core', distribution: 'Dist', access: 'Access', management: 'Mgmt'
@@ -243,6 +296,40 @@ function roleShortLabel(role: string): string {
 function truncateText(text: string, max: number): string {
   return text.length > max ? text.slice(0, max - 1) + '\u2026' : text
 }
+
+// --- Node sizing by role ---
+
+function getNodeSize(nodeId: string): { w: number; h: number } {
+  const role = getNodeRole(nodeId)
+  if (isGhostNode(nodeId)) return { w: 130, h: 58 }
+  if (role === 'core') return { w: 164, h: 80 }
+  if (role === 'distribution') return { w: 150, h: 74 }
+  return { w: 140, h: 68 }
+}
+
+function getNodeStroke(nodeId: string): string {
+  if (selectedNodeId.value === nodeId) return 'rgba(34,197,94,0.5)'
+  const role = getNodeRole(nodeId)
+  const hovered = hoveredNodeId.value === nodeId
+  return roleNodeBorder(role, hovered)
+}
+
+// Lazy ref for selectedNodeId to use in non-reactive context
+const selectedNodeId = computed(() => props.selectedNodeId)
+
+// --- Port status triangle helpers ---
+
+function portTriangleUp(scale: number): string {
+  const s = 3.5 * scale
+  return `0,${-s} ${s},${s} ${-s},${s}`
+}
+
+function portTriangleDown(scale: number): string {
+  const s = 3.5 * scale
+  return `0,${s} ${s},${-s} ${-s},${-s}`
+}
+
+// --- Node data helpers ---
 
 const nodeMap = computed(() => {
   const map = new Map<string, TopologyNode>()
@@ -278,6 +365,8 @@ function getGhostSiteName(nodeId: string): string {
   return ghostMap.value.get(nodeId)?.site_name || ''
 }
 
+// --- Edge data ---
+
 const edgeMap = computed(() => {
   const map = new Map<string, TopologyLink>()
   for (const l of props.links) map.set(l.id, l)
@@ -291,6 +380,8 @@ function getEdgeSourceLabel(edgeId: string): string {
 function getEdgeTargetLabel(edgeId: string): string {
   return edgeMap.value.get(edgeId)?.target_port_label || ''
 }
+
+// --- v-network-graph data ---
 
 const graphNodes = computed(() => {
   const result: Record<string, { name: string }> = {}
@@ -316,6 +407,8 @@ const graphEdges = computed(() => {
   return result
 })
 
+// --- Auto-layout ---
+
 function calculateAutoLayout(): Record<string, { x: number; y: number }> {
   const tiers: Record<number, string[]> = { 0: [], 1: [], 2: [] }
 
@@ -326,8 +419,8 @@ function calculateAutoLayout(): Record<string, { x: number; y: number }> {
   }
 
   const positions: Record<string, { x: number; y: number }> = {}
-  const xSpacing = 200
-  const ySpacing = 200
+  const xSpacing = 220
+  const ySpacing = 250
 
   for (const [tierStr, nodeIds] of Object.entries(tiers)) {
     const tier = Number(tierStr)
@@ -374,6 +467,8 @@ const graphLayouts = computed(() => {
   return { nodes: merged }
 })
 
+// --- Configs ---
+
 const graphConfigs = computed(() => defineConfigs({
   view: {
     panEnabled: true,
@@ -385,10 +480,13 @@ const graphConfigs = computed(() => defineConfigs({
   node: {
     selectable: true,
     draggable: (nodeId: string) => !isGhostNode(nodeId),
+    label: {
+      visible: false
+    },
     normal: {
       type: 'rect',
-      width: 140,
-      height: 70,
+      width: 164,
+      height: 80,
       borderRadius: 8,
       color: 'transparent'
     },
@@ -401,28 +499,36 @@ const graphConfigs = computed(() => defineConfigs({
   },
   edge: {
     selectable: true,
-    gap: 5,
+    gap: 8,
     keepOrder: 'vertical',
     normal: {
-      color: isDark.value ? '#2a2a2a' : '#d4d4d8',
+      color: isDark.value ? '#555' : '#bbb',
       width: 2
     },
     hover: {
-      color: isDark.value ? '#444' : '#a1a1aa',
+      color: isDark.value ? '#999' : '#888',
       width: 3
     },
     selected: {
-      color: 'rgba(34,197,94,0.5)',
-      width: 3
+      color: 'rgba(34,197,94,0.6)',
+      width: 3.5
     }
   }
 }))
+
+// --- Event handlers ---
 
 const eventHandlers = {
   'node:click': ({ node }: { node: string }) => {
     if (!isGhostNode(node)) {
       emit('select-node', node)
     }
+  },
+  'node:pointerover': ({ node }: { node: string }) => {
+    hoveredNodeId.value = node
+  },
+  'node:pointerout': () => {
+    hoveredNodeId.value = null
   },
   'edge:click': ({ edge }: { edge: string }) => {
     const link = edgeMap.value.get(edge)
@@ -450,8 +556,18 @@ const eventHandlers = {
   }
 }
 
+// --- Public methods ---
+
 function fitToContents() {
   graphRef.value?.fitToContents()
+}
+
+function zoomIn() {
+  graphRef.value?.zoomIn()
+}
+
+function zoomOut() {
+  graphRef.value?.zoomOut()
 }
 
 async function exportPng() {
@@ -480,6 +596,11 @@ async function exportPng() {
     // Export failed silently
   }
 }
+
+// Auto-fit on first render
+onMounted(() => {
+  setTimeout(() => fitToContents(), 200)
+})
 
 defineExpose({ fitToContents })
 </script>
