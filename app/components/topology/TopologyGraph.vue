@@ -53,7 +53,7 @@
               :width="getNodeSize(nodeId).w * scale"
               :height="getNodeSize(nodeId).h * scale"
               :rx="8 * scale"
-              :fill="nodeBackground"
+              :fill="nodeBackgroundForRole(nodeId)"
               :stroke="getNodeStroke(nodeId)"
               :stroke-width="selectedNodeId === nodeId ? 2 : hoveredNodeId === nodeId ? 1.5 : 1"
               :stroke-dasharray="isGhostNode(nodeId) ? '4,4' : 'none'"
@@ -63,11 +63,11 @@
               v-if="getNodeRole(nodeId) && !isGhostNode(nodeId)"
               :x="-getNodeSize(nodeId).w / 2 * scale"
               :y="(-getNodeSize(nodeId).h / 2 + 8) * scale"
-              :width="3 * scale"
+              :width="(getNodeRole(nodeId) === 'core' ? 4 : 3) * scale"
               :height="(getNodeSize(nodeId).h - 16) * scale"
               :rx="1.5 * scale"
               :fill="roleBadgeColor(getNodeRole(nodeId)!)"
-              :opacity="getNodeRole(nodeId) === 'core' ? 0.7 : 0.4"
+              :opacity="getNodeRole(nodeId) === 'core' ? 0.8 : getNodeRole(nodeId) === 'distribution' ? 0.5 : 0.35"
             />
 
             <!-- Name (left-aligned) -->
@@ -80,7 +80,7 @@
               class="text-gray-900 dark:text-white"
               dominant-baseline="middle"
             >
-              {{ truncateText(getNodeData(nodeId)?.name || '', getNodeRole(nodeId) === 'core' ? 16 : 14) }}
+              {{ truncateText(getNodeData(nodeId)?.name || '', getNodeRole(nodeId) === 'core' ? 20 : getNodeRole(nodeId) === 'distribution' ? 17 : 16) }}
             </text>
 
             <!-- Role badge (top-right) -->
@@ -118,7 +118,7 @@
               class="text-gray-500"
               dominant-baseline="middle"
             >
-              {{ truncateText(getNodeModel(nodeId)!, getNodeRole(nodeId) === 'core' ? 26 : 22) }}
+              {{ truncateText(getNodeModel(nodeId)!, getNodeRole(nodeId) === 'core' ? 30 : 24) }}
             </text>
 
             <!-- Ghost node: site name -->
@@ -323,10 +323,24 @@ function truncateText(text: string, max: number): string {
 
 function getNodeSize(nodeId: string): { w: number; h: number } {
   const role = getNodeRole(nodeId)
-  if (isGhostNode(nodeId)) return { w: 130, h: 58 }
-  if (role === 'core') return { w: 176, h: 86 }
-  if (role === 'distribution') return { w: 160, h: 78 }
-  return { w: 148, h: 72 }
+  if (isGhostNode(nodeId)) return { w: 140, h: 58 }
+  if (role === 'core') return { w: 196, h: 86 }
+  if (role === 'distribution') return { w: 176, h: 78 }
+  return { w: 164, h: 72 }
+}
+
+// Subtle background tint per role
+function nodeBackgroundForRole(nodeId: string): string {
+  if (isGhostNode(nodeId)) return nodeBackground.value
+  const role = getNodeRole(nodeId)
+  if (!role || !isDark.value) return nodeBackground.value
+  const tints: Record<string, string> = {
+    core: 'rgba(239,68,68,0.03)',
+    distribution: 'rgba(59,130,246,0.02)',
+    access: 'rgba(34,197,94,0.015)',
+    management: 'rgba(234,179,8,0.02)'
+  }
+  return tints[role] || nodeBackground.value
 }
 
 function getNodeStroke(nodeId: string): string {
@@ -444,32 +458,68 @@ const graphEdges = computed(() => {
 // --- Auto-layout ---
 
 function calculateAutoLayout(): Record<string, { x: number; y: number }> {
-  const tiers: Record<number, string[]> = { 0: [], 1: [], 2: [] }
-
+  // Categorize nodes into tiers
+  const tierBuckets: string[][] = [[], [], []] // core, distribution, access/other
   for (const n of props.nodes) {
-    if (n.role === 'core') tiers[0]!.push(n.id)
-    else if (n.role === 'distribution') tiers[1]!.push(n.id)
-    else tiers[2]!.push(n.id)
+    if (n.role === 'core') tierBuckets[0]!.push(n.id)
+    else if (n.role === 'distribution') tierBuckets[1]!.push(n.id)
+    else tierBuckets[2]!.push(n.id)
   }
 
-  const positions: Record<string, { x: number; y: number }> = {}
-  const xSpacing = 220
-  const ySpacing = 260
+  // Sort lower-tier nodes by their primary connection's x-position
+  // to minimize edge crossings
+  const upperIds = new Set([...tierBuckets[0]!, ...tierBuckets[1]!])
+  if (tierBuckets[2]!.length > 1 && upperIds.size > 0) {
+    // Find primary connected upper node for each lower node
+    const primaryUpper = new Map<string, string>()
+    for (const link of props.links) {
+      const src = link.source_switch_id
+      const tgt = link.target_switch_id
+      if (upperIds.has(src) && !upperIds.has(tgt) && !primaryUpper.has(tgt)) {
+        primaryUpper.set(tgt, src)
+      }
+      if (upperIds.has(tgt) && !upperIds.has(src) && !primaryUpper.has(src)) {
+        primaryUpper.set(src, tgt)
+      }
+    }
 
-  for (const [tierStr, nodeIds] of Object.entries(tiers)) {
-    const tier = Number(tierStr)
+    // Sort upper tier for stable x reference
+    const upperOrder = [...tierBuckets[0]!, ...tierBuckets[1]!]
+    const upperXIndex = new Map<string, number>()
+    upperOrder.forEach((id, i) => upperXIndex.set(id, i))
+
+    tierBuckets[2]!.sort((a, b) => {
+      const aUpper = primaryUpper.get(a)
+      const bUpper = primaryUpper.get(b)
+      const aIdx = aUpper ? (upperXIndex.get(aUpper) ?? 999) : 999
+      const bIdx = bUpper ? (upperXIndex.get(bUpper) ?? 999) : 999
+      return aIdx - bIdx
+    })
+  }
+
+  // Skip empty tiers so nodes don't float with huge gaps
+  const activeTiers = tierBuckets.filter(t => t.length > 0)
+
+  const positions: Record<string, { x: number; y: number }> = {}
+  const xSpacing = 210
+  const ySpacing = 200
+
+  for (let tierIdx = 0; tierIdx < activeTiers.length; tierIdx++) {
+    const nodeIds = activeTiers[tierIdx]!
     const totalWidth = (nodeIds.length - 1) * xSpacing
     const startX = -totalWidth / 2
 
     for (let i = 0; i < nodeIds.length; i++) {
       positions[nodeIds[i]!] = {
         x: startX + i * xSpacing,
-        y: tier * ySpacing
+        y: tierIdx * ySpacing
       }
     }
   }
 
-  const ghostY = 3 * ySpacing
+  // Ghost nodes below the last tier
+  const lastTierY = (activeTiers.length - 1) * ySpacing
+  const ghostY = lastTierY + ySpacing
   let ghostX = -(props.ghostNodes.length - 1) * xSpacing / 2
   for (const g of props.ghostNodes) {
     if (!positions[g.id]) {
@@ -511,7 +561,7 @@ const graphConfigs = computed(() => defineConfigs({
     minZoomLevel: 0.2,
     maxZoomLevel: 3,
     autoPanAndZoomOnLoad: 'fit-content',
-    fitContentMargin: { top: 20, bottom: 60, left: 60, right: 60 }
+    fitContentMargin: { top: 30, bottom: 50, left: 50, right: 50 }
   },
   node: {
     selectable: true,
@@ -524,7 +574,7 @@ const graphConfigs = computed(() => defineConfigs({
     },
     normal: {
       type: 'rect',
-      width: 176,
+      width: 196,
       height: 86,
       borderRadius: 8,
       color: 'transparent',
@@ -558,7 +608,7 @@ const graphConfigs = computed(() => defineConfigs({
       color: 'rgba(34,197,94,0.6)',
       width: 3.5
     },
-    margin: null
+    margin: 2
   }
 }))
 

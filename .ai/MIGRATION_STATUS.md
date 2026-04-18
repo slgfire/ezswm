@@ -718,6 +718,36 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 21h: Graph Layout + Node Readability (2026-04-18)
+
+**Layout improvements:**
+- Reduced ySpacing from 260 to 200 (was briefly 160, too aggressive)
+- Empty tiers skipped so nodes don't float with unnecessary gaps
+- Lower-tier nodes sorted by primary connected upper node to minimize edge crossings
+- Edge margin set to 2 (edges stop at node boundary, no pass-through)
+- fitContentMargin adjusted: top 30, bottom/left/right 50
+
+**Node readability:**
+- Wider nodes: Core 196x86 (was 176), Dist 176x78 (was 160), Access 164x72 (was 148)
+- Increased truncation limits: Core 20 chars, Dist 17, Access 16 (were 16/14/14)
+- Model text truncation: Core 30, others 24 (were 26/22)
+- Subtle role-tinted background fill per node (Core red 3%, Dist blue 2%, Access green 1.5%)
+
+**Node differentiation:**
+- Core accent bar widened to 4px (was 3), opacity 0.8
+- Distribution accent bar opacity 0.5 (was 0.4)
+- Graduated opacity: Core 0.8 → Dist 0.5 → Access 0.35
+- v-network-graph bounding box updated to 196x86 to match largest node
+
+**Files changed:**
+- `app/components/topology/TopologyGraph.vue`
+- `.ai/MIGRATION_STATUS.md`
+
+**Verification:**
+- `npm run build`: Passes
+
+---
+
 ## Feature Backlog
 
 ### Quick Wins
