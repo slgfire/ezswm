@@ -125,6 +125,8 @@
     "edit": "Switch bearbeiten",
     "delete": "Switch löschen",
     "duplicate": "Switch duplizieren",
+    "favorite": "Zu Favoriten hinzufügen",
+    "unfavorite": "Aus Favoriten entfernen",
     "stackSize": "Stack-Größe",
     "stackMember": "Member {n}",
     "fields": {

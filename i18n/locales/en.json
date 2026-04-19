@@ -125,6 +125,8 @@
     "edit": "Edit Switch",
     "delete": "Delete Switch",
     "duplicate": "Duplicate Switch",
+    "favorite": "Add to favorites",
+    "unfavorite": "Remove from favorites",
     "stackSize": "Stack Size",
     "stackMember": "Member {n}",
     "fields": {

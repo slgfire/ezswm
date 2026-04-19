@@ -216,6 +216,16 @@ v-if="tagOptions.length > 0"
             :to="`/sites/${siteId}/switches/${sw.id}`"
             class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
           >
+            <!-- Favorite star -->
+            <button
+              class="absolute left-2 top-2 z-10 rounded-full p-1 transition-all"
+              :class="sw.is_favorite ? 'text-amber-400 opacity-100' : 'text-gray-400 opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-amber-400'"
+              :title="sw.is_favorite ? $t('switches.unfavorite') : $t('switches.favorite')"
+              @click.prevent="toggleFavorite(sw)"
+            >
+              <UIcon :name="sw.is_favorite ? 'i-heroicons-star-solid' : 'i-heroicons-star'" class="h-4 w-4" />
+            </button>
+
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
               <UButton icon="i-heroicons-printer" variant="ghost" color="warning" size="xs" @click.prevent="printSingleSwitch(sw.id)" />
@@ -296,6 +306,16 @@ v-if="tagOptions.length > 0"
             :to="`/sites/${siteId}/switches/${sw.id}`"
             class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
           >
+            <!-- Favorite star -->
+            <button
+              class="absolute left-2 top-2 z-10 rounded-full p-1 transition-all"
+              :class="sw.is_favorite ? 'text-amber-400 opacity-100' : 'text-gray-400 opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-amber-400'"
+              :title="sw.is_favorite ? $t('switches.unfavorite') : $t('switches.favorite')"
+              @click.prevent="toggleFavorite(sw)"
+            >
+              <UIcon :name="sw.is_favorite ? 'i-heroicons-star-solid' : 'i-heroicons-star'" class="h-4 w-4" />
+            </button>
+
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
               <UButton icon="i-heroicons-bars-2" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="neutral" size="xs" @click.prevent />
@@ -382,6 +402,16 @@ v-if="tagOptions.length > 0"
             :to="`/sites/${siteId}/switches/${sw.id}`"
             class="stagger-item card-glow group relative flex items-center gap-4 rounded-lg bg-default px-5 py-3"
           >
+            <!-- Favorite star -->
+            <button
+              class="shrink-0 rounded-full p-0.5 transition-all"
+              :class="sw.is_favorite ? 'text-amber-400' : 'text-gray-400 opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-amber-400'"
+              :title="sw.is_favorite ? $t('switches.unfavorite') : $t('switches.favorite')"
+              @click.prevent="toggleFavorite(sw)"
+            >
+              <UIcon :name="sw.is_favorite ? 'i-heroicons-star-solid' : 'i-heroicons-star'" class="h-3.5 w-3.5" />
+            </button>
+
             <!-- Hover actions -->
             <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
               <UButton icon="i-heroicons-printer" variant="ghost" color="warning" size="xs" @click.prevent="printSingleSwitch(sw.id)" />
@@ -603,6 +633,13 @@ const filteredItems = computed(() => {
     result = result.filter((s) => s.tags?.includes(tagFilter.value!))
   }
 
+  // Sort favorites first
+  result.sort((a, b) => {
+    if (a.is_favorite && !b.is_favorite) return -1
+    if (!a.is_favorite && b.is_favorite) return 1
+    return 0
+  })
+
   return result
 })
 
@@ -662,6 +699,18 @@ async function saveSortOrder() {
 const deleteMessage = computed(() => deleteTarget.value ? `${t('switches.delete')}: ${deleteTarget.value.name}?` : '')
 
 function confirmDelete(row: Switch) { deleteTarget.value = row; showDeleteDialog.value = true }
+
+async function toggleFavorite(sw: Switch) {
+  try {
+    await $fetch(`/api/switches/${sw.id}`, {
+      method: 'PUT',
+      body: { is_favorite: !sw.is_favorite }
+    })
+    sw.is_favorite = !sw.is_favorite
+  } catch {
+    // Silent fail
+  }
+}
 
 async function onDelete() {
   if (!deleteTarget.value) return
