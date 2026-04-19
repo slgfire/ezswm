@@ -75,77 +75,80 @@
       />
     </div>
 
-    <!-- Legend -->
+    <!-- Legend + LAG Card -->
     <template v-if="!publicMode">
-    <div class="port-legend flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-default pt-3 text-[11px] text-gray-500 dark:text-gray-400">
-      <!-- Status -->
-      <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.status') }}:</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-green-400 bg-green-50 dark:bg-neutral-700" /> {{ $t('legend.up') }}</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-gray-300 bg-gray-100 dark:border-neutral-600 dark:bg-neutral-800" /> {{ $t('legend.down') }}</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-red-300 bg-red-50 dark:bg-neutral-800" /> {{ $t('legend.disabled') }}</span>
+    <div class="port-legend list-container mt-4 rounded-lg bg-default p-4 text-[11px] text-gray-500 dark:text-gray-400">
+      <!-- Row 1: Status / Type / Mode -->
+      <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5">
+        <!-- Status -->
+        <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.status') }}:</span>
+        <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-green-400 bg-green-50 dark:bg-neutral-700" /> {{ $t('legend.up') }}</span>
+        <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-gray-300 bg-gray-100 dark:border-neutral-600 dark:bg-neutral-800" /> {{ $t('legend.down') }}</span>
+        <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-red-300 bg-red-50 dark:bg-neutral-800" /> {{ $t('legend.disabled') }}</span>
 
-      <span class="text-gray-300 dark:text-gray-600">|</span>
+        <span class="text-gray-300 dark:text-gray-600">|</span>
 
-      <!-- Port types -->
-      <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.type') }}:</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-sky-400" /> {{ $t('legend.sfp') }}</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-violet-400" /> {{ $t('legend.qsfp') }}</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-amber-400" /> {{ $t('legend.console') }}</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-teal-400" /> {{ $t('legend.mgmt') }}</span>
+        <!-- Port types -->
+        <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.type') }}:</span>
+        <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-sky-400" /> {{ $t('legend.sfp') }}</span>
+        <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-violet-400" /> {{ $t('legend.qsfp') }}</span>
+        <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-amber-400" /> {{ $t('legend.console') }}</span>
+        <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-teal-400" /> {{ $t('legend.mgmt') }}</span>
 
-      <span class="text-gray-300 dark:text-gray-600">|</span>
+        <span class="text-gray-300 dark:text-gray-600">|</span>
 
-      <!-- Indicators -->
-      <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.indicators') }}:</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 bg-gray-400" style="border-radius: 0" /> Access</span>
-      <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-full bg-gray-400" style="box-shadow: 0 0 0 1.5px #0a0a0a, 0 0 0 2.5px #9ca3af" /> Trunk</span>
-      <template v-if="vlans && vlans.length">
+        <!-- Mode (was "Indicators") -->
+        <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.mode') }}:</span>
+        <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 bg-gray-400" style="border-radius: 0" /> {{ $t('legend.access') }}</span>
+        <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-full bg-gray-400" style="box-shadow: 0 0 0 1.5px var(--color-default), 0 0 0 2.5px #9ca3af" /> {{ $t('legend.trunk') }}</span>
+      </div>
+
+      <!-- Row 2: VLANs (conditional) -->
+      <div v-if="usedVlans.length" class="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-default pt-2">
+        <span class="font-semibold text-gray-600 dark:text-gray-300">VLANs:</span>
         <template v-for="vlan in usedVlans" :key="vlan.vlan_id">
-          <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm" :style="{ backgroundColor: vlan.color }" /> VLAN {{ vlan.vlan_id }}</span>
+          <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm" :style="{ backgroundColor: vlan.color }" /> {{ vlan.vlan_id }} {{ vlan.name }}</span>
         </template>
-      </template>
+      </div>
 
-      <span class="text-gray-300 dark:text-gray-600">|</span>
+      <!-- Row 3: LAG (conditional) -->
+      <div v-if="lagGroups?.length" class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-default pt-2">
+        <span class="font-semibold text-gray-600 dark:text-gray-300">LAG:</span>
 
-      <span class="flex items-center gap-1 text-gray-400">
+        <template v-for="lag in visibleLags" :key="lag.id">
+          <div
+            class="flex cursor-pointer items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 transition-all hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+            @mouseenter="onLagHover(lag.id)"
+            @mouseleave="onLagLeave()"
+            @click="isTouch ? $emit('view-lag', lag) : $emit('edit-lag', lag)"
+          >
+            <span class="lag-stripe-icon inline-block h-3 w-4 rounded-sm" />
+            <span class="max-w-[150px] truncate font-medium text-gray-700 dark:text-gray-200">{{ lag.name }}</span>
+            <span class="text-gray-400">{{ lag.port_ids.length }}p</span>
+            <span v-if="lag.remote_device" class="text-gray-400">&rarr; {{ lag.remote_device }}</span>
+            <button
+              class="ml-1 rounded p-0.5 text-gray-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/30"
+              @click.stop="$emit('delete-lag', lag)"
+            >
+              <UIcon name="i-heroicons-x-mark" class="h-3 w-3" />
+            </button>
+          </div>
+        </template>
+
+        <button
+          v-if="lagGroups.length > 3"
+          class="text-primary-500 hover:text-primary-400 text-[11px]"
+          @click="lagExpanded = !lagExpanded"
+        >
+          {{ lagExpanded ? $t('common.showLess') : $t('lag.showAll', { n: lagGroups.length }) }}
+        </button>
+      </div>
+
+      <!-- Row 4: Multi-Select Hint (hidden when ports selected) -->
+      <div v-if="selectedPorts.length === 0" class="mt-2 flex items-center gap-1 border-t border-default pt-2 text-slate-500">
         <UIcon name="i-heroicons-cursor-arrow-ripple" class="h-3 w-3" />
         {{ $t('switches.ports.multiSelectHint') }}
-      </span>
-    </div>
-    </template>
-
-    <!-- LAG Legend -->
-    <template v-if="!publicMode">
-    <div v-if="lagGroups?.length" class="port-legend flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-default pt-3 text-[11px] text-gray-500 dark:text-gray-400">
-      <span class="font-semibold text-gray-600 dark:text-gray-300">LAG:</span>
-
-      <template v-for="lag in visibleLags" :key="lag.id">
-        <div
-          class="flex cursor-pointer items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 transition-all hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
-          @mouseenter="onLagHover(lag.id)"
-          @mouseleave="onLagLeave()"
-          @click="isTouch ? $emit('view-lag', lag) : $emit('edit-lag', lag)"
-        >
-          <span class="lag-stripe-icon inline-block h-3 w-4 rounded-sm" />
-          <span class="font-medium text-gray-700 dark:text-gray-200">{{ lag.name }}</span>
-          <span class="text-gray-400">{{ lag.port_ids.length }}p</span>
-          <span v-if="lag.remote_device" class="text-gray-400">&rarr; {{ lag.remote_device }}</span>
-          <button
-            class="ml-1 rounded p-0.5 text-gray-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/30"
-            @click.stop="$emit('delete-lag', lag)"
-          >
-            <UIcon name="i-heroicons-x-mark" class="h-3 w-3" />
-          </button>
-        </div>
-      </template>
-
-      <button
-        v-if="lagGroups.length > 3"
-        class="text-primary-500 hover:text-primary-400 text-[11px]"
-        @click="lagExpanded = !lagExpanded"
-      >
-        {{ lagExpanded ? $t('common.showLess') : $t('lag.showAll', { n: lagGroups.length }) }}
-      </button>
+      </div>
     </div>
     </template>
   </div>
@@ -285,6 +288,10 @@ const usedVlans = computed(() => {
   const usedIds = new Set<number>()
   for (const p of props.ports) {
     if (p.native_vlan) usedIds.add(p.native_vlan)
+    if (p.access_vlan) usedIds.add(p.access_vlan)
+    if (p.tagged_vlans) {
+      for (const vid of p.tagged_vlans) usedIds.add(vid)
+    }
   }
   return props.vlans.filter(v => usedIds.has(v.vlan_id) && v.color)
 })
