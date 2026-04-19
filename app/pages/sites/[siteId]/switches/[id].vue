@@ -230,8 +230,8 @@
         <p v-else class="text-sm text-gray-400">{{ $t('switches.ports.noPortsMessage') }}</p>
       </div>
 
-      <!-- Port Table View (collapsible, default collapsed) -->
-      <div v-if="item.ports?.length" class="mt-6">
+      <!-- Port Table View (collapsible card, default collapsed) -->
+      <div v-if="item.ports?.length" class="mt-3">
         <SwitchPortTable
           :ports="item.ports"
           :vlans="vlans"
@@ -239,32 +239,37 @@
         />
       </div>
 
-      <!-- Recent Activity for this switch (collapsible, default collapsed) -->
-      <div v-if="switchActivity.length" class="mt-6">
-        <button
-          class="mb-3 flex w-full items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
-          @click="showActivity = !showActivity"
-        >
-          <UIcon name="i-heroicons-chevron-right" :class="['h-4 w-4 transition-transform', showActivity ? 'rotate-90' : '']" />
-          <UIcon name="i-heroicons-clock" class="h-4 w-4" />
-          {{ $t('switches.recentActivity') }}
-          <span class="text-xs font-normal text-gray-400">({{ switchActivity.length }})</span>
-        </button>
-        <div v-show="showActivity" class="space-y-1">
-          <div v-for="entry in switchActivity" :key="entry.id" class="rounded px-3 py-2 text-sm alt-row">
-            <div class="flex items-center gap-2">
-              <span
-                class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded"
-                :class="entry.action === 'create' ? 'bg-green-500/15 text-green-500' : entry.action === 'delete' ? 'bg-red-500/15 text-red-500' : 'bg-primary-500/15 text-primary-500'"
-              >
-                <UIcon
-                  :name="entry.action === 'create' ? 'i-heroicons-plus' : entry.action === 'delete' ? 'i-heroicons-minus' : 'i-heroicons-pencil'"
-                  class="h-3 w-3"
-                />
-              </span>
-              <span v-if="formatActivity(entry)" class="truncate text-xs text-gray-300">{{ formatActivity(entry) }}</span>
-              <span v-else class="text-xs text-gray-500">{{ entry.action }}</span>
-              <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relTime(entry.timestamp) }}</span>
+      <!-- Recent Activity (collapsible card, default collapsed) -->
+      <div v-if="switchActivity.length" class="mt-2">
+        <div class="list-container rounded-lg bg-default p-4">
+          <button
+            class="flex w-full items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
+            @click="showActivity = !showActivity"
+          >
+            <UIcon name="i-heroicons-chevron-right" :class="['h-4 w-4 transition-transform duration-200', showActivity ? 'rotate-90' : '']" />
+            <UIcon name="i-heroicons-clock" class="h-4 w-4 text-primary-500" />
+            {{ $t('switches.recentActivity') }}
+            <span class="text-xs font-normal text-gray-400">{{ $t('switches.activity.entriesCount', switchActivity.length) }}</span>
+            <span v-if="switchActivity.length" class="ml-auto text-xs font-normal text-gray-400">
+              {{ $t('switches.activity.latest', { time: relTime(switchActivity[0]?.timestamp) }) }}
+            </span>
+          </button>
+          <div v-show="showActivity" class="mt-3 space-y-1 border-t border-default pt-3">
+            <div v-for="entry in switchActivity" :key="entry.id" class="alt-row rounded px-3 py-2 text-sm">
+              <div class="flex items-center gap-2">
+                <span
+                  class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded"
+                  :class="entry.action === 'create' ? 'bg-green-500/15 text-green-500' : entry.action === 'delete' ? 'bg-red-500/15 text-red-500' : 'bg-primary-500/15 text-primary-500'"
+                >
+                  <UIcon
+                    :name="entry.action === 'create' ? 'i-heroicons-plus' : entry.action === 'delete' ? 'i-heroicons-minus' : 'i-heroicons-pencil'"
+                    class="h-3 w-3"
+                  />
+                </span>
+                <span v-if="formatActivity(entry)" class="truncate text-xs text-gray-300">{{ formatActivity(entry) }}</span>
+                <span v-else class="text-xs text-gray-500">{{ entry.action }}</span>
+                <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relTime(entry.timestamp) }}</span>
+              </div>
             </div>
           </div>
         </div>
