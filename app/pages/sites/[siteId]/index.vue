@@ -53,6 +53,28 @@
         </NuxtLink>
       </div>
 
+      <!-- Favorite Switches -->
+      <div v-if="stats.favorites?.switches?.length" class="stagger-item">
+        <h2 class="mb-2 text-sm font-semibold text-gray-400">
+          <UIcon name="i-heroicons-star-solid" class="mr-1 inline h-3.5 w-3.5 text-amber-400" />
+          {{ $t('dashboard.favorites') }}
+        </h2>
+        <div class="flex flex-wrap gap-2">
+          <NuxtLink
+            v-for="fav in stats.favorites.switches"
+            :key="(fav as any).id"
+            :to="`/sites/${siteId}/switches/${(fav as any).id}`"
+            class="card-glow flex items-center gap-2 rounded-lg bg-default px-3 py-2 text-sm transition-colors hover:text-primary-500"
+          >
+            <UIcon name="i-heroicons-server-stack" class="h-3.5 w-3.5 text-gray-500" />
+            <span class="font-medium">{{ (fav as any).name }}</span>
+            <UBadge v-if="(fav as any).role" :color="roleColor((fav as any).role)" variant="subtle" size="xs">
+              {{ (fav as any).role }}
+            </UBadge>
+          </NuxtLink>
+        </div>
+      </div>
+
       <!-- Port Status + Warnings -->
       <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <UCard class="stagger-item">
@@ -252,6 +274,12 @@ const hasSomeData = computed(() =>
 const totalPorts = computed(() =>
   (stats.value?.portStatus?.up || 0) + (stats.value?.portStatus?.down || 0) + (stats.value?.portStatus?.disabled || 0)
 )
+
+type BadgeColor = 'error' | 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'neutral'
+function roleColor(role: string): BadgeColor {
+  const map: Record<string, BadgeColor> = { core: 'error', distribution: 'info', access: 'success', management: 'warning' }
+  return map[role] || 'neutral'
+}
 
 const portUpPercent = computed(() =>
   totalPorts.value > 0 ? (stats.value!.portStatus!.up / totalPorts.value) * 100 : 0
