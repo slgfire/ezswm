@@ -819,10 +819,7 @@ End-to-end tests: 11/11 passed
 ## Feature Backlog
 
 ### Quick Wins
-- Port utilization bar on switch cards (% ports up/configured)
-- Favoriten/Pinned switches — star icon, pinned cards shown first
-- CSV export for switches, VLANs, networks
-- Port table view — collapsible table below port grid for copy-paste
+(all completed)
 
 ### Medium Effort
 - VLAN matrix per switch — which VLANs on which switch, as grid/matrix
