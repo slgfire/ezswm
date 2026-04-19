@@ -27,7 +27,8 @@ export default defineEventHandler(async (event) => {
     lagGroups: readJson('lagGroups.json'),
     activity: readJson('activity.json'),
     settings: readJson('settings.json'),
-    publicTokens: readJson('publicTokens.json')
+    publicTokens: readJson('publicTokens.json'),
+    topologyLayouts: readJson('topologyLayouts.json')
   }
 
   try {
@@ -43,7 +44,8 @@ export default defineEventHandler(async (event) => {
       lagGroups: 'lagGroups.json',
       activity: 'activity.json',
       settings: 'settings.json',
-      publicTokens: 'publicTokens.json'
+      publicTokens: 'publicTokens.json',
+      topologyLayouts: 'topologyLayouts.json'
     }
 
     for (const [key, fileName] of Object.entries(fileMap)) {
@@ -59,7 +61,7 @@ export default defineEventHandler(async (event) => {
           users: 'users.json', switches: 'switches.json', vlans: 'vlans.json',
           networks: 'networks.json', ipAllocations: 'ipAllocations.json', ipRanges: 'ipRanges.json',
           layoutTemplates: 'layoutTemplates.json', lagGroups: 'lagGroups.json',
-          activity: 'activity.json', settings: 'settings.json'
+          activity: 'activity.json', settings: 'settings.json', topologyLayouts: 'topologyLayouts.json'
         }
         writeJson(fileMap[key]!, data)
       }

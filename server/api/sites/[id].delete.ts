@@ -1,5 +1,6 @@
 import { siteRepository } from '../../repositories/siteRepository'
 import { activityRepository } from '../../repositories/activityRepository'
+import { topologyLayoutRepository } from '../../repositories/topologyLayoutRepository'
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params?.id
@@ -22,6 +23,7 @@ export default defineEventHandler(async (event) => {
   }
 
   siteRepository.delete(id)
+  topologyLayoutRepository.deleteBySiteId(id)
 
   await activityRepository.log({
     user_id: event.context.auth?.userId,

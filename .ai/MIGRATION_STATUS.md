@@ -527,6 +527,295 @@ End-to-end tests: 11/11 passed
 
 ---
 
+### Phase 21: Network Topology Visualization (2026-04-18)
+
+**Site-scoped interactive topology:**
+- v-network-graph (Vue 3 SVG library) with custom node rendering
+- Site-scoped page at `/sites/[siteId]/topology`
+- Custom SVG nodes: switch name, role badge, model, port status dots
+- One edge per physical port connection (bidirectional dedup)
+- LAG members as parallel edges with `edge.gap` spacing
+- Cross-site links: ghost nodes with dashed borders
+- Detail panel: switch info, port footer, connections grouped by LAG
+- Hierarchical auto-layout (Core → Distribution → Access)
+- Drag-to-reposition with persistent positions (topologyLayouts.json)
+- Reset layout (DELETE endpoint), Fit to screen, PNG export (SVG→Canvas)
+- Toolbar, role legend, stats badge
+- Topology nav hidden in All Sites context
+- Full i18n (EN + DE)
+
+**Files created:**
+- `types/topology.ts` — TopologyNode, TopologyLink, TopologyGhostNode, TopologyLayout
+- `app/plugins/v-network-graph.ts` — Nuxt plugin
+- `app/pages/sites/[siteId]/topology.vue` — main page
+- `app/components/topology/TopologyGraph.vue` — graph component
+- `app/components/topology/TopologyDetailPanel.vue` — detail panel
+- `app/composables/useTopology.ts` — data fetching composable
+- `server/api/sites/[siteId]/topology/` — 4 API endpoints (data, layout GET/PUT/DELETE)
+- `server/repositories/topologyLayoutRepository.ts` — layout storage
+- `server/validators/topologySchemas.ts` — Zod validation
+
+**Files changed:**
+- `server/plugins/initData.ts` — topologyLayouts.json init
+- `server/api/backup/export.get.ts` — include in backup
+- `server/api/backup/import.post.ts` — include in restore
+- `server/api/sites/[id].delete.ts` — cleanup on site deletion
+- `app/components/layout/AppSidebar.vue` — site-scoped nav
+- `i18n/locales/en.json`, `de.json` — topology keys
+
+**Files removed:**
+- `app/pages/topology.vue` — replaced by site-scoped
+- `server/api/topology.get.ts` — replaced by site-scoped
+
+**Version:** 0.12.0
+
+**Verification:**
+- `npm run build`: Passes
+
+---
+
+### Phase 21b: Topology UI/UX Polish (2026-04-18)
+
+**Visual improvements to topology graph:**
+- Edge visibility: normal color `#555` (was `#2a2a2a`), hover `#999`, selected green with width 3.5
+- Removed duplicate node labels (v-network-graph default label hidden via `label.visible: false`)
+- Role-based node sizing: Core 164x80, Distribution 150x74, Access 140x68
+- Role-colored node borders: subtle tint matching role color, stronger on hover
+- Node hover state: border opacity increase + SVG glow filter in role color
+- Port status symbols: ▲ up (green), — down (gray), ▼ disabled (red) instead of identical circles
+- Auto-fit on page load (`fitToContents()` after 200ms mount delay)
+- Compact icon toolbar: +/− zoom, fit, reset, export as icon-only buttons with dividers
+- Improved legend: filled circles + port status symbol explanation in bottom bar
+- Better auto-layout spacing: 220px horizontal, 250px vertical (was 200/200)
+
+**Files changed:**
+- `app/components/topology/TopologyGraph.vue` — complete UI overhaul
+- `i18n/locales/en.json` — added zoomIn, zoomOut keys
+- `i18n/locales/de.json` — added zoomIn, zoomOut keys
+
+**Verification:**
+- `npm run build`: Passes
+- Zero console errors
+
+---
+
+### Phase 21c: Topology UI Polish Refinement (2026-04-18)
+
+**Focused polish pass:**
+- Native fit-to-view via `autoPanAndZoomOnLoad: 'fit-content'` with `fitContentMargin: 50` (replaces manual setTimeout)
+- Node bounding box matches largest node (168x82) preventing right-edge clipping
+- Slightly larger nodes: Access 148x72 (was 140x68), Dist 156x76 (was 150x74), Core 168x82 (was 164x80)
+- Edge fanout: `gap: 12` + `margin: 8` for cleaner parallel link spacing
+- Dist border opacity 0.25 vs Access 0.15 for stronger visual differentiation
+- Model text left-aligned (matching name) instead of centered
+- Port count label (`48p`) added for context next to status symbols
+- Toolbar + bottom bar: `backdrop-blur-sm`, `shadow-md`, `bg-elevated/90` for cohesive floating look
+- Stats merged into legend bar (single bottom element instead of two)
+- Tier y-spacing 260 (was 250) for better vertical distribution
+
+**Files changed:**
+- `app/components/topology/TopologyGraph.vue`
+- `.ai/MIGRATION_STATUS.md`
+
+**Verification:**
+- `npm run build`: Passes
+- Zero console errors
+
+---
+
+### Phase 21d: Topology Final Layout + Edge Attachment Fix (2026-04-18)
+
+**Layout polish:**
+- Asymmetric fitContentMargin `{ top: 20, bottom: 60, left: 60, right: 60 }` — graph sits higher, less empty space above
+- Bottom/side padding prevents node clipping near edges and legend bar
+- Edge gap increased to 14 for cleaner parallel link fanout from core
+
+**Edge-to-node attachment fix:**
+- Root cause: node config `width/height` (168x82) was larger than actual SVG rects (148x72 for Access), causing edges to terminate at the config boundary instead of the visual card edge
+- Fix: `edge.margin: null` — edges now extend to node center, visually clipped by the opaque node background rect drawn in the `#override-node` slot
+- Edges attach flush to all node sizes regardless of role
+
+**Minor:**
+- Port count label font bumped to 9px (was 8px) for readability
+
+**Files changed:**
+- `app/components/topology/TopologyGraph.vue`
+- `.ai/MIGRATION_STATUS.md`
+
+**Verification:**
+- `npm run build`: Passes
+- Zero console errors
+
+---
+
+### Phase 21e: Selection Polish + Panel Re-fit (2026-04-18)
+
+**Selection state:**
+- Selected node uses role-colored border at 0.55 opacity (was uniform green 0.5)
+- Dedicated `glow-selected` SVG filter with green glow (stdDeviation 4, opacity 0.2)
+- Selection feels integrated with role colors instead of a disconnected overlay
+- Guard against NaN SVG attributes when scale is briefly undefined during transitions
+
+**Panel integration:**
+- Graph auto-re-fits when detail panel opens or closes via `watch(panelOpen)`
+- All nodes remain visible even with the 290px panel taking canvas space
+
+**Files changed:**
+- `app/components/topology/TopologyGraph.vue`
+- `app/pages/sites/[siteId]/topology.vue`
+- `.ai/MIGRATION_STATUS.md`
+
+**Verification:**
+- `npm run build`: Passes
+
+---
+
+### Phase 21f: Panel Reuse + Edge Highlighting + Node Differentiation (2026-04-18)
+
+**Panel → USlideover:**
+- Replaced custom `w-[290px]` div with `<USlideover>` matching the app's standard side panel
+- Title/description props, `#body` + `#footer` slots, standard close behavior
+- Graph gets full canvas width (panel overlays, no longer pushes)
+- Connection cards emit `highlight-edge` on hover for edge highlighting
+
+**Edge highlighting:**
+- Panel connection hover → edge selected in graph via `setSelectedEdges()`
+- Edge selection style: green `rgba(34,197,94,0.6)` width 3.5
+
+**Node differentiation:**
+- Role accent bar: 3px vertical stripe on left edge in role color (Core 0.7 opacity, others 0.4)
+- Wider size gap: Core 176x86, Dist 160x78, Access 148x72 (was 168/156/148)
+- Combined with role-colored borders → clear hierarchy at a glance
+
+**Files changed:**
+- `app/components/topology/TopologyDetailPanel.vue` — rewritten to USlideover
+- `app/components/topology/TopologyGraph.vue` — accent bar, highlight-edge, size update
+- `app/pages/sites/[siteId]/topology.vue` — new events, panel overlay layout
+- `.ai/MIGRATION_STATUS.md`
+
+**Verification:**
+- `npm run build`: Passes
+
+---
+
+### Phase 21g: Side Panel UX Improvements (2026-04-18)
+
+**Panel content restructuring:**
+- Role badge moved into USlideover description ("Core · Juniper · QFX5100")
+- Connections grouped by target switch — one card per switch instead of per link
+- Port mappings as compact monospace rows (local ↔ remote) inside each card
+- LAG sub-groups shown as labeled sections within switch cards
+- VLANs deduplicated per target switch, shown once at bottom of card
+- Port stats dots reduced from 2px to 1.5px, tighter spacing
+- Overall vertical density significantly improved
+
+**Files changed:**
+- `app/components/topology/TopologyDetailPanel.vue`
+- `.ai/MIGRATION_STATUS.md`
+
+**Verification:**
+- `npm run build`: Passes
+
+---
+
+### Phase 21h: Graph Layout + Node Readability (2026-04-18)
+
+**Layout improvements:**
+- Reduced ySpacing from 260 to 200 (was briefly 160, too aggressive)
+- Empty tiers skipped so nodes don't float with unnecessary gaps
+- Lower-tier nodes sorted by primary connected upper node to minimize edge crossings
+- Edge margin set to 2 (edges stop at node boundary, no pass-through)
+- fitContentMargin adjusted: top 30, bottom/left/right 50
+
+**Node readability:**
+- Wider nodes: Core 196x86 (was 176), Dist 176x78 (was 160), Access 164x72 (was 148)
+- Increased truncation limits: Core 20 chars, Dist 17, Access 16 (were 16/14/14)
+- Model text truncation: Core 30, others 24 (were 26/22)
+- Subtle role-tinted background fill per node (Core red 3%, Dist blue 2%, Access green 1.5%)
+
+**Node differentiation:**
+- Core accent bar widened to 4px (was 3), opacity 0.8
+- Distribution accent bar opacity 0.5 (was 0.4)
+- Graduated opacity: Core 0.8 → Dist 0.5 → Access 0.35
+- v-network-graph bounding box updated to 196x86 to match largest node
+
+**Files changed:**
+- `app/components/topology/TopologyGraph.vue`
+- `.ai/MIGRATION_STATUS.md`
+
+**Verification:**
+- `npm run build`: Passes
+
+---
+
+### Phase 21i: Edge Type Differentiation + Card Design Alignment (2026-04-18)
+
+**Node card design aligned with switch overview:**
+- Identical structure: Name + Badge header, Model subtitle, port footer
+- Port footer matches switch cards: "XX PORTS" left, colored dots right, border-t separator
+- Removed accent bar and triangle port symbols
+- Dynamic name truncation based on node width
+
+**Edge type visual differentiation:**
+- Normal links: thin (1.5px), solid, `#555`
+- Trunk links (multiple VLANs): medium (2px), dashed `6,3`, `#666`
+- LAG links: thick (3px), solid, `#7a8999` (blue-gray)
+- Per-edge styling via v-network-graph function configs
+- Custom edge data (`isLag`, `isTrunk`) passed to graphEdges
+- Legend updated with edge type indicators (solid/dashed/thick lines)
+
+**Files changed:**
+- `app/components/topology/TopologyGraph.vue`
+- `.ai/MIGRATION_STATUS.md`
+
+**Verification:**
+- `npm run build`: Passes
+
+---
+
+### Phase 21j: Mini Layout Polish (2026-04-18)
+
+- fitContentMargin tightened: top 20, bottom 40, sides 40 (was 30/50/50)
+- xSpacing 200 (was 210) — slightly denser horizontal layout
+
+**Files changed:**
+- `app/components/topology/TopologyGraph.vue`
+- `.ai/MIGRATION_STATUS.md`
+
+---
+
+### Phase 21k: Documentation Audit + Release Readiness (2026-04-19)
+
+**README.md:**
+- Version badge updated: 0.8.0 → 0.12.0
+- Roadmap: Topology, LAG Groups, Print View marked as completed with version tags
+- Rack Planning and IPv6 remain as planned
+
+**User Guide (EN + DE):**
+- Added full "Network Topology" section (EN: ~60 lines, DE: ~60 lines)
+- Covers: overview, graph layout, edge types (Link/Trunk/LAG), detail panel, toolbar, saved positions
+- Two new topology screenshots added
+
+**API Reference (EN + DE):**
+- Removed stale `GET /api/topology` global endpoint
+- Added 4 site-scoped topology endpoints: data, layout GET/PUT/DELETE
+
+**Screenshots:**
+- `screenshot-topology.png` — full topology graph view
+- `screenshot-topology-detail.png` — topology with detail panel open
+
+**Files changed:**
+- `README.md`
+- `docs/guide/user-guide.md`
+- `docs/de/guide/user-guide.md`
+- `docs/api/reference.md`
+- `docs/de/api/reference.md`
+- `docs/public/images/screenshot-topology.png` (new)
+- `docs/public/images/screenshot-topology-detail.png` (new)
+- `.ai/MIGRATION_STATUS.md`
+
+---
+
 ## Feature Backlog
 
 ### Quick Wins

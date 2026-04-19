@@ -27,3 +27,5 @@ export type { AppSettings } from './settings'
 export { DEFAULT_SETTINGS } from './settings'
 
 export type { ValidationError, ApiError, ApiResponse, PaginatedResponse } from './api'
+
+export type { TopologyNode, TopologyLink, TopologyGhostNode, TopologyLayout } from './topology'

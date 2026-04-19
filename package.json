@@ -1,6 +1,6 @@
 {
   "name": "ezswm",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "type": "module",
   "private": true,
   "scripts": {
@@ -25,6 +25,7 @@
     "nuxt": "4.4.2",
     "qrcode": "1.5.4",
     "tailwindcss": "4.2.2",
+    "v-network-graph": "0.9.22",
     "vuedraggable": "4.1.0",
     "yaml": "2.8.3",
     "zod": "4.3.6"

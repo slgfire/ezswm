@@ -2,7 +2,7 @@ import { readJson } from '../../storage/jsonStorage'
 
 export default defineEventHandler((event) => {
   const backup = {
-    version: '0.1.0',
+    version: useRuntimeConfig().public.appVersion,
     created_at: new Date().toISOString(),
     data: {
       users: readJson('users.json'),
@@ -15,7 +15,8 @@ export default defineEventHandler((event) => {
       lagGroups: readJson('lagGroups.json'),
       activity: readJson('activity.json'),
       settings: readJson('settings.json'),
-      publicTokens: readJson('publicTokens.json')
+      publicTokens: readJson('publicTokens.json'),
+      topologyLayouts: readJson('topologyLayouts.json')
     }
   }
 

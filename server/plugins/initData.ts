@@ -41,6 +41,7 @@ export default defineNitroPlugin(() => {
   }
 
   initializeFile('settings.json', DEFAULT_SETTINGS)
+  initializeFile('topologyLayouts.json', {})
 
   console.log(`[ezSWM] Data directory initialized: ${config.dataDir}`)
 })

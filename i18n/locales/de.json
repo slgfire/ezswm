@@ -435,12 +435,19 @@
   "topology": {
     "title": "Netzwerk-Topologie",
     "emptyTitle": "Keine Switch-Verbindungen gefunden",
-    "emptyDescription": "Verbinden Sie Switches, um die Topologie anzuzeigen.",
-    "exportPdf": "PDF exportieren",
-    "exportPng": "PNG exportieren",
-    "comingSoon": "Demnächst",
-    "comingSoonDescription": "Interaktives Netzwerk-Topologiediagramm basierend auf Switch-Verbindungen. Auto-Layout, klickbare Knoten und VLAN-Beschriftungen.",
-    "inDevelopment": "In Entwicklung"
+    "emptyDescription": "Verbinde Switches über Port-Verbindungen, um die Netzwerk-Topologie zu sehen.",
+    "selectSiteTitle": "Standort auswählen",
+    "selectSiteDescription": "Die Topologie ist standortbezogen. Bitte wähle einen bestimmten Standort aus, um die Netzwerk-Topologie zu sehen.",
+    "exportPng": "Als PNG exportieren",
+    "fit": "Ansicht anpassen",
+    "resetLayout": "Layout zurücksetzen",
+    "zoomIn": "Vergrößern",
+    "zoomOut": "Verkleinern",
+    "openSwitch": "Switch öffnen",
+    "connections": "Verbindungen",
+    "ports": "Ports",
+    "switchInfo": "Switch-Info",
+    "crossSite": "Standortübergreifend"
   },
   "tools": {
     "subnetCalculator": {

@@ -1,7 +1,7 @@
 <div align="center">
   <img src="public/logo.png" alt="ezSWM" width="400"/>
 
-  [![Version](https://img.shields.io/badge/Version-0.8.0-22c55e.svg)](https://github.com/slgfire/ezswm/releases)
+  [![Version](https://img.shields.io/badge/Version-0.12.0-22c55e.svg)](https://github.com/slgfire/ezswm/releases)
   [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
   [![Node](https://img.shields.io/badge/Node-22_LTS-green.svg)](https://nodejs.org)
   [![Nuxt](https://img.shields.io/badge/Nuxt-4.x-00DC82.svg)](https://nuxt.com)
@@ -84,11 +84,11 @@ npm run dev
 
 ## Roadmap
 
-- **Rack Planning** — Visual 19" rack view with height-unit positioning
-- **Topology** — Interactive network topology diagram
-- **LAG Groups** — Link Aggregation Group management
-- **IPv6 Support** — IPv6 subnet and allocation tracking
-- **Print View** — Printable switch front panel layouts
+- [x] **Topology** — Interactive site-scoped network topology with v-network-graph (v0.12.0)
+- [x] **LAG Groups** — Link Aggregation Group management (v0.7.0)
+- [x] **Print View** — Printable switch front panel layouts with QR codes (v0.6.0)
+- [ ] **Rack Planning** — Visual 19" rack view with height-unit positioning
+- [ ] **IPv6 Support** — IPv6 subnet and allocation tracking
 
 ---
 

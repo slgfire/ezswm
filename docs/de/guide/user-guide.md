@@ -272,6 +272,64 @@ Beim Bearbeiten eines Ports, der zu einer LAG gehört, werden folgende Einstellu
 
 Beim Anzeigen eines LAG-Ports im Seitenpanel zeigt ein **LAG-Gruppe**-Feld den LAG-Namen und einen **Aus LAG entfernen**-Button. Wenn das Entfernen des Ports weniger als 2 Mitglieder übrig lassen würde, wird die gesamte LAG gelöscht.
 
+## Netzwerk-Topologie
+
+### Übersicht
+
+Die Topologie-Seite bietet eine interaktive, standortbezogene Graphen-Visualisierung Ihrer Switch-zu-Switch-Verbindungen. Sie zeigt, wie Switches über Port-Links verbunden sind und hilft dabei, die physische Netzwerkstruktur auf einen Blick zu verstehen.
+
+![Topologie-Ansicht](/images/screenshot-topology.png)
+
+Navigieren Sie zu **Topologie** in der Seitenleiste (nur sichtbar, wenn ein bestimmter Standort ausgewählt ist — nicht in der "Alle Standorte"-Ansicht).
+
+### Graph-Layout
+
+Switches werden hierarchisch nach ihrer Rolle angeordnet:
+
+- **Core**-Switches erscheinen oben (größte Karten)
+- **Distribution**-Switches in der Mitte
+- **Access** und andere Switches unten
+
+Der Graph passt sich beim Laden automatisch an den verfügbaren Canvas an. Sie können per **Drag** auf dem Canvas schwenken, per **Scrollrad** zoomen und einzelne Nodes per **Drag** neu positionieren. Verschobene Nodes werden gespeichert und beim nächsten Besuch wiederhergestellt.
+
+### Verbindungstypen
+
+Verbindungen zwischen Switches werden visuell unterschieden:
+
+| Typ | Darstellung | Beschreibung |
+|-----|-------------|--------------|
+| **Link** | Dünne durchgezogene Linie | Einzelne Port-Verbindung |
+| **Trunk** | Gestrichelte Linie | Verbindung mit mehreren VLANs |
+| **LAG** | Dicke durchgezogene Linie (blaugrau) | Link Aggregation Group |
+
+Die Legende am unteren Rand des Canvas erklärt alle visuellen Indikatoren.
+
+### Detail-Panel
+
+Klicken Sie auf einen Switch-Node, um das Detail-Panel zu öffnen. Es zeigt:
+
+- Switch-Name, Rolle, Hersteller und Modell
+- Standort und Management-IP
+- Port-Statistiken (aktiv / inaktiv / deaktiviert)
+- Alle Verbindungen gruppiert nach Ziel-Switch, mit Port-Zuordnungen und VLANs
+
+![Topologie Detail-Panel](/images/screenshot-topology-detail.png)
+
+Klicken Sie auf **Switch öffnen** am unteren Rand des Panels, um zur vollständigen Switch-Detailseite zu navigieren.
+
+### Toolbar
+
+Die schwebende Toolbar oben links bietet:
+
+- **+/−** Vergrößern/Verkleinern
+- **Einpassen** Ansicht zurücksetzen, um alle Nodes einzupassen
+- **Zurücksetzen** Gespeicherte Positionen löschen und Layout neu berechnen
+- **Exportieren** Aktuelle Ansicht als PNG-Bild herunterladen
+
+### Gespeicherte Positionen
+
+Wenn Sie einen Node an eine neue Position ziehen, werden alle Node-Positionen automatisch gespeichert. Beim nächsten Seitenaufruf wird das Layout wiederhergestellt. Verwenden Sie den **Zurücksetzen**-Button, um gespeicherte Positionen zu löschen und zum automatischen hierarchischen Layout zurückzukehren.
+
 ## VLANs
 
 ### VLANs erstellen

@@ -272,6 +272,64 @@ When editing a port that belongs to a LAG, the following settings are automatica
 
 When viewing a LAG port in the side panel, a **LAG Group** field shows the LAG name and a **Remove from LAG** button. If removing the port would leave fewer than 2 members, the entire LAG is deleted.
 
+## Network Topology
+
+### Overview
+
+The topology page provides an interactive, site-scoped graph visualization of your switch-to-switch connections. It shows how switches are connected via port links and helps you understand the physical network structure at a glance.
+
+![Topology view](/images/screenshot-topology.png)
+
+Navigate to **Topology** in the sidebar (only visible when a specific site is selected — not in the "All Sites" view).
+
+### Graph Layout
+
+Switches are arranged in a hierarchical layout based on their role:
+
+- **Core** switches appear at the top (largest cards)
+- **Distribution** switches in the middle
+- **Access** and other switches at the bottom
+
+The graph automatically fits to the available canvas on page load. You can **pan** by dragging the canvas, **zoom** with the scroll wheel, and **drag** individual nodes to reposition them. Repositioned nodes are saved and restored on next visit.
+
+### Edge Types
+
+Connections between switches are visually differentiated:
+
+| Type | Appearance | Description |
+|------|------------|-------------|
+| **Link** | Thin solid line | Single port connection |
+| **Trunk** | Dashed line | Connection carrying multiple VLANs |
+| **LAG** | Thick solid line (blue-gray) | Link Aggregation Group |
+
+The legend at the bottom of the canvas explains all visual indicators.
+
+### Detail Panel
+
+Click any switch node to open the detail panel. It shows:
+
+- Switch name, role, manufacturer, and model
+- Location and management IP
+- Port statistics (up / down / disabled)
+- All connections grouped by target switch, with port mappings and VLANs
+
+![Topology detail panel](/images/screenshot-topology-detail.png)
+
+Click **Open Switch** at the bottom of the panel to navigate to the full switch detail page.
+
+### Toolbar
+
+The floating toolbar in the top-left corner provides:
+
+- **+/−** Zoom in/out
+- **Fit** Reset view to fit all nodes
+- **Reset** Clear saved positions and recalculate layout
+- **Export** Download the current view as a PNG image
+
+### Saved Positions
+
+When you drag a node to a new position, all node positions are saved automatically. On the next page load, the layout is restored. Use the **Reset** button to clear saved positions and return to the automatic hierarchical layout.
+
 ## VLANs
 
 ### Creating VLANs
