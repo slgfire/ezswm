@@ -2,8 +2,8 @@
 
 ## Latest Stage
 
-Date: 2026-04-09
-Stage: Phase 18 — Keyboard Shortcuts
+Date: 2026-04-19
+Stage: Phase 23 — Switch Detail Lower Section UX
 Status: Complete
 
 ---
@@ -872,6 +872,40 @@ End-to-end tests: 11/11 passed
 - Zero console errors, zero warnings
 - `npm run build`: Passes (8.95 MB output)
 - `docker compose build --no-cache`: Passes
+
+---
+
+### Phase 23: Switch Detail Lower Section UX (2026-04-19)
+
+**Visual consolidation of the lower section on switch detail page:**
+- Legend (Status/Type/Mode), VLANs, LAG chips, and multi-select hint consolidated into one `list-container` card
+- "Indicators" label renamed to "Mode" (`legend.mode` i18n key, `legend.access` for Access)
+- VLANs moved to own row with VLAN ID + name display
+- LAG chips get `truncate max-w-[150px]` on name spans for long names
+- Multi-select hint as last row inside legend card, auto-hides when ports are selected
+- Multi-select hint text updated: "Mehrfachauswahl: Strg/Cmd + Klick auf Ports"
+- Port Table collapsible upgraded to card with status metadata (up/down/disabled counts in header)
+- Recent Activity collapsible upgraded to card with entry count + latest timestamp in header
+- Both collapsibles get `border-t` separator between header and content when expanded
+- All three cards share `list-container rounded-lg bg-default` visual style
+- Trunk box-shadow uses `var(--color-default)` for dark/light mode compatibility
+
+**Bug fix:**
+- `usedVlans` computed in `SwitchPortGrid.vue` now collects `access_vlan` and `tagged_vlans` in addition to `native_vlan`
+
+**i18n:**
+- New keys: `legend.mode`, `legend.access`, `switches.portTable.portsCount`, `switches.portTable.upCount/downCount/disabledCount`, `switches.activity.entriesCount`, `switches.activity.latest`
+- Updated: `switches.ports.multiSelectHint`
+- Pluralization support for port/entry counts
+
+**Files changed:**
+- `app/components/switch/SwitchPortGrid.vue` — legend card consolidation, usedVlans fix
+- `app/components/switch/SwitchPortTable.vue` — card style, portStats, metadata header
+- `app/pages/sites/[siteId]/switches/[id].vue` — activity card, spacing adjustments
+- `i18n/locales/de.json`, `i18n/locales/en.json` — new and updated keys
+
+**Verification:**
+- `npm run build`: Passes (8.55 MB output)
 
 ---
 
