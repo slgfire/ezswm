@@ -819,9 +819,7 @@ End-to-end tests: 11/11 passed
 ## Feature Backlog
 
 ### Quick Wins
-- Port utilization bar on switch cards (% ports up/configured)
 - Favoriten/Pinned switches — star icon, pinned cards shown first
-- CSV export for switches, VLANs, networks
 - Port table view — collapsible table below port grid for copy-paste
 
 ### Medium Effort
@@ -831,7 +829,7 @@ End-to-end tests: 11/11 passed
 - Real-time client-side form validation
 
 ### Larger Features
-- Topology: interactive graph visualization (v-network-graph or similar)
+- Rack Planning — visual 19" rack view with height-unit positioning
 - Dashboard widgets customizable — drag & drop reorder KPI cards
 - PDF export — switch front panel as printable PDF
 - IPv6 support
