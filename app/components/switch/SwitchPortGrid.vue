@@ -77,7 +77,7 @@
 
     <!-- Legend + LAG Card -->
     <template v-if="!publicMode">
-    <div class="port-legend list-container mt-4 rounded-lg bg-default p-4 text-[11px] text-gray-500 dark:text-gray-400">
+    <div class="port-legend mt-4 rounded-lg border border-neutral-200 bg-default p-4 text-[11px] text-gray-500 dark:border-neutral-800 dark:text-gray-400">
       <!-- Row 1: Status / Type / Mode -->
       <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5">
         <!-- Status -->
