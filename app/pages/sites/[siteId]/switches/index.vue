@@ -216,14 +216,14 @@ v-if="tagOptions.length > 0"
             :to="`/sites/${siteId}/switches/${sw.id}`"
             class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
           >
-            <!-- Favorite star -->
+            <!-- Favorite star (top-left, always visible) -->
             <button
-              class="absolute left-2 top-2 z-10 rounded-full p-1 transition-all"
-              :class="sw.is_favorite ? 'text-amber-400 opacity-100' : 'text-gray-400 opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-amber-400'"
+              class="absolute left-1.5 top-px z-10 transition-colors"
+              :class="sw.is_favorite ? 'text-amber-400' : 'text-gray-600 hover:text-amber-400 dark:text-gray-700 dark:hover:text-amber-400'"
               :title="sw.is_favorite ? $t('switches.unfavorite') : $t('switches.favorite')"
               @click.prevent="toggleFavorite(sw)"
             >
-              <UIcon :name="sw.is_favorite ? 'i-heroicons-star-solid' : 'i-heroicons-star'" class="h-4 w-4" />
+              <UIcon :name="sw.is_favorite ? 'i-heroicons-star-solid' : 'i-heroicons-star'" class="h-3.5 w-3.5" />
             </button>
 
             <!-- Hover actions -->
@@ -306,14 +306,14 @@ v-if="tagOptions.length > 0"
             :to="`/sites/${siteId}/switches/${sw.id}`"
             class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
           >
-            <!-- Favorite star -->
+            <!-- Favorite star (top-left, always visible) -->
             <button
-              class="absolute left-2 top-2 z-10 rounded-full p-1 transition-all"
-              :class="sw.is_favorite ? 'text-amber-400 opacity-100' : 'text-gray-400 opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-amber-400'"
+              class="absolute left-1.5 top-px z-10 transition-colors"
+              :class="sw.is_favorite ? 'text-amber-400' : 'text-gray-600 hover:text-amber-400 dark:text-gray-700 dark:hover:text-amber-400'"
               :title="sw.is_favorite ? $t('switches.unfavorite') : $t('switches.favorite')"
               @click.prevent="toggleFavorite(sw)"
             >
-              <UIcon :name="sw.is_favorite ? 'i-heroicons-star-solid' : 'i-heroicons-star'" class="h-4 w-4" />
+              <UIcon :name="sw.is_favorite ? 'i-heroicons-star-solid' : 'i-heroicons-star'" class="h-3.5 w-3.5" />
             </button>
 
             <!-- Hover actions -->
@@ -402,10 +402,10 @@ v-if="tagOptions.length > 0"
             :to="`/sites/${siteId}/switches/${sw.id}`"
             class="stagger-item card-glow group relative flex items-center gap-4 rounded-lg bg-default px-5 py-3"
           >
-            <!-- Favorite star -->
+            <!-- Favorite star (list view) -->
             <button
-              class="shrink-0 rounded-full p-0.5 transition-all"
-              :class="sw.is_favorite ? 'text-amber-400' : 'text-gray-400 opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-amber-400'"
+              class="shrink-0 transition-colors"
+              :class="sw.is_favorite ? 'text-amber-400' : 'text-gray-600 hover:text-amber-400 dark:text-gray-700 dark:hover:text-amber-400'"
               :title="sw.is_favorite ? $t('switches.unfavorite') : $t('switches.favorite')"
               @click.prevent="toggleFavorite(sw)"
             >
