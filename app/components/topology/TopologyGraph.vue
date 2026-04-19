@@ -38,13 +38,25 @@
 
         <!-- Custom node rendering (matches switch card design from switches/index) -->
         <template #override-node="{ nodeId, scale }">
-          <g
-            :class="{ 'cursor-pointer': !isGhostNode(nodeId) }"
-            :filter="getNodeFilter(nodeId)"
+          <!-- Interaction layer: drag + click + hover -->
+          <rect
+            class="draggable selectable"
+            :x="-getNodeSize(nodeId).w / 2 * scale"
+            :y="-getNodeSize(nodeId).h / 2 * scale"
+            :width="getNodeSize(nodeId).w * scale"
+            :height="getNodeSize(nodeId).h * scale"
+            fill="transparent"
+            stroke="none"
+            style="pointer-events: all; cursor: grab"
+            @click="onNodeClick(nodeId)"
             @pointerenter="hoveredNodeId = nodeId"
             @pointerleave="hoveredNodeId = null"
+          />
+          <g
+            :filter="getNodeFilter(nodeId)"
+            style="pointer-events: none"
           >
-            <!-- Card background (pointer-events here so library drag still works on the outer g) -->
+            <!-- Card background -->
             <rect
               :x="-getNodeSize(nodeId).w / 2 * scale"
               :y="-getNodeSize(nodeId).h / 2 * scale"
@@ -55,8 +67,6 @@
               :stroke="getNodeStroke(nodeId)"
               :stroke-width="selectedNodeId === nodeId ? 2 : hoveredNodeId === nodeId ? 1.5 : 1"
               :stroke-dasharray="isGhostNode(nodeId) ? '4,4' : 'none'"
-              style="pointer-events: all; cursor: pointer"
-              @click="onNodeClick(nodeId)"
             />
 
             <!-- Header: Name + Role badge (like switch cards) -->
@@ -616,11 +626,57 @@ const graphConfigs = computed(() => defineConfigs({
 
 // --- Event handlers ---
 
-// Node click from SVG template (override-node has pointer-events: all)
+// Track drag state to prevent click after drag
+const isDragging = ref(false)
+
+// Node click from SVG template — ignore if we just finished a drag
 function onNodeClick(nodeId: string) {
+  if (isDragging.value) {
+    isDragging.value = false
+    return
+  }
   if (!isGhostNode(nodeId)) {
     emit('select-node', nodeId)
   }
+}
+
+// Read node positions from SVG transform attributes
+function readNodePositionsFromSvg(): Record<string, { x: number; y: number }> {
+  const positions: Record<string, { x: number; y: number }> = {}
+  const container = graphRef.value?.$el as HTMLElement | undefined
+  if (!container) return positions
+
+  const nodeElements = container.querySelectorAll('.v-ng-node')
+  // Build a map from node name to node ID for reverse lookup
+  const nameToId = new Map<string, string>()
+  for (const [id, node] of Object.entries(graphNodes.value)) {
+    nameToId.set(node.name, id)
+  }
+
+  nodeElements.forEach((el: Element) => {
+    const nameText = el.querySelector('text')?.textContent?.trim()
+    if (!nameText) return
+    // Match truncated names (ending with …)
+    let nodeId: string | undefined
+    if (nameText.endsWith('\u2026')) {
+      // Truncated — find by prefix match
+      const prefix = nameText.slice(0, -1)
+      for (const [name, id] of nameToId) {
+        if (name.startsWith(prefix)) { nodeId = id; break }
+      }
+    } else {
+      nodeId = nameToId.get(nameText)
+    }
+    if (!nodeId) return
+
+    const transform = el.getAttribute('transform') || ''
+    const match = transform.match(/translate\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/)
+    if (match) {
+      positions[nodeId] = { x: parseFloat(match[1]!), y: parseFloat(match[2]!) }
+    }
+  })
+
+  return positions
 }
 
 const eventHandlers = {
@@ -635,16 +691,11 @@ const eventHandlers = {
     emit('select-node', '')
   },
   'node:dragend': () => {
-    if (graphRef.value) {
-      const positions: Record<string, { x: number; y: number }> = {}
-      const layouts = graphRef.value.layouts
-      if (layouts?.nodes) {
-        for (const [id, pos] of Object.entries(layouts.nodes)) {
-          if (!isGhostNode(id)) {
-            positions[id] = pos as { x: number; y: number }
-          }
-        }
-      }
+    isDragging.value = true
+    // Read positions from SVG transforms (graphRef.layouts returns the
+    // prop object, not the internal state after drag)
+    const positions = readNodePositionsFromSvg()
+    if (Object.keys(positions).length > 0) {
       emit('positions-changed', positions)
     }
   }
@@ -667,7 +718,20 @@ function zoomOut() {
 async function exportPng() {
   if (!graphRef.value) return
   try {
-    const svgText = await graphRef.value.exportAsSvgText({ embedImages: true })
+    let svgText = await graphRef.value.exportAsSvgText({ embedImages: true })
+
+    // Inject font styles into SVG so exported PNG has readable text.
+    // The SVG loses CSS class references and external fonts on export.
+    const fontStyle = `<style>
+      text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      text[font-family*="monospace"] { font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; }
+    </style>`
+    svgText = svgText.replace(/<svg([^>]*)>/, `<svg$1>${fontStyle}`)
+
+    // Add dark background to the SVG
+    const bgRect = `<rect width="100%" height="100%" fill="#0a0a0a" />`
+    svgText = svgText.replace(/<svg([^>]*)>(<style>[\s\S]*?<\/style>)/, `<svg$1>$2${bgRect}`)
+
     const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' })
     const url = URL.createObjectURL(svgBlob)
     const img = new Image()
