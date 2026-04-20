@@ -120,6 +120,13 @@ Auf der Switch-Detailseite werden Ports als visuelles Raster entsprechend dem La
 
 ![Switch-Detail mit Port-Raster](/images/screenshot-switch-detail.png)
 
+Unterhalb des Port-Rasters fasst eine **Legenden-Card** alle visuellen Indikatoren in gruppierten Zeilen zusammen: Port-Status (aktiv/inaktiv/deaktiviert), Port-Typen (SFP/QSFP/Konsole/Mgmt), Port-Modus (Access/Trunk), aktive VLANs mit ihren Farben und LAG-Gruppen. Ein Mehrfachauswahl-Hinweis am unteren Rand erinnert an die Port-Mehrfachauswahl (Strg/Cmd + Klick). Der Hinweis verschwindet automatisch, wenn Ports ausgewählt sind.
+
+Zwei aufklappbare Bereiche folgen der Legenden-Card:
+
+- **Port-Tabelle** — eine tabellarische Ansicht aller Ports. Der geschlossene Header zeigt Port-Anzahl und Status-Zusammenfassung (z.B. "7 aktiv · 105 inaktiv"). Klicke zum Aufklappen der vollständigen Tabelle.
+- **Letzte Aktivität** — zeigt die neuesten Änderungen an diesem Switch. Der geschlossene Header zeigt die Eintragsanzahl und den Zeitstempel der letzten Änderung (z.B. "20 Einträge · Letzte: vor 5 Min").
+
 ### Ports bearbeiten
 
 Klicke auf einen beliebigen Port im Raster, um ein Seitenpanel zu öffnen. Dort kannst du konfigurieren:
@@ -134,7 +141,7 @@ Klicke auf einen beliebigen Port im Raster, um ein Seitenpanel zu öffnen. Dort 
 
 ### Massen-Port-Bearbeitung
 
-Wähle mehrere Ports aus, indem du Umschalt oder Strg gedrückt hältst und klickst, dann verwende die Massenbearbeitungsaktion, um dasselbe VLAN, dieselbe Geschwindigkeit oder denselben Status auf alle ausgewählten Ports gleichzeitig anzuwenden.
+Wähle mehrere Ports aus, indem du **Strg** (oder **Cmd** auf Mac) gedrückt hältst und klickst, dann verwende die Massenbearbeitungsaktion, um dasselbe VLAN, dieselbe Geschwindigkeit oder denselben Status auf alle ausgewählten Ports gleichzeitig anzuwenden.
 
 ### Verbundene Geräte verknüpfen
 
@@ -146,6 +153,10 @@ Jeder Port kann erfassen, was an ihm angeschlossen ist. Zwei Modi sind verfügba
 ### Drag & Drop Sortierung
 
 Auf der Switch-Listenseite kannst du Switches per Drag & Drop umsortieren. Die Sortierreihenfolge wird gespeichert und in allen Ansichten angezeigt.
+
+### Favoriten-Switches
+
+Klicke auf das **Herz-Symbol** auf einer Switch-Karte, um den Switch als Favorit zu markieren. Favorisierte Switches erscheinen oben in der Liste mit einem ausgefüllten Herz-Symbol und sind so leicht auffindbar. Favoriten werden pro Benutzer gespeichert und bleiben über Sitzungen hinweg bestehen.
 
 ### Switches drucken
 
@@ -250,7 +261,7 @@ Klicke auf den **X**-Button auf einem LAG-Chip in der Legende. Der Bestätigungs
 
 ![LAG-Hover-Hervorhebung](/images/screenshot-lag-highlight.png)
 
-Unterhalb des Port-Rasters zeigt die LAG-Legende alle LAG-Gruppen des Switches. Jeder Chip zeigt den LAG-Namen, die Port-Anzahl und das Remote-Gerät.
+Die LAG-Legende ist Teil der Legenden-Card unterhalb des Port-Rasters. Jede LAG-Gruppe wird als interaktiver Chip mit LAG-Name, Port-Anzahl und Remote-Gerät angezeigt.
 
 - **Hover** über einen LAG-Chip hebt dessen Mitgliedsports hervor (Nicht-Mitglieder werden abgedunkelt)
 - **Klick** auf einen Chip zum Bearbeiten der LAG
@@ -403,6 +414,22 @@ Drücke **/** oder klicke auf die Suchleiste in der Kopfleiste, um die globale S
 
 Verwende die Pfeiltasten zur Navigation der Ergebnisse und Enter zum Springen zum ausgewählten Element. LAG-Suchergebnisse verlinken direkt zur Switch-Detailseite mit geöffnetem LAG-Bearbeitungs-Seitenpanel.
 
+## Subnetz-Rechner
+
+Navigiere zum **Subnetz-Rechner** in der Seitenleiste. Gib eine beliebige IPv4-Adresse mit CIDR-Präfix ein (z.B. `192.168.1.0/24`) und der Rechner zeigt:
+
+![Subnetz-Rechner](/images/screenshot-subnet-calculator.png)
+
+- Netzwerkadresse und Broadcast-Adresse
+- Nutzbarer Host-Bereich (erster und letzter Host)
+- Gesamtanzahl der Adressen und nutzbare Hosts
+- Subnetzmaske in Punkt-Dezimal- und Binärnotation
+- Wildcard-Maske
+- CIDR-Notation
+- IP-Klasse
+
+Dies ist ein rein clientseitiges Werkzeug — es werden keine Daten gespeichert. Nützlich für schnelle Subnetz-Berechnungen bei der Netzwerkplanung.
+
 ## Datenverwaltung
 
 ### Export und Import
@@ -434,6 +461,24 @@ Backups sind einfache JSON-Dateien. Sie können versioniert, verglichen oder bei
 ### Passwort ändern
 
 Ändere dein Passwort auf der Kontoeinstellungsseite. Du musst dein aktuelles Passwort eingeben und das neue bestätigen.
+
+## Standorte
+
+### Was sie sind
+
+Standorte repräsentieren physische Orte oder logische Gruppierungen für deine Infrastruktur. Jeder Standort hat eigene Switches, VLANs, Netzwerke und Topologie. Verwende Standorte, um verschiedene Orte zu trennen (z.B. "Rechenzentrum", "Büro", "LAN-Party Halle A").
+
+![Standorte](/images/screenshot-sites.png)
+
+### Standorte verwalten
+
+Navigiere zu **Standorte** in der Seitenleiste, um alle Standorte zu sehen. Klicke auf **Standort erstellen**, um einen neuen hinzuzufügen. Jeder Standort hat einen Namen und eine optionale Beschreibung.
+
+Wenn du einen Standort im Dropdown der Seitenleiste auswählst, werden alle Ansichten (Switches, VLANs, Netzwerke, Topologie) auf diesen Standort eingeschränkt. Wähle "Alle Standorte", um alles standortübergreifend zu sehen.
+
+### Standard-Standort
+
+Bei der Ersteinrichtung wird automatisch ein "Default"-Standort erstellt. Du kannst ihn umbenennen oder jederzeit weitere Standorte anlegen.
 
 ## Architekturübersicht
 

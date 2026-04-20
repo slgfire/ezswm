@@ -120,6 +120,13 @@ On a switch detail page, ports are rendered as a visual grid matching the layout
 
 ![Switch detail with port grid](/images/screenshot-switch-detail.png)
 
+Below the port grid, a **legend card** summarizes all visual indicators in grouped rows: port status (up/down/disabled), port types (SFP/QSFP/Console/Mgmt), port mode (access/trunk), active VLANs with their colors, and LAG groups. A multi-select hint at the bottom reminds you how to select multiple ports (Ctrl/Cmd + Click). The hint automatically hides when ports are selected.
+
+Two collapsible sections follow the legend card:
+
+- **Port Table** — a tabular view of all ports. The closed header shows port count and status summary (e.g., "7 up · 105 down"). Click to expand the full table.
+- **Recent Activity** — shows the latest changes to this switch. The closed header displays the entry count and timestamp of the most recent change (e.g., "20 entries · Latest: 5 min ago").
+
 ### Editing Ports
 
 Click any port in the grid to open a slideover panel. From there you can configure:
@@ -134,7 +141,7 @@ Click any port in the grid to open a slideover panel. From there you can configu
 
 ### Bulk Port Editing
 
-Select multiple ports by holding Shift or Ctrl and clicking, then use the bulk edit action to apply the same VLAN, speed, or status to all selected ports at once.
+Select multiple ports by holding **Ctrl** (or **Cmd** on Mac) and clicking, then use the bulk edit action to apply the same VLAN, speed, or status to all selected ports at once.
 
 ### Connected Device Linking
 
@@ -146,6 +153,10 @@ Each port can track what is connected to it. Two modes are available:
 ### Drag & Drop Sort Order
 
 On the switch list page, you can drag switches to reorder them. The sort order is persisted and reflected across all views.
+
+### Favorite Switches
+
+Click the **heart icon** on any switch card to mark it as a favorite. Favorite switches appear at the top of the list with a filled heart icon, making them easy to find. Favorites are stored per user and persist across sessions.
 
 ### Printing Switches
 
@@ -250,7 +261,7 @@ Click the **X** button on a LAG chip in the legend. The confirmation dialog show
 
 ![LAG hover highlight](/images/screenshot-lag-highlight.png)
 
-Below the port grid, the LAG legend shows all LAG groups for the switch. Each chip displays the LAG name, port count, and remote device.
+The LAG legend is part of the legend card below the port grid. Each LAG group is shown as an interactive chip with the LAG name, port count, and remote device.
 
 - **Hover** a LAG chip to highlight its member ports (non-members dim)
 - **Click** a chip to edit the LAG
@@ -403,6 +414,22 @@ Press **/** or click the search bar in the header to open global search. It sear
 
 Use arrow keys to navigate results and Enter to jump to the selected item. LAG search results deep-link to the switch detail page with the LAG edit slideover open.
 
+## Subnet Calculator
+
+Navigate to **Subnet Calculator** in the sidebar. Enter any IPv4 address with a CIDR prefix (e.g., `192.168.1.0/24`) and the calculator shows:
+
+![Subnet Calculator](/images/screenshot-subnet-calculator.png)
+
+- Network address and broadcast address
+- Usable host range (first and last host)
+- Total number of addresses and usable hosts
+- Subnet mask in dotted decimal and binary notation
+- Wildcard mask
+- CIDR notation
+- IP class
+
+This is a client-side tool — no data is saved. Useful for quick subnet calculations during network planning.
+
 ## Data Management
 
 ### Export and Import
@@ -434,6 +461,24 @@ Change your display name and preferred language (English or German).
 ### Password Change
 
 Change your password from the account settings page. You must provide your current password and confirm the new one.
+
+## Sites
+
+### What They Are
+
+Sites represent physical locations or logical groupings for your infrastructure. Each site has its own switches, VLANs, networks, and topology. Use sites to separate different locations (e.g., "Data Center", "Office", "LAN Party Hall A").
+
+![Sites](/images/screenshot-sites.png)
+
+### Managing Sites
+
+Navigate to **Sites** in the sidebar to see all sites. Click **Create Site** to add a new one. Each site has a name and optional description.
+
+When you select a site from the dropdown in the sidebar, all views (switches, VLANs, networks, topology) are scoped to that site. Select "All Sites" to see everything across all locations.
+
+### Default Site
+
+On first setup, a "Default" site is created automatically. You can rename it or create additional sites at any time.
 
 ## Architecture Overview
 

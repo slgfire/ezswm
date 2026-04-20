@@ -165,7 +165,7 @@
       "bulkResetDone": "{count} port(s) reset to defaults",
       "selected": "{count} port(s) selected",
       "noPortsMessage": "No ports. Assign a layout template to generate ports.",
-      "multiSelectHint": "Ctrl+Click to multi-select",
+      "multiSelectHint": "Multi-select: Ctrl/Cmd + Click on ports",
       "portUpdated": "Port updated",
       "portReset": "Port reset to defaults",
       "resetPort": "Reset Port",
@@ -231,7 +231,15 @@
       "vlan": "VLAN",
       "connectedDevice": "Connected Device",
       "connectedPort": "Connected Port",
-      "description": "Description"
+      "description": "Description",
+      "portsCount": "{n} Port | {n} Ports",
+      "upCount": "{n} up",
+      "downCount": "{n} down",
+      "disabledCount": "{n} disabled"
+    },
+    "activity": {
+      "entriesCount": "{n} entry | {n} entries",
+      "latest": "Latest: {time}"
     }
   },
   "vlans": {
@@ -584,6 +592,8 @@
     "disabled": "Disabled",
     "type": "Type",
     "indicators": "Indicators",
+    "mode": "Mode",
+    "access": "Access",
     "trunk": "Trunk",
     "sfp": "SFP/SFP+",
     "qsfp": "QSFP",

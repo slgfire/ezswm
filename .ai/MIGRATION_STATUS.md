@@ -2,8 +2,8 @@
 
 ## Latest Stage
 
-Date: 2026-04-09
-Stage: Phase 18 — Keyboard Shortcuts
+Date: 2026-04-20
+Stage: Phase 23b — Documentation Update
 Status: Complete
 
 ---
@@ -872,6 +872,70 @@ End-to-end tests: 11/11 passed
 - Zero console errors, zero warnings
 - `npm run build`: Passes (8.95 MB output)
 - `docker compose build --no-cache`: Passes
+
+---
+
+### Phase 23: Switch Detail Lower Section UX (2026-04-19)
+
+**Visual consolidation of the lower section on switch detail page:**
+- Legend (Status/Type/Mode), VLANs, LAG chips, and multi-select hint consolidated into one `list-container` card
+- "Indicators" label renamed to "Mode" (`legend.mode` i18n key, `legend.access` for Access)
+- VLANs moved to own row with VLAN ID + name display
+- LAG chips get `truncate max-w-[150px]` on name spans for long names
+- Multi-select hint as last row inside legend card, auto-hides when ports are selected
+- Multi-select hint text updated: "Mehrfachauswahl: Strg/Cmd + Klick auf Ports"
+- Port Table collapsible upgraded to card with status metadata (up/down/disabled counts in header)
+- Recent Activity collapsible upgraded to card with entry count + latest timestamp in header
+- Both collapsibles get `border-t` separator between header and content when expanded
+- All three cards share `list-container rounded-lg bg-default` visual style
+- Trunk box-shadow uses `var(--color-default)` for dark/light mode compatibility
+
+**Bug fix:**
+- `usedVlans` computed in `SwitchPortGrid.vue` now collects `access_vlan` and `tagged_vlans` in addition to `native_vlan`
+
+**i18n:**
+- New keys: `legend.mode`, `legend.access`, `switches.portTable.portsCount`, `switches.portTable.upCount/downCount/disabledCount`, `switches.activity.entriesCount`, `switches.activity.latest`
+- Updated: `switches.ports.multiSelectHint`
+- Pluralization support for port/entry counts
+
+**Files changed:**
+- `app/components/switch/SwitchPortGrid.vue` — legend card consolidation, usedVlans fix
+- `app/components/switch/SwitchPortTable.vue` — card style, portStats, metadata header
+- `app/pages/sites/[siteId]/switches/[id].vue` — activity card, spacing adjustments
+- `i18n/locales/de.json`, `i18n/locales/en.json` — new and updated keys
+
+**Verification:**
+- `npm run build`: Passes (8.55 MB output)
+
+---
+
+### Phase 23b: Documentation Update (2026-04-20)
+
+**VitePress documentation audit and refresh:**
+- Updated 7 screenshots to reflect current UI (switch detail with card layout, LAG highlight, switches list with favorites, dashboard, sites, subnet calculator)
+- Added missing documentation sections: Sites Management, Subnet Calculator, Favorite Switches
+- Updated switch detail description to cover new legend card, port table card with status metadata, activity card with latest timestamp
+- Fixed bulk port editing instruction: "Shift or Ctrl" → "Ctrl (or Cmd on Mac)"
+- Updated LAG legend description to reflect card-based layout
+- Referenced previously unused screenshots (sites, subnet-calculator) in user guide
+- All changes applied to both EN and DE user guides
+
+**Files changed:**
+- `docs/guide/user-guide.md` — 3 text updates + 3 new sections
+- `docs/de/guide/user-guide.md` — same changes in German
+- `docs/public/images/screenshot-switch-detail.png` — replaced
+- `docs/public/images/screenshot-lag-portgrid.png` — replaced
+- `docs/public/images/screenshot-lag-highlight.png` — replaced
+- `docs/public/images/screenshot-switches.png` — replaced
+- `docs/public/images/screenshot-dashboard.png` — replaced
+- `docs/public/images/screenshot-sites.png` — replaced
+- `docs/public/images/screenshot-subnet-calculator.png` — replaced
+
+**Verification:**
+- All 13 referenced screenshots match current UI
+- No broken image paths
+- No console errors
+- EN and DE content structurally identical
 
 ---
 
