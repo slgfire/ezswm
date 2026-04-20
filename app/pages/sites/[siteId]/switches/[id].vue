@@ -251,7 +251,7 @@
             {{ $t('switches.recentActivity') }}
             <span class="text-xs font-normal text-gray-400">{{ $t('switches.activity.entriesCount', switchActivity.length) }}</span>
             <span v-if="switchActivity.length" class="ml-auto text-xs font-normal text-gray-400">
-              {{ $t('switches.activity.latest', { time: relTime(switchActivity[0]?.timestamp) }) }}
+              {{ $t('switches.activity.latest', { time: relTime(switchActivity[0]?.timestamp ?? '') }) }}
             </span>
           </button>
           <div v-show="showActivity" class="mt-3 space-y-1 border-t border-default pt-3">
