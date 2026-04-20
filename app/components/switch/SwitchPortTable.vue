@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-lg border border-neutral-200 bg-default p-4 dark:border-neutral-800">
+  <div class="list-container rounded-lg bg-default p-4">
     <button
       class="flex w-full items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
       @click="expanded = !expanded"
