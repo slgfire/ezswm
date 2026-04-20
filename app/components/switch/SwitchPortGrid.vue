@@ -10,8 +10,7 @@
           <div class="h-px flex-1 bg-emerald-500/30"/>
         </div>
         <SwitchUnitDivider :label="unit.label || `Unit ${unit.unit_number}`" />
-        <div class="port-grid-unit rounded-lg border border-default bg-default/30 p-2 lg:p-3">
-          <div class="overflow-x-auto">
+        <div class="port-grid-unit overflow-x-auto rounded-lg border border-default bg-default/30 p-2 lg:p-3">
           <div class="flex flex-wrap items-start gap-5 w-max lg:w-auto">
             <div v-for="block in unit.blocks" :key="block.id" class="flex flex-col gap-1">
               <div v-if="block.label" class="text-[10px] font-medium text-gray-400 dark:text-gray-500">{{ block.label }}</div>
@@ -54,7 +53,6 @@
               />
             </div>
             </div>
-          </div>
           </div>
         </div>
       </div>
