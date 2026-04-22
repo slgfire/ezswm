@@ -18,10 +18,16 @@
           <USelect v-model="form.port_mode" :items="portModeOptions" :placeholder="$t('common.noChange')" class="w-full" />
         </UFormField>
 
+        <!-- Override Toggle -->
+        <div v-if="allVlans.length > 0 && configuredVlans" class="flex items-center gap-2 mb-3">
+          <UToggle v-model="addVlansToSwitch" size="xs" />
+          <span class="text-xs text-dimmed">{{ $t('vlans.addToSwitchToggle') }}</span>
+        </div>
+
         <!-- Access VLAN -->
         <template v-if="form.port_mode === 'access'">
           <UFormField :label="$t('switches.ports.accessVlan')">
-            <VlanDropdown v-if="allVlans.length" v-model="form.access_vlan" :vlans="allVlans" />
+            <VlanDropdown v-if="allVlans.length" v-model="form.access_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" :override-active="addVlansToSwitch" />
             <UInput v-else v-model.number="form.access_vlan" type="number" :placeholder="$t('common.noChange')" class="w-full" />
           </UFormField>
         </template>
@@ -29,7 +35,7 @@
         <!-- Trunk: Native + Tagged -->
         <template v-if="form.port_mode === 'trunk'">
           <UFormField :label="$t('switches.ports.nativeVlan')">
-            <VlanDropdown v-if="allVlans.length" v-model="form.native_vlan" :vlans="allVlans" />
+            <VlanDropdown v-if="allVlans.length" v-model="form.native_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" :override-active="addVlansToSwitch" />
             <UInput v-else v-model.number="form.native_vlan" type="number" :placeholder="$t('common.noChange')" class="w-full" />
           </UFormField>
 
@@ -38,6 +44,8 @@
               v-if="allVlans.length"
               v-model="selectedTaggedVlans"
               :vlans="allVlans"
+              :configured-vlans="configuredVlans"
+              :override-active="addVlansToSwitch"
             />
             <UInput v-else v-model="form.tagged_vlans_str" placeholder="e.g. 100,200,300" class="w-full" />
           </UFormField>
@@ -68,6 +76,8 @@ import type { VLAN } from '~~/types/vlan'
 const props = defineProps<{
   switchId: string
   selectedPorts: string[]
+  configuredVlans?: number[]
+  switchUpdatedAt?: string
 }>()
 
 const emit = defineEmits<{ saved: [], 'clear-selection': [] }>()
@@ -78,6 +88,7 @@ const { apiFetch } = useApiFetch()
 const isOpen = ref(false)
 const allVlans = ref<VLAN[]>([])
 const selectedTaggedVlans = ref<number[]>([])
+const addVlansToSwitch = ref(false)
 
 
 async function fetchVlans() {
@@ -172,7 +183,12 @@ async function apply() {
   try {
     await $fetch(`/api/switches/${props.switchId}/ports/bulk`, {
       method: 'PUT',
-      body: { port_ids: props.selectedPorts, updates }
+      body: {
+        port_ids: props.selectedPorts,
+        updates,
+        add_vlans_to_switch: addVlansToSwitch.value || undefined,
+        expected_updated_at: props.switchUpdatedAt || undefined
+      }
     })
     toast.add({ title: t('switches.ports.updatedPorts', { count: props.selectedPorts.length }), color: 'success' })
     // Reset form
@@ -185,6 +201,7 @@ async function apply() {
     form.description = ''
     form.helper_usage = '_no_change'
     selectedTaggedVlans.value = []
+    addVlansToSwitch.value = false
     emit('saved')
     close()
   } catch (e: unknown) {
