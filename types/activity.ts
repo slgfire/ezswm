@@ -1,4 +1,4 @@
-export type ActivityAction = 'create' | 'update' | 'delete' | 'duplicate' | 'update_port' | 'bulk_update_ports'
+export type ActivityAction = 'create' | 'update' | 'delete' | 'duplicate' | 'update_port' | 'bulk_update_ports' | 'add_configured_vlans' | 'remove_configured_vlans'
 
 export interface ActivityEntry {
   id: string

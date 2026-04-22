@@ -18,6 +18,7 @@ export interface Switch {
   role?: SwitchRole
   tags?: string[]
   ports: Port[]
+  configured_vlans: number[]
   is_favorite: boolean
   sort_order?: number
   notes?: string
