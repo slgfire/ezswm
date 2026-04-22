@@ -46,14 +46,14 @@ const emit = defineEmits<{
 const configuredSet = computed(() => new Set(props.configuredVlans || []))
 
 function isUnconfiguredItem(vlanId: number): boolean {
-  if (!props.configuredVlans || props.configuredVlans.length === 0 || vlanId === 0) return false
+  if (!props.configuredVlans || vlanId === 0) return false
   return !configuredSet.value.has(vlanId)
 }
 
 const groupedOptions = computed(() => {
   const noneOption = { label: '— None —', value: 0 }
 
-  if (!props.configuredVlans || props.configuredVlans.length === 0) {
+  if (!props.configuredVlans) {
     return [noneOption, ...props.vlans.map(v => ({
       label: `${v.vlan_id} · ${v.name}`,
       value: v.vlan_id
