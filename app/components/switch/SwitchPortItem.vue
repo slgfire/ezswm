@@ -134,13 +134,13 @@ const tooltipPos = reactive({ top: 0, left: 0 })
 const tooltipStyle = computed(() => ({
   top: `${tooltipPos.top}px`,
   left: `${tooltipPos.left}px`,
-  transform: 'translateY(-100%)'
+  transform: 'translateY(0)'
 }))
 
 function onMouseEnter() {
   if (portEl.value) {
     const rect = portEl.value.getBoundingClientRect()
-    tooltipPos.top = rect.top - 4  // position above the port, small gap
+    tooltipPos.top = rect.bottom + 4  // position below the port, small gap
     tooltipPos.left = rect.left
   }
   hovered.value = true
