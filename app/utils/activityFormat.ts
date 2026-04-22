@@ -28,6 +28,16 @@ export function formatActivitySummary(entry: ActivityEntry, t: TranslateFn, deta
     return formatEntityChange(changes, previous_state, t)
   }
 
+  if (action === 'add_configured_vlans' && metadata?.vlan_ids) {
+    const vlanIds = (metadata.vlan_ids as number[]).join(', ')
+    return t('activity.configuredVlansAdded', { vlans: vlanIds })
+  }
+
+  if (action === 'remove_configured_vlans' && metadata?.vlan_ids) {
+    const vlanId = (metadata.vlan_ids as number[])[0]
+    return t('activity.configuredVlansRemoved', { vlan: vlanId })
+  }
+
   return ''
 }
 
