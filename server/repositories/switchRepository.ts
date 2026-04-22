@@ -315,6 +315,83 @@ export const switchRepository = {
     return updatedPorts
   },
 
+  applyPortVlanUpdate(
+    switchId: string,
+    portId: string,
+    portData: Partial<Omit<Port, 'id' | 'unit' | 'index'>>,
+    options: {
+      addVlansToSwitch?: boolean
+      expectedUpdatedAt?: string
+      siteVlanIds?: number[]
+    } = {}
+  ): { port: Port; updatedAt: string; vlansAddedToSwitch: number[] } {
+    const switches = this.list()
+    const sw = switches.find(s => s.id === switchId)
+    if (!sw) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
+
+    // Optimistic concurrency check
+    if (options.expectedUpdatedAt && sw.updated_at !== options.expectedUpdatedAt) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'Switch was modified since page load',
+        data: { current_updated_at: sw.updated_at }
+      })
+    }
+
+    const port = sw.ports.find(p => p.id === portId)
+    if (!port) throw createError({ statusCode: 404, statusMessage: 'Port not found' })
+
+    // Collect all VLAN IDs from the request
+    const requestedVlans: number[] = []
+    if (portData.access_vlan) requestedVlans.push(portData.access_vlan)
+    if (portData.native_vlan) requestedVlans.push(portData.native_vlan)
+    if (portData.tagged_vlans) requestedVlans.push(...portData.tagged_vlans)
+
+    const configuredVlans = sw.configured_vlans || []
+    const vlansToAdd: number[] = []
+
+    for (const vlanId of requestedVlans) {
+      if (!configuredVlans.includes(vlanId)) {
+        if (!options.addVlansToSwitch) {
+          throw createError({
+            statusCode: 422,
+            statusMessage: `VLAN ${vlanId} is not configured on this switch`
+          })
+        }
+        vlansToAdd.push(vlanId)
+      }
+    }
+
+    // Verify all VLANs exist as site entities
+    if (options.siteVlanIds && requestedVlans.length > 0) {
+      for (const vlanId of requestedVlans) {
+        if (!options.siteVlanIds.includes(vlanId)) {
+          throw createError({
+            statusCode: 404,
+            statusMessage: `VLAN ${vlanId} does not exist in this site`
+          })
+        }
+      }
+    }
+
+    // Atomic mutation: extend configured_vlans + update port
+    if (vlansToAdd.length > 0) {
+      sw.configured_vlans = normalizeConfiguredVlans([...configuredVlans, ...vlansToAdd])
+    }
+
+    // Merge port data
+    Object.assign(port, portData)
+
+    sw.updated_at = new Date().toISOString()
+    writeJson(FILE_NAME, switches)
+
+    return {
+      port,
+      updatedAt: sw.updated_at,
+      vlansAddedToSwitch: vlansToAdd
+    }
+  },
+
   duplicate(id: string): Switch {
     const original = this.getById(id)
     if (!original) {
