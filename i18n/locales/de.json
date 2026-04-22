@@ -260,6 +260,23 @@
       "updated": "VLAN erfolgreich aktualisiert",
       "deleted": "VLAN erfolgreich gelöscht"
     },
+    "group": {
+      "configured": "Auf diesem Switch konfiguriert",
+      "otherSite": "Weitere Site-VLANs"
+    },
+    "notConfiguredHint": "Nicht auf diesem Switch konfiguriert",
+    "addToSwitchToggle": "VLAN auf Switch anlegen",
+    "willBeAdded": "Wird beim Speichern auf dem Switch angelegt",
+    "willBeAddedBadge": "+ Switch",
+    "addedToSwitch": "VLAN {id} auf Switch angelegt und Port zugewiesen",
+    "remove": {
+      "inUseTitle": "VLAN {id} wird auf {count} Port(s) genutzt",
+      "taggedAuto": "Automatisch aus Tagged VLANs entfernen",
+      "setToNone": "Auf leer setzen",
+      "replaceWith": "Ersetzen durch",
+      "confirmButton": "VLAN entfernen und {count} Port(s) aktualisieren",
+      "success": "VLAN {id} entfernt. {count} Port(s) aktualisiert."
+    },
     "emptyTitle": "Noch keine VLANs definiert",
     "emptyDescription": "Erstellen Sie Ihr erstes VLAN.",
     "noNetwork": "Kein Netzwerk",
@@ -567,7 +584,9 @@
     "trunkConfigured": "Trunk konfiguriert",
     "accessConfigured": "Access konfiguriert",
     "disconnected": "{device} getrennt",
-    "removed": "entfernt"
+    "removed": "entfernt",
+    "configuredVlansAdded": "Konfigurierte VLANs hinzugefügt: {vlans}",
+    "configuredVlansRemoved": "Konfiguriertes VLAN {vlan} entfernt"
   },
   "errors": {
     "notFound": "Nicht gefunden",
