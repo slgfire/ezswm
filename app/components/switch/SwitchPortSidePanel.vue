@@ -20,18 +20,23 @@
           <USelect v-model="form.port_mode" :items="portModeOptions" class="w-full" />
         </UFormField>
 
+        <div v-if="allVlans.length > 0 && configuredVlans" class="flex items-center gap-2 mb-3">
+          <UToggle v-model="addVlansToSwitch" size="xs" />
+          <span class="text-xs text-dimmed">{{ $t('vlans.addToSwitchToggle') }}</span>
+        </div>
+
         <template v-if="form.port_mode === 'access'">
           <UFormField :label="$t('switches.ports.accessVlan')">
-            <VlanDropdown v-model="form.access_vlan" :vlans="allVlans" />
+            <VlanDropdown v-model="form.access_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" :override-active="addVlansToSwitch" />
           </UFormField>
         </template>
 
         <template v-if="form.port_mode === 'trunk'">
           <UFormField :label="$t('switches.ports.nativeVlan')">
-            <VlanDropdown v-model="form.native_vlan" :vlans="allVlans" />
+            <VlanDropdown v-model="form.native_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" :override-active="addVlansToSwitch" />
           </UFormField>
           <UFormField :label="$t('switches.ports.taggedVlans')">
-            <VlanMultiSelect v-if="allVlans.length" v-model="selectedTaggedVlans" :vlans="allVlans" />
+            <VlanMultiSelect v-if="allVlans.length" v-model="selectedTaggedVlans" :vlans="allVlans" :configured-vlans="configuredVlans" :override-active="addVlansToSwitch" />
             <UInput v-else v-model="taggedVlansStr" placeholder="e.g. 100,200,300" class="w-full" />
           </UFormField>
         </template>
@@ -194,6 +199,8 @@ const props = defineProps<{
   port: Port | null
   switchId: string
   lagGroup?: LAGGroup
+  configuredVlans?: number[]
+  switchUpdatedAt?: string
 }>()
 
 const emit = defineEmits<{
@@ -226,6 +233,7 @@ const allAllocations = ref<IPAllocation[]>([])
 const allNetworks = ref<Network[]>([])
 const selectedAllocationId = ref<string>('')
 const selectedTaggedVlans = ref<number[]>([])
+const addVlansToSwitch = ref(false)
 
 const poeOptions = computed(() => [
   { label: '802.3af (15.4W)', value: '802.3af' },
@@ -546,6 +554,7 @@ watch(() => props.port, (p) => {
 
 watch(isOpen, async (open) => {
   if (open) {
+    addVlansToSwitch.value = false
     // Re-load form state from port data to discard any unsaved changes
     const p = props.port
     if (p) {
@@ -609,6 +618,8 @@ async function save() {
   } else {
     body.connected_allocation_id = null
   }
+  if (addVlansToSwitch.value) body.add_vlans_to_switch = true
+  if (props.switchUpdatedAt) body.expected_updated_at = props.switchUpdatedAt
   if (connectionMode.value === 'switch' && selectedSwitchId.value) {
     const sw = allSwitches.value.find(s => s.id === selectedSwitchId.value)
     body.connected_device = sw?.name || ''; body.connected_device_id = selectedSwitchId.value; body.connected_port_id = selectedPortId.value || null
@@ -617,7 +628,12 @@ async function save() {
     body.connected_device = null; body.connected_device_id = null; body.connected_port_id = null; body.connected_port = null
   } else { body.connected_device_id = null; body.connected_port_id = null }
   try {
-    await $fetch(`/api/switches/${props.switchId}/ports/${props.port!.id}`, { method: 'PUT', body })
+    const response = await $fetch<Record<string, unknown>>(`/api/switches/${props.switchId}/ports/${props.port!.id}`, { method: 'PUT', body })
+
+    if ((response as any)?.vlans_added_to_switch?.length) {
+      toast.add({ title: t('vlans.addedToSwitch', { id: (response as any).vlans_added_to_switch.join(', ') }) })
+    }
+    addVlansToSwitch.value = false
 
     // LAG sync: update VLAN/speed/status/connected_device on all other LAG member ports
     if ((props.lagGroup?.port_ids?.length ?? 0) > 1) {
