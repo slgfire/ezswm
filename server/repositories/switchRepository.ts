@@ -392,6 +392,76 @@ export const switchRepository = {
     }
   },
 
+  applyConfiguredVlansRemoval(
+    switchId: string,
+    vlanId: number,
+    options: {
+      expectedUpdatedAt?: string
+      portCleanup?: Array<{
+        port_id: string
+        field: 'access_vlan' | 'native_vlan' | 'tagged_vlans'
+        new_value?: number | null
+        action?: 'auto_remove'
+      }>
+    } = {}
+  ): { updatedAt: string; portsUpdated: number } {
+    const switches = this.list()
+    const sw = switches.find(s => s.id === switchId)
+    if (!sw) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
+
+    // Optimistic concurrency check
+    if (options.expectedUpdatedAt && sw.updated_at !== options.expectedUpdatedAt) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'Switch was modified since page load',
+        data: { current_updated_at: sw.updated_at }
+      })
+    }
+
+    const configuredVlans = sw.configured_vlans || []
+    if (!configuredVlans.includes(vlanId)) {
+      throw createError({ statusCode: 422, statusMessage: `VLAN ${vlanId} is not in configured_vlans` })
+    }
+
+    // Apply port cleanup
+    let portsUpdated = 0
+    if (options.portCleanup) {
+      for (const cleanup of options.portCleanup) {
+        const port = sw.ports.find(p => p.id === cleanup.port_id)
+        if (!port) continue
+
+        if (cleanup.field === 'tagged_vlans') {
+          port.tagged_vlans = (port.tagged_vlans || []).filter(v => v !== vlanId)
+        } else if (cleanup.field === 'access_vlan') {
+          port.access_vlan = cleanup.new_value ?? undefined
+        } else if (cleanup.field === 'native_vlan') {
+          port.native_vlan = cleanup.new_value ?? undefined
+        }
+        portsUpdated++
+      }
+    }
+
+    // Also auto-remove from tagged_vlans on ports not in portCleanup
+    for (const port of sw.ports) {
+      if (port.tagged_vlans?.includes(vlanId)) {
+        const alreadyHandled = options.portCleanup?.some(
+          c => c.port_id === port.id && c.field === 'tagged_vlans'
+        )
+        if (!alreadyHandled) {
+          port.tagged_vlans = port.tagged_vlans.filter(v => v !== vlanId)
+          portsUpdated++
+        }
+      }
+    }
+
+    // Remove from configured_vlans
+    sw.configured_vlans = normalizeConfiguredVlans(configuredVlans.filter(v => v !== vlanId))
+    sw.updated_at = new Date().toISOString()
+    writeJson(FILE_NAME, switches)
+
+    return { updatedAt: sw.updated_at, portsUpdated }
+  },
+
   duplicate(id: string): Switch {
     const original = this.getById(id)
     if (!original) {
