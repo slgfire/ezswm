@@ -202,6 +202,8 @@
         ref="bulkEditorRef"
         :switch-id="id"
         :selected-ports="selectedPorts"
+        :configured-vlans="item?.configured_vlans || []"
+        :switch-updated-at="item?.updated_at"
         @saved="fetchSwitch"
         @clear-selection="selectedPorts = []"
       />
@@ -236,6 +238,18 @@
           :ports="item.ports"
           :vlans="vlans"
           @select-port="onSelectPort"
+        />
+      </div>
+
+      <!-- Configured VLANs Management -->
+      <div class="mt-3">
+        <SwitchConfiguredVlans
+          :switch-id="item.id"
+          :switch-name="item.name"
+          :configured-vlans="item.configured_vlans || []"
+          :all-vlans="vlans"
+          :updated-at="item.updated_at"
+          @updated="fetchSwitch"
         />
       </div>
 
@@ -282,6 +296,8 @@
       v-model="showPortPanel"
       :port="selectedPort!"
       :switch-id="id"
+      :configured-vlans="item?.configured_vlans || []"
+      :switch-updated-at="item?.updated_at"
       :lag-group="selectedPort ? lagByPortId.get(selectedPort.id) : undefined"
       @saved="fetchSwitch"
       @remove-from-lag="onRemovePortFromLag"
