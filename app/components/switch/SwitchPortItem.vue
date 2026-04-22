@@ -39,7 +39,7 @@
     </template>
 
     <!-- Combined hover tooltip (VLAN + LAG info) -->
-    <div v-if="hasTooltipContent && !printMode && !publicMode" v-show="hovered" class="pointer-events-none absolute left-0 top-full z-[60] mt-1 min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg">
+    <div v-if="hasTooltipContent && !printMode && !publicMode" v-show="hovered" class="pointer-events-none absolute left-0 bottom-full z-[60] mb-1 min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg">
       <div class="space-y-1.5 text-xs">
         <!-- VLAN section -->
         <template v-if="isTrunk">
@@ -78,7 +78,7 @@
     </div>
 
     <!-- Public mode: read-only info tooltip -->
-    <div v-if="hasTooltipContent && publicMode" v-show="hovered" class="pointer-events-none absolute left-0 top-full z-[60] mt-1 min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg">
+    <div v-if="hasTooltipContent && publicMode" v-show="hovered" class="pointer-events-none absolute left-0 bottom-full z-[60] mb-1 min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg">
       <div class="space-y-1.5 text-xs">
         <template v-if="isTrunk">
           <div class="font-semibold text-gray-700 dark:text-gray-200">Trunk</div>
