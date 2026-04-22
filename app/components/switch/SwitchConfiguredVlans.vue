@@ -60,7 +60,7 @@
       </div>
     </div>
 
-    <VlanRemoveConfirmDialog
+    <SwitchVlanRemoveConfirmDialog
       v-if="removeDialog.open"
       v-model:open="removeDialog.open"
       :vlan-id="removeDialog.vlanId"

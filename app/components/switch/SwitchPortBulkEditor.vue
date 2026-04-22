@@ -20,7 +20,7 @@
 
         <!-- Override Toggle -->
         <div v-if="allVlans.length > 0 && configuredVlans" class="flex items-center gap-2 mb-3">
-          <UToggle v-model="addVlansToSwitch" size="xs" />
+          <USwitch v-model="addVlansToSwitch" size="xs" />
           <span class="text-xs text-dimmed">{{ $t('vlans.addToSwitchToggle') }}</span>
         </div>
 
