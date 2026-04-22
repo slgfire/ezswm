@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="portEl"
     class="port-glow group relative flex flex-col items-center justify-center font-mono transition-all"
     :class="[
       publicMode ? 'cursor-default' : 'cursor-pointer',
@@ -11,7 +12,7 @@
       vlanTintClass
     ]"
     :style="portStyle"
-    @mouseenter="hovered = true"
+    @mouseenter="onMouseEnter"
     @mouseleave="hovered = false"
   >
     <span class="relative z-10 text-xs font-semibold leading-none">{{ port.index }}</span>
@@ -39,7 +40,8 @@
     </template>
 
     <!-- Combined hover tooltip (VLAN + LAG info) -->
-    <div v-if="hasTooltipContent && !printMode && !publicMode" v-show="hovered" class="pointer-events-none absolute left-0 bottom-full z-[60] mb-1 min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg">
+    <Teleport to="body">
+    <div v-if="hasTooltipContent && !printMode && !publicMode" v-show="hovered" class="pointer-events-none fixed z-[9999] min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg" :style="tooltipStyle">
       <div class="space-y-1.5 text-xs">
         <!-- VLAN section -->
         <template v-if="isTrunk">
@@ -76,9 +78,11 @@
         </template>
       </div>
     </div>
+    </Teleport>
 
     <!-- Public mode: read-only info tooltip -->
-    <div v-if="hasTooltipContent && publicMode" v-show="hovered" class="pointer-events-none absolute left-0 bottom-full z-[60] mb-1 min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg">
+    <Teleport to="body">
+    <div v-if="hasTooltipContent && publicMode" v-show="hovered" class="pointer-events-none fixed z-[9999] min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg" :style="tooltipStyle">
       <div class="space-y-1.5 text-xs">
         <template v-if="isTrunk">
           <div class="font-semibold text-gray-700 dark:text-gray-200">Trunk</div>
@@ -104,6 +108,7 @@
         </template>
       </div>
     </div>
+    </Teleport>
   </div>
 </template>
 
@@ -123,6 +128,23 @@ const props = defineProps<{
 }>()
 
 const hovered = ref(false)
+const portEl = ref<HTMLElement | null>(null)
+const tooltipPos = reactive({ top: 0, left: 0 })
+
+const tooltipStyle = computed(() => ({
+  top: `${tooltipPos.top}px`,
+  left: `${tooltipPos.left}px`,
+  transform: 'translateY(-100%)'
+}))
+
+function onMouseEnter() {
+  if (portEl.value) {
+    const rect = portEl.value.getBoundingClientRect()
+    tooltipPos.top = rect.top - 4  // position above the port, small gap
+    tooltipPos.left = rect.left
+  }
+  hovered.value = true
+}
 const isTrunk = computed(() => props.port.tagged_vlans && props.port.tagged_vlans.length > 0)
 const isQsfp = computed(() => props.port.type === 'qsfp')
 const isSfpType = computed(() => props.port.type === 'sfp' || props.port.type === 'sfp+')
