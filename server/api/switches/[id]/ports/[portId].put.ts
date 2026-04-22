@@ -1,4 +1,5 @@
 import { switchRepository } from '../../../../repositories/switchRepository'
+import { vlanRepository } from '../../../../repositories/vlanRepository'
 import { updatePortSchema } from '../../../../validators/switchSchemas'
 import { activityRepository } from '../../../../repositories/activityRepository'
 import type { Port } from '../../../../../types/port'
@@ -27,6 +28,12 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = updatePortSchema.parse(body)
 
+  // Extract override/concurrency fields before passing to port update
+  const addVlansToSwitch = parsed.add_vlans_to_switch
+  const expectedUpdatedAt = parsed.expected_updated_at
+  delete (parsed as Record<string, unknown>).add_vlans_to_switch
+  delete (parsed as Record<string, unknown>).expected_updated_at
+
   // Build changes diff BEFORE normalization — so "clear to automatic" appears in activity as null
   // Build changes diff — only log fields that actually changed
   const changes: Record<string, unknown> = {}
@@ -47,7 +54,28 @@ export default defineEventHandler(async (event) => {
   if (parsed.helper_usage === null) parsed.helper_usage = undefined
   if (parsed.helper_label === null) parsed.helper_label = undefined
 
-  const updatedPort = await switchRepository.updatePort(switchId, portId, parsed as Partial<Omit<Port, 'id' | 'unit' | 'index'>>)
+  // Get site VLANs for validation
+  const siteVlans = vlanRepository.list().filter(v => v.site_id === existing.site_id)
+  const siteVlanIds = siteVlans.map(v => v.vlan_id)
+
+  const result = switchRepository.applyPortVlanUpdate(
+    switchId,
+    portId,
+    parsed as Partial<Omit<Port, 'id' | 'unit' | 'index'>>,
+    {
+      addVlansToSwitch: addVlansToSwitch || false,
+      expectedUpdatedAt,
+      siteVlanIds
+    }
+  )
+
+  const metadata: Record<string, unknown> = {
+    port_id: portId,
+    port_label: oldPort?.label || portId,
+  }
+  if (result.vlansAddedToSwitch.length > 0) {
+    metadata.vlans_added_to_switch = result.vlansAddedToSwitch
+  }
 
   await activityRepository.log({
     user_id: event.context.auth?.userId,
@@ -55,13 +83,14 @@ export default defineEventHandler(async (event) => {
     entity_type: 'switch',
     entity_id: switchId,
     entity_name: existing.name,
-    metadata: {
-      port_id: portId,
-      port_label: oldPort?.label || portId,
-    },
+    metadata,
     changes: Object.keys(changes).length > 0 ? changes : undefined,
     previous_state: Object.keys(previousState).length > 0 ? previousState : undefined,
   })
 
-  return updatedPort
+  return {
+    ...result.port,
+    updated_at: result.updatedAt,
+    vlans_added_to_switch: result.vlansAddedToSwitch.length > 0 ? result.vlansAddedToSwitch : undefined
+  }
 })
