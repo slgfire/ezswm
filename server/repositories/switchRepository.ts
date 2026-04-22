@@ -118,6 +118,24 @@ function generatePortsFromTemplate(templateId: string, stackSize: number = 1): P
   return ports
 }
 
+/** Deduplicate, sort, and filter to valid VLAN IDs (1-4094) */
+function normalizeConfiguredVlans(vlans: number[]): number[] {
+  return [...new Set(vlans)]
+    .filter(v => Number.isInteger(v) && v >= 1 && v <= 4094)
+    .sort((a, b) => a - b)
+}
+
+/** Compute configured_vlans from a switch's ports */
+function computeConfiguredVlansFromPorts(sw: Switch): number[] {
+  const vlanIds: number[] = []
+  for (const port of sw.ports) {
+    if (port.access_vlan) vlanIds.push(port.access_vlan)
+    if (port.native_vlan) vlanIds.push(port.native_vlan)
+    if (port.tagged_vlans) vlanIds.push(...port.tagged_vlans)
+  }
+  return normalizeConfiguredVlans(vlanIds)
+}
+
 export const switchRepository = {
   list(): Switch[] {
     const switches = readJson<Switch[]>(FILE_NAME)
@@ -155,6 +173,7 @@ export const switchRepository = {
       id: nanoid(),
       ...data,
       ports,
+      configured_vlans: [],
       is_favorite: false,
       created_at: now,
       updated_at: now
