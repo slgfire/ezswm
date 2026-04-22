@@ -1,21 +1,32 @@
 <template>
-  <div class="space-y-3">
-    <div class="flex items-center justify-between">
-      <h3 class="text-sm font-semibold">{{ $t('vlans.group.configured') }}</h3>
-      <UButton size="xs" variant="ghost" icon="i-heroicons-plus" @click="showAddDialog = true">
-        {{ $t('common.add') }}
-      </UButton>
-    </div>
+  <div class="list-container rounded-lg bg-default p-4">
+    <button
+      class="flex w-full items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
+      @click="expanded = !expanded"
+    >
+      <UIcon name="i-heroicons-chevron-right" :class="['h-4 w-4 transition-transform duration-200', expanded ? 'rotate-90' : '']" />
+      <UIcon name="i-heroicons-cpu-chip" class="h-4 w-4 text-primary-500" />
+      {{ $t('vlans.group.configured') }}
+      <span class="text-xs font-normal text-gray-400">{{ configuredVlanDetails.length }} VLANs</span>
+      <span class="ml-auto">
+        <UButton
+          size="xs"
+          variant="ghost"
+          icon="i-heroicons-plus"
+          @click.stop="showAddDialog = !showAddDialog"
+        />
+      </span>
+    </button>
 
-    <div v-if="configuredVlanDetails.length === 0" class="text-sm text-dimmed">
-      {{ $t('common.noResults') }}
-    </div>
+    <div v-if="expanded" class="mt-3 space-y-1">
+      <div v-if="configuredVlanDetails.length === 0" class="text-sm text-dimmed pl-6">
+        {{ $t('common.noResults') }}
+      </div>
 
-    <div v-else class="space-y-1">
       <div
         v-for="vlan in configuredVlanDetails"
         :key="vlan.vlan_id"
-        class="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-elevated"
+        class="flex items-center gap-2 rounded-md px-2 py-1.5 ml-6 hover:bg-elevated"
       >
         <span class="size-3 shrink-0 rounded-full" :style="{ backgroundColor: vlan.color || '#888' }" />
         <span class="flex-1 text-sm">{{ vlan.vlan_id }} · {{ vlan.name || 'Unknown VLAN' }}</span>
@@ -29,28 +40,25 @@
       </div>
     </div>
 
-    <!-- Add VLANs popover -->
-    <UPopover v-if="showAddDialog" v-model:open="showAddDialog">
-      <template #content>
-        <div class="p-3 space-y-2 w-64">
-          <p class="text-sm font-medium">{{ $t('vlans.group.otherSite') }}</p>
-          <div v-if="availableToAdd.length === 0" class="text-xs text-dimmed">
-            {{ $t('common.noResults') }}
-          </div>
-          <div v-else class="space-y-1 max-h-48 overflow-y-auto">
-            <div
-              v-for="vlan in availableToAdd"
-              :key="vlan.vlan_id"
-              class="flex items-center gap-2 rounded px-2 py-1 cursor-pointer hover:bg-elevated"
-              @click="addVlan(vlan.vlan_id)"
-            >
-              <span class="size-3 shrink-0 rounded-full" :style="{ backgroundColor: vlan.color }" />
-              <span class="text-sm">{{ vlan.vlan_id }} · {{ vlan.name }}</span>
-            </div>
-          </div>
+    <!-- Add VLANs inline (shown when + button clicked) -->
+    <div v-if="showAddDialog && expanded" class="mt-3 ml-6 rounded-md border border-default p-3">
+      <p class="text-xs font-medium text-dimmed mb-2">{{ $t('vlans.group.otherSite') }}</p>
+      <div v-if="availableToAdd.length === 0" class="text-xs text-dimmed">
+        {{ $t('common.noResults') }}
+      </div>
+      <div v-else class="space-y-1 max-h-48 overflow-y-auto">
+        <div
+          v-for="vlan in availableToAdd"
+          :key="vlan.vlan_id"
+          class="flex items-center gap-2 rounded px-2 py-1 cursor-pointer hover:bg-elevated"
+          @click="addVlan(vlan.vlan_id)"
+        >
+          <span class="size-3 shrink-0 rounded-full" :style="{ backgroundColor: vlan.color }" />
+          <span class="text-sm">{{ vlan.vlan_id }} · {{ vlan.name }}</span>
+          <UIcon name="i-heroicons-plus" class="ml-auto h-3.5 w-3.5 text-dimmed" />
         </div>
-      </template>
-    </UPopover>
+      </div>
+    </div>
 
     <VlanRemoveConfirmDialog
       v-if="removeDialog.open"
@@ -83,6 +91,7 @@ const emit = defineEmits<{
   'updated': []
 }>()
 
+const expanded = ref(true)
 const showAddDialog = ref(false)
 
 const configuredVlanDetails = computed(() => {
