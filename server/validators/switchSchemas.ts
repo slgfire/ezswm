@@ -60,7 +60,9 @@ export const updatePortSchema = z.object({
   ]).optional(),
   helper_usage: z.enum(['participant', 'phone_passthrough', 'ap', 'printer', 'orga', 'uplink']).nullable().optional(),
   helper_label: z.string().max(100).nullable().optional(),
-  show_in_helper_list: z.boolean().optional()
+  show_in_helper_list: z.boolean().optional(),
+  add_vlans_to_switch: z.boolean().optional(),
+  expected_updated_at: z.string().optional()
 })
 
 export const bulkUpdatePortsSchema = z.object({
@@ -74,5 +76,37 @@ export const bulkUpdatePortsSchema = z.object({
     speed: z.preprocess(v => v === '' ? null : v, z.enum(['100M', '1G', '2.5G', '10G', '100G']).optional().nullable()),
     description: z.string().max(500).optional().nullable(),
     helper_usage: z.enum(['participant', 'phone_passthrough', 'ap', 'printer', 'orga', 'uplink']).nullable().optional()
-  })
+  }),
+  add_vlans_to_switch: z.boolean().optional(),
+  expected_updated_at: z.string().optional()
 })
+
+export const configuredVlansAddSchema = z.object({
+  action: z.literal('add'),
+  vlan_ids: z.array(z.number().int().min(1).max(4094)).min(1),
+  expected_updated_at: z.string().optional()
+})
+
+export const configuredVlansRemoveSchema = z.object({
+  action: z.literal('remove'),
+  vlan_id: z.number().int().min(1).max(4094),
+  expected_updated_at: z.string().optional()
+})
+
+export const configuredVlansRemoveConfirmedSchema = z.object({
+  action: z.literal('remove_confirmed'),
+  vlan_id: z.number().int().min(1).max(4094),
+  expected_updated_at: z.string().optional(),
+  port_cleanup: z.array(z.object({
+    port_id: z.string().min(1),
+    field: z.enum(['access_vlan', 'native_vlan', 'tagged_vlans']),
+    new_value: z.number().int().min(1).max(4094).nullable().optional(),
+    action: z.enum(['auto_remove']).optional()
+  }))
+})
+
+export const configuredVlansSchema = z.discriminatedUnion('action', [
+  configuredVlansAddSchema,
+  configuredVlansRemoveSchema,
+  configuredVlansRemoveConfirmedSchema
+])
