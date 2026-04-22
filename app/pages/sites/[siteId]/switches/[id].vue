@@ -232,15 +232,6 @@
         <p v-else class="text-sm text-gray-400">{{ $t('switches.ports.noPortsMessage') }}</p>
       </div>
 
-      <!-- Port Table View (collapsible card, default collapsed) -->
-      <div v-if="item.ports?.length" class="mt-3">
-        <SwitchPortTable
-          :ports="item.ports"
-          :vlans="vlans"
-          @select-port="onSelectPort"
-        />
-      </div>
-
       <!-- Configured VLANs Management -->
       <div class="mt-3">
         <SwitchConfiguredVlans
@@ -250,6 +241,15 @@
           :all-vlans="vlans"
           :updated-at="item.updated_at"
           @updated="fetchSwitch"
+        />
+      </div>
+
+      <!-- Port Table View (collapsible card, default collapsed) -->
+      <div v-if="item.ports?.length" class="mt-3">
+        <SwitchPortTable
+          :ports="item.ports"
+          :vlans="vlans"
+          @select-port="onSelectPort"
         />
       </div>
 
