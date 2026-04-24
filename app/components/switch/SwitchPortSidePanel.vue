@@ -679,9 +679,10 @@ async function save() {
   try {
     const response = await $fetch<Record<string, unknown>>(`/api/switches/${props.switchId}/ports/${props.port!.id}`, { method: 'PUT', body })
 
-    if ((response as any)?.vlans_added_to_target_switch?.length) {
+    const vlansAdded = (response as Record<string, unknown>)?.vlans_added_to_target_switch as number[] | undefined
+    if (vlansAdded?.length) {
       const targetSw = allSwitches.value.find(s => s.id === selectedSwitchId.value)
-      toast.add({ title: t('vlans.addedToTargetSwitch', { vlans: (response as any).vlans_added_to_target_switch.join(', '), switch: targetSw?.name || '' }) })
+      toast.add({ title: t('vlans.addedToTargetSwitch', { vlans: vlansAdded.join(', '), switch: targetSw?.name || '' }) })
     }
 
 

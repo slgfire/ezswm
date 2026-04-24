@@ -80,7 +80,7 @@ const groupedOptions = computed(() => {
       value: v.vlan_id
     }))
 
-  const groups: any[] = [noneOption]
+  const groups: Array<{ label: string; value?: number; type?: string; badge?: string }> = [noneOption]
 
   if (configured.length > 0) {
     groups.push({ label: t('vlans.group.configured'), type: 'label' })

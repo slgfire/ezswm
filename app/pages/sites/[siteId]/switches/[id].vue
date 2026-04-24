@@ -920,7 +920,6 @@ if (lagParam) {
 
 
 // Activity log for this switch
-const showActivity = ref(false)
 const switchActivity = ref<ActivityEntry[]>([])
 const { apiFetch } = useApiFetch()
 
