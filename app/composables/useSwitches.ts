@@ -41,11 +41,12 @@ export function useSwitch(id: string) {
   const { apiFetch } = useApiFetch()
 
   async function fetch() {
-    loading.value = true
+    const isRefresh = !!item.value
+    if (!isRefresh) loading.value = true
     try {
       item.value = await apiFetch<Switch>(`/api/switches/${id}`)
     } finally {
-      loading.value = false
+      if (!isRefresh) loading.value = false
     }
   }
 
