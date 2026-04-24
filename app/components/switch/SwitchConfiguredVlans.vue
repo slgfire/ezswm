@@ -157,7 +157,8 @@ async function removeVlan(vlanId: number) {
   }
 }
 
-async function confirmRemove(cleanup: Array<{ port_id: string; field: string; new_value: number | null }>, expectedUpdatedAt: string) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function confirmRemove(cleanup: any[], expectedUpdatedAt: string) {
   try {
     const result = await $fetch<Record<string, unknown>>(`/api/switches/${props.switchId}/configured-vlans`, {
       method: 'PUT',

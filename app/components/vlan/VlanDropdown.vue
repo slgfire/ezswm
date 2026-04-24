@@ -80,7 +80,8 @@ const groupedOptions = computed(() => {
       value: v.vlan_id
     }))
 
-  const groups: Array<{ label: string; value?: number; type?: string; badge?: string }> = [noneOption]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const groups: any[] = [noneOption]
 
   if (configured.length > 0) {
     groups.push({ label: t('vlans.group.configured'), type: 'label' })
