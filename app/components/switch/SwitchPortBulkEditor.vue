@@ -18,24 +18,18 @@
           <USelect v-model="form.port_mode" :items="portModeOptions" :placeholder="$t('common.noChange')" class="w-full" />
         </UFormField>
 
-        <!-- Override Toggle -->
-        <div v-if="allVlans.length > 0 && configuredVlans" class="flex items-center gap-2 mb-3">
-          <USwitch v-model="addVlansToSwitch" size="xs" />
-          <span class="text-xs text-dimmed">{{ $t('vlans.addToSwitchToggle') }}</span>
-        </div>
-
         <!-- Access VLAN -->
-        <template v-if="form.port_mode === 'access'">
+        <template v-if="form.port_mode === 'access' || form.port_mode === ''">
           <UFormField :label="$t('switches.ports.accessVlan')">
-            <VlanDropdown v-if="allVlans.length" v-model="form.access_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" :override-active="addVlansToSwitch" />
+            <VlanDropdown v-if="allVlans.length" v-model="form.access_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" />
             <UInput v-else v-model.number="form.access_vlan" type="number" :placeholder="$t('common.noChange')" class="w-full" />
           </UFormField>
         </template>
 
         <!-- Trunk: Native + Tagged -->
-        <template v-if="form.port_mode === 'trunk'">
+        <template v-if="form.port_mode === 'trunk' || form.port_mode === ''">
           <UFormField :label="$t('switches.ports.nativeVlan')">
-            <VlanDropdown v-if="allVlans.length" v-model="form.native_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" :override-active="addVlansToSwitch" />
+            <VlanDropdown v-if="allVlans.length" v-model="form.native_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" />
             <UInput v-else v-model.number="form.native_vlan" type="number" :placeholder="$t('common.noChange')" class="w-full" />
           </UFormField>
 
@@ -45,7 +39,6 @@
               v-model="selectedTaggedVlans"
               :vlans="allVlans"
               :configured-vlans="configuredVlans"
-              :override-active="addVlansToSwitch"
             />
             <UInput v-else v-model="form.tagged_vlans_str" placeholder="e.g. 100,200,300" class="w-full" />
           </UFormField>
@@ -88,7 +81,6 @@ const { apiFetch } = useApiFetch()
 const isOpen = ref(false)
 const allVlans = ref<VLAN[]>([])
 const selectedTaggedVlans = ref<number[]>([])
-const addVlansToSwitch = ref(false)
 
 
 async function fetchVlans() {
@@ -174,6 +166,15 @@ async function apply() {
         updates.tagged_vlans = form.tagged_vlans_str.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v))
       }
     }
+  } else {
+    // No port_mode change — still allow individual VLAN updates
+    if (form.access_vlan) updates.access_vlan = form.access_vlan
+    if (form.native_vlan) updates.native_vlan = form.native_vlan
+    if (selectedTaggedVlans.value.length) {
+      updates.tagged_vlans = [...selectedTaggedVlans.value]
+    } else if (form.tagged_vlans_str) {
+      updates.tagged_vlans = form.tagged_vlans_str.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v))
+    }
   }
   if (form.description) updates.description = form.description
   if (form.helper_usage !== '_no_change') {
@@ -186,7 +187,6 @@ async function apply() {
       body: {
         port_ids: props.selectedPorts,
         updates,
-        add_vlans_to_switch: addVlansToSwitch.value || undefined,
         expected_updated_at: props.switchUpdatedAt || undefined
       }
     })
@@ -201,7 +201,6 @@ async function apply() {
     form.description = ''
     form.helper_usage = '_no_change'
     selectedTaggedVlans.value = []
-    addVlansToSwitch.value = false
     emit('saved')
     close()
   } catch (e: unknown) {

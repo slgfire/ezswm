@@ -59,7 +59,18 @@
             by="value"
             class="w-full"
             @update:model-value="onSwitchSelect"
-          />
+          >
+            <template #item-trailing="{ item }">
+              <UBadge v-if="getMissingRemoteVlans((item as { value: string }).value).length" color="warning" variant="subtle" size="xs">
+                {{ $t('vlans.missingCount', { count: getMissingRemoteVlans((item as { value: string }).value).length }) }}
+              </UBadge>
+            </template>
+          </USelectMenu>
+
+          <div v-if="remoteMode === 'switch' && selectedRemoteSwitchId && remoteSwitchMissingVlans.length > 0" class="mt-1 rounded-md border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs text-blue-400">
+            <UIcon name="i-heroicons-information-circle" class="size-3.5 inline-block mr-1" />
+            {{ $t('lag.remoteSwitchWillAdd', { vlans: remoteSwitchMissingVlans.join(', ') }) }}
+          </div>
 
           <UInput
             v-if="remoteMode === 'freetext'"
@@ -131,6 +142,35 @@
           <span class="font-semibold">{{ $t('common.warning') }}:</span>
           {{ $t('lag.conflictWarning') }}
         </div>
+
+        <USeparator />
+
+        <!-- VLAN configuration for LAG ports -->
+        <div class="space-y-3">
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-400">
+            {{ $t('lag.vlanSection') }}
+          </h4>
+
+          <UFormField :label="$t('switches.ports.portMode')">
+            <USelect v-model="vlanForm.port_mode" :items="vlanPortModeOptions" class="w-full" />
+          </UFormField>
+
+          <template v-if="vlanForm.port_mode === 'access'">
+            <UFormField :label="$t('switches.ports.accessVlan')">
+              <VlanDropdown v-if="allVlans.length" v-model="vlanForm.access_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" :remote-configured-vlans="remoteConfiguredVlansList" />
+            </UFormField>
+          </template>
+
+          <template v-if="vlanForm.port_mode === 'trunk'">
+            <UFormField :label="$t('switches.ports.nativeVlan')">
+              <VlanDropdown v-if="allVlans.length" v-model="vlanForm.native_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" :remote-configured-vlans="remoteConfiguredVlansList" />
+            </UFormField>
+            <UFormField :label="$t('switches.ports.taggedVlans')">
+              <VlanMultiSelect v-if="allVlans.length" v-model="vlanForm.tagged_vlans" :vlans="allVlans" :configured-vlans="configuredVlans" :remote-configured-vlans="remoteConfiguredVlansList" />
+            </UFormField>
+          </template>
+
+        </div>
       </UForm>
     </template>
 
@@ -151,12 +191,14 @@
 import type { LAGGroup } from '~~/types/lagGroup'
 import type { Port } from '~~/types/port'
 import type { Switch } from '~~/types/switch'
+import type { VLAN } from '~~/types/vlan'
 import { resolvePortLabel } from '~/utils/ports'
 
 const props = defineProps<{
   switchId: string
   ports: Port[]
   existingLags: LAGGroup[]
+  configuredVlans?: number[]
 }>()
 
 const emit = defineEmits<{
@@ -179,6 +221,31 @@ const form = reactive({
   remote_device: '',
   remote_device_id: '' as string | undefined,
 })
+
+// VLAN configuration section
+const allVlans = ref<VLAN[]>([])
+const vlanForm = reactive({
+  port_mode: 'access' as string,
+  access_vlan: null as number | null,
+  native_vlan: null as number | null,
+  tagged_vlans: [] as number[]
+})
+
+const vlanPortModeOptions = computed(() => [
+  { label: t('switches.ports.modeAccess'), value: 'access' },
+  { label: t('switches.ports.modeTrunk'), value: 'trunk' }
+])
+
+async function fetchVlans() {
+  try {
+    const route = useRoute()
+    const siteId = route.params.siteId as string
+    const params: Record<string, string> = {}
+    if (siteId && siteId !== 'all') params.site_id = siteId
+    const data = await apiFetch<{ data?: VLAN[] } | VLAN[]>('/api/vlans', { params })
+    allVlans.value = (Array.isArray(data) ? data : data.data || []).sort((a: VLAN, b: VLAN) => a.vlan_id - b.vlan_id)
+  } catch { /* ignore */ }
+}
 
 // Remote connection mode
 const remoteMode = ref<'none' | 'switch' | 'freetext'>('none')
@@ -203,6 +270,43 @@ const allSwitches = ref<Switch[]>([])
 const selectedRemoteSwitchId = ref('')
 // LAGs on the remote switch
 const remoteLags = ref<LAGGroup[]>([])
+
+// VLANs from the VLAN form state
+const formVlanNumbers = computed(() => {
+  const vlans: number[] = []
+  if (vlanForm.port_mode === 'trunk') {
+    if (vlanForm.native_vlan) vlans.push(vlanForm.native_vlan)
+    if (vlanForm.tagged_vlans.length) vlans.push(...vlanForm.tagged_vlans)
+  } else {
+    if (vlanForm.access_vlan) vlans.push(vlanForm.access_vlan)
+  }
+  return [...new Set(vlans)]
+})
+
+// Missing VLANs for a given switch (used in switch dropdown badges)
+function getMissingRemoteVlans(switchId: string): number[] {
+  if (!switchId || !formVlanNumbers.value.length) return []
+  const sw = allSwitches.value.find(s => s.id === switchId)
+  if (!sw) return []
+  const configured = new Set(sw.configured_vlans || [])
+  return formVlanNumbers.value.filter(v => !configured.has(v))
+}
+
+// Remote switch configured VLANs for badge display
+const remoteConfiguredVlansList = computed(() => {
+  if (remoteMode.value !== 'switch' || !selectedRemoteSwitchId.value) return undefined
+  const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
+  return sw?.configured_vlans || []
+})
+
+// Missing VLANs on selected remote switch
+const remoteSwitchMissingVlans = computed(() => {
+  if (!selectedRemoteSwitchId.value || !formVlanNumbers.value.length) return []
+  const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
+  if (!sw) return []
+  const configured = new Set(sw.configured_vlans || [])
+  return formVlanNumbers.value.filter(v => !configured.has(v))
+})
 
 const switchOptions = computed(() => [
   { label: '— None —', value: '' },
@@ -440,6 +544,50 @@ async function onSubmit() {
       color: 'success'
     })
 
+    // 4. Apply VLAN configuration to all LAG member ports (local + remote)
+    const vlanUpdates: Record<string, unknown> = {
+      port_mode: vlanForm.port_mode
+    }
+    if (vlanForm.port_mode === 'access') {
+      if (vlanForm.access_vlan) vlanUpdates.access_vlan = vlanForm.access_vlan
+      vlanUpdates.native_vlan = null
+      vlanUpdates.tagged_vlans = []
+    } else {
+      vlanUpdates.access_vlan = null
+      if (vlanForm.native_vlan) vlanUpdates.native_vlan = vlanForm.native_vlan
+      if (vlanForm.tagged_vlans.length) vlanUpdates.tagged_vlans = [...vlanForm.tagged_vlans]
+    }
+    // 4a. Apply to local LAG ports
+    try {
+      await $fetch(`/api/switches/${props.switchId}/ports/bulk`, {
+        method: 'PUT',
+        body: { port_ids: [...form.port_ids], updates: vlanUpdates }
+      })
+      toast.add({ title: t('lag.vlanApplied', { count: form.port_ids.length }), color: 'success' })
+    } catch (e: unknown) {
+      const err = e as { data?: { message?: string } }
+      toast.add({ title: err?.data?.message || t('lag.vlanApplyFailed'), color: 'error' })
+    }
+    // 4b. Apply same VLAN config to remote LAG member ports
+    if (remoteMode.value === 'switch' && selectedRemoteSwitchId.value) {
+      const remotePortIds = form.port_ids
+        .map(pid => portMapping[pid]?.remotePortId)
+        .filter(Boolean) as string[]
+      if (remotePortIds.length > 0) {
+        try {
+          await $fetch(`/api/switches/${selectedRemoteSwitchId.value}/ports/bulk`, {
+            method: 'PUT',
+            body: { port_ids: remotePortIds, updates: vlanUpdates }
+          })
+          const remoteSw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
+          toast.add({ title: t('lag.vlanAppliedRemote', { count: remotePortIds.length, switch: remoteSw?.name || '' }), color: 'success' })
+        } catch (e: unknown) {
+          const err = e as { data?: { message?: string } }
+          toast.add({ title: err?.data?.message || t('lag.vlanApplyFailed'), color: 'error' })
+        }
+      }
+    }
+
     isOpen.value = false
     emit('saved')
   } catch (e: unknown) {
@@ -510,7 +658,11 @@ async function syncRemoteLag() {
 
 async function fetchSwitches() {
   try {
-    const data = await apiFetch<{ data?: Switch[] } | Switch[]>('/api/switches')
+    const route = useRoute()
+    const siteId = route.params.siteId as string
+    const params: Record<string, string> = {}
+    if (siteId && siteId !== 'all') params.site_id = siteId
+    const data = await apiFetch<{ data?: Switch[] } | Switch[]>('/api/switches', { params })
     allSwitches.value = (Array.isArray(data) ? data : data.data) || []
   } catch { /* ignore */ }
 }
@@ -546,8 +698,13 @@ function openCreate(portIds: string[]) {
   selectedRemoteSwitchId.value = ''
   remoteLags.value = []
   for (const key of Object.keys(portMapping)) delete portMapping[key]
+  vlanForm.port_mode = 'access'
+  vlanForm.access_vlan = null
+  vlanForm.native_vlan = null
+  vlanForm.tagged_vlans = []
   isOpen.value = true
   fetchSwitches()
+  fetchVlans()
 }
 
 async function openEdit(lag: LAGGroup) {
@@ -570,8 +727,23 @@ async function openEdit(lag: LAGGroup) {
   for (const key of Object.keys(portMapping)) delete portMapping[key]
   initPortMapping()
 
+  // Pre-fill VLAN form from first LAG port
+  const firstPort = props.ports.find(p => lag.port_ids.includes(p.id))
+  if (firstPort) {
+    vlanForm.port_mode = firstPort.port_mode || 'access'
+    vlanForm.access_vlan = firstPort.access_vlan || null
+    vlanForm.native_vlan = firstPort.native_vlan || null
+    vlanForm.tagged_vlans = [...(firstPort.tagged_vlans || [])]
+  } else {
+    vlanForm.port_mode = 'access'
+    vlanForm.access_vlan = null
+    vlanForm.native_vlan = null
+    vlanForm.tagged_vlans = []
+  }
+
   isOpen.value = true
   await fetchSwitches()
+  fetchVlans()
   if (lag.remote_device_id) {
     await fetchRemoteLags(lag.remote_device_id)
   }

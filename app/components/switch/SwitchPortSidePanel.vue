@@ -20,23 +20,18 @@
           <USelect v-model="form.port_mode" :items="portModeOptions" class="w-full" />
         </UFormField>
 
-        <div v-if="allVlans.length > 0 && configuredVlans" class="flex items-center gap-2 mb-3">
-          <USwitch v-model="addVlansToSwitch" size="xs" />
-          <span class="text-xs text-dimmed">{{ $t('vlans.addToSwitchToggle') }}</span>
-        </div>
-
         <template v-if="form.port_mode === 'access'">
           <UFormField :label="$t('switches.ports.accessVlan')">
-            <VlanDropdown v-model="form.access_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" :override-active="addVlansToSwitch" />
+            <VlanDropdown v-model="form.access_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" :remote-configured-vlans="targetSwitchConfiguredVlans" />
           </UFormField>
         </template>
 
         <template v-if="form.port_mode === 'trunk'">
           <UFormField :label="$t('switches.ports.nativeVlan')">
-            <VlanDropdown v-model="form.native_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" :override-active="addVlansToSwitch" />
+            <VlanDropdown v-model="form.native_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" :remote-configured-vlans="targetSwitchConfiguredVlans" />
           </UFormField>
           <UFormField :label="$t('switches.ports.taggedVlans')">
-            <VlanMultiSelect v-if="allVlans.length" v-model="selectedTaggedVlans" :vlans="allVlans" :configured-vlans="configuredVlans" :override-active="addVlansToSwitch" />
+            <VlanMultiSelect v-if="allVlans.length" v-model="selectedTaggedVlans" :vlans="allVlans" :configured-vlans="configuredVlans" :remote-configured-vlans="targetSwitchConfiguredVlans" />
             <UInput v-else v-model="taggedVlansStr" placeholder="e.g. 100,200,300" class="w-full" />
           </UFormField>
         </template>
@@ -65,7 +60,13 @@
               by="value"
               class="w-full"
               @update:model-value="onSwitchSelect"
-            />
+            >
+              <template #item-trailing="{ item }">
+                <UBadge v-if="getMissingSwitchVlans((item as { value: string }).value).length" color="warning" variant="subtle" size="xs">
+                  {{ $t('vlans.missingCount', { count: getMissingSwitchVlans((item as { value: string }).value).length }) }}
+                </UBadge>
+              </template>
+            </USelectMenu>
           </UFormField>
           <UFormField v-if="selectedSwitchId" :label="$t('switches.ports.connectedPort')">
             <USelectMenu
@@ -83,6 +84,10 @@
               {{ $t('switches.ports.portConflictOverride') }}
             </div>
           </UFormField>
+          <div v-if="selectedSwitchId && targetSwitchMissingVlans.length > 0" class="mt-1 rounded-md bg-blue-500/10 border border-blue-500/30 px-3 py-2 text-xs text-blue-400">
+            <UIcon name="i-heroicons-information-circle" class="size-3.5 inline-block mr-1" />
+            {{ $t('vlans.targetSwitchWillAdd', { vlans: targetSwitchMissingVlans.join(', ') }) }}
+          </div>
         </template>
 
         <template v-if="connectionMode === 'device'">
@@ -128,23 +133,29 @@
           />
         </UFormField>
 
-        <!-- Helper View Settings -->
+        <!-- Helper View Settings (collapsible) -->
         <div class="border-t border-default pt-4 mt-4">
-          <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
+          <button
+            class="flex w-full items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-300"
+            @click="helperExpanded = !helperExpanded"
+          >
+            <UIcon name="i-heroicons-chevron-right" :class="['h-3.5 w-3.5 transition-transform duration-200', helperExpanded ? 'rotate-90' : '']" />
             {{ $t('helperUsage.helperSection') }}
-          </h4>
+          </button>
 
-          <UFormField :label="$t('helperUsage.label')" name="helper_usage" class="mb-3">
-            <USelect v-model="form.helper_usage" :items="helperUsageOptions" class="w-full" />
-          </UFormField>
+          <div v-if="helperExpanded" class="mt-3 space-y-3">
+            <UFormField :label="$t('helperUsage.label')" name="helper_usage">
+              <USelect v-model="form.helper_usage" :items="helperUsageOptions" class="w-full" />
+            </UFormField>
 
-          <UFormField :label="$t('helperUsage.helperLabel')" name="helper_label" class="mb-3">
-            <UInput v-model="form.helper_label" :placeholder="$t('helperUsage.helperLabelPlaceholder')" class="w-full" />
-          </UFormField>
+            <UFormField :label="$t('helperUsage.helperLabel')" name="helper_label">
+              <UInput v-model="form.helper_label" :placeholder="$t('helperUsage.helperLabelPlaceholder')" class="w-full" />
+            </UFormField>
 
-          <UFormField name="show_in_helper_list">
-            <UCheckbox v-model="form.show_in_helper_list" :label="$t('helperUsage.showInHelperList')" />
-          </UFormField>
+            <UFormField name="show_in_helper_list">
+              <UCheckbox v-model="form.show_in_helper_list" :label="$t('helperUsage.showInHelperList')" />
+            </UFormField>
+          </div>
         </div>
 
         <USeparator />
@@ -233,7 +244,6 @@ const allAllocations = ref<IPAllocation[]>([])
 const allNetworks = ref<Network[]>([])
 const selectedAllocationId = ref<string>('')
 const selectedTaggedVlans = ref<number[]>([])
-const addVlansToSwitch = ref(false)
 
 const poeOptions = computed(() => [
   { label: '802.3af (15.4W)', value: '802.3af' },
@@ -276,9 +286,17 @@ const helperUsageOptions = computed(() => [
 ])
 
 const taggedVlansStr = ref('')
+const helperExpanded = ref(false)
 
 async function fetchSwitches() {
-  try { const data = await apiFetch<{ data?: Switch[] } | Switch[]>('/api/switches'); allSwitches.value = (Array.isArray(data) ? data : data.data) || [] } catch { /* ignore */ }
+  try {
+    const route = useRoute()
+    const siteId = route.params.siteId as string
+    const params: Record<string, string> = {}
+    if (siteId && siteId !== 'all') params.site_id = siteId
+    const data = await apiFetch<{ data?: Switch[] } | Switch[]>('/api/switches', { params })
+    allSwitches.value = (Array.isArray(data) ? data : data.data) || []
+  } catch { /* ignore */ }
 }
 
 async function fetchVlans() {
@@ -342,9 +360,35 @@ async function fetchAllocations() {
   } catch { /* ignore */ }
 }
 
+// Missing VLANs for a given switch (used in switch dropdown badges)
+function getMissingSwitchVlans(switchId: string): number[] {
+  if (!switchId || !formVlanNumbers.value.length) return []
+  const sw = allSwitches.value.find(s => s.id === switchId)
+  if (!sw) return []
+  const configured = new Set(sw.configured_vlans || [])
+  return formVlanNumbers.value.filter(v => !configured.has(v))
+}
+
+// Target switch configured VLANs for badge display in VLAN selectors
+const targetSwitchConfiguredVlans = computed(() => {
+  if (!selectedSwitchId.value || selectedSwitchId.value === props.switchId) return undefined
+  const sw = allSwitches.value.find(s => s.id === selectedSwitchId.value)
+  return sw?.configured_vlans || []
+})
+
+// Target switch: check which VLANs are missing on the selected target
+const targetSwitchMissingVlans = computed(() => {
+  if (!selectedSwitchId.value || !formVlanNumbers.value.length) return []
+  const sw = allSwitches.value.find(s => s.id === selectedSwitchId.value)
+  if (!sw) return []
+  const targetConfigured = new Set(sw.configured_vlans || [])
+  return formVlanNumbers.value.filter(v => !targetConfigured.has(v))
+})
+
 const switchSearchOptions = computed(() => [
   { label: '—', value: '', sw: null as Switch | null },
-  ...allSwitches.value.map(s => ({ label: s.id === props.switchId ? `${s.name} (this switch)` : s.name, value: s.id, sw: s as Switch | null }))
+  ...allSwitches.value
+    .map(s => ({ label: s.id === props.switchId ? `${s.name} (this switch)` : s.name, value: s.id, sw: s as Switch | null }))
 ])
 
 const selectedSwitchOption = computed(() => switchSearchOptions.value.find(o => o.value === selectedSwitchId.value) || switchSearchOptions.value[0])
@@ -531,14 +575,16 @@ watch(() => props.port, (p) => {
       selectedPortId.value = ''
       pendingSwitchId.value = ''
       pendingPortId.value = ''
-    } else if (p.connected_device_id) {
+    } else if (p.connected_device_id || props.lagGroup?.remote_device_id) {
       connectionMode.value = 'switch'
       selectedAllocationId.value = ''
-      pendingSwitchId.value = p.connected_device_id
-      pendingPortId.value = p.connected_port_id || ''
+      const deviceId = p.connected_device_id || props.lagGroup?.remote_device_id || ''
+      const portId = p.connected_port_id || ''
+      pendingSwitchId.value = deviceId
+      pendingPortId.value = portId
       if (allSwitches.value.length) {
-        selectedSwitchId.value = p.connected_device_id
-        selectedPortId.value = p.connected_port_id || ''
+        selectedSwitchId.value = deviceId
+        selectedPortId.value = portId
       }
     } else {
       connectionMode.value = 'freetext'
@@ -554,7 +600,7 @@ watch(() => props.port, (p) => {
 
 watch(isOpen, async (open) => {
   if (open) {
-    addVlansToSwitch.value = false
+
     // Re-load form state from port data to discard any unsaved changes
     const p = props.port
     if (p) {
@@ -572,10 +618,11 @@ watch(isOpen, async (open) => {
         connectionMode.value = 'device'
         selectedAllocationId.value = p.connected_allocation_id
         selectedSwitchId.value = ''; selectedPortId.value = ''; pendingSwitchId.value = ''; pendingPortId.value = ''
-      } else if (p.connected_device_id) {
+      } else if (p.connected_device_id || props.lagGroup?.remote_device_id) {
         connectionMode.value = 'switch'
         selectedAllocationId.value = ''
-        pendingSwitchId.value = p.connected_device_id; pendingPortId.value = p.connected_port_id || ''
+        const deviceId = p.connected_device_id || props.lagGroup?.remote_device_id || ''
+        pendingSwitchId.value = deviceId; pendingPortId.value = p.connected_port_id || ''
       } else {
         connectionMode.value = 'freetext'
         selectedAllocationId.value = ''; selectedSwitchId.value = ''; selectedPortId.value = ''; pendingSwitchId.value = ''; pendingPortId.value = ''
@@ -618,7 +665,9 @@ async function save() {
   } else {
     body.connected_allocation_id = null
   }
-  if (addVlansToSwitch.value) body.add_vlans_to_switch = true
+  if (connectionMode.value === 'switch' && selectedSwitchId.value) {
+    body.add_vlans_to_target_switch = true
+  }
   if (props.switchUpdatedAt) body.expected_updated_at = props.switchUpdatedAt
   if (connectionMode.value === 'switch' && selectedSwitchId.value) {
     const sw = allSwitches.value.find(s => s.id === selectedSwitchId.value)
@@ -630,10 +679,11 @@ async function save() {
   try {
     const response = await $fetch<Record<string, unknown>>(`/api/switches/${props.switchId}/ports/${props.port!.id}`, { method: 'PUT', body })
 
-    if ((response as any)?.vlans_added_to_switch?.length) {
-      toast.add({ title: t('vlans.addedToSwitch', { id: (response as any).vlans_added_to_switch.join(', ') }) })
+    if ((response as any)?.vlans_added_to_target_switch?.length) {
+      const targetSw = allSwitches.value.find(s => s.id === selectedSwitchId.value)
+      toast.add({ title: t('vlans.addedToTargetSwitch', { vlans: (response as any).vlans_added_to_target_switch.join(', '), switch: targetSw?.name || '' }) })
     }
-    addVlansToSwitch.value = false
+
 
     // LAG sync: update VLAN/speed/status/connected_device on all other LAG member ports
     if ((props.lagGroup?.port_ids?.length ?? 0) > 1) {
@@ -647,6 +697,10 @@ async function save() {
         connected_device: body.connected_device,
         connected_device_id: body.connected_device_id,
         connected_allocation_id: body.connected_allocation_id,
+      }
+      // Propagate target switch override to LAG member ports
+      if (body.add_vlans_to_target_switch) {
+        syncFields.add_vlans_to_target_switch = true
       }
       if (body.connected_allocation_id) {
         syncFields.connected_port = null

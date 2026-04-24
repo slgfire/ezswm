@@ -320,7 +320,6 @@ export const switchRepository = {
     portId: string,
     portData: Partial<Omit<Port, 'id' | 'unit' | 'index'>>,
     options: {
-      addVlansToSwitch?: boolean
       expectedUpdatedAt?: string
       siteVlanIds?: number[]
     } = {}
@@ -347,21 +346,6 @@ export const switchRepository = {
     if (portData.native_vlan) requestedVlans.push(portData.native_vlan)
     if (portData.tagged_vlans) requestedVlans.push(...portData.tagged_vlans)
 
-    const configuredVlans = sw.configured_vlans || []
-    const vlansToAdd: number[] = []
-
-    for (const vlanId of requestedVlans) {
-      if (!configuredVlans.includes(vlanId)) {
-        if (!options.addVlansToSwitch) {
-          throw createError({
-            statusCode: 422,
-            statusMessage: `VLAN ${vlanId} is not configured on this switch`
-          })
-        }
-        vlansToAdd.push(vlanId)
-      }
-    }
-
     // Verify all VLANs exist as site entities
     if (options.siteVlanIds && requestedVlans.length > 0) {
       for (const vlanId of requestedVlans) {
@@ -374,7 +358,15 @@ export const switchRepository = {
       }
     }
 
-    // Atomic mutation: extend configured_vlans + update port
+    // Auto-add any unconfigured VLANs to this switch's configured_vlans
+    const configuredVlans = sw.configured_vlans || []
+    const vlansToAdd: number[] = []
+    for (const vlanId of requestedVlans) {
+      if (!configuredVlans.includes(vlanId)) {
+        vlansToAdd.push(vlanId)
+      }
+    }
+
     if (vlansToAdd.length > 0) {
       sw.configured_vlans = normalizeConfiguredVlans([...configuredVlans, ...vlansToAdd])
     }
@@ -389,6 +381,33 @@ export const switchRepository = {
       port,
       updatedAt: sw.updated_at,
       vlansAddedToSwitch: vlansToAdd
+    }
+  },
+
+  /**
+   * Add VLANs to a target switch's configured_vlans list.
+   * Used when overriding during connected switch selection.
+   */
+  addVlansToSwitch(
+    switchId: string,
+    vlanIds: number[]
+  ): { addedVlans: number[]; updatedAt: string } {
+    const switches = this.list()
+    const sw = switches.find(s => s.id === switchId)
+    if (!sw) throw createError({ statusCode: 404, statusMessage: 'Target switch not found' })
+
+    const configuredVlans = sw.configured_vlans || []
+    const vlansToAdd = vlanIds.filter(v => !configuredVlans.includes(v))
+
+    if (vlansToAdd.length > 0) {
+      sw.configured_vlans = normalizeConfiguredVlans([...configuredVlans, ...vlansToAdd])
+      sw.updated_at = new Date().toISOString()
+      writeJson(FILE_NAME, switches)
+    }
+
+    return {
+      addedVlans: vlansToAdd,
+      updatedAt: sw.updated_at
     }
   },
 

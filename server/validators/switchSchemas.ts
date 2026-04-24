@@ -61,7 +61,7 @@ export const updatePortSchema = z.object({
   helper_usage: z.enum(['participant', 'phone_passthrough', 'ap', 'printer', 'orga', 'uplink']).nullable().optional(),
   helper_label: z.string().max(100).nullable().optional(),
   show_in_helper_list: z.boolean().optional(),
-  add_vlans_to_switch: z.boolean().optional(),
+  add_vlans_to_target_switch: z.boolean().optional(),
   expected_updated_at: z.string().optional()
 })
 
@@ -77,7 +77,6 @@ export const bulkUpdatePortsSchema = z.object({
     description: z.string().max(500).optional().nullable(),
     helper_usage: z.enum(['participant', 'phone_passthrough', 'ap', 'printer', 'orga', 'uplink']).nullable().optional()
   }),
-  add_vlans_to_switch: z.boolean().optional(),
   expected_updated_at: z.string().optional()
 })
 

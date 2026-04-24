@@ -19,11 +19,13 @@
       />
     </template>
     <template #item-trailing="{ item }">
-      <span v-if="isUnconfiguredItem((item as { value: number }).value)">
-        <UBadge v-if="overrideActive" color="info" variant="subtle" size="xs">
+      <span class="inline-flex gap-1">
+        <UBadge v-if="isUnconfiguredItem((item as { value: number }).value)" color="info" variant="subtle" size="xs">
           {{ $t('vlans.willBeAddedBadge') }}
         </UBadge>
-        <UIcon v-else name="i-heroicons-lock-closed" class="size-3.5 opacity-50" />
+        <UBadge v-if="isUnconfiguredRemote((item as { value: number }).value)" color="warning" variant="subtle" size="xs">
+          {{ $t('vlans.willBeAddedRemoteBadge') }}
+        </UBadge>
       </span>
     </template>
   </USelectMenu>
@@ -36,7 +38,7 @@ const props = defineProps<{
   modelValue: number | null | undefined
   vlans: { vlan_id: number; name: string; color: string }[]
   configuredVlans?: number[]
-  overrideActive?: boolean
+  remoteConfiguredVlans?: number[]
 }>()
 
 const emit = defineEmits<{
@@ -45,9 +47,16 @@ const emit = defineEmits<{
 
 const configuredSet = computed(() => new Set(props.configuredVlans || []))
 
+const remoteConfiguredSet = computed(() => new Set(props.remoteConfiguredVlans || []))
+
 function isUnconfiguredItem(vlanId: number): boolean {
   if (!props.configuredVlans || vlanId === 0) return false
   return !configuredSet.value.has(vlanId)
+}
+
+function isUnconfiguredRemote(vlanId: number): boolean {
+  if (!props.remoteConfiguredVlans || vlanId === 0) return false
+  return !remoteConfiguredSet.value.has(vlanId)
 }
 
 const groupedOptions = computed(() => {
@@ -68,8 +77,7 @@ const groupedOptions = computed(() => {
     .filter(v => !configuredSet.value.has(v.vlan_id))
     .map(v => ({
       label: `${v.vlan_id} · ${v.name}`,
-      value: v.vlan_id,
-      disabled: !props.overrideActive
+      value: v.vlan_id
     }))
 
   const groups: any[] = [noneOption]
@@ -80,7 +88,7 @@ const groupedOptions = computed(() => {
   }
 
   if (other.length > 0) {
-    groups.push({ label: props.overrideActive ? t('vlans.willBeAdded') : t('vlans.group.otherSite'), type: 'label' })
+    groups.push({ label: t('vlans.group.otherSite'), type: 'label' })
     groups.push(...other)
   }
 

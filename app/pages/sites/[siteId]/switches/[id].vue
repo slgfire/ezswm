@@ -15,17 +15,30 @@
         </h1>
       </div>
       <div v-if="item" class="flex items-center gap-1">
-        <UTooltip :text="showDetails ? $t('common.hideDetails') : $t('common.showDetails')">
-          <UButton
-            :variant="showDetails ? 'solid' : 'ghost'"
-            color="info"
-            size="sm"
-            @click="showDetails = !showDetails"
-          >
-            <UIcon name="i-heroicons-chevron-down" :class="['h-4 w-4 transition-transform duration-200', showDetails ? 'rotate-180' : '']" />
-            <span class="ml-1">{{ showDetails ? $t('common.hideDetails') : $t('common.showDetails') }}</span>
-          </UButton>
-        </UTooltip>
+        <!-- Group A: View/Panel toggles -->
+        <UButton
+          icon="i-heroicons-square-3-stack-3d"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          label="VLANs"
+          class="text-violet-400 hover:text-violet-300 hover:bg-violet-500/10"
+          @click="showVlanSlideover = true"
+        />
+        <UButton
+          icon="i-heroicons-table-cells"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          :label="$t('switches.detailsAction')"
+          class="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+          @click="showSecondaryDetails = true"
+        />
+
+        <!-- Divider -->
+        <span class="mx-1 h-5 w-px bg-neutral-200 dark:bg-neutral-700" />
+
+        <!-- Group B: Actions -->
         <SwitchPublicAccess
           :switch-id="id"
           :switch-name="item.name"
@@ -43,12 +56,17 @@
         <UTooltip :text="$t('common.duplicate')">
           <UButton
             icon="i-heroicons-document-duplicate"
-            variant="ghost"
+            variant="soft"
             color="neutral"
             size="sm"
             @click="onDuplicate"
           />
         </UTooltip>
+
+        <!-- Divider -->
+        <span class="mx-1 h-5 w-px bg-neutral-200 dark:bg-neutral-700" />
+
+        <!-- Group C: Destructive -->
         <UTooltip :text="$t('common.delete')">
           <UButton
             icon="i-heroicons-trash"
@@ -70,44 +88,52 @@
 
     <!-- Switch details -->
     <div v-if="item && !loading" class="space-y-4">
-      <!-- Info bar -->
-      <div class="-mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 list-container rounded-lg bg-default px-5 py-3">
-        <div v-if="item.model">
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.model') }}</div>
-          <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.manufacturer ? `${item.manufacturer} ${item.model}` : item.model }}</div>
-        </div>
-        <div v-if="item.model && (item.location || item.management_ip)" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-        <div v-if="item.location">
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.location') }}</div>
-          <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.location }}{{ item.rack_position ? ` / ${item.rack_position}` : '' }}</div>
-        </div>
-        <div v-if="item.location && item.management_ip" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-        <div v-if="item.management_ip">
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.managementIp') }}</div>
-          <div class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ item.management_ip }}</div>
-        </div>
-        <div v-if="item.ports?.length" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-        <div v-if="item.ports?.length">
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.ports') }}</div>
-          <div class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
-            {{ item.ports.length }}
-            <span class="flex items-center gap-1.5 text-xs font-normal">
-              <span v-if="portStats.up" class="flex items-center gap-0.5 text-green-500"><span class="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />{{ portStats.up }}</span>
-              <span v-if="portStats.down" class="flex items-center gap-0.5 text-gray-400"><span class="inline-block h-1.5 w-1.5 rounded-full bg-gray-400" />{{ portStats.down }}</span>
-              <span v-if="portStats.disabled" class="flex items-center gap-0.5 text-red-400"><span class="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />{{ portStats.disabled }}</span>
-            </span>
+      <!-- Info bar with inline expand toggle -->
+      <div class="-mt-2 list-container rounded-lg bg-default">
+        <button
+          class="flex w-full flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3 text-left cursor-pointer hover:bg-elevated/50 transition-colors rounded-lg"
+          @click="showDetails = !showDetails"
+        >
+          <div v-if="item.model">
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.model') }}</div>
+            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.manufacturer ? `${item.manufacturer} ${item.model}` : item.model }}</div>
           </div>
-        </div>
-        <div v-if="currentTemplateName" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-        <div v-if="currentTemplateName">
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.template') }}</div>
-          <div class="text-sm text-gray-600 dark:text-gray-300">{{ currentTemplateName }}</div>
-        </div>
-      </div>
+          <div v-if="item.model && (item.location || item.management_ip)" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <div v-if="item.location">
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.location') }}</div>
+            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.location }}{{ item.rack_position ? ` / ${item.rack_position}` : '' }}</div>
+          </div>
+          <div v-if="item.location && item.management_ip" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <div v-if="item.management_ip">
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.managementIp') }}</div>
+            <div class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ item.management_ip }}</div>
+          </div>
+          <div v-if="item.ports?.length" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <div v-if="item.ports?.length">
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.ports') }}</div>
+            <div class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+              {{ item.ports.length }}
+              <span class="flex items-center gap-1.5 text-xs font-normal">
+                <span v-if="portStats.up" class="flex items-center gap-0.5 text-green-500"><span class="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />{{ portStats.up }}</span>
+                <span v-if="portStats.down" class="flex items-center gap-0.5 text-gray-400"><span class="inline-block h-1.5 w-1.5 rounded-full bg-gray-400" />{{ portStats.down }}</span>
+                <span v-if="portStats.disabled" class="flex items-center gap-0.5 text-red-400"><span class="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />{{ portStats.disabled }}</span>
+              </span>
+            </div>
+          </div>
+          <div v-if="currentTemplateName" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <div v-if="currentTemplateName">
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.template') }}</div>
+            <div class="text-sm text-gray-600 dark:text-gray-300">{{ currentTemplateName }}</div>
+          </div>
+          <!-- Expand/collapse chevron -->
+          <div class="ml-auto flex items-center">
+            <UIcon name="i-heroicons-chevron-down" :class="['h-4 w-4 text-gray-400 transition-transform duration-200', showDetails ? 'rotate-180' : '']" />
+          </div>
+        </button>
 
-      <!-- Details panel (toggled via info button in header) -->
-      <div v-show="showDetails" class="list-container rounded-lg bg-default p-4">
-        <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
+        <!-- Expanded details (inline below info bar) -->
+        <div v-show="showDetails" class="border-t border-default px-5 py-4">
+          <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
           <div>
             <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.name') }}</dt>
             <dd>{{ item.name }}</dd>
@@ -164,7 +190,7 @@
             <dd class="whitespace-pre-wrap">{{ item.notes }}</dd>
           </div>
         </div>
-
+        </div>
       </div>
 
       <!-- Selection bar (shown when ports are selected) -->
@@ -232,62 +258,60 @@
         <p v-else class="text-sm text-gray-400">{{ $t('switches.ports.noPortsMessage') }}</p>
       </div>
 
-      <!-- Configured VLANs Management -->
-      <div class="mt-3">
-        <SwitchConfiguredVlans
-          :switch-id="item.id"
-          :switch-name="item.name"
-          :configured-vlans="item.configured_vlans || []"
-          :all-vlans="vlans"
-          :updated-at="item.updated_at"
-          @updated="fetchSwitch"
-        />
-      </div>
+      <!-- VLAN Management Slideover -->
+      <USlideover v-model:open="showVlanSlideover" :title="$t('vlans.configuredTitle')">
+        <template #body>
+          <SwitchConfiguredVlans
+            :switch-id="item.id"
+            :switch-name="item.name"
+            :configured-vlans="item.configured_vlans || []"
+            :all-vlans="vlans"
+            :updated-at="item.updated_at"
+            @updated="fetchSwitch"
+          />
+        </template>
+      </USlideover>
 
-      <!-- Port Table View (collapsible card, default collapsed) -->
-      <div v-if="item.ports?.length" class="mt-3">
-        <SwitchPortTable
-          :ports="item.ports"
-          :vlans="vlans"
-          @select-port="onSelectPort"
-        />
-      </div>
-
-      <!-- Recent Activity (collapsible card, default collapsed) -->
-      <div v-if="switchActivity.length" class="mt-2">
-        <div class="list-container rounded-lg bg-default p-4">
-          <button
-            class="flex w-full items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
-            @click="showActivity = !showActivity"
-          >
-            <UIcon name="i-heroicons-chevron-right" :class="['h-4 w-4 transition-transform duration-200', showActivity ? 'rotate-90' : '']" />
-            <UIcon name="i-heroicons-clock" class="h-4 w-4 text-primary-500" />
-            {{ $t('switches.recentActivity') }}
-            <span class="text-xs font-normal text-gray-400">{{ $t('switches.activity.entriesCount', switchActivity.length) }}</span>
-            <span v-if="switchActivity.length" class="ml-auto text-xs font-normal text-gray-400">
-              {{ $t('switches.activity.latest', { time: relTime(switchActivity[0]?.timestamp ?? '') }) }}
-            </span>
-          </button>
-          <div v-show="showActivity" class="mt-3 space-y-1 border-t border-default pt-3">
-            <div v-for="entry in switchActivity" :key="entry.id" class="alt-row rounded px-3 py-2 text-sm">
-              <div class="flex items-center gap-2">
-                <span
-                  class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded"
-                  :class="entry.action === 'create' ? 'bg-green-500/15 text-green-500' : entry.action === 'delete' ? 'bg-red-500/15 text-red-500' : 'bg-primary-500/15 text-primary-500'"
-                >
-                  <UIcon
-                    :name="entry.action === 'create' ? 'i-heroicons-plus' : entry.action === 'delete' ? 'i-heroicons-minus' : 'i-heroicons-pencil'"
-                    class="h-3 w-3"
-                  />
-                </span>
-                <span v-if="formatActivity(entry)" class="truncate text-xs text-gray-300">{{ formatActivity(entry) }}</span>
-                <span v-else class="text-xs text-gray-500">{{ entry.action }}</span>
-                <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relTime(entry.timestamp) }}</span>
+      <!-- Secondary Details Slideover (Port Table + Activity) -->
+      <USlideover v-model:open="showSecondaryDetails" :title="$t('switches.detailsAction')">
+        <template #body>
+          <UTabs :items="secondaryTabs" class="w-full">
+            <template #content="{ item: tab }">
+              <!-- Port Table Tab -->
+              <div v-if="tab.key === 'ports' && item?.ports?.length" class="pt-3">
+                <SwitchPortTable
+                  :ports="item.ports"
+                  :vlans="vlans"
+                  embedded
+                  @select-port="(id: string) => { showSecondaryDetails = false; onSelectPort(id) }"
+                />
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
+              <!-- Activity Tab -->
+              <div v-else-if="tab.key === 'activity'" class="pt-3 space-y-1">
+                <div v-if="!switchActivity.length" class="text-sm text-dimmed py-4 text-center">
+                  {{ $t('common.noResults') }}
+                </div>
+                <div v-for="entry in switchActivity" :key="entry.id" class="alt-row rounded px-3 py-2 text-sm">
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded"
+                      :class="entry.action === 'create' ? 'bg-green-500/15 text-green-500' : entry.action === 'delete' ? 'bg-red-500/15 text-red-500' : 'bg-primary-500/15 text-primary-500'"
+                    >
+                      <UIcon
+                        :name="entry.action === 'create' ? 'i-heroicons-plus' : entry.action === 'delete' ? 'i-heroicons-minus' : 'i-heroicons-pencil'"
+                        class="h-3 w-3"
+                      />
+                    </span>
+                    <span v-if="formatActivity(entry)" class="truncate text-xs text-gray-300">{{ formatActivity(entry) }}</span>
+                    <span v-else class="text-xs text-gray-500">{{ entry.action }}</span>
+                    <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relTime(entry.timestamp) }}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </UTabs>
+        </template>
+      </USlideover>
 
     </div>
 
@@ -446,6 +470,7 @@ v-model="editForm.role"
       :switch-id="id"
       :ports="item?.ports || []"
       :existing-lags="lagGroups"
+      :configured-vlans="item?.configured_vlans || []"
       @saved="onLagSaved"
     />
 
@@ -509,6 +534,13 @@ const editFormRef = ref()
 const showDeleteDialog = ref(false)
 const deleting = ref(false)
 const showDetails = ref(false)
+const showVlanSlideover = ref(false)
+const showSecondaryDetails = ref(false)
+
+const secondaryTabs = computed(() => [
+  { label: t('switches.tabs.ports'), key: 'ports' },
+  { label: t('switches.tabs.activity'), key: 'activity' }
+])
 
 const selectedPorts = ref<string[]>([])
 const bulkEditorRef = ref<{ submit: () => void; open: () => void } | null>(null)

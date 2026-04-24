@@ -29,9 +29,9 @@ export default defineEventHandler(async (event) => {
   const parsed = updatePortSchema.parse(body)
 
   // Extract override/concurrency fields before passing to port update
-  const addVlansToSwitch = parsed.add_vlans_to_switch
+  const addVlansToTargetSwitch = parsed.add_vlans_to_target_switch
   const expectedUpdatedAt = parsed.expected_updated_at
-  delete (parsed as Record<string, unknown>).add_vlans_to_switch
+  delete (parsed as Record<string, unknown>).add_vlans_to_target_switch
   delete (parsed as Record<string, unknown>).expected_updated_at
 
   // Build changes diff BEFORE normalization — so "clear to automatic" appears in activity as null
@@ -63,11 +63,30 @@ export default defineEventHandler(async (event) => {
     portId,
     parsed as Partial<Omit<Port, 'id' | 'unit' | 'index'>>,
     {
-      addVlansToSwitch: addVlansToSwitch || false,
       expectedUpdatedAt,
       siteVlanIds
     }
   )
+
+  // If override is active and a target switch is connected, add VLANs to the target switch
+  let vlansAddedToTargetSwitch: number[] = []
+  const connectedDeviceId = (parsed as Record<string, unknown>).connected_device_id as string | undefined
+  if (addVlansToTargetSwitch && connectedDeviceId && connectedDeviceId !== switchId) {
+    // Collect all VLAN IDs from the port
+    const portVlans: number[] = []
+    if ((parsed as Record<string, unknown>).access_vlan) portVlans.push((parsed as Record<string, unknown>).access_vlan as number)
+    if ((parsed as Record<string, unknown>).native_vlan) portVlans.push((parsed as Record<string, unknown>).native_vlan as number)
+    if ((parsed as Record<string, unknown>).tagged_vlans) portVlans.push(...((parsed as Record<string, unknown>).tagged_vlans as number[]))
+
+    if (portVlans.length > 0) {
+      // Verify VLANs exist in site before adding to target
+      const validVlans = portVlans.filter(v => siteVlanIds.includes(v))
+      if (validVlans.length > 0) {
+        const targetResult = switchRepository.addVlansToSwitch(connectedDeviceId, validVlans)
+        vlansAddedToTargetSwitch = targetResult.addedVlans
+      }
+    }
+  }
 
   const metadata: Record<string, unknown> = {
     port_id: portId,
@@ -75,6 +94,9 @@ export default defineEventHandler(async (event) => {
   }
   if (result.vlansAddedToSwitch.length > 0) {
     metadata.vlans_added_to_switch = result.vlansAddedToSwitch
+  }
+  if (vlansAddedToTargetSwitch.length > 0) {
+    metadata.vlans_added_to_target_switch = vlansAddedToTargetSwitch
   }
 
   await activityRepository.log({
@@ -91,6 +113,7 @@ export default defineEventHandler(async (event) => {
   return {
     ...result.port,
     updated_at: result.updatedAt,
-    vlans_added_to_switch: result.vlansAddedToSwitch.length > 0 ? result.vlansAddedToSwitch : undefined
+    vlans_added_to_switch: result.vlansAddedToSwitch.length > 0 ? result.vlansAddedToSwitch : undefined,
+    vlans_added_to_target_switch: vlansAddedToTargetSwitch.length > 0 ? vlansAddedToTargetSwitch : undefined
   }
 })

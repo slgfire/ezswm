@@ -19,7 +19,6 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = bulkUpdatePortsSchema.parse(body)
 
-  const addVlansToSwitch = parsed.add_vlans_to_switch || false
   const expectedUpdatedAt = parsed.expected_updated_at
 
   // Concurrency check once at the start
@@ -44,22 +43,6 @@ export default defineEventHandler(async (event) => {
   if (parsed.updates.native_vlan) requestedVlans.push(parsed.updates.native_vlan)
   if (parsed.updates.tagged_vlans) requestedVlans.push(...parsed.updates.tagged_vlans)
 
-  const configuredVlans = sw.configured_vlans || []
-  const vlansToAdd: number[] = []
-
-  // All-or-nothing VLAN validation
-  for (const vlanId of requestedVlans) {
-    if (!configuredVlans.includes(vlanId)) {
-      if (!addVlansToSwitch) {
-        throw createError({
-          statusCode: 422,
-          statusMessage: `VLAN ${vlanId} is not configured on this switch`
-        })
-      }
-      if (!vlansToAdd.includes(vlanId)) vlansToAdd.push(vlanId)
-    }
-  }
-
   // Verify all VLANs exist as site entities
   if (requestedVlans.length > 0) {
     const siteVlans = vlanRepository.list().filter(v => v.site_id === sw.site_id)
@@ -71,6 +54,15 @@ export default defineEventHandler(async (event) => {
           statusMessage: `VLAN ${vlanId} does not exist in this site`
         })
       }
+    }
+  }
+
+  // Auto-add any unconfigured VLANs to this switch
+  const configuredVlans = sw.configured_vlans || []
+  const vlansToAdd: number[] = []
+  for (const vlanId of requestedVlans) {
+    if (!configuredVlans.includes(vlanId) && !vlansToAdd.includes(vlanId)) {
+      vlansToAdd.push(vlanId)
     }
   }
 

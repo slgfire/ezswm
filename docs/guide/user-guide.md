@@ -120,12 +120,16 @@ On a switch detail page, ports are rendered as a visual grid matching the layout
 
 ![Switch detail with port grid](/images/screenshot-switch-detail.png)
 
-Below the port grid, a **legend card** summarizes all visual indicators in grouped rows: port status (up/down/disabled), port types (SFP/QSFP/Console/Mgmt), port mode (access/trunk), active VLANs with their colors, and LAG groups. A multi-select hint at the bottom reminds you how to select multiple ports (Ctrl/Cmd + Click). The hint automatically hides when ports are selected.
+Below the port grid, a **legend** summarizes all visual indicators: port status (up/down/disabled), port types (SFP/QSFP/Console/Mgmt), port mode (access/trunk), active VLANs with their colors, and LAG groups. A multi-select hint reminds you how to select multiple ports (Ctrl/Cmd + Click). The hint automatically hides when ports are selected.
 
-Two collapsible sections follow the legend card:
+The **info bar** above the port grid shows key switch details (model, location, management IP, port count, template). Click the bar to expand the full detail panel with all switch fields inline.
 
-- **Port Table** — a tabular view of all ports. The closed header shows port count and status summary (e.g., "7 up · 105 down"). Click to expand the full table.
-- **Recent Activity** — shows the latest changes to this switch. The closed header displays the entry count and timestamp of the most recent change (e.g., "20 entries · Latest: 5 min ago").
+The top-right **action bar** provides quick access to:
+
+- **VLANs** — opens a slideover to manage which VLANs are configured on this switch (add/remove)
+- **Details** — opens a slideover with two tabs:
+  - **Ports** — a tabular view of all ports with status summary
+  - **Activity** — recent changes to this switch
 
 ### Editing Ports
 
