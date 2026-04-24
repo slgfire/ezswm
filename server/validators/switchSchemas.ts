@@ -14,7 +14,8 @@ export const createSwitchSchema = z.object({
   stack_size: z.number().int().min(1).max(8).optional(),
   role: z.enum(['core', 'distribution', 'access', 'management']).optional(),
   tags: z.array(z.string().max(50)).max(20).optional(),
-  notes: z.string().max(2000).optional()
+  notes: z.string().max(2000).optional(),
+  configured_vlans: z.array(z.number().int().min(1).max(4094)).optional().default([])
 })
 
 export const updateSwitchSchema = z.object({

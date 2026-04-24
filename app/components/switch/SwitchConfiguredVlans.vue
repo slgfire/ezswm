@@ -84,7 +84,6 @@ const emit = defineEmits<{
   'updated': []
 }>()
 
-const expanded = ref(true)
 const showAddDialog = ref(false)
 
 const configuredVlanDetails = computed(() => {
@@ -125,8 +124,9 @@ async function addVlan(vlanId: number) {
     toast.add({ title: t('vlans.addedToSwitch', { id: vlanId }) })
     showAddDialog.value = false
     emit('updated')
-  } catch (err: any) {
-    toast.add({ title: err.statusMessage || 'Error', color: 'error' })
+  } catch (err: unknown) {
+    const e = err as { statusMessage?: string }
+    toast.add({ title: e.statusMessage || 'Error', color: 'error' })
   }
 }
 
@@ -142,23 +142,24 @@ async function removeVlan(vlanId: number) {
     })
     toast.add({ title: t('vlans.remove.success', { id: vlanId, count: 0 }) })
     emit('updated')
-  } catch (err: any) {
-    if (err.statusCode === 409 && err.data?.affected_ports) {
+  } catch (err: unknown) {
+    const e = err as { statusCode?: number; statusMessage?: string; data?: Record<string, unknown> }
+    if (e.statusCode === 409 && e.data?.affected_ports) {
       removeDialog.vlanId = vlanId
-      removeDialog.affectedPorts = err.data.affected_ports
-      removeDialog.requiresDecision = err.data.requires_decision || []
-      removeDialog.removableAutomatically = err.data.removable_automatically || []
-      removeDialog.currentUpdatedAt = err.data.current_updated_at
+      removeDialog.affectedPorts = e.data.affected_ports as typeof removeDialog.affectedPorts
+      removeDialog.requiresDecision = (e.data.requires_decision || []) as typeof removeDialog.requiresDecision
+      removeDialog.removableAutomatically = (e.data.removable_automatically || []) as typeof removeDialog.removableAutomatically
+      removeDialog.currentUpdatedAt = e.data.current_updated_at as string
       removeDialog.open = true
     } else {
-      toast.add({ title: err.statusMessage || 'Error', color: 'error' })
+      toast.add({ title: e.statusMessage || 'Error', color: 'error' })
     }
   }
 }
 
-async function confirmRemove(cleanup: any[], expectedUpdatedAt: string) {
+async function confirmRemove(cleanup: Array<{ port_id: string; field: string; new_value: number | null }>, expectedUpdatedAt: string) {
   try {
-    const result = await $fetch(`/api/switches/${props.switchId}/configured-vlans`, {
+    const result = await $fetch<Record<string, unknown>>(`/api/switches/${props.switchId}/configured-vlans`, {
       method: 'PUT',
       body: {
         action: 'remove_confirmed',
@@ -166,15 +167,16 @@ async function confirmRemove(cleanup: any[], expectedUpdatedAt: string) {
         expected_updated_at: expectedUpdatedAt,
         port_cleanup: cleanup
       }
-    }) as any
-    toast.add({ title: t('vlans.remove.success', { id: removeDialog.vlanId, count: result?.ports_updated || 0 }) })
+    })
+    toast.add({ title: t('vlans.remove.success', { id: removeDialog.vlanId, count: (result as Record<string, unknown>)?.ports_updated || 0 }) })
     emit('updated')
-  } catch (err: any) {
-    if (err.statusCode === 409) {
+  } catch (err: unknown) {
+    const e = err as { statusCode?: number; statusMessage?: string }
+    if (e.statusCode === 409) {
       toast.add({ title: 'Switch was modified. Please try again.', color: 'warning' })
       emit('updated')
     } else {
-      toast.add({ title: err.statusMessage || 'Error', color: 'error' })
+      toast.add({ title: e.statusMessage || 'Error', color: 'error' })
     }
   }
 }

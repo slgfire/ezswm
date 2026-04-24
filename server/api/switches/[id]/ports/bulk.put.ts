@@ -78,7 +78,7 @@ export default defineEventHandler(async (event) => {
     const merged = [...new Set([...(currentSw.configured_vlans || []), ...vlansToAdd])]
       .filter(v => v >= 1 && v <= 4094)
       .sort((a, b) => a - b)
-    switchRepository.update(switchId, { configured_vlans: merged } as any)
+    switchRepository.update(switchId, { configured_vlans: merged } as Partial<import('~~/types').Switch>)
   }
 
   const updatedSw = switchRepository.getById(switchId)!

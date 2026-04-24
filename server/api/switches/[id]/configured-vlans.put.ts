@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
       .filter(v => v >= 1 && v <= 4094)
       .sort((a, b) => a - b)
 
-    switchRepository.update(switchId, { configured_vlans: merged } as any)
+    switchRepository.update(switchId, { configured_vlans: merged } as Partial<import('~~/types').Switch>)
     const updated = switchRepository.getById(switchId)!
 
     await activityRepository.log({

@@ -125,17 +125,6 @@ function normalizeConfiguredVlans(vlans: number[]): number[] {
     .sort((a, b) => a - b)
 }
 
-/** Compute configured_vlans from a switch's ports */
-function computeConfiguredVlansFromPorts(sw: Switch): number[] {
-  const vlanIds: number[] = []
-  for (const port of sw.ports) {
-    if (port.access_vlan) vlanIds.push(port.access_vlan)
-    if (port.native_vlan) vlanIds.push(port.native_vlan)
-    if (port.tagged_vlans) vlanIds.push(...port.tagged_vlans)
-  }
-  return normalizeConfiguredVlans(vlanIds)
-}
-
 export const switchRepository = {
   list(): Switch[] {
     const switches = readJson<Switch[]>(FILE_NAME)
