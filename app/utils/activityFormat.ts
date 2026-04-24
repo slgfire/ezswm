@@ -34,7 +34,7 @@ export function formatActivitySummary(entry: ActivityEntry, t: TranslateFn, deta
   }
 
   if (action === 'remove_configured_vlans' && metadata?.vlan_ids) {
-    const vlanId = (metadata.vlan_ids as number[])[0]
+    const vlanId = (metadata.vlan_ids as number[])[0] ?? 0
     return t('activity.configuredVlansRemoved', { vlan: vlanId })
   }
 
