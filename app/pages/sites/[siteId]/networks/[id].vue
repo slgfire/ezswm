@@ -7,7 +7,7 @@
         <h1 class="text-xl font-bold">{{ network?.name || $t('common.loading') }}</h1>
       </div>
       <div v-if="network" class="flex items-center gap-1">
-        <UButton :icon="editing ? 'i-heroicons-x-mark' : 'i-heroicons-pencil'" :variant="editing ? 'solid' : 'ghost'" :color="editing ? 'neutral' : 'primary'" size="sm" :title="editing ? $t('common.cancel') : $t('common.edit')" @click="editing ? editing = false : startEdit()" />
+        <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="sm" :title="$t('common.edit')" @click="startEdit()" />
         <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="showDeleteDialog = true" />
       </div>
     </div>
@@ -110,43 +110,6 @@
         </div>
       </div>
 
-      <!-- Edit form -->
-      <div v-if="editing" class="rounded-lg border border-primary-500/30 bg-primary-500/5 dark:bg-primary-500/5">
-        <div class="flex items-center justify-between border-b border-primary-500/20 px-5 py-3">
-          <div class="flex items-center gap-2">
-            <UIcon name="i-heroicons-pencil-square" class="h-4 w-4 text-primary-500" />
-            <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ $t('networks.edit') }}</span>
-          </div>
-          <UButton icon="i-heroicons-x-mark" variant="ghost" color="neutral" size="xs" @click="editing = false" />
-        </div>
-        <UForm :state="editForm" :validate="validate" :validate-on="['blur', 'change']" novalidate class="space-y-4 p-5" @submit="onSave">
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <UFormField :label="$t('networks.fields.name')" name="name" required>
-              <UInput v-model="editForm.name" required class="w-full" />
-            </UFormField>
-            <UFormField :label="$t('networks.fields.subnet')" name="subnet" required>
-              <UInput v-model="editForm.subnet" required class="w-full" />
-            </UFormField>
-            <UFormField :label="$t('networks.fields.gateway')" name="gateway">
-              <UInput v-model="editForm.gateway" class="w-full" />
-            </UFormField>
-            <UFormField :label="$t('networks.fields.dnsServers')" name="dns_servers">
-              <UInput v-model="editDnsInput" placeholder="8.8.8.8, 8.8.4.4" class="w-full" />
-            </UFormField>
-            <UFormField :label="$t('networks.fields.vlan')" name="vlan_id">
-              <USelect v-model="editForm.vlan_id" :items="vlanOptions" placeholder="-" class="w-full" />
-            </UFormField>
-          </div>
-          <UFormField :label="$t('common.description')" name="description">
-            <UTextarea v-model="editForm.description" :rows="2" class="w-full" />
-          </UFormField>
-          <div class="flex justify-end gap-2 border-t border-primary-500/20 pt-4">
-            <UButton variant="ghost" color="neutral" @click="editing = false">{{ $t('common.cancel') }}</UButton>
-            <UButton type="submit" :loading="saving">{{ $t('common.save') }}</UButton>
-          </div>
-        </UForm>
-      </div>
-
       <!-- Unified IP Overview -->
       <div>
         <div class="mb-3 flex items-center justify-between">
@@ -225,6 +188,43 @@
         </div>
       </div>
     </div>
+
+    <!-- Network edit slideover -->
+    <USlideover v-model:open="editing">
+      <template #title>
+        <span>{{ $t('networks.edit') }}</span>
+      </template>
+
+      <template #body>
+        <UForm ref="editFormRef" :state="editForm" :validate="validate" :validate-on="['blur', 'change']" novalidate class="space-y-4" @submit="onSave">
+          <UFormField :label="$t('networks.fields.name')" name="name" required>
+            <UInput v-model="editForm.name" required class="w-full" />
+          </UFormField>
+          <UFormField :label="$t('networks.fields.subnet')" name="subnet" required>
+            <UInput v-model="editForm.subnet" required class="w-full" />
+          </UFormField>
+          <UFormField :label="$t('networks.fields.gateway')" name="gateway">
+            <UInput v-model="editForm.gateway" class="w-full" />
+          </UFormField>
+          <UFormField :label="$t('networks.fields.dnsServers')" name="dns_servers">
+            <UInput v-model="editDnsInput" placeholder="8.8.8.8, 8.8.4.4" class="w-full" />
+          </UFormField>
+          <UFormField :label="$t('networks.fields.vlan')" name="vlan_id">
+            <USelect v-model="editForm.vlan_id" :items="vlanOptions" placeholder="-" class="w-full" />
+          </UFormField>
+          <UFormField :label="$t('common.description')" name="description">
+            <UTextarea v-model="editForm.description" :rows="3" class="w-full" />
+          </UFormField>
+        </UForm>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UButton variant="ghost" color="neutral" @click="editing = false">{{ $t('common.cancel') }}</UButton>
+          <UButton :loading="saving" @click="editFormRef?.submit()">{{ $t('common.save') }}</UButton>
+        </div>
+      </template>
+    </USlideover>
 
     <!-- Range edit slideover -->
     <USlideover v-model:open="showRangeEdit">
@@ -402,6 +402,7 @@ const network = ref<Network | null>(null)
 
 useHead({ title: computed(() => network.value?.name || t('networks.title')) })
 const editing = ref(false)
+const editFormRef = ref<{ submit: () => void } | null>(null)
 const saving = ref(false)
 const showDetails = ref(false)
 const showDeleteDialog = ref(false)

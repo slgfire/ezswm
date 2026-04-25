@@ -6,6 +6,17 @@ Date: 2026-04-26
 Stage: Phase 26c — Documentation & Screenshot Update
 Status: Complete
 
+### Phase 26f Changes (Edit → Slideover, Info-Bar finalisiert)
+- **Inline-Edit komplett entfernt:** Der grüne Inline-Edit-Block auf der Hauptseite existiert nicht mehr
+- **Neues Edit-Slideover:** Netzwerk-Bearbeitung findet jetzt in einem USlideover statt — konsistent zu VLAN/Allocation/Range-Panels
+  - Header: "Netzwerk bearbeiten" Titel
+  - Body: Name, Subnet, Gateway, DNS, VLAN, Description (UTextarea)
+  - Footer: Cancel + Save
+  - Schließt sich automatisch nach erfolgreichem Speichern
+- **Edit-Button vereinfacht:** Kein Toggle mehr (war pencil/x-mark), nur noch pencil → öffnet Slideover
+- **Seite jetzt ruhiger:** Ohne Inline-Edit-Block fokussiert die Seite klar auf Info-Bar + IP-Übersicht
+- **editFormRef:** Verwendet ref für Form-Submit aus Footer heraus (wie VLAN-Panel)
+
 ### Phase 26e Changes (Info-Bar Inline-Expand wie Switch)
 - **Info-Leiste als klickbarer Button:** Gesamte Summary-Leiste ist jetzt ein `<button>` mit Hover-State (wie Switch-Seite)
 - **Chevron-Toggle:** Expand/Collapse-Chevron rechts in der Info-Leiste, rotiert bei Expand (identisch zu Switch)
