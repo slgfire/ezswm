@@ -7,7 +7,6 @@
         <h1 class="text-xl font-bold">{{ network?.name || $t('common.loading') }}</h1>
       </div>
       <div v-if="network" class="flex items-center gap-1">
-        <UButton icon="i-heroicons-information-circle" :variant="showDetails ? 'solid' : 'ghost'" color="info" size="sm" :title="showDetails ? $t('common.hideDetails') : $t('common.showDetails')" @click="showDetails = !showDetails" />
         <UButton :icon="editing ? 'i-heroicons-x-mark' : 'i-heroicons-pencil'" :variant="editing ? 'solid' : 'ghost'" :color="editing ? 'neutral' : 'primary'" size="sm" :title="editing ? $t('common.cancel') : $t('common.edit')" @click="editing ? editing = false : startEdit()" />
         <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="showDeleteDialog = true" />
       </div>
@@ -18,38 +17,69 @@
     </div>
 
     <div v-else-if="network" class="space-y-5">
-      <!-- Subnet stats -->
-      <div class="-mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-default bg-default/30 px-5 py-3">
-        <div>
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.subnet') }}</div>
-          <div class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ network.subnet }}</div>
-        </div>
-        <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-        <div v-if="network.gateway">
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.gateway') }}</div>
-          <div class="font-mono text-sm font-semibold text-gray-900 dark:text-white">{{ network.gateway }}</div>
-        </div>
-        <div v-if="network.gateway" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-        <div>
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.mask') }}</div>
-          <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.mask }}</div>
-        </div>
-        <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-        <div>
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.hosts') }}</div>
-          <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ subnetInfo.usableHosts.toLocaleString() }}</div>
-        </div>
-        <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-        <div>
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.allocated') }}</div>
-          <div class="text-sm font-semibold" :class="utilizationPercent > 80 ? 'text-red-500' : 'text-primary-500'">{{ allocations.length }} <span class="text-xs font-normal text-gray-400">({{ utilizationPercent }}%)</span></div>
-        </div>
-        <div v-if="associatedVlan" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-        <div v-if="associatedVlan">
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.vlan') }}</div>
-          <div class="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
-            <div class="h-2 w-2 rounded-full" :style="{ backgroundColor: associatedVlan.color }" />
-            {{ associatedVlan.vlan_id }} <span class="font-normal text-gray-400">{{ associatedVlan.name }}</span>
+      <!-- Info bar with inline expand toggle (like Switch detail) -->
+      <div class="-mt-2 list-container rounded-lg bg-default">
+        <button
+          class="flex w-full flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3 text-left cursor-pointer transition-colors hover:bg-elevated/50 rounded-t-lg"
+          @click="showDetails = !showDetails"
+        >
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.subnet') }}</div>
+            <div class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ network.subnet }}</div>
+          </div>
+          <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <div v-if="network.gateway">
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.gateway') }}</div>
+            <div class="font-mono text-sm font-semibold text-gray-900 dark:text-white">{{ network.gateway }}</div>
+          </div>
+          <div v-if="network.gateway" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.mask') }}</div>
+            <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.mask }}</div>
+          </div>
+          <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.hosts') }}</div>
+            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ subnetInfo.usableHosts.toLocaleString() }}</div>
+          </div>
+          <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.allocated') }}</div>
+            <div class="text-sm font-semibold" :class="utilizationPercent > 80 ? 'text-red-500' : 'text-primary-500'">{{ allocations.length }} <span class="text-xs font-normal text-gray-400">({{ utilizationPercent }}%)</span></div>
+          </div>
+          <div v-if="associatedVlan" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <div v-if="associatedVlan">
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.vlan') }}</div>
+            <div class="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
+              <div class="h-2 w-2 rounded-full" :style="{ backgroundColor: associatedVlan.color }" />
+              {{ associatedVlan.vlan_id }} <span class="font-normal text-gray-400">{{ associatedVlan.name }}</span>
+            </div>
+          </div>
+          <!-- Expand/collapse chevron -->
+          <div class="ml-auto flex items-center">
+            <UIcon name="i-heroicons-chevron-down" :class="['h-4 w-4 text-gray-400 transition-transform duration-200', showDetails ? 'rotate-180' : '']" />
+          </div>
+        </button>
+
+        <!-- Expanded details (inline below info bar) -->
+        <div v-show="showDetails" class="border-t border-default px-5 py-4">
+          <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
+            <div>
+              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.network') }}</dt>
+              <dd class="font-mono">{{ subnetInfo.network }}</dd>
+            </div>
+            <div>
+              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.broadcast') }}</dt>
+              <dd class="font-mono">{{ subnetInfo.broadcast }}</dd>
+            </div>
+            <div v-if="network.dns_servers?.length">
+              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.dns') }}</dt>
+              <dd class="font-mono">{{ network.dns_servers.join(', ') }}</dd>
+            </div>
+            <div v-if="network.description" class="col-span-2 sm:col-span-3 lg:col-span-4">
+              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('common.description') }}</dt>
+              <dd>{{ network.description }}</dd>
+            </div>
           </div>
         </div>
       </div>
@@ -80,34 +110,21 @@
         </div>
       </div>
 
-      <!-- Details panel (toggled) -->
-      <div v-show="showDetails || editing" class="rounded-lg border border-default bg-default/30 p-4">
-        <div v-if="!editing" class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
-          <div>
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.network') }}</dt>
-            <dd class="font-mono">{{ subnetInfo.network }}</dd>
+      <!-- Edit form -->
+      <div v-if="editing" class="rounded-lg border border-primary-500/30 bg-primary-500/5 dark:bg-primary-500/5">
+        <div class="flex items-center justify-between border-b border-primary-500/20 px-5 py-3">
+          <div class="flex items-center gap-2">
+            <UIcon name="i-heroicons-pencil-square" class="h-4 w-4 text-primary-500" />
+            <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ $t('networks.edit') }}</span>
           </div>
-          <div>
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.broadcast') }}</dt>
-            <dd class="font-mono">{{ subnetInfo.broadcast }}</dd>
-          </div>
-          <div v-if="network.dns_servers?.length">
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.dns') }}</dt>
-            <dd class="font-mono">{{ network.dns_servers.join(', ') }}</dd>
-          </div>
-          <div v-if="network.description" class="col-span-2 sm:col-span-3 lg:col-span-4">
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('common.description') }}</dt>
-            <dd>{{ network.description }}</dd>
-          </div>
+          <UButton icon="i-heroicons-x-mark" variant="ghost" color="neutral" size="xs" @click="editing = false" />
         </div>
-
-        <!-- Edit form -->
-        <UForm v-if="editing" :state="editForm" :validate="validate" :validate-on="['blur', 'change']" novalidate class="space-y-4" @submit="onSave">
+        <UForm :state="editForm" :validate="validate" :validate-on="['blur', 'change']" novalidate class="space-y-4 p-5" @submit="onSave">
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <UFormField :label="$t('networks.fields.name') + ' *'" name="name" required>
+            <UFormField :label="$t('networks.fields.name')" name="name" required>
               <UInput v-model="editForm.name" required class="w-full" />
             </UFormField>
-            <UFormField :label="$t('networks.fields.subnet') + ' *'" name="subnet" required>
+            <UFormField :label="$t('networks.fields.subnet')" name="subnet" required>
               <UInput v-model="editForm.subnet" required class="w-full" />
             </UFormField>
             <UFormField :label="$t('networks.fields.gateway')" name="gateway">
@@ -119,11 +136,11 @@
             <UFormField :label="$t('networks.fields.vlan')" name="vlan_id">
               <USelect v-model="editForm.vlan_id" :items="vlanOptions" placeholder="-" class="w-full" />
             </UFormField>
-            <UFormField :label="$t('common.description')" name="description">
-              <UInput v-model="editForm.description" class="w-full" />
-            </UFormField>
           </div>
-          <div class="flex justify-end gap-2">
+          <UFormField :label="$t('common.description')" name="description">
+            <UTextarea v-model="editForm.description" :rows="2" class="w-full" />
+          </UFormField>
+          <div class="flex justify-end gap-2 border-t border-primary-500/20 pt-4">
             <UButton variant="ghost" color="neutral" @click="editing = false">{{ $t('common.cancel') }}</UButton>
             <UButton type="submit" :loading="saving">{{ $t('common.save') }}</UButton>
           </div>
@@ -631,7 +648,6 @@ function startEdit() {
   editForm.value = { name: network.value.name, subnet: network.value.subnet, gateway: network.value.gateway || '', vlan_id: network.value.vlan_id || '', description: network.value.description || '' }
   editDnsInput.value = network.value.dns_servers?.join(', ') || ''
   editing.value = true
-  showDetails.value = true
 }
 
 function validate(state: typeof editForm.value) {

@@ -6,6 +6,22 @@ Date: 2026-04-26
 Stage: Phase 26c — Documentation & Screenshot Update
 Status: Complete
 
+### Phase 26e Changes (Info-Bar Inline-Expand wie Switch)
+- **Info-Leiste als klickbarer Button:** Gesamte Summary-Leiste ist jetzt ein `<button>` mit Hover-State (wie Switch-Seite)
+- **Chevron-Toggle:** Expand/Collapse-Chevron rechts in der Info-Leiste, rotiert bei Expand (identisch zu Switch)
+- **Inline-Expand:** Zusätzliche Details (Netzwerkadresse, Broadcast, DNS, Description) klappen als `border-t` innerhalb desselben Containers auf — kein separater Block mehr
+- **Info-Button aus Header entfernt:** Toggle-Logik ist jetzt vollständig in der Info-Leiste, nicht mehr im Header
+- **Konsistenz zu Switch:** Exakt gleiches Interaktionsmuster wie auf der Switch-Detailseite
+
+### Phase 26d Changes (Network Edit Polish)
+- **Edit-Kontext klar abgesetzt:** Eigener Container mit `border-primary-500/30` und leichtem Primary-Hintergrund — visuell klar als Edit-Modus erkennbar
+- **Edit-Header:** Pencil-Icon + "Netzwerk bearbeiten" Titel + Close-Button — klarer Kontextwechsel
+- **Details und Edit getrennt:** `v-show` für Details nur ohne Edit, Edit hat eigenen Container — kein gemeinsamer Block mehr
+- **Footer mit Separator:** Cancel/Save durch `border-t border-primary-500/20 pt-4` visuell abgesetzt
+- **Description → UTextarea:** Einzeiliges UInput ersetzt durch UTextarea mit 2 Zeilen (konsistent mit VLAN-Panel)
+- **Description volle Breite:** Aus dem 2-Spalten-Grid herausgenommen, steht jetzt als eigenes Feld auf voller Breite
+- **Pflichtmarker bereinigt:** `+ ' *'` String-Concat entfernt, nutzt stattdessen UFormField `required` Prop
+
 ### Phase 26c Changes (Doku & Screenshots)
 - **Screenshots aktualisiert:** `screenshot-vlans.png`, `screenshot-networks.png` auf aktuellen UI-Stand gebracht
 - **Neue Screenshots:** `screenshot-vlans-detail.png` (VLAN-Sidepanel), `screenshot-network-detail.png` (IP-Übersicht)
