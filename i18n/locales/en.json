@@ -66,6 +66,8 @@
     "description": "Description",
     "status": "Status",
     "noData": "No data available",
+    "free": "Free",
+    "more": "more",
     "loading": "Loading...",
     "confirm": "Confirm",
     "back": "Back",
@@ -332,7 +334,21 @@
         "updated": "IP allocation updated successfully",
         "deleted": "IP allocation deleted successfully"
       },
-      "deleteWithRefs": "This allocation is connected to {count} port(s): {ports}. Port references will be cleared."
+      "deleteWithRefs": "This allocation is connected to {count} port(s): {ports}. Port references will be cleared.",
+      "deviceTypes": {
+        "server": "Server",
+        "switch": "Switch",
+        "printer": "Printer",
+        "phone": "Phone",
+        "ap": "AP",
+        "camera": "Camera",
+        "other": "Other"
+      },
+      "statuses": {
+        "active": "Active",
+        "reserved": "Reserved",
+        "inactive": "Inactive"
+      }
     },
     "ranges": {
       "title": "IP Ranges",
@@ -349,6 +365,7 @@
         "reserved": "Reserved"
       },
       "ipsDocumented": "{count} IPs documented",
+      "ipCount": "{count} IPs",
       "editRange": "Edit Range",
       "messages": {
         "created": "IP range created successfully",
@@ -363,6 +380,12 @@
       "networkAddress": "Network",
       "gateway": "Gateway",
       "broadcast": "Broadcast"
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "subnetRequired": "Subnet is required",
+      "subnetFormat": "Must be valid CIDR notation (e.g. 10.0.0.0/24)",
+      "gatewayFormat": "Must be a valid IPv4 address (e.g. 10.0.0.1)"
     },
     "subnetInfo": {
       "networkAddress": "Network Address",

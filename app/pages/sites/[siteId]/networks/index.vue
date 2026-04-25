@@ -41,17 +41,17 @@
         </div>
         <div class="list-container rounded-lg bg-default">
           <!-- Sort header -->
-          <div class="flex items-center gap-4 border-b border-default px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400">
-            <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('name')">
-              Name
+          <div class="flex items-center gap-4 border-b border-default px-5 py-1.5 text-[10px] uppercase tracking-wider text-gray-500">
+            <button class="flex items-center gap-1 transition-colors hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('name')">
+              {{ $t('common.name') }}
               <UIcon v-if="sortField === 'name'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
             </button>
-            <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('subnet')">
-              Subnet
+            <button class="flex items-center gap-1 transition-colors hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('subnet')">
+              {{ $t('networks.infoBar.subnet') }}
               <UIcon v-if="sortField === 'subnet'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
             </button>
-            <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('gateway')">
-              Gateway
+            <button class="flex items-center gap-1 transition-colors hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('gateway')">
+              {{ $t('networks.infoBar.gateway') }}
               <UIcon v-if="sortField === 'gateway'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
             </button>
           </div>
@@ -98,7 +98,6 @@
 
             <!-- Actions (on hover) -->
             <div class="flex items-center gap-1 py-3 opacity-0 transition-opacity group-hover:opacity-100">
-              <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.prevent />
               <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="openDeleteDialog(net)" />
             </div>
           </NuxtLink>

@@ -2,9 +2,43 @@
 
 ## Latest Stage
 
-Date: 2026-04-25
-Stage: Phase 25c — VLAN Sidepanel Switch-Konsistenz (v0.14.3)
+Date: 2026-04-26
+Stage: Phase 26c — Documentation & Screenshot Update
 Status: Complete
+
+### Phase 26c Changes (Doku & Screenshots)
+- **Screenshots aktualisiert:** `screenshot-vlans.png`, `screenshot-networks.png` auf aktuellen UI-Stand gebracht
+- **Neue Screenshots:** `screenshot-vlans-detail.png` (VLAN-Sidepanel), `screenshot-network-detail.png` (IP-Übersicht)
+- **User Guide EN:** VLAN-Sektion um Sidepanel-Beschreibung + Screenshot ergänzt. Netzwerk-Sektion komplett überarbeitet (IP-Übersicht, klickbare Zeilen, Badges, Ranges)
+- **User Guide DE:** Identische Aktualisierungen in deutscher Fassung
+- **Globale Suche:** Audit durchgeführt — vollständig funktional, Doku aktuell, kein Handlungsbedarf
+
+### Previous: Phase 26b — Network Page Feinschliff & Konsistenz
+
+### Phase 26b Changes (Feinschliff)
+- **IP-Übersicht Header-Alignment:** Titel auf `text-base` angehoben und `mb-3` Spacing — saubere vertikale Ausrichtung mit dem Hinzufügen-Button
+- **Host-Zeilen-Hierarchie:** IP-Adresse dezenter (text-xs Mono), Hostname als Primärinfo (text-sm font-medium). Ohne Hostname → IP-Adresse als Fallback-Haupttext
+- **Description + MAC als Subtext:** Allocation-Description und MAC-Adresse als zweite Zeile (`text-[11px] text-gray-400`) statt nur MAC
+- **Allocation-Edit-Titel:** Zeigt IP-Adresse + Hostname statt generischem "Zuweisung bearbeiten" — analog zum Range-Panel
+- **Validierung i18n:** Alle Network-Edit-Fehlermeldungen (Name, Subnet CIDR, Gateway IPv4) über `networks.validation.*` Keys
+- **Range IP-Count i18n:** `"123 IPs"` → `$t('networks.ranges.ipCount', { count })` 
+- **Delete-Dialog i18n:** `"+ more"` → `$t('common.more')`
+- **Sort-Header i18n:** Hardcoded "Name/Subnet/Gateway" → `$t('common.name')`, `$t('networks.infoBar.subnet/gateway')`
+- **Sort-Header dezenter:** Von `text-[11px] py-2` auf `text-[10px] py-1.5 text-gray-500` mit Hover-Transition
+- **Neue i18n-Keys:** `networks.validation.*`, `networks.ranges.ipCount`, `common.more` (EN + DE)
+
+### Phase 26 Changes (Network Page IP Overview)
+- **IP-Zeilen klickbar:** Ganze Allocation-/Range-Zeile ist jetzt klickbar und öffnet direkt das Edit-Sidepanel
+- **Selection-State:** Aktive Zeile bekommt `bg-primary-500/10` Highlight — klare Master-Detail-Verbindung
+- **Hover-States verbessert:** Range-Zeilen mit typ-spezifischem Hover, cursor-pointer für alle interaktiven Zeilen
+- **Allocation-Zeilen:** Device-Type als UBadge, Status-Badge i18n
+- **Range-Zeilen:** Start-IP prominent, End-IP dezenter getrennt dargestellt
+- **Sidepanel Header:** Range-Edit mit Type-Badge + IP-Range im Titel, Add/Edit-Panel kontextabhängig
+- **Tooltips → native title:** UTooltip ersetzt (verhindert Auto-Focus-Bug)
+- **Sprachkonsistenz:** Alle hardcoded Strings i18n, Utilization-Legende i18n
+- **Netzwerkliste:** Nicht-funktionaler Edit-Button entfernt
+
+### Previous: Phase 25c — VLAN Sidepanel Switch-Konsistenz (v0.14.3)
 
 ### Phase 25c Changes (Switch-Sidepanel-Angleichung)
 - **Fix: Tooltip-Auto-Focus-Bug:** `UTooltip` um Edit/Delete-Buttons entfernt — USlideover fokussiert beim Öffnen den ersten Button im `#actions`-Slot, was den Tooltip sofort auslöste. Ersetzt durch natives `title`-Attribut (kein Focus-Trigger)
