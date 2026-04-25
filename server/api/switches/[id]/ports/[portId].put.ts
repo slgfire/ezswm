@@ -103,12 +103,12 @@ export default defineEventHandler(async (event) => {
           connected_port_id: portId
         }
         if (portMode === 'access') {
-          targetPortUpdate.access_vlan = accessVlan ?? null
-          targetPortUpdate.native_vlan = null
+          targetPortUpdate.access_vlan = accessVlan ?? undefined
+          targetPortUpdate.native_vlan = undefined
           targetPortUpdate.tagged_vlans = []
         } else if (portMode === 'trunk') {
-          targetPortUpdate.access_vlan = null
-          targetPortUpdate.native_vlan = nativeVlan ?? null
+          targetPortUpdate.access_vlan = undefined
+          targetPortUpdate.native_vlan = nativeVlan ?? undefined
           targetPortUpdate.tagged_vlans = taggedVlans ?? []
         }
         try {
