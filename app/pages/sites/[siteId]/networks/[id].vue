@@ -62,7 +62,13 @@
         </button>
 
         <!-- Expanded details (inline below info bar, same visual language) -->
-        <div v-show="showDetails" class="border-t border-default px-5 py-3">
+        <div v-show="showDetails" class="border-t border-default px-5 py-3 space-y-3">
+          <!-- Description (full width, only if present) -->
+          <div v-if="network.description">
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('common.description') }}</div>
+            <p class="mt-0.5 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">{{ network.description }}</p>
+          </div>
+          <!-- Technical details row -->
           <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
             <div>
               <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.network') }}</div>
@@ -81,7 +87,6 @@
               </div>
             </template>
           </div>
-          <p v-if="network.description" class="mt-2 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">{{ network.description }}</p>
         </div>
       </div>
 

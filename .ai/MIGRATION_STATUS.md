@@ -6,7 +6,7 @@ Date: 2026-04-26
 Stage: Phase 26c — Documentation & Screenshot Update
 Status: Complete
 
-### Phase 26g Changes (Expanded Info-Bereich visuell angeglichen)
+### Phase 26g Changes (Expanded Info-Bereich finalisiert)
 - **Gleiche visuelle Sprache wie Header:** Expanded-Bereich nutzt `flex flex-wrap` mit vertikalen Dividern (`h-8 w-px`) — identisch zum oberen Summary-Header
 - **Kompakte Info-Zeile:** Network, Broadcast, DNS als gleichwertige Info-Items mit Mono-Font und Dividern
 - **DNS kompakt:** `formatDns()` kürzt bei >3 Einträgen auf `"1.1.1.1, 8.8.8.8 +2"`
