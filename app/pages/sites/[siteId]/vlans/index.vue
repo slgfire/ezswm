@@ -40,16 +40,16 @@
         </div>
         <div class="list-container rounded-lg bg-default">
           <!-- Sort header -->
-          <div class="flex items-center gap-4 border-b border-default px-5 py-2 text-[11px] uppercase tracking-wider text-gray-400">
-            <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('vlan_id')">
+          <div class="flex items-center gap-4 border-b border-default px-5 py-1.5 text-[10px] uppercase tracking-wider text-gray-500">
+            <button class="flex items-center gap-1 transition-colors hover:text-gray-300" @click="toggleSort('vlan_id')">
               {{ $t('vlans.sortId') }}
               <UIcon v-if="sortField === 'vlan_id'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
             </button>
-            <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('name')">
+            <button class="flex items-center gap-1 transition-colors hover:text-gray-300" @click="toggleSort('name')">
               {{ $t('vlans.sortName') }}
               <UIcon v-if="sortField === 'name'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
             </button>
-            <button class="flex items-center gap-1 hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('status')">
+            <button class="flex items-center gap-1 transition-colors hover:text-gray-300" @click="toggleSort('status')">
               {{ $t('vlans.sortStatus') }}
               <UIcon v-if="sortField === 'status'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
             </button>
@@ -57,15 +57,21 @@
           <div
             v-for="(vlan, i) in group.items"
             :key="vlan.id"
-            class="row-hover group flex cursor-pointer items-stretch pr-5"
-            :class="i > 0 ? 'border-t border-default' : ''"
+            class="group flex cursor-pointer items-stretch pr-5 transition-colors"
+            :class="[
+              i > 0 ? 'border-t border-default' : '',
+              selectedVlan?.id === vlan.id && showPanel
+                ? 'bg-primary-500/10 dark:bg-primary-500/10'
+                : 'row-hover'
+            ]"
             @click="openPanel(vlan, false)"
           >
             <!-- VLAN color left accent -->
             <div
-              class="w-1 flex-shrink-0"
+              class="flex-shrink-0 transition-all"
               :style="{ backgroundColor: vlan.color }"
               :class="[
+                selectedVlan?.id === vlan.id && showPanel ? 'w-2' : 'w-1',
                 i === 0 ? 'rounded-tl-lg' : '',
                 i === group.items.length - 1 ? 'rounded-bl-lg' : ''
               ]"
@@ -81,20 +87,20 @@
                 </UBadge>
               </div>
               <div class="mt-0.5 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                <span v-if="getNetworksForVlan(vlan.id).length" class="flex items-center gap-1 text-primary-500">
+                <span v-if="getNetworksForVlan(vlan.id).length" class="flex items-center gap-1 font-medium text-primary-500/80">
                   <UIcon name="i-heroicons-globe-alt" class="h-3 w-3" />
                   {{ getNetworksForVlan(vlan.id).map(n => n.name).join(', ') }}
                 </span>
-                <span v-else class="flex items-center gap-1 text-yellow-500">
-                  <UIcon name="i-heroicons-exclamation-triangle" class="h-3 w-3" />
+                <span v-else class="flex items-center gap-1 italic text-gray-500 dark:text-gray-500">
+                  <UIcon name="i-heroicons-minus-circle" class="h-3 w-3" />
                   {{ $t('vlans.noNetwork') }}
                 </span>
                 <span v-if="vlan.routing_device" class="flex items-center gap-1">
-                  <UIcon name="i-heroicons-server" class="h-3 w-3 text-gray-400" />
+                  <UIcon name="i-heroicons-server" class="h-3 w-3" />
                   {{ vlan.routing_device }}
                 </span>
                 <span v-if="vlan.description" class="flex items-center gap-1 truncate">
-                  <UIcon name="i-heroicons-document-text" class="h-3 w-3 flex-shrink-0 text-gray-400" />
+                  <UIcon name="i-heroicons-document-text" class="h-3 w-3 flex-shrink-0" />
                   {{ vlan.description }}
                 </span>
               </div>
@@ -123,71 +129,62 @@
     </template>
 
     <!-- VLAN Side Panel -->
-    <USlideover v-model:open="showPanel" :title="selectedVlan ? `VLAN ${selectedVlan.vlan_id} — ${selectedVlan.name}` : 'VLAN Details'" description="View and edit VLAN configuration">
+    <USlideover v-model:open="showPanel">
         <template #title>
-          <div class="flex items-center gap-2">
-            <VlanColorSwatch v-if="selectedVlan" :color="panelEditing ? editForm.color : selectedVlan.color" size="lg" />
-            <span class="font-semibold">
-              {{ selectedVlan ? `VLAN ${selectedVlan.vlan_id} — ${selectedVlan.name}` : '' }}
-            </span>
+          <div v-if="selectedVlan" class="flex items-center gap-2.5">
+            <VlanColorSwatch :color="panelEditing ? editForm.color : selectedVlan.color" size="lg" />
+            <span>{{ selectedVlan.vlan_id }} — {{ selectedVlan.name }}</span>
           </div>
         </template>
         <template #actions>
-          <UTooltip v-if="!panelEditing" :text="$t('common.edit')">
-            <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="sm" @click="startEdit()" />
-          </UTooltip>
+          <div v-if="!panelEditing" class="flex items-center gap-1">
+            <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="sm" :title="$t('common.edit')" @click="startEdit()" />
+            <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="selectedVlan && openDeleteDialog(selectedVlan)" />
+          </div>
         </template>
 
         <template #body>
         <div v-if="selectedVlan && !panelEditing" class="space-y-4">
-          <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-            <div>
-              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('vlans.fields.vlanId') }}</dt>
-              <dd class="font-medium">{{ selectedVlan.vlan_id }}</dd>
-            </div>
-            <div>
-              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('vlans.fields.name') }}</dt>
-              <dd class="font-medium">{{ selectedVlan.name }}</dd>
-            </div>
-            <div>
-              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('vlans.fields.status') }}</dt>
-              <dd>
-                <UBadge :color="selectedVlan.status === 'active' ? 'success' : 'neutral'" variant="subtle">
-                  {{ selectedVlan.status === 'active' ? $t('common.active') : $t('common.inactive') }}
-                </UBadge>
-              </dd>
-            </div>
-            <div>
-              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('vlans.fields.color') }}</dt>
-              <dd class="flex items-center gap-2">
-                <VlanColorSwatch :color="selectedVlan.color" size="md" />
-                <span class="font-mono text-xs">{{ selectedVlan.color }}</span>
-              </dd>
-            </div>
-            <div v-if="selectedVlan.routing_device" class="col-span-2">
-              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('vlans.fields.routingDevice') }}</dt>
-              <dd class="font-medium">{{ selectedVlan.routing_device }}</dd>
-            </div>
-            <div v-if="selectedVlan.description" class="col-span-2">
-              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('common.description') }}</dt>
-              <dd>{{ selectedVlan.description }}</dd>
-            </div>
+          <!-- Status + Color badges -->
+          <div class="flex gap-2">
+            <UBadge :color="selectedVlan.status === 'active' ? 'success' : 'neutral'" variant="subtle">
+              {{ selectedVlan.status === 'active' ? $t('common.active') : $t('common.inactive') }}
+            </UBadge>
+            <UBadge variant="subtle" class="gap-1.5">
+              <VlanColorSwatch :color="selectedVlan.color" size="sm" />
+              {{ selectedVlan.color }}
+            </UBadge>
           </div>
 
+          <!-- Routing device -->
+          <div v-if="selectedVlan.routing_device">
+            <span class="text-sm text-gray-400">{{ $t('vlans.fields.routingDevice') }}</span>
+            <p class="text-sm font-medium">{{ selectedVlan.routing_device }}</p>
+          </div>
+
+          <!-- Description -->
+          <div v-if="selectedVlan.description">
+            <span class="text-sm text-gray-400">{{ $t('common.description') }}</span>
+            <p class="text-sm">{{ selectedVlan.description }}</p>
+          </div>
+
+          <USeparator />
+
           <!-- Associated networks -->
-          <div v-if="panelNetworks.length" class="border-t border-default pt-3">
-            <div class="mb-2 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.title') }}</div>
-            <div class="space-y-1">
+          <div>
+            <span class="text-sm font-medium text-gray-400">{{ $t('networks.title') }}</span>
+            <div v-if="panelNetworks.length" class="mt-2 space-y-1">
               <NuxtLink
                 v-for="net in panelNetworks"
                 :key="net.id"
                 :to="`/sites/${siteId}/networks/${net.id}`"
-                class="block rounded px-2 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+                class="flex items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-elevated"
               >
                 <span class="font-medium text-primary-500">{{ net.name }}</span>
-                <span class="ml-2 text-xs text-gray-400">{{ net.subnet }}</span>
+                <span class="text-xs text-gray-500">{{ net.subnet }}</span>
               </NuxtLink>
             </div>
+            <p v-else class="mt-2 text-sm text-gray-500">{{ $t('vlans.noNetwork') }}</p>
           </div>
         </div>
 
@@ -216,6 +213,7 @@
                 class="h-9 w-12 cursor-pointer rounded border border-default bg-elevated"
               >
               <UInput v-model="editForm.color" class="w-28" size="sm" />
+              <VlanColorSwatch :color="editForm.color" size="md" />
             </div>
           </UFormField>
         </UForm>
@@ -444,6 +442,7 @@ async function confirmDelete() {
 }
 
 watch([search, statusFilter], () => { page.value = 1 })
+watch(showPanel, (open) => { if (!open) panelEditing.value = false })
 
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 

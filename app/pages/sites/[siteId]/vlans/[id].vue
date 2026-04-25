@@ -46,42 +46,43 @@
           </div>
         </template>
 
-        <div v-if="!editing" class="space-y-3">
-          <div class="grid grid-cols-2 gap-4">
+        <div v-if="!editing" class="space-y-4">
+          <div class="grid grid-cols-2 gap-x-6 gap-y-3">
             <div>
-              <span class="text-sm text-gray-400">{{ $t('vlans.fields.vlanId') }}</span>
-              <p class="font-medium">{{ vlan.vlan_id }}</p>
+              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('vlans.fields.vlanId') }}</dt>
+              <dd class="mt-0.5 text-sm font-medium">{{ vlan.vlan_id }}</dd>
             </div>
             <div>
-              <span class="text-sm text-gray-400">{{ $t('vlans.fields.name') }}</span>
-              <p class="font-medium">{{ vlan.name }}</p>
+              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('vlans.fields.name') }}</dt>
+              <dd class="mt-0.5 text-sm font-medium">{{ vlan.name }}</dd>
             </div>
             <div>
-              <span class="text-sm text-gray-400">{{ $t('vlans.fields.status') }}</span>
-              <p>
+              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('vlans.fields.status') }}</dt>
+              <dd class="mt-0.5">
                 <UBadge
                   :color="vlan.status === 'active' ? 'success' : 'neutral'"
                   variant="subtle"
+                  size="sm"
                 >
                   {{ vlan.status === 'active' ? $t('common.active') : $t('common.inactive') }}
                 </UBadge>
-              </p>
+              </dd>
             </div>
             <div>
-              <span class="text-sm text-gray-400">{{ $t('vlans.fields.routingDevice') }}</span>
-              <p class="font-medium">{{ vlan.routing_device || '-' }}</p>
+              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('vlans.fields.routingDevice') }}</dt>
+              <dd class="mt-0.5 text-sm font-medium">{{ vlan.routing_device || '-' }}</dd>
             </div>
             <div>
-              <span class="text-sm text-gray-400">{{ $t('vlans.fields.color') }}</span>
-              <p class="flex items-center gap-2">
+              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('vlans.fields.color') }}</dt>
+              <dd class="mt-0.5 flex items-center gap-2 text-sm">
                 <VlanColorSwatch :color="vlan.color" size="md" />
-                {{ vlan.color }}
-              </p>
+                <span class="font-mono text-xs text-gray-400">{{ vlan.color }}</span>
+              </dd>
             </div>
           </div>
-          <div v-if="vlan.description">
-            <span class="text-sm text-gray-400">{{ $t('common.description') }}</span>
-            <p class="font-medium">{{ vlan.description }}</p>
+          <div v-if="vlan.description" class="border-t border-default pt-3">
+            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('common.description') }}</dt>
+            <dd class="mt-1 text-sm">{{ vlan.description }}</dd>
           </div>
         </div>
 
@@ -132,18 +133,18 @@
           <h2 class="text-lg font-semibold">{{ $t('networks.title') }}</h2>
         </template>
 
-        <div v-if="associatedNetworks.length > 0" class="space-y-2">
+        <div v-if="associatedNetworks.length > 0" class="space-y-1">
           <NuxtLink
             v-for="net in associatedNetworks"
             :key="net.id"
             :to="`/sites/${siteId}/networks/${net.id}`"
-            class="block rounded-md p-2 hover:bg-gray-800"
+            class="flex items-center justify-between rounded-md px-3 py-2 transition-colors hover:bg-elevated"
           >
-            <p class="font-medium text-primary-400">{{ net.name }}</p>
-            <p class="text-sm text-gray-400">{{ net.subnet }}</p>
+            <span class="text-sm font-medium text-primary-500">{{ net.name }}</span>
+            <span class="text-xs text-gray-400">{{ net.subnet }}</span>
           </NuxtLink>
         </div>
-        <p v-else class="text-sm text-gray-500">{{ $t('common.noData') }}</p>
+        <p v-else class="text-sm text-gray-400">{{ $t('vlans.noNetwork') }}</p>
       </UCard>
     </div>
 
