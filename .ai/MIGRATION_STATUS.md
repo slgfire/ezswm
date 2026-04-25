@@ -2,6 +2,40 @@
 
 ## Latest Stage
 
+Date: 2026-04-25
+Stage: Phase 25c — VLAN Sidepanel Switch-Konsistenz (v0.14.3)
+Status: Complete
+
+### Phase 25c Changes (Switch-Sidepanel-Angleichung)
+- **Fix: Tooltip-Auto-Focus-Bug:** `UTooltip` um Edit/Delete-Buttons entfernt — USlideover fokussiert beim Öffnen den ersten Button im `#actions`-Slot, was den Tooltip sofort auslöste. Ersetzt durch natives `title`-Attribut (kein Focus-Trigger)
+- **Header vereinheitlicht:** Swatch + "VLAN {id} — {name}" als einfacher Titel-String wie beim Switch-Panel (kein überladenes Custom-Layout). Actions (Edit/Delete) rechts mit `title`-Attribut
+- **Card-in-Card eliminiert:** `rounded-lg border p-4` Container um Properties und `rounded-lg border` um Netzwerke entfernt. Body ist jetzt flach mit `space-y-4` wie beim Switch-Panel
+- **Status + Farbe als Badges:** Oben im Body als `flex gap-2` Badge-Zeile (wie Switch: type + status Badges). Farb-Badge enthält Swatch + Hex inline
+- **Sections mit USeparator:** Netzwerk-Sektion durch `<USeparator />` vom Rest getrennt — gleicher Mechanismus wie im Switch-Panel
+- **Labels vereinfacht:** Von `text-[10px] uppercase tracking-wider` zu `text-sm text-gray-400` — gleiche Label-Sprache wie Switch-Panel (`UFormField :label`)
+- **Netzwerk-Links flach:** Einfache hover-fähige Liste ohne Border-Container. Leer-Zustand als schlichter `text-gray-500` Text (kein border-dashed)
+
+### Phase 25b Changes (Sidepanel Polish)
+- Header entzerrt, Redundanz entfernt, Properties-Sektion, Farbwert aufgewertet, Netzwerk-Sektion, Label-Farbe angepasst
+
+### Phase 25 Changes
+- **VLAN list selection state:** Active/selected row highlighted with `bg-primary-500/10` + color accent bar widens from `w-1` to `w-2` (animated) — clear master-detail connection
+- **Sort header dezenter:** Reduced from `text-[11px] py-2` to `text-[10px] py-1.5`, softer color (`text-gray-500`), smoother hover transition
+- **Metadata hierarchy ruhiger:** "No network" changed from yellow exclamation to italic neutral with minus-circle icon — recognized as empty state, not alarm. Network names get `font-medium` for slight emphasis
+- **Sidepanel header redesigned:** VLAN ID in VLAN color (bold) + name baseline-aligned, status badge with `mt-1` spacing — less crammed, clearer priority
+- **Sidepanel actions:** Edit + Delete buttons in header actions (consistent with switch panels), tooltips for both
+- **Sidepanel info structure:** Sections separated with `border-t border-default` dividers — Description and Networks as own sections with clear visual breaks
+- **Networks section with icon header:** Globe icon + uppercase label, hover links with `hover:bg-elevated`, empty state italic gray
+- **Edit form color preview:** VlanColorSwatch added next to hex input for live preview
+- **Panel close resets edit mode:** Watcher resets `panelEditing` when panel closes
+- **Detail page (`[id].vue`) labels unified:** All field labels now use `text-[10px] uppercase tracking-wider text-gray-400` — matches sidepanel and switch page
+- **Detail page network links:** Updated to same flex layout with `hover:bg-elevated` and `text-primary-500`
+- **Detail page description:** Now in separate `border-t` section below grid
+
+---
+
+## Previous Stage
+
 Date: 2026-04-24
 Stage: Phase 24c — Toolbar Consistency & Info Inline Refactor (v0.14.2)
 Status: Complete
