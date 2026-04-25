@@ -2,8 +2,44 @@
 
 ## Latest Stage
 
+Date: 2026-04-24
+Stage: Phase 24c — Toolbar Consistency & Info Inline Refactor (v0.14.2)
+Status: Complete
+
+### Phase 24c Changes
+- **Info moved to inline expand/collapse:** Info-Karte ist jetzt klickbar mit Chevron-Toggle. Details klappen inline unter der Info-Karte auf/zu — kein Toolbar-Button, kein Slideover
+- **Toolbar Action-Farben wiederhergestellt:** Edit zurück zu `color="primary"` (konsistent mit allen anderen Seiten: VLANs, Networks, Sites, Layout Templates)
+- **Toolbar 3-Gruppen-Layout:** [VLANs | Details] | [PublicAccess | Edit | Duplicate] | [Delete] — mit visuellen Dividern
+- **VLANs + Details farbig:** VLANs in violet (passend zum Dashboard-KPI), Details in blau — via Tailwind-Klassen (`text-violet-400`, `text-blue-400`) mit farbigem Hover-Hintergrund
+- **Details-Slidepanel beibehalten:** Tabs "Ports" / "Activity", SwitchPortTable mit `embedded`-Prop (keine doppelte Ebene)
+- **Utility-Actions (QR + Duplicate):** Von `variant="ghost"` zu `variant="soft"` — dezenter Hintergrund + deutlich sichtbarerer Hover-/Focus-State, konsistent als neutrale Utility-Familie
+- **Utility-Actions (QR + Duplicate):** Von `variant="ghost"` zu `variant="soft"` — dezenter Hintergrund + sichtbarerer Hover-/Focus-State
+- **Polish:** Redundante Tooltips bei VLANs/Details entfernt, `cursor-pointer` auf Info-Karte
+- **Doku-Update:** User Guide (EN+DE) aktualisiert: Port Table/Activity jetzt als Details-Slideover beschrieben, Info-Leiste mit Expand-Toggle dokumentiert, Toolbar-Aktionen beschrieben. Screenshot `screenshot-switch-detail.png` erneuert. README Version-Badge auf 0.14.0, Roadmap ergänzt
+
+### Phase 24b Changes
+- **Labels shortened:** "More details" → "Details", tab "Port Table" → "Ports", tab "Recent Activity" → "Activity"
+- **Details slideover inner structure simplified:** SwitchPortTable `embedded` prop removes collapsible header/card wrapper; shows compact summary bar + table directly under Ports tab
+- **i18n updated:** Added `common.info`, `switches.detailsAction`, `switches.tabs.ports`, `switches.tabs.activity` (EN + DE)
+
+### Phase 24a Changes (2026-04-23)
+- **VLAN Selector simplified:** Removed override toggle, lock icons, "+Switch" badges. All site VLANs are now always selectable with informational grouping (configured / other site VLANs)
+- **Override moved to Connected Switch selection:** When VLANs are selected, the connected switch list filters to only show switches with those VLANs configured. An override toggle allows showing all switches and auto-adding missing VLANs to the target switch on save
+- **Backend: auto-add on current switch:** Port updates now automatically add unconfigured VLANs to the current switch's configured_vlans (no toggle needed)
+- **Backend: target switch override:** New `add_vlans_to_target_switch` flag in port update API. When set, missing VLANs are atomically added to the connected target switch
+- **Bulk editor simplified:** Override toggle removed (bulk has no connected switch selection)
+- **LAG port rehydration:** Ports in LAGs now auto-detect connected switch from LAG remote_device_id
+- **LAG VLAN config:** New optional VLAN configuration section in LAG slideover — applies port_mode/VLANs to all LAG member ports via bulk API
+- **Site filter fix:** Switch dropdowns (port editor + LAG slideover) now filter by current site_id
+- **i18n updated:** Old override keys replaced with target switch override keys + LAG VLAN keys (EN + DE)
+- **Switch detail layout simplified:** Configured VLANs moved to action button + slideover; Port Table + Activity moved to "More details" slideover with tabs; Legend zone below port grid stripped of box/card styling; Helper section made collapsible
+
+---
+
+## Previous Stage
+
 Date: 2026-04-20
-Stage: Phase 23b — Documentation Update
+Stage: Phase 24 — Secure VLAN Port Assignment (v0.14.0)
 Status: Complete
 
 ---
@@ -936,6 +972,53 @@ End-to-end tests: 11/11 passed
 - No broken image paths
 - No console errors
 - EN and DE content structurally identical
+
+### Phase 24: Secure VLAN Port Assignment — Design (2026-04-20)
+
+**Design/Planning phase — no code changes yet.**
+
+Goal: Safer VLAN assignment to switch ports with explicit switch-VLAN configuration.
+
+**Key design decisions:**
+- New `configured_vlans: number[]` field on Switch type
+- Grouped VLAN selector: "Configured on this switch" (selectable) + "Other site VLANs" (disabled by default)
+- Override toggle "Add VLAN to switch" enables selecting unconfigured VLANs
+- One-time Nitro server plugin for data migration (no lazy read side-effects)
+- Atomic operations: switch config + port assignment in single write
+- VLAN removal with port cleanup: full UI flow with per-port decisions for access_vlan/native_vlan
+- Consistent HTTP error semantics (422/404/409)
+- Direct switch-VLAN management API route
+
+**Spec document:** `docs/superpowers/specs/2026-04-20-vlan-port-assignment-design.md`
+
+**Status:** Spec v6 final (all reviews resolved), awaiting implementation.
+
+**v6 additions (follow-up review 2026-04-22, pass 2):**
+- Bulk-Port-Update: explicit `expected_updated_at` in schema, check once at start, all-or-nothing semantics
+- Remove/remove_confirmed limited to single VLAN-ID for v1 (multi-VLAN as follow-up)
+- Replacement VLAN validated against post-remove state of configured_vlans
+- Activity action types (`add_configured_vlans`, `remove_configured_vlans`) + frontend formatting in implementation plan
+- Bulk atomicity: all ports validated before any write, no partial updates
+
+**v5 additions (follow-up review 2026-04-22):**
+- All-or-nothing batch semantics for add/remove vlan_ids arrays
+- Completeness invariant for remove_confirmed: port_cleanup must exactly match requires_decision
+- 2-step remove bound to concurrency: 409 analysis returns current_updated_at, confirm sends expected_updated_at
+- Migration normalizes existing but invalid configured_vlans arrays (duplicates, out-of-range, unsorted)
+
+**v4 additions (review findings):**
+- Optimistic concurrency sharpened: LAG-sync excluded, response returns `updated_at` for follow-up requests
+- `configured_vlans` removed from generic switch schemas, only via dedicated routes/internal default
+- 404/409 made consistent (deleted VLAN = 404 everywhere)
+- Dedicated repository method `applyPortVlanUpdate(...)` instead of generic update
+- `configured_vlans` invariant: deduplicated, sorted, valid IDs after every write
+- Activity logging defined for all configured-vlans operations
+
+**v3 additions:**
+- Optimistic concurrency via `expected_updated_at` for clean 404/409 distinction
+- Idempotent start migration with logging
+- Explicit null-behavior rules for access_vlan/native_vlan
+- LAG-Sync consciously deferred to follow-up feature
 
 ---
 

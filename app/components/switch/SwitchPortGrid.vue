@@ -75,7 +75,7 @@
 
     <!-- Legend + LAG Card -->
     <template v-if="!publicMode">
-    <div class="port-legend list-container mt-4 rounded-lg bg-default p-4 text-[11px] text-gray-500 dark:text-gray-400">
+    <div class="port-legend mt-4 px-1 text-[11px] text-gray-500 dark:text-gray-400">
       <!-- Row 1: Status / Type / Mode -->
       <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5">
         <!-- Status -->
@@ -102,7 +102,7 @@
       </div>
 
       <!-- Row 2: VLANs (conditional) -->
-      <div v-if="usedVlans.length" class="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-default pt-2">
+      <div v-if="usedVlans.length" class="mt-1.5 flex flex-wrap items-center gap-x-5 gap-y-1.5">
         <span class="font-semibold text-gray-600 dark:text-gray-300">VLANs:</span>
         <template v-for="vlan in usedVlans" :key="vlan.vlan_id">
           <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm" :style="{ backgroundColor: vlan.color }" /> {{ vlan.vlan_id }} {{ vlan.name }}</span>
@@ -110,7 +110,7 @@
       </div>
 
       <!-- Row 3: LAG (conditional) -->
-      <div v-if="lagGroups?.length" class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-default pt-2">
+      <div v-if="lagGroups?.length" class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
         <span class="font-semibold text-gray-600 dark:text-gray-300">LAG:</span>
 
         <template v-for="lag in visibleLags" :key="lag.id">
@@ -143,7 +143,7 @@
       </div>
 
       <!-- Row 4: Multi-Select Hint (hidden when ports selected) -->
-      <div v-if="selectedPorts.length === 0" class="mt-2 flex items-center gap-1 border-t border-default pt-2 text-slate-500">
+      <div v-if="selectedPorts.length === 0" class="mt-1.5 flex items-center gap-1 text-slate-500">
         <UIcon name="i-heroicons-cursor-arrow-ripple" class="h-3 w-3" />
         {{ $t('switches.ports.multiSelectHint') }}
       </div>
@@ -291,6 +291,8 @@ const usedVlans = computed(() => {
       for (const vid of p.tagged_vlans) usedIds.add(vid)
     }
   }
-  return props.vlans.filter(v => usedIds.has(v.vlan_id) && v.color)
+  return props.vlans
+    .filter(v => usedIds.has(v.vlan_id) && v.color)
+    .sort((a, b) => a.vlan_id - b.vlan_id)
 })
 </script>

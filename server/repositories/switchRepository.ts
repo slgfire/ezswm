@@ -118,6 +118,13 @@ function generatePortsFromTemplate(templateId: string, stackSize: number = 1): P
   return ports
 }
 
+/** Deduplicate, sort, and filter to valid VLAN IDs (1-4094) */
+function normalizeConfiguredVlans(vlans: number[]): number[] {
+  return [...new Set(vlans)]
+    .filter(v => Number.isInteger(v) && v >= 1 && v <= 4094)
+    .sort((a, b) => a - b)
+}
+
 export const switchRepository = {
   list(): Switch[] {
     const switches = readJson<Switch[]>(FILE_NAME)
@@ -155,6 +162,7 @@ export const switchRepository = {
       id: nanoid(),
       ...data,
       ports,
+      configured_vlans: [],
       is_favorite: false,
       created_at: now,
       updated_at: now
@@ -294,6 +302,172 @@ export const switchRepository = {
     sw.updated_at = new Date().toISOString()
     writeJson(FILE_NAME, switches)
     return updatedPorts
+  },
+
+  applyPortVlanUpdate(
+    switchId: string,
+    portId: string,
+    portData: Partial<Omit<Port, 'id' | 'unit' | 'index'>>,
+    options: {
+      expectedUpdatedAt?: string
+      siteVlanIds?: number[]
+    } = {}
+  ): { port: Port; updatedAt: string; vlansAddedToSwitch: number[] } {
+    const switches = this.list()
+    const sw = switches.find(s => s.id === switchId)
+    if (!sw) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
+
+    // Optimistic concurrency check
+    if (options.expectedUpdatedAt && sw.updated_at !== options.expectedUpdatedAt) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'Switch was modified since page load',
+        data: { current_updated_at: sw.updated_at }
+      })
+    }
+
+    const port = sw.ports.find(p => p.id === portId)
+    if (!port) throw createError({ statusCode: 404, statusMessage: 'Port not found' })
+
+    // Collect all VLAN IDs from the request
+    const requestedVlans: number[] = []
+    if (portData.access_vlan) requestedVlans.push(portData.access_vlan)
+    if (portData.native_vlan) requestedVlans.push(portData.native_vlan)
+    if (portData.tagged_vlans) requestedVlans.push(...portData.tagged_vlans)
+
+    // Verify all VLANs exist as site entities
+    if (options.siteVlanIds && requestedVlans.length > 0) {
+      for (const vlanId of requestedVlans) {
+        if (!options.siteVlanIds.includes(vlanId)) {
+          throw createError({
+            statusCode: 404,
+            statusMessage: `VLAN ${vlanId} does not exist in this site`
+          })
+        }
+      }
+    }
+
+    // Auto-add any unconfigured VLANs to this switch's configured_vlans
+    const configuredVlans = sw.configured_vlans || []
+    const vlansToAdd: number[] = []
+    for (const vlanId of requestedVlans) {
+      if (!configuredVlans.includes(vlanId)) {
+        vlansToAdd.push(vlanId)
+      }
+    }
+
+    if (vlansToAdd.length > 0) {
+      sw.configured_vlans = normalizeConfiguredVlans([...configuredVlans, ...vlansToAdd])
+    }
+
+    // Merge port data
+    Object.assign(port, portData)
+
+    sw.updated_at = new Date().toISOString()
+    writeJson(FILE_NAME, switches)
+
+    return {
+      port,
+      updatedAt: sw.updated_at,
+      vlansAddedToSwitch: vlansToAdd
+    }
+  },
+
+  /**
+   * Add VLANs to a target switch's configured_vlans list.
+   * Used when overriding during connected switch selection.
+   */
+  addVlansToSwitch(
+    switchId: string,
+    vlanIds: number[]
+  ): { addedVlans: number[]; updatedAt: string } {
+    const switches = this.list()
+    const sw = switches.find(s => s.id === switchId)
+    if (!sw) throw createError({ statusCode: 404, statusMessage: 'Target switch not found' })
+
+    const configuredVlans = sw.configured_vlans || []
+    const vlansToAdd = vlanIds.filter(v => !configuredVlans.includes(v))
+
+    if (vlansToAdd.length > 0) {
+      sw.configured_vlans = normalizeConfiguredVlans([...configuredVlans, ...vlansToAdd])
+      sw.updated_at = new Date().toISOString()
+      writeJson(FILE_NAME, switches)
+    }
+
+    return {
+      addedVlans: vlansToAdd,
+      updatedAt: sw.updated_at
+    }
+  },
+
+  applyConfiguredVlansRemoval(
+    switchId: string,
+    vlanId: number,
+    options: {
+      expectedUpdatedAt?: string
+      portCleanup?: Array<{
+        port_id: string
+        field: 'access_vlan' | 'native_vlan' | 'tagged_vlans'
+        new_value?: number | null
+        action?: 'auto_remove'
+      }>
+    } = {}
+  ): { updatedAt: string; portsUpdated: number } {
+    const switches = this.list()
+    const sw = switches.find(s => s.id === switchId)
+    if (!sw) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
+
+    // Optimistic concurrency check
+    if (options.expectedUpdatedAt && sw.updated_at !== options.expectedUpdatedAt) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'Switch was modified since page load',
+        data: { current_updated_at: sw.updated_at }
+      })
+    }
+
+    const configuredVlans = sw.configured_vlans || []
+    if (!configuredVlans.includes(vlanId)) {
+      throw createError({ statusCode: 422, statusMessage: `VLAN ${vlanId} is not in configured_vlans` })
+    }
+
+    // Apply port cleanup
+    let portsUpdated = 0
+    if (options.portCleanup) {
+      for (const cleanup of options.portCleanup) {
+        const port = sw.ports.find(p => p.id === cleanup.port_id)
+        if (!port) continue
+
+        if (cleanup.field === 'tagged_vlans') {
+          port.tagged_vlans = (port.tagged_vlans || []).filter(v => v !== vlanId)
+        } else if (cleanup.field === 'access_vlan') {
+          port.access_vlan = cleanup.new_value ?? undefined
+        } else if (cleanup.field === 'native_vlan') {
+          port.native_vlan = cleanup.new_value ?? undefined
+        }
+        portsUpdated++
+      }
+    }
+
+    // Also auto-remove from tagged_vlans on ports not in portCleanup
+    for (const port of sw.ports) {
+      if (port.tagged_vlans?.includes(vlanId)) {
+        const alreadyHandled = options.portCleanup?.some(
+          c => c.port_id === port.id && c.field === 'tagged_vlans'
+        )
+        if (!alreadyHandled) {
+          port.tagged_vlans = port.tagged_vlans.filter(v => v !== vlanId)
+          portsUpdated++
+        }
+      }
+    }
+
+    // Remove from configured_vlans
+    sw.configured_vlans = normalizeConfiguredVlans(configuredVlans.filter(v => v !== vlanId))
+    sw.updated_at = new Date().toISOString()
+    writeJson(FILE_NAME, switches)
+
+    return { updatedAt: sw.updated_at, portsUpdated }
   },
 
   duplicate(id: string): Switch {

@@ -120,12 +120,16 @@ Auf der Switch-Detailseite werden Ports als visuelles Raster entsprechend dem La
 
 ![Switch-Detail mit Port-Raster](/images/screenshot-switch-detail.png)
 
-Unterhalb des Port-Rasters fasst eine **Legenden-Card** alle visuellen Indikatoren in gruppierten Zeilen zusammen: Port-Status (aktiv/inaktiv/deaktiviert), Port-Typen (SFP/QSFP/Konsole/Mgmt), Port-Modus (Access/Trunk), aktive VLANs mit ihren Farben und LAG-Gruppen. Ein Mehrfachauswahl-Hinweis am unteren Rand erinnert an die Port-Mehrfachauswahl (Strg/Cmd + Klick). Der Hinweis verschwindet automatisch, wenn Ports ausgewählt sind.
+Unterhalb des Port-Rasters fasst eine **Legende** alle visuellen Indikatoren zusammen: Port-Status (aktiv/inaktiv/deaktiviert), Port-Typen (SFP/QSFP/Konsole/Mgmt), Port-Modus (Access/Trunk), aktive VLANs mit ihren Farben und LAG-Gruppen. Ein Mehrfachauswahl-Hinweis erinnert an die Port-Mehrfachauswahl (Strg/Cmd + Klick). Der Hinweis verschwindet automatisch, wenn Ports ausgewählt sind.
 
-Zwei aufklappbare Bereiche folgen der Legenden-Card:
+Die **Info-Leiste** oberhalb des Port-Rasters zeigt die wichtigsten Switch-Details (Modell, Standort, Management-IP, Port-Anzahl, Template). Klicke auf die Leiste, um das vollständige Detail-Panel mit allen Switch-Feldern inline aufzuklappen.
 
-- **Port-Tabelle** — eine tabellarische Ansicht aller Ports. Der geschlossene Header zeigt Port-Anzahl und Status-Zusammenfassung (z.B. "7 aktiv · 105 inaktiv"). Klicke zum Aufklappen der vollständigen Tabelle.
-- **Letzte Aktivität** — zeigt die neuesten Änderungen an diesem Switch. Der geschlossene Header zeigt die Eintragsanzahl und den Zeitstempel der letzten Änderung (z.B. "20 Einträge · Letzte: vor 5 Min").
+Die **Aktionsleiste** oben rechts bietet schnellen Zugriff auf:
+
+- **VLANs** — öffnet ein Seitenpanel zur Verwaltung der konfigurierten VLANs auf diesem Switch (hinzufügen/entfernen)
+- **Details** — öffnet ein Seitenpanel mit zwei Tabs:
+  - **Ports** — eine tabellarische Ansicht aller Ports mit Status-Zusammenfassung
+  - **Aktivität** — letzte Änderungen an diesem Switch
 
 ### Ports bearbeiten
 

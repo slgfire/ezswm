@@ -1,6 +1,7 @@
 <template>
-  <div class="list-container rounded-lg bg-default p-4">
+  <div :class="embedded ? '' : 'list-container rounded-lg bg-default p-4'">
     <button
+      v-if="!embedded"
       class="flex w-full items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
       @click="expanded = !expanded"
     >
@@ -23,7 +24,20 @@
         </span>
       </span>
     </button>
-    <div v-show="expanded" class="mt-3 overflow-x-auto border-t border-default pt-3">
+    <!-- Summary bar for embedded mode -->
+    <div v-if="embedded" class="flex items-center gap-3 text-xs text-gray-400 mb-2">
+      <span class="font-medium">{{ ports.length }} Ports</span>
+      <span v-if="portStats.up" class="flex items-center gap-1 text-green-500">
+        <span class="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />{{ portStats.up }} up
+      </span>
+      <span v-if="portStats.down" class="flex items-center gap-1 text-gray-400">
+        <span class="inline-block h-1.5 w-1.5 rounded-full bg-gray-400" />{{ portStats.down }} down
+      </span>
+      <span v-if="portStats.disabled" class="flex items-center gap-1 text-red-400">
+        <span class="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />{{ portStats.disabled }} disabled
+      </span>
+    </div>
+    <div v-show="embedded || expanded" :class="embedded ? 'overflow-x-auto' : 'mt-3 overflow-x-auto border-t border-default pt-3'">
       <table class="w-full text-left text-sm">
         <thead>
           <tr class="border-b border-neutral-200 text-[10px] uppercase tracking-wider text-gray-400 dark:border-neutral-700">
@@ -113,6 +127,7 @@ import type { Port } from '~~/types'
 const props = defineProps<{
   ports: Port[]
   vlans: { id: string; vlan_id: number; name: string; color?: string }[]
+  embedded?: boolean
 }>()
 
 defineEmits<{

@@ -97,6 +97,7 @@
     "noResults": "No results found",
     "hideDetails": "Hide details",
     "showDetails": "Show details",
+    "info": "Info",
     "comingSoon": "Coming Soon",
     "inDevelopment": "In Development",
     "showLess": "Show less",
@@ -222,6 +223,12 @@
       "ports": "Ports",
       "template": "Template"
     },
+    "secondaryDetails": "More details",
+    "detailsAction": "Details",
+    "tabs": {
+      "ports": "Ports",
+      "activity": "Activity"
+    },
     "recentActivity": "Recent Activity",
     "portTable": {
       "title": "Port Table",
@@ -259,6 +266,28 @@
       "created": "VLAN created successfully",
       "updated": "VLAN updated successfully",
       "deleted": "VLAN deleted successfully"
+    },
+    "group": {
+      "configured": "Configured on this switch",
+      "otherSite": "Other site VLANs"
+    },
+    "willBeAddedBadge": "+ Switch",
+    "willBeAddedRemoteBadge": "+ Remote",
+    "missingCount": "{count} VLAN(s) missing",
+    "configuredTitle": "Configured VLANs",
+    "manageAction": "Manage VLANs",
+    "addToSwitchAction": "Add VLAN to switch",
+    "targetSwitchOverride": "Show {count} more switch(es) without these VLANs",
+    "targetSwitchMissing": "VLANs {vlans} not configured on target switch",
+    "targetSwitchWillAdd": "VLANs {vlans} will be added to target switch on save",
+    "addedToTargetSwitch": "VLANs {vlans} added to {switch}",
+    "remove": {
+      "inUseTitle": "VLAN {id} is used on {count} port(s)",
+      "taggedAuto": "Automatically remove from tagged VLANs",
+      "setToNone": "Set to none",
+      "replaceWith": "Replace with",
+      "confirmButton": "Remove VLAN and update {count} port(s)",
+      "success": "VLAN {id} removed. {count} port(s) updated."
     },
     "emptyTitle": "No VLANs defined yet",
     "emptyDescription": "Create your first VLAN to get started.",
@@ -567,7 +596,9 @@
     "trunkConfigured": "Trunk configured",
     "accessConfigured": "Access configured",
     "disconnected": "{device} disconnected",
-    "removed": "removed"
+    "removed": "removed",
+    "configuredVlansAdded": "Configured VLANs added: {vlans}",
+    "configuredVlansRemoved": "Configured VLAN {vlan} removed"
   },
   "errors": {
     "notFound": "Not found",
@@ -644,7 +675,15 @@
     "existingRemoteLag": "A LAG \"{name}\" already exists on {switch} linking back to this switch. It will be replaced.",
     "replaceRemoteLag": "A LAG \"{name}\" on {switch} already links to this switch. Replace it with the new mirror LAG?",
     "portInRemoteLag": "This port is already in LAG \"{lag}\" on the remote switch",
-    "deleteRemoteLagToo": "The mirror LAG on {switch} will also be deleted."
+    "deleteRemoteLagToo": "The mirror LAG on {switch} will also be deleted.",
+    "vlanSection": "VLAN configuration for LAG ports",
+    "vlanOptOut": "Skip VLAN changes for this save",
+    "vlanApplied": "VLAN config applied to {count} LAG port(s)",
+    "vlanAppliedRemote": "VLAN config applied to {count} port(s) on {switch}",
+    "vlanApplyFailed": "Failed to apply VLAN config to LAG ports",
+    "showAllSwitchesOverride": "Show {count} more switch(es) without these VLANs",
+    "remoteSwitchMissing": "VLANs {vlans} not configured on remote switch",
+    "remoteSwitchWillAdd": "VLANs {vlans} will be added to remote switch on save"
   },
   "print": {
     "switchCount": "{n} switches selected for printing",

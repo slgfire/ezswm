@@ -1,7 +1,7 @@
 <template>
   <USelectMenu
     v-model="value"
-    :items="options"
+    :items="groupedOptions"
     placeholder="Select VLAN..."
     class="w-full"
     :ui="{ item: 'items-center', base: selectedVlan ? 'ps-8' : '' }"
@@ -18,26 +18,83 @@
         :style="{ backgroundColor: colorMap[(item as { value: number }).value] || '#888' }"
       />
     </template>
+    <template #item-trailing="{ item }">
+      <span class="inline-flex gap-1">
+        <UBadge v-if="isUnconfiguredItem((item as { value: number }).value)" color="info" variant="subtle" size="xs">
+          {{ $t('vlans.willBeAddedBadge') }}
+        </UBadge>
+        <UBadge v-if="isUnconfiguredRemote((item as { value: number }).value)" color="warning" variant="subtle" size="xs">
+          {{ $t('vlans.willBeAddedRemoteBadge') }}
+        </UBadge>
+      </span>
+    </template>
   </USelectMenu>
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
+
 const props = defineProps<{
   modelValue: number | null | undefined
   vlans: { vlan_id: number; name: string; color: string }[]
+  configuredVlans?: number[]
+  remoteConfiguredVlans?: number[]
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: number | null]
 }>()
 
-const options = computed(() => [
-  { label: '— None —', value: 0 },
-  ...props.vlans.map(v => ({
-    label: `${v.vlan_id} · ${v.name}`,
-    value: v.vlan_id
-  }))
-])
+const configuredSet = computed(() => new Set(props.configuredVlans || []))
+
+const remoteConfiguredSet = computed(() => new Set(props.remoteConfiguredVlans || []))
+
+function isUnconfiguredItem(vlanId: number): boolean {
+  if (!props.configuredVlans || vlanId === 0) return false
+  return !configuredSet.value.has(vlanId)
+}
+
+function isUnconfiguredRemote(vlanId: number): boolean {
+  if (!props.remoteConfiguredVlans || vlanId === 0) return false
+  return !remoteConfiguredSet.value.has(vlanId)
+}
+
+const groupedOptions = computed(() => {
+  const noneOption = { label: '— None —', value: 0 }
+
+  if (!props.configuredVlans) {
+    return [noneOption, ...props.vlans.map(v => ({
+      label: `${v.vlan_id} · ${v.name}`,
+      value: v.vlan_id
+    }))]
+  }
+
+  const configured = props.vlans
+    .filter(v => configuredSet.value.has(v.vlan_id))
+    .map(v => ({ label: `${v.vlan_id} · ${v.name}`, value: v.vlan_id }))
+
+  const other = props.vlans
+    .filter(v => !configuredSet.value.has(v.vlan_id))
+    .map(v => ({
+      label: `${v.vlan_id} · ${v.name}`,
+      value: v.vlan_id
+    }))
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const groups: any[] = [noneOption]
+
+  if (configured.length > 0) {
+    groups.push({ label: t('vlans.group.configured'), type: 'label' })
+    groups.push(...configured)
+  }
+
+  if (other.length > 0) {
+    groups.push({ label: t('vlans.group.otherSite'), type: 'label' })
+    groups.push(...other)
+  }
+
+  return groups
+})
 
 const colorMap = computed(() => {
   const map: Record<number, string> = {}
@@ -52,10 +109,9 @@ const selectedVlan = computed(() => {
 
 const value = computed({
   get() {
-    return options.value.find(o => o.value === props.modelValue) || options.value[0]
+    return groupedOptions.value.find(o => o.value === props.modelValue) || groupedOptions.value[0]
   },
   set(val: { label: string; value: number } | undefined) {
-    // value 0 = "None" = clear the VLAN
     emit('update:modelValue', val?.value ? val.value : null)
   }
 })

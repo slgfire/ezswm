@@ -19,17 +19,17 @@
         </UFormField>
 
         <!-- Access VLAN -->
-        <template v-if="form.port_mode === 'access'">
+        <template v-if="form.port_mode === 'access' || form.port_mode === ''">
           <UFormField :label="$t('switches.ports.accessVlan')">
-            <VlanDropdown v-if="allVlans.length" v-model="form.access_vlan" :vlans="allVlans" />
+            <VlanDropdown v-if="allVlans.length" v-model="form.access_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" />
             <UInput v-else v-model.number="form.access_vlan" type="number" :placeholder="$t('common.noChange')" class="w-full" />
           </UFormField>
         </template>
 
         <!-- Trunk: Native + Tagged -->
-        <template v-if="form.port_mode === 'trunk'">
+        <template v-if="form.port_mode === 'trunk' || form.port_mode === ''">
           <UFormField :label="$t('switches.ports.nativeVlan')">
-            <VlanDropdown v-if="allVlans.length" v-model="form.native_vlan" :vlans="allVlans" />
+            <VlanDropdown v-if="allVlans.length" v-model="form.native_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" />
             <UInput v-else v-model.number="form.native_vlan" type="number" :placeholder="$t('common.noChange')" class="w-full" />
           </UFormField>
 
@@ -38,6 +38,7 @@
               v-if="allVlans.length"
               v-model="selectedTaggedVlans"
               :vlans="allVlans"
+              :configured-vlans="configuredVlans"
             />
             <UInput v-else v-model="form.tagged_vlans_str" placeholder="e.g. 100,200,300" class="w-full" />
           </UFormField>
@@ -68,6 +69,8 @@ import type { VLAN } from '~~/types/vlan'
 const props = defineProps<{
   switchId: string
   selectedPorts: string[]
+  configuredVlans?: number[]
+  switchUpdatedAt?: string
 }>()
 
 const emit = defineEmits<{ saved: [], 'clear-selection': [] }>()
@@ -163,6 +166,15 @@ async function apply() {
         updates.tagged_vlans = form.tagged_vlans_str.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v))
       }
     }
+  } else {
+    // No port_mode change — still allow individual VLAN updates
+    if (form.access_vlan) updates.access_vlan = form.access_vlan
+    if (form.native_vlan) updates.native_vlan = form.native_vlan
+    if (selectedTaggedVlans.value.length) {
+      updates.tagged_vlans = [...selectedTaggedVlans.value]
+    } else if (form.tagged_vlans_str) {
+      updates.tagged_vlans = form.tagged_vlans_str.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v))
+    }
   }
   if (form.description) updates.description = form.description
   if (form.helper_usage !== '_no_change') {
@@ -172,7 +184,11 @@ async function apply() {
   try {
     await $fetch(`/api/switches/${props.switchId}/ports/bulk`, {
       method: 'PUT',
-      body: { port_ids: props.selectedPorts, updates }
+      body: {
+        port_ids: props.selectedPorts,
+        updates,
+        expected_updated_at: props.switchUpdatedAt || undefined
+      }
     })
     toast.add({ title: t('switches.ports.updatedPorts', { count: props.selectedPorts.length }), color: 'success' })
     // Reset form

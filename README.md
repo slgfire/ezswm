@@ -1,7 +1,7 @@
 <div align="center">
   <img src="public/logo.png" alt="ezSWM" width="400"/>
 
-  [![Version](https://img.shields.io/badge/Version-0.12.0-22c55e.svg)](https://github.com/slgfire/ezswm/releases)
+  [![Version](https://img.shields.io/badge/Version-0.14.0-22c55e.svg)](https://github.com/slgfire/ezswm/releases)
   [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
   [![Node](https://img.shields.io/badge/Node-22_LTS-green.svg)](https://nodejs.org)
   [![Nuxt](https://img.shields.io/badge/Nuxt-4.x-00DC82.svg)](https://nuxt.com)
@@ -84,6 +84,8 @@ npm run dev
 
 ## Roadmap
 
+- [x] **Secure VLAN Port Assignment** — VLAN auto-add, target switch sync, LAG VLAN config (v0.14.0)
+- [x] **Favorites & Quick Wins** — Favorite switches, global search enhancements, UX improvements (v0.13.0)
 - [x] **Topology** — Interactive site-scoped network topology with v-network-graph (v0.12.0)
 - [x] **LAG Groups** — Link Aggregation Group management (v0.7.0)
 - [x] **Print View** — Printable switch front panel layouts with QR codes (v0.6.0)
