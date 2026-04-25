@@ -6,6 +6,14 @@ Date: 2026-04-26
 Stage: Phase 26c — Documentation & Screenshot Update
 Status: Complete
 
+### Phase 26g Changes (Expanded Info-Bereich visuell angeglichen)
+- **Gleiche visuelle Sprache wie Header:** Expanded-Bereich nutzt `flex flex-wrap` mit vertikalen Dividern (`h-8 w-px`) — identisch zum oberen Summary-Header
+- **Kompakte Info-Zeile:** Network, Broadcast, DNS als gleichwertige Info-Items mit Mono-Font und Dividern
+- **DNS kompakt:** `formatDns()` kürzt bei >3 Einträgen auf `"1.1.1.1, 8.8.8.8 +2"`
+- **Description als Subtext:** Nur wenn vorhanden, als `line-clamp-2 text-sm text-gray-500` unter der Info-Zeile — kein eigener Block
+- **Kein Grid mehr:** Statt `grid grid-cols-2` jetzt `flex flex-wrap` mit Dividern wie der Header
+- **Kein Card-in-Card:** Alles innerhalb desselben Containers, `border-t` als Trennung, gleicher `px-5`
+
 ### Phase 26f Changes (Edit → Slideover, Info-Bar finalisiert)
 - **Inline-Edit komplett entfernt:** Der grüne Inline-Edit-Block auf der Hauptseite existiert nicht mehr
 - **Neues Edit-Slideover:** Netzwerk-Bearbeitung findet jetzt in einem USlideover statt — konsistent zu VLAN/Allocation/Range-Panels

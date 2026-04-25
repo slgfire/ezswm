@@ -61,26 +61,27 @@
           </div>
         </button>
 
-        <!-- Expanded details (inline below info bar) -->
-        <div v-show="showDetails" class="border-t border-default px-5 py-4">
-          <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
+        <!-- Expanded details (inline below info bar, same visual language) -->
+        <div v-show="showDetails" class="border-t border-default px-5 py-3">
+          <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
             <div>
-              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.network') }}</dt>
-              <dd class="font-mono">{{ subnetInfo.network }}</dd>
+              <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.network') }}</div>
+              <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.network }}</div>
             </div>
+            <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
             <div>
-              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.broadcast') }}</dt>
-              <dd class="font-mono">{{ subnetInfo.broadcast }}</dd>
+              <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.broadcast') }}</div>
+              <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.broadcast }}</div>
             </div>
-            <div v-if="network.dns_servers?.length">
-              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.dns') }}</dt>
-              <dd class="font-mono">{{ network.dns_servers.join(', ') }}</dd>
-            </div>
-            <div v-if="network.description" class="col-span-2 sm:col-span-3 lg:col-span-4">
-              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('common.description') }}</dt>
-              <dd>{{ network.description }}</dd>
-            </div>
+            <template v-if="network.dns_servers?.length">
+              <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+              <div>
+                <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.dns') }}</div>
+                <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ formatDns(network.dns_servers) }}</div>
+              </div>
+            </template>
           </div>
+          <p v-if="network.description" class="mt-2 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">{{ network.description }}</p>
         </div>
       </div>
 
@@ -567,6 +568,11 @@ function rangeTypeBadgeColor(type: string): BadgeColor {
   if (type === 'dhcp') return 'info'
   if (type === 'static') return 'success'
   return 'warning'
+}
+
+function formatDns(servers: string[]): string {
+  if (servers.length <= 3) return servers.join(', ')
+  return servers.slice(0, 2).join(', ') + ` +${servers.length - 2}`
 }
 
 function abbreviateEndIp(startIp: string, endIp: string): string {
