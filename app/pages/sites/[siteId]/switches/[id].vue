@@ -19,10 +19,9 @@
         <UButton
           icon="i-heroicons-square-3-stack-3d"
           variant="ghost"
-          color="neutral"
+          color="primary"
           size="sm"
           label="VLANs"
-          class="text-violet-400 hover:text-violet-300 hover:bg-violet-500/10"
           @click="showVlanSlideover = true"
         />
         <UButton
