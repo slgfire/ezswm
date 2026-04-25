@@ -400,7 +400,7 @@ Felder:
 
 ### Netzwerk-Detail & IP-Übersicht
 
-Die Netzwerk-Detailseite zeigt Subnetz-Statistiken (Subnetz, Gateway, Maske, Hosts, Zugewiesene Anzahl, verknüpftes VLAN) in einer kompakten Info-Leiste oben. Ein Auslastungsbalken visualisiert zugewiesene, DHCP-, reservierte und freie Adressbereiche.
+Die Netzwerk-Detailseite zeigt Subnetz-Statistiken (Subnetz, Gateway, Maske, Hosts, Zugewiesene Anzahl, verknüpftes VLAN) in einer kompakten Info-Leiste oben. Klicke auf die Info-Leiste, um zusätzliche Details aufzuklappen (Netzwerkadresse, Broadcast, DNS-Server, Beschreibung) -- dasselbe Muster wie auf der Switch-Detailseite. Ein Auslastungsbalken darunter visualisiert zugewiesene, DHCP-, reservierte und freie Adressbereiche. Zum Bearbeiten des Netzwerks klicke auf das **Stift-Symbol** oben rechts -- dies öffnet ein Sidepanel.
 
 ![Netzwerk-Detail mit IP-Übersicht](/images/screenshot-network-detail.png)
 

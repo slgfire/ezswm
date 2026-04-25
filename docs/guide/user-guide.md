@@ -400,7 +400,7 @@ Fields:
 
 ### Network Detail & IP Overview
 
-The network detail page shows subnet statistics (subnet, gateway, mask, hosts, allocated count, associated VLAN) in a compact info bar at the top. A utilization bar visualizes allocated, DHCP, reserved, and free address space.
+The network detail page shows subnet statistics (subnet, gateway, mask, hosts, allocated count, associated VLAN) in a compact info bar at the top. Click the info bar to expand additional details (network address, broadcast, DNS servers, description) -- the same pattern used on the switch detail page. A utilization bar below visualizes allocated, DHCP, reserved, and free address space. To edit the network, click the **pencil icon** in the top-right corner -- this opens a slideover panel.
 
 ![Network detail with IP overview](/images/screenshot-network-detail.png)
 
