@@ -68,22 +68,54 @@ export default defineEventHandler(async (event) => {
     }
   )
 
-  // If override is active and a target switch is connected, add VLANs to the target switch
+  // If override is active and a target switch is connected, sync VLANs to the target
   let vlansAddedToTargetSwitch: number[] = []
   const connectedDeviceId = (parsed as Record<string, unknown>).connected_device_id as string | undefined
+  const connectedPortId = (parsed as Record<string, unknown>).connected_port_id as string | undefined
   if (addVlansToTargetSwitch && connectedDeviceId && connectedDeviceId !== switchId) {
-    // Collect all VLAN IDs from the port
+    // Collect VLAN config from the saved port
+    const portMode = (parsed as Record<string, unknown>).port_mode as string | undefined
+    const accessVlan = (parsed as Record<string, unknown>).access_vlan as number | null | undefined
+    const nativeVlan = (parsed as Record<string, unknown>).native_vlan as number | null | undefined
+    const taggedVlans = (parsed as Record<string, unknown>).tagged_vlans as number[] | undefined
+
     const portVlans: number[] = []
-    if ((parsed as Record<string, unknown>).access_vlan) portVlans.push((parsed as Record<string, unknown>).access_vlan as number)
-    if ((parsed as Record<string, unknown>).native_vlan) portVlans.push((parsed as Record<string, unknown>).native_vlan as number)
-    if ((parsed as Record<string, unknown>).tagged_vlans) portVlans.push(...((parsed as Record<string, unknown>).tagged_vlans as number[]))
+    if (accessVlan) portVlans.push(accessVlan)
+    if (nativeVlan) portVlans.push(nativeVlan)
+    if (taggedVlans) portVlans.push(...taggedVlans)
 
     if (portVlans.length > 0) {
-      // Verify VLANs exist in site before adding to target
+      // 1. Add VLANs to target switch's configured_vlans
       const validVlans = portVlans.filter(v => siteVlanIds.includes(v))
       if (validVlans.length > 0) {
         const targetResult = switchRepository.addVlansToSwitch(connectedDeviceId, validVlans)
         vlansAddedToTargetSwitch = targetResult.addedVlans
+      }
+
+      // 2. Sync VLAN config + back-link to the connected port on the target switch
+      if (connectedPortId && portMode) {
+        const targetPortUpdate: Partial<Omit<Port, 'id' | 'unit' | 'index'>> = {
+          port_mode: portMode as Port['port_mode'],
+          // Set bidirectional connection back to source
+          connected_device: existing.name,
+          connected_device_id: switchId,
+          connected_port: oldPort?.label || portId,
+          connected_port_id: portId
+        }
+        if (portMode === 'access') {
+          targetPortUpdate.access_vlan = accessVlan ?? null
+          targetPortUpdate.native_vlan = null
+          targetPortUpdate.tagged_vlans = []
+        } else if (portMode === 'trunk') {
+          targetPortUpdate.access_vlan = null
+          targetPortUpdate.native_vlan = nativeVlan ?? null
+          targetPortUpdate.tagged_vlans = taggedVlans ?? []
+        }
+        try {
+          switchRepository.applyPortVlanUpdate(connectedDeviceId, connectedPortId, targetPortUpdate, { siteVlanIds })
+        } catch {
+          // Target port update is best-effort — don't fail the main save
+        }
       }
     }
   }

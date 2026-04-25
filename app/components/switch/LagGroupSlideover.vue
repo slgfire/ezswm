@@ -570,9 +570,13 @@ async function onSubmit() {
     }
     // 4b. Apply same VLAN config to remote LAG member ports
     if (remoteMode.value === 'switch' && selectedRemoteSwitchId.value) {
-      const remotePortIds = form.port_ids
+      let remotePortIds = form.port_ids
         .map(pid => portMapping[pid]?.remotePortId)
         .filter(Boolean) as string[]
+      // Fallback: if no port mapping, use mirror LAG's port_ids directly
+      if (remotePortIds.length === 0 && existingRemoteLag.value) {
+        remotePortIds = [...existingRemoteLag.value.port_ids]
+      }
       if (remotePortIds.length > 0) {
         try {
           await $fetch(`/api/switches/${selectedRemoteSwitchId.value}/ports/bulk`, {

@@ -67,14 +67,23 @@
           </div>
         </template>
 
-        <!-- Separator if both VLAN and LAG -->
-        <div v-if="(isTrunk || vlanDotColor) && lagGroup" class="border-t border-default" />
+        <!-- Separator -->
+        <div v-if="(isTrunk || vlanDotColor) && (lagGroup || port.connected_device)" class="border-t border-default" />
 
         <!-- LAG section -->
         <template v-if="lagGroup">
           <div class="font-semibold text-gray-700 dark:text-gray-200">{{ lagGroup.name }}</div>
           <div class="text-gray-400">{{ lagGroup.port_ids?.length || 0 }} {{ $t('lag.ports') }}</div>
           <div v-if="lagGroup.remote_device" class="text-gray-400">→ {{ lagGroup.remote_device }}</div>
+        </template>
+
+        <!-- Connected device (when not in a LAG) -->
+        <template v-else-if="port.connected_device">
+          <div class="flex items-center gap-1.5 text-gray-400">
+            <UIcon name="i-heroicons-link" class="h-3 w-3 shrink-0" />
+            <span class="truncate">{{ port.connected_device }}</span>
+          </div>
+          <div v-if="port.connected_port" class="text-gray-500 pl-[1.125rem]">{{ port.connected_port }}</div>
         </template>
       </div>
     </div>
@@ -151,8 +160,8 @@ const isSfpType = computed(() => props.port.type === 'sfp' || props.port.type ==
 const isConsole = computed(() => props.port.type === 'console')
 const isManagement = computed(() => props.port.type === 'management')
 
-// Show tooltip if port has VLAN info or LAG info
-const hasTooltipContent = computed(() => isTrunk.value || vlanDotColor.value || props.lagGroup)
+// Show tooltip if port has VLAN info, LAG info, or connected device
+const hasTooltipContent = computed(() => isTrunk.value || vlanDotColor.value || props.lagGroup || props.port.connected_device)
 
 const typeLabel = computed(() => {
   if (isQsfp.value) return 'Q'

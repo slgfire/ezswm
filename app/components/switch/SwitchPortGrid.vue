@@ -291,6 +291,8 @@ const usedVlans = computed(() => {
       for (const vid of p.tagged_vlans) usedIds.add(vid)
     }
   }
-  return props.vlans.filter(v => usedIds.has(v.vlan_id) && v.color)
+  return props.vlans
+    .filter(v => usedIds.has(v.vlan_id) && v.color)
+    .sort((a, b) => a.vlan_id - b.vlan_id)
 })
 </script>
