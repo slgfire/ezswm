@@ -1,12 +1,12 @@
 <template>
-  <div class="p-6">
-    <div class="mb-6 flex items-center gap-2">
-      <UButton icon="i-heroicons-arrow-left" variant="ghost" :to="`/sites/${siteId}/vlans`" />
+  <div class="mx-auto w-full max-w-5xl px-6 py-6">
+    <div class="mb-6 flex items-center gap-3">
+      <UButton icon="i-heroicons-arrow-left" variant="ghost" :to="`/sites/${siteId}/vlans`" :aria-label="$t('common.back')" />
       <h1 class="text-2xl font-bold">{{ $t('vlans.create') }}</h1>
     </div>
 
     <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit="onSubmit">
-      <div class="max-w-4xl space-y-6">
+      <div class="space-y-6">
         <div class="list-container rounded-lg bg-default p-5">
           <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">VLAN</h2>
           <div class="space-y-4">
@@ -28,23 +28,25 @@
               <UTextarea v-model="form.description" :placeholder="$t('common.description')" :rows="2" class="w-full" />
             </UFormField>
             <UFormField :label="$t('vlans.fields.color')" name="color" required>
-              <div class="flex items-center gap-3">
-                <input v-model="form.color" type="color" class="h-10 w-14 cursor-pointer rounded border border-default bg-default" >
-                <UInput v-model="form.color" placeholder="#FF5733" class="w-32" />
-                <VlanColorSwatch :color="form.color" size="lg" />
+              <div class="flex items-center gap-2">
+                <label class="relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-default">
+                  <input v-model="form.color" type="color" class="absolute inset-0 h-full w-full cursor-pointer opacity-0">
+                  <span class="h-5 w-5 rounded" :style="{ backgroundColor: form.color }" />
+                </label>
+                <UInput v-model="form.color" placeholder="#FF5733" class="w-32 font-mono" />
               </div>
             </UFormField>
           </div>
         </div>
+      </div>
 
-        <div class="flex justify-end gap-3">
-          <UButton variant="ghost" color="neutral" :to="`/sites/${siteId}/vlans`">
-            {{ $t('common.cancel') }}
-          </UButton>
-          <UButton type="submit" :loading="submitting" icon="i-heroicons-check">
-            {{ $t('common.save') }}
-          </UButton>
-        </div>
+      <div class="mt-4 flex justify-end gap-3">
+        <UButton variant="ghost" color="neutral" :to="`/sites/${siteId}/vlans`">
+          {{ $t('common.cancel') }}
+        </UButton>
+        <UButton type="submit" :loading="submitting" icon="i-heroicons-check">
+          {{ $t('common.save') }}
+        </UButton>
       </div>
     </UForm>
   </div>

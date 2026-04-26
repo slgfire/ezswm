@@ -1,15 +1,15 @@
 <template>
-  <div class="p-6">
-    <div class="mb-6 flex items-center gap-2">
-      <UButton icon="i-heroicons-arrow-left" variant="ghost" :to="`/sites/${siteId}/networks`" />
+  <div class="mx-auto w-full max-w-5xl px-6 py-6">
+    <div class="mb-6 flex items-center gap-3">
+      <UButton icon="i-heroicons-arrow-left" variant="ghost" :to="`/sites/${siteId}/networks`" :aria-label="$t('common.back')" />
       <h1 class="text-2xl font-bold">{{ $t('networks.create') }}</h1>
     </div>
 
     <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit="onSubmit">
-      <div class="max-w-4xl space-y-6">
+      <div class="space-y-6">
         <!-- Network Info -->
         <div class="list-container rounded-lg bg-default p-5">
-          <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Network</h2>
+          <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('networks.sections.networkInfo') }}</h2>
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <UFormField :label="$t('networks.fields.name')" name="name" required>
               <UInput v-model="form.name" :placeholder="$t('networks.fields.name')" class="w-full" />
@@ -31,7 +31,7 @@
 
         <!-- Association -->
         <div class="list-container rounded-lg bg-default p-5">
-          <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">VLAN & Description</h2>
+          <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('networks.sections.vlanDescription') }}</h2>
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <UFormField :label="$t('networks.fields.vlan')">
               <USelect v-model="form.vlan_id" :items="vlanOptions" :placeholder="$t('networks.fields.vlan')" value-key="value" class="w-full" />
@@ -42,15 +42,16 @@
           </div>
         </div>
 
-        <!-- Actions -->
-        <div class="flex justify-end gap-3">
-          <UButton variant="ghost" color="neutral" :to="`/sites/${siteId}/networks`">
-            {{ $t('common.cancel') }}
-          </UButton>
-          <UButton type="submit" :loading="submitting" icon="i-heroicons-check">
-            {{ $t('common.save') }}
-          </UButton>
-        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="mt-4 flex justify-end gap-3">
+        <UButton variant="ghost" color="neutral" :to="`/sites/${siteId}/networks`">
+          {{ $t('common.cancel') }}
+        </UButton>
+        <UButton type="submit" :loading="submitting" icon="i-heroicons-check">
+          {{ $t('common.save') }}
+        </UButton>
       </div>
     </UForm>
   </div>
