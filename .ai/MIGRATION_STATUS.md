@@ -3,8 +3,14 @@
 ## Latest Stage
 
 Date: 2026-04-26
-Stage: Phase 27 — Create Page Layout Unification
+Stage: Phase 27b — Docs Audit & PR Prep
 Status: Complete
+
+### Phase 27b Changes (Docs Audit & PR Prep)
+- **Doku-Audit:** README, EN User Guide, DE User Guide gegen aktuellen UI-Stand geprüft — alle korrekt und aktuell
+- **Screenshot-Audit:** Alle 17 referenzierten Screenshots geprüft — passen zum aktuellen UI, kein Update nötig
+- **Globale Suche Audit:** Voll funktionsfähig mit 6 Entitätstypen, Keyboard-Navigation, Site-Scoping, Highlighting — in beiden Guides vollständig dokumentiert
+- **Keine Doku-Lücken:** Create-Page-Vereinheitlichung war rein layout-bezogen, Feld-Beschreibungen in Guides bereits korrekt
 
 ### Phase 27 Changes (Create-Seiten vereinheitlicht)
 - **Zentrierter Wrapper:** Alle 4 Create-Seiten nutzen `mx-auto w-full max-w-5xl px-6 py-6`
