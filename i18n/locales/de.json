@@ -20,6 +20,9 @@
     "create": "Standort erstellen",
     "edit": "Standort bearbeiten",
     "delete": "Standort löschen",
+    "sections": {
+      "siteInfo": "Standort-Informationen"
+    },
     "confirmDelete": "Möchten Sie diesen Standort wirklich löschen? Dies kann nicht rückgängig gemacht werden.",
     "fields": {
       "name": "Name",
@@ -127,6 +130,11 @@
     "create": "Switch erstellen",
     "edit": "Switch bearbeiten",
     "delete": "Switch löschen",
+    "sections": {
+      "basicInfo": "Allgemeine Informationen",
+      "networkLocation": "Netzwerk & Standort",
+      "templateClassification": "Vorlage & Klassifizierung"
+    },
     "duplicate": "Switch duplizieren",
     "favorite": "Zu Favoriten hinzufügen",
     "unfavorite": "Aus Favoriten entfernen",
@@ -303,6 +311,10 @@
     "create": "Netzwerk erstellen",
     "edit": "Netzwerk bearbeiten",
     "delete": "Netzwerk löschen",
+    "sections": {
+      "networkInfo": "Netzwerk-Informationen",
+      "vlanDescription": "VLAN & Beschreibung"
+    },
     "fields": {
       "name": "Name",
       "subnet": "Subnetz (CIDR)",

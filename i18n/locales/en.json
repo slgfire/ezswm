@@ -20,6 +20,9 @@
     "create": "Create Site",
     "edit": "Edit Site",
     "delete": "Delete Site",
+    "sections": {
+      "siteInfo": "Site Information"
+    },
     "confirmDelete": "Are you sure you want to delete this site? This cannot be undone.",
     "fields": {
       "name": "Name",
@@ -127,6 +130,11 @@
     "create": "Create Switch",
     "edit": "Edit Switch",
     "delete": "Delete Switch",
+    "sections": {
+      "basicInfo": "Basic Information",
+      "networkLocation": "Network & Location",
+      "templateClassification": "Template & Classification"
+    },
     "duplicate": "Duplicate Switch",
     "favorite": "Add to favorites",
     "unfavorite": "Remove from favorites",
@@ -303,6 +311,10 @@
     "create": "Create Network",
     "edit": "Edit Network",
     "delete": "Delete Network",
+    "sections": {
+      "networkInfo": "Network Information",
+      "vlanDescription": "VLAN & Description"
+    },
     "fields": {
       "name": "Name",
       "subnet": "Subnet (CIDR)",

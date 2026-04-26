@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6">
+  <div class="mx-auto w-full max-w-5xl px-6 py-6">
     <div class="mb-6 flex items-center gap-3">
       <UButton
         icon="i-heroicons-arrow-left"
@@ -11,10 +11,10 @@
     </div>
 
     <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit="onSubmit">
-      <div class="max-w-4xl space-y-6">
+      <div class="space-y-6">
         <!-- Basic Info -->
         <div class="list-container rounded-lg bg-default p-5">
-          <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('switches.fields.name') }}</h2>
+          <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('switches.sections.basicInfo') }}</h2>
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <UFormField :label="$t('switches.fields.name')" name="name" required>
               <UInput v-model="form.name" :placeholder="$t('switches.fields.name')" class="w-full" />
@@ -33,7 +33,7 @@
 
         <!-- Network & Location -->
         <div class="list-container rounded-lg bg-default p-5">
-          <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Network & Location</h2>
+          <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('switches.sections.networkLocation') }}</h2>
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <UFormField :label="$t('switches.fields.managementIp')" name="management_ip">
               <UInput v-model="form.management_ip" :placeholder="$t('switches.fields.managementIp')" class="w-full" />
@@ -52,7 +52,7 @@
 
         <!-- Template & Classification -->
         <div class="list-container rounded-lg bg-default p-5">
-          <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Template & Classification</h2>
+          <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('switches.sections.templateClassification') }}</h2>
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <UFormField :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
               <USelect v-model="form.layout_template_id" :items="templateOptions" :placeholder="$t('switches.fields.layoutTemplate')" value-key="value" class="w-full" />
@@ -85,15 +85,16 @@
           </UFormField>
         </div>
 
-        <!-- Actions -->
-        <div class="flex justify-end gap-3">
-          <UButton color="neutral" variant="ghost" :to="`/sites/${siteId}/switches`">
-            {{ $t('common.cancel') }}
-          </UButton>
-          <UButton type="submit" :loading="submitting" icon="i-heroicons-check">
-            {{ $t('common.save') }}
-          </UButton>
-        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="mt-4 flex justify-end gap-3">
+        <UButton color="neutral" variant="ghost" :to="`/sites/${siteId}/switches`">
+          {{ $t('common.cancel') }}
+        </UButton>
+        <UButton type="submit" :loading="submitting" icon="i-heroicons-check">
+          {{ $t('common.save') }}
+        </UButton>
       </div>
     </UForm>
   </div>

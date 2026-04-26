@@ -3,8 +3,21 @@
 ## Latest Stage
 
 Date: 2026-04-26
-Stage: Phase 26c — Documentation & Screenshot Update
+Stage: Phase 27 — Create Page Layout Unification
 Status: Complete
+
+### Phase 27 Changes (Create-Seiten vereinheitlicht)
+- **Zentrierter Wrapper:** Alle 4 Create-Seiten nutzen `mx-auto w-full max-w-5xl px-6 py-6`
+- **Einheitlicher Header:** `gap-3`, Back-Button mit `aria-label`, `text-2xl font-bold` Titel
+- **Section-Titel i18n:** Alle hardcodierten Section-Titel durch i18n-Keys ersetzt (EN + DE)
+  - Sites: `sites.sections.siteInfo`
+  - Switches: `switches.sections.basicInfo`, `networkLocation`, `templateClassification`
+  - Networks: `networks.sections.networkInfo`, `vlanDescription`
+  - VLANs: Section-Titel "VLAN" bleibt (universal)
+- **Max-Width `max-w-5xl`:** Einheitlich 64rem für alle — genug Platz für Switch-Grids, Site wirkt nicht verloren
+- **Footer-Abstand optimiert:** Footer aus `space-y-6` herausgenommen, eigenes `mt-4` — kompakterer Abstand zur letzten Card, konsistent auf allen 4 Seiten
+- **VLAN Color-Input poliert:** Nativer Color-Picker versteckt hinter gestyltem Label mit Farbvorschau-Dot, Hex-Input mit `font-mono`, VlanColorSwatch entfernt (redundant)
+- **Keine fachlichen Änderungen:** Formulare, Felder und Logik unverändert
 
 ### Phase 26g Changes (Expanded Info-Bereich finalisiert)
 - **Gleiche visuelle Sprache wie Header:** Expanded-Bereich nutzt `flex flex-wrap` mit vertikalen Dividern (`h-8 w-px`) — identisch zum oberen Summary-Header
