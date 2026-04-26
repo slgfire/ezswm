@@ -22,6 +22,7 @@ screenshots/
 docs/node_modules/
 docs/.vitepress/cache/
 docs/.vitepress/dist/
+docs/docs/.vitepress/cache/
 .superpowers/
 tests/.test-data-*
 docs/superpowers/reviews/
