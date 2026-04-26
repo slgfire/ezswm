@@ -66,6 +66,8 @@
     "description": "Beschreibung",
     "status": "Status",
     "noData": "Keine Daten vorhanden",
+    "free": "Frei",
+    "more": "weitere",
     "loading": "Laden...",
     "confirm": "Bestätigen",
     "back": "Zurück",
@@ -332,7 +334,21 @@
         "updated": "IP-Zuweisung erfolgreich aktualisiert",
         "deleted": "IP-Zuweisung erfolgreich gelöscht"
       },
-      "deleteWithRefs": "Diese Allocation ist mit {count} Port(s) verbunden: {ports}. Port-Referenzen werden entfernt."
+      "deleteWithRefs": "Diese Zuweisung ist mit {count} Port(s) verbunden: {ports}. Port-Referenzen werden entfernt.",
+      "deviceTypes": {
+        "server": "Server",
+        "switch": "Switch",
+        "printer": "Drucker",
+        "phone": "Telefon",
+        "ap": "AP",
+        "camera": "Kamera",
+        "other": "Sonstige"
+      },
+      "statuses": {
+        "active": "Aktiv",
+        "reserved": "Reserviert",
+        "inactive": "Inaktiv"
+      }
     },
     "ranges": {
       "title": "IP-Bereiche",
@@ -349,6 +365,7 @@
         "reserved": "Reserviert"
       },
       "ipsDocumented": "{count} IPs dokumentiert",
+      "ipCount": "{count} IPs",
       "editRange": "Bereich bearbeiten",
       "messages": {
         "created": "IP-Bereich erfolgreich erstellt",
@@ -363,6 +380,12 @@
       "networkAddress": "Netzwerk",
       "gateway": "Gateway",
       "broadcast": "Broadcast"
+    },
+    "validation": {
+      "nameRequired": "Name ist erforderlich",
+      "subnetRequired": "Subnetz ist erforderlich",
+      "subnetFormat": "Muss gültige CIDR-Notation sein (z. B. 10.0.0.0/24)",
+      "gatewayFormat": "Muss eine gültige IPv4-Adresse sein (z. B. 10.0.0.1)"
     },
     "subnetInfo": {
       "networkAddress": "Netzwerkadresse",

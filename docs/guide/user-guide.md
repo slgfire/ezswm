@@ -366,9 +366,20 @@ Fields:
 
 Each VLAN has a unique color that appears on port visualizations across all switches. This makes it easy to visually identify which VLAN a port belongs to. The color picker includes both a visual selector and a hex input field.
 
+### VLAN Detail Sidepanel
+
+Click any VLAN in the list to open a detail sidepanel on the right. The selected VLAN is highlighted in the list, creating a clear master-detail relationship. The sidepanel shows:
+
+- Status and color badges
+- Routing device
+- Description
+- Associated networks with links
+
+![VLAN detail sidepanel](/images/screenshot-vlans-detail.png)
+
 ### Editing and Deleting
 
-Click a VLAN in the list to view its details. From there you can edit all fields or delete the VLAN. The detail view also shows which switch ports are currently assigned to this VLAN.
+In the sidepanel, click the **edit icon** to switch to edit mode inline. Click the **trash icon** to delete the VLAN. You can also access a full detail page for each VLAN with additional information.
 
 ## Networks & IP Management
 
@@ -387,23 +398,44 @@ Fields:
 - **VLAN** -- associate this network with a VLAN from the dropdown
 - **Description** -- optional
 
+### Network Detail & IP Overview
+
+The network detail page shows subnet statistics (subnet, gateway, mask, hosts, allocated count, associated VLAN) in a compact info bar at the top. Click the info bar to expand additional details (network address, broadcast, DNS servers, description) -- the same pattern used on the switch detail page. A utilization bar below visualizes allocated, DHCP, reserved, and free address space. To edit the network, click the **pencil icon** in the top-right corner -- this opens a slideover panel.
+
+![Network detail with IP overview](/images/screenshot-network-detail.png)
+
+Below the info bar, the **IP Overview** displays all entries in a unified, sorted list:
+
+- **Fixed rows** (network address, gateway, broadcast) -- shown in a muted style
+- **IP Allocations** -- individual host entries with hostname, device type badge, status badge, and optional MAC address / description
+- **IP Ranges** -- DHCP, static, or reserved blocks with color-coded left border and IP count
+
+**Clicking any allocation or range row** opens the corresponding edit sidepanel. The selected row is highlighted to show the master-detail relationship. Hover actions (edit/delete buttons) appear on the right side of each row.
+
 ### IP Allocations
 
-On a network detail page, you can allocate individual IP addresses within the subnet. Each allocation records the IP address, hostname, MAC address, and a description. This serves as your IP address management (IPAM) registry.
+Click **Add** to open the add/edit sidepanel. Each allocation records:
+
+- **IP Address** (required)
+- **Hostname** -- displayed as the primary identifier in the IP overview
+- **Device Type** -- Server, Switch, Printer, Phone, AP, Camera, or Other (shown as a badge)
+- **Status** -- Active, Reserved, or Inactive
+- **MAC Address** -- shown as secondary info in the row
+- **Description** -- shown as secondary info in the row
 
 ### IP Ranges
 
-Within a network, you can define IP ranges to designate blocks of addresses for specific purposes:
+IP ranges designate blocks of addresses for specific purposes:
 
-- **DHCP** -- addresses handed out dynamically
-- **Static** -- addresses assigned manually
-- **Reserved** -- addresses set aside (e.g., for future use or infrastructure)
+- **DHCP** -- addresses handed out dynamically (blue indicator)
+- **Static** -- addresses assigned manually (green indicator)
+- **Reserved** -- addresses set aside for infrastructure (yellow indicator)
 
-Each range has a start IP, end IP, name, and type.
+Each range has a start IP, end IP, type, and optional description. The IP count is shown inline.
 
 ### Utilization Tracking
 
-The network detail page displays utilization metrics: total addresses in the subnet, how many are allocated, and how many fall within defined ranges. A visual bar shows overall usage at a glance.
+The utilization bar at the top of the network detail page visualizes address space usage. The legend shows allocated, DHCP, reserved, and free counts.
 
 ## Global Search
 

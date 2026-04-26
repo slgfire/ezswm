@@ -2,9 +2,78 @@
 
 ## Latest Stage
 
-Date: 2026-04-25
-Stage: Phase 25c — VLAN Sidepanel Switch-Konsistenz (v0.14.3)
+Date: 2026-04-26
+Stage: Phase 26c — Documentation & Screenshot Update
 Status: Complete
+
+### Phase 26g Changes (Expanded Info-Bereich finalisiert)
+- **Gleiche visuelle Sprache wie Header:** Expanded-Bereich nutzt `flex flex-wrap` mit vertikalen Dividern (`h-8 w-px`) — identisch zum oberen Summary-Header
+- **Kompakte Info-Zeile:** Network, Broadcast, DNS als gleichwertige Info-Items mit Mono-Font und Dividern
+- **DNS kompakt:** `formatDns()` kürzt bei >3 Einträgen auf `"1.1.1.1, 8.8.8.8 +2"`
+- **Description als Subtext:** Nur wenn vorhanden, als `line-clamp-2 text-sm text-gray-500` unter der Info-Zeile — kein eigener Block
+- **Kein Grid mehr:** Statt `grid grid-cols-2` jetzt `flex flex-wrap` mit Dividern wie der Header
+- **Kein Card-in-Card:** Alles innerhalb desselben Containers, `border-t` als Trennung, gleicher `px-5`
+
+### Phase 26f Changes (Edit → Slideover, Info-Bar finalisiert)
+- **Inline-Edit komplett entfernt:** Der grüne Inline-Edit-Block auf der Hauptseite existiert nicht mehr
+- **Neues Edit-Slideover:** Netzwerk-Bearbeitung findet jetzt in einem USlideover statt — konsistent zu VLAN/Allocation/Range-Panels
+  - Header: "Netzwerk bearbeiten" Titel
+  - Body: Name, Subnet, Gateway, DNS, VLAN, Description (UTextarea)
+  - Footer: Cancel + Save
+  - Schließt sich automatisch nach erfolgreichem Speichern
+- **Edit-Button vereinfacht:** Kein Toggle mehr (war pencil/x-mark), nur noch pencil → öffnet Slideover
+- **Seite jetzt ruhiger:** Ohne Inline-Edit-Block fokussiert die Seite klar auf Info-Bar + IP-Übersicht
+- **editFormRef:** Verwendet ref für Form-Submit aus Footer heraus (wie VLAN-Panel)
+
+### Phase 26e Changes (Info-Bar Inline-Expand wie Switch)
+- **Info-Leiste als klickbarer Button:** Gesamte Summary-Leiste ist jetzt ein `<button>` mit Hover-State (wie Switch-Seite)
+- **Chevron-Toggle:** Expand/Collapse-Chevron rechts in der Info-Leiste, rotiert bei Expand (identisch zu Switch)
+- **Inline-Expand:** Zusätzliche Details (Netzwerkadresse, Broadcast, DNS, Description) klappen als `border-t` innerhalb desselben Containers auf — kein separater Block mehr
+- **Info-Button aus Header entfernt:** Toggle-Logik ist jetzt vollständig in der Info-Leiste, nicht mehr im Header
+- **Konsistenz zu Switch:** Exakt gleiches Interaktionsmuster wie auf der Switch-Detailseite
+
+### Phase 26d Changes (Network Edit Polish)
+- **Edit-Kontext klar abgesetzt:** Eigener Container mit `border-primary-500/30` und leichtem Primary-Hintergrund — visuell klar als Edit-Modus erkennbar
+- **Edit-Header:** Pencil-Icon + "Netzwerk bearbeiten" Titel + Close-Button — klarer Kontextwechsel
+- **Details und Edit getrennt:** `v-show` für Details nur ohne Edit, Edit hat eigenen Container — kein gemeinsamer Block mehr
+- **Footer mit Separator:** Cancel/Save durch `border-t border-primary-500/20 pt-4` visuell abgesetzt
+- **Description → UTextarea:** Einzeiliges UInput ersetzt durch UTextarea mit 2 Zeilen (konsistent mit VLAN-Panel)
+- **Description volle Breite:** Aus dem 2-Spalten-Grid herausgenommen, steht jetzt als eigenes Feld auf voller Breite
+- **Pflichtmarker bereinigt:** `+ ' *'` String-Concat entfernt, nutzt stattdessen UFormField `required` Prop
+
+### Phase 26c Changes (Doku & Screenshots)
+- **Screenshots aktualisiert:** `screenshot-vlans.png`, `screenshot-networks.png` auf aktuellen UI-Stand gebracht
+- **Neue Screenshots:** `screenshot-vlans-detail.png` (VLAN-Sidepanel), `screenshot-network-detail.png` (IP-Übersicht)
+- **User Guide EN:** VLAN-Sektion um Sidepanel-Beschreibung + Screenshot ergänzt. Netzwerk-Sektion komplett überarbeitet (IP-Übersicht, klickbare Zeilen, Badges, Ranges)
+- **User Guide DE:** Identische Aktualisierungen in deutscher Fassung
+- **Globale Suche:** Audit durchgeführt — vollständig funktional, Doku aktuell, kein Handlungsbedarf
+
+### Previous: Phase 26b — Network Page Feinschliff & Konsistenz
+
+### Phase 26b Changes (Feinschliff)
+- **IP-Übersicht Header-Alignment:** Titel auf `text-base` angehoben und `mb-3` Spacing — saubere vertikale Ausrichtung mit dem Hinzufügen-Button
+- **Host-Zeilen-Hierarchie:** IP-Adresse dezenter (text-xs Mono), Hostname als Primärinfo (text-sm font-medium). Ohne Hostname → IP-Adresse als Fallback-Haupttext
+- **Description + MAC als Subtext:** Allocation-Description und MAC-Adresse als zweite Zeile (`text-[11px] text-gray-400`) statt nur MAC
+- **Allocation-Edit-Titel:** Zeigt IP-Adresse + Hostname statt generischem "Zuweisung bearbeiten" — analog zum Range-Panel
+- **Validierung i18n:** Alle Network-Edit-Fehlermeldungen (Name, Subnet CIDR, Gateway IPv4) über `networks.validation.*` Keys
+- **Range IP-Count i18n:** `"123 IPs"` → `$t('networks.ranges.ipCount', { count })` 
+- **Delete-Dialog i18n:** `"+ more"` → `$t('common.more')`
+- **Sort-Header i18n:** Hardcoded "Name/Subnet/Gateway" → `$t('common.name')`, `$t('networks.infoBar.subnet/gateway')`
+- **Sort-Header dezenter:** Von `text-[11px] py-2` auf `text-[10px] py-1.5 text-gray-500` mit Hover-Transition
+- **Neue i18n-Keys:** `networks.validation.*`, `networks.ranges.ipCount`, `common.more` (EN + DE)
+
+### Phase 26 Changes (Network Page IP Overview)
+- **IP-Zeilen klickbar:** Ganze Allocation-/Range-Zeile ist jetzt klickbar und öffnet direkt das Edit-Sidepanel
+- **Selection-State:** Aktive Zeile bekommt `bg-primary-500/10` Highlight — klare Master-Detail-Verbindung
+- **Hover-States verbessert:** Range-Zeilen mit typ-spezifischem Hover, cursor-pointer für alle interaktiven Zeilen
+- **Allocation-Zeilen:** Device-Type als UBadge, Status-Badge i18n
+- **Range-Zeilen:** Start-IP prominent, End-IP dezenter getrennt dargestellt
+- **Sidepanel Header:** Range-Edit mit Type-Badge + IP-Range im Titel, Add/Edit-Panel kontextabhängig
+- **Tooltips → native title:** UTooltip ersetzt (verhindert Auto-Focus-Bug)
+- **Sprachkonsistenz:** Alle hardcoded Strings i18n, Utilization-Legende i18n
+- **Netzwerkliste:** Nicht-funktionaler Edit-Button entfernt
+
+### Previous: Phase 25c — VLAN Sidepanel Switch-Konsistenz (v0.14.3)
 
 ### Phase 25c Changes (Switch-Sidepanel-Angleichung)
 - **Fix: Tooltip-Auto-Focus-Bug:** `UTooltip` um Edit/Delete-Buttons entfernt — USlideover fokussiert beim Öffnen den ersten Button im `#actions`-Slot, was den Tooltip sofort auslöste. Ersetzt durch natives `title`-Attribut (kein Focus-Trigger)

@@ -7,15 +7,8 @@
         <h1 class="text-xl font-bold">{{ network?.name || $t('common.loading') }}</h1>
       </div>
       <div v-if="network" class="flex items-center gap-1">
-        <UTooltip :text="showDetails ? $t('common.hideDetails') : $t('common.showDetails')">
-          <UButton icon="i-heroicons-information-circle" :variant="showDetails ? 'solid' : 'ghost'" color="info" size="sm" @click="showDetails = !showDetails" />
-        </UTooltip>
-        <UTooltip :text="editing ? $t('common.cancel') : $t('common.edit')">
-          <UButton :icon="editing ? 'i-heroicons-x-mark' : 'i-heroicons-pencil'" :variant="editing ? 'solid' : 'ghost'" :color="editing ? 'neutral' : 'primary'" size="sm" @click="editing ? editing = false : startEdit()" />
-        </UTooltip>
-        <UTooltip :text="$t('common.delete')">
-          <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" @click="showDeleteDialog = true" />
-        </UTooltip>
+        <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="sm" :title="$t('common.edit')" @click="startEdit()" />
+        <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="showDeleteDialog = true" />
       </div>
     </div>
 
@@ -24,38 +17,75 @@
     </div>
 
     <div v-else-if="network" class="space-y-5">
-      <!-- Subnet stats -->
-      <div class="-mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-default bg-default/30 px-5 py-3">
-        <div>
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.subnet') }}</div>
-          <div class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ network.subnet }}</div>
-        </div>
-        <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-        <div v-if="network.gateway">
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.gateway') }}</div>
-          <div class="font-mono text-sm font-semibold text-gray-900 dark:text-white">{{ network.gateway }}</div>
-        </div>
-        <div v-if="network.gateway" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-        <div>
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.mask') }}</div>
-          <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.mask }}</div>
-        </div>
-        <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-        <div>
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.hosts') }}</div>
-          <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ subnetInfo.usableHosts.toLocaleString() }}</div>
-        </div>
-        <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-        <div>
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.allocated') }}</div>
-          <div class="text-sm font-semibold" :class="utilizationPercent > 80 ? 'text-red-500' : 'text-primary-500'">{{ allocations.length }} <span class="text-xs font-normal text-gray-400">({{ utilizationPercent }}%)</span></div>
-        </div>
-        <div v-if="associatedVlan" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-        <div v-if="associatedVlan">
-          <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.vlan') }}</div>
-          <div class="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
-            <div class="h-2 w-2 rounded-full" :style="{ backgroundColor: associatedVlan.color }" />
-            {{ associatedVlan.vlan_id }} <span class="font-normal text-gray-400">{{ associatedVlan.name }}</span>
+      <!-- Info bar with inline expand toggle (like Switch detail) -->
+      <div class="-mt-2 list-container rounded-lg bg-default">
+        <button
+          class="flex w-full flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3 text-left cursor-pointer transition-colors hover:bg-elevated/50 rounded-t-lg"
+          @click="showDetails = !showDetails"
+        >
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.subnet') }}</div>
+            <div class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ network.subnet }}</div>
+          </div>
+          <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <div v-if="network.gateway">
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.gateway') }}</div>
+            <div class="font-mono text-sm font-semibold text-gray-900 dark:text-white">{{ network.gateway }}</div>
+          </div>
+          <div v-if="network.gateway" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.mask') }}</div>
+            <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.mask }}</div>
+          </div>
+          <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.hosts') }}</div>
+            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ subnetInfo.usableHosts.toLocaleString() }}</div>
+          </div>
+          <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.allocated') }}</div>
+            <div class="text-sm font-semibold" :class="utilizationPercent > 80 ? 'text-red-500' : 'text-primary-500'">{{ allocations.length }} <span class="text-xs font-normal text-gray-400">({{ utilizationPercent }}%)</span></div>
+          </div>
+          <div v-if="associatedVlan" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <div v-if="associatedVlan">
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.vlan') }}</div>
+            <div class="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
+              <div class="h-2 w-2 rounded-full" :style="{ backgroundColor: associatedVlan.color }" />
+              {{ associatedVlan.vlan_id }} <span class="font-normal text-gray-400">{{ associatedVlan.name }}</span>
+            </div>
+          </div>
+          <!-- Expand/collapse chevron -->
+          <div class="ml-auto flex items-center">
+            <UIcon name="i-heroicons-chevron-down" :class="['h-4 w-4 text-gray-400 transition-transform duration-200', showDetails ? 'rotate-180' : '']" />
+          </div>
+        </button>
+
+        <!-- Expanded details (inline below info bar, same visual language) -->
+        <div v-show="showDetails" class="border-t border-default px-5 py-3 space-y-3">
+          <!-- Description (full width, only if present) -->
+          <div v-if="network.description">
+            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('common.description') }}</div>
+            <p class="mt-0.5 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">{{ network.description }}</p>
+          </div>
+          <!-- Technical details row -->
+          <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <div>
+              <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.network') }}</div>
+              <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.network }}</div>
+            </div>
+            <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+            <div>
+              <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.broadcast') }}</div>
+              <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.broadcast }}</div>
+            </div>
+            <template v-if="network.dns_servers?.length">
+              <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+              <div>
+                <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.dns') }}</div>
+                <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ formatDns(network.dns_servers) }}</div>
+              </div>
+            </template>
           </div>
         </div>
       </div>
@@ -79,80 +109,30 @@
           />
         </div>
         <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-gray-400">
-          <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-green-500" /> {{ allocations.length }} Allocated</span>
-          <span v-if="dhcpRangePercent > 0" class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-blue-500/60" /> DHCP</span>
-          <span v-if="reservedRangePercent > 0" class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-yellow-500/50" /> Reserved</span>
-          <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-gray-500/30" /> Free</span>
+          <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-green-500" /> {{ allocations.length }} {{ $t('networks.infoBar.allocated') }}</span>
+          <span v-if="dhcpRangePercent > 0" class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-blue-500/60" /> {{ $t('networks.ranges.types.dhcp') }}</span>
+          <span v-if="reservedRangePercent > 0" class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-yellow-500/50" /> {{ $t('networks.ranges.types.reserved') }}</span>
+          <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-gray-500/30" /> {{ $t('common.free') }}</span>
         </div>
-      </div>
-
-      <!-- Details panel (toggled) -->
-      <div v-show="showDetails || editing" class="rounded-lg border border-default bg-default/30 p-4">
-        <div v-if="!editing" class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
-          <div>
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.network') }}</dt>
-            <dd class="font-mono">{{ subnetInfo.network }}</dd>
-          </div>
-          <div>
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.broadcast') }}</dt>
-            <dd class="font-mono">{{ subnetInfo.broadcast }}</dd>
-          </div>
-          <div v-if="network.dns_servers?.length">
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.dns') }}</dt>
-            <dd class="font-mono">{{ network.dns_servers.join(', ') }}</dd>
-          </div>
-          <div v-if="network.description" class="col-span-2 sm:col-span-3 lg:col-span-4">
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('common.description') }}</dt>
-            <dd>{{ network.description }}</dd>
-          </div>
-        </div>
-
-        <!-- Edit form -->
-        <UForm v-if="editing" :state="editForm" :validate="validate" :validate-on="['blur', 'change']" novalidate class="space-y-4" @submit="onSave">
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <UFormField :label="$t('networks.fields.name') + ' *'" name="name" required>
-              <UInput v-model="editForm.name" required class="w-full" />
-            </UFormField>
-            <UFormField :label="$t('networks.fields.subnet') + ' *'" name="subnet" required>
-              <UInput v-model="editForm.subnet" required class="w-full" />
-            </UFormField>
-            <UFormField :label="$t('networks.fields.gateway')" name="gateway">
-              <UInput v-model="editForm.gateway" class="w-full" />
-            </UFormField>
-            <UFormField :label="$t('networks.fields.dnsServers')" name="dns_servers">
-              <UInput v-model="editDnsInput" placeholder="8.8.8.8, 8.8.4.4" class="w-full" />
-            </UFormField>
-            <UFormField :label="$t('networks.fields.vlan')" name="vlan_id">
-              <USelect v-model="editForm.vlan_id" :items="vlanOptions" placeholder="-" class="w-full" />
-            </UFormField>
-            <UFormField :label="$t('common.description')" name="description">
-              <UInput v-model="editForm.description" class="w-full" />
-            </UFormField>
-          </div>
-          <div class="flex justify-end gap-2">
-            <UButton variant="ghost" color="neutral" @click="editing = false">{{ $t('common.cancel') }}</UButton>
-            <UButton type="submit" :loading="saving">{{ $t('common.save') }}</UButton>
-          </div>
-        </UForm>
       </div>
 
       <!-- Unified IP Overview -->
       <div>
-        <div class="mb-2 flex items-center justify-between">
-          <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ $t('networks.unified.title') }}</h2>
-          <UButton icon="i-heroicons-plus" size="sm" @click="addPanelError = ''; showAddPanel = true">
+        <div class="mb-3 flex items-center justify-between">
+          <h2 class="text-base font-semibold text-gray-700 dark:text-gray-300">{{ $t('networks.unified.title') }}</h2>
+          <UButton icon="i-heroicons-plus" size="sm" @click="openAddPanel()">
             {{ $t('common.add') }}
           </UButton>
         </div>
-
 
         <!-- Unified list -->
         <div class="divide-y divide-default overflow-hidden rounded-lg border border-default bg-default">
           <div
             v-for="row in unifiedList"
             :key="row.key"
-            class="group flex items-center gap-3 px-4 py-2.5"
+            class="group flex items-center gap-3 px-4 py-2.5 transition-colors"
             :class="rowClass(row)"
+            @click="onRowClick(row)"
           >
             <!-- Fixed rows (network, gateway, broadcast) -->
             <template v-if="row.kind === 'fixed'">
@@ -160,7 +140,7 @@
                 <code class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ row.ip }}</code>
               </div>
               <div class="flex-1">
-                <span class="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ row.label }}</span>
+                <span class="text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ row.label }}</span>
               </div>
             </template>
 
@@ -171,35 +151,40 @@
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span v-if="(row.data as IPAllocation).hostname" class="text-sm font-medium text-gray-900 dark:text-white">{{ (row.data as IPAllocation).hostname }}</span>
-                  <span v-if="(row.data as IPAllocation).device_type" class="text-xs text-gray-500">{{ (row.data as IPAllocation).device_type }}</span>
-                  <UBadge :color="(row.data as IPAllocation).status === 'active' ? 'success' : (row.data as IPAllocation).status === 'reserved' ? 'warning' : 'neutral'" variant="subtle" size="sm">{{ (row.data as IPAllocation).status }}</UBadge>
+                  <span class="text-sm font-medium text-gray-900 dark:text-white">{{ (row.data as IPAllocation).hostname || (row.data as IPAllocation).ip_address }}</span>
+                  <UBadge v-if="(row.data as IPAllocation).device_type" variant="subtle" color="neutral" size="sm">{{ $t(`networks.allocations.deviceTypes.${(row.data as IPAllocation).device_type}`) }}</UBadge>
+                  <UBadge :color="(row.data as IPAllocation).status === 'active' ? 'success' : (row.data as IPAllocation).status === 'reserved' ? 'warning' : 'neutral'" variant="subtle" size="sm">{{ $t(`networks.allocations.statuses.${(row.data as IPAllocation).status}`) }}</UBadge>
+                </div>
+                <div v-if="(row.data as IPAllocation).description || (row.data as IPAllocation).mac_address" class="mt-0.5 flex items-center gap-3 text-[11px] text-gray-400">
+                  <span v-if="(row.data as IPAllocation).description">{{ (row.data as IPAllocation).description }}</span>
+                  <span v-if="(row.data as IPAllocation).mac_address" class="font-mono">{{ (row.data as IPAllocation).mac_address }}</span>
                 </div>
               </div>
-              <div class="flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100">
-                <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click="openEditAlloc(row.data as IPAllocation)" />
-                <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="openDeleteAllocDialog(row.data as IPAllocation)" />
+              <div class="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.stop="openEditAlloc(row.data as IPAllocation)" />
+                <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.stop="openDeleteAllocDialog(row.data as IPAllocation)" />
               </div>
             </template>
 
             <!-- Range rows -->
             <template v-else-if="row.kind === 'range'">
               <div class="w-40 shrink-0">
-                <code class="font-mono text-xs text-gray-900 dark:text-white">{{ (row.data as IPRange).start_ip }} &ndash; {{ abbreviateEndIp((row.data as IPRange).start_ip, (row.data as IPRange).end_ip) }}</code>
+                <code class="font-mono text-sm font-medium text-gray-900 dark:text-white">{{ (row.data as IPRange).start_ip }}</code>
+                <span class="font-mono text-xs text-gray-400"> – {{ abbreviateEndIp((row.data as IPRange).start_ip, (row.data as IPRange).end_ip) }}</span>
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
                   <UBadge :color="rangeTypeBadgeColor((row.data as IPRange).type)" variant="subtle" size="sm">{{ $t(`networks.ranges.types.${(row.data as IPRange).type}`) }}</UBadge>
-                  <span class="font-mono text-[11px] text-gray-400">{{ rangeIpCount(row.data as IPRange) }} IPs</span>
+                  <span class="font-mono text-[11px] text-gray-400">{{ $t('networks.ranges.ipCount', { count: rangeIpCount(row.data as IPRange) }) }}</span>
                   <span v-if="(row.data as IPRange).description" class="text-xs text-gray-500 dark:text-gray-400">{{ (row.data as IPRange).description }}</span>
                   <span v-if="(row.data as IPRange).type !== 'dhcp' && countAllocsInRange(row.data as IPRange) > 0" class="text-xs text-gray-400">
                     ({{ $t('networks.ranges.ipsDocumented', { count: countAllocsInRange(row.data as IPRange) }) }})
                   </span>
                 </div>
               </div>
-              <div class="flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100">
-                <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click="openRangeEdit(row.data as IPRange)" />
-                <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="openDeleteRange(row.data as IPRange)" />
+              <div class="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.stop="openRangeEdit(row.data as IPRange)" />
+                <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.stop="openDeleteRange(row.data as IPRange)" />
               </div>
             </template>
           </div>
@@ -210,20 +195,65 @@
       </div>
     </div>
 
+    <!-- Network edit slideover -->
+    <USlideover v-model:open="editing">
+      <template #title>
+        <span>{{ $t('networks.edit') }}</span>
+      </template>
+
+      <template #body>
+        <UForm ref="editFormRef" :state="editForm" :validate="validate" :validate-on="['blur', 'change']" novalidate class="space-y-4" @submit="onSave">
+          <UFormField :label="$t('networks.fields.name')" name="name" required>
+            <UInput v-model="editForm.name" required class="w-full" />
+          </UFormField>
+          <UFormField :label="$t('networks.fields.subnet')" name="subnet" required>
+            <UInput v-model="editForm.subnet" required class="w-full" />
+          </UFormField>
+          <UFormField :label="$t('networks.fields.gateway')" name="gateway">
+            <UInput v-model="editForm.gateway" class="w-full" />
+          </UFormField>
+          <UFormField :label="$t('networks.fields.dnsServers')" name="dns_servers">
+            <UInput v-model="editDnsInput" placeholder="8.8.8.8, 8.8.4.4" class="w-full" />
+          </UFormField>
+          <UFormField :label="$t('networks.fields.vlan')" name="vlan_id">
+            <USelect v-model="editForm.vlan_id" :items="vlanOptions" placeholder="-" class="w-full" />
+          </UFormField>
+          <UFormField :label="$t('common.description')" name="description">
+            <UTextarea v-model="editForm.description" :rows="3" class="w-full" />
+          </UFormField>
+        </UForm>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UButton variant="ghost" color="neutral" @click="editing = false">{{ $t('common.cancel') }}</UButton>
+          <UButton :loading="saving" @click="editFormRef?.submit()">{{ $t('common.save') }}</UButton>
+        </div>
+      </template>
+    </USlideover>
+
     <!-- Range edit slideover -->
-    <USlideover v-model:open="showRangeEdit" :title="$t('networks.ranges.editRange')" description="Modify IP range settings">
+    <USlideover v-model:open="showRangeEdit">
+      <template #title>
+        <div class="flex items-center gap-2">
+          <UBadge :color="rangeTypeBadgeColor(rangeEditForm.type)" variant="subtle" size="sm">{{ $t(`networks.ranges.types.${rangeEditForm.type}`) }}</UBadge>
+          <span>{{ rangeEditTarget?.start_ip }} – {{ rangeEditTarget?.end_ip }}</span>
+        </div>
+      </template>
 
       <template #body>
         <div v-if="rangeEditError" class="mb-4 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
           {{ rangeEditError }}
         </div>
         <form class="space-y-4" @submit.prevent="onSaveRangeEdit">
-          <UFormField :label="$t('networks.ranges.fields.startIp') + ' *'">
-            <UInput v-model="rangeEditForm.start_ip" required class="w-full" />
-          </UFormField>
-          <UFormField :label="$t('networks.ranges.fields.endIp') + ' *'">
-            <UInput v-model="rangeEditForm.end_ip" required class="w-full" />
-          </UFormField>
+          <div class="grid grid-cols-2 gap-3">
+            <UFormField :label="$t('networks.ranges.fields.startIp') + ' *'">
+              <UInput v-model="rangeEditForm.start_ip" required class="w-full" />
+            </UFormField>
+            <UFormField :label="$t('networks.ranges.fields.endIp') + ' *'">
+              <UInput v-model="rangeEditForm.end_ip" required class="w-full" />
+            </UFormField>
+          </div>
           <UFormField :label="$t('networks.ranges.fields.type') + ' *'">
             <USelect v-model="rangeEditForm.type" :items="rangeTypeOptions" class="w-full" />
           </UFormField>
@@ -246,24 +276,37 @@
       </template>
     </USlideover>
 
-    <!-- Add IP/Range Sidebar -->
-    <USlideover v-model:open="showAddPanel" :title="editAllocTarget ? $t('networks.allocations.edit') : addPanelMode === 'ip' ? $t('networks.unified.addIp') : $t('networks.unified.addRange')" description="Add IP allocation or range">
+    <!-- Add/Edit IP/Range Sidebar -->
+    <USlideover v-model:open="showAddPanel">
+      <template #title>
+        <div v-if="editAllocTarget" class="flex items-center gap-2">
+          <code class="font-mono text-sm">{{ editAllocTarget.ip_address }}</code>
+          <span v-if="editAllocTarget.hostname" class="text-sm text-gray-400">{{ editAllocTarget.hostname }}</span>
+        </div>
+        <span v-else>{{ $t('common.add') }}</span>
+      </template>
 
-        <template #body>
-        <!-- Mode toggle -->
-        <div class="mb-4 flex items-center gap-1">
+      <template #actions>
+        <div v-if="editAllocTarget" class="flex items-center gap-1">
+          <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="openDeleteAllocDialog(editAllocTarget)" />
+        </div>
+      </template>
+
+      <template #body>
+        <!-- Mode toggle (only for new entries) -->
+        <div v-if="!editAllocTarget" class="mb-4 flex items-center gap-1">
           <button
             class="px-2.5 py-1 text-xs font-medium rounded border transition-colors"
             :class="addPanelMode === 'ip'
               ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
-              : 'bg-neutral-100 border-neutral-300 text-neutral-500 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400'"
+              : 'bg-neutral-100 border-neutral-300 text-neutral-500 hover:text-neutral-700 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'"
             @click="addPanelMode = 'ip'"
           >{{ $t('networks.unified.addIp') }}</button>
           <button
             class="px-2.5 py-1 text-xs font-medium rounded border transition-colors"
             :class="addPanelMode === 'range'
               ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
-              : 'bg-neutral-100 border-neutral-300 text-neutral-500 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400'"
+              : 'bg-neutral-100 border-neutral-300 text-neutral-500 hover:text-neutral-700 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'"
             @click="addPanelMode = 'range'"
           >{{ $t('networks.unified.addRange') }}</button>
         </div>
@@ -314,14 +357,14 @@
             <UInput v-model="rangeForm.description" class="w-full" />
           </UFormField>
         </form>
-        </template>
+      </template>
 
-        <template #footer>
-          <div class="flex justify-end gap-2">
-            <UButton variant="ghost" color="neutral" @click="showAddPanel = false; editAllocTarget = null">{{ $t('common.cancel') }}</UButton>
-            <UButton :loading="addPanelMode === 'ip' ? creatingAlloc : creatingRange" @click="addPanelMode === 'ip' ? onCreateAllocation() : onCreateRange()">{{ $t('common.add') }}</UButton>
-          </div>
-        </template>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UButton variant="ghost" color="neutral" @click="showAddPanel = false; editAllocTarget = null">{{ $t('common.cancel') }}</UButton>
+          <UButton :loading="addPanelMode === 'ip' ? creatingAlloc : creatingRange" @click="addPanelMode === 'ip' ? onCreateAllocation() : onCreateRange()">{{ editAllocTarget ? $t('common.save') : $t('common.add') }}</UButton>
+        </div>
+      </template>
     </USlideover>
 
     <SharedConfirmDialog v-model="showDeleteDialog" :title="$t('networks.delete')" :message="network ? `${$t('networks.delete')}: ${network.name} (${network.subnet})?` : ''" :loading="deleting" @confirm="confirmDeleteNetwork" />
@@ -334,7 +377,7 @@
               count: allocDeleteRefs.length,
               ports: allocDeleteRefs.length <= 5
                 ? allocDeleteRefs.join(', ')
-                : allocDeleteRefs.slice(0, 5).join(', ') + ' +' + (allocDeleteRefs.length - 5) + ' more'
+                : allocDeleteRefs.slice(0, 5).join(', ') + ` +${allocDeleteRefs.length - 5} ${t('common.more')}`
             })}`
           : `${$t('common.delete')}: ${deleteAllocTarget.ip_address}?`)
         : ''"
@@ -365,6 +408,7 @@ const network = ref<Network | null>(null)
 
 useHead({ title: computed(() => network.value?.name || t('networks.title')) })
 const editing = ref(false)
+const editFormRef = ref<{ submit: () => void } | null>(null)
 const saving = ref(false)
 const showDetails = ref(false)
 const showDeleteDialog = ref(false)
@@ -447,9 +491,25 @@ const associatedVlan = computed(() => {
   return vlans.value.find((v) => v.id === network.value!.vlan_id)
 })
 
-const deviceTypeOptions = [{ label: 'Server', value: 'server' }, { label: 'Switch', value: 'switch' }, { label: 'Printer', value: 'printer' }, { label: 'Phone', value: 'phone' }, { label: 'AP', value: 'ap' }, { label: 'Camera', value: 'camera' }, { label: 'Other', value: 'other' }]
-const allocStatusOptions = computed(() => [{ label: t('common.active'), value: 'active' }, { label: 'Reserved', value: 'reserved' }, { label: t('common.inactive'), value: 'inactive' }])
-const rangeTypeOptions = [{ label: 'DHCP', value: 'dhcp' }, { label: 'Static', value: 'static' }, { label: 'Reserved', value: 'reserved' }]
+const deviceTypeOptions = computed(() => [
+  { label: t('networks.allocations.deviceTypes.server'), value: 'server' },
+  { label: t('networks.allocations.deviceTypes.switch'), value: 'switch' },
+  { label: t('networks.allocations.deviceTypes.printer'), value: 'printer' },
+  { label: t('networks.allocations.deviceTypes.phone'), value: 'phone' },
+  { label: t('networks.allocations.deviceTypes.ap'), value: 'ap' },
+  { label: t('networks.allocations.deviceTypes.camera'), value: 'camera' },
+  { label: t('networks.allocations.deviceTypes.other'), value: 'other' }
+])
+const allocStatusOptions = computed(() => [
+  { label: t('common.active'), value: 'active' },
+  { label: t('networks.allocations.statuses.reserved'), value: 'reserved' },
+  { label: t('common.inactive'), value: 'inactive' }
+])
+const rangeTypeOptions = computed(() => [
+  { label: t('networks.ranges.types.dhcp'), value: 'dhcp' },
+  { label: t('networks.ranges.types.static'), value: 'static' },
+  { label: t('networks.ranges.types.reserved'), value: 'reserved' }
+])
 
 
 const subnetInfo = computed(() => {
@@ -515,6 +575,11 @@ function rangeTypeBadgeColor(type: string): BadgeColor {
   return 'warning'
 }
 
+function formatDns(servers: string[]): string {
+  if (servers.length <= 3) return servers.join(', ')
+  return servers.slice(0, 2).join(', ') + ` +${servers.length - 2}`
+}
+
 function abbreviateEndIp(startIp: string, endIp: string): string {
   const startParts = startIp.split('.')
   const endParts = endIp.split('.')
@@ -532,17 +597,41 @@ function rangeIpCount(range: IPRange): number {
   return ipToLong(range.end_ip) - ipToLong(range.start_ip) + 1
 }
 
+// Selection tracking for master-detail
+const selectedRowKey = computed(() => {
+  if (showAddPanel.value && editAllocTarget.value) return `alloc-${editAllocTarget.value.id}`
+  if (showRangeEdit.value && rangeEditTarget.value) return `range-${rangeEditTarget.value.id}`
+  return null
+})
+
 function rowClass(row: UnifiedRow): string {
+  const isSelected = selectedRowKey.value === row.key
   if (row.kind === 'fixed') {
     return 'bg-elevated'
   }
   if (row.kind === 'range') {
     const type = (row.data as IPRange | undefined)?.type
-    if (type === 'dhcp') return 'border-l-2 border-l-blue-500 bg-blue-500/5 dark:bg-blue-500/5'
-    if (type === 'static') return 'border-l-2 border-l-green-500 bg-green-500/5 dark:bg-green-500/5'
-    if (type === 'reserved') return 'border-l-2 border-l-yellow-500 bg-yellow-500/5 dark:bg-yellow-500/5'
+    if (isSelected) return 'cursor-pointer border-l-2 border-l-primary-500 bg-primary-500/10 dark:bg-primary-500/10'
+    if (type === 'dhcp') return 'cursor-pointer border-l-2 border-l-blue-500 bg-blue-500/5 dark:bg-blue-500/5 hover:bg-blue-500/10 dark:hover:bg-blue-500/10'
+    if (type === 'static') return 'cursor-pointer border-l-2 border-l-green-500 bg-green-500/5 dark:bg-green-500/5 hover:bg-green-500/10 dark:hover:bg-green-500/10'
+    if (type === 'reserved') return 'cursor-pointer border-l-2 border-l-yellow-500 bg-yellow-500/5 dark:bg-yellow-500/5 hover:bg-yellow-500/10 dark:hover:bg-yellow-500/10'
   }
-  return 'row-hover'
+  if (isSelected) return 'cursor-pointer bg-primary-500/10 dark:bg-primary-500/10'
+  return 'cursor-pointer row-hover'
+}
+
+function onRowClick(row: UnifiedRow) {
+  if (row.kind === 'fixed') return
+  if (row.kind === 'allocation') openEditAlloc(row.data as IPAllocation)
+  if (row.kind === 'range') openRangeEdit(row.data as IPRange)
+}
+
+function openAddPanel() {
+  editAllocTarget.value = null
+  addPanelError.value = ''
+  allocForm.value = { ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' }
+  rangeForm.value = { start_ip: '', end_ip: '', type: 'static', description: '' }
+  showAddPanel.value = true
 }
 
 function countAllocsInRange(range: IPRange): number {
@@ -571,21 +660,20 @@ function startEdit() {
   editForm.value = { name: network.value.name, subnet: network.value.subnet, gateway: network.value.gateway || '', vlan_id: network.value.vlan_id || '', description: network.value.description || '' }
   editDnsInput.value = network.value.dns_servers?.join(', ') || ''
   editing.value = true
-  showDetails.value = true
 }
 
 function validate(state: typeof editForm.value) {
   const errors: { name: string; message: string }[] = []
   if (!state.name?.trim()) {
-    errors.push({ name: 'name', message: 'Name is required' })
+    errors.push({ name: 'name', message: t('networks.validation.nameRequired') })
   }
   if (!state.subnet?.trim()) {
-    errors.push({ name: 'subnet', message: 'Subnet is required' })
+    errors.push({ name: 'subnet', message: t('networks.validation.subnetRequired') })
   } else if (!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}$/.test(state.subnet.trim())) {
-    errors.push({ name: 'subnet', message: 'Must be valid CIDR notation (e.g. 10.0.0.0/24)' })
+    errors.push({ name: 'subnet', message: t('networks.validation.subnetFormat') })
   }
   if (state.gateway?.trim() && !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(state.gateway.trim())) {
-    errors.push({ name: 'gateway', message: 'Must be a valid IPv4 address (e.g. 10.0.0.1)' })
+    errors.push({ name: 'gateway', message: t('networks.validation.gatewayFormat') })
   }
   return errors
 }

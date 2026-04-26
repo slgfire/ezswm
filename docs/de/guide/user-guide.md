@@ -366,9 +366,20 @@ Felder:
 
 Jedes VLAN hat eine eindeutige Farbe, die in den Port-Visualisierungen aller Switches angezeigt wird. So lässt sich visuell schnell erkennen, welchem VLAN ein Port zugeordnet ist. Der Farbwähler enthält sowohl eine visuelle Auswahl als auch ein Hex-Eingabefeld.
 
+### VLAN-Detail-Sidepanel
+
+Klicke auf ein VLAN in der Liste, um ein Detail-Sidepanel auf der rechten Seite zu öffnen. Das ausgewählte VLAN wird in der Liste hervorgehoben, was eine klare Master-Detail-Beziehung schafft. Das Sidepanel zeigt:
+
+- Status- und Farb-Badges
+- Routing-Gerät
+- Beschreibung
+- Verknüpfte Netzwerke mit Links
+
+![VLAN-Detail-Sidepanel](/images/screenshot-vlans-detail.png)
+
 ### Bearbeiten und Löschen
 
-Klicke auf ein VLAN in der Liste, um dessen Details anzuzeigen. Von dort aus kannst du alle Felder bearbeiten oder das VLAN löschen. Die Detailansicht zeigt auch, welche Switch-Ports diesem VLAN derzeit zugewiesen sind.
+Im Sidepanel klicke auf das **Bearbeiten-Symbol**, um in den Bearbeitungsmodus zu wechseln. Klicke auf das **Papierkorb-Symbol**, um das VLAN zu löschen. Du kannst auch eine vollständige Detailseite für jedes VLAN mit zusätzlichen Informationen aufrufen.
 
 ## Netzwerke & IP-Verwaltung
 
@@ -387,23 +398,44 @@ Felder:
 - **VLAN** -- dieses Netzwerk mit einem VLAN aus dem Dropdown verknüpfen
 - **Beschreibung** -- optional
 
+### Netzwerk-Detail & IP-Übersicht
+
+Die Netzwerk-Detailseite zeigt Subnetz-Statistiken (Subnetz, Gateway, Maske, Hosts, Zugewiesene Anzahl, verknüpftes VLAN) in einer kompakten Info-Leiste oben. Klicke auf die Info-Leiste, um zusätzliche Details aufzuklappen (Netzwerkadresse, Broadcast, DNS-Server, Beschreibung) -- dasselbe Muster wie auf der Switch-Detailseite. Ein Auslastungsbalken darunter visualisiert zugewiesene, DHCP-, reservierte und freie Adressbereiche. Zum Bearbeiten des Netzwerks klicke auf das **Stift-Symbol** oben rechts -- dies öffnet ein Sidepanel.
+
+![Netzwerk-Detail mit IP-Übersicht](/images/screenshot-network-detail.png)
+
+Unter der Info-Leiste zeigt die **IP-Übersicht** alle Einträge in einer einheitlichen, sortierten Liste:
+
+- **Feste Zeilen** (Netzwerkadresse, Gateway, Broadcast) -- in gedämpftem Stil dargestellt
+- **IP-Zuweisungen** -- einzelne Host-Einträge mit Hostname, Gerätetyp-Badge, Status-Badge und optionaler MAC-Adresse / Beschreibung
+- **IP-Bereiche** -- DHCP-, statische oder reservierte Blöcke mit farbcodiertem linken Rand und IP-Anzahl
+
+**Klick auf eine Zuweisung oder einen Bereich** öffnet das entsprechende Bearbeiten-Sidepanel. Die ausgewählte Zeile wird hervorgehoben, um die Master-Detail-Beziehung zu zeigen. Hover-Aktionen (Bearbeiten/Löschen-Buttons) erscheinen rechts in jeder Zeile.
+
 ### IP-Zuweisungen
 
-Auf der Netzwerk-Detailseite kannst du einzelne IP-Adressen innerhalb des Subnetzes zuweisen. Jede Zuweisung erfasst die IP-Adresse, den Hostnamen, die MAC-Adresse und eine Beschreibung. Dies dient als dein IP-Adress-Management (IPAM) Register.
+Klicke auf **Hinzufügen**, um das Hinzufügen/Bearbeiten-Sidepanel zu öffnen. Jede Zuweisung erfasst:
+
+- **IP-Adresse** (erforderlich)
+- **Hostname** -- wird als primäre Kennung in der IP-Übersicht angezeigt
+- **Gerätetyp** -- Server, Switch, Drucker, Telefon, AP, Kamera oder Sonstige (als Badge dargestellt)
+- **Status** -- Aktiv, Reserviert oder Inaktiv
+- **MAC-Adresse** -- als sekundäre Info in der Zeile angezeigt
+- **Beschreibung** -- als sekundäre Info in der Zeile angezeigt
 
 ### IP-Bereiche
 
-Innerhalb eines Netzwerks kannst du IP-Bereiche definieren, um Adressblöcke für bestimmte Zwecke zu kennzeichnen:
+IP-Bereiche kennzeichnen Adressblöcke für bestimmte Zwecke:
 
-- **DHCP** -- dynamisch vergebene Adressen
-- **Statisch** -- manuell zugewiesene Adressen
-- **Reserviert** -- zurückgehaltene Adressen (z.B. für zukünftige Nutzung oder Infrastruktur)
+- **DHCP** -- dynamisch vergebene Adressen (blauer Indikator)
+- **Statisch** -- manuell zugewiesene Adressen (grüner Indikator)
+- **Reserviert** -- für Infrastruktur zurückgehaltene Adressen (gelber Indikator)
 
-Jeder Bereich hat eine Start-IP, End-IP, einen Namen und einen Typ.
+Jeder Bereich hat eine Start-IP, End-IP, einen Typ und eine optionale Beschreibung. Die IP-Anzahl wird inline angezeigt.
 
 ### Auslastungsverfolgung
 
-Die Netzwerk-Detailseite zeigt Auslastungsmetriken: Gesamtanzahl der Adressen im Subnetz, wie viele zugewiesen sind und wie viele in definierten Bereichen liegen. Ein visueller Balken zeigt die Gesamtnutzung auf einen Blick.
+Der Auslastungsbalken oben auf der Netzwerk-Detailseite visualisiert die Adressraum-Nutzung. Die Legende zeigt Zugewiesene, DHCP, Reservierte und Freie Anzahlen.
 
 ## Globale Suche
 
