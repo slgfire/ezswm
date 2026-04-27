@@ -16,8 +16,8 @@
     "docs:preview": "npm run --prefix docs preview"
   },
   "dependencies": {
-    "@nuxt/ui": "4.6.1",
-    "@nuxtjs/i18n": "10.2.4",
+    "@nuxt/ui": "4.7.0",
+    "@nuxtjs/i18n": "10.3.0",
     "@types/qrcode": "1.5.6",
     "bcryptjs": "3.0.3",
     "jsonwebtoken": "9.0.3",
