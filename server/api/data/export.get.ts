@@ -1,9 +1,4 @@
 import { readJson } from '../../storage/jsonStorage'
-import type { Switch } from '../../../types/switch'
-import type { VLAN } from '../../../types/vlan'
-import type { Network } from '../../../types/network'
-import type { IPAllocation } from '../../../types/ipAllocation'
-import type { LayoutTemplate } from '../../../types/layoutTemplate'
 
 type EntityType = 'switches' | 'vlans' | 'networks' | 'allocations' | 'templates'
 type ExportFormat = 'json' | 'csv'

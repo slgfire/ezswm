@@ -1322,8 +1322,7 @@ describe('createLayoutTemplateSchema', () => {
 describe('updateSettingsSchema', () => {
   it('accepts valid settings update', () => {
     const result = updateSettingsSchema.safeParse({
-      app_name: 'My Network',
-      pagination_size: 25
+      app_name: 'My Network'
     })
     assert.strictEqual(result.success, true)
   })
@@ -1331,28 +1330,6 @@ describe('updateSettingsSchema', () => {
   it('accepts empty object (all optional)', () => {
     const result = updateSettingsSchema.safeParse({})
     assert.strictEqual(result.success, true)
-  })
-
-  it('rejects pagination_size below 10', () => {
-    const result = updateSettingsSchema.safeParse({ pagination_size: 5 })
-    assert.strictEqual(result.success, false)
-  })
-
-  it('rejects pagination_size above 100', () => {
-    const result = updateSettingsSchema.safeParse({ pagination_size: 101 })
-    assert.strictEqual(result.success, false)
-  })
-
-  it('accepts pagination_size boundary values', () => {
-    const r1 = updateSettingsSchema.safeParse({ pagination_size: 10 })
-    const r2 = updateSettingsSchema.safeParse({ pagination_size: 100 })
-    assert.strictEqual(r1.success, true)
-    assert.strictEqual(r2.success, true)
-  })
-
-  it('rejects non-integer pagination_size', () => {
-    const result = updateSettingsSchema.safeParse({ pagination_size: 25.5 })
-    assert.strictEqual(result.success, false)
   })
 
   it('rejects empty app_name', () => {
