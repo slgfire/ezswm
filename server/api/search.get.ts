@@ -4,6 +4,7 @@ import { networkRepository } from '../repositories/networkRepository'
 import { ipAllocationRepository } from '../repositories/ipAllocationRepository'
 import { layoutTemplateRepository } from '../repositories/layoutTemplateRepository'
 import { lagGroupRepository } from '../repositories/lagGroupRepository'
+import { ipRangeRepository } from '../repositories/ipRangeRepository'
 
 export default defineEventHandler((event) => {
   const query = getQuery(event)
@@ -11,7 +12,7 @@ export default defineEventHandler((event) => {
   const siteId = query.site_id as string | undefined
 
   if (!q || q.length < 2) {
-    return { switches: [], vlans: [], networks: [], allocations: [], templates: [], lagGroups: [] }
+    return { switches: [], vlans: [], networks: [], allocations: [], ranges: [], templates: [], lagGroups: [] }
   }
 
   const MAX_PER_TYPE = 10
@@ -100,5 +101,22 @@ export default defineEventHandler((event) => {
       }
     })
 
-  return { switches, vlans, networks, allocations, templates, lagGroups }
+  const ranges = ipRangeRepository.list()
+    .filter(r => {
+      const net = allNetworks.find(n => n.id === r.network_id)
+      return (
+        r.start_ip.includes(q) ||
+        r.end_ip.includes(q) ||
+        r.type.toLowerCase().includes(q) ||
+        r.description?.toLowerCase().includes(q) ||
+        net?.name.toLowerCase().includes(q)
+      )
+    })
+    .slice(0, MAX_PER_TYPE)
+    .map(r => {
+      const net = allNetworks.find(n => n.id === r.network_id)
+      return { ...r, network_name: net?.name || '', network_id: r.network_id, site_id: net?.site_id || '' }
+    })
+
+  return { switches, vlans, networks, allocations, ranges, templates, lagGroups }
 })

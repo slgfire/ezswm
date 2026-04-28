@@ -400,7 +400,11 @@
       "nameRequired": "Name is required",
       "subnetRequired": "Subnet is required",
       "subnetFormat": "Must be valid CIDR notation (e.g. 10.0.0.0/24)",
-      "gatewayFormat": "Must be a valid IPv4 address (e.g. 10.0.0.1)"
+      "gatewayFormat": "Must be a valid IPv4 address (e.g. 10.0.0.1)",
+      "commaSeparated": "Comma-separated",
+      "vlanIdRange": "VLAN ID must be between 1 and 4094",
+      "colorFormat": "Valid hex color required (e.g. #FF5733)",
+      "managementIpFormat": "Must be a valid IPv4 address (e.g. 192.168.1.1)"
     },
     "subnetInfo": {
       "networkAddress": "Network Address",
@@ -672,6 +676,7 @@
     "vlans": "VLANs",
     "networks": "Networks",
     "ipAllocations": "IP Allocations",
+    "ipRanges": "IP Ranges",
     "templates": "Layout Templates",
     "lagGroups": "LAG Groups",
     "noResults": "No results found"

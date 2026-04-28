@@ -2,9 +2,10 @@
 
 ## Latest Stage
 
-Date: 2026-04-27
-Stage: Phase 28 — Data Management UX Cleanup
+Date: 2026-04-28
+Stage: Phase 28 — Data Management UX, Import Fixes, IPv4 Special Nets, Final Polish
 Status: Complete
+Version: 0.15.0
 
 ### Phase 28 Changes (Data Management UX Cleanup)
 - **Tab-Benennung:** "Backup" → "Backup & Restore" — klarere Semantik

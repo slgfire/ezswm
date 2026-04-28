@@ -433,6 +433,15 @@ IP-Bereiche kennzeichnen Adressblöcke für bestimmte Zwecke:
 
 Jeder Bereich hat eine Start-IP, End-IP, einen Typ und eine optionale Beschreibung. Die IP-Anzahl wird inline angezeigt.
 
+### Spezielle Netzwerke (/31 und /32)
+
+ezSWM behandelt IPv4-Sondersubnetze gemäß ihren RFCs:
+
+- **/31 (Point-to-Point, RFC 3021)** -- Beide Adressen sind nutzbare Endpunkte. Die Detailseite zeigt "Endpunkt A" und "Endpunkt B" statt "Netzwerk" und "Broadcast", mit einem "Point-to-Point"-Badge. DHCP-Bereiche können für /31-Netze nicht erstellt werden.
+- **/32 (Host Route)** -- Einzelne Host-Adresse. Die Detailseite zeigt "Host-Adresse" mit einem "Host Route"-Badge. Keine Broadcast-Zeile wird angezeigt. DHCP-Bereiche können für /32-Netze nicht erstellt werden.
+
+Der Subnetz-Rechner verwendet dieselben Labels und Badges.
+
 ### Auslastungsverfolgung
 
 Der Auslastungsbalken oben auf der Netzwerk-Detailseite visualisiert die Adressraum-Nutzung. Die Legende zeigt Zugewiesene, DHCP, Reservierte und Freie Anzahlen.
@@ -445,6 +454,7 @@ Drücke **/** oder klicke auf die Suchleiste in der Kopfleiste, um die globale S
 - VLANs (nach Name, VLAN-ID)
 - Netzwerke (nach Name, Subnetz)
 - IP-Zuweisungen (nach IP, Hostname)
+- IP-Bereiche (nach Start-/End-IP, Typ, Netzwerkname)
 - Layout-Templates (nach Name)
 - LAG-Gruppen (nach Name, Beschreibung, Remote-Gerät)
 
@@ -472,11 +482,11 @@ Dies ist ein rein clientseitiges Werkzeug — es werden keine Daten gespeichert.
 
 ![Datenverwaltung](/images/screenshot-data-management.png)
 
-Jeder Entitätstyp (Switches, VLANs, Netzwerke, Layout-Templates) kann einzeln als JSON exportiert und wieder importiert werden. Dies ist nützlich, um bestimmte Daten zwischen Instanzen zu übertragen.
+Jeder Entitätstyp (Switches, VLANs, Netzwerke, IP-Zuweisungen, IP-Bereiche, Layout-Templates) kann einzeln als JSON oder CSV exportiert und wieder importiert werden. Dateien können per Drag & Drop in den Upload-Bereich gezogen werden. Dies ist nützlich, um bestimmte Daten zwischen Instanzen zu übertragen oder Netzwerkpläne in Bulk zu laden.
 
 ### Vollständiges Backup und Wiederherstellung
 
-Der Bereich **Datenverwaltung** in den Einstellungen bietet vollständiges Backup und Wiederherstellung. Ein Backup erzeugt eine einzelne JSON-Datei mit allen Entitäten. Die Wiederherstellung ersetzt alle Daten durch den Inhalt einer Backup-Datei.
+Der Tab **Backup & Restore** in der Datenverwaltung bietet vollständiges Backup und Wiederherstellung. Ein Backup erzeugt eine einzelne JSON-Datei mit allen Entitäten. Die Wiederherstellung ersetzt alle Daten durch den Inhalt einer Backup-Datei.
 
 ### Backup-Format
 
