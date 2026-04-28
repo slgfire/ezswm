@@ -52,7 +52,7 @@ const form = reactive({
 function validate(state: typeof form): { name: string; message: string }[] {
   const errors: { name: string; message: string }[] = []
   if (!state.name?.trim()) {
-    errors.push({ name: 'name', message: 'Name is required' })
+    errors.push({ name: 'name', message: t('networks.validation.nameRequired') })
   }
   return errors
 }

@@ -1,7 +1,7 @@
 node_modules/
 .nuxt/
 .output/
-data/
+/data/
 *.tmp
 .env
 .DS_Store

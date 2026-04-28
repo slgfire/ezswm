@@ -165,10 +165,10 @@ const templateOptions = computed(() => {
 function validate(state: typeof form): { name: string; message: string }[] {
   const errors: { name: string; message: string }[] = []
   if (!state.name?.trim()) {
-    errors.push({ name: 'name', message: 'Name is required' })
+    errors.push({ name: 'name', message: t('networks.validation.nameRequired') })
   }
   if (state.management_ip?.trim() && !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(state.management_ip.trim())) {
-    errors.push({ name: 'management_ip', message: 'Must be a valid IPv4 address (e.g. 192.168.1.1)' })
+    errors.push({ name: 'management_ip', message: t('networks.validation.managementIpFormat') })
   }
   return errors
 }

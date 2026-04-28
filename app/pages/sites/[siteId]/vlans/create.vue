@@ -94,13 +94,13 @@ onMounted(async () => {
 function validate(state: typeof form.value) {
   const errors: { name: string; message: string }[] = []
   if (!state.vlan_id || state.vlan_id < 1 || state.vlan_id > 4094) {
-    errors.push({ name: 'vlan_id', message: 'VLAN ID must be between 1 and 4094' })
+    errors.push({ name: 'vlan_id', message: t('networks.validation.vlanIdRange') })
   }
   if (!state.name?.trim()) {
-    errors.push({ name: 'name', message: 'Name is required' })
+    errors.push({ name: 'name', message: t('networks.validation.nameRequired') })
   }
   if (!state.color?.match(/^#[0-9A-Fa-f]{6}$/)) {
-    errors.push({ name: 'color', message: 'Valid hex color required (e.g. #FF5733)' })
+    errors.push({ name: 'color', message: t('networks.validation.colorFormat') })
   }
   return errors
 }

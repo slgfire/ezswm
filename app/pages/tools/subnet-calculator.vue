@@ -12,20 +12,43 @@
       </UFormField>
 
       <UCard v-if="result" class="mt-6">
-        <template #header><h2 class="font-semibold">{{ $t('tools.subnetCalculator.results') }}</h2></template>
+        <template #header>
+          <div class="flex items-center gap-2">
+            <h2 class="font-semibold">{{ $t('tools.subnetCalculator.results') }}</h2>
+            <UBadge v-if="result.prefix_length === 31" variant="subtle" color="info" size="xs">Point-to-Point</UBadge>
+            <UBadge v-else-if="result.prefix_length === 32" variant="subtle" color="warning" size="xs">Host Route</UBadge>
+          </div>
+        </template>
         <div class="grid grid-cols-2 gap-3 text-sm">
-          <div><span class="text-gray-400">{{ $t('networks.subnetInfo.networkAddress') }}:</span></div>
-          <div>{{ result.network_address }}</div>
-          <div><span class="text-gray-400">{{ $t('networks.subnetInfo.broadcastAddress') }}:</span></div>
-          <div>{{ result.broadcast_address }}</div>
+          <!-- /32: Host Address only -->
+          <template v-if="result.prefix_length === 32">
+            <div><span class="text-gray-400">{{ $t('networks.subnetInfo.hostAddress') }}:</span></div>
+            <div>{{ result.network_address }}</div>
+          </template>
+          <!-- /31: Endpoint A + B -->
+          <template v-else-if="result.prefix_length === 31">
+            <div><span class="text-gray-400">{{ $t('networks.subnetInfo.endpointA') }}:</span></div>
+            <div>{{ result.network_address }}</div>
+            <div><span class="text-gray-400">{{ $t('networks.subnetInfo.endpointB') }}:</span></div>
+            <div>{{ result.broadcast_address }}</div>
+          </template>
+          <!-- Normal subnets -->
+          <template v-else>
+            <div><span class="text-gray-400">{{ $t('networks.subnetInfo.networkAddress') }}:</span></div>
+            <div>{{ result.network_address }}</div>
+            <div><span class="text-gray-400">{{ $t('networks.subnetInfo.broadcastAddress') }}:</span></div>
+            <div>{{ result.broadcast_address }}</div>
+          </template>
           <div><span class="text-gray-400">{{ $t('networks.subnetInfo.subnetMask') }}:</span></div>
           <div>{{ result.subnet_mask }}</div>
           <div><span class="text-gray-400">{{ $t('networks.subnetInfo.wildcardMask') }}:</span></div>
           <div>{{ result.wildcard_mask }}</div>
-          <div><span class="text-gray-400">{{ $t('networks.subnetInfo.firstUsable') }}:</span></div>
-          <div>{{ result.first_usable }}</div>
-          <div><span class="text-gray-400">{{ $t('networks.subnetInfo.lastUsable') }}:</span></div>
-          <div>{{ result.last_usable }}</div>
+          <template v-if="result.prefix_length < 31">
+            <div><span class="text-gray-400">{{ $t('networks.subnetInfo.firstUsable') }}:</span></div>
+            <div>{{ result.first_usable }}</div>
+            <div><span class="text-gray-400">{{ $t('networks.subnetInfo.lastUsable') }}:</span></div>
+            <div>{{ result.last_usable }}</div>
+          </template>
           <div><span class="text-gray-400">{{ $t('networks.subnetInfo.totalHosts') }}:</span></div>
           <div>{{ result.total_hosts }}</div>
           <div><span class="text-gray-400">{{ $t('networks.subnetInfo.usableHosts') }}:</span></div>

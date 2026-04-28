@@ -23,7 +23,7 @@
             <UFormField :label="$t('networks.fields.dnsServers')">
               <UInput v-model="dnsInput" placeholder="8.8.8.8, 8.8.4.4" class="w-full" />
               <template #hint>
-                <span class="text-xs text-gray-500">Comma-separated</span>
+                <span class="text-xs text-gray-500">{{ $t('networks.validation.commaSeparated') }}</span>
               </template>
             </UFormField>
           </div>
@@ -91,12 +91,12 @@ const vlanOptions = computed(() => {
 function validate(state: typeof form.value) {
   const errors: { name: string; message: string }[] = []
   if (!state.name?.trim()) {
-    errors.push({ name: 'name', message: 'Name is required' })
+    errors.push({ name: 'name', message: t('networks.validation.nameRequired') })
   }
   if (!state.subnet?.trim()) {
-    errors.push({ name: 'subnet', message: 'Subnet (CIDR) is required' })
+    errors.push({ name: 'subnet', message: t('networks.validation.subnetRequired') })
   } else if (!state.subnet.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}$/)) {
-    errors.push({ name: 'subnet', message: 'Invalid CIDR notation (e.g. 10.0.1.0/24)' })
+    errors.push({ name: 'subnet', message: t('networks.validation.subnetFormat') })
   }
   return errors
 }

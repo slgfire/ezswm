@@ -433,6 +433,15 @@ IP ranges designate blocks of addresses for specific purposes:
 
 Each range has a start IP, end IP, type, and optional description. The IP count is shown inline.
 
+### Special Networks (/31 and /32)
+
+ezSWM handles IPv4 special subnets according to their RFCs:
+
+- **/31 (Point-to-Point, RFC 3021)** -- Both addresses are usable endpoints. The detail page shows "Endpoint A" and "Endpoint B" instead of "Network" and "Broadcast", with a "Point-to-Point" badge. DHCP ranges cannot be created for /31 networks.
+- **/32 (Host Route)** -- Single host address. The detail page shows "Host Address" with a "Host Route" badge. No broadcast row is displayed. DHCP ranges cannot be created for /32 networks.
+
+The Subnet Calculator applies the same labels and badges.
+
 ### Utilization Tracking
 
 The utilization bar at the top of the network detail page visualizes address space usage. The legend shows allocated, DHCP, reserved, and free counts.
@@ -445,6 +454,7 @@ Press **/** or click the search bar in the header to open global search. It sear
 - VLANs (by name, VLAN ID)
 - Networks (by name, subnet)
 - IP allocations (by IP, hostname)
+- IP ranges (by start/end IP, type, network name)
 - Layout templates (by name)
 - LAG groups (by name, description, remote device)
 
@@ -472,11 +482,11 @@ This is a client-side tool — no data is saved. Useful for quick subnet calcula
 
 ![Data Management](/images/screenshot-data-management.png)
 
-Each entity type (switches, VLANs, networks, layout templates) can be individually exported to JSON and imported back. This is useful for transferring specific data between instances.
+Each entity type (switches, VLANs, networks, IP allocations, IP ranges, layout templates) can be individually exported to JSON or CSV and imported back. Files can be dragged into the upload area. This is useful for transferring specific data between instances or bulk-loading network plans.
 
 ### Full Backup and Restore
 
-The **Data Management** section in settings provides full backup and restore. A backup produces a single JSON file containing all entities. Restore replaces all data with the contents of a backup file.
+The **Backup & Restore** tab in Data Management provides full backup and restore. A backup produces a single JSON file containing all entities. Restore replaces all data with the contents of a backup file.
 
 ### Backup Format
 

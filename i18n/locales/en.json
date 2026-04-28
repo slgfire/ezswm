@@ -391,13 +391,20 @@
       "addRange": "IP Range",
       "networkAddress": "Network",
       "gateway": "Gateway",
-      "broadcast": "Broadcast"
+      "broadcast": "Broadcast",
+      "endpointA": "Endpoint A",
+      "endpointB": "Endpoint B",
+      "hostAddress": "Host Address"
     },
     "validation": {
       "nameRequired": "Name is required",
       "subnetRequired": "Subnet is required",
       "subnetFormat": "Must be valid CIDR notation (e.g. 10.0.0.0/24)",
-      "gatewayFormat": "Must be a valid IPv4 address (e.g. 10.0.0.1)"
+      "gatewayFormat": "Must be a valid IPv4 address (e.g. 10.0.0.1)",
+      "commaSeparated": "Comma-separated",
+      "vlanIdRange": "VLAN ID must be between 1 and 4094",
+      "colorFormat": "Valid hex color required (e.g. #FF5733)",
+      "managementIpFormat": "Must be a valid IPv4 address (e.g. 192.168.1.1)"
     },
     "subnetInfo": {
       "networkAddress": "Network Address",
@@ -407,7 +414,10 @@
       "firstUsable": "First Usable",
       "lastUsable": "Last Usable",
       "totalHosts": "Total Hosts",
-      "usableHosts": "Usable Hosts"
+      "usableHosts": "Usable Hosts",
+      "endpointA": "Endpoint A",
+      "endpointB": "Endpoint B",
+      "hostAddress": "Host Address"
     },
     "infoBar": {
       "subnet": "Subnet",
@@ -418,7 +428,18 @@
       "vlan": "VLAN",
       "network": "Network",
       "broadcast": "Broadcast",
-      "dns": "DNS"
+      "dns": "DNS",
+      "endpointA": "Endpoint A",
+      "endpointB": "Endpoint B",
+      "hostAddress": "Host Address",
+      "pointToPoint": "Point-to-Point",
+      "hostRoute": "Host Route"
+    },
+    "specialNet": {
+      "pointToPoint": "Point-to-Point (RFC 3021)",
+      "hostRoute": "Host Route",
+      "dhcpNotApplicableP2P": "DHCP is not applicable for point-to-point networks.",
+      "dhcpNotApplicableHost": "DHCP is not applicable for host-route networks."
     }
   },
   "templates": {
@@ -538,7 +559,6 @@
       "appName": "Application Name",
       "defaultVlan": "Default VLAN for new ports",
       "defaultPortStatus": "Default port status",
-      "paginationSize": "Items per page",
       "portSpeeds": "Available port speeds"
     },
     "account": {
@@ -561,10 +581,12 @@
   },
   "backup": {
     "title": "Backup & Restore",
+    "createTitle": "Create Backup",
+    "restoreTitle": "Restore Backup",
     "export": "Download Backup",
-    "exportDescription": "Download a full backup of all data as a ZIP file.",
+    "exportDescription": "Download a full backup of all data as a JSON file.",
     "import": "Restore from Backup",
-    "importDescription": "Upload a backup ZIP file to restore all data.",
+    "importDescription": "Upload a backup file to restore all data. This will overwrite existing data.",
     "selectFile": "Select backup file",
     "restore": "Restore",
     "confirmRestore": "This will overwrite all current data. Are you sure?",
@@ -590,7 +612,7 @@
   },
   "dataManagement": {
     "title": "Data Management",
-    "backupTab": "Backup",
+    "backupRestoreTab": "Backup & Restore",
     "exportTab": "Export",
     "importTab": "Import",
     "entities": {
@@ -598,17 +620,24 @@
       "vlans": "VLANs",
       "networks": "Networks",
       "allocations": "IP Allocations",
+      "ranges": "IP Ranges",
       "templates": "Layout Templates"
     },
     "export": {
+      "description": "Export individual entity types as JSON or CSV file.",
       "selectType": "Entity Type",
       "selectFormat": "Format",
       "download": "Download",
-      "downloadTemplate": "Download Template",
       "success": "Export downloaded successfully"
     },
     "import": {
+      "description": "Import entities from a JSON or CSV file. New entries are added, existing data is not replaced.",
+      "selectType": "Entity Type",
+      "selectTypePlaceholder": "Select entity type...",
+      "downloadTemplate": "Download Template",
+      "templateHint": "CSV template with expected columns",
       "selectFile": "Select File",
+      "dropOrSelect": "Drop file here or click to select",
       "preview": "Rows to import",
       "rows": "rows",
       "importButton": "Import",
@@ -647,6 +676,7 @@
     "vlans": "VLANs",
     "networks": "Networks",
     "ipAllocations": "IP Allocations",
+    "ipRanges": "IP Ranges",
     "templates": "Layout Templates",
     "lagGroups": "LAG Groups",
     "noResults": "No results found"

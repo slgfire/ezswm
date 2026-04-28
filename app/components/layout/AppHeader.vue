@@ -124,6 +124,25 @@
               </NuxtLink>
             </template>
 
+            <!-- IP Ranges -->
+            <template v-if="results.ranges?.length">
+              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.ipRanges') }}</div>
+              <NuxtLink
+                v-for="(range, i) in results.ranges"
+                :key="range.id"
+                :to="range.site_id ? `/sites/${range.site_id}/networks/${range.network_id}` : `${searchSitePrefix}/networks/${range.network_id}`"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('ranges', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
+                @click="closeSearch"
+                @mouseenter="selectedIndex = flatIndex('ranges', i)"
+              >
+                <UIcon name="i-heroicons-arrows-right-left" class="h-4 w-4 flex-shrink-0 text-gray-400" />
+                <div class="min-w-0 flex-1">
+                  <div class="font-mono font-medium text-gray-900 dark:text-white" v-html="highlight(`${range.start_ip} — ${range.end_ip}`)" />
+                  <div class="text-xs text-gray-400">{{ range.type.toUpperCase() }} · {{ range.network_name }}</div>
+                </div>
+              </NuxtLink>
+            </template>
+
             <!-- Templates -->
             <template v-if="results.templates?.length">
               <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.templates') }}</div>
@@ -260,12 +279,13 @@ interface SearchResults {
   vlans: Array<{ id: string; vlan_id: number; name: string; color: string }>
   networks: Array<{ id: string; name: string; subnet: string }>
   allocations: Array<{ id: string; ip_address: string; hostname?: string; network_id: string }>
+  ranges: Array<{ id: string; start_ip: string; end_ip: string; type: string; network_id: string; network_name: string; site_id: string }>
   templates: Array<{ id: string; name: string; manufacturer?: string; model?: string }>
   lagGroups: Array<{ id: string; name: string; switch_id: string; site_id: string; switch_name: string; port_count: number; remote_device?: string }>
   [key: string]: unknown[]
 }
 
-const results = ref<SearchResults>({ switches: [], vlans: [], networks: [], allocations: [], templates: [], lagGroups: [] })
+const results = ref<SearchResults>({ switches: [], vlans: [], networks: [], allocations: [], ranges: [], templates: [], lagGroups: [] })
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -273,7 +293,7 @@ watch(searchQuery, (q) => {
   if (debounceTimer) clearTimeout(debounceTimer)
   selectedIndex.value = -1
   if (!q || q.length < 2) {
-    results.value = { switches: [], vlans: [], networks: [], allocations: [], templates: [], lagGroups: [] }
+    results.value = { switches: [], vlans: [], networks: [], allocations: [], ranges: [], templates: [], lagGroups: [] }
     return
   }
   searching.value = true
@@ -283,7 +303,7 @@ watch(searchQuery, (q) => {
       if (headerSiteId.value && headerSiteId.value !== 'all') params.site_id = headerSiteId.value
       results.value = await $fetch('/api/search', { params })
     } catch {
-      results.value = { switches: [], vlans: [], networks: [], allocations: [], templates: [], lagGroups: [] }
+      results.value = { switches: [], vlans: [], networks: [], allocations: [], ranges: [], templates: [], lagGroups: [] }
     } finally {
       searching.value = false
     }
@@ -295,6 +315,7 @@ const hasResults = computed(() =>
   results.value.vlans?.length ||
   results.value.networks?.length ||
   results.value.allocations?.length ||
+  results.value.ranges?.length ||
   results.value.templates?.length ||
   results.value.lagGroups?.length
 )
@@ -315,6 +336,10 @@ const flatResults = computed(() => {
   for (const a of results.value.allocations || []) {
     items.push({ type: 'allocations', index: items.length, url: `${prefix}/networks/${a.network_id}` })
   }
+  for (const r of results.value.ranges || []) {
+    const rPrefix = r.site_id ? `/sites/${r.site_id}` : prefix
+    items.push({ type: 'ranges', index: items.length, url: `${rPrefix}/networks/${r.network_id}` })
+  }
   for (const tpl of results.value.templates || []) {
     items.push({ type: 'templates', index: items.length, url: `/layout-templates/${tpl.id}` })
   }
@@ -326,7 +351,7 @@ const flatResults = computed(() => {
 
 function flatIndex(type: string, i: string | number): number {
   let offset = 0
-  const order = ['switches', 'vlans', 'networks', 'allocations', 'templates', 'lagGroups']
+  const order = ['switches', 'vlans', 'networks', 'allocations', 'ranges', 'templates', 'lagGroups']
   for (const t of order) {
     if (t === type) return offset + Number(i)
     offset += (results.value[t]?.length || 0)

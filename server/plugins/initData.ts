@@ -5,7 +5,6 @@ const DEFAULT_SETTINGS = {
   app_logo_url: null,
   default_vlan: null,
   default_port_status: 'down',
-  pagination_size: 25,
   port_speeds: ['100M', '1G', '2.5G', '10G', '100G'],
   setup_completed: false
 }
