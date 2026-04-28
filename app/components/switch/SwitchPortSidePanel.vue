@@ -317,46 +317,21 @@ async function fetchAllocations() {
     const params: Record<string, string> = {}
     if (siteId && siteId !== 'all') params.site_id = siteId
 
-    // Fetch all networks (paged)
-    const allNets: Network[] = []
-    let netPage = 1
-    while (true) {
-      const res = await apiFetch<{ data?: Network[]; items?: Network[] } | Network[]>('/api/networks', { params: { ...params, page: netPage, per_page: 100 } })
-      const items = Array.isArray(res) ? res : (res.data || res.items || [])
-      if (!Array.isArray(items) || items.length === 0) break
-      allNets.push(...items)
-      if (items.length < 100) break
-      netPage++
-    }
+    // Fetch all networks
+    const netRes = await apiFetch<{ data?: Network[]; items?: Network[] } | Network[]>('/api/networks', { params })
+    const allNets = Array.isArray(netRes) ? netRes : (netRes.data || netRes.items || [])
     allNetworks.value = allNets
 
     // Fetch allocations from all networks in parallel
     const allocResults = await Promise.all(
       allNets.map(async (net) => {
-        const allocs: IPAllocation[] = []
-        let page = 1
-        while (true) {
-          try {
-            const a = await apiFetch<{ data?: IPAllocation[] } | IPAllocation[]>(`/api/networks/${net.id}/allocations`, { params: { page, per_page: 100 } })
-            const items = Array.isArray(a) ? a : (a.data || [])
-            if (!Array.isArray(items) || items.length === 0) break
-            allocs.push(...items)
-            if (items.length < 100) break
-            page++
-          } catch { break }
-        }
-        return allocs
+        try {
+          const a = await apiFetch<{ data?: IPAllocation[] } | IPAllocation[]>(`/api/networks/${net.id}/allocations`)
+          return Array.isArray(a) ? a : (a.data || [])
+        } catch { return [] }
       })
     )
-    // Deduplicate by id
-    const seen = new Set<string>()
-    const allocs: IPAllocation[] = []
-    for (const batch of allocResults) {
-      for (const a of batch) {
-        if (!seen.has(a.id)) { seen.add(a.id); allocs.push(a) }
-      }
-    }
-    allAllocations.value = allocs
+    allAllocations.value = allocResults.flat()
   } catch { /* ignore */ }
 }
 

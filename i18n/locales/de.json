@@ -391,7 +391,10 @@
       "addRange": "IP-Bereich",
       "networkAddress": "Netzwerk",
       "gateway": "Gateway",
-      "broadcast": "Broadcast"
+      "broadcast": "Broadcast",
+      "endpointA": "Endpunkt A",
+      "endpointB": "Endpunkt B",
+      "hostAddress": "Host-Adresse"
     },
     "validation": {
       "nameRequired": "Name ist erforderlich",
@@ -407,7 +410,10 @@
       "firstUsable": "Erste nutzbare IP",
       "lastUsable": "Letzte nutzbare IP",
       "totalHosts": "Gesamte Hosts",
-      "usableHosts": "Nutzbare Hosts"
+      "usableHosts": "Nutzbare Hosts",
+      "endpointA": "Endpunkt A",
+      "endpointB": "Endpunkt B",
+      "hostAddress": "Host-Adresse"
     },
     "infoBar": {
       "subnet": "Subnetz",
@@ -418,7 +424,18 @@
       "vlan": "VLAN",
       "network": "Netzwerk",
       "broadcast": "Broadcast",
-      "dns": "DNS"
+      "dns": "DNS",
+      "endpointA": "Endpunkt A",
+      "endpointB": "Endpunkt B",
+      "hostAddress": "Host-Adresse",
+      "pointToPoint": "Point-to-Point",
+      "hostRoute": "Host Route"
+    },
+    "specialNet": {
+      "pointToPoint": "Point-to-Point (RFC 3021)",
+      "hostRoute": "Host Route",
+      "dhcpNotApplicableP2P": "DHCP ist für Point-to-Point-Netze nicht verfügbar.",
+      "dhcpNotApplicableHost": "DHCP ist für Host-Routen nicht verfügbar."
     }
   },
   "templates": {
@@ -538,7 +555,6 @@
       "appName": "Anwendungsname",
       "defaultVlan": "Standard-VLAN für neue Ports",
       "defaultPortStatus": "Standard-Port-Status",
-      "paginationSize": "Einträge pro Seite",
       "portSpeeds": "Verfügbare Port-Geschwindigkeiten"
     },
     "account": {
@@ -560,17 +576,19 @@
     }
   },
   "backup": {
-    "title": "Sicherung & Wiederherstellung",
-    "export": "Sicherung herunterladen",
-    "exportDescription": "Laden Sie eine vollständige Sicherung aller Daten als ZIP-Datei herunter.",
-    "import": "Aus Sicherung wiederherstellen",
-    "importDescription": "Laden Sie eine Sicherungs-ZIP-Datei hoch, um alle Daten wiederherzustellen.",
-    "selectFile": "Sicherungsdatei auswählen",
+    "title": "Backup & Restore",
+    "createTitle": "Backup erstellen",
+    "restoreTitle": "Backup wiederherstellen",
+    "export": "Backup herunterladen",
+    "exportDescription": "Vollständiges Backup aller Daten als JSON-Datei herunterladen.",
+    "import": "Aus Backup wiederherstellen",
+    "importDescription": "Backup-Datei hochladen, um alle Daten wiederherzustellen. Bestehende Daten werden überschrieben.",
+    "selectFile": "Backup-Datei auswählen",
     "restore": "Wiederherstellen",
-    "confirmRestore": "Dies überschreibt alle aktuellen Daten. Sind Sie sicher?",
+    "confirmRestore": "Alle aktuellen Daten werden überschrieben. Fortfahren?",
     "messages": {
-      "exported": "Sicherung erfolgreich heruntergeladen",
-      "imported": "Sicherung erfolgreich wiederhergestellt"
+      "exported": "Backup erfolgreich heruntergeladen",
+      "imported": "Backup erfolgreich wiederhergestellt"
     }
   },
   "importExport": {
@@ -590,7 +608,7 @@
   },
   "dataManagement": {
     "title": "Datenverwaltung",
-    "backupTab": "Sicherung",
+    "backupRestoreTab": "Backup & Restore",
     "exportTab": "Export",
     "importTab": "Import",
     "entities": {
@@ -598,17 +616,24 @@
       "vlans": "VLANs",
       "networks": "Netzwerke",
       "allocations": "IP-Zuweisungen",
+      "ranges": "IP-Bereiche",
       "templates": "Layout-Vorlagen"
     },
     "export": {
+      "description": "Einzelne Entitätstypen als JSON- oder CSV-Datei exportieren.",
       "selectType": "Entitätstyp",
       "selectFormat": "Format",
       "download": "Herunterladen",
-      "downloadTemplate": "Vorlage herunterladen",
       "success": "Export erfolgreich heruntergeladen"
     },
     "import": {
+      "description": "Entitäten aus einer JSON- oder CSV-Datei importieren. Neue Einträge werden hinzugefügt, bestehende Daten nicht ersetzt.",
+      "selectType": "Entitätstyp",
+      "selectTypePlaceholder": "Entitätstyp wählen...",
+      "downloadTemplate": "Vorlage herunterladen",
+      "templateHint": "CSV-Vorlage mit erwarteten Spalten",
       "selectFile": "Datei auswählen",
+      "dropOrSelect": "Datei hierher ziehen oder klicken",
       "preview": "Zu importierende Zeilen",
       "rows": "Zeilen",
       "importButton": "Importieren",

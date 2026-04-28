@@ -26,6 +26,15 @@ export const ipRangeRepository = {
       throw createError({ statusCode: 404, message: 'Network not found' })
     }
 
+    // Block DHCP ranges for /31 and /32 networks
+    const prefix = parseInt(network.subnet.split('/')[1] || '0', 10)
+    if (prefix >= 31 && data.type === 'dhcp') {
+      const msg = prefix === 32
+        ? 'DHCP is not applicable for host-route networks.'
+        : 'DHCP is not applicable for point-to-point networks.'
+      throw createError({ statusCode: 400, message: msg })
+    }
+
     if (!isValidIPv4(data.start_ip) || !isValidIPv4(data.end_ip)) {
       throw createError({ statusCode: 400, message: 'Invalid IP address in range' })
     }

@@ -18,8 +18,6 @@ export default defineEventHandler(async (event) => {
 
   const type = query.type as string | undefined
   const search = query.search as string | undefined
-  const page = Math.max(1, parseInt(query.page as string, 10) || 1)
-  const perPage = Math.min(100, Math.max(1, parseInt(query.per_page as string, 10) || 20))
 
   let items = ipRangeRepository.list(id)
 
@@ -37,18 +35,8 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  const total = items.length
-  const totalPages = Math.ceil(total / perPage)
-  const offset = (page - 1) * perPage
-  const paginatedItems = items.slice(offset, offset + perPage)
-
   return {
-    data: paginatedItems,
-    meta: {
-      page,
-      per_page: perPage,
-      total,
-      total_pages: totalPages,
-    },
+    data: items,
+    meta: { total: items.length },
   }
 })

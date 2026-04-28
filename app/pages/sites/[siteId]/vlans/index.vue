@@ -258,7 +258,6 @@ const pageLoading = ref(true)
 const search = ref('')
 const statusFilter = ref('all')
 const page = ref(1)
-const _perPage = 25
 
 // Panel state
 const showPanel = ref(false)

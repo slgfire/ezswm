@@ -75,9 +75,7 @@ function setCanvasRef(id: string, el: HTMLCanvasElement | null) {
 onMounted(async () => {
   try {
     // Fetch switches (API returns { data: [...] } envelope)
-    const switchesRes = await $fetch<{ data: { id: string; name: string; model?: string; location?: string; manufacturer?: string }[] }>('/api/switches', {
-      params: { per_page: 1000 }
-    })
+    const switchesRes = await $fetch<{ data: { id: string; name: string; model?: string; location?: string; manufacturer?: string }[] }>('/api/switches')
     const switchList = switchesRes?.data || []
 
     const result: Sticker[] = []

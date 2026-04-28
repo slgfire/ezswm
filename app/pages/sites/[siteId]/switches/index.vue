@@ -739,7 +739,7 @@ const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { sit
 async function loadData() {
   await fetchSwitches(siteParams.value)
   try {
-    const response = await apiFetch<{ filters?: { locations?: string[]; tags?: string[] } }>('/api/switches', { params: { per_page: 1, ...siteParams.value } })
+    const response = await apiFetch<{ filters?: { locations?: string[]; tags?: string[] } }>('/api/switches', { params: { ...siteParams.value } })
     availableLocations.value = response?.filters?.locations || []
     availableTags.value = response?.filters?.tags || []
   } catch { /* silent */ }

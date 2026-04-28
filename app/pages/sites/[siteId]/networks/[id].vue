@@ -25,7 +25,11 @@
         >
           <div>
             <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.subnet') }}</div>
-            <div class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ network.subnet }}</div>
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ network.subnet }}</span>
+              <UBadge v-if="isPointToPoint" variant="subtle" color="info" size="xs">{{ $t('networks.infoBar.pointToPoint') }}</UBadge>
+              <UBadge v-else-if="isHostRoute" variant="subtle" color="warning" size="xs">{{ $t('networks.infoBar.hostRoute') }}</UBadge>
+            </div>
           </div>
           <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
           <div v-if="network.gateway">
@@ -70,15 +74,37 @@
           </div>
           <!-- Technical details row -->
           <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <div>
-              <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.network') }}</div>
-              <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.network }}</div>
-            </div>
-            <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-            <div>
-              <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.broadcast') }}</div>
-              <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.broadcast }}</div>
-            </div>
+            <!-- /32: single host address -->
+            <template v-if="isHostRoute">
+              <div>
+                <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.hostAddress') }}</div>
+                <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.network }}</div>
+              </div>
+            </template>
+            <!-- /31: endpoint A + B -->
+            <template v-else-if="isPointToPoint">
+              <div>
+                <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.endpointA') }}</div>
+                <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.network }}</div>
+              </div>
+              <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+              <div>
+                <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.endpointB') }}</div>
+                <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.broadcast }}</div>
+              </div>
+            </template>
+            <!-- Normal subnets -->
+            <template v-else>
+              <div>
+                <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.network') }}</div>
+                <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.network }}</div>
+              </div>
+              <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+              <div>
+                <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.broadcast') }}</div>
+                <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.broadcast }}</div>
+              </div>
+            </template>
             <template v-if="network.dns_servers?.length">
               <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
               <div>
@@ -293,7 +319,7 @@
       </template>
 
       <template #body>
-        <!-- Mode toggle (only for new entries) -->
+        <!-- Mode toggle (only for new entries, hide range option for /31 and /32) -->
         <div v-if="!editAllocTarget" class="mb-4 flex items-center gap-1">
           <button
             class="px-2.5 py-1 text-xs font-medium rounded border transition-colors"
@@ -303,6 +329,7 @@
             @click="addPanelMode = 'ip'"
           >{{ $t('networks.unified.addIp') }}</button>
           <button
+            v-if="!isSpecialNet"
             class="px-2.5 py-1 text-xs font-medium rounded border transition-colors"
             :class="addPanelMode === 'range'
               ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
@@ -513,9 +540,9 @@ const rangeTypeOptions = computed(() => [
 
 
 const subnetInfo = computed(() => {
-  if (!network.value?.subnet) return { network: '-', broadcast: '-', mask: '-', totalHosts: 0, usableHosts: 0 }
+  if (!network.value?.subnet) return { network: '-', broadcast: '-', mask: '-', totalHosts: 0, usableHosts: 0, prefix: 0 }
   const parts = network.value.subnet.split('/')
-  if (parts.length !== 2) return { network: '-', broadcast: '-', mask: '-', totalHosts: 0, usableHosts: 0 }
+  if (parts.length !== 2) return { network: '-', broadcast: '-', mask: '-', totalHosts: 0, usableHosts: 0, prefix: 0 }
   const prefix = parseInt(parts[1]!, 10)
   const ipParts = parts[0]!.split('.').map(Number)
   const ipNum = ((ipParts[0]! << 24) | (ipParts[1]! << 16) | (ipParts[2]! << 8) | ipParts[3]!) >>> 0
@@ -525,8 +552,12 @@ const subnetInfo = computed(() => {
   const totalHosts = Math.pow(2, 32 - prefix)
   const usableHosts = prefix <= 30 ? totalHosts - 2 : totalHosts
   const numToIp = (n: number) => `${(n >>> 24) & 255}.${(n >>> 16) & 255}.${(n >>> 8) & 255}.${n & 255}`
-  return { network: numToIp(networkNum), broadcast: numToIp(broadcastNum), mask: numToIp(maskNum), totalHosts, usableHosts: Math.max(0, usableHosts) }
+  return { network: numToIp(networkNum), broadcast: numToIp(broadcastNum), mask: numToIp(maskNum), totalHosts, usableHosts: Math.max(0, usableHosts), prefix }
 })
+
+const isPointToPoint = computed(() => subnetInfo.value.prefix === 31)
+const isHostRoute = computed(() => subnetInfo.value.prefix === 32)
+const isSpecialNet = computed(() => isPointToPoint.value || isHostRoute.value)
 
 // Unified list computed
 interface UnifiedRow {
@@ -542,15 +573,23 @@ const unifiedList = computed<UnifiedRow[]>(() => {
   const rows: UnifiedRow[] = []
   const info = subnetInfo.value
 
-  // Fixed rows
+  // Fixed rows — context-dependent labels for special subnets
   if (info.network !== '-') {
-    rows.push({ key: 'net', kind: 'fixed', sortIp: ipToLong(info.network), ip: info.network, label: t('networks.unified.networkAddress') })
+    const netLabel = isHostRoute.value
+      ? t('networks.unified.hostAddress')
+      : isPointToPoint.value
+        ? t('networks.unified.endpointA')
+        : t('networks.unified.networkAddress')
+    rows.push({ key: 'net', kind: 'fixed', sortIp: ipToLong(info.network), ip: info.network, label: netLabel })
   }
   if (network.value?.gateway) {
     rows.push({ key: 'gw', kind: 'fixed', sortIp: ipToLong(network.value.gateway), ip: network.value.gateway, label: t('networks.unified.gateway') })
   }
-  if (info.broadcast !== '-') {
-    rows.push({ key: 'bc', kind: 'fixed', sortIp: ipToLong(info.broadcast), ip: info.broadcast, label: t('networks.unified.broadcast') })
+  if (info.broadcast !== '-' && !isHostRoute.value) {
+    const bcLabel = isPointToPoint.value
+      ? t('networks.unified.endpointB')
+      : t('networks.unified.broadcast')
+    rows.push({ key: 'bc', kind: 'fixed', sortIp: ipToLong(info.broadcast), ip: info.broadcast, label: bcLabel })
   }
 
   // Allocation rows

@@ -368,7 +368,7 @@ const { apiFetch } = useApiFetch()
 async function loadData() {
   await fetch()
   try {
-    const response = await apiFetch<{ manufacturers?: string[] }>('/api/layout-templates', { params: { per_page: 999 } })
+    const response = await apiFetch<{ manufacturers?: string[] }>('/api/layout-templates')
     manufacturers.value = response?.manufacturers || []
   } catch { /* silent */ }
 }

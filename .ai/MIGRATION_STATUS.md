@@ -2,9 +2,28 @@
 
 ## Latest Stage
 
-Date: 2026-04-26
-Stage: Phase 27b — Docs Audit & PR Prep
+Date: 2026-04-27
+Stage: Phase 28 — Data Management UX Cleanup
 Status: Complete
+
+### Phase 28 Changes (Data Management UX Cleanup)
+- **Tab-Benennung:** "Backup" → "Backup & Restore" — klarere Semantik
+- **Keine doppelten Überschriften:** Export/Import-Tabs zeigen Formular direkt ohne extra Card-Wrapper und redundante Titel
+- **Backup-Tab Cards:** Überschriften von "EXPORT"/"IMPORT" → "CREATE BACKUP"/"RESTORE BACKUP" — eindeutig, keine Verwechslung mit Daten-Export/Import
+- **Backup-Beschreibungen:** "ZIP file" → "JSON file" korrigiert (Backup exportiert JSON, nicht ZIP)
+- **Import Entity-Type Label:** Nutzt eigenen i18n-Key `dataManagement.import.selectType` statt Export-Key
+- **Drag & Drop:** Auch auf Backup-Restore Dropzone hinzugefügt (konsistent mit Import)
+- **Weniger Verschachtelung:** Export/Import-Content direkt unter Tab statt in list-container Card — kompakter, weniger Leerraum
+- **Erklärende Beschreibungstexte:** Export + Import haben jeweils einen kurzen Einleitungstext der erklärt was passiert
+- **Import-Flow klarer:** Template-Download mit Hint-Text inline, Dropzone mit "Datei hierher ziehen oder klicken" + Format-/Size-Hint
+- **Begriffe bereinigt:** DE durchgehend "Backup" statt gemischt "Sicherung"/"Backup", Template-Key von Export nach Import verschoben
+- **i18n aktualisiert:** EN + DE mit neuen Keys (`backupRestoreTab`, `createTitle`, `restoreTitle`, `import.selectType`, `export.description`, `import.description`, `import.dropOrSelect`, `import.templateHint`, `import.downloadTemplate`)
+- **Paginierung entfernt:** Alle 7 List-Endpoints (VLANs, Switches, Networks, Sites, Allocations, Ranges, Layout Templates) liefern jetzt alle Items — keine page/per_page-Logik mehr
+- **Settings "Items per page" entfernt:** War toter Code, wurde nirgendwo im Frontend genutzt — Feld, Type, Validator, Default und i18n-Keys bereinigt
+- **Frontend Paginierungs-Workarounds entfernt:** per_page-Parameter aus allen Frontend-Fetches entfernt, Paginierungs-Loops in SwitchPortSidePanel vereinfacht
+- **IPv4-Sondernetze /31 und /32:** Network-Detailseite zeigt RFC-konforme Labels (Endpoint A/B für /31, Host Address für /32), Badges "Point-to-Point"/"Host Route", Subnet Calculator nutzt gleiche Logik, DHCP-Range-Erstellung für /31 und /32 im Backend blockiert, Range-Tab in Add-Panel bei Sondernetzen ausgeblendet
+- **Import: IP Ranges als neuer Entity-Typ:** Import-Endpoint um `ranges` erweitert (network_id, start_ip, end_ip, type), DHCP-Ranges aus Allocations-Datei separiert
+- **Settings-Seite Polish:** Seiten-Wrapper `p-6` wie alle Hauptseiten, Formularfelder innerhalb Cards auf `max-w-lg` begrenzt, Buttons linksbündig, Section-Titel "General" statt Feldname, Felder gestapelt statt breites Grid — Cards nutzen volle Breite, Felder darin bleiben kompakt
 
 ### Phase 27b Changes (Docs Audit & PR Prep)
 - **Doku-Audit:** README, EN User Guide, DE User Guide gegen aktuellen UI-Stand geprüft — alle korrekt und aktuell

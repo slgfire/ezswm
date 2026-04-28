@@ -5,8 +5,6 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const search = (query.search as string) || ''
   const manufacturer = (query.manufacturer as string) || ''
-  const page = parseInt(query.page as string) || 1
-  const perPage = parseInt(query.per_page as string) || 25
 
   let templates = layoutTemplateRepository.list()
 
@@ -31,9 +29,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const total = templates.length
-  const start = (page - 1) * perPage
-  const items = templates.slice(start, start + perPage).map((t) => ({
+  const items = templates.map((t) => ({
     ...t,
     switch_count: usageMap.get(t.id) || 0
   }))
@@ -46,10 +42,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     items,
-    total,
-    page,
-    per_page: perPage,
-    total_pages: Math.ceil(total / perPage),
+    total: items.length,
     manufacturers,
   }
 })
