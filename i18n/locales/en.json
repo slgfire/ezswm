@@ -108,7 +108,9 @@
     "showLess": "Show less",
     "none": "None",
     "selectAll": "Select all",
-    "deselectAll": "Deselect all"
+    "deselectAll": "Deselect all",
+    "copied": "Copied!",
+    "copyToClipboard": "Copy to clipboard"
   },
   "dashboard": {
     "emptyTitle": "Welcome to ezSWM!",
@@ -350,6 +352,8 @@
       "deviceTypes": {
         "server": "Server",
         "switch": "Switch",
+        "router": "Router",
+        "firewall": "Firewall",
         "printer": "Printer",
         "phone": "Phone",
         "ap": "AP",

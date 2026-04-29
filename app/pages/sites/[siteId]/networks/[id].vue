@@ -26,7 +26,7 @@
           <div>
             <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.subnet') }}</div>
             <div class="flex items-center gap-2">
-              <span class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ network.subnet }}</span>
+              <SharedCopyButton :value="network.subnet"><span class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ network.subnet }}</span></SharedCopyButton>
               <UBadge v-if="isPointToPoint" variant="subtle" color="info" size="xs">{{ $t('networks.infoBar.pointToPoint') }}</UBadge>
               <UBadge v-else-if="isHostRoute" variant="subtle" color="warning" size="xs">{{ $t('networks.infoBar.hostRoute') }}</UBadge>
             </div>
@@ -34,12 +34,12 @@
           <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
           <div v-if="network.gateway">
             <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.gateway') }}</div>
-            <div class="font-mono text-sm font-semibold text-gray-900 dark:text-white">{{ network.gateway }}</div>
+            <SharedCopyButton :value="network.gateway"><span class="font-mono text-sm font-semibold text-gray-900 dark:text-white">{{ network.gateway }}</span></SharedCopyButton>
           </div>
           <div v-if="network.gateway" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
           <div>
             <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.mask') }}</div>
-            <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.mask }}</div>
+            <SharedCopyButton :value="subnetInfo.mask"><span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.mask }}</span></SharedCopyButton>
           </div>
           <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
           <div>
@@ -78,31 +78,31 @@
             <template v-if="isHostRoute">
               <div>
                 <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.hostAddress') }}</div>
-                <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.network }}</div>
+                <SharedCopyButton :value="subnetInfo.network"><span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.network }}</span></SharedCopyButton>
               </div>
             </template>
             <!-- /31: endpoint A + B -->
             <template v-else-if="isPointToPoint">
               <div>
                 <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.endpointA') }}</div>
-                <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.network }}</div>
+                <SharedCopyButton :value="subnetInfo.network"><span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.network }}</span></SharedCopyButton>
               </div>
               <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
               <div>
                 <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.endpointB') }}</div>
-                <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.broadcast }}</div>
+                <SharedCopyButton :value="subnetInfo.broadcast"><span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.broadcast }}</span></SharedCopyButton>
               </div>
             </template>
             <!-- Normal subnets -->
             <template v-else>
               <div>
                 <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.network') }}</div>
-                <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.network }}</div>
+                <SharedCopyButton :value="subnetInfo.network"><span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.network }}</span></SharedCopyButton>
               </div>
               <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
               <div>
                 <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.broadcast') }}</div>
-                <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.broadcast }}</div>
+                <SharedCopyButton :value="subnetInfo.broadcast"><span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.broadcast }}</span></SharedCopyButton>
               </div>
             </template>
             <template v-if="network.dns_servers?.length">
@@ -163,7 +163,7 @@
             <!-- Fixed rows (network, gateway, broadcast) -->
             <template v-if="row.kind === 'fixed'">
               <div class="w-40 shrink-0">
-                <code class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ row.ip }}</code>
+                <SharedCopyButton :value="row.ip!"><code class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ row.ip }}</code></SharedCopyButton>
               </div>
               <div class="flex-1">
                 <span class="text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ row.label }}</span>
@@ -173,7 +173,7 @@
             <!-- Allocation rows -->
             <template v-else-if="row.kind === 'allocation'">
               <div class="w-40 shrink-0">
-                <code class="font-mono text-xs text-gray-900 dark:text-white">{{ (row.data as IPAllocation).ip_address }}</code>
+                <SharedCopyButton :value="(row.data as IPAllocation).ip_address"><code class="font-mono text-xs text-gray-900 dark:text-white">{{ (row.data as IPAllocation).ip_address }}</code></SharedCopyButton>
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
@@ -183,7 +183,7 @@
                 </div>
                 <div v-if="(row.data as IPAllocation).description || (row.data as IPAllocation).mac_address" class="mt-0.5 flex items-center gap-3 text-[11px] text-gray-400">
                   <span v-if="(row.data as IPAllocation).description">{{ (row.data as IPAllocation).description }}</span>
-                  <span v-if="(row.data as IPAllocation).mac_address" class="font-mono">{{ (row.data as IPAllocation).mac_address }}</span>
+                  <SharedCopyButton v-if="(row.data as IPAllocation).mac_address" :value="(row.data as IPAllocation).mac_address!"><span class="font-mono">{{ (row.data as IPAllocation).mac_address }}</span></SharedCopyButton>
                 </div>
               </div>
               <div class="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -195,8 +195,7 @@
             <!-- Range rows -->
             <template v-else-if="row.kind === 'range'">
               <div class="w-40 shrink-0">
-                <code class="font-mono text-sm font-medium text-gray-900 dark:text-white">{{ (row.data as IPRange).start_ip }}</code>
-                <span class="font-mono text-xs text-gray-400"> – {{ abbreviateEndIp((row.data as IPRange).start_ip, (row.data as IPRange).end_ip) }}</span>
+                <SharedCopyButton :value="`${(row.data as IPRange).start_ip} - ${(row.data as IPRange).end_ip}`"><code class="font-mono text-sm font-medium text-gray-900 dark:text-white">{{ (row.data as IPRange).start_ip }}</code><span class="font-mono text-xs text-gray-400"> – {{ abbreviateEndIp((row.data as IPRange).start_ip, (row.data as IPRange).end_ip) }}</span></SharedCopyButton>
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
@@ -521,6 +520,8 @@ const associatedVlan = computed(() => {
 const deviceTypeOptions = computed(() => [
   { label: t('networks.allocations.deviceTypes.server'), value: 'server' },
   { label: t('networks.allocations.deviceTypes.switch'), value: 'switch' },
+  { label: t('networks.allocations.deviceTypes.router'), value: 'router' },
+  { label: t('networks.allocations.deviceTypes.firewall'), value: 'firewall' },
   { label: t('networks.allocations.deviceTypes.printer'), value: 'printer' },
   { label: t('networks.allocations.deviceTypes.phone'), value: 'phone' },
   { label: t('networks.allocations.deviceTypes.ap'), value: 'ap' },
