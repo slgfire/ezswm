@@ -387,7 +387,9 @@ Im Sidepanel klicke auf das **Bearbeiten-Symbol**, um in den Bearbeitungsmodus z
 
 ![Netzwerkliste](/images/screenshot-networks.png)
 
-Navigiere zu **Netzwerke** in der Seitenleiste und klicke auf **Erstellen**.
+Navigiere zu **Netzwerke** in der Seitenleiste und klicke auf **Erstellen**. Die Netzwerkliste unterstützt Sortierung nach Name, Subnetz (numerisch korrekt) und Gateway. Such-, Filter- und Sortierzustand wird in der URL und über Sessions hinweg via localStorage gespeichert.
+
+**Klick-zum-Kopieren**: Auf der Netzwerk-Detailseite kannst du auf jede IP-Adresse, Subnetz, Gateway oder Maske klicken um den Wert in die Zwischenablage zu kopieren. Eine Bestätigung erscheint als Toast unten rechts. Dies funktioniert auf allen Detailseiten (Netzwerke, Switches, Subnetz-Rechner, Topologie-Panel).
 
 Felder:
 
@@ -418,7 +420,7 @@ Klicke auf **Hinzufügen**, um das Hinzufügen/Bearbeiten-Sidepanel zu öffnen. 
 
 - **IP-Adresse** (erforderlich)
 - **Hostname** -- wird als primäre Kennung in der IP-Übersicht angezeigt
-- **Gerätetyp** -- Server, Switch, Drucker, Telefon, AP, Kamera oder Sonstige (als Badge dargestellt)
+- **Gerätetyp** -- Server, Switch, Router, Firewall, Drucker, Telefon, AP, Kamera oder Sonstige (als Badge dargestellt)
 - **Status** -- Aktiv, Reserviert oder Inaktiv
 - **MAC-Adresse** -- als sekundäre Info in der Zeile angezeigt
 - **Beschreibung** -- als sekundäre Info in der Zeile angezeigt

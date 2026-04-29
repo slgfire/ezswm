@@ -131,6 +131,7 @@
 import type { Network } from '~~/types/network'
 
 const route = useRoute()
+const router = useRouter()
 const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
 useHead({ title: t('networks.title') })
@@ -145,17 +146,64 @@ const siteMap = computed(() => {
 })
 
 const pageLoading = ref(true)
-const search = ref('')
-const vlanFilter = ref('all')
 const showDeleteDialog = ref(false)
 const deleteTarget = ref<Network | null>(null)
 const deleteMessage = ref('')
 const deleting = ref(false)
 
-const sortField = ref<'name' | 'subnet' | 'gateway'>('name')
-const sortAsc = ref(true)
+// Initialize from URL query params, fallback to localStorage
+const LS_KEY = 'ezswm-networks-list'
+const validSortFields = ['name', 'subnet', 'gateway'] as const
+type SortField = typeof validSortFields[number]
 
-function toggleSort(field: 'name' | 'subnet' | 'gateway') {
+function loadState() {
+  const hasQuery = route.query.q || route.query.vlan || route.query.sort || route.query.dir
+  if (hasQuery) {
+    return {
+      q: (route.query.q as string) || '',
+      vlan: (route.query.vlan as string) || 'all',
+      sort: validSortFields.includes(route.query.sort as SortField) ? route.query.sort as SortField : 'name',
+      dir: route.query.dir === 'desc' ? false : true
+    }
+  }
+  try {
+    const saved = localStorage.getItem(LS_KEY)
+    if (saved) {
+      const s = JSON.parse(saved)
+      return {
+        q: s.q || '',
+        vlan: s.vlan || 'all',
+        sort: validSortFields.includes(s.sort) ? s.sort as SortField : 'name',
+        dir: s.dir !== false
+      }
+    }
+  } catch { /* ignore */ }
+  return { q: '', vlan: 'all', sort: 'name' as SortField, dir: true }
+}
+
+const initial = loadState()
+const search = ref(initial.q)
+const vlanFilter = ref(initial.vlan)
+const sortField = ref<SortField>(initial.sort)
+const sortAsc = ref(initial.dir)
+
+function syncState() {
+  const query: Record<string, string> = {}
+  if (search.value) query.q = search.value
+  if (vlanFilter.value !== 'all') query.vlan = vlanFilter.value
+  if (sortField.value !== 'name') query.sort = sortField.value
+  if (!sortAsc.value) query.dir = 'desc'
+  router.replace({ query })
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      q: search.value, vlan: vlanFilter.value, sort: sortField.value, dir: sortAsc.value
+    }))
+  } catch { /* ignore */ }
+}
+
+watch([search, vlanFilter, sortField, sortAsc], syncState)
+
+function toggleSort(field: SortField) {
   if (sortField.value === field) sortAsc.value = !sortAsc.value
   else { sortField.value = field; sortAsc.value = true }
 }
@@ -187,13 +235,37 @@ const filteredItems = computed(() => {
   return result
 })
 
+function ipToNum(ip: string): number {
+  const parts = ip.split('.').map(Number)
+  return ((parts[0]! << 24) | (parts[1]! << 16) | (parts[2]! << 8) | parts[3]!) >>> 0
+}
+
+function subnetToNum(subnet: string): [number, number] {
+  const [ip, prefix] = subnet.split('/')
+  return [ipToNum(ip!), parseInt(prefix || '0', 10)]
+}
+
 const sortedItems = computed(() => {
   const list = [...filteredItems.value]
   list.sort((a, b) => {
-    let va: string = (a[sortField.value] as string) || ''
-    let vb: string = (b[sortField.value] as string) || ''
-    if (typeof va === 'string') va = va.toLowerCase()
-    if (typeof vb === 'string') vb = vb.toLowerCase()
+    const field = sortField.value
+    if (field === 'subnet' || field === 'gateway') {
+      const va = (a[field] as string) || ''
+      const vb = (b[field] as string) || ''
+      if (!va && !vb) return 0
+      if (!va) return 1
+      if (!vb) return -1
+      if (field === 'subnet') {
+        const [ipA, prefA] = subnetToNum(va)
+        const [ipB, prefB] = subnetToNum(vb)
+        const diff = ipA - ipB || prefA - prefB
+        return sortAsc.value ? diff : -diff
+      }
+      const diff = ipToNum(va) - ipToNum(vb)
+      return sortAsc.value ? diff : -diff
+    }
+    const va = (a[field] as string || '').toLowerCase()
+    const vb = (b[field] as string || '').toLowerCase()
     if (va < vb) return sortAsc.value ? -1 : 1
     if (va > vb) return sortAsc.value ? 1 : -1
     return 0

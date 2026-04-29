@@ -13,7 +13,7 @@
       <div v-if="sw.serial_number"><span class="text-gray-400">Serial:</span> {{ sw.serial_number }}</div>
       <div v-if="sw.location"><span class="text-gray-400">Location:</span> {{ sw.location }}</div>
       <div v-if="sw.rack_position"><span class="text-gray-400">Rack:</span> {{ sw.rack_position }}</div>
-      <div v-if="sw.management_ip"><span class="text-gray-400">Management IP:</span> {{ sw.management_ip }}</div>
+      <div v-if="sw.management_ip"><span class="text-gray-400">Management IP:</span> <SharedCopyButton :value="sw.management_ip">{{ sw.management_ip }}</SharedCopyButton></div>
       <div v-if="sw.firmware_version"><span class="text-gray-400">Firmware:</span> {{ sw.firmware_version }}</div>
       <div><span class="text-gray-400">Ports:</span> {{ sw.ports?.length || 0 }}</div>
     </div>

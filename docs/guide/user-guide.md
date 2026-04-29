@@ -387,7 +387,9 @@ In the sidepanel, click the **edit icon** to switch to edit mode inline. Click t
 
 ![Network list](/images/screenshot-networks.png)
 
-Navigate to **Networks** in the sidebar and click **Create**.
+Navigate to **Networks** in the sidebar and click **Create**. The network list supports sorting by name, subnet (numerically correct), and gateway. Search, filter, and sort state is preserved in the URL and across sessions via localStorage.
+
+**Click-to-copy**: On the network detail page, click any IP address, subnet, gateway, or mask value to copy it to your clipboard. A confirmation toast appears in the bottom-right corner. This works on all detail pages (networks, switches, subnet calculator, topology panel).
 
 Fields:
 
@@ -418,7 +420,7 @@ Click **Add** to open the add/edit sidepanel. Each allocation records:
 
 - **IP Address** (required)
 - **Hostname** -- displayed as the primary identifier in the IP overview
-- **Device Type** -- Server, Switch, Printer, Phone, AP, Camera, or Other (shown as a badge)
+- **Device Type** -- Server, Switch, Router, Firewall, Printer, Phone, AP, Camera, or Other (shown as a badge)
 - **Status** -- Active, Reserved, or Inactive
 - **MAC Address** -- shown as secondary info in the row
 - **Description** -- shown as secondary info in the row

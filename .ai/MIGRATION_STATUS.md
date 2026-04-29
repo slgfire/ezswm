@@ -2,10 +2,18 @@
 
 ## Latest Stage
 
-Date: 2026-04-28
-Stage: Phase 28 — Data Management UX, Import Fixes, IPv4 Special Nets, Final Polish
+Date: 2026-04-29
+Stage: Phase 29 — Quick Wins: Copy-to-Clipboard, Device Types, Network List UX
 Status: Complete
-Version: 0.15.0
+Version: 0.16.0
+
+### Phase 29 Changes
+- **Copy-to-clipboard:** Klick auf IP/Subnet/MAC/Mask kopiert den Wert direkt. Kein Icon, `cursor-copy` als Hinweis, grüner Text-Flash + Toast als Feedback. Fallback für HTTP (non-secure context). Nur auf Detail-Seiten und Tools, nicht auf Listen (Navigation-Konflikt)
+- **Device Types erweitert:** `router` und `firewall` als neue Device Types für IP Allocations (Type, Validator, i18n EN+DE, Frontend-Dropdown)
+- **Numerische Subnet-Sortierung:** Networks-Liste sortiert Subnets jetzt numerisch (IP-Oktett-Vergleich) statt lexikografisch. Gateway-Sortierung ebenfalls numerisch
+- **Listen-Zustand in URL:** Suchtext (`q`), VLAN-Filter (`vlan`), Sortierspalte (`sort`), Sortierrichtung (`dir`) werden als URL Query-Parameter gespeichert. Reload/Back/Forward behält Zustand
+
+### Previous: Phase 28 — Data Management UX, Import Fixes, IPv4 Special Nets, Final Polish
 
 ### Phase 28 Changes (Data Management UX Cleanup)
 - **Tab-Benennung:** "Backup" → "Backup & Restore" — klarere Semantik

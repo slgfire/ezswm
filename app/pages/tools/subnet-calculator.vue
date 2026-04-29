@@ -23,31 +23,31 @@
           <!-- /32: Host Address only -->
           <template v-if="result.prefix_length === 32">
             <div><span class="text-gray-400">{{ $t('networks.subnetInfo.hostAddress') }}:</span></div>
-            <div>{{ result.network_address }}</div>
+            <div><SharedCopyButton :value="result.network_address">{{ result.network_address }}</SharedCopyButton></div>
           </template>
           <!-- /31: Endpoint A + B -->
           <template v-else-if="result.prefix_length === 31">
             <div><span class="text-gray-400">{{ $t('networks.subnetInfo.endpointA') }}:</span></div>
-            <div>{{ result.network_address }}</div>
+            <div><SharedCopyButton :value="result.network_address">{{ result.network_address }}</SharedCopyButton></div>
             <div><span class="text-gray-400">{{ $t('networks.subnetInfo.endpointB') }}:</span></div>
-            <div>{{ result.broadcast_address }}</div>
+            <div><SharedCopyButton :value="result.broadcast_address">{{ result.broadcast_address }}</SharedCopyButton></div>
           </template>
           <!-- Normal subnets -->
           <template v-else>
             <div><span class="text-gray-400">{{ $t('networks.subnetInfo.networkAddress') }}:</span></div>
-            <div>{{ result.network_address }}</div>
+            <div><SharedCopyButton :value="result.network_address">{{ result.network_address }}</SharedCopyButton></div>
             <div><span class="text-gray-400">{{ $t('networks.subnetInfo.broadcastAddress') }}:</span></div>
-            <div>{{ result.broadcast_address }}</div>
+            <div><SharedCopyButton :value="result.broadcast_address">{{ result.broadcast_address }}</SharedCopyButton></div>
           </template>
           <div><span class="text-gray-400">{{ $t('networks.subnetInfo.subnetMask') }}:</span></div>
-          <div>{{ result.subnet_mask }}</div>
+          <div><SharedCopyButton :value="result.subnet_mask">{{ result.subnet_mask }}</SharedCopyButton></div>
           <div><span class="text-gray-400">{{ $t('networks.subnetInfo.wildcardMask') }}:</span></div>
-          <div>{{ result.wildcard_mask }}</div>
+          <div><SharedCopyButton :value="result.wildcard_mask">{{ result.wildcard_mask }}</SharedCopyButton></div>
           <template v-if="result.prefix_length < 31">
             <div><span class="text-gray-400">{{ $t('networks.subnetInfo.firstUsable') }}:</span></div>
-            <div>{{ result.first_usable }}</div>
+            <div><SharedCopyButton :value="result.first_usable">{{ result.first_usable }}</SharedCopyButton></div>
             <div><span class="text-gray-400">{{ $t('networks.subnetInfo.lastUsable') }}:</span></div>
-            <div>{{ result.last_usable }}</div>
+            <div><SharedCopyButton :value="result.last_usable">{{ result.last_usable }}</SharedCopyButton></div>
           </template>
           <div><span class="text-gray-400">{{ $t('networks.subnetInfo.totalHosts') }}:</span></div>
           <div>{{ result.total_hosts }}</div>

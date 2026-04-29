@@ -1,4 +1,4 @@
-export type DeviceType = 'server' | 'switch' | 'printer' | 'phone' | 'ap' | 'camera' | 'other'
+export type DeviceType = 'server' | 'switch' | 'router' | 'firewall' | 'printer' | 'phone' | 'ap' | 'camera' | 'other'
 export type AllocationStatus = 'active' | 'reserved' | 'inactive'
 
 export interface IPAllocation {

@@ -12,10 +12,10 @@
             <UIcon name="i-heroicons-map-pin" class="h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
             <span class="text-gray-500 dark:text-gray-400">{{ node.location }}</span>
           </div>
-          <div v-if="node.management_ip" class="flex items-center gap-2">
+          <SharedCopyButton v-if="node.management_ip" :value="node.management_ip"><span class="flex items-center gap-2">
             <UIcon name="i-heroicons-globe-alt" class="h-3.5 w-3.5 flex-shrink-0 text-teal-400" />
             <span class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ node.management_ip }}</span>
-          </div>
+          </span></SharedCopyButton>
         </div>
 
         <!-- Port stats -->

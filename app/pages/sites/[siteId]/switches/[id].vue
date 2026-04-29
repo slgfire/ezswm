@@ -105,7 +105,7 @@
           <div v-if="item.location && item.management_ip" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
           <div v-if="item.management_ip">
             <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.managementIp') }}</div>
-            <div class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ item.management_ip }}</div>
+            <SharedCopyButton :value="item.management_ip!"><span class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ item.management_ip }}</span></SharedCopyButton>
           </div>
           <div v-if="item.ports?.length" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
           <div v-if="item.ports?.length">
@@ -159,7 +159,7 @@
           </div>
           <div>
             <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.managementIp') }}</dt>
-            <dd class="font-mono">{{ item.management_ip || '-' }}</dd>
+            <dd class="font-mono"><SharedCopyButton v-if="item.management_ip" :value="item.management_ip">{{ item.management_ip }}</SharedCopyButton><span v-else>-</span></dd>
           </div>
           <div>
             <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.firmwareVersion') }}</dt>
