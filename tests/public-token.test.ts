@@ -1,69 +1,72 @@
-import { describe, it, beforeEach } from 'node:test'
-import assert from 'node:assert'
-import { writeFileSync, mkdirSync, rmSync } from 'node:fs'
+import { mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
-
-const TEST_DATA_DIR = join(import.meta.dirname, '.test-data-public-token')
-
-// Stub useRuntimeConfig before any imports that use jsonStorage
-;(globalThis as unknown as Record<string, unknown>).useRuntimeConfig = () => ({ dataDir: TEST_DATA_DIR })
+import { tmpdir } from 'node:os'
+import { setTestRuntimeConfig, resetTestRuntimeConfig, seedJsonFile } from './testHelpers'
 
 describe('publicTokenRepository', () => {
   let publicTokenRepository: typeof import('../server/repositories/publicTokenRepository').publicTokenRepository
+  let tempDir: string
 
   beforeEach(async () => {
-    rmSync(TEST_DATA_DIR, { recursive: true, force: true })
-    mkdirSync(TEST_DATA_DIR, { recursive: true })
-    writeFileSync(join(TEST_DATA_DIR, 'publicTokens.json'), '[]')
+    tempDir = mkdtempSync(join(tmpdir(), 'ezswm-vitest-'))
+    setTestRuntimeConfig({ dataDir: tempDir })
+    seedJsonFile(tempDir, 'publicTokens.json', [])
     const mod = await import('../server/repositories/publicTokenRepository')
     publicTokenRepository = mod.publicTokenRepository
   })
 
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true })
+    resetTestRuntimeConfig()
+  })
+
   it('creates a token with 32-char token string', () => {
     const token = publicTokenRepository.create('switch-1')
-    assert.strictEqual(token.token.length, 32)
-    assert.strictEqual(token.switch_id, 'switch-1')
-    assert.strictEqual(token.revoked_at, null)
-    assert.strictEqual(token.last_access_at, null)
-    assert.ok(token.id.length > 0)
-    assert.ok(token.created_at.length > 0)
+    expect(token.token.length).toBe(32)
+    expect(token.switch_id).toBe('switch-1')
+    expect(token.revoked_at).toBe(null)
+    expect(token.last_access_at).toBe(null)
+    expect(token.id.length).toBeGreaterThan(0)
+    expect(token.created_at.length).toBeGreaterThan(0)
   })
 
   it('enforces one active token per switch', () => {
     publicTokenRepository.create('switch-1')
-    assert.throws(
-      () => publicTokenRepository.create('switch-1'),
-      (err: unknown) => (err as { statusCode?: number }).statusCode === 409
-    )
+    try {
+      publicTokenRepository.create('switch-1')
+      expect.fail('Expected create to throw')
+    } catch (error) {
+      expect((error as { statusCode?: number }).statusCode).toBe(409)
+    }
   })
 
   it('allows new token after revoking', () => {
     const first = publicTokenRepository.create('switch-1')
     publicTokenRepository.revoke(first.id)
     const second = publicTokenRepository.create('switch-1')
-    assert.notStrictEqual(first.token, second.token)
+    expect(first.token).not.toBe(second.token)
   })
 
   it('looks up active token by token string', () => {
     const created = publicTokenRepository.create('switch-1')
     const found = publicTokenRepository.getByToken(created.token)
-    assert.ok(found)
-    assert.strictEqual(found!.id, created.id)
+    expect(found).toBeTruthy()
+    expect(found!.id).toBe(created.id)
   })
 
   it('returns null for revoked token from getByToken', () => {
     const created = publicTokenRepository.create('switch-1')
     publicTokenRepository.revoke(created.id)
     const found = publicTokenRepository.getByToken(created.token)
-    assert.strictEqual(found, null)
+    expect(found).toBe(null)
   })
 
   it('getLatestBySwitchId returns revoked token', () => {
     const created = publicTokenRepository.create('switch-1')
     publicTokenRepository.revoke(created.id)
     const latest = publicTokenRepository.getLatestBySwitchId('switch-1')
-    assert.ok(latest)
-    assert.ok(latest!.revoked_at)
+    expect(latest).toBeTruthy()
+    expect(latest!.revoked_at).toBeTruthy()
   })
 
   it('deleteBySwitchId removes all tokens for switch', () => {
@@ -71,14 +74,14 @@ describe('publicTokenRepository', () => {
     publicTokenRepository.revoke(first.id)
     publicTokenRepository.create('switch-1')
     publicTokenRepository.deleteBySwitchId('switch-1')
-    assert.strictEqual(publicTokenRepository.getLatestBySwitchId('switch-1'), null)
+    expect(publicTokenRepository.getLatestBySwitchId('switch-1')).toBe(null)
   })
 
   it('updateLastAccess sets timestamp', () => {
     const created = publicTokenRepository.create('switch-1')
-    assert.strictEqual(created.last_access_at, null)
+    expect(created.last_access_at).toBe(null)
     publicTokenRepository.updateLastAccess(created.id)
     const updated = publicTokenRepository.getByToken(created.token)
-    assert.ok(updated!.last_access_at)
+    expect(updated!.last_access_at).toBeTruthy()
   })
 })
