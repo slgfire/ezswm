@@ -18,13 +18,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@nuxt/ui": "4.7.0",
+    "@nuxt/ui": "4.7.1",
     "@nuxtjs/i18n": "10.3.0",
     "@types/qrcode": "1.5.6",
     "bcryptjs": "3.0.3",
     "jsonwebtoken": "9.0.3",
     "nanoid": "5.1.9",
-    "nuxt": "4.4.2",
+    "nuxt": "4.4.4",
     "qrcode": "1.5.4",
     "tailwindcss": "4.2.4",
     "v-network-graph": "0.9.22",
