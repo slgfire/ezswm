@@ -1,4 +1,5 @@
-import { hashPassword, verifyPassword } from '../server/utils/auth'
+import { hashPassword, verifyPassword, signToken, verifyToken } from '../server/utils/auth'
+import { setTestRuntimeConfig, resetTestRuntimeConfig } from './testHelpers'
 
 describe('hashPassword', () => {
   it('returns a string', async () => {
@@ -82,5 +83,71 @@ describe('round-trip', () => {
     const hash = await hashPassword(password)
     const result = await verifyPassword('wrong-roundtrip', hash)
     expect(result).toBe(false)
+  })
+})
+
+describe('signToken', () => {
+  beforeEach(() => {
+    setTestRuntimeConfig({ jwtSecret: 'test-jwt-secret' })
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    resetTestRuntimeConfig()
+  })
+
+  it('returns a JWT string with 3 dot-separated parts', () => {
+    const token = signToken({ sub: 'user-1', username: 'admin', role: 'admin' })
+    expect(token.split('.').length).toBe(3)
+  })
+
+  it('payload contains user id, username and role', () => {
+    const token = signToken({ sub: 'user-1', username: 'admin', role: 'admin' })
+    const decoded = verifyToken(token)
+    expect(decoded.sub).toBe('user-1')
+    expect(decoded.username).toBe('admin')
+    expect(decoded.role).toBe('admin')
+  })
+
+  it('default expiry is 7 days', () => {
+    const token = signToken({ sub: 'user-1', username: 'admin', role: 'admin' })
+    const decoded = verifyToken(token)
+    expect(decoded.exp - decoded.iat).toBe(7 * 24 * 60 * 60)
+  })
+
+  it('rememberMe expiry is 30 days', () => {
+    const token = signToken({ sub: 'user-1', username: 'admin', role: 'admin' }, true)
+    const decoded = verifyToken(token)
+    expect(decoded.exp - decoded.iat).toBe(30 * 24 * 60 * 60)
+  })
+})
+
+describe('verifyToken', () => {
+  beforeEach(() => {
+    setTestRuntimeConfig({ jwtSecret: 'test-jwt-secret' })
+  })
+
+  afterEach(() => {
+    resetTestRuntimeConfig()
+  })
+
+  it('decodes a valid token', () => {
+    const token = signToken({ sub: 'user-1', username: 'admin', role: 'admin' })
+    const decoded = verifyToken(token)
+    expect(decoded.sub).toBe('user-1')
+  })
+
+  it('rejects a tampered token', () => {
+    const token = signToken({ sub: 'user-1', username: 'admin', role: 'admin' })
+    const tampered = token.slice(0, -5) + 'XXXXX'
+    expect(() => verifyToken(tampered)).toThrow()
+  })
+
+  it('rejects a token signed with a different secret', () => {
+    const token = signToken({ sub: 'user-1', username: 'admin', role: 'admin' })
+    setTestRuntimeConfig({ jwtSecret: 'different-secret' })
+    expect(() => verifyToken(token)).toThrow()
   })
 })
