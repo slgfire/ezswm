@@ -29,7 +29,7 @@
     "tailwindcss": "4.2.4",
     "v-network-graph": "0.9.22",
     "vuedraggable": "4.1.0",
-    "yaml": "2.8.3",
+    "yaml": "2.8.4",
     "zod": "4.3.6"
   },
   "devDependencies": {
