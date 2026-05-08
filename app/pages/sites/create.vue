@@ -10,7 +10,7 @@
       <h1 class="text-2xl font-bold">{{ $t('sites.create') }}</h1>
     </div>
 
-    <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit="onSubmit">
+    <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit.prevent="onSubmit">
       <div class="space-y-6">
         <div class="list-container rounded-lg bg-default p-5">
           <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('sites.sections.siteInfo') }}</h2>

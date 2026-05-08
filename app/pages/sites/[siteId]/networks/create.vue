@@ -5,7 +5,7 @@
       <h1 class="text-2xl font-bold">{{ $t('networks.create') }}</h1>
     </div>
 
-    <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit="onSubmit">
+    <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit.prevent="onSubmit">
       <div class="space-y-6">
         <!-- Network Info -->
         <div class="list-container rounded-lg bg-default p-5">

@@ -10,7 +10,7 @@
       <h1 class="text-2xl font-bold">{{ $t('switches.create') }}</h1>
     </div>
 
-    <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit="onSubmit">
+    <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit.prevent="onSubmit">
       <div class="space-y-6">
         <!-- Basic Info -->
         <div class="list-container rounded-lg bg-default p-5">
@@ -65,7 +65,7 @@
               />
             </UFormField>
             <UFormField :label="$t('switches.fields.role')" name="role">
-              <USelectMenu v-model="form.role" :search-input="false" :items="roleOptions" value-key="value" class="w-full" />
+              <USelect v-model="form.role" :items="roleOptions" class="w-full" />
             </UFormField>
             <UFormField :label="$t('switches.fields.tags')" name="tags" class="md:col-span-2">
               <UInput v-model="tagInput" :placeholder="$t('switches.tagsPlaceholder')" class="w-full" @keydown.enter.prevent="addTag" />
