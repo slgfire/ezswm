@@ -2,10 +2,23 @@
 
 ## Latest Stage
 
-Date: 2026-04-29
-Stage: Phase 29 — Quick Wins: Copy-to-Clipboard, Device Types, Network List UX
+Date: 2026-05-04
+Stage: Phase 30 — vitest Setup: Test Migration + Repository/Validator/JWT Coverage
 Status: Complete
-Version: 0.16.0
+Version: 0.17.0
+
+### Phase 30 Changes
+- **vitest installed:** Replaced Node.js built-in test runner with vitest (globals mode, setupFiles for Nuxt stubs)
+- **5 existing tests migrated:** auth, ipv4, deviceLibrary, public-token, validators — from `node:test`/`node:assert` to vitest globals
+- **Test helpers:** `tests/testHelpers.ts` (mutable runtime config per test) + `tests/vitest.setup.ts` (Nuxt auto-import stubs: `useRuntimeConfig`, `createError`)
+- **Repository tests (new):** networkRepository (11), vlanRepository (8), ipRangeRepository (11), ipAllocationRepository (15) — CRUD + all validation logic
+- **JWT tests (new):** signToken/verifyToken with fake timers for deterministic expiry assertions (7d/30d)
+- **MAC validation tests (new):** 9 tests for `isValidMacAddress`
+- **Update schema tests (new):** updateSwitchSchema, updateNetworkSchema, updateIpAllocationSchema, updateIpRangeSchema, updateSiteSchema, updateVlanSchema edge cases
+- **CI updated:** `node --import tsx --test` → `npm run test`
+- **Total: 9 test files, 381 tests, ~3.4s runtime**
+
+### Previous: Phase 29 — Quick Wins: Copy-to-Clipboard, Device Types, Network List UX
 
 ### Phase 29 Changes
 - **Copy-to-clipboard:** Klick auf IP/Subnet/MAC/Mask kopiert den Wert direkt. Kein Icon, `cursor-copy` als Hinweis, grüner Text-Flash + Toast als Feedback. Fallback für HTTP (non-secure context). Nur auf Detail-Seiten und Tools, nicht auf Listen (Navigation-Konflikt)
