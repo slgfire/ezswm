@@ -191,7 +191,7 @@ async function onSubmit() {
     if (siteId.value && siteId.value !== 'all') {
       body.site_id = siteId.value
     }
-    result = await create(body) as Record<string, unknown> | undefined
+    result = await create(body) as unknown as Record<string, unknown> | undefined
     toast.add({ title: t('switches.messages.created'), color: 'success' })
   } catch (e: unknown) {
     const err = e as { data?: { message?: string } }
