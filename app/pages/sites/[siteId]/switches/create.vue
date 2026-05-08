@@ -10,7 +10,7 @@
       <h1 class="text-2xl font-bold">{{ $t('switches.create') }}</h1>
     </div>
 
-    <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit="onSubmit">
+    <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit.prevent="onSubmit">
       <div class="space-y-6">
         <!-- Basic Info -->
         <div class="list-container rounded-lg bg-default p-5">
@@ -65,7 +65,7 @@
               />
             </UFormField>
             <UFormField :label="$t('switches.fields.role')" name="role">
-              <USelectMenu v-model="form.role" :search-input="false" :items="roleOptions" value-key="value" class="w-full" />
+              <USelect v-model="form.role" :items="roleOptions" class="w-full" />
             </UFormField>
             <UFormField :label="$t('switches.fields.tags')" name="tags" class="md:col-span-2">
               <UInput v-model="tagInput" :placeholder="$t('switches.tagsPlaceholder')" class="w-full" @keydown.enter.prevent="addTag" />
@@ -123,14 +123,14 @@ const form = reactive({
   management_ip: '',
   firmware_version: '',
   layout_template_id: '',
-  role: '',
+  role: '__none__',
   tags: [] as string[],
   notes: '',
   stack_size: 1
 })
 
 const roleOptions = computed(() => [
-  { label: '---', value: '' },
+  { label: '---', value: '__none__' },
   { label: t('switches.roles.core'), value: 'core' },
   { label: t('switches.roles.distribution'), value: 'distribution' },
   { label: t('switches.roles.access'), value: 'access' },
@@ -178,11 +178,12 @@ async function onSubmit() {
   if (validationErrors.length > 0) return
 
   submitting.value = true
+  let result: Record<string, unknown> | undefined
   try {
     const body: Record<string, unknown> = { ...form, tags: [...form.tags] }
     // Remove empty optional fields
     for (const key of Object.keys(body)) {
-      if (body[key] === '' || (Array.isArray(body[key]) && body[key].length === 0)) {
+      if (body[key] === '' || body[key] === '__none__' || (Array.isArray(body[key]) && body[key].length === 0)) {
         delete body[key]
       }
     }
@@ -190,19 +191,19 @@ async function onSubmit() {
     if (siteId.value && siteId.value !== 'all') {
       body.site_id = siteId.value
     }
-    const result = await create(body)
+    result = await create(body) as unknown as Record<string, unknown> | undefined
     toast.add({ title: t('switches.messages.created'), color: 'success' })
-    if (result?.id) {
-      await navigateTo(`/sites/${siteId.value}/switches/${result.id}`)
-    } else {
-      await navigateTo(`/sites/${siteId.value}/switches`)
-    }
   } catch (e: unknown) {
     const err = e as { data?: { message?: string } }
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
+    return
   } finally {
     submitting.value = false
   }
+  await navigateTo(result?.id
+    ? `/sites/${siteId.value}/switches/${result.id}`
+    : `/sites/${siteId.value}/switches`
+  )
 }
 
 onMounted(() => {

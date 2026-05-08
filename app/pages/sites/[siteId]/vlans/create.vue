@@ -5,7 +5,7 @@
       <h1 class="text-2xl font-bold">{{ $t('vlans.create') }}</h1>
     </div>
 
-    <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit="onSubmit">
+    <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit.prevent="onSubmit">
       <div class="space-y-6">
         <div class="list-container rounded-lg bg-default p-5">
           <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">VLAN</h2>
@@ -107,6 +107,7 @@ function validate(state: typeof form.value) {
 
 async function onSubmit() {
   submitting.value = true
+  let result: unknown
   try {
     const body: Record<string, unknown> = {
       vlan_id: form.value.vlan_id,
@@ -119,14 +120,15 @@ async function onSubmit() {
     if (siteId.value && siteId.value !== 'all') {
       body.site_id = siteId.value
     }
-    const result = await create(body)
+    result = await create(body)
     toast.add({ title: t('vlans.messages.created'), color: 'success' })
-    await router.push(`/sites/${siteId.value}/vlans/${(result as VLAN).id}`)
   } catch (err: unknown) {
     const error = err as { data?: { message?: string } }
     toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
+    return
   } finally {
     submitting.value = false
   }
+  await router.push(`/sites/${siteId.value}/vlans/${(result as VLAN).id}`)
 }
 </script>

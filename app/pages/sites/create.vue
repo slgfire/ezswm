@@ -10,7 +10,7 @@
       <h1 class="text-2xl font-bold">{{ $t('sites.create') }}</h1>
     </div>
 
-    <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit="onSubmit">
+    <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit.prevent="onSubmit">
       <div class="space-y-6">
         <div class="list-container rounded-lg bg-default p-5">
           <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('sites.sections.siteInfo') }}</h2>
@@ -62,8 +62,9 @@ async function onSubmit() {
   if (validationErrors.length > 0) return
 
   submitting.value = true
+  let result: { id: string } | undefined
   try {
-    const result = await $fetch<{ id: string }>('/api/sites', {
+    result = await $fetch<{ id: string }>('/api/sites', {
       method: 'POST',
       body: {
         name: form.name.trim(),
@@ -71,16 +72,13 @@ async function onSubmit() {
       }
     })
     toast.add({ title: t('sites.messages.created', 'Site created'), color: 'success' })
-    if (result?.id) {
-      await navigateTo(`/sites/${result.id}/switches`)
-    } else {
-      await navigateTo('/sites')
-    }
   } catch (e: unknown) {
     const message = (e as { data?: { message?: string } })?.data?.message
     toast.add({ title: message || t('errors.serverError', 'Server error'), color: 'error' })
+    return
   } finally {
     submitting.value = false
   }
+  await navigateTo(result?.id ? `/sites/${result.id}/switches` : '/sites')
 }
 </script>
