@@ -107,6 +107,7 @@ function validate(state: typeof form.value) {
 
 async function onSubmit() {
   submitting.value = true
+  let result: unknown
   try {
     const body: Record<string, unknown> = {
       vlan_id: form.value.vlan_id,
@@ -119,14 +120,15 @@ async function onSubmit() {
     if (siteId.value && siteId.value !== 'all') {
       body.site_id = siteId.value
     }
-    const result = await create(body)
+    result = await create(body)
     toast.add({ title: t('vlans.messages.created'), color: 'success' })
-    await router.push(`/sites/${siteId.value}/vlans/${(result as VLAN).id}`)
   } catch (err: unknown) {
     const error = err as { data?: { message?: string } }
     toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
+    return
   } finally {
     submitting.value = false
   }
+  await router.push(`/sites/${siteId.value}/vlans/${(result as VLAN).id}`)
 }
 </script>
