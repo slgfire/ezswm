@@ -8,7 +8,7 @@ export function useRemoteConnection(
   formPortIds: Ref<string[]>,
   formRemoteDevice: Ref<string>,
   formRemoteDeviceId: Ref<string | undefined>,
-  vlanForm: { port_mode: string; access_vlan: number | null; native_vlan: number | null; tagged_vlans: number[] }
+  vlanForm: ReturnType<typeof useLagVlanConfig>['vlanForm']
 ) {
   const { t } = useI18n()
   const { apiFetch } = useApiFetch()
@@ -129,13 +129,9 @@ export function useRemoteConnection(
   }
 
   // Missing VLANs on selected remote switch
-  const remoteSwitchMissingVlans = computed(() => {
-    if (!selectedRemoteSwitchId.value || !formVlanNumbers.value.length) return []
-    const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
-    if (!sw) return []
-    const configured = new Set(sw.configured_vlans || [])
-    return formVlanNumbers.value.filter(v => !configured.has(v))
-  })
+  const remoteSwitchMissingVlans = computed(() =>
+    getMissingRemoteVlans(selectedRemoteSwitchId.value)
+  )
 
   // Remote switch configured VLANs for badge display
   const remoteConfiguredVlansList = computed(() => {
