@@ -237,7 +237,7 @@
 
 <script setup lang="ts">
 import type { Network } from '~~/types/network'
-import type { IPAllocation, AllocationStatus } from '~~/types/ipAllocation'
+import type { IPAllocation, AllocationStatus, DeviceType } from '~~/types/ipAllocation'
 import type { IPRange, RangeType } from '~~/types/ipRange'
 
 const { t } = useI18n()
@@ -328,7 +328,7 @@ const vlanOptions = computed(() => {
 
 const associatedVlan = computed(() => {
   if (!network.value?.vlan_id) return null
-  return vlans.value.find((v) => v.id === network.value!.vlan_id)
+  return vlans.value.find((v) => v.id === network.value!.vlan_id) ?? null
 })
 
 const deviceTypeOptions = computed(() => [
@@ -527,7 +527,7 @@ async function onCreateAllocation() {
     ip_address: allocForm.value.ip_address.trim(),
     hostname: allocForm.value.hostname.trim() || undefined,
     mac_address: allocForm.value.mac_address.trim() || undefined,
-    device_type: allocForm.value.device_type || undefined,
+    device_type: (allocForm.value.device_type || undefined) as DeviceType | undefined,
     description: allocForm.value.description.trim() || undefined,
     status: allocForm.value.status
   }
