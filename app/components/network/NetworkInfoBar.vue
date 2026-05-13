@@ -95,13 +95,14 @@
 
 <script setup lang="ts">
 import type { Network } from '~~/types/network'
+import type { VLAN } from '~~/types/vlan'
 
 const props = defineProps<{
   network: Network
   subnetInfo: { network: string; broadcast: string; mask: string; totalHosts: number; usableHosts: number; prefix: number }
   isPointToPoint: boolean
   isHostRoute: boolean
-  associatedVlan: { vlan_id: number; name: string; color: string } | null
+  associatedVlan: VLAN | null
   allocationsCount: number
   utilizationPercent: number
   showDetails: boolean

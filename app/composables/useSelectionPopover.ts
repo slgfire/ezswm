@@ -35,5 +35,5 @@ export function useSelectionPopover(
     selectedIds.value = []
   }
 
-  return { selectedIds, search, filteredList, filteredGroups, toggle, selectAll, deselectAll }
+  return reactive({ selectedIds, search, filteredList, filteredGroups, toggle, selectAll, deselectAll })
 }

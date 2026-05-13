@@ -54,15 +54,15 @@
               <div class="mb-2 flex items-center justify-between">
                 <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">{{ $t('common.print') }}</span>
                 <div class="flex gap-1">
-                  <UButton size="xs" variant="ghost" @click="print.selectedIds.value.length === filteredItems.length ? print.deselectAll() : print.selectAll(filteredItems.map((s) => s.id))">
-                    {{ print.selectedIds.value.length === filteredItems.length ? $t('common.deselectAll') : $t('common.selectAll') }}
+                  <UButton size="xs" variant="ghost" @click="print.selectedIds.length === filteredItems.length ? print.deselectAll() : print.selectAll(filteredItems.map((s) => s.id))">
+                    {{ print.selectedIds.length === filteredItems.length ? $t('common.deselectAll') : $t('common.selectAll') }}
                   </UButton>
                 </div>
               </div>
               <UInput v-model="print.search" :placeholder="$t('common.search') + '...'" size="xs" class="mb-2 w-full" icon="i-heroicons-magnifying-glass" />
               <div class="max-h-60 overflow-y-auto space-y-0.5">
                 <template v-if="siteId === 'all'">
-                  <template v-for="group in print.filteredGroups.value" :key="group.siteId">
+                  <template v-for="group in print.filteredGroups" :key="group.siteId">
                     <div v-if="group.siteName" class="mt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">{{ group.siteName }}</div>
                     <label
                       v-for="sw in group.items"
@@ -71,7 +71,7 @@
                     >
                       <input
                         type="checkbox"
-                        :checked="print.selectedIds.value.includes(sw.id)"
+                        :checked="print.selectedIds.includes(sw.id)"
                         class="h-3.5 w-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
                         @change="print.toggle(sw.id)"
                       >
@@ -81,13 +81,13 @@
                 </template>
                 <template v-else>
                   <label
-                    v-for="sw in print.filteredList.value"
+                    v-for="sw in print.filteredList"
                     :key="sw.id"
                     class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   >
                     <input
                       type="checkbox"
-                      :checked="print.selectedIds.value.includes(sw.id)"
+                      :checked="print.selectedIds.includes(sw.id)"
                       class="h-3.5 w-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
                       @change="print.toggle(sw.id)"
                     >
@@ -100,10 +100,10 @@
                   icon="i-heroicons-printer"
                   size="xs"
                   block
-                  :disabled="print.selectedIds.value.length === 0"
+                  :disabled="print.selectedIds.length === 0"
                   @click="openPrintPage"
                 >
-                  {{ $t('print.printSelected', { n: print.selectedIds.value.length }) }}
+                  {{ $t('print.printSelected', { n: print.selectedIds.length }) }}
                 </UButton>
               </div>
             </div>
@@ -118,15 +118,15 @@
               <div class="mb-2 flex items-center justify-between">
                 <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">{{ $t('public.admin.title') }}</span>
                 <div class="flex gap-1">
-                  <UButton size="xs" variant="ghost" @click="qr.selectedIds.value.length === filteredItems.length ? qr.deselectAll() : qr.selectAll(filteredItems.map((s) => s.id))">
-                    {{ qr.selectedIds.value.length === filteredItems.length ? $t('common.deselectAll') : $t('common.selectAll') }}
+                  <UButton size="xs" variant="ghost" @click="qr.selectedIds.length === filteredItems.length ? qr.deselectAll() : qr.selectAll(filteredItems.map((s) => s.id))">
+                    {{ qr.selectedIds.length === filteredItems.length ? $t('common.deselectAll') : $t('common.selectAll') }}
                   </UButton>
                 </div>
               </div>
               <UInput v-model="qr.search" :placeholder="$t('common.search') + '...'" size="xs" class="mb-2 w-full" icon="i-heroicons-magnifying-glass" />
               <div class="max-h-60 overflow-y-auto space-y-0.5">
                 <template v-if="siteId === 'all'">
-                  <template v-for="group in qr.filteredGroups.value" :key="group.siteId">
+                  <template v-for="group in qr.filteredGroups" :key="group.siteId">
                     <div v-if="group.siteName" class="mt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">{{ group.siteName }}</div>
                     <label
                       v-for="sw in group.items"
@@ -135,7 +135,7 @@
                     >
                       <input
                         type="checkbox"
-                        :checked="qr.selectedIds.value.includes(sw.id)"
+                        :checked="qr.selectedIds.includes(sw.id)"
                         class="h-3.5 w-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
                         @change="qr.toggle(sw.id)"
                       >
@@ -145,13 +145,13 @@
                 </template>
                 <template v-else>
                   <label
-                    v-for="sw in qr.filteredList.value"
+                    v-for="sw in qr.filteredList"
                     :key="sw.id"
                     class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   >
                     <input
                       type="checkbox"
-                      :checked="qr.selectedIds.value.includes(sw.id)"
+                      :checked="qr.selectedIds.includes(sw.id)"
                       class="h-3.5 w-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
                       @change="qr.toggle(sw.id)"
                     >
@@ -164,10 +164,10 @@
                   icon="i-heroicons-qr-code"
                   size="xs"
                   block
-                  :disabled="qr.selectedIds.value.length === 0"
+                  :disabled="qr.selectedIds.length === 0"
                   @click="openQrPrintPage"
                 >
-                  {{ $t('public.admin.printSticker') }} ({{ qr.selectedIds.value.length }})
+                  {{ $t('public.admin.printSticker') }} ({{ qr.selectedIds.length }})
                 </UButton>
               </div>
             </div>
@@ -413,14 +413,14 @@ function printSingleSwitch(swId: string) {
 }
 
 function openPrintPage() {
-  if (print.selectedIds.value.length === 0) return
-  const ids = print.selectedIds.value.join(',')
+  if (print.selectedIds.length === 0) return
+  const ids = print.selectedIds.join(',')
   window.open(`/sites/${siteId.value}/switches/print?ids=${ids}`, '_blank')
 }
 
 function openQrPrintPage() {
-  if (qr.selectedIds.value.length === 0) return
-  const ids = qr.selectedIds.value.join(',')
+  if (qr.selectedIds.length === 0) return
+  const ids = qr.selectedIds.join(',')
   window.open(`/sites/${siteId.value}/switches/qr-print?ids=${ids}`, '_blank')
 }
 

@@ -4,7 +4,7 @@ import type { LayoutTemplate } from '~~/types/layoutTemplate'
 export function useSwitchEditForm(
   item: Ref<Switch | null>,
   templates: Ref<LayoutTemplate[]>,
-  updateFn: (body: Record<string, unknown>) => Promise<void>
+  updateFn: (body: Record<string, unknown>) => Promise<unknown>
 ) {
   const { t } = useI18n()
   const toast = useToast()

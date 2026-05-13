@@ -201,8 +201,8 @@
       :edit-target="editAllocTarget"
       :error="addPanelError"
       :saving="addPanelMode === 'ip' ? creatingAlloc : creatingRange"
-      :alloc-form="allocForm"
-      :range-form="rangeForm"
+      v-model:alloc-form="allocForm"
+      v-model:range-form="rangeForm"
       :is-special-net="isSpecialNet"
       :device-type-options="deviceTypeOptions"
       :alloc-status-options="allocStatusOptions"
@@ -237,8 +237,8 @@
 
 <script setup lang="ts">
 import type { Network } from '~~/types/network'
-import type { IPAllocation } from '~~/types/ipAllocation'
-import type { IPRange } from '~~/types/ipRange'
+import type { IPAllocation, AllocationStatus } from '~~/types/ipAllocation'
+import type { IPRange, RangeType } from '~~/types/ipRange'
 
 const { t } = useI18n()
 const toast = useToast()
@@ -279,7 +279,7 @@ const deletingRange = ref(false)
 // Range edit slideover
 const showRangeEdit = ref(false)
 const rangeEditTarget = ref<IPRange | null>(null)
-const rangeEditForm = ref({ start_ip: '', end_ip: '', type: 'static', description: '' })
+const rangeEditForm = ref({ start_ip: '', end_ip: '', type: 'static' as RangeType, description: '' })
 const rangeEditError = ref('')
 const savingRangeEdit = ref(false)
 
@@ -287,8 +287,8 @@ const editAllocTarget = ref<IPAllocation | null>(null)
 
 const editForm = ref({ name: '', subnet: '', gateway: '', vlan_id: '', description: '' })
 const editDnsInput = ref('')
-const allocForm = ref({ ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' })
-const rangeForm = ref({ start_ip: '', end_ip: '', type: 'static', description: '' })
+const allocForm = ref({ ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' as AllocationStatus })
+const rangeForm = ref({ start_ip: '', end_ip: '', type: 'static' as RangeType, description: '' })
 
 const utilizationPercent = computed(() => {
   if (!subnetInfo.value.usableHosts || subnetInfo.value.usableHosts <= 0) return 0
@@ -453,7 +453,7 @@ function openAddPanel() {
   editAllocTarget.value = null
   addPanelError.value = ''
   allocForm.value = { ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' }
-  rangeForm.value = { start_ip: '', end_ip: '', type: 'static', description: '' }
+  rangeForm.value = { start_ip: '', end_ip: '', type: 'static' as RangeType, description: '' }
   showAddPanel.value = true
 }
 
@@ -541,7 +541,7 @@ async function onCreateAllocation() {
     }
     showAddPanel.value = false
     editAllocTarget.value = null
-    allocForm.value = { ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' }
+    allocForm.value = { ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' as AllocationStatus }
     await fetchAllocations()
   } catch (err: unknown) {
     const error = err as { data?: { message?: string } }
@@ -606,7 +606,7 @@ async function onCreateRange() {
     await createRange({ start_ip: rangeForm.value.start_ip.trim(), end_ip: rangeForm.value.end_ip.trim(), type: rangeForm.value.type, description: rangeForm.value.description.trim() || undefined })
     toast.add({ title: t('networks.ranges.messages.created'), color: 'success' })
     showAddPanel.value = false
-    rangeForm.value = { start_ip: '', end_ip: '', type: 'static', description: '' }
+    rangeForm.value = { start_ip: '', end_ip: '', type: 'static' as RangeType, description: '' }
     await fetchRanges()
   } catch (err: unknown) {
     const error = err as { data?: { message?: string } }

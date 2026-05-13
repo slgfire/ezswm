@@ -100,13 +100,14 @@ const props = defineProps<{
   mode: 'ip' | 'range'
   error: string
   saving: boolean
-  allocForm: { ip_address: string; hostname: string; mac_address: string; device_type: string; description: string; status: string }
-  rangeForm: { start_ip: string; end_ip: string; type: string; description: string }
   isSpecialNet: boolean
   deviceTypeOptions: { label: string; value: string }[]
   allocStatusOptions: { label: string; value: string }[]
   rangeTypeOptions: { label: string; value: string }[]
 }>()
+
+const allocForm = defineModel<{ ip_address: string; hostname: string; mac_address: string; device_type: string; description: string; status: string }>('allocForm', { required: true })
+const rangeForm = defineModel<{ start_ip: string; end_ip: string; type: string; description: string }>('rangeForm', { required: true })
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
