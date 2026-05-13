@@ -11,7 +11,7 @@ export function useSwitchEditForm(
 
   const editMode = ref(false)
   const saving = ref(false)
-  const editFormRef = ref()
+  const editFormRef = ref<{ submit: () => void } | null>(null)
   const editTagInput = ref('')
 
   const editForm = reactive({
