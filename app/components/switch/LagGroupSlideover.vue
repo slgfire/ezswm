@@ -190,8 +190,6 @@
 <script setup lang="ts">
 import type { LAGGroup } from '~~/types/lagGroup'
 import type { Port } from '~~/types/port'
-import type { Switch } from '~~/types/switch'
-import type { VLAN } from '~~/types/vlan'
 import { resolvePortLabel } from '~/utils/ports'
 
 const props = defineProps<{
@@ -207,7 +205,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const toast = useToast()
-const { apiFetch } = useApiFetch()
 
 const isOpen = ref(false)
 const saving = ref(false)
@@ -222,227 +219,49 @@ const form = reactive({
   remote_device_id: '' as string | undefined,
 })
 
-// VLAN configuration section
-const allVlans = ref<VLAN[]>([])
-const vlanForm = reactive({
-  port_mode: 'access' as string,
-  access_vlan: null as number | null,
-  native_vlan: null as number | null,
-  tagged_vlans: [] as number[]
-})
+// VLAN configuration composable
+const { allVlans, vlanForm, vlanPortModeOptions, fetchVlans } = useLagVlanConfig()
 
-const vlanPortModeOptions = computed(() => [
-  { label: t('switches.ports.modeAccess'), value: 'access' },
-  { label: t('switches.ports.modeTrunk'), value: 'trunk' }
-])
+// Remote connection composable
+const {
+  remoteMode,
+  allSwitches,
+  selectedRemoteSwitchId,
+  remoteLags,
+  portMapping,
+  switchOptions,
+  selectedSwitchOption,
+  existingRemoteLag,
+  remotePortOptions,
+  remotePortLagConflicts,
+  hasConnectionConflicts,
+  remoteSwitchMissingVlans,
+  remoteConfiguredVlansList,
+  showPortMapping,
+  onRemoteModeChange,
+  onSwitchSelect,
+  fetchSwitches,
+  fetchRemoteLags,
+  initPortMapping,
+  getRemotePortOption,
+  setRemotePort,
+  setRemotePortFreetext,
+  getPortConflict,
+  getMissingRemoteVlans
+} = useRemoteConnection(
+  toRef(() => props.switchId),
+  toRef(() => props.ports),
+  toRef(form, 'port_ids'),
+  toRef(form, 'remote_device'),
+  toRef(form, 'remote_device_id'),
+  vlanForm
+)
 
-async function fetchVlans() {
-  try {
-    const route = useRoute()
-    const siteId = route.params.siteId as string
-    const params: Record<string, string> = {}
-    if (siteId && siteId !== 'all') params.site_id = siteId
-    const data = await apiFetch<{ data?: VLAN[] } | VLAN[]>('/api/vlans', { params })
-    allVlans.value = (Array.isArray(data) ? data : data.data || []).sort((a: VLAN, b: VLAN) => a.vlan_id - b.vlan_id)
-  } catch { /* ignore */ }
-}
-
-// Remote connection mode
-const remoteMode = ref<'none' | 'switch' | 'freetext'>('none')
 const remoteConnectionModes = computed(() => [
   { label: t('common.none'), value: 'none' as const },
   { label: 'Switch', value: 'switch' as const },
   { label: t('switches.ports.freetext'), value: 'freetext' as const },
 ])
-
-function onRemoteModeChange(mode: 'none' | 'switch' | 'freetext') {
-  remoteMode.value = mode
-  if (mode === 'none') {
-    form.remote_device = ''
-    form.remote_device_id = undefined
-    selectedRemoteSwitchId.value = ''
-    for (const key of Object.keys(portMapping)) delete portMapping[key]
-  }
-}
-
-// All switches for remote device dropdown
-const allSwitches = ref<Switch[]>([])
-const selectedRemoteSwitchId = ref('')
-// LAGs on the remote switch
-const remoteLags = ref<LAGGroup[]>([])
-
-// VLANs from the VLAN form state
-const formVlanNumbers = computed(() => {
-  const vlans: number[] = []
-  if (vlanForm.port_mode === 'trunk') {
-    if (vlanForm.native_vlan) vlans.push(vlanForm.native_vlan)
-    if (vlanForm.tagged_vlans.length) vlans.push(...vlanForm.tagged_vlans)
-  } else {
-    if (vlanForm.access_vlan) vlans.push(vlanForm.access_vlan)
-  }
-  return [...new Set(vlans)]
-})
-
-// Missing VLANs for a given switch (used in switch dropdown badges)
-function getMissingRemoteVlans(switchId: string): number[] {
-  if (!switchId || !formVlanNumbers.value.length) return []
-  const sw = allSwitches.value.find(s => s.id === switchId)
-  if (!sw) return []
-  const configured = new Set(sw.configured_vlans || [])
-  return formVlanNumbers.value.filter(v => !configured.has(v))
-}
-
-// Remote switch configured VLANs for badge display
-const remoteConfiguredVlansList = computed(() => {
-  if (remoteMode.value !== 'switch' || !selectedRemoteSwitchId.value) return undefined
-  const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
-  return sw?.configured_vlans || []
-})
-
-// Missing VLANs on selected remote switch
-const remoteSwitchMissingVlans = computed(() => {
-  if (!selectedRemoteSwitchId.value || !formVlanNumbers.value.length) return []
-  const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
-  if (!sw) return []
-  const configured = new Set(sw.configured_vlans || [])
-  return formVlanNumbers.value.filter(v => !configured.has(v))
-})
-
-const switchOptions = computed(() => [
-  { label: '— None —', value: '' },
-  ...allSwitches.value
-    .filter(s => s.id !== props.switchId)
-    .map(s => ({ label: s.name, value: s.id }))
-])
-
-const selectedSwitchOption = computed(() =>
-  switchOptions.value.find(o => o.value === selectedRemoteSwitchId.value) || switchOptions.value[0]
-)
-
-async function onSwitchSelect(option: { label: string; value: string } | undefined) {
-  selectedRemoteSwitchId.value = option?.value || ''
-  const sw = allSwitches.value.find(s => s.id === option?.value)
-  form.remote_device = sw?.name || ''
-  form.remote_device_id = option?.value || undefined
-  for (const key of Object.keys(portMapping)) delete portMapping[key]
-  // Fetch LAGs on the remote switch
-  if (option?.value) {
-    await fetchRemoteLags(option.value)
-  } else {
-    remoteLags.value = []
-  }
-}
-
-// Check if there's an existing LAG on the remote switch that links back to us
-const existingRemoteLag = computed(() => {
-  if (!selectedRemoteSwitchId.value) return null
-  return remoteLags.value.find(lag =>
-    lag.remote_device_id === props.switchId
-  ) || null
-})
-
-// Check if selected remote ports are in a DIFFERENT LAG on the remote switch
-const remotePortLagConflicts = computed(() => {
-  if (remoteMode.value !== 'switch' || !selectedRemoteSwitchId.value) return []
-  const conflicts: { portId: string; portLabel: string; lagName: string }[] = []
-  const allowedRemoteLagId = existingRemoteLag.value?.id
-
-  for (const localPortId of form.port_ids) {
-    const mapping = portMapping[localPortId]
-    if (!mapping?.remotePortId) continue
-
-    for (const rlag of remoteLags.value) {
-      // Skip the mirror LAG that belongs to us
-      if (rlag.id === allowedRemoteLagId) continue
-      if (rlag.port_ids.includes(mapping.remotePortId)) {
-        const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
-        const port = sw?.ports?.find((p: Port) => p.id === mapping.remotePortId)
-        conflicts.push({
-          portId: mapping.remotePortId,
-          portLabel: port?.label || mapping.remotePortId,
-          lagName: rlag.name
-        })
-      }
-    }
-  }
-  return conflicts
-})
-
-// Remote port options for selected switch (with connection conflict info)
-const remotePortOptions = computed(() => {
-  if (!selectedRemoteSwitchId.value) return []
-  const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
-  if (!sw?.ports) return []
-  return [
-    { label: '— None —', value: '', conflict: '' },
-    ...sw.ports.map((p: Port) => {
-      const label = p.label || `${p.unit}/${p.index}`
-      let conflict = ''
-      if (p.connected_device_id && p.connected_device_id !== props.switchId) {
-        conflict = `→ ${p.connected_device || 'Unknown'}`
-      } else if (p.connected_device_id === props.switchId && p.connected_port_id) {
-        const isOurLagPort = form.port_ids.includes(p.connected_port_id)
-        if (!isOurLagPort) {
-          const ourPort = props.ports.find((lp: Port) => lp.id === p.connected_port_id)
-          conflict = `→ ${ourPort?.label || 'this switch'}`
-        }
-      }
-      return {
-        label: conflict ? `${label}  ⚠ ${conflict}` : label,
-        value: p.id,
-        conflict
-      }
-    })
-  ]
-})
-
-// Port mapping: local portId → { remotePortId, remotePortLabel }
-const portMapping = reactive<Record<string, { remotePortId: string; remotePortLabel: string }>>({})
-
-function getRemotePortOption(localPortId: string) {
-  const mapping = portMapping[localPortId]
-  if (!mapping?.remotePortId) return remotePortOptions.value[0]
-  return remotePortOptions.value.find(o => o.value === mapping.remotePortId) || remotePortOptions.value[0]
-}
-
-function setRemotePort(localPortId: string, option: { label: string; value: string; conflict: string } | undefined) {
-  const portId = option?.value || ''
-  const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
-  const remotePort = sw?.ports?.find((p: Port) => p.id === portId)
-  portMapping[localPortId] = {
-    remotePortId: portId,
-    remotePortLabel: remotePort?.label || option?.label?.replace(/\s+⚠.*/, '') || ''
-  }
-}
-
-function setRemotePortFreetext(localPortId: string, label: string) {
-  portMapping[localPortId] = {
-    remotePortId: '',
-    remotePortLabel: label
-  }
-}
-
-// Connection conflict check per port (existing connections, not LAG conflicts)
-function getPortConflict(localPortId: string): string | null {
-  if (remoteMode.value !== 'switch') return null
-  const mapping = portMapping[localPortId]
-  if (!mapping?.remotePortId) return null
-  const option = remotePortOptions.value.find(o => o.value === mapping.remotePortId)
-  if (option?.conflict) {
-    return t('lag.portAlreadyConnected', { port: mapping.remotePortLabel, device: option.conflict.replace('→ ', '') })
-  }
-  return null
-}
-
-const hasConnectionConflicts = computed(() => {
-  return form.port_ids.some(pid => getPortConflict(pid) !== null)
-})
-
-const showPortMapping = computed(() => {
-  if (remoteMode.value === 'switch' && selectedRemoteSwitchId.value) return true
-  if (remoteMode.value === 'freetext' && form.remote_device.trim()) return true
-  return false
-})
 
 function getPortLabel(portId: string): string {
   return resolvePortLabel(props.ports, portId)
@@ -478,127 +297,95 @@ function validate(state: { name?: string; port_ids: string[] }) {
 
 const { create, update } = useLagGroups(props.switchId)
 
-async function onSubmit() {
-  const errors = validate(form)
-  if (errors.length > 0) return
+// --- onSubmit stage functions ---
 
-  // Confirm if there are connection conflicts
-  if (hasConnectionConflicts.value) {
-    if (!window.confirm(t('lag.conflictConfirm'))) return
+async function createOrUpdateLocalLag(): Promise<void> {
+  const body = {
+    name: form.name.trim(),
+    port_ids: [...form.port_ids],
+    description: form.description.trim() || undefined,
+    remote_device: remoteMode.value !== 'none' ? (form.remote_device.trim() || undefined) : undefined,
+    remote_device_id: remoteMode.value === 'switch' ? (selectedRemoteSwitchId.value || undefined) : undefined,
   }
-
-  // Confirm if existing remote LAG will be replaced
-  if (existingRemoteLag.value && !isEdit.value) {
-    if (!window.confirm(t('lag.replaceRemoteLag', { name: existingRemoteLag.value.name, switch: form.remote_device }))) return
+  if (isEdit.value && editingLag.value) {
+    await update(editingLag.value.id, body)
+  } else {
+    await create(body)
   }
+}
 
-  saving.value = true
+async function updateLocalPortConnections(): Promise<void> {
+  if (remoteMode.value !== 'none' && form.remote_device.trim()) {
+    for (const portId of form.port_ids) {
+      const mapping = portMapping[portId]
+      const portBody: Record<string, string | null> = {
+        connected_device: form.remote_device.trim(),
+        connected_device_id: remoteMode.value === 'switch' ? (selectedRemoteSwitchId.value || null) : null,
+        connected_port_id: mapping?.remotePortId || null,
+        connected_port: mapping?.remotePortLabel || null,
+      }
+      try {
+        await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, { method: 'PUT', body: portBody })
+      } catch { /* best-effort */ }
+    }
+  } else if (remoteMode.value === 'none') {
+    for (const portId of form.port_ids) {
+      try {
+        await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, {
+          method: 'PUT',
+          body: { connected_device: null, connected_device_id: null, connected_port_id: null, connected_port: null }
+        })
+      } catch { /* best-effort */ }
+    }
+  }
+}
+
+async function applyVlanConfig(): Promise<void> {
+  const vlanUpdates: Record<string, unknown> = {
+    port_mode: vlanForm.port_mode
+  }
+  if (vlanForm.port_mode === 'access') {
+    if (vlanForm.access_vlan) vlanUpdates.access_vlan = vlanForm.access_vlan
+    vlanUpdates.native_vlan = null
+    vlanUpdates.tagged_vlans = []
+  } else {
+    vlanUpdates.access_vlan = null
+    if (vlanForm.native_vlan) vlanUpdates.native_vlan = vlanForm.native_vlan
+    if (vlanForm.tagged_vlans.length) vlanUpdates.tagged_vlans = [...vlanForm.tagged_vlans]
+  }
+  // Apply to local LAG ports
   try {
-    // 1. Create/update local LAG
-    const body = {
-      name: form.name.trim(),
-      port_ids: [...form.port_ids],
-      description: form.description.trim() || undefined,
-      remote_device: remoteMode.value !== 'none' ? (form.remote_device.trim() || undefined) : undefined,
-      remote_device_id: remoteMode.value === 'switch' ? (selectedRemoteSwitchId.value || undefined) : undefined,
-    }
-
-    if (isEdit.value && editingLag.value) {
-      await update(editingLag.value.id, body)
-    } else {
-      await create(body)
-    }
-
-    // 2. Update connected device + port mapping on all local member ports
-    if (remoteMode.value !== 'none' && form.remote_device.trim()) {
-      for (const portId of form.port_ids) {
-        const mapping = portMapping[portId]
-        const portBody: Record<string, string | null> = {
-          connected_device: form.remote_device.trim(),
-          connected_device_id: remoteMode.value === 'switch' ? (selectedRemoteSwitchId.value || null) : null,
-          connected_port_id: mapping?.remotePortId || null,
-          connected_port: mapping?.remotePortLabel || null,
-        }
-        try {
-          await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, { method: 'PUT', body: portBody })
-        } catch { /* best-effort */ }
-      }
-    } else if (remoteMode.value === 'none') {
-      for (const portId of form.port_ids) {
-        try {
-          await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, {
-            method: 'PUT',
-            body: { connected_device: null, connected_device_id: null, connected_port_id: null, connected_port: null }
-          })
-        } catch { /* best-effort */ }
-      }
-    }
-
-    // 3. Create/update mirror LAG on remote switch (only for switch mode)
-    if (remoteMode.value === 'switch' && selectedRemoteSwitchId.value) {
-      await syncRemoteLag()
-    }
-
-    toast.add({
-      title: isEdit.value ? t('lag.messages.updated') : t('lag.messages.created'),
-      color: 'success'
+    await $fetch(`/api/switches/${props.switchId}/ports/bulk`, {
+      method: 'PUT',
+      body: { port_ids: [...form.port_ids], updates: vlanUpdates }
     })
-
-    // 4. Apply VLAN configuration to all LAG member ports (local + remote)
-    const vlanUpdates: Record<string, unknown> = {
-      port_mode: vlanForm.port_mode
-    }
-    if (vlanForm.port_mode === 'access') {
-      if (vlanForm.access_vlan) vlanUpdates.access_vlan = vlanForm.access_vlan
-      vlanUpdates.native_vlan = null
-      vlanUpdates.tagged_vlans = []
-    } else {
-      vlanUpdates.access_vlan = null
-      if (vlanForm.native_vlan) vlanUpdates.native_vlan = vlanForm.native_vlan
-      if (vlanForm.tagged_vlans.length) vlanUpdates.tagged_vlans = [...vlanForm.tagged_vlans]
-    }
-    // 4a. Apply to local LAG ports
-    try {
-      await $fetch(`/api/switches/${props.switchId}/ports/bulk`, {
-        method: 'PUT',
-        body: { port_ids: [...form.port_ids], updates: vlanUpdates }
-      })
-      toast.add({ title: t('lag.vlanApplied', { count: form.port_ids.length }), color: 'success' })
-    } catch (e: unknown) {
-      const err = e as { data?: { message?: string } }
-      toast.add({ title: err?.data?.message || t('lag.vlanApplyFailed'), color: 'error' })
-    }
-    // 4b. Apply same VLAN config to remote LAG member ports
-    if (remoteMode.value === 'switch' && selectedRemoteSwitchId.value) {
-      let remotePortIds = form.port_ids
-        .map(pid => portMapping[pid]?.remotePortId)
-        .filter(Boolean) as string[]
-      // Fallback: if no port mapping, use mirror LAG's port_ids directly
-      if (remotePortIds.length === 0 && existingRemoteLag.value) {
-        remotePortIds = [...existingRemoteLag.value.port_ids]
-      }
-      if (remotePortIds.length > 0) {
-        try {
-          await $fetch(`/api/switches/${selectedRemoteSwitchId.value}/ports/bulk`, {
-            method: 'PUT',
-            body: { port_ids: remotePortIds, updates: vlanUpdates }
-          })
-          const remoteSw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
-          toast.add({ title: t('lag.vlanAppliedRemote', { count: remotePortIds.length, switch: remoteSw?.name || '' }), color: 'success' })
-        } catch (e: unknown) {
-          const err = e as { data?: { message?: string } }
-          toast.add({ title: err?.data?.message || t('lag.vlanApplyFailed'), color: 'error' })
-        }
-      }
-    }
-
-    isOpen.value = false
-    emit('saved')
+    toast.add({ title: t('lag.vlanApplied', { count: form.port_ids.length }), color: 'success' })
   } catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
-  } finally {
-    saving.value = false
+    toast.add({ title: err?.data?.message || t('lag.vlanApplyFailed'), color: 'error' })
+  }
+  // Apply same VLAN config to remote LAG member ports
+  if (remoteMode.value === 'switch' && selectedRemoteSwitchId.value) {
+    let remotePortIds = form.port_ids
+      .map(pid => portMapping[pid]?.remotePortId)
+      .filter(Boolean) as string[]
+    // Fallback: if no port mapping, use mirror LAG's port_ids directly
+    if (remotePortIds.length === 0 && existingRemoteLag.value) {
+      remotePortIds = [...existingRemoteLag.value.port_ids]
+    }
+    if (remotePortIds.length > 0) {
+      try {
+        await $fetch(`/api/switches/${selectedRemoteSwitchId.value}/ports/bulk`, {
+          method: 'PUT',
+          body: { port_ids: remotePortIds, updates: vlanUpdates }
+        })
+        const remoteSw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
+        toast.add({ title: t('lag.vlanAppliedRemote', { count: remotePortIds.length, switch: remoteSw?.name || '' }), color: 'success' })
+      } catch (e: unknown) {
+        const err = e as { data?: { message?: string } }
+        toast.add({ title: err?.data?.message || t('lag.vlanApplyFailed'), color: 'error' })
+      }
+    }
   }
 }
 
@@ -606,12 +393,11 @@ async function syncRemoteLag() {
   const remoteSwId = selectedRemoteSwitchId.value
   if (!remoteSwId) return
 
-  // Collect remote port IDs from mapping
   const remotePortIds = form.port_ids
     .map(pid => portMapping[pid]?.remotePortId)
     .filter(Boolean) as string[]
 
-  if (remotePortIds.length < 2) return // need at least 2 ports for a LAG
+  if (remotePortIds.length < 2) return
 
   const localSw = allSwitches.value.find(s => s.id === props.switchId)
   const localSwName = localSw?.name || props.switchId
@@ -624,14 +410,12 @@ async function syncRemoteLag() {
     remote_device_id: props.switchId,
   }
 
-  // Delete existing remote LAG if it exists (replace it)
   if (existingRemoteLag.value) {
     try {
       await $fetch(`/api/switches/${remoteSwId}/lag-groups/${existingRemoteLag.value.id}`, { method: 'DELETE' })
     } catch { /* best-effort */ }
   }
 
-  // Create mirror LAG on remote switch
   try {
     await $fetch(`/api/switches/${remoteSwId}/lag-groups`, { method: 'POST', body: mirrorBody })
   } catch (e: unknown) {
@@ -640,7 +424,6 @@ async function syncRemoteLag() {
     return
   }
 
-  // Update connected_device on remote member ports (mirror of Step 2)
   for (const localPortId of form.port_ids) {
     const mapping = portMapping[localPortId]
     if (!mapping?.remotePortId) continue
@@ -660,34 +443,37 @@ async function syncRemoteLag() {
   }
 }
 
-async function fetchSwitches() {
-  try {
-    const route = useRoute()
-    const siteId = route.params.siteId as string
-    const params: Record<string, string> = {}
-    if (siteId && siteId !== 'all') params.site_id = siteId
-    const data = await apiFetch<{ data?: Switch[] } | Switch[]>('/api/switches', { params })
-    allSwitches.value = (Array.isArray(data) ? data : data.data) || []
-  } catch { /* ignore */ }
-}
+async function onSubmit() {
+  const errors = validate(form)
+  if (errors.length > 0) return
 
-async function fetchRemoteLags(remoteSwitchId: string) {
-  try {
-    remoteLags.value = await apiFetch<LAGGroup[]>(`/api/switches/${remoteSwitchId}/lag-groups`)
-  } catch {
-    remoteLags.value = []
+  if (hasConnectionConflicts.value) {
+    if (!window.confirm(t('lag.conflictConfirm'))) return
   }
-}
 
-function initPortMapping() {
-  for (const portId of form.port_ids) {
-    const port = props.ports.find(p => p.id === portId)
-    if (port) {
-      portMapping[portId] = {
-        remotePortId: port.connected_port_id || '',
-        remotePortLabel: port.connected_port || ''
-      }
+  if (existingRemoteLag.value && !isEdit.value) {
+    if (!window.confirm(t('lag.replaceRemoteLag', { name: existingRemoteLag.value.name, switch: form.remote_device }))) return
+  }
+
+  saving.value = true
+  try {
+    await createOrUpdateLocalLag()
+    await updateLocalPortConnections()
+    if (remoteMode.value === 'switch' && selectedRemoteSwitchId.value) {
+      await syncRemoteLag()
     }
+    toast.add({
+      title: isEdit.value ? t('lag.messages.updated') : t('lag.messages.created'),
+      color: 'success'
+    })
+    await applyVlanConfig()
+    isOpen.value = false
+    emit('saved')
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
+  } finally {
+    saving.value = false
   }
 }
 
@@ -731,7 +517,6 @@ async function openEdit(lag: LAGGroup) {
   for (const key of Object.keys(portMapping)) delete portMapping[key]
   initPortMapping()
 
-  // Pre-fill VLAN form from first LAG port
   const firstPort = props.ports.find(p => lag.port_ids.includes(p.id))
   if (firstPort) {
     vlanForm.port_mode = firstPort.port_mode || 'access'
