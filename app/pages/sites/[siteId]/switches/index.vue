@@ -59,7 +59,7 @@
                   </UButton>
                 </div>
               </div>
-              <UInput v-model="print.search.value" :placeholder="$t('common.search') + '...'" size="xs" class="mb-2 w-full" icon="i-heroicons-magnifying-glass" />
+              <UInput v-model="print.search" :placeholder="$t('common.search') + '...'" size="xs" class="mb-2 w-full" icon="i-heroicons-magnifying-glass" />
               <div class="max-h-60 overflow-y-auto space-y-0.5">
                 <template v-if="siteId === 'all'">
                   <template v-for="group in print.filteredGroups.value" :key="group.siteId">
@@ -123,7 +123,7 @@
                   </UButton>
                 </div>
               </div>
-              <UInput v-model="qr.search.value" :placeholder="$t('common.search') + '...'" size="xs" class="mb-2 w-full" icon="i-heroicons-magnifying-glass" />
+              <UInput v-model="qr.search" :placeholder="$t('common.search') + '...'" size="xs" class="mb-2 w-full" icon="i-heroicons-magnifying-glass" />
               <div class="max-h-60 overflow-y-auto space-y-0.5">
                 <template v-if="siteId === 'all'">
                   <template v-for="group in qr.filteredGroups.value" :key="group.siteId">
@@ -361,9 +361,7 @@ watch(items, (newItems) => {
 }, { immediate: true })
 
 watch(filteredItems, (fi) => {
-  if (viewMode.value === 'grid') {
-    sortedItems.value = fi
-  }
+  sortedItems.value = fi
 })
 
 async function saveSortOrder() {
