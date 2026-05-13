@@ -2,10 +2,21 @@
 
 ## Latest Stage
 
-Date: 2026-05-04
-Stage: Phase 30 — vitest Setup: Test Migration + Repository/Validator/JWT Coverage
+Date: 2026-05-13
+Stage: Phase 31 — Component Refactoring: Extract Composables & Sub-Components
 Status: Complete
-Version: 0.17.0
+Version: 0.18.0
+
+### Phase 31 Changes
+- **Goal:** Reduce 5 files >750 lines by extracting composables and sub-components — no feature changes, no UI changes
+- **New utils (auto-imported):** `subnetCalculations.ts`, `roleColors.ts`, `topologyRoleColors.ts`, `topologyLayout.ts`, `exportGraphPng.ts`
+- **New composables (auto-imported):** `useSwitchEditForm.ts`, `useTemplateUnits.ts`, `useActivityLog.ts`, `useSwitchListFilters.ts`, `useSelectionPopover.ts`, `useTopologyGraphConfig.ts`, `useRemoteConnection.ts`, `useLagVlanConfig.ts`
+- **New components:** `network/NetworkInfoBar.vue`, `network/NetworkUtilizationBar.vue`, `network/NetworkAllocationForm.vue`, `switch/SwitchCard.vue`, `switch/SwitchInfoBar.vue`
+- **New tests:** `tests/subnetCalculations.test.ts` (18 tests)
+- **Line reductions:** `networks/[id].vue` 893→615, `switches/index.vue` 754→447, `switches/[id].vue` 940→680, `TopologyGraph.vue` 759→549, `LagGroupSlideover.vue` 757→542 — total ~1270 lines removed
+- **Also:** Replaced raw `$fetch` CRUD in network detail with `useIpAllocations`/`useIpRanges` composables; fixed nested ref v-model bug in switch list
+
+### Previous: Phase 30 — vitest Setup: Test Migration + Repository/Validator/JWT Coverage
 
 ### Phase 30 Changes
 - **vitest installed:** Replaced Node.js built-in test runner with vitest (globals mode, setupFiles for Nuxt stubs)
