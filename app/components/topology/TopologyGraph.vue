@@ -27,7 +27,7 @@
           <!-- Hover glow per role -->
           <filter v-for="r in ['core', 'distribution', 'access', 'management']" :id="`glow-${r}`" :key="r" x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur stdDeviation="3" result="blur" />
-            <feFlood :flood-color="roleBadgeColor(r)" flood-opacity="0.15" />
+            <feFlood :flood-color="topologyRoleBadgeColor(r)" flood-opacity="0.15" />
             <feComposite in2="blur" operator="in" />
             <feMerge>
               <feMergeNode />
@@ -88,20 +88,20 @@
                 :width="38 * scale"
                 :height="16 * scale"
                 :rx="4 * scale"
-                :fill="roleBadgeBg(getNodeRole(nodeId)!)"
-                :stroke="roleBadgeBorder(getNodeRole(nodeId)!)"
+                :fill="topologyRoleBadgeBg(getNodeRole(nodeId)!)"
+                :stroke="topologyRoleBadgeBorder(getNodeRole(nodeId)!)"
                 stroke-width="0.5"
               />
               <text
                 :x="(getNodeSize(nodeId).w / 2 - 27) * scale"
                 :y="(-getNodeSize(nodeId).h / 2 + 18) * scale"
                 :font-size="8 * scale"
-                :fill="roleBadgeColor(getNodeRole(nodeId)!)"
+                :fill="topologyRoleBadgeColor(getNodeRole(nodeId)!)"
                 text-anchor="middle"
                 dominant-baseline="middle"
                 font-weight="500"
               >
-                {{ roleShortLabel(getNodeRole(nodeId)!) }}
+                {{ topologyRoleShortLabel(getNodeRole(nodeId)!) }}
               </text>
             </g>
 
@@ -250,8 +250,6 @@
 </template>
 
 <script setup lang="ts">
-import { defineConfigs } from 'v-network-graph'
-import type { Edge } from 'v-network-graph'
 import type { TopologyNode, TopologyLink, TopologyGhostNode } from '~~/types/topology'
 
 const props = defineProps<{
@@ -279,55 +277,6 @@ const isDark = computed(() => colorMode.value === 'dark')
 
 const nodeBackground = computed(() => isDark.value ? '#0e0e0e' : '#ffffff')
 const nodeBorder = computed(() => isDark.value ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)')
-
-// --- Role color helpers ---
-
-function roleBadgeColor(role: string): string {
-  const map: Record<string, string> = {
-    core: '#ef4444', distribution: '#3b82f6', access: '#22c55e', management: '#eab308'
-  }
-  return map[role] || '#64748b'
-}
-
-function roleBadgeBg(role: string): string {
-  const map: Record<string, string> = {
-    core: 'rgba(239,68,68,0.1)', distribution: 'rgba(59,130,246,0.1)',
-    access: 'rgba(34,197,94,0.1)', management: 'rgba(234,179,8,0.1)'
-  }
-  return map[role] || 'rgba(100,116,139,0.1)'
-}
-
-function roleBadgeBorder(role: string): string {
-  const map: Record<string, string> = {
-    core: 'rgba(239,68,68,0.2)', distribution: 'rgba(59,130,246,0.2)',
-    access: 'rgba(34,197,94,0.2)', management: 'rgba(234,179,8,0.2)'
-  }
-  return map[role] || 'rgba(100,116,139,0.2)'
-}
-
-function roleNodeBorder(role: string | undefined, hovered: boolean): string {
-  if (!role) return nodeBorder.value
-  const base: Record<string, [number, number]> = {
-    core: [0.3, 0.45],
-    distribution: [0.25, 0.4],
-    access: [0.15, 0.28],
-    management: [0.15, 0.28]
-  }
-  const [normal, hover] = base[role] || [0.08, 0.15]
-  const opacity = hovered ? hover : normal
-  const color = roleBadgeColor(role)
-  const r = parseInt(color.slice(1, 3), 16)
-  const g = parseInt(color.slice(3, 5), 16)
-  const b = parseInt(color.slice(5, 7), 16)
-  return `rgba(${r},${g},${b},${opacity})`
-}
-
-function roleShortLabel(role: string): string {
-  const map: Record<string, string> = {
-    core: 'Core', distribution: 'Dist', access: 'Access', management: 'Mgmt'
-  }
-  return map[role] || role
-}
 
 function truncateText(text: string, max: number): string {
   return text.length > max ? text.slice(0, max - 1) + '\u2026' : text
@@ -360,7 +309,7 @@ function nodeBackgroundForRole(nodeId: string): string {
 function getNodeStroke(nodeId: string): string {
   const role = getNodeRole(nodeId)
   const hovered = hoveredNodeId.value === nodeId
-  return roleNodeBorder(role, hovered)
+  return topologyRoleNodeBorder(role, hovered, nodeBorder.value)
 }
 
 function getNodeFilter(nodeId: string): string | undefined {
@@ -476,56 +425,9 @@ const graphEdges = computed(() => {
   return result
 })
 
-// --- Auto-layout ---
-
-function calculateAutoLayout(): Record<string, { x: number; y: number }> {
-  const tiers: Record<number, string[]> = { 0: [], 1: [], 2: [] }
-
-  for (const n of props.nodes) {
-    if (n.role === 'core') tiers[0]!.push(n.id)
-    else if (n.role === 'distribution') tiers[1]!.push(n.id)
-    else tiers[2]!.push(n.id)
-  }
-
-  // Skip empty tiers
-  const activeTiers: string[][] = []
-  for (const t of [tiers[0]!, tiers[1]!, tiers[2]!]) {
-    if (t.length > 0) activeTiers.push(t)
-  }
-
-  const positions: Record<string, { x: number; y: number }> = {}
-  const xSpacing = 200
-  const ySpacing = 220
-
-  for (let tierIdx = 0; tierIdx < activeTiers.length; tierIdx++) {
-    const nodeIds = activeTiers[tierIdx]!
-    const totalWidth = (nodeIds.length - 1) * xSpacing
-    const startX = -totalWidth / 2
-
-    for (let i = 0; i < nodeIds.length; i++) {
-      positions[nodeIds[i]!] = {
-        x: startX + i * xSpacing,
-        y: tierIdx * ySpacing
-      }
-    }
-  }
-
-  const lastTierY = (activeTiers.length - 1) * ySpacing
-  const ghostY = lastTierY + ySpacing
-  let ghostX = -(props.ghostNodes.length - 1) * xSpacing / 2
-  for (const g of props.ghostNodes) {
-    if (!positions[g.id]) {
-      positions[g.id] = { x: ghostX, y: ghostY }
-      ghostX += xSpacing
-    }
-  }
-
-  return positions
-}
-
 const graphLayouts = computed(() => {
   const saved = props.savedPositions
-  const auto = calculateAutoLayout()
+  const auto = calculateTopologyLayout(props.nodes, props.ghostNodes)
   const merged: Record<string, { x: number; y: number }> = {}
 
   for (const [id, pos] of Object.entries(auto)) {
@@ -545,84 +447,7 @@ const graphLayouts = computed(() => {
 
 // --- Configs ---
 
-const graphConfigs = computed(() => defineConfigs({
-  view: {
-    panEnabled: true,
-    zoomEnabled: true,
-    scalingObjects: true,
-    minZoomLevel: 0.2,
-    maxZoomLevel: 3,
-    autoPanAndZoomOnLoad: 'fit-content',
-    fitContentMargin: { top: 20, bottom: 40, left: 40, right: 40 }
-  },
-  node: {
-    selectable: true,
-    draggable: true,
-    label: {
-      visible: false
-    },
-    focusring: {
-      visible: false
-    },
-    normal: {
-      type: 'rect',
-      width: 196,
-      height: 86,
-      borderRadius: 8,
-      color: 'transparent',
-      strokeColor: 'transparent',
-      strokeWidth: 0
-    },
-    hover: {
-      color: 'transparent',
-      strokeColor: 'transparent',
-      strokeWidth: 0
-    },
-    selected: {
-      color: 'transparent',
-      strokeColor: isDark.value ? 'rgba(34,197,94,0.35)' : 'rgba(34,197,94,0.5)',
-      strokeWidth: 1.5
-    }
-  },
-  edge: {
-    selectable: true,
-    gap: 14,
-    keepOrder: 'vertical',
-    normal: {
-      color: (edge: Edge) => {
-        if (edge.isLag) return isDark.value ? '#7a8999' : '#8899aa'
-        if (edge.isTrunk) return isDark.value ? '#666' : '#aaa'
-        return isDark.value ? '#555' : '#bbb'
-      },
-      width: (edge: Edge) => {
-        if (edge.isLag) return 3
-        if (edge.isTrunk) return 2
-        return 1.5
-      },
-      dasharray: (edge: Edge) => {
-        if (edge.isTrunk && !edge.isLag) return '6 3'
-        return 0
-      }
-    },
-    hover: {
-      color: (edge: Edge) => {
-        if (edge.isLag) return isDark.value ? '#a0b0c0' : '#7799bb'
-        if (edge.isTrunk) return isDark.value ? '#999' : '#777'
-        return isDark.value ? '#888' : '#888'
-      },
-      width: (edge: Edge) => {
-        if (edge.isLag) return 4.5
-        if (edge.isTrunk) return 3
-        return 2.5
-      }
-    },
-    selected: {
-      color: 'rgba(34,197,94,0.6)',
-      width: 4
-    },
-    margin: null
-  }
-}))
+const { graphConfigs } = useTopologyGraphConfig(isDark)
 
 // --- Event handlers ---
 
@@ -717,43 +542,8 @@ function zoomOut() {
 
 async function exportPng() {
   if (!graphRef.value) return
-  try {
-    let svgText = await graphRef.value.exportAsSvgText({ embedImages: true })
-
-    // Inject font styles into SVG so exported PNG has readable text.
-    // The SVG loses CSS class references and external fonts on export.
-    const fontStyle = `<style>
-      text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-      text[font-family*="monospace"] { font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; }
-    </style>`
-    svgText = svgText.replace(/<svg([^>]*)>/, `<svg$1>${fontStyle}`)
-
-    // Add dark background to the SVG
-    const bgRect = `<rect width="100%" height="100%" fill="#0a0a0a" />`
-    svgText = svgText.replace(/<svg([^>]*)>(<style>[\s\S]*?<\/style>)/, `<svg$1>$2${bgRect}`)
-
-    const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' })
-    const url = URL.createObjectURL(svgBlob)
-    const img = new Image()
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      canvas.width = img.naturalWidth * 2
-      canvas.height = img.naturalHeight * 2
-      const ctx = canvas.getContext('2d')!
-      ctx.scale(2, 2)
-      ctx.drawImage(img, 0, 0)
-      URL.revokeObjectURL(url)
-      const pngUrl = canvas.toDataURL('image/png')
-      const a = document.createElement('a')
-      a.href = pngUrl
-      a.download = `topology-${new Date().toISOString().slice(0, 10)}.png`
-      a.click()
-    }
-    img.src = url
-  } catch {
-    // Export failed silently
-  }
+  await exportGraphPng((opts) => graphRef.value.exportAsSvgText(opts))
 }
 
-defineExpose({ fitToContents })
+defineExpose({ fitToContents, exportPng })
 </script>

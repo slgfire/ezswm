@@ -88,109 +88,12 @@
     <!-- Switch details -->
     <div v-if="item && !loading" class="space-y-4">
       <!-- Info bar with inline expand toggle -->
-      <div class="-mt-2 list-container rounded-lg bg-default">
-        <button
-          class="flex w-full flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3 text-left cursor-pointer hover:bg-elevated/50 transition-colors rounded-lg"
-          @click="showDetails = !showDetails"
-        >
-          <div v-if="item.model">
-            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.model') }}</div>
-            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.manufacturer ? `${item.manufacturer} ${item.model}` : item.model }}</div>
-          </div>
-          <div v-if="item.model && (item.location || item.management_ip)" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-          <div v-if="item.location">
-            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.location') }}</div>
-            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.location }}{{ item.rack_position ? ` / ${item.rack_position}` : '' }}</div>
-          </div>
-          <div v-if="item.location && item.management_ip" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-          <div v-if="item.management_ip">
-            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.managementIp') }}</div>
-            <SharedCopyButton :value="item.management_ip!"><span class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ item.management_ip }}</span></SharedCopyButton>
-          </div>
-          <div v-if="item.ports?.length" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-          <div v-if="item.ports?.length">
-            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.ports') }}</div>
-            <div class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
-              {{ item.ports.length }}
-              <span class="flex items-center gap-1.5 text-xs font-normal">
-                <span v-if="portStats.up" class="flex items-center gap-0.5 text-green-500"><span class="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />{{ portStats.up }}</span>
-                <span v-if="portStats.down" class="flex items-center gap-0.5 text-gray-400"><span class="inline-block h-1.5 w-1.5 rounded-full bg-gray-400" />{{ portStats.down }}</span>
-                <span v-if="portStats.disabled" class="flex items-center gap-0.5 text-red-400"><span class="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />{{ portStats.disabled }}</span>
-              </span>
-            </div>
-          </div>
-          <div v-if="currentTemplateName" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-          <div v-if="currentTemplateName">
-            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.infoBar.template') }}</div>
-            <div class="text-sm text-gray-600 dark:text-gray-300">{{ currentTemplateName }}</div>
-          </div>
-          <!-- Expand/collapse chevron -->
-          <div class="ml-auto flex items-center">
-            <UIcon name="i-heroicons-chevron-down" :class="['h-4 w-4 text-gray-400 transition-transform duration-200', showDetails ? 'rotate-180' : '']" />
-          </div>
-        </button>
-
-        <!-- Expanded details (inline below info bar) -->
-        <div v-show="showDetails" class="border-t border-default px-5 py-4">
-          <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
-          <div>
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.name') }}</dt>
-            <dd>{{ item.name }}</dd>
-          </div>
-          <div>
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.model') }}</dt>
-            <dd>{{ item.model || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.manufacturer') }}</dt>
-            <dd>{{ item.manufacturer || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.serialNumber') }}</dt>
-            <dd>{{ item.serial_number || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.location') }}</dt>
-            <dd>{{ item.location || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.rackPosition') }}</dt>
-            <dd>{{ item.rack_position || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.managementIp') }}</dt>
-            <dd class="font-mono"><SharedCopyButton v-if="item.management_ip" :value="item.management_ip">{{ item.management_ip }}</SharedCopyButton><span v-else>-</span></dd>
-          </div>
-          <div>
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.firmwareVersion') }}</dt>
-            <dd>{{ item.firmware_version || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.layoutTemplate') }}</dt>
-            <dd>{{ currentTemplateName || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.role') }}</dt>
-            <dd>
-              <UBadge v-if="item.role" :color="roleColor(item.role)" variant="subtle" size="sm">
-                {{ $t(`switches.roles.${item.role}`) }}
-              </UBadge>
-              <span v-else>-</span>
-            </dd>
-          </div>
-          <div v-if="item.tags?.length" class="col-span-2 sm:col-span-3 lg:col-span-4">
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('switches.fields.tags') }}</dt>
-            <dd class="flex flex-wrap gap-1 pt-0.5">
-              <UBadge v-for="tg in item.tags" :key="tg" color="neutral" variant="soft" size="sm">{{ tg }}</UBadge>
-            </dd>
-          </div>
-          <div v-if="item.notes" class="col-span-2 sm:col-span-3 lg:col-span-4">
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('common.notes') }}</dt>
-            <dd class="whitespace-pre-wrap">{{ item.notes }}</dd>
-          </div>
-        </div>
-        </div>
-      </div>
+      <SwitchInfoBar
+        :item="item"
+        :port-stats="portStats"
+        :current-template-name="currentTemplateName"
+        v-model:show-details="showDetails"
+      />
 
       <!-- Selection bar (shown when ports are selected) -->
       <div v-if="selectedPorts.length > 0" class="flex items-center justify-between rounded-lg border border-primary-300 bg-primary-50 px-4 py-2 dark:border-primary-500/30 dark:bg-primary-500/10">
@@ -488,7 +391,6 @@ v-model="editForm.role"
 <script setup lang="ts">
 import type { Port } from '~~/types/port'
 import type { LAGGroup } from '~~/types/lagGroup'
-import type { LayoutUnit } from '~~/types/layoutTemplate'
 import type { ActivityEntry } from '~~/types/activity'
 import { formatActivitySummary as _formatActivitySummary } from '~/utils/activityFormat'
 import { relativeTime as _relativeTime } from '~/utils/timeFormat'
@@ -527,9 +429,8 @@ function getPortLabel(portId: string): string {
   return port.label || `${port.unit}/${port.index}`
 }
 
-const editMode = ref(false)
-const saving = ref(false)
-const editFormRef = ref()
+const { editMode, saving, editFormRef, editTagInput, editForm, stackSizeOptions, editRoleOptions, templateOptions, openEditPanel, validateEdit, onSave, addEditTag, removeEditTag } = useSwitchEditForm(item, templates, update)
+
 const showDeleteDialog = ref(false)
 const deleting = ref(false)
 const showDetails = ref(false)
@@ -545,7 +446,8 @@ const selectedPorts = ref<string[]>([])
 const bulkEditorRef = ref<{ submit: () => void; open: () => void } | null>(null)
 const showPortPanel = ref(false)
 const selectedPort = ref<Port | null>(null)
-const templateUnits = ref<LayoutUnit[]>([])
+const { templateUnits } = useTemplateUnits(item, templates)
+
 const portStats = computed(() => {
   const ports = item.value?.ports || []
   return {
@@ -604,126 +506,11 @@ function onToggleSelect(portId: string) {
   else selectedPorts.value.push(portId)
 }
 
-const editTagInput = ref('')
-
-const editForm = reactive({
-  name: '',
-  model: '',
-  manufacturer: '',
-  serial_number: '',
-  location: '',
-  rack_position: '',
-  management_ip: '',
-  firmware_version: '',
-  layout_template_id: '',
-  role: '',
-  tags: [] as string[],
-  notes: '',
-  stack_size: 1
-})
-
-const stackSizeOptions = Array.from({ length: 8 }, (_, i) => ({
-  label: String(i + 1),
-  value: i + 1
-}))
-
-const editRoleOptions = computed(() => [
-  { label: t('switches.roles.core'), value: 'core' },
-  { label: t('switches.roles.distribution'), value: 'distribution' },
-  { label: t('switches.roles.access'), value: 'access' },
-  { label: t('switches.roles.management'), value: 'management' }
-])
-
-type BadgeColor = 'error' | 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'neutral'
-
-function roleColor(role: string): BadgeColor {
-  const map: Record<string, BadgeColor> = { core: 'error', distribution: 'info', access: 'success', management: 'warning' }
-  return map[role] || 'neutral'
-}
-
-function addEditTag() {
-  const tag = editTagInput.value.trim()
-  if (tag && !editForm.tags.includes(tag)) {
-    editForm.tags.push(tag)
-  }
-  editTagInput.value = ''
-}
-
-function removeEditTag(tag: string) {
-  editForm.tags = editForm.tags.filter(t => t !== tag)
-}
-
 const currentTemplateName = computed(() => {
   if (!item.value?.layout_template_id) return null
   const tpl = templates.value.find(t => t.id === item.value!.layout_template_id)
   return tpl?.name || item.value.layout_template_id
 })
-
-const templateOptions = computed(() => {
-  const options = [{ label: '---', value: '' }]
-  for (const tpl of templates.value) {
-    options.push({ label: tpl.name, value: tpl.id })
-  }
-  return options
-})
-
-function openEditPanel() {
-  if (!item.value) return
-  editForm.name = item.value.name || ''
-  editForm.model = item.value.model || ''
-  editForm.manufacturer = item.value.manufacturer || ''
-  editForm.serial_number = item.value.serial_number || ''
-  editForm.location = item.value.location || ''
-  editForm.rack_position = item.value.rack_position || ''
-  editForm.management_ip = item.value.management_ip || ''
-  editForm.firmware_version = item.value.firmware_version || ''
-  editForm.layout_template_id = item.value.layout_template_id || ''
-  editForm.role = item.value.role || ''
-  editForm.tags = [...(item.value.tags || [])]
-  editForm.notes = item.value.notes || ''
-  editForm.stack_size = item.value.stack_size ?? 1
-  editTagInput.value = ''
-  editMode.value = true
-}
-
-function validateEdit(state: typeof editForm) {
-  const errors: { name: string; message: string }[] = []
-  if (!state.name?.trim()) {
-    errors.push({ name: 'name', message: t('networks.validation.nameRequired') })
-  }
-  if (state.management_ip?.trim() && !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(state.management_ip.trim())) {
-    errors.push({ name: 'management_ip', message: t('networks.validation.managementIpFormat') })
-  }
-  return errors
-}
-
-async function onSave() {
-  saving.value = true
-  try {
-    const body: Record<string, unknown> = { ...editForm, tags: [...editForm.tags] }
-    // Remove empty optional fields but keep layout_template_id to allow clearing
-    for (const key of Object.keys(body)) {
-      if (body[key] === '' && key !== 'layout_template_id') {
-        delete body[key]
-      }
-      if (Array.isArray(body[key]) && body[key].length === 0) {
-        delete body[key]
-      }
-    }
-    if (body.layout_template_id === '') {
-      delete body.layout_template_id
-    }
-    body.stack_size = editForm.stack_size || 1
-    await update(body)
-    toast.add({ title: t('switches.messages.updated'), color: 'success' })
-    editMode.value = false
-  } catch (e: unknown) {
-    const err = e as { data?: { message?: string } }
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
-  } finally {
-    saving.value = false
-  }
-}
 
 async function onDuplicate() {
   try {
@@ -752,45 +539,6 @@ async function onDelete() {
     deleting.value = false
   }
 }
-
-watch([item, templates], () => {
-  if (item.value?.layout_template_id) {
-    const tpl = templates.value.find(t => t.id === item.value!.layout_template_id)
-    const baseUnits = tpl?.units || []
-    const stackSize = item.value?.stack_size ?? 1
-
-    if (stackSize > 1 && baseUnits.length > 0) {
-      // Increment first number in label for stacking (client-side version)
-      const incrementLabel = (label: string, memberIdx: number): string => {
-        if (memberIdx === 1) return label
-        const match = label.match(/^(.*?)(\d+)(.*)$/)
-        if (match) return `${match[1]}${parseInt(match[2]!, 10) + memberIdx - 1}${match[3]}`
-        return `${memberIdx}/${label}`
-      }
-
-      // Duplicate units for each stack member with incremented block labels
-      const stacked: LayoutUnit[] = []
-      for (let member = 1; member <= stackSize; member++) {
-        for (const unit of baseUnits) {
-          stacked.push({
-            ...unit,
-            unit_number: unit.unit_number + (member - 1) * baseUnits.length,
-            label: unit.label ? `Member ${member} - ${unit.label}` : `Member ${member}`,
-            blocks: unit.blocks.map((b) => ({
-              ...b,
-              label: b.label ? incrementLabel(b.label, member) : b.label
-            }))
-          })
-        }
-      }
-      templateUnits.value = stacked
-    } else {
-      templateUnits.value = baseUnits
-    }
-  } else {
-    templateUnits.value = []
-  }
-}, { immediate: true })
 
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 
@@ -919,15 +667,7 @@ if (lagParam) {
 
 
 // Activity log for this switch
-const switchActivity = ref<ActivityEntry[]>([])
-const { apiFetch } = useApiFetch()
-
-async function fetchActivity() {
-  try {
-    const data = await apiFetch<{ data?: ActivityEntry[] }>('/api/activity', { params: { entity_id: id, limit: 20 } })
-    switchActivity.value = data.data || []
-  } catch { /* ignore */ }
-}
+const { activities: switchActivity, fetchActivity } = useActivityLog(id)
 
 
 onMounted(() => {

@@ -17,130 +17,24 @@
     </div>
 
     <div v-else-if="network" class="space-y-5">
-      <!-- Info bar with inline expand toggle (like Switch detail) -->
-      <div class="-mt-2 list-container rounded-lg bg-default">
-        <button
-          class="flex w-full flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3 text-left cursor-pointer transition-colors hover:bg-elevated/50 rounded-t-lg"
-          @click="showDetails = !showDetails"
-        >
-          <div>
-            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.subnet') }}</div>
-            <div class="flex items-center gap-2">
-              <SharedCopyButton :value="network.subnet"><span class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ network.subnet }}</span></SharedCopyButton>
-              <UBadge v-if="isPointToPoint" variant="subtle" color="info" size="xs">{{ $t('networks.infoBar.pointToPoint') }}</UBadge>
-              <UBadge v-else-if="isHostRoute" variant="subtle" color="warning" size="xs">{{ $t('networks.infoBar.hostRoute') }}</UBadge>
-            </div>
-          </div>
-          <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-          <div v-if="network.gateway">
-            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.gateway') }}</div>
-            <SharedCopyButton :value="network.gateway"><span class="font-mono text-sm font-semibold text-gray-900 dark:text-white">{{ network.gateway }}</span></SharedCopyButton>
-          </div>
-          <div v-if="network.gateway" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-          <div>
-            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.mask') }}</div>
-            <SharedCopyButton :value="subnetInfo.mask"><span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.mask }}</span></SharedCopyButton>
-          </div>
-          <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-          <div>
-            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.hosts') }}</div>
-            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ subnetInfo.usableHosts.toLocaleString() }}</div>
-          </div>
-          <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-          <div>
-            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.allocated') }}</div>
-            <div class="text-sm font-semibold" :class="utilizationPercent > 80 ? 'text-red-500' : 'text-primary-500'">{{ allocations.length }} <span class="text-xs font-normal text-gray-400">({{ utilizationPercent }}%)</span></div>
-          </div>
-          <div v-if="associatedVlan" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-          <div v-if="associatedVlan">
-            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.vlan') }}</div>
-            <div class="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
-              <div class="h-2 w-2 rounded-full" :style="{ backgroundColor: associatedVlan.color }" />
-              {{ associatedVlan.vlan_id }} <span class="font-normal text-gray-400">{{ associatedVlan.name }}</span>
-            </div>
-          </div>
-          <!-- Expand/collapse chevron -->
-          <div class="ml-auto flex items-center">
-            <UIcon name="i-heroicons-chevron-down" :class="['h-4 w-4 text-gray-400 transition-transform duration-200', showDetails ? 'rotate-180' : '']" />
-          </div>
-        </button>
+      <NetworkInfoBar
+        :network="network"
+        :subnet-info="subnetInfo"
+        :is-point-to-point="isPointToPoint"
+        :is-host-route="isHostRoute"
+        :associated-vlan="associatedVlan"
+        :allocations-count="allocations.length"
+        :utilization-percent="utilizationPercent"
+        v-model:show-details="showDetails"
+        :format-dns="formatDns"
+      />
 
-        <!-- Expanded details (inline below info bar, same visual language) -->
-        <div v-show="showDetails" class="border-t border-default px-5 py-3 space-y-3">
-          <!-- Description (full width, only if present) -->
-          <div v-if="network.description">
-            <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('common.description') }}</div>
-            <p class="mt-0.5 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">{{ network.description }}</p>
-          </div>
-          <!-- Technical details row -->
-          <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <!-- /32: single host address -->
-            <template v-if="isHostRoute">
-              <div>
-                <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.hostAddress') }}</div>
-                <SharedCopyButton :value="subnetInfo.network"><span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.network }}</span></SharedCopyButton>
-              </div>
-            </template>
-            <!-- /31: endpoint A + B -->
-            <template v-else-if="isPointToPoint">
-              <div>
-                <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.endpointA') }}</div>
-                <SharedCopyButton :value="subnetInfo.network"><span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.network }}</span></SharedCopyButton>
-              </div>
-              <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-              <div>
-                <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.endpointB') }}</div>
-                <SharedCopyButton :value="subnetInfo.broadcast"><span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.broadcast }}</span></SharedCopyButton>
-              </div>
-            </template>
-            <!-- Normal subnets -->
-            <template v-else>
-              <div>
-                <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.network') }}</div>
-                <SharedCopyButton :value="subnetInfo.network"><span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.network }}</span></SharedCopyButton>
-              </div>
-              <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-              <div>
-                <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.broadcast') }}</div>
-                <SharedCopyButton :value="subnetInfo.broadcast"><span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ subnetInfo.broadcast }}</span></SharedCopyButton>
-              </div>
-            </template>
-            <template v-if="network.dns_servers?.length">
-              <div class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-              <div>
-                <div class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('networks.infoBar.dns') }}</div>
-                <div class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ formatDns(network.dns_servers) }}</div>
-              </div>
-            </template>
-          </div>
-        </div>
-      </div>
-
-      <!-- Utilization bar -->
-      <div class="space-y-1.5">
-        <div class="flex h-2 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
-          <div
-            class="h-full bg-green-500 transition-all"
-            :style="{ width: `${Math.min(utilizationPercent, 100)}%` }"
-          />
-          <div
-            v-if="dhcpRangePercent > 0"
-            class="h-full bg-blue-500/60 transition-all"
-            :style="{ width: `${Math.min(dhcpRangePercent, 100 - utilizationPercent)}%` }"
-          />
-          <div
-            v-if="reservedRangePercent > 0"
-            class="h-full bg-yellow-500/50 transition-all"
-            :style="{ width: `${Math.min(reservedRangePercent, 100 - utilizationPercent - dhcpRangePercent)}%` }"
-          />
-        </div>
-        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-gray-400">
-          <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-green-500" /> {{ allocations.length }} {{ $t('networks.infoBar.allocated') }}</span>
-          <span v-if="dhcpRangePercent > 0" class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-blue-500/60" /> {{ $t('networks.ranges.types.dhcp') }}</span>
-          <span v-if="reservedRangePercent > 0" class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-yellow-500/50" /> {{ $t('networks.ranges.types.reserved') }}</span>
-          <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-gray-500/30" /> {{ $t('common.free') }}</span>
-        </div>
-      </div>
+      <NetworkUtilizationBar
+        :utilization-percent="utilizationPercent"
+        :dhcp-range-percent="dhcpRangePercent"
+        :reserved-range-percent="reservedRangePercent"
+        :allocations-count="allocations.length"
+      />
 
       <!-- Unified IP Overview -->
       <div>
@@ -200,7 +94,7 @@
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
                   <UBadge :color="rangeTypeBadgeColor((row.data as IPRange).type)" variant="subtle" size="sm">{{ $t(`networks.ranges.types.${(row.data as IPRange).type}`) }}</UBadge>
-                  <span class="font-mono text-[11px] text-gray-400">{{ $t('networks.ranges.ipCount', { count: rangeIpCount(row.data as IPRange) }) }}</span>
+                  <span class="font-mono text-[11px] text-gray-400">{{ $t('networks.ranges.ipCount', { count: rangeIpCount((row.data as IPRange).start_ip, (row.data as IPRange).end_ip) }) }}</span>
                   <span v-if="(row.data as IPRange).description" class="text-xs text-gray-500 dark:text-gray-400">{{ (row.data as IPRange).description }}</span>
                   <span v-if="(row.data as IPRange).type !== 'dhcp' && countAllocsInRange(row.data as IPRange) > 0" class="text-xs text-gray-400">
                     ({{ $t('networks.ranges.ipsDocumented', { count: countAllocsInRange(row.data as IPRange) }) }})
@@ -301,97 +195,23 @@
       </template>
     </USlideover>
 
-    <!-- Add/Edit IP/Range Sidebar -->
-    <USlideover v-model:open="showAddPanel">
-      <template #title>
-        <div v-if="editAllocTarget" class="flex items-center gap-2">
-          <code class="font-mono text-sm">{{ editAllocTarget.ip_address }}</code>
-          <span v-if="editAllocTarget.hostname" class="text-sm text-gray-400">{{ editAllocTarget.hostname }}</span>
-        </div>
-        <span v-else>{{ $t('common.add') }}</span>
-      </template>
-
-      <template #actions>
-        <div v-if="editAllocTarget" class="flex items-center gap-1">
-          <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="openDeleteAllocDialog(editAllocTarget)" />
-        </div>
-      </template>
-
-      <template #body>
-        <!-- Mode toggle (only for new entries, hide range option for /31 and /32) -->
-        <div v-if="!editAllocTarget" class="mb-4 flex items-center gap-1">
-          <button
-            class="px-2.5 py-1 text-xs font-medium rounded border transition-colors"
-            :class="addPanelMode === 'ip'
-              ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
-              : 'bg-neutral-100 border-neutral-300 text-neutral-500 hover:text-neutral-700 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'"
-            @click="addPanelMode = 'ip'"
-          >{{ $t('networks.unified.addIp') }}</button>
-          <button
-            v-if="!isSpecialNet"
-            class="px-2.5 py-1 text-xs font-medium rounded border transition-colors"
-            :class="addPanelMode === 'range'
-              ? 'bg-primary-500/20 border-primary-500/50 text-primary-400'
-              : 'bg-neutral-100 border-neutral-300 text-neutral-500 hover:text-neutral-700 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'"
-            @click="addPanelMode = 'range'"
-          >{{ $t('networks.unified.addRange') }}</button>
-        </div>
-
-        <!-- Error -->
-        <div v-if="addPanelError" class="mb-4 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
-          {{ addPanelError }}
-        </div>
-
-        <!-- IP Address form -->
-        <form v-if="addPanelMode === 'ip'" class="space-y-4" @submit.prevent="onCreateAllocation">
-          <UFormField :label="$t('networks.allocations.fields.ipAddress') + ' *'">
-            <UInput v-model="allocForm.ip_address" placeholder="10.0.1.10" required :color="addPanelError ? 'error' : undefined" class="w-full" />
-          </UFormField>
-          <UFormField :label="$t('networks.allocations.fields.hostname')">
-            <UInput v-model="allocForm.hostname" class="w-full" />
-          </UFormField>
-          <div class="grid grid-cols-2 gap-3">
-            <UFormField :label="$t('networks.allocations.fields.deviceType')">
-              <USelect v-model="allocForm.device_type" :items="deviceTypeOptions" placeholder="-" class="w-full" />
-            </UFormField>
-            <UFormField :label="$t('networks.allocations.fields.status')">
-              <USelect v-model="allocForm.status" :items="allocStatusOptions" class="w-full" />
-            </UFormField>
-          </div>
-          <UFormField :label="$t('networks.allocations.fields.macAddress')">
-            <UInput v-model="allocForm.mac_address" placeholder="AA:BB:CC:DD:EE:FF" class="w-full" />
-          </UFormField>
-          <UFormField :label="$t('common.description')">
-            <UInput v-model="allocForm.description" class="w-full" />
-          </UFormField>
-        </form>
-
-        <!-- IP Range form -->
-        <form v-if="addPanelMode === 'range'" class="space-y-4" @submit.prevent="onCreateRange">
-          <div class="grid grid-cols-2 gap-3">
-            <UFormField :label="$t('networks.ranges.fields.startIp') + ' *'">
-              <UInput v-model="rangeForm.start_ip" placeholder="10.0.1.100" required :color="addPanelError ? 'error' : undefined" class="w-full" />
-            </UFormField>
-            <UFormField :label="$t('networks.ranges.fields.endIp') + ' *'">
-              <UInput v-model="rangeForm.end_ip" placeholder="10.0.1.200" required :color="addPanelError ? 'error' : undefined" class="w-full" />
-            </UFormField>
-          </div>
-          <UFormField :label="$t('networks.ranges.fields.type') + ' *'">
-            <USelect v-model="rangeForm.type" :items="rangeTypeOptions" class="w-full" />
-          </UFormField>
-          <UFormField :label="$t('common.description')">
-            <UInput v-model="rangeForm.description" class="w-full" />
-          </UFormField>
-        </form>
-      </template>
-
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <UButton variant="ghost" color="neutral" @click="showAddPanel = false; editAllocTarget = null">{{ $t('common.cancel') }}</UButton>
-          <UButton :loading="addPanelMode === 'ip' ? creatingAlloc : creatingRange" @click="addPanelMode === 'ip' ? onCreateAllocation() : onCreateRange()">{{ editAllocTarget ? $t('common.save') : $t('common.add') }}</UButton>
-        </div>
-      </template>
-    </USlideover>
+    <NetworkAllocationForm
+      v-model:open="showAddPanel"
+      v-model:mode="addPanelMode"
+      :edit-target="editAllocTarget"
+      :error="addPanelError"
+      :saving="addPanelMode === 'ip' ? creatingAlloc : creatingRange"
+      v-model:alloc-form="allocForm"
+      v-model:range-form="rangeForm"
+      :is-special-net="isSpecialNet"
+      :device-type-options="deviceTypeOptions"
+      :alloc-status-options="allocStatusOptions"
+      :range-type-options="rangeTypeOptions"
+      @submit-allocation="onCreateAllocation"
+      @submit-range="onCreateRange"
+      @delete-alloc="openDeleteAllocDialog(editAllocTarget!)"
+      @close="showAddPanel = false; editAllocTarget = null"
+    />
 
     <SharedConfirmDialog v-model="showDeleteDialog" :title="$t('networks.delete')" :message="network ? `${$t('networks.delete')}: ${network.name} (${network.subnet})?` : ''" :loading="deleting" @confirm="confirmDeleteNetwork" />
     <SharedConfirmDialog
@@ -417,8 +237,8 @@
 
 <script setup lang="ts">
 import type { Network } from '~~/types/network'
-import type { IPAllocation } from '~~/types/ipAllocation'
-import type { IPRange } from '~~/types/ipRange'
+import type { IPAllocation, AllocationStatus, DeviceType } from '~~/types/ipAllocation'
+import type { IPRange, RangeType } from '~~/types/ipRange'
 
 const { t } = useI18n()
 const toast = useToast()
@@ -428,6 +248,8 @@ const router = useRouter()
 const networkId = route.params.id as string
 const { update: updateNetwork, remove: removeNetwork } = useNetworks()
 const { items: vlans, fetch: fetchVlans } = useVlans()
+const { items: allocations, fetch: fetchAllocations, create: createAllocation, update: updateAllocation, remove: removeAllocation } = useIpAllocations(networkId)
+const { items: ranges, fetch: fetchRanges, create: createRange, update: updateRange, remove: removeRange } = useIpRanges(networkId)
 
 const pageLoading = ref(true)
 const network = ref<Network | null>(null)
@@ -440,7 +262,6 @@ const showDetails = ref(false)
 const showDeleteDialog = ref(false)
 const deleting = ref(false)
 
-const allocations = ref<IPAllocation[]>([])
 const showAddPanel = ref(false)
 const addPanelMode = ref<'ip' | 'range'>('ip')
 const addPanelError = ref('')
@@ -450,7 +271,6 @@ const deleteAllocTarget = ref<IPAllocation | null>(null)
 const deletingAlloc = ref(false)
 const allocDeleteRefs = ref<string[]>([])
 
-const ranges = ref<IPRange[]>([])
 const creatingRange = ref(false)
 const showDeleteRangeDialog = ref(false)
 const deleteRangeTarget = ref<IPRange | null>(null)
@@ -459,7 +279,7 @@ const deletingRange = ref(false)
 // Range edit slideover
 const showRangeEdit = ref(false)
 const rangeEditTarget = ref<IPRange | null>(null)
-const rangeEditForm = ref({ start_ip: '', end_ip: '', type: 'static', description: '' })
+const rangeEditForm = ref({ start_ip: '', end_ip: '', type: 'static' as RangeType, description: '' })
 const rangeEditError = ref('')
 const savingRangeEdit = ref(false)
 
@@ -467,14 +287,8 @@ const editAllocTarget = ref<IPAllocation | null>(null)
 
 const editForm = ref({ name: '', subnet: '', gateway: '', vlan_id: '', description: '' })
 const editDnsInput = ref('')
-const allocForm = ref({ ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' })
-const rangeForm = ref({ start_ip: '', end_ip: '', type: 'static', description: '' })
-
-// IP to numeric for sorting
-function ipToLong(ip: string): number {
-  const parts = ip.split('.').map(Number)
-  return ((parts[0]! << 24) | (parts[1]! << 16) | (parts[2]! << 8) | parts[3]!) >>> 0
-}
+const allocForm = ref({ ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' as AllocationStatus })
+const rangeForm = ref({ start_ip: '', end_ip: '', type: 'static' as RangeType, description: '' })
 
 const utilizationPercent = computed(() => {
   if (!subnetInfo.value.usableHosts || subnetInfo.value.usableHosts <= 0) return 0
@@ -514,7 +328,7 @@ const vlanOptions = computed(() => {
 
 const associatedVlan = computed(() => {
   if (!network.value?.vlan_id) return null
-  return vlans.value.find((v) => v.id === network.value!.vlan_id)
+  return vlans.value.find((v) => v.id === network.value!.vlan_id) ?? null
 })
 
 const deviceTypeOptions = computed(() => [
@@ -540,21 +354,7 @@ const rangeTypeOptions = computed(() => [
 ])
 
 
-const subnetInfo = computed(() => {
-  if (!network.value?.subnet) return { network: '-', broadcast: '-', mask: '-', totalHosts: 0, usableHosts: 0, prefix: 0 }
-  const parts = network.value.subnet.split('/')
-  if (parts.length !== 2) return { network: '-', broadcast: '-', mask: '-', totalHosts: 0, usableHosts: 0, prefix: 0 }
-  const prefix = parseInt(parts[1]!, 10)
-  const ipParts = parts[0]!.split('.').map(Number)
-  const ipNum = ((ipParts[0]! << 24) | (ipParts[1]! << 16) | (ipParts[2]! << 8) | ipParts[3]!) >>> 0
-  const maskNum = prefix === 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0
-  const networkNum = (ipNum & maskNum) >>> 0
-  const broadcastNum = (networkNum | (~maskNum >>> 0)) >>> 0
-  const totalHosts = Math.pow(2, 32 - prefix)
-  const usableHosts = prefix <= 30 ? totalHosts - 2 : totalHosts
-  const numToIp = (n: number) => `${(n >>> 24) & 255}.${(n >>> 16) & 255}.${(n >>> 8) & 255}.${n & 255}`
-  return { network: numToIp(networkNum), broadcast: numToIp(broadcastNum), mask: numToIp(maskNum), totalHosts, usableHosts: Math.max(0, usableHosts), prefix }
-})
+const subnetInfo = computed(() => parseSubnetInfo(network.value?.subnet ?? ''))
 
 const isPointToPoint = computed(() => subnetInfo.value.prefix === 31)
 const isHostRoute = computed(() => subnetInfo.value.prefix === 32)
@@ -620,23 +420,6 @@ function formatDns(servers: string[]): string {
   return servers.slice(0, 2).join(', ') + ` +${servers.length - 2}`
 }
 
-function abbreviateEndIp(startIp: string, endIp: string): string {
-  const startParts = startIp.split('.')
-  const endParts = endIp.split('.')
-  let common = 0
-  for (let i = 0; i < 4; i++) {
-    if (startParts[i] === endParts[i]) common++
-    else break
-  }
-  if (common >= 3) return '.' + endParts.slice(3).join('.')
-  if (common >= 2) return '.' + endParts.slice(2).join('.')
-  return endIp
-}
-
-function rangeIpCount(range: IPRange): number {
-  return ipToLong(range.end_ip) - ipToLong(range.start_ip) + 1
-}
-
 // Selection tracking for master-detail
 const selectedRowKey = computed(() => {
   if (showAddPanel.value && editAllocTarget.value) return `alloc-${editAllocTarget.value.id}`
@@ -670,7 +453,7 @@ function openAddPanel() {
   editAllocTarget.value = null
   addPanelError.value = ''
   allocForm.value = { ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' }
-  rangeForm.value = { start_ip: '', end_ip: '', type: 'static', description: '' }
+  rangeForm.value = { start_ip: '', end_ip: '', type: 'static' as RangeType, description: '' }
   showAddPanel.value = true
 }
 
@@ -737,11 +520,6 @@ async function confirmDeleteNetwork() {
   finally { deleting.value = false }
 }
 
-async function fetchAllocations() {
-  try { const data = await $fetch<{ data?: IPAllocation[] } | IPAllocation[]>(`/api/networks/${networkId}/allocations`); allocations.value = (data as { data?: IPAllocation[] }).data || data as IPAllocation[] || [] }
-  catch { allocations.value = [] }
-}
-
 async function onCreateAllocation() {
   addPanelError.value = ''
   creatingAlloc.value = true
@@ -749,21 +527,21 @@ async function onCreateAllocation() {
     ip_address: allocForm.value.ip_address.trim(),
     hostname: allocForm.value.hostname.trim() || undefined,
     mac_address: allocForm.value.mac_address.trim() || undefined,
-    device_type: allocForm.value.device_type || undefined,
+    device_type: (allocForm.value.device_type || undefined) as DeviceType | undefined,
     description: allocForm.value.description.trim() || undefined,
     status: allocForm.value.status
   }
   try {
     if (editAllocTarget.value) {
-      await $fetch(`/api/networks/${networkId}/allocations/${editAllocTarget.value.id}`, { method: 'PUT', body })
+      await updateAllocation(editAllocTarget.value.id, body)
       toast.add({ title: t('networks.allocations.messages.updated'), color: 'success' })
     } else {
-      await $fetch(`/api/networks/${networkId}/allocations`, { method: 'POST', body })
+      await createAllocation(body)
       toast.add({ title: t('networks.allocations.messages.created'), color: 'success' })
     }
     showAddPanel.value = false
     editAllocTarget.value = null
-    allocForm.value = { ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' }
+    allocForm.value = { ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' as AllocationStatus }
     await fetchAllocations()
   } catch (err: unknown) {
     const error = err as { data?: { message?: string } }
@@ -811,7 +589,7 @@ async function confirmDeleteAlloc() {
   if (!deleteAllocTarget.value) return
   deletingAlloc.value = true
   try {
-    await $fetch(`/api/networks/${networkId}/allocations/${deleteAllocTarget.value.id}`, { method: 'DELETE' })
+    await removeAllocation(deleteAllocTarget.value.id)
     toast.add({ title: t('networks.allocations.messages.deleted'), color: 'success' })
     showDeleteAllocDialog.value = false
     allocDeleteRefs.value = []
@@ -821,19 +599,14 @@ async function confirmDeleteAlloc() {
   finally { deletingAlloc.value = false }
 }
 
-async function fetchRanges() {
-  try { const data = await $fetch<{ data?: IPRange[] } | IPRange[]>(`/api/networks/${networkId}/ranges`); ranges.value = (data as { data?: IPRange[] }).data || data as IPRange[] || [] }
-  catch { ranges.value = [] }
-}
-
 async function onCreateRange() {
   addPanelError.value = ''
   creatingRange.value = true
   try {
-    await $fetch(`/api/networks/${networkId}/ranges`, { method: 'POST', body: { start_ip: rangeForm.value.start_ip.trim(), end_ip: rangeForm.value.end_ip.trim(), type: rangeForm.value.type, description: rangeForm.value.description.trim() || undefined } })
+    await createRange({ start_ip: rangeForm.value.start_ip.trim(), end_ip: rangeForm.value.end_ip.trim(), type: rangeForm.value.type, description: rangeForm.value.description.trim() || undefined })
     toast.add({ title: t('networks.ranges.messages.created'), color: 'success' })
     showAddPanel.value = false
-    rangeForm.value = { start_ip: '', end_ip: '', type: 'static', description: '' }
+    rangeForm.value = { start_ip: '', end_ip: '', type: 'static' as RangeType, description: '' }
     await fetchRanges()
   } catch (err: unknown) {
     const error = err as { data?: { message?: string } }
@@ -851,7 +624,7 @@ function openDeleteRangeDialog(r: IPRange) {
 async function confirmDeleteRange() {
   if (!deleteRangeTarget.value) return
   deletingRange.value = true
-  try { await $fetch(`/api/networks/${networkId}/ranges/${deleteRangeTarget.value.id}`, { method: 'DELETE' }); toast.add({ title: t('networks.ranges.messages.deleted'), color: 'success' }); showDeleteRangeDialog.value = false; await fetchRanges() }
+  try { await removeRange(deleteRangeTarget.value.id); toast.add({ title: t('networks.ranges.messages.deleted'), color: 'success' }); showDeleteRangeDialog.value = false; await fetchRanges() }
   catch (err: unknown) { const error = err as { data?: { message?: string } }; toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' }) }
   finally { deletingRange.value = false }
 }
@@ -861,14 +634,11 @@ async function onSaveRangeEdit() {
   rangeEditError.value = ''
   savingRangeEdit.value = true
   try {
-    await $fetch(`/api/networks/${networkId}/ranges/${rangeEditTarget.value.id}`, {
-      method: 'PUT',
-      body: {
-        start_ip: rangeEditForm.value.start_ip.trim(),
-        end_ip: rangeEditForm.value.end_ip.trim(),
-        type: rangeEditForm.value.type,
-        description: rangeEditForm.value.description.trim() || null
-      }
+    await updateRange(rangeEditTarget.value.id, {
+      start_ip: rangeEditForm.value.start_ip.trim(),
+      end_ip: rangeEditForm.value.end_ip.trim(),
+      type: rangeEditForm.value.type,
+      description: rangeEditForm.value.description.trim() || undefined
     })
     toast.add({ title: t('networks.ranges.messages.updated'), color: 'success' })
     showRangeEdit.value = false

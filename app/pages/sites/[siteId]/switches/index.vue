@@ -17,33 +17,30 @@
         class="w-64"
       />
       <USelectMenu
-v-if="locationOptions.length > 0"
+        v-if="locationOptions.length > 0"
         v-model="locationFilter"
         :search-input="false"
         :items="locationOptions"
         value-key="value"
-        
         :placeholder="$t('switches.allLocations')"
         size="sm"
         class="w-48"
       />
       <USelectMenu
-v-model="roleFilter"
+        v-model="roleFilter"
         :search-input="false"
         :items="roleOptions"
         value-key="value"
-        
         :placeholder="$t('switches.allRoles')"
         size="sm"
         class="w-44"
       />
       <USelectMenu
-v-if="tagOptions.length > 0"
+        v-if="tagOptions.length > 0"
         v-model="tagFilter"
         :search-input="false"
         :items="tagOptions"
         value-key="value"
-        
         :placeholder="$t('switches.allTags')"
         size="sm"
         class="w-44"
@@ -57,15 +54,15 @@ v-if="tagOptions.length > 0"
               <div class="mb-2 flex items-center justify-between">
                 <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">{{ $t('common.print') }}</span>
                 <div class="flex gap-1">
-                  <UButton size="xs" variant="ghost" @click="printSelectedIds.length === filteredItems.length ? (printSelectedIds = []) : (printSelectedIds = filteredItems.map((s) => s.id))">
-                    {{ printSelectedIds.length === filteredItems.length ? $t('common.deselectAll') : $t('common.selectAll') }}
+                  <UButton size="xs" variant="ghost" @click="print.selectedIds.length === filteredItems.length ? print.deselectAll() : print.selectAll(filteredItems.map((s) => s.id))">
+                    {{ print.selectedIds.length === filteredItems.length ? $t('common.deselectAll') : $t('common.selectAll') }}
                   </UButton>
                 </div>
               </div>
-              <UInput v-model="printSearch" :placeholder="$t('common.search') + '...'" size="xs" class="mb-2 w-full" icon="i-heroicons-magnifying-glass" />
+              <UInput v-model="print.search" :placeholder="$t('common.search') + '...'" size="xs" class="mb-2 w-full" icon="i-heroicons-magnifying-glass" />
               <div class="max-h-60 overflow-y-auto space-y-0.5">
                 <template v-if="siteId === 'all'">
-                  <template v-for="group in printFilteredGroups" :key="group.siteId">
+                  <template v-for="group in print.filteredGroups" :key="group.siteId">
                     <div v-if="group.siteName" class="mt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">{{ group.siteName }}</div>
                     <label
                       v-for="sw in group.items"
@@ -74,9 +71,9 @@ v-if="tagOptions.length > 0"
                     >
                       <input
                         type="checkbox"
-                        :checked="printSelectedIds.includes(sw.id)"
+                        :checked="print.selectedIds.includes(sw.id)"
                         class="h-3.5 w-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
-                        @change="togglePrintId(sw.id)"
+                        @change="print.toggle(sw.id)"
                       >
                       <span class="truncate text-xs">{{ sw.name }}</span>
                     </label>
@@ -84,15 +81,15 @@ v-if="tagOptions.length > 0"
                 </template>
                 <template v-else>
                   <label
-                    v-for="sw in printFilteredItems"
+                    v-for="sw in print.filteredList"
                     :key="sw.id"
                     class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   >
                     <input
                       type="checkbox"
-                      :checked="printSelectedIds.includes(sw.id)"
+                      :checked="print.selectedIds.includes(sw.id)"
                       class="h-3.5 w-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
-                      @change="togglePrintId(sw.id)"
+                      @change="print.toggle(sw.id)"
                     >
                     <span class="truncate text-xs">{{ sw.name }}</span>
                   </label>
@@ -103,10 +100,10 @@ v-if="tagOptions.length > 0"
                   icon="i-heroicons-printer"
                   size="xs"
                   block
-                  :disabled="printSelectedIds.length === 0"
+                  :disabled="print.selectedIds.length === 0"
                   @click="openPrintPage"
                 >
-                  {{ $t('print.printSelected', { n: printSelectedIds.length }) }}
+                  {{ $t('print.printSelected', { n: print.selectedIds.length }) }}
                 </UButton>
               </div>
             </div>
@@ -121,15 +118,15 @@ v-if="tagOptions.length > 0"
               <div class="mb-2 flex items-center justify-between">
                 <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">{{ $t('public.admin.title') }}</span>
                 <div class="flex gap-1">
-                  <UButton size="xs" variant="ghost" @click="qrSelectedIds.length === filteredItems.length ? (qrSelectedIds = []) : (qrSelectedIds = filteredItems.map((s) => s.id))">
-                    {{ qrSelectedIds.length === filteredItems.length ? $t('common.deselectAll') : $t('common.selectAll') }}
+                  <UButton size="xs" variant="ghost" @click="qr.selectedIds.length === filteredItems.length ? qr.deselectAll() : qr.selectAll(filteredItems.map((s) => s.id))">
+                    {{ qr.selectedIds.length === filteredItems.length ? $t('common.deselectAll') : $t('common.selectAll') }}
                   </UButton>
                 </div>
               </div>
-              <UInput v-model="qrSearch" :placeholder="$t('common.search') + '...'" size="xs" class="mb-2 w-full" icon="i-heroicons-magnifying-glass" />
+              <UInput v-model="qr.search" :placeholder="$t('common.search') + '...'" size="xs" class="mb-2 w-full" icon="i-heroicons-magnifying-glass" />
               <div class="max-h-60 overflow-y-auto space-y-0.5">
                 <template v-if="siteId === 'all'">
-                  <template v-for="group in qrFilteredGroups" :key="group.siteId">
+                  <template v-for="group in qr.filteredGroups" :key="group.siteId">
                     <div v-if="group.siteName" class="mt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">{{ group.siteName }}</div>
                     <label
                       v-for="sw in group.items"
@@ -138,9 +135,9 @@ v-if="tagOptions.length > 0"
                     >
                       <input
                         type="checkbox"
-                        :checked="qrSelectedIds.includes(sw.id)"
+                        :checked="qr.selectedIds.includes(sw.id)"
                         class="h-3.5 w-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
-                        @change="toggleQrId(sw.id)"
+                        @change="qr.toggle(sw.id)"
                       >
                       <span class="truncate text-xs">{{ sw.name }}</span>
                     </label>
@@ -148,15 +145,15 @@ v-if="tagOptions.length > 0"
                 </template>
                 <template v-else>
                   <label
-                    v-for="sw in qrFilteredItems"
+                    v-for="sw in qr.filteredList"
                     :key="sw.id"
                     class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   >
                     <input
                       type="checkbox"
-                      :checked="qrSelectedIds.includes(sw.id)"
+                      :checked="qr.selectedIds.includes(sw.id)"
                       class="h-3.5 w-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
-                      @change="toggleQrId(sw.id)"
+                      @change="qr.toggle(sw.id)"
                     >
                     <span class="truncate text-xs">{{ sw.name }}</span>
                   </label>
@@ -167,10 +164,10 @@ v-if="tagOptions.length > 0"
                   icon="i-heroicons-qr-code"
                   size="xs"
                   block
-                  :disabled="qrSelectedIds.length === 0"
+                  :disabled="qr.selectedIds.length === 0"
                   @click="openQrPrintPage"
                 >
-                  {{ $t('public.admin.printSticker') }} ({{ qrSelectedIds.length }})
+                  {{ $t('public.admin.printSticker') }} ({{ qr.selectedIds.length }})
                 </UButton>
               </div>
             </div>
@@ -210,82 +207,16 @@ v-if="tagOptions.length > 0"
           <div class="h-px flex-1 bg-default" />
         </div>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <NuxtLink
-            v-for="sw in group.items"
-            :key="sw.id"
-            :to="`/sites/${siteId}/switches/${sw.id}`"
-            class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
-          >
-            <!-- Favorite star (top-left, always visible) -->
-            <button
-              class="absolute left-1.5 top-px z-10 transition-colors"
-              :class="sw.is_favorite ? 'text-amber-400' : 'text-gray-600 hover:text-amber-400 dark:text-gray-700 dark:hover:text-amber-400'"
-              :title="sw.is_favorite ? $t('switches.unfavorite') : $t('switches.favorite')"
-              @click.prevent="toggleFavorite(sw)"
-            >
-              <UIcon :name="sw.is_favorite ? 'i-heroicons-star-solid' : 'i-heroicons-star'" class="h-3.5 w-3.5" />
-            </button>
-
-            <!-- Hover actions -->
-            <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
-              <UButton icon="i-heroicons-printer" variant="ghost" color="warning" size="xs" @click.prevent="printSingleSwitch(sw.id)" />
-              <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="onDuplicate(sw)" />
-              <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="confirmDelete(sw)" />
-            </div>
-
-            <!-- Header: Name + Subtitle + Role -->
-            <div class="px-5 pt-4 pb-2">
-              <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0">
-                  <h3 class="truncate font-semibold text-gray-900 group-hover:text-primary-500 dark:text-white" :title="sw.name">
-                    {{ sw.name }}
-                  </h3>
-                  <p v-if="sw.manufacturer || sw.model" class="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
-                    {{ [sw.manufacturer, sw.model].filter(Boolean).join(' · ') }}
-                  </p>
-                </div>
-                <UBadge v-if="sw.role" :color="roleColor(sw.role)" variant="subtle" size="sm" class="shrink-0">
-                  {{ $t(`switches.roles.${sw.role}`) }}
-                </UBadge>
-              </div>
-              <!-- Tags -->
-              <div v-if="sw.tags?.length" class="mt-2 flex flex-wrap gap-1">
-                <UBadge v-for="tg in sw.tags" :key="tg" color="neutral" variant="soft" size="sm">
-                  {{ tg }}
-                </UBadge>
-              </div>
-            </div>
-
-            <!-- Info rows -->
-            <div class="min-h-[3rem] flex-1 space-y-1.5 px-5 pb-3 text-sm">
-              <div v-if="sw.location" class="flex items-center gap-2">
-                <UIcon name="i-heroicons-map-pin" class="h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
-                <span class="text-gray-500 dark:text-gray-400">{{ sw.location }}</span>
-              </div>
-              <div v-if="sw.management_ip" class="flex items-center gap-2">
-                <UIcon name="i-heroicons-globe-alt" class="h-3.5 w-3.5 flex-shrink-0 text-teal-400" />
-                <span class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ sw.management_ip }}</span>
-              </div>
-            </div>
-
-            <!-- Ports footer -->
-            <div class="mt-auto flex items-center justify-between border-t border-default px-5 py-2.5 font-mono">
-              <span class="text-xs font-medium uppercase tracking-wider text-gray-400">{{ sw.ports?.length || 0 }} ports</span>
-              <div class="flex items-center gap-3 text-xs">
-                <span v-if="getPortStats(sw).up" class="flex items-center gap-1 text-green-500">
-                  <span class="inline-block h-2 w-2 rounded-full bg-green-500" />
-                  {{ getPortStats(sw).up }}
-                </span>
-                <span v-if="getPortStats(sw).down" class="flex items-center gap-1 text-gray-400">
-                  <span class="inline-block h-2 w-2 rounded-full bg-gray-400" />
-                  {{ getPortStats(sw).down }}
-                </span>
-                <span v-if="getPortStats(sw).disabled" class="flex items-center gap-1 text-red-500">
-                  <span class="inline-block h-2 w-2 rounded-full bg-red-500" />
-                  {{ getPortStats(sw).disabled }}
-                </span>
-              </div>
-            </div>
+          <NuxtLink v-for="sw in group.items" :key="sw.id" :to="`/sites/${siteId}/switches/${sw.id}`">
+            <SwitchCard
+              :sw="sw"
+              :site-id="siteId"
+              variant="grid"
+              @favorite="toggleFavorite"
+              @print="printSingleSwitch"
+              @duplicate="onDuplicate"
+              @delete="confirmDelete"
+            />
           </NuxtLink>
         </div>
       </div>
@@ -302,81 +233,17 @@ v-if="tagOptions.length > 0"
         @end="saveSortOrder"
       >
         <template #item="{ element: sw }">
-          <NuxtLink
-            :to="`/sites/${siteId}/switches/${sw.id}`"
-            class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
-          >
-            <!-- Favorite star (top-left, always visible) -->
-            <button
-              class="absolute left-1.5 top-px z-10 transition-colors"
-              :class="sw.is_favorite ? 'text-amber-400' : 'text-gray-600 hover:text-amber-400 dark:text-gray-700 dark:hover:text-amber-400'"
-              :title="sw.is_favorite ? $t('switches.unfavorite') : $t('switches.favorite')"
-              @click.prevent="toggleFavorite(sw)"
-            >
-              <UIcon :name="sw.is_favorite ? 'i-heroicons-star-solid' : 'i-heroicons-star'" class="h-3.5 w-3.5" />
-            </button>
-
-            <!-- Hover actions -->
-            <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
-              <UButton icon="i-heroicons-bars-2" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="neutral" size="xs" @click.prevent />
-              <UButton icon="i-heroicons-printer" variant="ghost" color="warning" size="xs" @click.prevent="printSingleSwitch(sw.id)" />
-              <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="onDuplicate(sw)" />
-              <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="confirmDelete(sw)" />
-            </div>
-
-            <!-- Header: Name + Subtitle + Role -->
-            <div class="px-5 pt-4 pb-2">
-              <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0">
-                  <h3 class="truncate font-semibold text-gray-900 group-hover:text-primary-500 dark:text-white" :title="sw.name">
-                    {{ sw.name }}
-                  </h3>
-                  <p v-if="sw.manufacturer || sw.model" class="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
-                    {{ [sw.manufacturer, sw.model].filter(Boolean).join(' · ') }}
-                  </p>
-                </div>
-                <UBadge v-if="sw.role" :color="roleColor(sw.role)" variant="subtle" size="sm" class="shrink-0">
-                  {{ $t(`switches.roles.${sw.role}`) }}
-                </UBadge>
-              </div>
-              <!-- Tags -->
-              <div v-if="sw.tags?.length" class="mt-2 flex flex-wrap gap-1">
-                <UBadge v-for="tg in sw.tags" :key="tg" color="neutral" variant="soft" size="sm">
-                  {{ tg }}
-                </UBadge>
-              </div>
-            </div>
-
-            <!-- Info rows -->
-            <div class="min-h-[3rem] flex-1 space-y-1.5 px-5 pb-3 text-sm">
-              <div v-if="sw.location" class="flex items-center gap-2">
-                <UIcon name="i-heroicons-map-pin" class="h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
-                <span class="text-gray-500 dark:text-gray-400">{{ sw.location }}</span>
-              </div>
-              <div v-if="sw.management_ip" class="flex items-center gap-2">
-                <UIcon name="i-heroicons-globe-alt" class="h-3.5 w-3.5 flex-shrink-0 text-teal-400" />
-                <span class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ sw.management_ip }}</span>
-              </div>
-            </div>
-
-            <!-- Ports footer -->
-            <div class="mt-auto flex items-center justify-between border-t border-default px-5 py-2.5 font-mono">
-              <span class="text-xs font-medium uppercase tracking-wider text-gray-400">{{ sw.ports?.length || 0 }} ports</span>
-              <div class="flex items-center gap-3 text-xs">
-                <span v-if="getPortStats(sw).up" class="flex items-center gap-1 text-green-500">
-                  <span class="inline-block h-2 w-2 rounded-full bg-green-500" />
-                  {{ getPortStats(sw).up }}
-                </span>
-                <span v-if="getPortStats(sw).down" class="flex items-center gap-1 text-gray-400">
-                  <span class="inline-block h-2 w-2 rounded-full bg-gray-400" />
-                  {{ getPortStats(sw).down }}
-                </span>
-                <span v-if="getPortStats(sw).disabled" class="flex items-center gap-1 text-red-500">
-                  <span class="inline-block h-2 w-2 rounded-full bg-red-500" />
-                  {{ getPortStats(sw).disabled }}
-                </span>
-              </div>
-            </div>
+          <NuxtLink :to="`/sites/${siteId}/switches/${sw.id}`">
+            <SwitchCard
+              :sw="sw"
+              :site-id="siteId"
+              variant="grid"
+              :draggable="true"
+              @favorite="toggleFavorite"
+              @print="printSingleSwitch"
+              @duplicate="onDuplicate"
+              @delete="confirmDelete"
+            />
           </NuxtLink>
         </template>
       </draggable>
@@ -396,73 +263,16 @@ v-if="tagOptions.length > 0"
           <div class="h-px flex-1 bg-default" />
         </div>
         <div class="flex flex-col gap-2">
-          <NuxtLink
-            v-for="sw in group.items"
-            :key="sw.id"
-            :to="`/sites/${siteId}/switches/${sw.id}`"
-            class="stagger-item card-glow group relative flex items-center gap-4 rounded-lg bg-default px-5 py-3"
-          >
-            <!-- Favorite star (list view) -->
-            <button
-              class="shrink-0 transition-colors"
-              :class="sw.is_favorite ? 'text-amber-400' : 'text-gray-600 hover:text-amber-400 dark:text-gray-700 dark:hover:text-amber-400'"
-              :title="sw.is_favorite ? $t('switches.unfavorite') : $t('switches.favorite')"
-              @click.prevent="toggleFavorite(sw)"
-            >
-              <UIcon :name="sw.is_favorite ? 'i-heroicons-star-solid' : 'i-heroicons-star'" class="h-3.5 w-3.5" />
-            </button>
-
-            <!-- Hover actions -->
-            <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
-              <UButton icon="i-heroicons-printer" variant="ghost" color="warning" size="xs" @click.prevent="printSingleSwitch(sw.id)" />
-              <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="onDuplicate(sw)" />
-              <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="confirmDelete(sw)" />
-            </div>
-
-            <!-- Info -->
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
-                <h3 class="truncate font-semibold text-gray-900 dark:text-white">{{ sw.name }}</h3>
-                <UBadge v-if="sw.role" :color="roleColor(sw.role)" variant="subtle" size="sm">
-                  {{ $t(`switches.roles.${sw.role}`) }}
-                </UBadge>
-                <span v-if="sw.manufacturer || sw.model" class="hidden text-sm text-gray-500 dark:text-gray-400 md:inline">
-                  {{ [sw.manufacturer, sw.model].filter(Boolean).join(' · ') }}
-                </span>
-              </div>
-              <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
-                <span v-if="sw.location" class="flex items-center gap-1">
-                  <UIcon name="i-heroicons-map-pin" class="h-3 w-3" />
-                  {{ sw.location }}
-                </span>
-                <span v-if="sw.management_ip" class="flex items-center gap-1 font-mono">
-                  <UIcon name="i-heroicons-globe-alt" class="h-3 w-3" />
-                  {{ sw.management_ip }}
-                </span>
-                <UBadge v-for="tg in (sw.tags || [])" :key="tg" color="neutral" variant="soft" size="sm">
-                  {{ tg }}
-                </UBadge>
-              </div>
-            </div>
-
-            <!-- Port Stats (right-aligned) -->
-            <div class="hidden shrink-0 text-right sm:block">
-              <span class="text-xs font-medium uppercase tracking-wider text-gray-400">{{ sw.ports?.length || 0 }} ports</span>
-              <div class="mt-1 flex items-center justify-end gap-3 text-xs">
-                <span v-if="getPortStats(sw).up" class="flex items-center gap-1 text-green-500">
-                  <span class="inline-block h-2 w-2 rounded-full bg-green-500" />
-                  {{ getPortStats(sw).up }}
-                </span>
-                <span v-if="getPortStats(sw).down" class="flex items-center gap-1 text-gray-400">
-                  <span class="inline-block h-2 w-2 rounded-full bg-gray-400" />
-                  {{ getPortStats(sw).down }}
-                </span>
-                <span v-if="getPortStats(sw).disabled" class="flex items-center gap-1 text-red-500">
-                  <span class="inline-block h-2 w-2 rounded-full bg-red-500" />
-                  {{ getPortStats(sw).disabled }}
-                </span>
-              </div>
-            </div>
+          <NuxtLink v-for="sw in group.items" :key="sw.id" :to="`/sites/${siteId}/switches/${sw.id}`">
+            <SwitchCard
+              :sw="sw"
+              :site-id="siteId"
+              variant="list"
+              @favorite="toggleFavorite"
+              @print="printSingleSwitch"
+              @duplicate="onDuplicate"
+              @delete="confirmDelete"
+            />
           </NuxtLink>
         </div>
       </div>
@@ -517,74 +327,6 @@ const siteMap = computed(() => {
 })
 
 const viewMode = ref<'grid' | 'list'>('grid')
-const printSelectedIds = ref<string[]>([])
-const printSearch = ref('')
-
-const qrSelectedIds = ref<string[]>([])
-const qrSearch = ref('')
-
-const qrFilteredItems = computed(() => {
-  const q = qrSearch.value.toLowerCase().trim()
-  if (!q) return filteredItems.value
-  return filteredItems.value.filter((sw) => sw.name.toLowerCase().includes(q))
-})
-
-const qrFilteredGroups = computed(() => {
-  const q = qrSearch.value.toLowerCase().trim()
-  if (!q) return groupedItems.value
-  return groupedItems.value
-    .map((g) => ({ ...g, items: g.items.filter((sw) => sw.name.toLowerCase().includes(q)) }))
-    .filter((g) => g.items.length > 0)
-})
-
-function toggleQrId(swId: string) {
-  const idx = qrSelectedIds.value.indexOf(swId)
-  if (idx >= 0) qrSelectedIds.value.splice(idx, 1)
-  else qrSelectedIds.value.push(swId)
-}
-
-function openQrPrintPage() {
-  if (qrSelectedIds.value.length === 0) return
-  const ids = qrSelectedIds.value.join(',')
-  window.open(`/sites/${siteId.value}/switches/qr-print?ids=${ids}`, '_blank')
-}
-
-const printFilteredItems = computed(() => {
-  const q = printSearch.value.toLowerCase().trim()
-  if (!q) return filteredItems.value
-  return filteredItems.value.filter((sw) => sw.name.toLowerCase().includes(q))
-})
-
-const printFilteredGroups = computed(() => {
-  const q = printSearch.value.toLowerCase().trim()
-  if (!q) return groupedItems.value
-  return groupedItems.value
-    .map((g) => ({ ...g, items: g.items.filter((sw) => sw.name.toLowerCase().includes(q)) }))
-    .filter((g) => g.items.length > 0)
-})
-
-function togglePrintId(swId: string) {
-  const idx = printSelectedIds.value.indexOf(swId)
-  if (idx >= 0) printSelectedIds.value.splice(idx, 1)
-  else printSelectedIds.value.push(swId)
-}
-
-function printSingleSwitch(swId: string) {
-  window.open(`/sites/${siteId.value}/switches/print?ids=${swId}`, '_blank')
-}
-
-function openPrintPage() {
-  if (printSelectedIds.value.length === 0) return
-  const ids = printSelectedIds.value.join(',')
-  window.open(`/sites/${siteId.value}/switches/print?ids=${ids}`, '_blank')
-}
-
-// Reuse groupedItems for print popover site grouping
-
-const search = ref('')
-const locationFilter = ref<string | undefined>(undefined)
-const roleFilter = ref<string | undefined>(undefined)
-const tagFilter = ref<string | undefined>(undefined)
 const showDeleteDialog = ref(false)
 const deleteTarget = ref<Switch | null>(null)
 const deleting = ref(false)
@@ -609,85 +351,18 @@ const tagOptions = computed(() =>
   availableTags.value.map(tg => ({ value: tg, label: tg }))
 )
 
-const filteredItems = computed(() => {
-  let result = [...allItems.value]
+const { search, locationFilter, roleFilter, tagFilter, filteredItems, groupedItems } = useSwitchListFilters(allItems, siteId, siteMap)
 
-  if (search.value) {
-    const q = search.value.toLowerCase()
-    result = result.filter((s) =>
-      s.name?.toLowerCase().includes(q) || s.model?.toLowerCase().includes(q) ||
-      s.management_ip?.toLowerCase().includes(q) || s.serial_number?.toLowerCase().includes(q) ||
-      s.manufacturer?.toLowerCase().includes(q)
-    )
-  }
-
-  if (locationFilter.value) {
-    result = result.filter((s) => s.location === locationFilter.value)
-  }
-
-  if (roleFilter.value) {
-    result = result.filter((s) => s.role === roleFilter.value)
-  }
-
-  if (tagFilter.value) {
-    result = result.filter((s) => s.tags?.includes(tagFilter.value!))
-  }
-
-  // Sort favorites first
-  result.sort((a, b) => {
-    if (a.is_favorite && !b.is_favorite) return -1
-    if (!a.is_favorite && b.is_favorite) return 1
-    return 0
-  })
-
-  return result
-})
+const print = useSelectionPopover(filteredItems, groupedItems)
+const qr = useSelectionPopover(filteredItems, groupedItems)
 
 watch(items, (newItems) => {
   sortedItems.value = [...newItems]
 }, { immediate: true })
 
 watch(filteredItems, (fi) => {
-  if (viewMode.value === 'grid') {
-    sortedItems.value = fi
-  }
+  sortedItems.value = fi
 })
-
-const groupedItems = computed(() => {
-  if (siteId.value !== 'all') return [{ siteId: '', siteName: '', items: filteredItems.value }]
-  const groups: { siteId: string; siteName: string; items: Switch[] }[] = []
-  const groupMap = new Map<string, Switch[]>()
-  for (const item of filteredItems.value) {
-    const sid = item.site_id || ''
-    if (!groupMap.has(sid)) groupMap.set(sid, [])
-    groupMap.get(sid)!.push(item)
-  }
-  for (const [sid, items] of groupMap) {
-    groups.push({ siteId: sid, siteName: siteMap.value[sid] || sid, items })
-  }
-  return groups
-})
-
-type BadgeColor = 'error' | 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'neutral'
-
-function roleColor(role: string): BadgeColor {
-  const map: Record<string, BadgeColor> = {
-    core: 'error',
-    distribution: 'info',
-    access: 'success',
-    management: 'warning'
-  }
-  return map[role] || 'neutral'
-}
-
-function getPortStats(sw: Switch) {
-  const ports = sw.ports || []
-  return {
-    up: ports.filter((p) => p.status === 'up').length,
-    down: ports.filter((p) => p.status === 'down').length,
-    disabled: ports.filter((p) => p.status === 'disabled').length
-  }
-}
 
 async function saveSortOrder() {
   const order = sortedItems.value.map((s) => s.id)
@@ -731,6 +406,22 @@ async function onDuplicate(row: Switch) {
     await loadData()
     if (result?.id) await navigateTo(`/sites/${siteId.value}/switches/${result.id}`)
   } catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' }) }
+}
+
+function printSingleSwitch(swId: string) {
+  window.open(`/sites/${siteId.value}/switches/print?ids=${swId}`, '_blank')
+}
+
+function openPrintPage() {
+  if (print.selectedIds.length === 0) return
+  const ids = print.selectedIds.join(',')
+  window.open(`/sites/${siteId.value}/switches/print?ids=${ids}`, '_blank')
+}
+
+function openQrPrintPage() {
+  if (qr.selectedIds.length === 0) return
+  const ids = qr.selectedIds.join(',')
+  window.open(`/sites/${siteId.value}/switches/qr-print?ids=${ids}`, '_blank')
 }
 
 const { apiFetch } = useApiFetch()
