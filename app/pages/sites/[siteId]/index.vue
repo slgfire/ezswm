@@ -147,44 +147,43 @@
 
       <!-- IP Utilization + Recent Activity side by side -->
       <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <UCard v-if="stats.networkUtilization.length" class="stagger-item h-full flex flex-col" :ui="{ body: 'flex-1' }">
-          <template #header><h2 class="font-semibold">{{ $t('dashboard.ipUtilization') }}</h2></template>
-          <div class="space-y-4">
-            <div v-for="net in stats.networkUtilization" :key="net.id" class="space-y-1">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2 min-w-0">
-                  <span v-if="net.vlan_color" class="inline-block h-2.5 w-2.5 shrink-0 rounded" :style="{ backgroundColor: net.vlan_color }" />
-                  <NuxtLink :to="`/sites/${siteId}/networks/${net.id}`" class="truncate text-sm hover:text-primary-400">{{ net.name }}</NuxtLink>
-                  <span v-if="net.vlan_name" class="hidden text-xs text-gray-500 sm:inline">VLAN {{ net.vlan_id }}</span>
-                </div>
-                <span class="font-mono text-sm" :class="net.percentage > 80 ? 'text-red-400' : net.percentage > 50 ? 'text-yellow-400' : 'text-gray-400'">{{ net.percentage }}%</span>
+        <UCard v-if="stats.networkUtilization.length" class="stagger-item">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h2 class="font-semibold">{{ $t('dashboard.ipUtilization') }}</h2>
+              <span class="text-xs text-gray-500">{{ stats.networkUtilization.length }} {{ $t('networks.title').toLowerCase() }}</span>
+            </div>
+          </template>
+          <div class="space-y-1.5">
+            <div v-for="net in visibleUtilization" :key="net.id">
+              <div class="flex items-center gap-2">
+                <span v-if="net.vlan_color" class="h-2 w-2 shrink-0 rounded-full" :style="{ backgroundColor: net.vlan_color }" />
+                <NuxtLink :to="`/sites/${siteId}/networks/${net.id}`" class="min-w-0 flex-1 truncate text-sm hover:text-primary-400">{{ net.name }}</NuxtLink>
+                <code class="shrink-0 font-mono text-[11px] text-gray-500">{{ net.subnet }}</code>
+                <span class="w-9 shrink-0 text-right font-mono text-xs" :class="net.percentage > 80 ? 'text-red-400' : net.percentage > 50 ? 'text-yellow-400' : 'text-gray-400'">{{ net.percentage }}%</span>
               </div>
-              <div class="flex h-2 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
-                <div
-                  class="h-full transition-all"
-                  :class="net.percentage > 80 ? 'bg-red-500' : 'bg-green-500'"
-                  :style="{ width: `${Math.min(net.percentage, 100)}%` }"
-                />
-                <div
-                  v-if="net.dhcp_percent > 0"
-                  class="h-full bg-blue-500/60 transition-all"
-                  :style="{ width: `${Math.min(net.dhcp_percent, 100 - net.percentage)}%` }"
-                />
-                <div
-                  v-if="net.reserved_percent > 0"
-                  class="h-full bg-yellow-500/50 transition-all"
-                  :style="{ width: `${Math.min(net.reserved_percent, 100 - net.percentage - net.dhcp_percent)}%` }"
-                />
+              <div class="mt-0.5 flex h-1.5 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
+                <div class="h-full transition-all" :class="net.percentage > 80 ? 'bg-red-500' : 'bg-primary-500'" :style="{ width: `${Math.min(net.percentage, 100)}%` }" />
+                <div v-if="net.dhcp_percent > 0" class="h-full bg-blue-500/60 transition-all" :style="{ width: `${Math.min(net.dhcp_percent, 100 - net.percentage)}%` }" />
+                <div v-if="net.reserved_percent > 0" class="h-full bg-yellow-500/50 transition-all" :style="{ width: `${Math.min(net.reserved_percent, 100 - net.percentage - net.dhcp_percent)}%` }" />
               </div>
             </div>
           </div>
+          <button
+            v-if="sortedUtilization.length > UTIL_TOP_N"
+            class="mt-2 flex w-full items-center justify-center gap-1 text-xs text-gray-400 hover:text-primary-400 transition-colors"
+            @click="showAllNetworks = !showAllNetworks"
+          >
+            <UIcon :name="showAllNetworks ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
+            {{ showAllNetworks ? $t('common.showLess') : $t('common.showAll', { count: sortedUtilization.length }) }}
+          </button>
           <div v-if="stats.networkUtilization.length <= 1" class="mt-3 flex items-center gap-2 text-xs text-gray-500">
             <UIcon name="i-heroicons-light-bulb" class="h-3.5 w-3.5 text-yellow-500" />
             <NuxtLink :to="`/sites/${siteId}/networks/create`" class="hover:text-primary-400">Add more networks to track utilization</NuxtLink>
           </div>
           <template #footer>
             <div v-if="stats.networkUtilization.some((n: any) => n.dhcp_percent > 0 || n.reserved_percent > 0)" class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-gray-400">
-              <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-green-500" /> Allocated</span>
+              <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-primary-500" /> Allocated</span>
               <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-blue-500/60" /> DHCP</span>
               <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-yellow-500/50" /> Reserved</span>
               <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-gray-500/30" /> Free</span>
@@ -287,6 +286,15 @@ const portUpPercent = computed(() =>
 
 const portDisabledPercent = computed(() =>
   totalPorts.value > 0 ? (stats.value!.portStatus!.disabled / totalPorts.value) * 100 : 0
+)
+
+const UTIL_TOP_N = 10
+const showAllNetworks = ref(false)
+const sortedUtilization = computed(() =>
+  [...(stats.value?.networkUtilization ?? [])].sort((a, b) => b.percentage - a.percentage)
+)
+const visibleUtilization = computed(() =>
+  showAllNetworks.value ? sortedUtilization.value : sortedUtilization.value.slice(0, UTIL_TOP_N)
 )
 
 

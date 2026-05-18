@@ -82,6 +82,8 @@
     "all": "Alle",
     "type": "Typ",
     "showing": "Zeige {from}-{to} von {total} Einträgen",
+    "showAll": "Alle {count} anzeigen",
+    "showLess": "Weniger anzeigen",
     "perPage": "Pro Seite",
     "duplicate": "Duplizieren",
     "export": "Exportieren",
