@@ -1,35 +1,163 @@
-# Repository Guidelines
+# CLAUDE.md - ezSWM
 
-## Project Structure & Module Organization
-- `app/` contains the Nuxt frontend: routes in `app/pages`, shared UI in `app/components`, layouts in `app/layouts`, and helpers in `app/composables` and `app/utils`.
-- `server/` contains the Nitro backend: API handlers in `server/api`, Zod schemas in `server/validators`, storage access in `server/repositories`, and file helpers in `server/storage`.
-- `types/` holds shared TypeScript types, `i18n/locales/` holds translations, `public/` holds static assets, and `docs/` contains the VitePress documentation site.
-- `tests/` contains unit tests (`*.test.ts`) and Playwright end-to-end tests in `tests/e2e/*.spec.ts`.
-- Persisted app data lives in `./data` locally and `/app/data` in containers. Keep direct file access inside `server/repositories`.
+## Mission
 
-## Build, Test, and Development Commands
-- `npm run dev` starts the app locally on port `3000`.
-- `npm run build` creates the production build; `npm run preview` serves that build locally.
-- `npm run typecheck` runs Nuxt type checking in strict TypeScript mode.
-- `node --import tsx --test tests/*.test.ts` runs the unit tests used in CI.
-- `npx playwright test` runs browser tests; start the app first with `npm run dev`.
-- `npm run docs:dev` and `npm run docs:build` run the docs site from `docs/`.
-- `docker compose up --build` is the quickest container-level verification pass.
+Build a modern NetBox-style infrastructure tool for switch and IP
+management.
 
-## Coding Style & Naming Conventions
-- Match the existing style: 2-space indentation, single quotes, and no semicolons.
-- Prefer Vue SFCs with `<script setup lang="ts">`.
-- Use PascalCase for Vue components such as `AppHeader.vue`, and camelCase for TypeScript modules such as `switchRepository.ts`.
-- Keep UI text, comments, and documentation in English.
-- No dedicated lint or format script is checked in, so keep changes consistent with nearby files and finish with `npm run typecheck`.
+Scope:
+- Switch inventory
+- Port documentation
+- Switch port visualization
+- VLAN-based network documentation
+- IP allocation management
+- IP range management
+- Network topology visualization
 
-## Testing Guidelines
-- Add unit tests for pure logic and repository behavior in `tests/*.test.ts`.
-- Add Playwright coverage for user flows and regressions in `tests/e2e/*.spec.ts`; reserve `*.setup.ts` for shared setup like auth state.
-- Use behavior-focused names such as `ipv4.test.ts` and `crud-switches.spec.ts`.
+---
 
-## Commit & Pull Request Guidelines
-- Follow the conventional commit style already used here: `feat(device): ...`, `fix(auth): ...`, `chore: ...`.
-- Keep commits scoped and imperative; include the domain when it adds clarity.
-- PRs should describe user-visible changes, list verification steps, link related issues, and include screenshots for UI changes.
-- Update `docs/` and relevant locale files when routes, APIs, or user-facing text change.
+## Read first
+
+Before starting any task read:
+
+- .ai/STRATEGY.md
+- .ai/ARCHITECTURE.md
+- .ai/MIGRATION_STATUS.md
+- .ai/specs/SPEC_DATA_MODEL.md
+- .ai/specs/SPEC_BACKEND.md
+- .ai/specs/SPEC_FRONTEND.md
+- .ai/specs/SPEC_INFRASTRUCTURE.md
+
+These documents define roadmap, architecture, specifications and current state.
+
+---
+
+## Non-Negotiable Rules
+
+This project is a clean start.
+
+Do NOT:
+- reuse broken prototypes
+- patch legacy implementations
+- refactor unknown code without understanding it
+
+Codebase rules:
+
+- Prompts may be German
+- Code, comments, UI and documentation must be English
+- Use Nuxt 4.x
+- UI built with Nuxt UI v4
+- No database
+- JSON storage only
+
+Persistent storage path:
+
+`/app/data`
+
+---
+
+## Technology Stack
+
+Use exactly:
+
+- Nuxt 4.x
+- TypeScript (strict mode)
+- Nuxt UI v4
+- Nuxt i18n
+- Tailwind CSS (via Nuxt UI)
+- Zod (request validation)
+- bcrypt (password hashing)
+- jsonwebtoken (JWT)
+- nanoid (ID generation)
+- Docker
+- docker-compose
+
+Dependencies must be pinned exactly. No `^`, no `~`, no `latest`.
+
+Commit the lockfile.
+
+---
+
+## Architecture Rules
+
+- Only `server/repositories` may access storage
+- JSON writes must be atomic (write temp file → rename)
+- Domain types live in `types/`
+- Storage utilities live in `server/storage`
+- Zod validators live in `server/validators`
+- API routes live in `server/api`
+- UI logic stays in `app/`
+
+Follow the architecture described in:
+
+- .ai/ARCHITECTURE.md
+- .ai/specs/SPEC_BACKEND.md
+
+---
+
+## UI Layout
+
+The UI follows a dashboard-style layout built with Nuxt UI v4.
+
+Required structure:
+
+- Sidebar navigation
+- Header bar (search, user menu, theme toggle)
+- Breadcrumb navigation
+- Dashboard panels
+- Dark mode (default)
+- Fully responsive (desktop, tablet, smartphone)
+
+Do NOT create a custom dashboard shell.
+
+---
+
+## Working Mode
+
+Always follow this order:
+
+1. Fix runtime/build errors
+2. Verify stability
+3. Update .ai/MIGRATION_STATUS.md
+4. Propose next task
+5. Implement exactly one task
+
+Never implement features while blockers exist.
+
+---
+
+## Verification Requirements
+
+Before finishing any stage verify:
+
+```bash
+npm run dev
+npm run build
+docker compose build --no-cache
+docker compose up
+```
+
+---
+
+## Acceptance Criteria
+
+A stage is complete only if:
+
+- No client or server console errors exist
+- i18n works correctly
+- JSON persistence works in `/app/data`
+- Docker build succeeds
+- Docker runtime succeeds with healthcheck
+- MIGRATION_STATUS.md updated
+
+---
+
+## References
+
+- Project roadmap: .ai/STRATEGY.md
+- Architecture definition: .ai/ARCHITECTURE.md
+- Current implementation status: .ai/MIGRATION_STATUS.md
+- Data model specification: .ai/specs/SPEC_DATA_MODEL.md
+- Backend specification: .ai/specs/SPEC_BACKEND.md
+- Frontend specification: .ai/specs/SPEC_FRONTEND.md
+- Infrastructure specification: .ai/specs/SPEC_INFRASTRUCTURE.md
