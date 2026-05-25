@@ -1,8 +1,9 @@
 {
   "name": "ezswm",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "type": "module",
   "private": true,
+  "packageManager": "pnpm@11.0.9",
   "scripts": {
     "dev": "nuxt dev",
     "build": "nuxt build",
@@ -11,9 +12,9 @@
     "typecheck": "nuxt typecheck",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "docs:dev": "npm run --prefix docs dev",
-    "docs:build": "npm run --prefix docs build",
-    "docs:preview": "npm run --prefix docs preview",
+    "docs:dev": "pnpm --filter ezswm-docs dev",
+    "docs:build": "pnpm --filter ezswm-docs build",
+    "docs:preview": "pnpm --filter ezswm-docs preview",
     "test": "vitest run",
     "test:watch": "vitest"
   },

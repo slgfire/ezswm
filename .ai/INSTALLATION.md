@@ -3,46 +3,37 @@
 ## Requirements
 
 - **Docker and Docker Compose** (recommended)
-- OR **Node.js 22 LTS** for local development
+- OR **Node.js 22 LTS** + **pnpm 11** for local development
 
 ## Docker (Recommended)
+
+The repository ships two compose files:
+
+| File | Purpose |
+|---|---|
+| `compose.yaml` | Pulls the pre-built image from GHCR (`ghcr.io/slgfire/ezswm:latest`). Default for end users. |
+| `compose.dev.yaml` | Builds the image from the local source tree. For development or testing unreleased changes. |
+
+### Quick deploy (no source checkout needed)
+
+Just grab the compose file and a `JWT_SECRET`:
+
+```bash
+curl -O https://raw.githubusercontent.com/slgfire/ezswm/main/compose.yaml
+mkdir -p data && sudo chown -R 1000:1000 data
+export JWT_SECRET=$(openssl rand -hex 32)
+docker compose pull && docker compose up -d
+```
+
+Data persists in `./data` next to the compose file (bind mount — inspect and back up directly with normal file tools). If your host user isn't uid 1000, see [Custom UID / GID](#custom-uid--gid).
+
+### From source
 
 ```bash
 git clone https://github.com/slgfire/ezswm.git
 cd ezswm
-```
-
-Create a `docker-compose.yml`:
-
-```yaml
-services:
-  ezswm:
-    image: ghcr.io/slgfire/ezswm:latest
-    ports:
-      - "3000:3000"
-    environment:
-      - NUXT_JWT_SECRET=your-secret-key-here
-    volumes:
-      - ezswm-data:/app/data
-    restart: unless-stopped
-
-volumes:
-  ezswm-data:
-```
-
-Start the application:
-
-```bash
-docker compose up -d
-```
-
-Alternatively, build from source instead of pulling the image:
-
-```yaml
-services:
-  ezswm:
-    build: .
-    # ... same config as above
+export JWT_SECRET=$(openssl rand -hex 32)
+docker compose -f compose.dev.yaml up --build -d
 ```
 
 ## Docker Configuration
@@ -54,18 +45,42 @@ services:
 | `NUXT_JWT_SECRET` | Yes | (empty) | Secret key for JWT token signing. Use a long random string. |
 | `PORT` | No | `3000` | Port the application listens on. |
 | `DATA_DIR` | No | `/app/data` | Directory for JSON data storage. |
+| `PUID` / `PGID` | No | `1000` / `1000` | UID/GID the container process runs as. Set `PUID=0 PGID=0` to run as root. |
 
 In Docker, environment variables that configure Nuxt runtime must use the `NUXT_` prefix (e.g., `NUXT_JWT_SECRET` instead of `JWT_SECRET`).
 
+### Custom UID / GID
+
+The image runs as uid `1000` by default. If your host user isn't uid 1000 (e.g. Synology, Unraid, custom server setup), either:
+
+**Option A — chown `./data` to the container uid (recommended):**
+
+```bash
+export PUID=1026 PGID=100   # whatever your host uses
+sudo chown -R $PUID:$PGID ./data
+docker compose up -d
+```
+
+**Option B — run the container as root** (writes everywhere, no chown needed):
+
+```bash
+PUID=0 PGID=0 docker compose up -d
+```
+
+Both `PUID` and `PGID` are read from the environment by the compose file.
+
 ### Data Persistence
 
-Mount a volume or bind mount to `/app/data` to persist data across container restarts. Without this, all data is lost when the container is removed.
+The compose files bind-mount `./data` into the container at `/app/data`. All JSON state lives there. Back up by copying the directory.
+
+If you prefer a Docker named volume instead, edit your compose file:
 
 ```yaml
 volumes:
-  - ./data:/app/data      # bind mount
-  # or
-  - ezswm-data:/app/data  # named volume
+  - ezswm-data:/app/data
+
+volumes:
+  ezswm-data:
 ```
 
 ## Local Development
@@ -73,14 +88,14 @@ volumes:
 ```bash
 git clone https://github.com/slgfire/ezswm.git
 cd ezswm
-npm install
+pnpm install
 ```
 
 Set the JWT secret and start the dev server:
 
 ```bash
 export JWT_SECRET=dev-secret-change-me
-npm run dev
+pnpm dev
 ```
 
 The application is available at `http://localhost:3000`.
@@ -100,8 +115,8 @@ docker compose up -d
 
 ```bash
 git pull
-docker compose build --no-cache
-docker compose up -d
+docker compose -f compose.dev.yaml build --no-cache
+docker compose -f compose.dev.yaml up -d
 ```
 
 ## Backup

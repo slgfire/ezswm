@@ -1,0 +1,10 @@
+packages:
+  - 'docs'
+
+# Auto-managed by `pnpm approve-builds`. Whitelist of packages
+# allowed to run install/postinstall scripts (native binaries).
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  unrs-resolver: true
+  vue-demi: true

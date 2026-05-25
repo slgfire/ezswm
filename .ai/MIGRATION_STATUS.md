@@ -2,10 +2,37 @@
 
 ## Latest Stage
 
-Date: 2026-05-13
-Stage: Phase 31 — Component Refactoring: Extract Composables & Sub-Components
+Date: 2026-05-24
+Stage: Tooling — pnpm Migration + Compose Split + GHCR Volume Fix
 Status: Complete
-Version: 0.18.0
+Version: 0.18.1
+
+### Tooling Migration Changes
+- **Package manager:** npm → pnpm 11.0.9 (pinned via `packageManager` field, activated via `corepack enable`)
+- **Workspace:** Root + `docs/` configured as pnpm workspace (`pnpm-workspace.yaml`, single root `pnpm-lock.yaml`)
+- **Supply-chain guard:** `.npmrc` enforces `minimum-release-age=10080` (1 week) — fresh package versions younger than this won't resolve
+- **Build-script approvals:** `allowBuilds` in `pnpm-workspace.yaml` whitelists `@parcel/watcher`, `esbuild`, `unrs-resolver`, `vue-demi` (pnpm 10+ blocks scripts by default)
+- **Dockerfile:** Switched to `corepack enable` + `pnpm install --frozen-lockfile` with `ENV CI=true` (avoids interactive modules-purge prompt in non-TTY contexts)
+- **CI workflows:** `ci.yml` + `docs.yml` use `pnpm/action-setup@v4` + `actions/setup-node@v6` with `cache: pnpm`
+- **Root scripts:** `docs:*` scripts use `pnpm --filter ezswm-docs <cmd>` instead of `npm run --prefix docs`
+
+### Compose Split + GHCR Volume Fix
+- **`compose.yaml`:** Now pulls `ghcr.io/slgfire/ezswm:latest` (no `build:`) — end users can `curl` the file and run without a source checkout
+- **`compose.dev.yaml`:** New file — `build: .` for local development / Dockerfile iteration
+- **Volume strategy:** Kept the `./data` bind mount (transparent backup/inspect from host) but solved the original EACCES bug by combining with the uid 1000 default + `PUID`/`PGID` override (see below). Users with host uid ≠ 1000 chown `./data` once, or run as root via `PUID=0`
+- **Verified:** `docker compose pull && docker compose up -d` works end-to-end against GHCR — `/api/health` returns `{"status":"ok","data_writable":true}` (tested earlier with a named-volume variant; same Dockerfile, same runtime)
+
+### Container User UID Change (BREAKING for existing deployments)
+- **Old:** custom `ezswm` user via `addgroup -S` / `adduser -S` → got Alpine system uid `100`, gid `101`
+- **New:** reuse the existing `node` user (uid `1000`, gid `1000`) baked into `node:22-alpine` — standard user range, matches common Nuxt/Nitro Docker templates, more compatible with host UIDs
+- **Configurable per deployment:** compose files now declare `user: "${PUID:-1000}:${PGID:-1000}"` — override via env (e.g. Synology `PUID=1026`, or `PUID=0 PGID=0` for root)
+- **Migration for existing GHCR users on v0.18.0:** after pulling the new image, chown your `./data` directory once: `sudo chown -R 1000:1000 ./data` (or set `PUID=0 PGID=0` to run as root and skip)
+- **Verified:** default (`uid=1000(node)`) and root override (`PUID=0 → uid=0(root)`) both serve `/api/health` ok
+
+### Docs Updated
+README, AGENTS.md, .ai/INSTALLATION.md, .ai/ARCHITECTURE.md, .ai/STRATEGY.md, .ai/specs/SPEC_INFRASTRUCTURE.md, docs/guide/installation.md, docs/de/guide/installation.md
+
+### Previous: Phase 31 — Component Refactoring: Extract Composables & Sub-Components
 
 ### Phase 31 Changes
 - **Goal:** Reduce 5 files >750 lines by extracting composables and sub-components — no feature changes, no UI changes

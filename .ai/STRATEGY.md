@@ -40,8 +40,8 @@ Full specifications:
 - [ ] Configure `nuxt.config.ts` (Nuxt UI v2, i18n, color mode)
 - [ ] Set up project structure (directories)
 - [ ] Set up `i18n/locales/en.json` and `i18n/locales/de.json`
-- [ ] Verify `npm run dev`
-- [ ] Verify `npm run build`
+- [ ] Verify `pnpm dev`
+- [ ] Verify `pnpm build`
 - [ ] Verify Docker build and runtime
 
 ### Phase 2: Storage & Data Foundation

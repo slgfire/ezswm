@@ -353,8 +353,8 @@ Docker uses multi-stage builds.
 
 Builder:
 ```
-npm ci
-npm run build
+pnpm install --frozen-lockfile
+pnpm build
 ```
 
 Runtime:
