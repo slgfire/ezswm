@@ -43,7 +43,10 @@ ENV HOST=0.0.0.0
 ENV NODE_ENV=production
 ENV DATA_DIR=/app/data
 
+# BusyBox wget in the alpine base resolves `localhost` to IPv6 `::1` first,
+# but nitro listens only on IPv4 0.0.0.0:3000 — use 127.0.0.1 to force IPv4
+# so the healthcheck doesn't loop on "Connection refused".
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/health || exit 1
 
 CMD ["node", ".output/server/index.mjs"]
