@@ -31,7 +31,7 @@
         class="sticker-cell"
       >
         <div class="sticker-inner">
-          <canvas :ref="(el) => setCanvasRef(sticker.id, el as HTMLCanvasElement)" class="sticker-qr" />
+          <canvas :ref="(el: Element | null) => setCanvasRef(sticker.id, el as HTMLCanvasElement)" class="sticker-qr" />
           <div class="sticker-info">
             <div class="sticker-name">{{ sticker.name }}</div>
             <div v-if="sticker.model" class="sticker-model">{{ sticker.model }}</div>
