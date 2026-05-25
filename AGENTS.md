@@ -131,11 +131,21 @@ Never implement features while blockers exist.
 Before finishing any stage verify:
 
 ```bash
-npm run dev
-npm run build
-docker compose build --no-cache
-docker compose up
+pnpm dev
+pnpm build
+docker compose -f compose.dev.yaml build --no-cache
+docker compose -f compose.dev.yaml up
 ```
+
+Package manager: **pnpm** (workspace at root, `docs/` is a workspace
+member). Dependency installs use `pnpm install --frozen-lockfile`.
+`.npmrc` enforces `minimum-release-age=10080` (1 week) — new packages
+younger than that won't resolve, this is intentional supply-chain
+protection.
+
+Compose files: `compose.yaml` pulls the released GHCR image (end-user
+default). `compose.dev.yaml` builds locally — that's the one to use
+when verifying Dockerfile/build changes.
 
 ---
 

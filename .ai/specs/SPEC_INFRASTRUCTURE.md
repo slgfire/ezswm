@@ -300,26 +300,26 @@ ezswm/
 ### Prerequisites
 
 - Node.js 22 LTS
-- npm (included with Node.js)
+- pnpm 11.x (`corepack enable` activates the version pinned in `packageManager`)
 - Docker + docker-compose (for container testing)
 
 ### Local Development
 
 ```bash
-# Install dependencies
-npm install
+# Install dependencies (workspace install — covers root + docs/)
+pnpm install --frozen-lockfile
 
 # Start development server
-npm run dev
+pnpm dev
 
 # Build for production
-npm run build
+pnpm build
 
 # Preview production build
-npm run preview
+pnpm preview
 ```
 
-### npm Scripts
+### pnpm Scripts
 
 | Script | Command | Description |
 |--------|---------|-------------|
@@ -382,27 +382,31 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci
+ENV CI=true
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY docs/package.json ./docs/
+RUN pnpm install --frozen-lockfile
 
 COPY . .
-RUN npm run build
+RUN pnpm build
 
 # Stage 2: Runtime
 FROM node:22-alpine AS runtime
 
 WORKDIR /app
 
-# Create non-root user
-RUN addgroup -S ezswm && adduser -S ezswm -G ezswm
+# Use existing `node` user (uid 1000) from node:22-alpine base image
+# instead of creating a custom user — same numeric IDs, no clash.
 
 # Copy built output
 COPY --from=builder /app/.output .output
 
-# Create data directory
-RUN mkdir -p /app/data && chown -R ezswm:ezswm /app/data
+# Data directory owned by the runtime user
+RUN mkdir -p /app/data && chown -R node:node /app/data
 
-USER ezswm
+USER node
 
 EXPOSE 3000
 
@@ -420,7 +424,7 @@ CMD ["node", ".output/server/index.mjs"]
 ### Key Docker Decisions
 
 - **Alpine** base for small image size
-- **Non-root user** (`ezswm`) for security
+- **Non-root user** (`node`, uid 1000) for security
 - **HEALTHCHECK** using `/api/health` endpoint
 - Only `.output` directory is copied to runtime (minimal image)
 - No source code in production image
@@ -535,24 +539,25 @@ Before completing any implementation stage, verify all of the following:
 
 ```bash
 # Must succeed without errors
-npm run dev
+pnpm dev
 
 # Must build without errors
-npm run build
+pnpm build
 
 # TypeScript must pass
-npm run typecheck
+pnpm typecheck
 ```
 
 ### Docker
 
 ```bash
-# Must build without errors
-docker compose build --no-cache
+# Must build without errors (compose.dev.yaml builds from source;
+# compose.yaml pulls the GHCR image and is for end-user deployment)
+docker compose -f compose.dev.yaml build --no-cache
 
 # Must start and pass healthcheck
-docker compose up -d
-docker compose ps  # Status: healthy
+docker compose -f compose.dev.yaml up -d
+docker compose -f compose.dev.yaml ps  # Status: healthy
 
 # Must serve the application
 curl http://localhost:3000/api/health
@@ -634,7 +639,7 @@ Based on STRATEGY.md, refined with SPEC decisions:
 - Install and configure all dependencies (pinned versions)
 - Configure nuxt.config.ts (Nuxt UI v2, i18n, color mode)
 - Set up project structure (directories)
-- Verify: npm run dev, npm run build, Docker build + run
+- Verify: pnpm dev, pnpm build, Docker build + run
 
 ### Phase 2: Storage & Data Foundation
 - Define all TypeScript interfaces in types/

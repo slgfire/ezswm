@@ -1,8 +1,25 @@
+# Default compose file — pulls the pre-built image from GHCR.
+# No source checkout required, just this file and a JWT_SECRET.
+#
+# Usage:
+#   export JWT_SECRET=$(openssl rand -hex 32)
+#   docker compose pull && docker compose up -d
+#
+# For local development / building from source, use compose.dev.yaml:
+#   docker compose -f compose.dev.yaml up --build
+#
+# Data lives in ./data on the host (bind mount). Inspect/backup directly.
+# The container process runs as uid 1000 by default — if your host user
+# isn't uid 1000, override via PUID/PGID and chown ./data accordingly:
+#   sudo chown -R $PUID:$PGID ./data
+# Or just run as root (PUID=0 PGID=0) — writes everywhere, no chown.
+
 services:
   ezswm:
-    build: .
+    image: ghcr.io/slgfire/ezswm:latest
     container_name: ezswm
     restart: unless-stopped
+    user: "${PUID:-1000}:${PGID:-1000}"
     ports:
       - "${PORT:-3000}:3000"
     volumes:
