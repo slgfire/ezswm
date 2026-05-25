@@ -8,7 +8,14 @@ title: User Guide
 
 ### First Login
 
-When you launch ezSWM for the first time, a setup wizard guides you through creating an admin account. Enter a username, display name, and password. After setup, you are redirected to the login screen.
+When you launch ezSWM for the first time, a setup wizard guides you through two steps:
+
+1. **Admin account** — pick a username, display name and password.
+2. **First site** — give your first site a name (e.g. `HQ`, `Datacenter`, `LAN-Party`). Sites group switches, VLANs and networks; you can rename it later and add more.
+
+If you're upgrading from a version that did not yet have sites, the wizard skips step 1 and asks only for the site name. Any existing switches, VLANs and networks are automatically reassigned to the site you create.
+
+After setup, you are redirected to the login screen.
 
 ![Login screen](/images/screenshot-login.png)
 
@@ -524,9 +531,9 @@ Navigate to **Sites** in the sidebar to see all sites. Click **Create Site** to 
 
 When you select a site from the dropdown in the sidebar, all views (switches, VLANs, networks, topology) are scoped to that site. Select "All Sites" to see everything across all locations.
 
-### Default Site
+### First Site
 
-On first setup, a "Default" site is created automatically. You can rename it or create additional sites at any time.
+The first site is created during the [setup wizard](#first-login) and you choose its name yourself. You can rename it later or create additional sites at any time.
 
 ## Architecture Overview
 

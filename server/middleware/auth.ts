@@ -4,7 +4,8 @@ const PUBLIC_PATHS = [
   '/api/auth/setup',
   '/api/auth/login',
   '/api/auth/logout',
-  '/api/health'
+  '/api/health',
+  '/api/setup/status'
 ]
 
 export default defineEventHandler((event) => {

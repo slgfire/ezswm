@@ -2,6 +2,25 @@
 
 ## Latest Stage
 
+Date: 2026-05-25
+Stage: Setup Wizard — Operator-Named First Site
+Status: Complete
+Version: 0.18.2
+
+### Setup Wizard Changes
+- **First-run flow now has two steps:** Step 1 = admin account (existing), Step 2 = first site naming. Operator chooses the name instead of getting an opaque "Default" site
+- **Migration scenario covered:** legacy installs without `sites.json` no longer silently get a "Default" site at startup — the same wizard is reused but only Step 2 is shown (banner reports how many orphan switches/VLANs/networks will be reassigned)
+- **Settings:** new `sites_initialized: boolean` flag in `AppSettings`. Backfilled on startup for existing installs (`sites_initialized = sites.length > 0`) so returning users aren't bounced into the wizard
+- **New endpoints:** `GET /api/setup/status` (public — returns setup/sites flags + orphan counts), `POST /api/setup/initial-site` (auth-required — creates the site, reassigns orphans, flips `sites_initialized=true`; locked once flipped)
+- **`server/plugins/migrateSites.ts`:** rewritten as detection-only — counts orphans and logs them, never auto-creates a site
+- **Middleware (`auth.global.ts`):** routes through `/setup` for both `!setup_completed` and `!sites_initialized` cases; allows login in between when only the site step is pending
+- **`useAuth` composable:** adds `sitesInitialized`, `setupOrphans`, `createInitialSite()`; `checkSetup()` now reads `/api/setup/status` instead of `/api/settings`
+
+### Docs Updated
+docs/guide/user-guide.md, docs/de/guide/user-guide.md (i18n: `setup.*` keys added to EN+DE)
+
+### Previous: Tooling — pnpm Migration + Compose Split + GHCR Volume Fix
+
 Date: 2026-05-24
 Stage: Tooling — pnpm Migration + Compose Split + GHCR Volume Fix
 Status: Complete

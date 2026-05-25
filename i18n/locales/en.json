@@ -56,6 +56,20 @@
     "loginTitle": "Sign in",
     "loginDescription": "Enter your credentials to continue."
   },
+  "setup": {
+    "stepIndicator": "Step {current} of {total}",
+    "stepAccount": "Admin Account",
+    "stepSite": "First Site",
+    "siteTitle": "Name your first site",
+    "siteDescription": "Sites group switches, VLANs and networks. You can rename it later and add more.",
+    "siteName": "Site name",
+    "siteNamePlaceholder": "e.g. HQ, Datacenter, LAN-Party",
+    "siteDescriptionField": "Description (optional)",
+    "siteDescriptionPlaceholder": "Short note about this site",
+    "createSite": "Create Site",
+    "migrationBanner": "We found existing data without a site assignment: {switches} switches, {vlans} VLANs, {networks} networks. They will be assigned to the site you create here.",
+    "createSiteFailed": "Failed to create site"
+  },
   "common": {
     "welcome": "Welcome to ezSWM",
     "save": "Save",

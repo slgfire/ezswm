@@ -8,7 +8,14 @@ title: Benutzerhandbuch
 
 ### Erste Anmeldung
 
-Beim ersten Start von ezSWM führt ein Einrichtungsassistent durch die Erstellung eines Admin-Kontos. Gib einen Benutzernamen, einen Anzeigenamen und ein Passwort ein. Nach der Einrichtung wirst du zum Anmeldebildschirm weitergeleitet.
+Beim ersten Start von ezSWM führt ein Einrichtungsassistent durch zwei Schritte:
+
+1. **Admin-Konto** — wähle einen Benutzernamen, Anzeigenamen und ein Passwort.
+2. **Erste Site** — gib deiner ersten Site einen Namen (z. B. `HQ`, `Rechenzentrum`, `LAN-Party`). Sites gruppieren Switches, VLANs und Netzwerke; du kannst sie später umbenennen oder weitere hinzufügen.
+
+Wenn du von einer Version aktualisierst, die noch keine Sites hatte, überspringt der Wizard Schritt 1 und fragt nur nach dem Site-Namen. Alle vorhandenen Switches, VLANs und Netzwerke werden automatisch der angelegten Site zugeordnet.
+
+Nach der Einrichtung wirst du zum Anmeldebildschirm weitergeleitet.
 
 ![Anmeldebildschirm](/images/screenshot-login.png)
 
@@ -524,9 +531,9 @@ Navigiere zu **Standorte** in der Seitenleiste, um alle Standorte zu sehen. Klic
 
 Wenn du einen Standort im Dropdown der Seitenleiste auswählst, werden alle Ansichten (Switches, VLANs, Netzwerke, Topologie) auf diesen Standort eingeschränkt. Wähle "Alle Standorte", um alles standortübergreifend zu sehen.
 
-### Standard-Standort
+### Erste Site
 
-Bei der Ersteinrichtung wird automatisch ein "Default"-Standort erstellt. Du kannst ihn umbenennen oder jederzeit weitere Standorte anlegen.
+Die erste Site wird im [Einrichtungsassistenten](#erste-anmeldung) angelegt und du wählst den Namen selbst. Du kannst sie später umbenennen oder jederzeit weitere Sites hinzufügen.
 
 ## Architekturübersicht
 
