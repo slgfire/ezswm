@@ -10,7 +10,7 @@ setup('authenticate', async ({ page }) => {
   console.log('Initial URL:', url)
 
   if (url.includes('/setup')) {
-    console.log('Performing first-time setup...')
+    console.log('Performing first-time setup — step 1 (admin account)...')
     // Fill setup form - find inputs by placeholder or position
     const inputs = page.locator('input[type="text"], input:not([type])')
     const passwordInputs = page.locator('input[type="password"]')
@@ -21,6 +21,15 @@ setup('authenticate', async ({ page }) => {
     await passwordInputs.nth(1).fill('password123')  // confirm password
 
     await page.getByRole('button', { name: /setup|complete|einrichtung/i }).click()
+
+    // Two-step wizard: after step 1 we stay on /setup and step 2 (site name)
+    // appears. Wait for the site-name input to be present, then submit it.
+    console.log('Performing first-time setup — step 2 (first site)...')
+    const siteNameInput = page.getByPlaceholder(/HQ|Datacenter|Rechenzentrum|LAN-Party/i)
+    await siteNameInput.waitFor({ state: 'visible', timeout: 15000 })
+    await siteNameInput.fill('E2E Site')
+
+    await page.getByRole('button', { name: /create site|site anlegen/i }).click()
     await page.waitForURL('/', { timeout: 15000 })
   } else if (url.includes('/login')) {
     console.log('Performing login...')
