@@ -519,6 +519,15 @@
       "imported": "Template imported successfully",
       "duplicated": "Template duplicated successfully"
     },
+    "quickCreate": {
+      "title": "Quick Create Template",
+      "description": "Create a basic template right here. You can add more units, blocks, and PoE details later in the full editor.",
+      "trigger": "Create New",
+      "portCount": "Port Count",
+      "portType": "Port Type",
+      "openFullEditor": "Open full editor",
+      "portCountRange": "Port count must be between 1 and 96"
+    },
     "emptyTitle": "No layout templates yet",
     "emptyDescription": "Create your first switch template to define port layouts for your switch models.",
     "confirmDelete": "Are you sure you want to delete this template?",

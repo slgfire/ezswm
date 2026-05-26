@@ -55,7 +55,18 @@
           <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('switches.sections.templateClassification') }}</h2>
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <UFormField :label="$t('switches.fields.layoutTemplate')" name="layout_template_id">
-              <USelect v-model="form.layout_template_id" :items="templateOptions" :placeholder="$t('switches.fields.layoutTemplate')" value-key="value" class="w-full" />
+              <div class="flex gap-2">
+                <USelect v-model="form.layout_template_id" :items="templateOptions" :placeholder="$t('switches.fields.layoutTemplate')" value-key="value" class="flex-1" />
+                <UButton
+                  icon="i-heroicons-plus"
+                  variant="soft"
+                  color="primary"
+                  :title="$t('templates.quickCreate.title')"
+                  @click="showTemplateModal = true"
+                >
+                  {{ $t('templates.quickCreate.trigger') }}
+                </UButton>
+              </div>
             </UFormField>
             <UFormField v-if="form.layout_template_id" :label="$t('switches.stackSize')" name="stack_size">
               <USelect
@@ -97,10 +108,14 @@
         </UButton>
       </div>
     </UForm>
+
+    <TemplateQuickCreateModal v-model="showTemplateModal" @created="onTemplateCreated" />
   </div>
 </template>
 
 <script setup lang="ts">
+import type { LayoutTemplate } from '~~/types/layoutTemplate'
+
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
@@ -110,6 +125,7 @@ const { create } = useSwitches()
 const { items: templates, fetch: fetchTemplates } = useLayoutTemplates()
 
 const submitting = ref(false)
+const showTemplateModal = ref(false)
 
 const tagInput = ref('')
 
@@ -155,6 +171,11 @@ const stackSizeOptions = Array.from({ length: 8 }, (_, i) => ({
 }))
 
 const { clearDirty } = useUnsavedChanges(form)
+
+function onTemplateCreated(template: LayoutTemplate) {
+  templates.value = [...templates.value, template]
+  form.layout_template_id = template.id
+}
 
 const templateOptions = computed(() => {
   const options: { label: string; value: string }[] = []

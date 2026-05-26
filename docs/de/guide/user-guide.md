@@ -119,7 +119,7 @@ Felder:
 - **Rack-Position** -- Position innerhalb des Racks
 - **Management-IP** -- muss eine gültige IPv4-Adresse sein
 - **Firmware-Version** -- aktuell laufende Firmware
-- **Layout-Template** -- wähle ein zuvor erstelltes Template; dies generiert das Port-Raster
+- **Layout-Template** -- wähle ein zuvor erstelltes Template; dies generiert das Port-Raster. Falls kein passendes Template existiert, klicke auf **Neue erstellen** neben dem Dropdown — ein Schnell-Modal fragt Name, Port-Anzahl und Port-Typ ab und das neue Template wird sofort ausgewählt. Über **Vollen Editor öffnen** kommst du zu erweiterten Optionen mit mehreren Units, Blöcken und PoE-Einstellungen.
 - **Stack-Größe** -- Anzahl der Stacking-Mitglieder (1-8). Nur sichtbar, wenn ein Template ausgewählt ist. Bei mehr als 1 werden die Template-Ports für jedes Stack-Mitglied dupliziert, mit automatisch inkrementierten Port-Labels (z.B. GigabitEthernet1/0/1 für Mitglied 1, GigabitEthernet2/0/1 für Mitglied 2). Das Port-Raster zeigt eine visuelle Trennung zwischen Stack-Mitgliedern.
 - **Rolle** -- Core, Distribution, Access oder Management
 - **Tags** -- frei definierbare Tags; tippe und drücke Enter zum Hinzufügen, klicke auf einen Tag zum Entfernen
