@@ -25,6 +25,10 @@ Nach der Anmeldung bietet das Dashboard eine Zusammenfassung deiner Infrastruktu
 
 ![Dashboard](/images/screenshot-dashboard.png)
 
+### Schutz vor nicht gespeicherten Änderungen
+
+Wenn ein Erstellen- oder Bearbeiten-Formular ungespeicherte Änderungen enthält, warnt ezSWM vor dem Verlassen — sowohl beim Klick auf einen Link innerhalb der App als auch beim Schließen des Browser-Tabs. Speichere die Änderungen oder bestätige das Verlassen, um sie zu verwerfen.
+
 ## Layout-Templates
 
 ### Was sie sind

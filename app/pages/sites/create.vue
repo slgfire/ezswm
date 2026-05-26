@@ -49,6 +49,8 @@ const form = reactive({
   description: ''
 })
 
+const { clearDirty } = useUnsavedChanges(form)
+
 function validate(state: typeof form): { name: string; message: string }[] {
   const errors: { name: string; message: string }[] = []
   if (!state.name?.trim()) {
@@ -71,6 +73,7 @@ async function onSubmit() {
         description: form.description.trim() || undefined
       }
     })
+    clearDirty()
     toast.add({ title: t('sites.messages.created', 'Site created'), color: 'success' })
   } catch (e: unknown) {
     const message = (e as { data?: { message?: string } })?.data?.message

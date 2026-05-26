@@ -282,6 +282,8 @@ const form = reactive({
   ]
 })
 
+const { clearDirty } = useUnsavedChanges(form)
+
 const previewPorts = computed(() => {
   const ports: PreviewPort[] = []
   for (const unit of form.units) {
@@ -422,6 +424,7 @@ async function handleSubmit() {
         }))
       })) as LayoutUnit[]
     })
+    clearDirty()
     toast.add({ title: t('templates.messages.created'), color: 'success' })
     const created = result as LayoutTemplate
     const id = created.id
@@ -463,6 +466,8 @@ onMounted(async () => {
         }))
       }))
     } catch { /* ignore, use defaults */ }
+    await nextTick()
+    clearDirty()
   }
 })
 </script>

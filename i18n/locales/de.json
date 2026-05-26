@@ -87,6 +87,7 @@
     "more": "weitere",
     "loading": "Laden...",
     "confirm": "Bestätigen",
+    "unsavedChangesWarning": "Es gibt nicht gespeicherte Änderungen. Seite wirklich verlassen?",
     "back": "Zurück",
     "next": "Weiter",
     "yes": "Ja",

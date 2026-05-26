@@ -118,6 +118,9 @@ const passwordForm = reactive({
   confirm_password: ''
 })
 
+const dirtyTracker = computed(() => ({ ...generalForm, ...accountForm, ...passwordForm }))
+const { clearDirty } = useUnsavedChanges(dirtyTracker)
+
 async function saveGeneral() {
   savingGeneral.value = true
   try {
@@ -125,6 +128,7 @@ async function saveGeneral() {
       app_name: generalForm.app_name,
       default_port_status: generalForm.default_port_status as 'disabled' | 'up' | 'down'
     })
+    clearDirty()
     toast.add({ title: t('settings.messages.updated'), color: 'success' })
   } catch {
     toast.add({ title: t('errors.serverError'), color: 'error' })
@@ -143,6 +147,7 @@ async function saveAccount() {
     })
     await setLocale(accountForm.language as 'en' | 'de')
     Object.assign(user.value!, { language: accountForm.language })
+    clearDirty()
     toast.add({ title: t('settings.messages.profileUpdated'), color: 'success' })
   } catch {
     toast.add({ title: t('errors.serverError'), color: 'error' })
@@ -174,10 +179,12 @@ async function handleChangePassword() {
       current_password: passwordForm.current_password,
       new_password: passwordForm.new_password
     })
-    toast.add({ title: t('settings.messages.passwordChanged'), color: 'success' })
     passwordForm.current_password = ''
     passwordForm.new_password = ''
     passwordForm.confirm_password = ''
+    await nextTick()
+    clearDirty()
+    toast.add({ title: t('settings.messages.passwordChanged'), color: 'success' })
   } catch (e: unknown) {
     const message = e instanceof Error ? (e as Error & { data?: { message?: string } }).data?.message : undefined
     toast.add({ title: message || t('errors.serverError'), color: 'error' })
@@ -196,5 +203,7 @@ onMounted(async () => {
     accountForm.display_name = user.value.display_name || ''
     accountForm.language = user.value.language || 'en'
   }
+  await nextTick()
+  clearDirty()
 })
 </script>
