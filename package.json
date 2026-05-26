@@ -34,6 +34,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@iconify-json/tabler": "^1.2.35",
     "@nuxt/eslint": "1.15.2",
     "@playwright/test": "^1.60.0",
     "@types/bcryptjs": "3.0.0",
