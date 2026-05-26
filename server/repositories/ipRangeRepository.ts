@@ -4,7 +4,7 @@ import type { IPRange } from '../../types/ipRange'
 import { isValidIPv4, isIPInSubnet, ipToLong, doRangesOverlap, subnetRangeError } from '../utils/ipv4'
 import { networkRepository } from './networkRepository'
 
-const FILE_NAME = 'ipRanges.json'
+const FILE_NAME = 'ip-ranges.json'
 
 export const ipRangeRepository = {
   list(networkId?: string): IPRange[] {

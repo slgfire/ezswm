@@ -4,7 +4,7 @@ import type { LayoutTemplate } from '../../types/layoutTemplate'
 import type { Port, PortType } from '../../types/port'
 import type { Switch } from '../../types/switch'
 
-const FILE_NAME = 'layoutTemplates.json'
+const FILE_NAME = 'layout-templates.json'
 const SWITCHES_FILE = 'switches.json'
 
 function generatePortLabel(blockLabel: string | undefined, unitNumber: number, portIndex: number): string {

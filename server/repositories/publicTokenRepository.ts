@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid'
 import { readJson, writeJson } from '../storage/jsonStorage'
 import type { PublicToken } from '~~/types/publicToken'
 
-const FILE = 'publicTokens.json'
+const FILE = 'public-tokens.json'
 
 function readAll(): PublicToken[] {
   return readJson<PublicToken[]>(FILE)

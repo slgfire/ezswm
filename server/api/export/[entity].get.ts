@@ -4,9 +4,9 @@ const ENTITY_FILE_MAP: Record<string, string> = {
   switches: 'switches.json',
   vlans: 'vlans.json',
   networks: 'networks.json',
-  'ip-allocations': 'ipAllocations.json',
-  'ip-ranges': 'ipRanges.json',
-  'layout-templates': 'layoutTemplates.json',
+  'ip-allocations': 'ip-allocations.json',
+  'ip-ranges': 'ip-ranges.json',
+  'layout-templates': 'layout-templates.json',
   users: 'users.json'
 }
 

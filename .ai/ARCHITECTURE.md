@@ -239,10 +239,10 @@ users.json
 switches.json          (with embedded Port[])
 vlans.json
 networks.json
-ipAllocations.json
-ipRanges.json
-layoutTemplates.json   (with embedded LayoutUnit[]/LayoutBlock[])
-lagGroups.json
+ip-allocations.json
+ip-ranges.json
+layout-templates.json   (with embedded LayoutUnit[]/LayoutBlock[])
+lag-groups.json
 activity.json
 settings.json          (single object, not array)
 ```

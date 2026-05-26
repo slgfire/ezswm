@@ -8,7 +8,7 @@ import { isValidIPv4, isIPInSubnet } from '../utils/ipv4'
 import { incrementMemberLabel } from '../utils/deviceLibrary'
 
 const FILE_NAME = 'switches.json'
-const ALLOC_FILE_NAME = 'ipAllocations.json'
+const ALLOC_FILE_NAME = 'ip-allocations.json'
 const NETWORK_FILE_NAME = 'networks.json'
 
 /**

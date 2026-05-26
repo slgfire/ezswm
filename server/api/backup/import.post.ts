@@ -21,14 +21,14 @@ export default defineEventHandler(async (event) => {
     switches: readJson('switches.json'),
     vlans: readJson('vlans.json'),
     networks: readJson('networks.json'),
-    ipAllocations: readJson('ipAllocations.json'),
-    ipRanges: readJson('ipRanges.json'),
-    layoutTemplates: readJson('layoutTemplates.json'),
-    lagGroups: readJson('lagGroups.json'),
+    ipAllocations: readJson('ip-allocations.json'),
+    ipRanges: readJson('ip-ranges.json'),
+    layoutTemplates: readJson('layout-templates.json'),
+    lagGroups: readJson('lag-groups.json'),
     activity: readJson('activity.json'),
     settings: readJson('settings.json'),
-    publicTokens: readJson('publicTokens.json'),
-    topologyLayouts: readJson('topologyLayouts.json')
+    publicTokens: readJson('public-tokens.json'),
+    topologyLayouts: readJson('topology-layouts.json')
   }
 
   try {
@@ -38,14 +38,14 @@ export default defineEventHandler(async (event) => {
       switches: 'switches.json',
       vlans: 'vlans.json',
       networks: 'networks.json',
-      ipAllocations: 'ipAllocations.json',
-      ipRanges: 'ipRanges.json',
-      layoutTemplates: 'layoutTemplates.json',
-      lagGroups: 'lagGroups.json',
+      ipAllocations: 'ip-allocations.json',
+      ipRanges: 'ip-ranges.json',
+      layoutTemplates: 'layout-templates.json',
+      lagGroups: 'lag-groups.json',
       activity: 'activity.json',
       settings: 'settings.json',
-      publicTokens: 'publicTokens.json',
-      topologyLayouts: 'topologyLayouts.json'
+      publicTokens: 'public-tokens.json',
+      topologyLayouts: 'topology-layouts.json'
     }
 
     for (const [key, fileName] of Object.entries(fileMap)) {
@@ -59,9 +59,9 @@ export default defineEventHandler(async (event) => {
       for (const [key, data] of Object.entries(preRestoreBackup)) {
         const fileMap: Record<string, string> = {
           users: 'users.json', switches: 'switches.json', vlans: 'vlans.json',
-          networks: 'networks.json', ipAllocations: 'ipAllocations.json', ipRanges: 'ipRanges.json',
-          layoutTemplates: 'layoutTemplates.json', lagGroups: 'lagGroups.json',
-          activity: 'activity.json', settings: 'settings.json', topologyLayouts: 'topologyLayouts.json'
+          networks: 'networks.json', ipAllocations: 'ip-allocations.json', ipRanges: 'ip-ranges.json',
+          layoutTemplates: 'layout-templates.json', lagGroups: 'lag-groups.json',
+          activity: 'activity.json', settings: 'settings.json', topologyLayouts: 'topology-layouts.json'
         }
         writeJson(fileMap[key]!, data)
       }

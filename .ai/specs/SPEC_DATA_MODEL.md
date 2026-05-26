@@ -18,11 +18,11 @@ Related documents:
 | Port | Individual port on a switch | Embedded in `switches.json` |
 | VLAN | Virtual LAN definition | `vlans.json` |
 | Network | IP subnet, optionally linked to a VLAN | `networks.json` |
-| IPAllocation | Single IP assignment within a network | `ipAllocations.json` |
-| IPRange | IP address range within a network | `ipRanges.json` |
-| LayoutTemplate | Reusable switch model definition | `layoutTemplates.json` |
-| LayoutBlock | Group of ports within a template | Embedded in `layoutTemplates.json` |
-| LAGGroup | Link aggregation group | `lagGroups.json` |
+| IPAllocation | Single IP assignment within a network | `ip-allocations.json` |
+| IPRange | IP address range within a network | `ip-ranges.json` |
+| LayoutTemplate | Reusable switch model definition | `layout-templates.json` |
+| LayoutBlock | Group of ports within a template | Embedded in `layout-templates.json` |
+| LAGGroup | Link aggregation group | `lag-groups.json` |
 | ActivityEntry | Activity feed entry | `activity.json` |
 | AppSettings | Global application settings | `settings.json` |
 | UserPreferences | Per-user preferences | Embedded in `users.json` |
@@ -547,10 +547,10 @@ All files stored in `/app/data/`:
 ├── switches.json       # Switch[] (with embedded Port[])
 ├── vlans.json          # VLAN[]
 ├── networks.json       # Network[]
-├── ipAllocations.json  # IPAllocation[]
-├── ipRanges.json       # IPRange[]
-├── layoutTemplates.json # LayoutTemplate[] (with embedded LayoutUnit[]/LayoutBlock[])
-├── lagGroups.json      # LAGGroup[]
+├── ip-allocations.json  # IPAllocation[]
+├── ip-ranges.json       # IPRange[]
+├── layout-templates.json # LayoutTemplate[] (with embedded LayoutUnit[]/LayoutBlock[])
+├── lag-groups.json      # LAGGroup[]
 ├── activity.json       # ActivityEntry[]
 └── settings.json       # AppSettings (single object)
 ```

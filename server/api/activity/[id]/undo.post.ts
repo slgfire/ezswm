@@ -39,7 +39,7 @@ export default defineEventHandler((event) => {
           switch: 'switches.json',
           vlan: 'vlans.json',
           network: 'networks.json',
-          layout_template: 'layoutTemplates.json'
+          layout_template: 'layout-templates.json'
         }
         const fileName = fileMap[entityType]
         if (fileName) {
@@ -59,7 +59,7 @@ export default defineEventHandler((event) => {
           switch: 'switches.json',
           vlan: 'vlans.json',
           network: 'networks.json',
-          layout_template: 'layoutTemplates.json'
+          layout_template: 'layout-templates.json'
         }
         const fileName = fileMap[entityType]
         if (fileName) {

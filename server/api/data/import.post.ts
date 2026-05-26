@@ -7,9 +7,9 @@ const ENTITY_FILE_MAP: Record<EntityType, string> = {
   switches: 'switches.json',
   vlans: 'vlans.json',
   networks: 'networks.json',
-  allocations: 'ipAllocations.json',
-  ranges: 'ipRanges.json',
-  templates: 'layoutTemplates.json'
+  allocations: 'ip-allocations.json',
+  ranges: 'ip-ranges.json',
+  templates: 'layout-templates.json'
 }
 
 const REQUIRED_FIELDS: Record<EntityType, string[]> = {
