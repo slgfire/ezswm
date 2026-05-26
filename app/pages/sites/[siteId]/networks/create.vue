@@ -80,6 +80,9 @@ const form = ref({
   description: ''
 })
 
+const dirtyTracker = computed(() => ({ ...form.value, dnsInput: dnsInput.value }))
+const { clearDirty } = useUnsavedChanges(dirtyTracker)
+
 const vlanOptions = computed(() => {
   const options: { label: string; value: string }[] = []
   vlans.value.forEach((v) => {
@@ -122,6 +125,7 @@ async function onSubmit() {
       body.site_id = siteId.value
     }
     result = await create(body)
+    clearDirty()
     toast.add({ title: t('networks.messages.created'), color: 'success' })
   } catch (err: unknown) {
     const error = err as { data?: { message?: string } }

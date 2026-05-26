@@ -290,6 +290,8 @@ const physicalTypeOptions = [
 
 const form = ref<EditForm | null>(null)
 
+const { clearDirty } = useUnsavedChanges(form)
+
 const previewPorts = computed(() => {
   if (!form.value?.units) return []
   const ports: PreviewPort[] = []
@@ -411,6 +413,7 @@ async function handleSubmit() {
         }))
       })) as LayoutUnit[]
     })
+    clearDirty()
     toast.add({ title: t('templates.messages.updated'), color: 'success' })
     router.push(`/layout-templates/${route.params.id}`)
   } catch {
@@ -453,6 +456,8 @@ onMounted(async () => {
     form.value = null
   } finally {
     loading.value = false
+    await nextTick()
+    clearDirty()
   }
 })
 </script>

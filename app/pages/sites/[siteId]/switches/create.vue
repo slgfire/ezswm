@@ -154,6 +154,8 @@ const stackSizeOptions = Array.from({ length: 8 }, (_, i) => ({
   value: i + 1
 }))
 
+const { clearDirty } = useUnsavedChanges(form)
+
 const templateOptions = computed(() => {
   const options: { label: string; value: string }[] = []
   for (const tpl of templates.value) {
@@ -192,6 +194,7 @@ async function onSubmit() {
       body.site_id = siteId.value
     }
     result = await create(body) as unknown as Record<string, unknown> | undefined
+    clearDirty()
     toast.add({ title: t('switches.messages.created'), color: 'success' })
   } catch (e: unknown) {
     const err = e as { data?: { message?: string } }

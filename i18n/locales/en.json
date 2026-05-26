@@ -87,6 +87,7 @@
     "more": "more",
     "loading": "Loading...",
     "confirm": "Confirm",
+    "unsavedChangesWarning": "You have unsaved changes. Are you sure you want to leave?",
     "back": "Back",
     "next": "Next",
     "yes": "Yes",

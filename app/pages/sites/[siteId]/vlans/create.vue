@@ -79,6 +79,8 @@ const statusOptions = computed(() => [
   { label: t('common.inactive'), value: 'inactive' }
 ])
 
+const { clearDirty } = useUnsavedChanges(form)
+
 // Try to fetch suggested color on mount
 onMounted(async () => {
   try {
@@ -89,6 +91,8 @@ onMounted(async () => {
   } catch {
     // Use default color
   }
+  await nextTick()
+  clearDirty()
 })
 
 function validate(state: typeof form.value) {
@@ -121,6 +125,7 @@ async function onSubmit() {
       body.site_id = siteId.value
     }
     result = await create(body)
+    clearDirty()
     toast.add({ title: t('vlans.messages.created'), color: 'success' })
   } catch (err: unknown) {
     const error = err as { data?: { message?: string } }
