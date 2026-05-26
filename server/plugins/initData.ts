@@ -19,13 +19,13 @@ export default defineNitroPlugin(() => {
     'switches.json',
     'vlans.json',
     'networks.json',
-    'ipAllocations.json',
-    'ipRanges.json',
-    'layoutTemplates.json',
-    'lagGroups.json',
+    'ip-allocations.json',
+    'ip-ranges.json',
+    'layout-templates.json',
+    'lag-groups.json',
     'activity.json',
     'sites.json',
-    'publicTokens.json'
+    'public-tokens.json'
   ]
 
   for (const file of arrayFiles) {
@@ -33,7 +33,7 @@ export default defineNitroPlugin(() => {
   }
 
   initializeFile('settings.json', DEFAULT_SETTINGS)
-  initializeFile('topologyLayouts.json', {})
+  initializeFile('topology-layouts.json', {})
 
   // Backfill new fields on existing settings.json (older installs).
   // If sites already exist, treat the installation as already initialized

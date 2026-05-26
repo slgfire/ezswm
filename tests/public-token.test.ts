@@ -10,7 +10,7 @@ describe('publicTokenRepository', () => {
   beforeEach(async () => {
     tempDir = mkdtempSync(join(tmpdir(), 'ezswm-vitest-'))
     setTestRuntimeConfig({ dataDir: tempDir })
-    seedJsonFile(tempDir, 'publicTokens.json', [])
+    seedJsonFile(tempDir, 'public-tokens.json', [])
     const mod = await import('../server/repositories/publicTokenRepository')
     publicTokenRepository = mod.publicTokenRepository
   })

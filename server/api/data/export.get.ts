@@ -7,8 +7,8 @@ const ENTITY_FILE_MAP: Record<EntityType, string> = {
   switches: 'switches.json',
   vlans: 'vlans.json',
   networks: 'networks.json',
-  allocations: 'ipAllocations.json',
-  templates: 'layoutTemplates.json'
+  allocations: 'ip-allocations.json',
+  templates: 'layout-templates.json'
 }
 
 const CSV_HEADERS: Record<EntityType, string[]> = {

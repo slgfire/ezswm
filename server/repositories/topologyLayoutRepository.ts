@@ -1,7 +1,7 @@
 import { readJson, writeJson } from '../storage/jsonStorage'
 import type { TopologyLayout } from '../../types/topology'
 
-const FILE_NAME = 'topologyLayouts.json'
+const FILE_NAME = 'topology-layouts.json'
 
 type LayoutStore = Record<string, TopologyLayout>
 

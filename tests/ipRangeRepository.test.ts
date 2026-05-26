@@ -36,7 +36,7 @@ describe('ipRangeRepository', () => {
     tempDir = mkdtempSync(join(tmpdir(), 'ezswm-vitest-'))
     setTestRuntimeConfig({ dataDir: tempDir })
     seedJsonFile(tempDir, 'networks.json', [testNetwork, testNetwork31, testNetwork32])
-    seedJsonFile(tempDir, 'ipRanges.json', [])
+    seedJsonFile(tempDir, 'ip-ranges.json', [])
   })
 
   afterEach(() => {

@@ -585,10 +585,10 @@ On first startup, `/app/data/` will be initialized with:
 ├── switches.json           # []
 ├── vlans.json              # []
 ├── networks.json           # []
-├── ipAllocations.json      # []
-├── ipRanges.json           # []
-├── layoutTemplates.json    # []
-├── lagGroups.json          # []
+├── ip-allocations.json     # []
+├── ip-ranges.json          # []
+├── layout-templates.json   # []
+├── lag-groups.json         # []
 ├── activity.json           # []
 └── settings.json           # { default AppSettings }
 ```

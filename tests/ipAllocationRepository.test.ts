@@ -42,8 +42,8 @@ describe('ipAllocationRepository', () => {
     tempDir = mkdtempSync(join(tmpdir(), 'ezswm-vitest-'))
     setTestRuntimeConfig({ dataDir: tempDir })
     seedJsonFile(tempDir, 'networks.json', [testNetwork, testNetwork2])
-    seedJsonFile(tempDir, 'ipRanges.json', [dhcpRange])
-    seedJsonFile(tempDir, 'ipAllocations.json', [])
+    seedJsonFile(tempDir, 'ip-ranges.json', [dhcpRange])
+    seedJsonFile(tempDir, 'ip-allocations.json', [])
   })
 
   afterEach(() => {

@@ -3,7 +3,7 @@ import { readJson, writeJson } from '../storage/jsonStorage'
 import type { LAGGroup } from '../../types/lagGroup'
 import { switchRepository } from './switchRepository'
 
-const FILE_NAME = 'lagGroups.json'
+const FILE_NAME = 'lag-groups.json'
 
 export const lagGroupRepository = {
   list(switchId?: string): LAGGroup[] {

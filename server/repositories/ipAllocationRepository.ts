@@ -5,7 +5,7 @@ import type { IPRange } from '../../types/ipRange'
 import { isValidIPv4, isIPInSubnet, isUsableHostIP, isValidMacAddress, subnetRangeError, parseSubnet, ipToLong } from '../utils/ipv4'
 import { networkRepository } from './networkRepository'
 
-const FILE_NAME = 'ipAllocations.json'
+const FILE_NAME = 'ip-allocations.json'
 
 export const ipAllocationRepository = {
   list(networkId?: string): IPAllocation[] {
@@ -45,7 +45,7 @@ export const ipAllocationRepository = {
     }
 
     // Check if IP falls inside a DHCP dynamic range
-    const ipRanges = readJson<IPRange[]>('ipRanges.json')
+    const ipRanges = readJson<IPRange[]>('ip-ranges.json')
     const networkRanges = ipRanges.filter(r => r.network_id === networkId)
     const ipLong = ipToLong(data.ip_address)
     for (const range of networkRanges) {

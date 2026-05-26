@@ -9,14 +9,14 @@ export default defineEventHandler((event) => {
       switches: readJson('switches.json'),
       vlans: readJson('vlans.json'),
       networks: readJson('networks.json'),
-      ipAllocations: readJson('ipAllocations.json'),
-      ipRanges: readJson('ipRanges.json'),
-      layoutTemplates: readJson('layoutTemplates.json'),
-      lagGroups: readJson('lagGroups.json'),
+      ipAllocations: readJson('ip-allocations.json'),
+      ipRanges: readJson('ip-ranges.json'),
+      layoutTemplates: readJson('layout-templates.json'),
+      lagGroups: readJson('lag-groups.json'),
       activity: readJson('activity.json'),
       settings: readJson('settings.json'),
-      publicTokens: readJson('publicTokens.json'),
-      topologyLayouts: readJson('topologyLayouts.json')
+      publicTokens: readJson('public-tokens.json'),
+      topologyLayouts: readJson('topology-layouts.json')
     }
   }
 
