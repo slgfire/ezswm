@@ -20,21 +20,21 @@
 
         <!-- Port stats -->
         <div class="flex items-center justify-between border-t border-b border-default py-1.5 font-mono">
-          <span class="text-[11px] font-medium uppercase tracking-wider text-gray-400">
+          <span class="text-[11px] font-medium uppercase tracking-wider text-gray-400 leading-none">
             {{ node.port_count }} {{ $t('topology.ports') }}
           </span>
           <div class="flex items-center gap-3 text-xs">
-            <span v-if="node.ports_up" class="flex items-center gap-1 text-green-500">
-              <span class="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
-              {{ node.ports_up }}
+            <span v-if="node.ports_up" class="inline-flex items-center gap-1 text-green-500 leading-none">
+              <span class="block h-2 w-2 rounded-full bg-green-500" />
+              <span>{{ node.ports_up }}</span>
             </span>
-            <span v-if="node.ports_down" class="flex items-center gap-1 text-gray-400">
-              <span class="inline-block h-1.5 w-1.5 rounded-full bg-gray-400" />
-              {{ node.ports_down }}
+            <span v-if="node.ports_down" class="inline-flex items-center gap-1 text-gray-400 leading-none">
+              <span class="block h-2 w-2 rounded-full bg-gray-400" />
+              <span>{{ node.ports_down }}</span>
             </span>
-            <span v-if="node.ports_disabled" class="flex items-center gap-1 text-red-500">
-              <span class="inline-block h-1.5 w-1.5 rounded-full bg-red-500" />
-              {{ node.ports_disabled }}
+            <span v-if="node.ports_disabled" class="inline-flex items-center gap-1 text-red-500 leading-none">
+              <span class="block h-2 w-2 rounded-full bg-red-500" />
+              <span>{{ node.ports_disabled }}</span>
             </span>
           </div>
         </div>
