@@ -84,7 +84,7 @@
             <g v-if="getNodeRole(nodeId)">
               <rect
                 :x="(getNodeSize(nodeId).w / 2 - 46) * scale"
-                :y="(-getNodeSize(nodeId).h / 2 + 8) * scale"
+                :y="(-getNodeSize(nodeId).h / 2 + 10) * scale"
                 :width="38 * scale"
                 :height="16 * scale"
                 :rx="4 * scale"
@@ -98,7 +98,7 @@
                 :font-size="8 * scale"
                 :fill="topologyRoleBadgeColor(getNodeRole(nodeId)!)"
                 text-anchor="middle"
-                dominant-baseline="middle"
+                dominant-baseline="central"
                 font-weight="500"
               >
                 {{ topologyRoleShortLabel(getNodeRole(nodeId)!) }}
@@ -160,21 +160,21 @@
                 <!-- Disabled (rightmost) -->
                 <g v-if="(getNodeData(nodeId) as TopologyNode)?.ports_disabled" :transform="`translate(0, 0)`">
                   <circle :r="3 * scale" fill="#ef4444" :cx="-3 * scale" />
-                  <text :x="-10 * scale" :font-size="8.5 * scale" fill="#ef4444" font-family="ui-monospace,monospace" dominant-baseline="middle" text-anchor="end">
+                  <text :x="-10 * scale" :font-size="8.5 * scale" fill="#ef4444" font-family="ui-monospace,monospace" dominant-baseline="central" text-anchor="end">
                     {{ (getNodeData(nodeId) as TopologyNode).ports_disabled }}
                   </text>
                 </g>
                 <!-- Down -->
                 <g v-if="(getNodeData(nodeId) as TopologyNode)?.ports_down" :transform="`translate(${(getNodeData(nodeId) as TopologyNode)?.ports_disabled ? -32 * scale : 0}, 0)`">
                   <circle :r="3 * scale" fill="#9ca3af" :cx="-3 * scale" />
-                  <text :x="-10 * scale" :font-size="8.5 * scale" fill="#9ca3af" font-family="ui-monospace,monospace" dominant-baseline="middle" text-anchor="end">
+                  <text :x="-10 * scale" :font-size="8.5 * scale" fill="#9ca3af" font-family="ui-monospace,monospace" dominant-baseline="central" text-anchor="end">
                     {{ (getNodeData(nodeId) as TopologyNode).ports_down }}
                   </text>
                 </g>
                 <!-- Up -->
                 <g v-if="(getNodeData(nodeId) as TopologyNode)?.ports_up" :transform="`translate(${getPortDotsOffset(nodeId, scale)}, 0)`">
                   <circle :r="3 * scale" fill="#22c55e" :cx="-3 * scale" />
-                  <text :x="-10 * scale" :font-size="8.5 * scale" fill="#22c55e" font-family="ui-monospace,monospace" dominant-baseline="middle" text-anchor="end">
+                  <text :x="-10 * scale" :font-size="8.5 * scale" fill="#22c55e" font-family="ui-monospace,monospace" dominant-baseline="central" text-anchor="end">
                     {{ (getNodeData(nodeId) as TopologyNode).ports_up }}
                   </text>
                 </g>
@@ -210,33 +210,33 @@
     <!-- Bottom bar: Legend (matching app chip style) -->
     <div class="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 pointer-events-none text-[11px] text-gray-500 dark:text-gray-400">
       <!-- Role chips -->
-      <div class="pointer-events-auto flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 dark:bg-neutral-800">
+      <div class="pointer-events-auto inline-flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 leading-none dark:bg-neutral-800">
         <span class="inline-block h-2 w-2 rounded-full" style="background: #ef4444" />
         <span class="font-medium text-gray-700 dark:text-gray-200">Core</span>
       </div>
-      <div class="pointer-events-auto flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 dark:bg-neutral-800">
+      <div class="pointer-events-auto inline-flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 leading-none dark:bg-neutral-800">
         <span class="inline-block h-2 w-2 rounded-full" style="background: #3b82f6" />
         <span class="font-medium text-gray-700 dark:text-gray-200">Dist</span>
       </div>
-      <div class="pointer-events-auto flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 dark:bg-neutral-800">
+      <div class="pointer-events-auto inline-flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 leading-none dark:bg-neutral-800">
         <span class="inline-block h-2 w-2 rounded-full" style="background: #22c55e" />
         <span class="font-medium text-gray-700 dark:text-gray-200">Access</span>
       </div>
-      <div class="pointer-events-auto flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 dark:bg-neutral-800">
+      <div class="pointer-events-auto inline-flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 leading-none dark:bg-neutral-800">
         <span class="inline-block h-2 w-2 rounded-full" style="background: #eab308" />
         <span class="font-medium text-gray-700 dark:text-gray-200">Mgmt</span>
       </div>
       <span class="text-gray-600 dark:text-gray-500">|</span>
       <!-- Edge type chips -->
-      <div class="pointer-events-auto flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 dark:bg-neutral-800">
+      <div class="pointer-events-auto inline-flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 leading-none dark:bg-neutral-800">
         <span class="inline-block w-3 border-t border-gray-500" />
         <span>Link</span>
       </div>
-      <div class="pointer-events-auto flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 dark:bg-neutral-800">
+      <div class="pointer-events-auto inline-flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 leading-none dark:bg-neutral-800">
         <span class="inline-block w-3 border-t border-dashed border-gray-400" />
         <span>Trunk</span>
       </div>
-      <div class="pointer-events-auto flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 dark:bg-neutral-800">
+      <div class="pointer-events-auto inline-flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 leading-none dark:bg-neutral-800">
         <span class="inline-block w-3 border-t-2 border-[#7a8999]" />
         <span>LAG</span>
       </div>
