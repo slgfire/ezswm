@@ -6,9 +6,17 @@ interface AuthUser {
   language: string
 }
 
+interface SetupStatus {
+  setup_completed: boolean
+  sites_initialized: boolean
+  orphans: { switches: number; vlans: number; networks: number }
+}
+
 export function useAuth() {
   const user = useState<AuthUser | null>('auth-user', () => null)
   const setupCompleted = useState<boolean | null>('auth-setup', () => null)
+  const sitesInitialized = useState<boolean | null>('sites-initialized', () => null)
+  const setupOrphans = useState<SetupStatus['orphans'] | null>('setup-orphans', () => null)
   const isLoggedIn = computed(() => !!user.value)
 
   function getRequestOpts(): { headers: Record<string, string> } {
@@ -32,14 +40,19 @@ export function useAuth() {
     }
   }
 
-  async function checkSetup(): Promise<boolean> {
+  async function checkSetup(): Promise<SetupStatus> {
     try {
-      const data = await $fetch<{ setup_completed: boolean }>('/api/settings', getRequestOpts())
+      const data = await $fetch<SetupStatus>('/api/setup/status', getRequestOpts())
       setupCompleted.value = data.setup_completed
-      return data.setup_completed
+      sitesInitialized.value = data.sites_initialized
+      setupOrphans.value = data.orphans
+      return data
     } catch {
+      // Fail open so a broken status endpoint doesn't lock everyone out.
       setupCompleted.value = true
-      return true
+      sitesInitialized.value = true
+      setupOrphans.value = { switches: 0, vlans: 0, networks: 0 }
+      return { setup_completed: true, sites_initialized: true, orphans: { switches: 0, vlans: 0, networks: 0 } }
     }
   }
 
@@ -62,6 +75,16 @@ export function useAuth() {
     return result
   }
 
+  async function createInitialSite(data: { name: string; description?: string }) {
+    const result = await $fetch<{ site: { id: string; name: string }; migrated: { switches: number; vlans: number; networks: number } }>('/api/setup/initial-site', {
+      method: 'POST',
+      body: data
+    })
+    sitesInitialized.value = true
+    setupOrphans.value = { switches: 0, vlans: 0, networks: 0 }
+    return result
+  }
+
   async function logout() {
     await $fetch('/api/auth/logout', { method: 'POST' })
     user.value = null
@@ -71,10 +94,13 @@ export function useAuth() {
     user: readonly(user),
     isLoggedIn,
     setupCompleted: readonly(setupCompleted),
+    sitesInitialized: readonly(sitesInitialized),
+    setupOrphans: readonly(setupOrphans),
     fetchUser,
     checkSetup,
     login,
     setup,
+    createInitialSite,
     logout
   }
 }

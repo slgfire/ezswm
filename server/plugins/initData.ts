@@ -1,13 +1,6 @@
-import { ensureDataDir, initializeFile } from '../storage/jsonStorage'
-
-const DEFAULT_SETTINGS = {
-  app_name: 'ezSWM',
-  app_logo_url: null,
-  default_vlan: null,
-  default_port_status: 'down',
-  port_speeds: ['100M', '1G', '2.5G', '10G', '100G'],
-  setup_completed: false
-}
+import { ensureDataDir, initializeFile, readJson, writeJson } from '../storage/jsonStorage'
+import { DEFAULT_SETTINGS } from '../../types/settings'
+import type { AppSettings } from '../../types/settings'
 
 export default defineNitroPlugin(() => {
   const config = useRuntimeConfig()
@@ -41,6 +34,20 @@ export default defineNitroPlugin(() => {
 
   initializeFile('settings.json', DEFAULT_SETTINGS)
   initializeFile('topologyLayouts.json', {})
+
+  // Backfill new fields on existing settings.json (older installs).
+  // If sites already exist, treat the installation as already initialized
+  // so we don't bounce returning users into the setup wizard.
+  const currentSettings = readJson<Partial<AppSettings>>('settings.json')
+  const sites = readJson<unknown[]>('sites.json')
+  const needsBackfill = currentSettings.sites_initialized === undefined
+  if (needsBackfill) {
+    writeJson('settings.json', {
+      ...DEFAULT_SETTINGS,
+      ...currentSettings,
+      sites_initialized: sites.length > 0
+    })
+  }
 
   console.log(`[ezSWM] Data directory initialized: ${config.dataDir}`)
 })

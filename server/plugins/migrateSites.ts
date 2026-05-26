@@ -1,51 +1,23 @@
-import { nanoid } from 'nanoid'
-import { readJson, writeJson } from '../storage/jsonStorage'
+import { readJson } from '../storage/jsonStorage'
 
+// Detection-only: counts orphan entities (without site_id) so they show up
+// in the startup log. Actual site creation + reassignment happens through
+// the first-run setup wizard via /api/setup/initial-site, so the operator
+// gets to name the first site instead of receiving an opaque "Default".
 export default defineNitroPlugin(() => {
-  // Check if sites.json exists and has entries
   const sites = readJson<Record<string, unknown>[]>('sites.json')
+  if (sites.length > 0) return
 
-  if (sites.length === 0) {
-    // Create default site
-    const defaultSite = {
-      id: nanoid(),
-      name: 'Default',
-      description: 'Default site',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-    writeJson('sites.json', [defaultSite])
+  const switches = readJson<{ site_id?: string }[]>('switches.json')
+  const vlans = readJson<{ site_id?: string }[]>('vlans.json')
+  const networks = readJson<{ site_id?: string }[]>('networks.json')
 
-    // Migrate existing entities
-    const defaultId = defaultSite.id
+  const orphanSwitches = switches.filter(s => !s.site_id).length
+  const orphanVlans = vlans.filter(v => !v.site_id).length
+  const orphanNetworks = networks.filter(n => !n.site_id).length
+  const total = orphanSwitches + orphanVlans + orphanNetworks
 
-    // Switches
-    const switches = readJson<Record<string, unknown>[]>('switches.json')
-    if (switches.length > 0) {
-      for (const sw of switches) {
-        if (!sw.site_id) sw.site_id = defaultId
-      }
-      writeJson('switches.json', switches)
-    }
-
-    // VLANs
-    const vlans = readJson<Record<string, unknown>[]>('vlans.json')
-    if (vlans.length > 0) {
-      for (const v of vlans) {
-        if (!v.site_id) v.site_id = defaultId
-      }
-      writeJson('vlans.json', vlans)
-    }
-
-    // Networks
-    const networks = readJson<Record<string, unknown>[]>('networks.json')
-    if (networks.length > 0) {
-      for (const n of networks) {
-        if (!n.site_id) n.site_id = defaultId
-      }
-      writeJson('networks.json', networks)
-    }
-
-    console.log(`[ezSWM] Created default site and migrated ${switches.length} switches, ${vlans.length} VLANs, ${networks.length} networks`)
+  if (total > 0) {
+    console.log(`[migration] Found orphan entities awaiting site assignment: ${orphanSwitches} switches, ${orphanVlans} VLANs, ${orphanNetworks} networks — first-run wizard will assign them`)
   }
 })
