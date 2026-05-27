@@ -1,0 +1,50 @@
+name: Auto Tag Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+          fetch-tags: true
+
+      - name: Detect version bump
+        id: detect
+        run: |
+          current=$(jq -r '.version' package.json)
+          previous=$(git show HEAD~1:package.json 2>/dev/null | jq -r '.version' 2>/dev/null || echo "")
+          tag="v${current}"
+          echo "current=${current}"
+          echo "previous=${previous}"
+          if [ -z "${current}" ] || [ "${current}" = "null" ]; then
+            echo "No version field found. Skipping."
+            echo "should_tag=false" >> "$GITHUB_OUTPUT"
+          elif [ "${current}" = "${previous}" ]; then
+            echo "Version unchanged (${current}). Skipping."
+            echo "should_tag=false" >> "$GITHUB_OUTPUT"
+          elif git rev-parse "${tag}" >/dev/null 2>&1; then
+            echo "Tag ${tag} already exists. Skipping."
+            echo "should_tag=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Version bumped: ${previous} -> ${current}. Will tag ${tag}."
+            echo "should_tag=true" >> "$GITHUB_OUTPUT"
+            echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create tag and release
+        if: steps.detect.outputs.should_tag == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ steps.detect.outputs.tag }}"
+          git tag "${tag}"
+          git push origin "${tag}"
+          gh release create "${tag}" --generate-notes --title "${tag}"
