@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid'
 import { readJson, writeJson } from '../storage/jsonStorage'
+import { incrementMemberLabel } from '../utils/deviceLibrary'
 import type { LayoutTemplate } from '../../types/layoutTemplate'
 import type { Port, PortType } from '../../types/port'
 import type { Switch } from '../../types/switch'
@@ -12,6 +13,38 @@ function generatePortLabel(blockLabel: string | undefined, unitNumber: number, p
   return blockLabel.match(/[/\-:.]$/) ? `${blockLabel}${portIndex}` : `${blockLabel} ${unitNumber}/${portIndex}`
 }
 
+interface ExpectedPort {
+  unit: number
+  index: number
+  type: PortType
+  label: string
+}
+
+function buildExpectedPorts(template: LayoutTemplate, stackSize: number): ExpectedPort[] {
+  const expected: ExpectedPort[] = []
+  for (let member = 1; member <= stackSize; member++) {
+    const unitOffset = (member - 1) * template.units.length
+    for (const unit of template.units) {
+      for (const block of unit.blocks) {
+        const memberLabel = block.label
+          ? incrementMemberLabel(block.label, member)
+          : block.label
+        for (let i = 0; i < block.count; i++) {
+          const portIndex = block.start_index + i
+          const stackedUnit = unit.unit_number + unitOffset
+          expected.push({
+            unit: stackedUnit,
+            index: portIndex,
+            type: block.type,
+            label: generatePortLabel(memberLabel, stackedUnit, portIndex)
+          })
+        }
+      }
+    }
+  }
+  return expected
+}
+
 function syncPortsToTemplate(template: LayoutTemplate): void {
   const switches = readJson<Switch[]>(SWITCHES_FILE)
   let changed = false
@@ -19,72 +52,40 @@ function syncPortsToTemplate(template: LayoutTemplate): void {
   for (const sw of switches) {
     if (sw.layout_template_id !== template.id) continue
 
-    // Build map of what ports SHOULD exist based on new template
-    const expectedPorts: { unit: number; index: number; type: PortType; label: string; blockLabel?: string }[] = []
-    for (const unit of template.units) {
-      for (const block of unit.blocks) {
-        for (let i = 0; i < block.count; i++) {
-          const portIndex = block.start_index + i
-          expectedPorts.push({
-            unit: unit.unit_number,
-            index: portIndex,
-            type: block.type,
-            label: generatePortLabel(block.label, unit.unit_number, portIndex),
-            blockLabel: block.label
-          })
-        }
-      }
-    }
+    const stackSize = sw.stack_size ?? 1
+    const expectedPorts = buildExpectedPorts(template, stackSize)
 
-    // Match existing ports by unit+position-in-block (not by index)
-    // This preserves settings when start_index changes
+    // Match existing ports by (unit, index, type) to keep their settings.
+    // Same-key duplicates (rare) are matched in original order; unmatched
+    // expected ports become fresh ports; unmatched existing ports are dropped.
+    const consumed = new Set<string>()
     const newPorts: Port[] = []
-    const existingByUnit: Record<number, Port[]> = {}
-    for (const p of sw.ports) {
-      if (!existingByUnit[p.unit]) existingByUnit[p.unit] = []
-      existingByUnit[p.unit]!.push(p)
-    }
-    // Sort each unit's ports by index
-    for (const unit of Object.keys(existingByUnit)) {
-      existingByUnit[Number(unit)]!.sort((a, b) => a.index - b.index)
-    }
-
-    // Group expected ports by unit
-    const expectedByUnit: Record<number, typeof expectedPorts> = {}
-    for (const ep of expectedPorts) {
-      if (!expectedByUnit[ep.unit]) expectedByUnit[ep.unit] = []
-      expectedByUnit[ep.unit]!.push(ep)
-    }
 
     for (const ep of expectedPorts) {
-      const unitExisting = existingByUnit[ep.unit] || []
-      const unitExpected = expectedByUnit[ep.unit] || []
-      const posInBlock = unitExpected.indexOf(ep)
+      const existing = sw.ports.find(p =>
+        !consumed.has(p.id) &&
+        p.unit === ep.unit &&
+        p.index === ep.index &&
+        p.type === ep.type
+      )
 
-      // Try to match by same position in the unit's port list
-      const existingPort = unitExisting[posInBlock]
-
-      if (existingPort) {
-        // Preserve all settings, update index/label/type
-        const oldLabel = existingPort.label
-        existingPort.index = ep.index
-        existingPort.label = ep.label
-        existingPort.type = ep.type
-        newPorts.push(existingPort)
+      if (existing) {
+        consumed.add(existing.id)
+        const oldLabel = existing.label
+        existing.label = ep.label
+        newPorts.push(existing)
 
         if (oldLabel !== ep.label) {
           changed = true
-          // Update cross-references
           for (const otherSw of switches) {
             for (const otherPort of otherSw.ports) {
-              if (otherPort.connected_device_id === sw.id && otherPort.connected_port_id === existingPort.id) {
+              if (otherPort.connected_device_id === sw.id && otherPort.connected_port_id === existing.id) {
                 otherPort.connected_port = ep.label
               }
             }
           }
         }
       } else {
-        // New port (template has more ports than before)
         newPorts.push({
           id: nanoid(),
           unit: ep.unit,
@@ -98,7 +99,8 @@ function syncPortsToTemplate(template: LayoutTemplate): void {
       }
     }
 
-    if (JSON.stringify(sw.ports.map((p) => p.index)) !== JSON.stringify(newPorts.map((p) => p.index))) {
+    if (consumed.size !== sw.ports.length) {
+      // Some existing ports no longer match the template — drop them
       changed = true
     }
 
