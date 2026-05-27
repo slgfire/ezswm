@@ -428,15 +428,22 @@ describe('updatePortSchema', () => {
     expect(result.success).toBe(false)
   })
 
-  it('rejects poe with non-positive watts', () => {
+  it('rejects poe with negative watts', () => {
     const result = updatePortSchema.safeParse({
-      poe: { type: '802.3af', max_watts: 0 }
+      poe: { type: '802.3af', max_watts: -1 }
     })
     expect(result.success).toBe(false)
   })
 
+  it('accepts disabled poe with 0 watts', () => {
+    const result = updatePortSchema.safeParse({
+      poe: { type: 'disabled', max_watts: 0 }
+    })
+    expect(result.success).toBe(true)
+  })
+
   it('accepts all valid poe types', () => {
-    for (const type of ['802.3af', '802.3at', '802.3bt-type3', '802.3bt-type4', 'passive-24v', 'passive-48v']) {
+    for (const type of ['disabled', '802.3af', '802.3at', '802.3bt-type3', '802.3bt-type4', 'passive-24v', 'passive-48v']) {
       const result = updatePortSchema.safeParse({ poe: { type, max_watts: 15 } })
       expect(result.success, `poe type "${type}" should be valid`).toBe(true)
     }

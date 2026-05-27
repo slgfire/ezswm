@@ -225,6 +225,7 @@
       :configured-vlans="item?.configured_vlans || []"
       :switch-updated-at="item?.updated_at"
       :lag-group="selectedPort ? lagByPortId.get(selectedPort.id) : undefined"
+      :template-units="templateUnits"
       @saved="fetchSwitch"
       @remove-from-lag="onRemovePortFromLag"
     />

@@ -482,6 +482,7 @@
     "airflow": "Luftstrom",
     "poe": "PoE",
     "poeNone": "Keine",
+    "poeDisabled": "Deaktiviert",
     "poeInherited": "Vom Template geerbt",
     "physicalType": "Physischer Typ",
     "fields": {

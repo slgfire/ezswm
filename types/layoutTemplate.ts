@@ -1,6 +1,6 @@
 export type RowLayout = 'sequential' | 'odd-even' | 'even-odd'
 
-export type PoeType = '802.3af' | '802.3at' | '802.3bt-type3' | '802.3bt-type4' | 'passive-24v' | 'passive-48v'
+export type PoeType = 'disabled' | '802.3af' | '802.3at' | '802.3bt-type3' | '802.3bt-type4' | 'passive-24v' | 'passive-48v'
 
 export interface PoeConfig {
   type: PoeType
