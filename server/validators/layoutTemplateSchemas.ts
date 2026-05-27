@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
 const poeConfigSchema = z.object({
-  type: z.enum(['802.3af', '802.3at', '802.3bt-type3', '802.3bt-type4', 'passive-24v', 'passive-48v']),
-  max_watts: z.number().positive()
+  type: z.enum(['disabled', '802.3af', '802.3at', '802.3bt-type3', '802.3bt-type4', 'passive-24v', 'passive-48v']),
+  max_watts: z.number().min(0)
 })
 
 const layoutBlockSchema = z.object({

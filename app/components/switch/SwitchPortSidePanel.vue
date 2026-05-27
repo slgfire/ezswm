@@ -124,11 +124,10 @@
           <UInput v-model="form.mac_address" placeholder="XX:XX:XX:XX:XX:XX" class="w-full" />
         </UFormField>
 
-        <UFormField v-if="port?.type === 'rj45'" :label="$t('templates.poe')">
+        <UFormField v-if="port?.type === 'rj45' && poeCapable" :label="$t('templates.poe')">
           <USelect
             v-model="form.poe_selection"
             :items="poeOptions"
-            :placeholder="$t('templates.poeNone')"
             class="w-full"
           />
         </UFormField>
@@ -205,6 +204,7 @@ import type { Switch } from '~~/types/switch'
 import type { Network } from '~~/types/network'
 import type { IPAllocation } from '~~/types/ipAllocation'
 import type { LAGGroup } from '~~/types/lagGroup'
+import type { LayoutUnit } from '~~/types/layoutTemplate'
 
 const props = defineProps<{
   port: Port | null
@@ -212,6 +212,7 @@ const props = defineProps<{
   lagGroup?: LAGGroup
   configuredVlans?: number[]
   switchUpdatedAt?: string
+  templateUnits?: LayoutUnit[]
 }>()
 
 const emit = defineEmits<{
@@ -246,6 +247,7 @@ const selectedAllocationId = ref<string>('')
 const selectedTaggedVlans = ref<number[]>([])
 
 const poeOptions = computed(() => [
+  { label: t('templates.poeDisabled'), value: 'disabled' },
   { label: '802.3af (15.4W)', value: '802.3af' },
   { label: '802.3at (30W)', value: '802.3at' },
   { label: '802.3bt Type 3 (60W)', value: '802.3bt-type3' },
@@ -255,9 +257,22 @@ const poeOptions = computed(() => [
 ])
 
 const POE_WATTS: Record<string, number> = {
+  'disabled': 0,
   '802.3af': 15.4, '802.3at': 30, '802.3bt-type3': 60,
   '802.3bt-type4': 100, 'passive-24v': 24, 'passive-48v': 48,
 }
+
+// Find the layout block that the current port belongs to (by unit + index range)
+const portBlock = computed(() => {
+  if (!props.port || !props.templateUnits) return undefined
+  const unit = props.templateUnits.find(u => u.unit_number === props.port!.unit)
+  if (!unit) return undefined
+  return unit.blocks.find(b =>
+    props.port!.index >= b.start_index && props.port!.index < b.start_index + b.count
+  )
+})
+
+const poeCapable = computed(() => !!portBlock.value?.poe)
 
 const form = reactive({
   status: '',
@@ -621,7 +636,9 @@ async function onSaveClick() {
 async function save() {
   const tagged_vlans = allVlans.value.length ? [...selectedTaggedVlans.value] : taggedVlansStr.value ? taggedVlansStr.value.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v)) : []
   const body: Record<string, unknown> = { ...form, tagged_vlans }
-  body.poe = form.poe_selection ? { type: form.poe_selection, max_watts: POE_WATTS[form.poe_selection] } : null
+  if (poeCapable.value) {
+    body.poe = form.poe_selection ? { type: form.poe_selection, max_watts: POE_WATTS[form.poe_selection] } : null
+  }
   delete body.poe_selection
   body.helper_usage = form.helper_usage === '_automatic' ? null : (form.helper_usage || null)
   body.helper_label = form.helper_label || null

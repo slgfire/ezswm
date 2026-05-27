@@ -19,7 +19,7 @@
     <span
       v-if="typeLabel"
       class="relative z-10 mt-0.5 text-[7px] font-medium leading-none"
-      :class="port.poe ? 'text-amber-400' : 'opacity-80'"
+      :class="port.poe && port.poe.type !== 'disabled' ? 'text-amber-400' : 'opacity-80'"
     >{{ typeLabel }}</span>
 
     <!-- VLAN indicator dot (top-right) -->
