@@ -6,11 +6,15 @@
         <NuxtLink
           v-if="i < crumbs.length - 1"
           :to="crumb.path"
-          class="text-neutral-400 hover:text-gray-900 dark:hover:text-white"
+          class="flex items-center gap-1.5 text-neutral-400 hover:text-gray-900 dark:hover:text-white"
         >
+          <UIcon v-if="crumb.icon" :name="crumb.icon" class="h-4 w-4 flex-shrink-0" />
           {{ crumb.label }}
         </NuxtLink>
-        <span v-else class="text-gray-900 dark:text-white">{{ crumb.label }}</span>
+        <span v-else class="flex items-center gap-1.5 text-gray-900 dark:text-white">
+          <UIcon v-if="crumb.icon" :name="crumb.icon" class="h-4 w-4 flex-shrink-0" />
+          {{ crumb.label }}
+        </span>
       </li>
     </ol>
   </nav>
@@ -19,7 +23,6 @@
 <script setup lang="ts">
 const route = useRoute()
 const { t } = useI18n()
-const { currentSite } = useCurrentSite()
 
 const labelMap: Record<string, string> = {
   '': 'nav.dashboard',
@@ -37,18 +40,34 @@ const labelMap: Record<string, string> = {
   'edit': 'common.edit'
 }
 
+const iconMap: Record<string, string> = {
+  'switches': 'i-heroicons-server-stack',
+  'vlans': 'i-heroicons-tag',
+  'networks': 'i-heroicons-globe-alt',
+  'topology': 'i-heroicons-share',
+  'subnet-calculator': 'i-heroicons-calculator',
+  'layout-templates': 'i-heroicons-rectangle-group',
+  'data-management': 'i-heroicons-circle-stack',
+  'settings': 'i-heroicons-cog-6-tooth',
+  'sites': 'i-heroicons-building-office-2',
+  'create': 'i-heroicons-plus',
+  'edit': 'i-heroicons-pencil-square'
+}
+
+const DASHBOARD_ICON = 'i-heroicons-home'
+
 const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrides', () => ({}))
 
 const crumbs = computed(() => {
   const parts = route.path.split('/').filter(Boolean)
   const siteId = route.params.siteId as string
-  const result: { path: string; label: string }[] = []
+  const result: { path: string; label: string; icon?: string }[] = []
 
   // If we're in a site-scoped route (/sites/:siteId/...)
   if (parts[0] === 'sites' && siteId) {
     // Dashboard link goes to the site dashboard
     const siteBase = `/sites/${siteId}`
-    result.push({ path: siteBase, label: currentSite.value?.name || t('nav.dashboard') })
+    result.push({ path: siteBase, label: t('nav.dashboard'), icon: DASHBOARD_ICON })
 
     // Add remaining parts after /sites/:siteId/
     const remainingParts = parts.slice(2) // skip 'sites' and siteId
@@ -59,12 +78,13 @@ const crumbs = computed(() => {
       const override = breadcrumbOverrides.value[currentPath]
       result.push({
         path: currentPath,
-        label: override || (key ? t(key) : part)
+        label: override || (key ? t(key) : part),
+        icon: iconMap[part]
       })
     }
   } else if (parts[0] === 'sites' && !siteId) {
     // /sites list page
-    result.push({ path: '/sites', label: t('nav.sites') })
+    result.push({ path: '/sites', label: t('nav.sites'), icon: iconMap['sites'] })
     const remainingParts = parts.slice(1)
     let currentPath = '/sites'
     for (const part of remainingParts) {
@@ -72,12 +92,13 @@ const crumbs = computed(() => {
       const key = labelMap[part]
       result.push({
         path: currentPath,
-        label: key ? t(key) : part
+        label: key ? t(key) : part,
+        icon: iconMap[part]
       })
     }
   } else {
     // Global routes (settings, layout-templates, etc.)
-    result.push({ path: '/', label: t('nav.dashboard') })
+    result.push({ path: '/', label: t('nav.dashboard'), icon: DASHBOARD_ICON })
     let currentPath = ''
     for (const part of parts) {
       currentPath += `/${part}`
@@ -85,7 +106,8 @@ const crumbs = computed(() => {
       const override = breadcrumbOverrides.value[currentPath]
       result.push({
         path: currentPath,
-        label: override || (key ? t(key) : part)
+        label: override || (key ? t(key) : part),
+        icon: iconMap[part]
       })
     }
   }
