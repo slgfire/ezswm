@@ -13,3 +13,15 @@ export interface IPAllocation {
   created_at: string
   updated_at: string
 }
+
+// Allocation joined with its network, VLAN and site for the site-wide overview.
+export interface IpAllocationEnriched extends IPAllocation {
+  site_id: string
+  site_name: string
+  network_name: string
+  network_subnet: string
+  vlan_ref_id: string | null // network.vlan_id (VLAN entity FK) — used for filtering
+  vlan_tag: number | null // vlan.vlan_id (802.1Q tag) — used for display
+  vlan_name: string | null
+  vlan_color: string | null
+}
