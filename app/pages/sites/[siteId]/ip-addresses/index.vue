@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6">
+  <div class="flex h-full flex-col p-6">
     <div class="mb-4 flex items-center justify-between">
       <h1 class="text-xl font-bold">{{ $t('ipAddresses.title') }}</h1>
       <UButton icon="i-heroicons-plus" size="sm" @click="openAdd">{{ $t('ipAddresses.add') }}</UButton>
@@ -25,9 +25,17 @@
         <USelect v-model="deviceTypeFilter" :items="deviceTypeFilterOptions" icon="i-heroicons-cpu-chip" size="sm" class="w-48" />
       </div>
 
-      <!-- Table -->
-      <div v-if="items.length > 0" class="list-container rounded-lg bg-default">
-        <UTable v-model:sorting="sorting" :data="filteredData" :columns="columns" :ui="{ tr: 'cursor-pointer' }" @select="onRowSelect">
+      <!-- Table (fills remaining height, scrolls internally with a sticky header) -->
+      <UTable
+        v-if="items.length > 0"
+        v-model:sorting="sorting"
+        sticky
+        :data="filteredData"
+        :columns="columns"
+        :ui="{ tr: 'cursor-pointer' }"
+        class="min-h-0 flex-1 rounded-lg border border-default bg-default"
+        @select="onRowSelect"
+      >
           <template #network_name-cell="{ row }">
             <div class="flex items-center gap-2">
               <span class="font-medium text-gray-900 dark:text-white">{{ row.original.network_name }}</span>
@@ -60,8 +68,7 @@
           </template>
 
           <template #site_name-cell="{ row }">{{ row.original.site_name }}</template>
-        </UTable>
-      </div>
+      </UTable>
 
       <SharedEmptyState
         v-else
