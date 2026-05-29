@@ -8,13 +8,10 @@ interface CacheEntry {
 }
 
 let cache: CacheEntry | null = null
+let inflight: Promise<ChangelogResponse> | null = null
 const CACHE_TTL = 60 * 60 * 1000 // 1 hour
 
-export default defineEventHandler(async (): Promise<ChangelogResponse> => {
-  if (cache && Date.now() - cache.timestamp < CACHE_TTL) {
-    return cache.data
-  }
-
+async function fetchChangelog(): Promise<ChangelogResponse> {
   let response: Response
   try {
     response = await fetch(RELEASES_API_URL, {
@@ -32,4 +29,15 @@ export default defineEventHandler(async (): Promise<ChangelogResponse> => {
   const data = transformReleases(raw)
   cache = { data, timestamp: Date.now() }
   return data
+}
+
+export default defineEventHandler(async (): Promise<ChangelogResponse> => {
+  if (cache && Date.now() - cache.timestamp < CACHE_TTL) {
+    return cache.data
+  }
+  // Coalesce concurrent requests so a cache miss triggers one GitHub fetch.
+  if (!inflight) {
+    inflight = fetchChangelog().finally(() => { inflight = null })
+  }
+  return inflight
 })

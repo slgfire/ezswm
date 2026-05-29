@@ -10,6 +10,7 @@ function sanitizeHtml(html: string): string {
     .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')
     .replace(/\son\w+\s*=\s*'[^']*'/gi, '')
     .replace(/\son\w+\s*=\s*[^\s>]+/gi, '')
+    .replace(/\shref\s*=\s*["']?\s*javascript:[^"'\s>]*/gi, '')
 }
 
 export function renderReleaseHtml(markdown: string | null): string {

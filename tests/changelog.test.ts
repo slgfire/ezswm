@@ -19,6 +19,11 @@ describe('renderReleaseHtml', () => {
     expect(html).not.toMatch(/onerror/i)
   })
 
+  it('strips javascript: hrefs', () => {
+    const html = renderReleaseHtml('[click](javascript:alert(1))')
+    expect(html).not.toMatch(/javascript:/i)
+  })
+
   it('returns empty string for null body', () => {
     expect(renderReleaseHtml(null)).toBe('')
   })
