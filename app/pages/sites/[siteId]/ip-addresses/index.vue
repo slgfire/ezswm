@@ -41,7 +41,7 @@
               class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium text-white"
               :style="{ backgroundColor: row.original.vlan_color || '#6B7280' }"
             >
-              VLAN {{ row.original.vlan_tag }}<template v-if="row.original.vlan_name"> · {{ row.original.vlan_name }}</template>
+              {{ row.original.vlan_tag }}<template v-if="row.original.vlan_name"> · {{ row.original.vlan_name }}</template>
             </span>
             <span v-else class="text-gray-400">—</span>
           </template>
