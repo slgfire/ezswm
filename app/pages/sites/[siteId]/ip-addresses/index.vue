@@ -205,7 +205,8 @@ const vlanFilterOptions = computed(() => {
     { label: t('ipAddresses.filters.allVlans'), value: 'all' },
     { label: t('ipAddresses.filters.noVlan'), value: 'none' }
   ]
-  vlans.value.forEach(v => options.push({ label: `VLAN ${v.vlan_id} - ${v.name}`, value: v.id }))
+  const sorted = [...vlans.value].sort((a, b) => a.vlan_id - b.vlan_id)
+  sorted.forEach(v => options.push({ label: `VLAN ${v.vlan_id} - ${v.name}`, value: v.id }))
   return options
 })
 const statusFilterOptions = computed(() => [{ label: t('ipAddresses.filters.allStatuses'), value: 'all' }, ...allocStatusOptions.value])
