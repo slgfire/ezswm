@@ -74,10 +74,13 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
+            type=raw,value=latest
             type=raw,value=${{ steps.detect.outputs.version }}
             type=raw,value=${{ steps.detect.outputs.major_minor }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.detect.outputs.version }}
 
-      - name: Build and push versioned image
+      - name: Build and push release images (latest + version)
         if: steps.detect.outputs.should_tag == 'true'
         uses: docker/build-push-action@v7
         with:
@@ -85,5 +88,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          provenance: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
