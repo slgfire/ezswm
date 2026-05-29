@@ -18,7 +18,7 @@
             </div>
           </div>
         </NuxtLink>
-        <NuxtLink :to="`/sites/${siteId}/networks`" class="stagger-item card-glow block rounded-lg bg-default p-5">
+        <NuxtLink :to="`/sites/${siteId}/subnets`" class="stagger-item card-glow block rounded-lg bg-default p-5">
           <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-500/10">
               <UIcon name="i-heroicons-globe-alt" class="h-6 w-6 text-cyan-500" />
@@ -40,7 +40,7 @@
             </div>
           </div>
         </NuxtLink>
-        <NuxtLink :to="`/sites/${siteId}/networks`" class="stagger-item card-glow block rounded-lg bg-default p-5">
+        <NuxtLink :to="`/sites/${siteId}/subnets`" class="stagger-item card-glow block rounded-lg bg-default p-5">
           <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500/10">
               <UIcon name="i-heroicons-map-pin" class="h-6 w-6 text-amber-500" />
@@ -158,7 +158,7 @@
             <div v-for="net in visibleUtilization" :key="net.id">
               <div class="flex items-center gap-2">
                 <span v-if="net.vlan_color" class="h-2 w-2 shrink-0 rounded-full" :style="{ backgroundColor: net.vlan_color }" />
-                <NuxtLink :to="`/sites/${siteId}/networks/${net.id}`" class="min-w-0 flex-1 truncate text-sm hover:text-primary-400">{{ net.name }}</NuxtLink>
+                <NuxtLink :to="`/sites/${siteId}/subnets/${net.id}`" class="min-w-0 flex-1 truncate text-sm hover:text-primary-400">{{ net.name }}</NuxtLink>
                 <code class="shrink-0 font-mono text-[11px] text-gray-500">{{ net.subnet }}</code>
                 <span class="w-9 shrink-0 text-right font-mono text-xs" :class="net.percentage > 80 ? 'text-red-400' : net.percentage > 50 ? 'text-yellow-400' : 'text-gray-400'">{{ net.percentage }}%</span>
               </div>
@@ -179,7 +179,7 @@
           </button>
           <div v-if="stats.networkUtilization.length <= 1" class="mt-3 flex items-center gap-2 text-xs text-gray-500">
             <UIcon name="i-heroicons-light-bulb" class="h-3.5 w-3.5 text-yellow-500" />
-            <NuxtLink :to="`/sites/${siteId}/networks/create`" class="hover:text-primary-400">Add more networks to track utilization</NuxtLink>
+            <NuxtLink :to="`/sites/${siteId}/subnets/create`" class="hover:text-primary-400">Add more subnets to track utilization</NuxtLink>
           </div>
           <template #footer>
             <div v-if="stats.networkUtilization.some((n: any) => n.dhcp_percent > 0 || n.reserved_percent > 0)" class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-gray-400">
@@ -304,7 +304,7 @@ function activityLink(entry: ActivityEntry): string | undefined {
   switch (entry.entity_type) {
     case 'switch': return `${base}/switches/${entry.entity_id}`
     case 'vlan': return `${base}/vlans`
-    case 'network': return `${base}/networks/${entry.entity_id}`
+    case 'network': return `${base}/subnets/${entry.entity_id}`
     default: return undefined
   }
 }

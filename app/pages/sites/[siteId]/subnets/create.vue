@@ -1,7 +1,7 @@
 <template>
   <div class="mx-auto w-full max-w-5xl px-6 py-6">
     <div class="mb-6 flex items-center gap-3">
-      <UButton icon="i-heroicons-arrow-left" variant="ghost" :to="`/sites/${siteId}/networks`" :aria-label="$t('common.back')" />
+      <UButton icon="i-heroicons-arrow-left" variant="ghost" :to="`/sites/${siteId}/subnets`" :aria-label="$t('common.back')" />
       <h1 class="text-2xl font-bold">{{ $t('networks.create') }}</h1>
     </div>
 
@@ -46,7 +46,7 @@
 
       <!-- Actions -->
       <div class="mt-4 flex justify-end gap-3">
-        <UButton variant="ghost" color="neutral" :to="`/sites/${siteId}/networks`">
+        <UButton variant="ghost" color="neutral" :to="`/sites/${siteId}/subnets`">
           {{ $t('common.cancel') }}
         </UButton>
         <UButton type="submit" :loading="submitting" icon="i-heroicons-check">
@@ -134,7 +134,7 @@ async function onSubmit() {
   } finally {
     submitting.value = false
   }
-  await router.push(`/sites/${siteId.value}/networks/${(result as Network).id}`)
+  await router.push(`/sites/${siteId.value}/subnets/${(result as Network).id}`)
 }
 
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})

@@ -28,7 +28,7 @@ const labelMap: Record<string, string> = {
   '': 'nav.dashboard',
   'switches': 'nav.switches',
   'vlans': 'nav.vlans',
-  'networks': 'nav.networks',
+  'subnets': 'nav.networks',
   'ip-addresses': 'nav.ipAddresses',
   'topology': 'nav.topology',
   'tools': 'nav.tools',
@@ -44,7 +44,7 @@ const labelMap: Record<string, string> = {
 const iconMap: Record<string, string> = {
   'switches': 'i-heroicons-server-stack',
   'vlans': 'i-heroicons-tag',
-  'networks': 'i-heroicons-globe-alt',
+  'subnets': 'i-heroicons-globe-alt',
   'ip-addresses': 'i-heroicons-map-pin',
   'topology': 'i-heroicons-share',
   'subnet-calculator': 'i-heroicons-calculator',
