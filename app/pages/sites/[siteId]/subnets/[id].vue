@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="mb-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <UButton icon="i-heroicons-arrow-left" variant="ghost" size="sm" :to="`/sites/${siteId}/networks`" />
+        <UButton icon="i-heroicons-arrow-left" variant="ghost" size="sm" :to="`/sites/${siteId}/subnets`" />
         <h1 class="text-xl font-bold">{{ network?.name || $t('common.loading') }}</h1>
       </div>
       <div v-if="network" class="flex items-center gap-1">
@@ -318,7 +318,7 @@ const reservedRangePercent = computed(() => {
 })
 
 const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrides', () => ({}))
-watch(network, (n) => { if (n?.name) breadcrumbOverrides.value[`/sites/${siteId.value}/networks/${networkId}`] = n.name }, { immediate: true })
+watch(network, (n) => { if (n?.name) breadcrumbOverrides.value[`/sites/${siteId.value}/subnets/${networkId}`] = n.name }, { immediate: true })
 
 const vlanOptions = computed(() => {
   const opts: { label: string; value: string }[] = []
@@ -515,7 +515,7 @@ async function onSave() {
 
 async function confirmDeleteNetwork() {
   deleting.value = true
-  try { await removeNetwork(networkId); toast.add({ title: t('networks.messages.deleted'), color: 'success' }); showDeleteDialog.value = false; await router.push(`/sites/${siteId.value}/networks`) }
+  try { await removeNetwork(networkId); toast.add({ title: t('networks.messages.deleted'), color: 'success' }); showDeleteDialog.value = false; await router.push(`/sites/${siteId.value}/subnets`) }
   catch (err: unknown) { const error = err as { data?: { message?: string } }; toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' }) }
   finally { deleting.value = false }
 }
@@ -653,7 +653,7 @@ async function onSaveRangeEdit() {
 async function loadNetwork() {
   pageLoading.value = true
   try { network.value = await $fetch<Network>(`/api/networks/${networkId}`) }
-  catch { toast.add({ title: t('errors.notFound'), color: 'error' }); await router.push(`/sites/${siteId.value}/networks`) }
+  catch { toast.add({ title: t('errors.notFound'), color: 'error' }); await router.push(`/sites/${siteId.value}/subnets`) }
   finally { pageLoading.value = false }
 }
 

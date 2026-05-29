@@ -3,7 +3,7 @@
     "dashboard": "Dashboard",
     "switches": "Switches",
     "vlans": "VLANs",
-    "networks": "Networks",
+    "networks": "Subnets",
     "topology": "Topology",
     "tools": "Tools",
     "subnetCalculator": "Subnet Calculator",
@@ -38,8 +38,8 @@
     "emptyDescription": "Create your first site to get started.",
     "switchCount": "Switches",
     "vlanCount": "VLANs",
-    "networkCount": "Networks",
-    "cannotDelete": "Cannot delete site with existing entities. Remove all switches, VLANs and networks first."
+    "networkCount": "Subnets",
+    "cannotDelete": "Cannot delete site with existing entities. Remove all switches, VLANs and subnets first."
   },
   "auth": {
     "login": "Login",
@@ -61,13 +61,13 @@
     "stepAccount": "Admin Account",
     "stepSite": "First Site",
     "siteTitle": "Name your first site",
-    "siteDescription": "Sites group switches, VLANs and networks. You can rename it later and add more.",
+    "siteDescription": "Sites group switches, VLANs and subnets. You can rename it later and add more.",
     "siteName": "Site name",
     "siteNamePlaceholder": "e.g. HQ, Datacenter, LAN-Party",
     "siteDescriptionField": "Description (optional)",
     "siteDescriptionPlaceholder": "Short note about this site",
     "createSite": "Create Site",
-    "migrationBanner": "We found existing data without a site assignment: {switches} switches, {vlans} VLANs, {networks} networks. They will be assigned to the site you create here.",
+    "migrationBanner": "We found existing data without a site assignment: {switches} switches, {vlans} VLANs, {networks} subnets. They will be assigned to the site you create here.",
     "createSiteFailed": "Failed to create site"
   },
   "common": {
@@ -133,7 +133,7 @@
     "emptyTitle": "Welcome to ezSWM!",
     "emptyDescription": "Start by creating your first switch.",
     "switchCount": "Switches",
-    "networkCount": "Networks",
+    "networkCount": "Subnets",
     "vlanCount": "VLANs",
     "ipUtilization": "IP Utilization",
     "portStatus": "Port Status",
@@ -142,7 +142,7 @@
     "warnings": "Warnings",
     "orphanVlans": "Orphan VLANs",
     "duplicateIps": "Duplicate IPs",
-    "highUsage": "High Usage Networks"
+    "highUsage": "High Usage Subnets"
   },
   "switches": {
     "title": "Switches",
@@ -226,8 +226,8 @@
       "searchPort": "Search port...",
       "searchDevice": "Search or type device name...",
       "deviceHintNoVlan": "Assign a VLAN first to see available devices",
-      "deviceHintNoNetwork": "No network configured for this VLAN",
-      "deviceHintNoDevices": "No devices registered in this network",
+      "deviceHintNoNetwork": "No subnet configured for this VLAN",
+      "deviceHintNoDevices": "No devices registered in this subnet",
       "selectDevice": "Select device..."
     },
     "roles": {
@@ -289,7 +289,7 @@
       "color": "Color",
       "status": "Status",
       "routingDevice": "Routing Device",
-      "networkCount": "Networks"
+      "networkCount": "Subnets"
     },
     "messages": {
       "created": "VLAN created successfully",
@@ -320,18 +320,18 @@
     },
     "emptyTitle": "No VLANs defined yet",
     "emptyDescription": "Create your first VLAN to get started.",
-    "noNetwork": "No network",
+    "noNetwork": "No subnet",
     "sortId": "ID",
     "sortName": "Name",
     "sortStatus": "Status"
   },
   "networks": {
-    "title": "Networks",
-    "create": "Create Network",
-    "edit": "Edit Network",
-    "delete": "Delete Network",
+    "title": "Subnets",
+    "create": "Create Subnet",
+    "edit": "Edit Subnet",
+    "delete": "Delete Subnet",
     "sections": {
-      "networkInfo": "Network Information",
+      "networkInfo": "Subnet Information",
       "vlanDescription": "VLAN & Description"
     },
     "fields": {
@@ -343,12 +343,12 @@
       "utilization": "Utilization"
     },
     "messages": {
-      "created": "Network created successfully",
-      "updated": "Network updated successfully",
-      "deleted": "Network deleted successfully"
+      "created": "Subnet created successfully",
+      "updated": "Subnet updated successfully",
+      "deleted": "Subnet deleted successfully"
     },
-    "emptyTitle": "No networks configured yet",
-    "emptyDescription": "Create your first network to get started.",
+    "emptyTitle": "No subnets configured yet",
+    "emptyDescription": "Create your first subnet to get started.",
     "allocations": {
       "title": "IP Allocations",
       "create": "Add Allocation",
@@ -649,7 +649,7 @@
     "entities": {
       "switches": "Switches",
       "vlans": "VLANs",
-      "networks": "Networks",
+      "networks": "Subnets",
       "allocations": "IP Allocations",
       "ranges": "IP Ranges",
       "templates": "Layout Templates"
@@ -705,7 +705,7 @@
   "search": {
     "switches": "Switches",
     "vlans": "VLANs",
-    "networks": "Networks",
+    "networks": "Subnets",
     "ipAllocations": "IP Allocations",
     "ipRanges": "IP Ranges",
     "templates": "Layout Templates",
