@@ -27,7 +27,7 @@
 
       <!-- Table -->
       <div v-if="items.length > 0" class="list-container rounded-lg bg-default">
-        <UTable v-model:sorting="sorting" :data="filteredData" :columns="columns">
+        <UTable v-model:sorting="sorting" :data="filteredData" :columns="columns" :ui="{ tr: 'cursor-pointer' }" @select="onRowSelect">
           <template #network_name-cell="{ row }">
             <div class="flex items-center gap-2">
               <span class="font-medium text-gray-900 dark:text-white">{{ row.original.network_name }}</span>
@@ -60,13 +60,6 @@
           </template>
 
           <template #site_name-cell="{ row }">{{ row.original.site_name }}</template>
-
-          <template #action-cell="{ row }">
-            <div class="flex justify-end gap-1">
-              <UButton icon="i-heroicons-pencil-square" variant="ghost" color="neutral" size="xs" @click="openEdit(row.original)" />
-              <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="openDelete(row.original)" />
-            </div>
-          </template>
         </UTable>
       </div>
 
@@ -107,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui'
+import type { TableColumn, TableRow } from '@nuxt/ui'
 import type { IPAllocation, IpAllocationEnriched } from '~~/types/ipAllocation'
 
 const route = useRoute()
@@ -252,8 +245,7 @@ const columns = computed<TableColumn<IpAllocationEnriched>[]>(() => [
   { accessorKey: 'vlan_tag', header: t('ipAddresses.fields.vlan') },
   { accessorKey: 'device_type', header: t('ipAddresses.fields.deviceType') },
   { accessorKey: 'status', header: t('ipAddresses.fields.status') },
-  ...(siteId.value === 'all' ? [{ accessorKey: 'site_name', header: t('ipAddresses.fields.site') }] : []),
-  { id: 'action' }
+  ...(siteId.value === 'all' ? [{ accessorKey: 'site_name', header: t('ipAddresses.fields.site') }] : [])
 ])
 
 // --- Create / Edit ---
@@ -271,6 +263,9 @@ function openEdit(row: IpAllocationEnriched) {
   editTarget.value = row
   formError.value = ''
   formOpen.value = true
+}
+function onRowSelect(_e: Event, row: TableRow<IpAllocationEnriched>) {
+  openEdit(row.original)
 }
 
 async function onSubmit(payload: { networkId: string; body: Partial<IPAllocation> }) {
@@ -303,10 +298,6 @@ const deleteMessage = computed(() =>
   deleteTarget.value ? `${t('ipAddresses.delete')}: ${deleteTarget.value.ip_address}?` : ''
 )
 
-function openDelete(row: IpAllocationEnriched) {
-  deleteTarget.value = row
-  showDeleteDialog.value = true
-}
 function onFormDelete() {
   if (editTarget.value) {
     deleteTarget.value = editTarget.value
