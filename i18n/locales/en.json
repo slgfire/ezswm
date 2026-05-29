@@ -34,7 +34,10 @@
       "site": "Site"
     },
     "filters": {
-      "noVlan": "No VLAN"
+      "allVlans": "All VLANs",
+      "noVlan": "No VLAN",
+      "allStatuses": "All statuses",
+      "allDeviceTypes": "All types"
     },
     "messages": {
       "created": "IP address created successfully",

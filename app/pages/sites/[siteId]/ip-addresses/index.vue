@@ -20,9 +20,9 @@
           size="sm"
           class="w-64"
         />
-        <USelect v-model="vlanFilter" :items="vlanFilterOptions" size="sm" class="w-48" />
-        <USelect v-model="statusFilter" :items="statusFilterOptions" size="sm" class="w-40" />
-        <USelect v-model="deviceTypeFilter" :items="deviceTypeFilterOptions" size="sm" class="w-44" />
+        <USelect v-model="vlanFilter" :items="vlanFilterOptions" icon="i-heroicons-tag" size="sm" class="w-48" />
+        <USelect v-model="statusFilter" :items="statusFilterOptions" icon="i-heroicons-signal" size="sm" class="w-44" />
+        <USelect v-model="deviceTypeFilter" :items="deviceTypeFilterOptions" icon="i-heroicons-cpu-chip" size="sm" class="w-48" />
       </div>
 
       <!-- Table -->
@@ -202,14 +202,14 @@ watch([search, vlanFilter, statusFilter, deviceTypeFilter], syncState)
 
 const vlanFilterOptions = computed(() => {
   const options = [
-    { label: t('common.all'), value: 'all' },
+    { label: t('ipAddresses.filters.allVlans'), value: 'all' },
     { label: t('ipAddresses.filters.noVlan'), value: 'none' }
   ]
   vlans.value.forEach(v => options.push({ label: `VLAN ${v.vlan_id} - ${v.name}`, value: v.id }))
   return options
 })
-const statusFilterOptions = computed(() => [{ label: t('common.all'), value: 'all' }, ...allocStatusOptions.value])
-const deviceTypeFilterOptions = computed(() => [{ label: t('common.all'), value: 'all' }, ...deviceTypeOptions.value])
+const statusFilterOptions = computed(() => [{ label: t('ipAddresses.filters.allStatuses'), value: 'all' }, ...allocStatusOptions.value])
+const deviceTypeFilterOptions = computed(() => [{ label: t('ipAddresses.filters.allDeviceTypes'), value: 'all' }, ...deviceTypeOptions.value])
 
 const filteredData = computed(() => {
   let result = items.value
