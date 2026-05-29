@@ -37,7 +37,18 @@
     <!-- Footer info + collapse toggle -->
     <div class="flex items-center border-t border-default p-2 justify-center gap-3">
       <div v-if="!collapsed" class="flex items-center gap-2.5 px-1 font-mono text-sm text-neutral-500">
-        <span>v{{ version }}</span>
+        <button
+          type="button"
+          class="relative transition-colors hover:text-primary-500"
+          @click="changelogOpen = true"
+        >
+          v{{ version }}
+          <span
+            v-if="updateAvailable"
+            :title="$t('changelog.updateAvailable')"
+            class="absolute -right-2.5 -top-1 h-2 w-2 rounded-full bg-primary-500"
+          />
+        </button>
         <a href="https://github.com/slgfire/ezswm" target="_blank" rel="noopener" class="text-neutral-400 hover:text-primary-500 transition-colors">
           <UIcon name="i-simple-icons-github" class="h-4.5 w-4.5" />
         </a>
@@ -50,6 +61,7 @@
         @click="$emit('toggle')"
       />
     </div>
+    <LayoutChangelogModal v-model:open="changelogOpen" />
   </aside>
 </template>
 
@@ -59,6 +71,10 @@ defineEmits<{ toggle: [] }>()
 
 const config = useRuntimeConfig()
 const version = config.public.appVersion
+
+const changelogOpen = ref(false)
+const { updateAvailable, load } = useVersionCheck()
+onMounted(() => load())
 
 const route = useRoute()
 const { currentSiteId } = useCurrentSite()

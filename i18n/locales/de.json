@@ -859,5 +859,12 @@
     "helperLabelPlaceholder": "Automatisch",
     "showInHelperList": "In Helfer-Portliste anzeigen",
     "helperSection": "Öffentliche Helfer-Ansicht"
+  },
+  "changelog": {
+    "title": "Changelog",
+    "whatsNew": "Was ist neu?",
+    "viewAll": "Alle Releases auf GitHub ansehen",
+    "unavailable": "Changelog nicht verfügbar — GitHub nicht erreichbar.",
+    "updateAvailable": "Eine neue Version ist verfügbar"
   }
 }

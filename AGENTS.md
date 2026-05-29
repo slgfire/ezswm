@@ -78,6 +78,35 @@ Commit the lockfile.
 
 ---
 
+## Versioning
+
+Follow semver for the `version` field in `package.json`:
+
+- **Feature** (new, backwards-compatible functionality) → minor bump (e.g. `0.18.11` → `0.19.0`)
+- **Bug fix** → patch bump (e.g. `0.19.0` → `0.19.1`)
+- **Breaking change** → major bump
+
+Bump the version in the same PR as the change. Merging to `main` triggers
+`.github/workflows/release-tag.yml`, which creates the `v<version>` git tag
+and a GitHub release automatically — the `package.json` version is the
+single source of truth for the released tag.
+
+Only edit the version in `package.json`. `nuxt.config.ts` reads it from
+`process.env.npm_package_version` (and the sidebar reads it from there), so
+do not hardcode the version anywhere else.
+
+---
+
+## Git Workflow
+
+- Always work on a feature/bugfix branch — never commit directly to `main`
+  (`git checkout -b feat/<name>` or `fix/<name>`). Merge only after approval.
+- Do not create commits automatically. Commit and push only when the user
+  asks; after finishing changes + tests, stop and report. (A user may
+  authorize batch commits up front, e.g. for plan execution.)
+
+---
+
 ## Architecture Rules
 
 - Only `server/repositories` may access storage
@@ -87,6 +116,9 @@ Commit the lockfile.
 - Zod validators live in `server/validators`
 - API routes live in `server/api`
 - UI logic stays in `app/`
+- When adding a searchable field to an entity, also update global search:
+  `server/api/search.get.ts` (filter logic) and
+  `app/components/layout/AppHeader.vue` (result display)
 
 Follow the architecture described in:
 
@@ -109,6 +141,24 @@ Required structure:
 - Fully responsive (desktop, tablet, smartphone)
 
 Do NOT create a custom dashboard shell.
+
+---
+
+## Known UI Gotchas
+
+- Nuxt UI v4 `USelect` does not accept empty-string option values — the
+  dropdown fails to open on some devices (notably iPad). Use sentinel values
+  like `_automatic` / `_no_change` and convert them back to `null`/`undefined`
+  on save. (Applies to existing instances; keep new ones consistent.)
+
+---
+
+## Documentation
+
+After completing a feature, update in the same PR:
+
+- `docs/guide/user-guide.md` (English) and `docs/de/guide/user-guide.md` (German)
+- `.ai/MIGRATION_STATUS.md` — add a new phase entry
 
 ---
 

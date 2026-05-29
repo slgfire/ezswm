@@ -1,6 +1,6 @@
 {
   "name": "ezswm",
-  "version": "0.18.10",
+  "version": "0.19.0",
   "type": "module",
   "private": true,
   "packageManager": "pnpm@11.0.9",
@@ -24,6 +24,7 @@
     "@types/qrcode": "1.5.6",
     "bcryptjs": "3.0.3",
     "jsonwebtoken": "9.0.3",
+    "marked": "^18.0.4",
     "nanoid": "5.1.11",
     "nuxt": "4.4.6",
     "qrcode": "1.5.4",
