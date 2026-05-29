@@ -92,7 +92,8 @@ const navSections = computed(() => [
     items: [
       { to: `${sitePrefix.value}/switches`, icon: 'i-heroicons-server-stack', label: 'nav.switches' },
       { to: `${sitePrefix.value}/vlans`, icon: 'i-heroicons-tag', label: 'nav.vlans' },
-      { to: `${sitePrefix.value}/networks`, icon: 'i-heroicons-globe-alt', label: 'nav.networks' }
+      { to: `${sitePrefix.value}/subnets`, icon: 'i-heroicons-globe-alt', label: 'nav.networks' },
+      { to: `${sitePrefix.value}/ip-addresses`, icon: 'i-heroicons-map-pin', label: 'nav.ipAddresses' }
     ]
   },
   {

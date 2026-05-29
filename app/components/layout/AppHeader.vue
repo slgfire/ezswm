@@ -92,7 +92,7 @@
               <NuxtLink
                 v-for="(net, i) in results.networks"
                 :key="net.id"
-                :to="`${searchSitePrefix}/networks/${net.id}`"
+                :to="`${searchSitePrefix}/subnets/${net.id}`"
                 :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('networks', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('networks', i)"
@@ -130,7 +130,7 @@
               <NuxtLink
                 v-for="(range, i) in results.ranges"
                 :key="range.id"
-                :to="range.site_id ? `/sites/${range.site_id}/networks/${range.network_id}` : `${searchSitePrefix}/networks/${range.network_id}`"
+                :to="range.site_id ? `/sites/${range.site_id}/subnets/${range.network_id}` : `${searchSitePrefix}/subnets/${range.network_id}`"
                 :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('ranges', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('ranges', i)"
@@ -331,14 +331,14 @@ const flatResults = computed(() => {
     items.push({ type: 'vlans', index: items.length, url: `${prefix}/vlans/${v.id}` })
   }
   for (const n of results.value.networks || []) {
-    items.push({ type: 'networks', index: items.length, url: `${prefix}/networks/${n.id}` })
+    items.push({ type: 'networks', index: items.length, url: `${prefix}/subnets/${n.id}` })
   }
   for (const a of results.value.allocations || []) {
-    items.push({ type: 'allocations', index: items.length, url: `${prefix}/networks/${a.network_id}` })
+    items.push({ type: 'allocations', index: items.length, url: `${prefix}/subnets/${a.network_id}` })
   }
   for (const r of results.value.ranges || []) {
     const rPrefix = r.site_id ? `/sites/${r.site_id}` : prefix
-    items.push({ type: 'ranges', index: items.length, url: `${rPrefix}/networks/${r.network_id}` })
+    items.push({ type: 'ranges', index: items.length, url: `${rPrefix}/subnets/${r.network_id}` })
   }
   for (const tpl of results.value.templates || []) {
     items.push({ type: 'templates', index: items.length, url: `/layout-templates/${tpl.id}` })
@@ -376,7 +376,7 @@ function navigateToSelected() {
 }
 
 function allocLink(alloc: { network_id?: string }): string {
-  return alloc.network_id ? `${searchSitePrefix.value}/networks/${alloc.network_id}` : '#'
+  return alloc.network_id ? `${searchSitePrefix.value}/subnets/${alloc.network_id}` : '#'
 }
 
 function highlight(text: string | undefined | null): string {

@@ -2,7 +2,7 @@
   <div class="p-6">
     <div class="mb-4 flex items-center justify-between">
       <h1 class="text-xl font-bold">{{ $t('networks.title') }}</h1>
-      <UButton :to="`/sites/${siteId}/networks/create`" icon="i-heroicons-plus" size="sm">
+      <UButton :to="`/sites/${siteId}/subnets/create`" icon="i-heroicons-plus" size="sm">
         {{ $t('networks.create') }}
       </UButton>
     </div>
@@ -59,7 +59,7 @@
           <NuxtLink
             v-for="(net, i) in group.items"
             :key="net.id"
-            :to="`/sites/${siteId}/networks/${net.id}`"
+            :to="`/sites/${siteId}/subnets/${net.id}`"
             class="row-hover group flex items-stretch pr-5"
             :class="i > 0 ? 'border-t border-default' : ''"
           >
@@ -112,7 +112,7 @@
       :description="$t('networks.emptyDescription')"
     >
       <template #action>
-        <UButton :to="`/sites/${siteId}/networks/create`" icon="i-heroicons-plus">{{ $t('networks.create') }}</UButton>
+        <UButton :to="`/sites/${siteId}/subnets/create`" icon="i-heroicons-plus">{{ $t('networks.create') }}</UButton>
       </template>
     </SharedEmptyState>
     </template>

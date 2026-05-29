@@ -3,6 +3,9 @@ import {
   parseSubnetInfo,
   abbreviateEndIp,
   rangeIpCount,
+  isValidIPv4,
+  isIPInSubnet,
+  findNetworkForIP,
 } from '../app/utils/subnetCalculations'
 
 describe('ipToLong', () => {
@@ -112,5 +115,67 @@ describe('rangeIpCount', () => {
 
   it('counts correctly across octet boundary', () => {
     expect(rangeIpCount('10.0.0.250', '10.0.1.5')).toBe(12)
+  })
+})
+
+describe('isValidIPv4', () => {
+  it('accepts a well-formed address', () => {
+    expect(isValidIPv4('10.0.1.50')).toBe(true)
+  })
+
+  it('rejects a partial address', () => {
+    expect(isValidIPv4('10.0')).toBe(false)
+  })
+
+  it('rejects an octet out of range', () => {
+    expect(isValidIPv4('10.0.0.256')).toBe(false)
+  })
+
+  it('rejects non-numeric octets and leading zeros', () => {
+    expect(isValidIPv4('10.0.0.x')).toBe(false)
+    expect(isValidIPv4('10.0.0.01')).toBe(false)
+  })
+})
+
+describe('isIPInSubnet', () => {
+  it('returns true for an IP inside the subnet', () => {
+    expect(isIPInSubnet('10.0.1.50', '10.0.1.0/24')).toBe(true)
+  })
+
+  it('returns false for an IP outside the subnet', () => {
+    expect(isIPInSubnet('10.0.2.50', '10.0.1.0/24')).toBe(false)
+  })
+
+  it('handles /31 point-to-point subnets', () => {
+    expect(isIPInSubnet('10.0.0.1', '10.0.0.0/31')).toBe(true)
+    expect(isIPInSubnet('10.0.0.2', '10.0.0.0/31')).toBe(false)
+  })
+})
+
+describe('findNetworkForIP', () => {
+  const networks = [
+    { id: 'a', subnet: '10.0.1.0/24' },
+    { id: 'b', subnet: '10.0.2.0/24' }
+  ]
+
+  it('finds the matching network', () => {
+    expect(findNetworkForIP('10.0.2.5', networks)?.id).toBe('b')
+  })
+
+  it('returns null when no subnet contains the IP', () => {
+    expect(findNetworkForIP('192.168.0.5', networks)).toBeNull()
+  })
+
+  it('returns null for invalid or partial input', () => {
+    expect(findNetworkForIP('10.0', networks)).toBeNull()
+    expect(findNetworkForIP('', networks)).toBeNull()
+  })
+
+  it('returns the first matching network when subnets overlap', () => {
+    const overlap = [
+      { id: 'first', subnet: '10.0.0.0/8' },
+      { id: 'second', subnet: '10.0.1.0/24' }
+    ]
+    expect(findNetworkForIP('10.0.1.5', overlap)?.id).toBe('first')
   })
 })

@@ -94,3 +94,42 @@ export function abbreviateEndIp(startIp: string, endIp: string): string {
 export function rangeIpCount(startIp: string, endIp: string): number {
   return ipToLong(endIp) - ipToLong(startIp) + 1
 }
+
+/**
+ * Validates a dotted-decimal IPv4 address (rejects partial/octet-out-of-range input).
+ */
+export function isValidIPv4(ip: string): boolean {
+  const parts = ip.split('.')
+  if (parts.length !== 4) return false
+  return parts.every((part) => {
+    const num = Number(part)
+    return Number.isInteger(num) && num >= 0 && num <= 255 && part === String(num)
+  })
+}
+
+/**
+ * Returns true when the IP falls within the given CIDR subnet.
+ */
+export function isIPInSubnet(ip: string, cidr: string): boolean {
+  const [subnetIp, prefixStr] = cidr.split('/')
+  if (!subnetIp || prefixStr === undefined) return false
+  const prefix = Number(prefixStr)
+  const mask = prefix === 0 ? 0 : (~0 << (32 - prefix)) >>> 0
+  const network = (ipToLong(subnetIp) & mask) >>> 0
+  return ((ipToLong(ip) & mask) >>> 0) === network
+}
+
+/**
+ * Finds the first network whose subnet contains the given IP, or null.
+ * Returns null for invalid IPs so partial input never matches.
+ */
+export function findNetworkForIP<T extends { id: string; subnet: string }>(
+  ip: string,
+  networks: T[]
+): T | null {
+  if (!isValidIPv4(ip)) return null
+  for (const net of networks) {
+    if (net.subnet && isIPInSubnet(ip, net.subnet)) return net
+  }
+  return null
+}
