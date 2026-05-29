@@ -4,6 +4,7 @@
     "switches": "Switches",
     "vlans": "VLANs",
     "networks": "Netzwerke",
+    "ipAddresses": "IP-Adressen",
     "topology": "Topologie",
     "tools": "Werkzeuge",
     "subnetCalculator": "Subnetz-Rechner",
@@ -14,6 +15,32 @@
     "users": "Benutzer",
     "layoutTemplates": "Layout-Vorlagen",
     "sites": "Standorte"
+  },
+  "ipAddresses": {
+    "title": "IP-Adressen",
+    "add": "IP-Adresse hinzufügen",
+    "delete": "IP-Adresse löschen",
+    "emptyTitle": "Noch keine IP-Adressen",
+    "emptyDescription": "Lege deine erste IP-Adresse an — das Netzwerk wird automatisch aus der IP abgeleitet.",
+    "noNetworkMatch": "Diese IP liegt in keinem bekannten Subnetz — Netzwerk bitte manuell wählen.",
+    "fields": {
+      "ipAddress": "IP-Adresse",
+      "hostname": "Hostname",
+      "macAddress": "MAC-Adresse",
+      "network": "Netzwerk",
+      "vlan": "VLAN",
+      "deviceType": "Gerätetyp",
+      "status": "Status",
+      "site": "Standort"
+    },
+    "filters": {
+      "noVlan": "Kein VLAN"
+    },
+    "messages": {
+      "created": "IP-Adresse erfolgreich erstellt",
+      "updated": "IP-Adresse erfolgreich aktualisiert",
+      "deleted": "IP-Adresse erfolgreich gelöscht"
+    }
   },
   "sites": {
     "title": "Standorte",
