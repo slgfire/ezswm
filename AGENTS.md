@@ -78,6 +78,21 @@ Commit the lockfile.
 
 ---
 
+## Versioning
+
+Follow semver for the `version` field in `package.json`:
+
+- **Feature** (new, backwards-compatible functionality) → minor bump (e.g. `0.18.11` → `0.19.0`)
+- **Bug fix** → patch bump (e.g. `0.19.0` → `0.19.1`)
+- **Breaking change** → major bump
+
+Bump the version in the same PR as the change. Merging to `main` triggers
+`.github/workflows/release-tag.yml`, which creates the `v<version>` git tag
+and a GitHub release automatically — the `package.json` version is the
+single source of truth for the released tag.
+
+---
+
 ## Architecture Rules
 
 - Only `server/repositories` may access storage
