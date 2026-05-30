@@ -95,6 +95,16 @@ export const ipAllocationRepository = {
         throw createError({ statusCode: 400, message: `IP ${data.ip_address} is the ${data.ip_address === info.network_address ? 'network' : 'broadcast'} address of ${network.subnet}. Valid range: ${info.first_usable} - ${info.last_usable}` })
       }
 
+      // Check if IP falls inside a DHCP dynamic range
+      const ipRanges = readJson<IPRange[]>('ip-ranges.json')
+      const networkRanges = ipRanges.filter(r => r.network_id === allocations[index]!.network_id)
+      const ipLong = ipToLong(data.ip_address)
+      for (const range of networkRanges) {
+        if (range.type === 'dhcp' && ipLong >= ipToLong(range.start_ip) && ipLong <= ipToLong(range.end_ip)) {
+          throw createError({ statusCode: 400, message: `IP ${data.ip_address} is inside a DHCP dynamic range (${range.start_ip} - ${range.end_ip}). Static IPs cannot be assigned within dynamic DHCP ranges.` })
+        }
+      }
+
       if (allocations.some(a => a.ip_address === data.ip_address && a.id !== id)) {
         throw createError({ statusCode: 409, message: `IP address ${data.ip_address} is already allocated` })
       }
