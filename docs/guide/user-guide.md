@@ -11,9 +11,9 @@ title: User Guide
 When you launch ezSWM for the first time, a setup wizard guides you through two steps:
 
 1. **Admin account** — pick a username, display name and password.
-2. **First site** — give your first site a name (e.g. `HQ`, `Datacenter`, `LAN-Party`). Sites group switches, VLANs and networks; you can rename it later and add more.
+2. **First site** — give your first site a name (e.g. `HQ`, `Datacenter`, `LAN-Party`). Sites group switches, VLANs and subnets; you can rename it later and add more.
 
-If you're upgrading from a version that did not yet have sites, the wizard skips step 1 and asks only for the site name. Any existing switches, VLANs and networks are automatically reassigned to the site you create.
+If you're upgrading from a version that did not yet have sites, the wizard skips step 1 and asks only for the site name. Any existing switches, VLANs and subnets are automatically reassigned to the site you create.
 
 After setup, you are redirected to the login screen.
 
@@ -21,7 +21,7 @@ After setup, you are redirected to the login screen.
 
 ### Dashboard Overview
 
-After logging in, the dashboard provides a summary of your infrastructure: total switches, VLANs, networks, and IP utilization. The sidebar on the left gives access to all sections. The header bar contains global search, a theme toggle (dark/light), language selector, and user menu.
+After logging in, the dashboard provides a summary of your infrastructure: total switches, VLANs, subnets, and IP utilization. The sidebar on the left gives access to all sections. The header bar contains global search, a theme toggle (dark/light), language selector, and user menu.
 
 ![Dashboard](/images/screenshot-dashboard.png)
 
@@ -384,7 +384,7 @@ Click any VLAN in the list to open a detail sidepanel on the right. The selected
 - Status and color badges
 - Routing device
 - Description
-- Associated networks with links
+- Associated subnets with links
 
 ![VLAN detail sidepanel](/images/screenshot-vlans-detail.png)
 
@@ -392,15 +392,15 @@ Click any VLAN in the list to open a detail sidepanel on the right. The selected
 
 In the sidepanel, click the **edit icon** to switch to edit mode inline. Click the **trash icon** to delete the VLAN. You can also access a full detail page for each VLAN with additional information.
 
-## Networks & IP Management
+## Subnets & IP Management
 
-### Creating Networks
+### Creating Subnets
 
-![Network list](/images/screenshot-networks.png)
+![Subnet list](/images/screenshot-networks.png)
 
-Navigate to **Networks** in the sidebar and click **Create**. The network list supports sorting by name, subnet (numerically correct), and gateway. Search, filter, and sort state is preserved in the URL and across sessions via localStorage.
+Navigate to **Subnets** in the sidebar and click **Create**. The subnet list supports sorting by name, subnet (numerically correct), and gateway. Search, filter, and sort state is preserved in the URL and across sessions via localStorage.
 
-**Click-to-copy**: On the network detail page, click any IP address, subnet, gateway, or mask value to copy it to your clipboard. A confirmation toast appears in the bottom-right corner. This works on all detail pages (networks, switches, subnet calculator, topology panel).
+**Click-to-copy**: On the subnet detail page, click any IP address, subnet, gateway, or mask value to copy it to your clipboard. A confirmation toast appears in the bottom-right corner. This works on all detail pages (subnets, switches, subnet calculator, topology panel).
 
 Fields:
 
@@ -408,14 +408,14 @@ Fields:
 - **Subnet** (required) -- CIDR notation, e.g., `10.0.1.0/24`
 - **Gateway** -- e.g., `10.0.1.1`
 - **DNS Servers** -- comma-separated list, e.g., `8.8.8.8, 8.8.4.4`
-- **VLAN** -- associate this network with a VLAN from the dropdown
+- **VLAN** -- associate this subnet with a VLAN from the dropdown
 - **Description** -- optional
 
-### Network Detail & IP Overview
+### Subnet Detail & IP Overview
 
-The network detail page shows subnet statistics (subnet, gateway, mask, hosts, allocated count, associated VLAN) in a compact info bar at the top. Click the info bar to expand additional details (network address, broadcast, DNS servers, description) -- the same pattern used on the switch detail page. A utilization bar below visualizes allocated, DHCP, reserved, and free address space. To edit the network, click the **pencil icon** in the top-right corner -- this opens a slideover panel.
+The subnet detail page shows subnet statistics (subnet, gateway, mask, hosts, allocated count, associated VLAN) in a compact info bar at the top. Click the info bar to expand additional details (network address, broadcast, DNS servers, description) -- the same pattern used on the switch detail page. A utilization bar below visualizes allocated, DHCP, reserved, and free address space. To edit the subnet, click the **pencil icon** in the top-right corner -- this opens a slideover panel.
 
-![Network detail with IP overview](/images/screenshot-network-detail.png)
+![Subnet detail with IP overview](/images/screenshot-network-detail.png)
 
 Below the info bar, the **IP Overview** displays all entries in a unified, sorted list:
 
@@ -446,7 +446,7 @@ IP ranges designate blocks of addresses for specific purposes:
 
 Each range has a start IP, end IP, type, and optional description. The IP count is shown inline.
 
-### Special Networks (/31 and /32)
+### Special Subnets (/31 and /32)
 
 ezSWM handles IPv4 special subnets according to their RFCs:
 
@@ -457,7 +457,21 @@ The Subnet Calculator applies the same labels and badges.
 
 ### Utilization Tracking
 
-The utilization bar at the top of the network detail page visualizes address space usage. The legend shows allocated, DHCP, reserved, and free counts.
+The utilization bar at the top of the subnet detail page visualizes address space usage. The legend shows allocated, DHCP, reserved, and free counts.
+
+## IP Addresses (site-wide)
+
+The **IP Addresses** page in the sidebar gives you a flat, table-style view of every IP allocation across all subnets of the current site (or across every site in "All Sites" mode). Useful when you want to scan, filter, or look up an IP without first navigating into a specific subnet.
+
+**Columns:** IP · Hostname · MAC · Subnet (name + CIDR) · VLAN (colored badge) · Device Type · Status. In "All Sites" mode an additional Site column is shown.
+
+**Filters & sort:** a search box matches IP / hostname / MAC. Separate dropdowns filter by VLAN, Status, and Device Type. Filter state is preserved in the URL and across sessions via localStorage. Click the IP column header to sort numerically (so `.10` comes after `.9`, not after `.1`). The table body scrolls internally — the page header, filters, and column headers stay fixed while you scroll, on desktop and mobile.
+
+**Row click → edit:** clicking any row opens an edit slideover. Delete lives in the slideover header, so no per-row action buttons clutter the table.
+
+**Adding an IP:** click **Add IP Address**. As soon as you type a valid IP, the **Subnet** dropdown auto-selects the subnet whose CIDR contains it — no need to pick the subnet manually. You can always override the dropdown (useful in "All Sites" mode where ranges from different sites can overlap). The VLAN of the chosen subnet is shown read-only next to it.
+
+**DHCP-range protection:** if the IP you try to create — or to move to via editing — falls inside a DHCP range, the form rejects it with a clear message: *IP x.x.x.x is inside a DHCP dynamic range (start – end). Static IPs cannot be assigned within dynamic DHCP ranges.* This applies symmetrically on **create** and on **edit**, so you can't accidentally move a static allocation into a DHCP scope by editing its IP.
 
 ## Global Search
 
@@ -465,9 +479,9 @@ Press **/** or click the search bar in the header to open global search. It sear
 
 - Switches (by name, location, management IP, model, manufacturer, tags)
 - VLANs (by name, VLAN ID)
-- Networks (by name, subnet)
+- Subnets (by name, CIDR)
 - IP allocations (by IP, hostname)
-- IP ranges (by start/end IP, type, network name)
+- IP ranges (by start/end IP, type, subnet name)
 - Layout templates (by name)
 - LAG groups (by name, description, remote device)
 
@@ -495,7 +509,7 @@ This is a client-side tool — no data is saved. Useful for quick subnet calcula
 
 ![Data Management](/images/screenshot-data-management.png)
 
-Each entity type (switches, VLANs, networks, IP allocations, IP ranges, layout templates) can be individually exported to JSON or CSV and imported back. Files can be dragged into the upload area. This is useful for transferring specific data between instances or bulk-loading network plans.
+Each entity type (switches, VLANs, subnets, IP allocations, IP ranges, layout templates) can be individually exported to JSON or CSV and imported back. Files can be dragged into the upload area. This is useful for transferring specific data between instances or bulk-loading subnet plans.
 
 ### Full Backup and Restore
 
@@ -525,7 +539,7 @@ Change your password from the account settings page. You must provide your curre
 
 ### What They Are
 
-Sites represent physical locations or logical groupings for your infrastructure. Each site has its own switches, VLANs, networks, and topology. Use sites to separate different locations (e.g., "Data Center", "Office", "LAN Party Hall A").
+Sites represent physical locations or logical groupings for your infrastructure. Each site has its own switches, VLANs, subnets, and topology. Use sites to separate different locations (e.g., "Data Center", "Office", "LAN Party Hall A").
 
 ![Sites](/images/screenshot-sites.png)
 
@@ -533,7 +547,7 @@ Sites represent physical locations or logical groupings for your infrastructure.
 
 Navigate to **Sites** in the sidebar to see all sites. Click **Create Site** to add a new one. Each site has a name and optional description.
 
-When you select a site from the dropdown in the sidebar, all views (switches, VLANs, networks, topology) are scoped to that site. Select "All Sites" to see everything across all locations.
+When you select a site from the dropdown in the sidebar, all views (switches, VLANs, subnets, topology) are scoped to that site. Select "All Sites" to see everything across all locations.
 
 ### First Site
 

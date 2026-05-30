@@ -24,6 +24,7 @@ export default withMermaid(
           nav: [
             { text: 'Guide', link: '/guide/installation' },
             { text: 'API Reference', link: '/api/reference' },
+            { text: 'Release Notes', link: '/release-notes' },
             { text: 'GitHub', link: GITHUB_REPO },
           ],
           sidebar: {
@@ -34,6 +35,7 @@ export default withMermaid(
                   { text: 'Installation', link: '/guide/installation' },
                   { text: 'User Guide', link: '/guide/user-guide' },
                   { text: 'FAQ & Troubleshooting', link: '/guide/faq' },
+                  { text: 'Release Notes', link: '/release-notes' },
                 ],
               },
             ],
@@ -42,6 +44,17 @@ export default withMermaid(
                 text: 'API',
                 items: [
                   { text: 'API Reference', link: '/api/reference' },
+                ],
+              },
+            ],
+            '/release-notes': [
+              {
+                text: 'Guide',
+                items: [
+                  { text: 'Installation', link: '/guide/installation' },
+                  { text: 'User Guide', link: '/guide/user-guide' },
+                  { text: 'FAQ & Troubleshooting', link: '/guide/faq' },
+                  { text: 'Release Notes', link: '/release-notes' },
                 ],
               },
             ],
@@ -58,6 +71,7 @@ export default withMermaid(
           nav: [
             { text: 'Handbuch', link: '/de/guide/installation' },
             { text: 'API-Referenz', link: '/de/api/reference' },
+            { text: 'Release Notes', link: '/de/release-notes' },
             { text: 'GitHub', link: GITHUB_REPO },
           ],
           sidebar: {
@@ -68,6 +82,7 @@ export default withMermaid(
                   { text: 'Installation', link: '/de/guide/installation' },
                   { text: 'Benutzerhandbuch', link: '/de/guide/user-guide' },
                   { text: 'FAQ & Problemlösung', link: '/de/guide/faq' },
+                  { text: 'Release Notes', link: '/de/release-notes' },
                 ],
               },
             ],
@@ -76,6 +91,17 @@ export default withMermaid(
                 text: 'API',
                 items: [
                   { text: 'API-Referenz', link: '/de/api/reference' },
+                ],
+              },
+            ],
+            '/de/release-notes': [
+              {
+                text: 'Handbuch',
+                items: [
+                  { text: 'Installation', link: '/de/guide/installation' },
+                  { text: 'Benutzerhandbuch', link: '/de/guide/user-guide' },
+                  { text: 'FAQ & Problemlösung', link: '/de/guide/faq' },
+                  { text: 'Release Notes', link: '/de/release-notes' },
                 ],
               },
             ],

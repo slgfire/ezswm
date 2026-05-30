@@ -19,12 +19,12 @@ features:
     title: Switch-Inventar
     details: Switches mit Front-Panel Port-Visualisierung, VLAN-Farbcodierung und Layout-Templates für jedes Hardware-Modell verwalten.
   - icon: 🌐
-    title: VLAN- & Netzwerk-Management
-    details: VLANs mit individuellen Farben dokumentieren, Netzwerke mit CIDR-Subnetzen verwalten und IP-Zuweisungen und -Bereiche nachverfolgen.
+    title: VLAN- & Subnetz-Management
+    details: VLANs mit individuellen Farben dokumentieren, Subnetze mit CIDR-Notation verwalten und IP-Zuweisungen und -Bereiche nachverfolgen.
   - icon: 📦
     title: Keine Datenbank erforderlich
     details: Alle Daten als JSON-Dateien mit atomaren Schreibvorgängen gespeichert. In Sekunden mit Docker bereitstellen, Backup durch Ordner kopieren.
   - icon: 🏢
     title: Multi-Standort-Unterstützung
-    details: Infrastruktur über mehrere Standorte oder Orte organisieren, jeweils mit eigenen Switches, VLANs und Netzwerken.
+    details: Infrastruktur über mehrere Standorte oder Orte organisieren, jeweils mit eigenen Switches, VLANs und Subnetzen.
 ---

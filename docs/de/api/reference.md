@@ -12,14 +12,14 @@ Alle Endpunkte erfordern eine Authentifizierung per JWT-Cookie, außer `/api/hea
 erDiagram
     Site ||--o{ Switch : contains
     Site ||--o{ VLAN : contains
-    Site ||--o{ Network : contains
+    Site ||--o{ Subnet : contains
     Switch ||--o{ Port : has
     Switch }o--|| LayoutTemplate : uses
     Port }o--o| VLAN : native_vlan
     Port }o--o{ VLAN : trunk_vlans
-    Network ||--o{ IPAllocation : contains
-    Network ||--o{ IPRange : contains
-    Network }o--|| VLAN : assigned_to
+    Subnet ||--o{ IPAllocation : contains
+    Subnet ||--o{ IPRange : contains
+    Subnet }o--|| VLAN : assigned_to
 ```
 
 ---
@@ -75,33 +75,37 @@ erDiagram
 | GET | `/api/vlans/:id/references` | Objekte abrufen, die dieses VLAN referenzieren |
 | GET | `/api/vlans/suggest-color` | Farbvorschlag für ein neues VLAN |
 
-## Netzwerke
+## Subnetze
+
+::: tip
+In der UI heißt diese Entität seit v0.20.0 **Subnetze**. Die API-Pfade bleiben aus Kompatibilitätsgründen bei `/api/networks`.
+:::
 
 | Methode | Endpunkt | Beschreibung |
 |---------|----------|--------------|
-| GET | `/api/networks` | Alle Netzwerke auflisten |
-| POST | `/api/networks` | Neues Netzwerk erstellen |
-| GET | `/api/networks/:id` | Netzwerk nach ID abrufen |
-| PUT | `/api/networks/:id` | Netzwerk nach ID aktualisieren |
-| DELETE | `/api/networks/:id` | Netzwerk nach ID löschen |
-| GET | `/api/networks/:id/references` | Objekte abrufen, die dieses Netzwerk referenzieren |
-| GET | `/api/networks/:id/utilization` | IP-Auslastungsstatistiken des Netzwerks abrufen |
+| GET | `/api/networks` | Alle Subnetze auflisten |
+| POST | `/api/networks` | Neues Subnetz erstellen |
+| GET | `/api/networks/:id` | Subnetz nach ID abrufen |
+| PUT | `/api/networks/:id` | Subnetz nach ID aktualisieren |
+| DELETE | `/api/networks/:id` | Subnetz nach ID löschen |
+| GET | `/api/networks/:id/references` | Objekte abrufen, die dieses Subnetz referenzieren |
+| GET | `/api/networks/:id/utilization` | IP-Auslastungsstatistiken des Subnetzes abrufen |
 
-## Netzwerk-IP-Zuweisungen
+## Subnetz-IP-Zuweisungen
 
 | Methode | Endpunkt | Beschreibung |
 |---------|----------|--------------|
-| GET | `/api/networks/:id/allocations` | Zuweisungen eines Netzwerks auflisten |
+| GET | `/api/networks/:id/allocations` | Zuweisungen eines Subnetzes auflisten |
 | POST | `/api/networks/:id/allocations` | IP-Zuweisung erstellen |
 | GET | `/api/networks/:id/allocations/:allocId` | Zuweisung nach ID abrufen |
 | PUT | `/api/networks/:id/allocations/:allocId` | Zuweisung nach ID aktualisieren |
 | DELETE | `/api/networks/:id/allocations/:allocId` | Zuweisung nach ID löschen |
 
-## Netzwerk-IP-Bereiche
+## Subnetz-IP-Bereiche
 
 | Methode | Endpunkt | Beschreibung |
 |---------|----------|--------------|
-| GET | `/api/networks/:id/ranges` | IP-Bereiche eines Netzwerks auflisten |
+| GET | `/api/networks/:id/ranges` | IP-Bereiche eines Subnetzes auflisten |
 | POST | `/api/networks/:id/ranges` | IP-Bereich erstellen |
 | GET | `/api/networks/:id/ranges/:rangeId` | IP-Bereich nach ID abrufen |
 | PUT | `/api/networks/:id/ranges/:rangeId` | IP-Bereich nach ID aktualisieren |
