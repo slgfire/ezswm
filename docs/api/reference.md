@@ -12,14 +12,14 @@ All endpoints require authentication via JWT cookie except `/api/health`, `/api/
 erDiagram
     Site ||--o{ Switch : contains
     Site ||--o{ VLAN : contains
-    Site ||--o{ Network : contains
+    Site ||--o{ Subnet : contains
     Switch ||--o{ Port : has
     Switch }o--|| LayoutTemplate : uses
     Port }o--o| VLAN : native_vlan
     Port }o--o{ VLAN : trunk_vlans
-    Network ||--o{ IPAllocation : contains
-    Network ||--o{ IPRange : contains
-    Network }o--|| VLAN : assigned_to
+    Subnet ||--o{ IPAllocation : contains
+    Subnet ||--o{ IPRange : contains
+    Subnet }o--|| VLAN : assigned_to
 ```
 
 ---
@@ -75,33 +75,37 @@ erDiagram
 | GET | `/api/vlans/:id/references` | Get objects referencing this VLAN |
 | GET | `/api/vlans/suggest-color` | Suggest a color for a new VLAN |
 
-## Networks
+## Subnets
+
+::: tip
+The UI calls this entity **Subnets** since v0.20.0. The API paths stay `/api/networks` for backward compatibility.
+:::
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/networks` | List all networks |
-| POST | `/api/networks` | Create a new network |
-| GET | `/api/networks/:id` | Get network by ID |
-| PUT | `/api/networks/:id` | Update network by ID |
-| DELETE | `/api/networks/:id` | Delete network by ID |
-| GET | `/api/networks/:id/references` | Get objects referencing this network |
-| GET | `/api/networks/:id/utilization` | Get network IP utilization stats |
+| GET | `/api/networks` | List all subnets |
+| POST | `/api/networks` | Create a new subnet |
+| GET | `/api/networks/:id` | Get subnet by ID |
+| PUT | `/api/networks/:id` | Update subnet by ID |
+| DELETE | `/api/networks/:id` | Delete subnet by ID |
+| GET | `/api/networks/:id/references` | Get objects referencing this subnet |
+| GET | `/api/networks/:id/utilization` | Get subnet IP utilization stats |
 
-## Network IP Allocations
+## Subnet IP Allocations
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/networks/:id/allocations` | List allocations for a network |
+| GET | `/api/networks/:id/allocations` | List allocations for a subnet |
 | POST | `/api/networks/:id/allocations` | Create an IP allocation |
 | GET | `/api/networks/:id/allocations/:allocId` | Get allocation by ID |
 | PUT | `/api/networks/:id/allocations/:allocId` | Update allocation by ID |
 | DELETE | `/api/networks/:id/allocations/:allocId` | Delete allocation by ID |
 
-## Network IP Ranges
+## Subnet IP Ranges
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/networks/:id/ranges` | List IP ranges for a network |
+| GET | `/api/networks/:id/ranges` | List IP ranges for a subnet |
 | POST | `/api/networks/:id/ranges` | Create an IP range |
 | GET | `/api/networks/:id/ranges/:rangeId` | Get IP range by ID |
 | PUT | `/api/networks/:id/ranges/:rangeId` | Update IP range by ID |

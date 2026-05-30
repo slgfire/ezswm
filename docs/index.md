@@ -19,12 +19,12 @@ features:
     title: Switch Inventory
     details: Track switches with front-panel port visualization, VLAN color-coding, and layout templates for any hardware model.
   - icon: 🌐
-    title: VLAN & Network Management
-    details: Document VLANs with unique colors, manage networks with CIDR subnets, and track IP allocations and ranges.
+    title: VLAN & Subnet Management
+    details: Document VLANs with unique colors, manage subnets with CIDR notation, and track IP allocations and ranges.
   - icon: 📦
     title: No Database Required
     details: All data stored as JSON files with atomic writes. Deploy with Docker in seconds, back up by copying a folder.
   - icon: 🏢
     title: Multi-Site Support
-    details: Organize infrastructure across multiple sites or locations, each with their own switches, VLANs, and networks.
+    details: Organize infrastructure across multiple sites or locations, each with their own switches, VLANs, and subnets.
 ---

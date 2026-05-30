@@ -11,9 +11,9 @@ title: Benutzerhandbuch
 Beim ersten Start von ezSWM führt ein Einrichtungsassistent durch zwei Schritte:
 
 1. **Admin-Konto** — wähle einen Benutzernamen, Anzeigenamen und ein Passwort.
-2. **Erste Site** — gib deiner ersten Site einen Namen (z. B. `HQ`, `Rechenzentrum`, `LAN-Party`). Sites gruppieren Switches, VLANs und Netzwerke; du kannst sie später umbenennen oder weitere hinzufügen.
+2. **Erste Site** — gib deiner ersten Site einen Namen (z. B. `HQ`, `Rechenzentrum`, `LAN-Party`). Sites gruppieren Switches, VLANs und Subnetze; du kannst sie später umbenennen oder weitere hinzufügen.
 
-Wenn du von einer Version aktualisierst, die noch keine Sites hatte, überspringt der Wizard Schritt 1 und fragt nur nach dem Site-Namen. Alle vorhandenen Switches, VLANs und Netzwerke werden automatisch der angelegten Site zugeordnet.
+Wenn du von einer Version aktualisierst, die noch keine Sites hatte, überspringt der Wizard Schritt 1 und fragt nur nach dem Site-Namen. Alle vorhandenen Switches, VLANs und Subnetze werden automatisch der angelegten Site zugeordnet.
 
 Nach der Einrichtung wirst du zum Anmeldebildschirm weitergeleitet.
 
@@ -21,7 +21,7 @@ Nach der Einrichtung wirst du zum Anmeldebildschirm weitergeleitet.
 
 ### Dashboard-Übersicht
 
-Nach der Anmeldung bietet das Dashboard eine Zusammenfassung deiner Infrastruktur: Gesamtzahl der Switches, VLANs, Netzwerke und IP-Auslastung. Die Seitenleiste links ermöglicht den Zugriff auf alle Bereiche. Die Kopfleiste enthält die globale Suche, einen Theme-Umschalter (Dunkel/Hell), Sprachauswahl und Benutzermenü.
+Nach der Anmeldung bietet das Dashboard eine Zusammenfassung deiner Infrastruktur: Gesamtzahl der Switches, VLANs, Subnetze und IP-Auslastung. Die Seitenleiste links ermöglicht den Zugriff auf alle Bereiche. Die Kopfleiste enthält die globale Suche, einen Theme-Umschalter (Dunkel/Hell), Sprachauswahl und Benutzermenü.
 
 ![Dashboard](/images/screenshot-dashboard.png)
 
@@ -384,7 +384,7 @@ Klicke auf ein VLAN in der Liste, um ein Detail-Sidepanel auf der rechten Seite 
 - Status- und Farb-Badges
 - Routing-Gerät
 - Beschreibung
-- Verknüpfte Netzwerke mit Links
+- Verknüpfte Subnetze mit Links
 
 ![VLAN-Detail-Sidepanel](/images/screenshot-vlans-detail.png)
 
@@ -392,15 +392,15 @@ Klicke auf ein VLAN in der Liste, um ein Detail-Sidepanel auf der rechten Seite 
 
 Im Sidepanel klicke auf das **Bearbeiten-Symbol**, um in den Bearbeitungsmodus zu wechseln. Klicke auf das **Papierkorb-Symbol**, um das VLAN zu löschen. Du kannst auch eine vollständige Detailseite für jedes VLAN mit zusätzlichen Informationen aufrufen.
 
-## Netzwerke & IP-Verwaltung
+## Subnetze & IP-Verwaltung
 
-### Netzwerke erstellen
+### Subnetze erstellen
 
-![Netzwerkliste](/images/screenshot-networks.png)
+![Subnetz-Liste](/images/screenshot-networks.png)
 
-Navigiere zu **Netzwerke** in der Seitenleiste und klicke auf **Erstellen**. Die Netzwerkliste unterstützt Sortierung nach Name, Subnetz (numerisch korrekt) und Gateway. Such-, Filter- und Sortierzustand wird in der URL und über Sessions hinweg via localStorage gespeichert.
+Navigiere zu **Subnetze** in der Seitenleiste und klicke auf **Erstellen**. Die Subnetz-Liste unterstützt Sortierung nach Name, Subnetz (numerisch korrekt) und Gateway. Such-, Filter- und Sortierzustand wird in der URL und über Sessions hinweg via localStorage gespeichert.
 
-**Klick-zum-Kopieren**: Auf der Netzwerk-Detailseite kannst du auf jede IP-Adresse, Subnetz, Gateway oder Maske klicken um den Wert in die Zwischenablage zu kopieren. Eine Bestätigung erscheint als Toast unten rechts. Dies funktioniert auf allen Detailseiten (Netzwerke, Switches, Subnetz-Rechner, Topologie-Panel).
+**Klick-zum-Kopieren**: Auf der Subnetz-Detailseite kannst du auf jede IP-Adresse, Subnetz, Gateway oder Maske klicken um den Wert in die Zwischenablage zu kopieren. Eine Bestätigung erscheint als Toast unten rechts. Dies funktioniert auf allen Detailseiten (Subnetze, Switches, Subnetz-Rechner, Topologie-Panel).
 
 Felder:
 
@@ -408,14 +408,14 @@ Felder:
 - **Subnetz** (erforderlich) -- CIDR-Notation, z.B. `10.0.1.0/24`
 - **Gateway** -- z.B. `10.0.1.1`
 - **DNS-Server** -- kommagetrennte Liste, z.B. `8.8.8.8, 8.8.4.4`
-- **VLAN** -- dieses Netzwerk mit einem VLAN aus dem Dropdown verknüpfen
+- **VLAN** -- dieses Subnetz mit einem VLAN aus dem Dropdown verknüpfen
 - **Beschreibung** -- optional
 
-### Netzwerk-Detail & IP-Übersicht
+### Subnetz-Detail & IP-Übersicht
 
-Die Netzwerk-Detailseite zeigt Subnetz-Statistiken (Subnetz, Gateway, Maske, Hosts, Zugewiesene Anzahl, verknüpftes VLAN) in einer kompakten Info-Leiste oben. Klicke auf die Info-Leiste, um zusätzliche Details aufzuklappen (Netzwerkadresse, Broadcast, DNS-Server, Beschreibung) -- dasselbe Muster wie auf der Switch-Detailseite. Ein Auslastungsbalken darunter visualisiert zugewiesene, DHCP-, reservierte und freie Adressbereiche. Zum Bearbeiten des Netzwerks klicke auf das **Stift-Symbol** oben rechts -- dies öffnet ein Sidepanel.
+Die Subnetz-Detailseite zeigt Subnetz-Statistiken (Subnetz, Gateway, Maske, Hosts, Zugewiesene Anzahl, verknüpftes VLAN) in einer kompakten Info-Leiste oben. Klicke auf die Info-Leiste, um zusätzliche Details aufzuklappen (Netzwerkadresse, Broadcast, DNS-Server, Beschreibung) -- dasselbe Muster wie auf der Switch-Detailseite. Ein Auslastungsbalken darunter visualisiert zugewiesene, DHCP-, reservierte und freie Adressbereiche. Zum Bearbeiten des Subnetzes klicke auf das **Stift-Symbol** oben rechts -- dies öffnet ein Sidepanel.
 
-![Netzwerk-Detail mit IP-Übersicht](/images/screenshot-network-detail.png)
+![Subnetz-Detail mit IP-Übersicht](/images/screenshot-network-detail.png)
 
 Unter der Info-Leiste zeigt die **IP-Übersicht** alle Einträge in einer einheitlichen, sortierten Liste:
 
@@ -446,7 +446,7 @@ IP-Bereiche kennzeichnen Adressblöcke für bestimmte Zwecke:
 
 Jeder Bereich hat eine Start-IP, End-IP, einen Typ und eine optionale Beschreibung. Die IP-Anzahl wird inline angezeigt.
 
-### Spezielle Netzwerke (/31 und /32)
+### Spezielle Subnetze (/31 und /32)
 
 ezSWM behandelt IPv4-Sondersubnetze gemäß ihren RFCs:
 
@@ -457,7 +457,21 @@ Der Subnetz-Rechner verwendet dieselben Labels und Badges.
 
 ### Auslastungsverfolgung
 
-Der Auslastungsbalken oben auf der Netzwerk-Detailseite visualisiert die Adressraum-Nutzung. Die Legende zeigt Zugewiesene, DHCP, Reservierte und Freie Anzahlen.
+Der Auslastungsbalken oben auf der Subnetz-Detailseite visualisiert die Adressraum-Nutzung. Die Legende zeigt Zugewiesene, DHCP, Reservierte und Freie Anzahlen.
+
+## IP-Adressen (site-übergreifend)
+
+Die Seite **IP-Adressen** in der Seitenleiste zeigt eine flache, tabellarische Übersicht aller IP-Zuweisungen über alle Subnetze der aktuellen Site (bzw. aller Sites im „Alle Standorte"-Modus). Praktisch, wenn du eine IP scannen, filtern oder nachschlagen willst, ohne erst in ein bestimmtes Subnetz zu navigieren.
+
+**Spalten:** IP · Hostname · MAC · Subnetz (Name + CIDR) · VLAN (farbiges Badge) · Gerätetyp · Status. Im „Alle Standorte"-Modus kommt zusätzlich eine Standort-Spalte hinzu.
+
+**Filter & Sortierung:** ein Suchfeld matched IP / Hostname / MAC, dazu separate Dropdowns für VLAN, Status und Gerätetyp. Der Filter-Zustand wird in der URL und sessionsübergreifend via localStorage gespeichert. Ein Klick auf den IP-Spaltenkopf sortiert numerisch (`.10` kommt also nach `.9`, nicht nach `.1`). Der Tabellen-Body scrollt intern — Seiten-Header, Filter-Leiste und Spaltenköpfe bleiben sichtbar, auf Desktop und Mobile.
+
+**Zeilen-Klick → Bearbeiten:** ein Klick auf eine Zeile öffnet das Bearbeiten-Sidepanel. Löschen sitzt im Header des Sidepanels — so muss die Tabelle nicht mit Action-Buttons pro Zeile vollgestopft werden.
+
+**IP anlegen:** Klick auf **IP-Adresse hinzufügen**. Sobald du eine gültige IP eintippst, wählt das **Subnetz**-Dropdown automatisch das Subnetz, dessen CIDR sie enthält — kein manuelles Picken nötig. Du kannst die Auswahl jederzeit überschreiben (sinnvoll im „Alle Standorte"-Modus, wenn sich Bereiche über mehrere Sites überlappen). Das zum Subnetz gehörende VLAN wird daneben read-only angezeigt.
+
+**DHCP-Range-Schutz:** Wenn die IP, die du anlegen oder per Bearbeiten dorthin verschieben willst, in eine bestehende DHCP-Range fällt, lehnt das Formular sie mit einer klaren Meldung ab: *IP x.x.x.x is inside a DHCP dynamic range (start – end). Static IPs cannot be assigned within dynamic DHCP ranges.* Das gilt sowohl beim **Anlegen** als auch beim **Bearbeiten**, sodass du eine statische Zuweisung nicht versehentlich durch eine IP-Änderung in den DHCP-Bereich rutschen lassen kannst.
 
 ## Globale Suche
 
@@ -465,9 +479,9 @@ Drücke **/** oder klicke auf die Suchleiste in der Kopfleiste, um die globale S
 
 - Switches (nach Name, Standort, Management-IP, Modell, Hersteller, Tags)
 - VLANs (nach Name, VLAN-ID)
-- Netzwerke (nach Name, Subnetz)
+- Subnetze (nach Name, CIDR)
 - IP-Zuweisungen (nach IP, Hostname)
-- IP-Bereiche (nach Start-/End-IP, Typ, Netzwerkname)
+- IP-Bereiche (nach Start-/End-IP, Typ, Subnetz-Name)
 - Layout-Templates (nach Name)
 - LAG-Gruppen (nach Name, Beschreibung, Remote-Gerät)
 
@@ -495,7 +509,7 @@ Dies ist ein rein clientseitiges Werkzeug — es werden keine Daten gespeichert.
 
 ![Datenverwaltung](/images/screenshot-data-management.png)
 
-Jeder Entitätstyp (Switches, VLANs, Netzwerke, IP-Zuweisungen, IP-Bereiche, Layout-Templates) kann einzeln als JSON oder CSV exportiert und wieder importiert werden. Dateien können per Drag & Drop in den Upload-Bereich gezogen werden. Dies ist nützlich, um bestimmte Daten zwischen Instanzen zu übertragen oder Netzwerkpläne in Bulk zu laden.
+Jeder Entitätstyp (Switches, VLANs, Subnetze, IP-Zuweisungen, IP-Bereiche, Layout-Templates) kann einzeln als JSON oder CSV exportiert und wieder importiert werden. Dateien können per Drag & Drop in den Upload-Bereich gezogen werden. Dies ist nützlich, um bestimmte Daten zwischen Instanzen zu übertragen oder Subnetzpläne in Bulk zu laden.
 
 ### Vollständiges Backup und Wiederherstellung
 
@@ -525,7 +539,7 @@ Backups sind einfache JSON-Dateien. Sie können versioniert, verglichen oder bei
 
 ### Was sie sind
 
-Standorte repräsentieren physische Orte oder logische Gruppierungen für deine Infrastruktur. Jeder Standort hat eigene Switches, VLANs, Netzwerke und Topologie. Verwende Standorte, um verschiedene Orte zu trennen (z.B. "Rechenzentrum", "Büro", "LAN-Party Halle A").
+Standorte repräsentieren physische Orte oder logische Gruppierungen für deine Infrastruktur. Jeder Standort hat eigene Switches, VLANs, Subnetze und Topologie. Verwende Standorte, um verschiedene Orte zu trennen (z.B. "Rechenzentrum", "Büro", "LAN-Party Halle A").
 
 ![Standorte](/images/screenshot-sites.png)
 
@@ -533,7 +547,7 @@ Standorte repräsentieren physische Orte oder logische Gruppierungen für deine 
 
 Navigiere zu **Standorte** in der Seitenleiste, um alle Standorte zu sehen. Klicke auf **Standort erstellen**, um einen neuen hinzuzufügen. Jeder Standort hat einen Namen und eine optionale Beschreibung.
 
-Wenn du einen Standort im Dropdown der Seitenleiste auswählst, werden alle Ansichten (Switches, VLANs, Netzwerke, Topologie) auf diesen Standort eingeschränkt. Wähle "Alle Standorte", um alles standortübergreifend zu sehen.
+Wenn du einen Standort im Dropdown der Seitenleiste auswählst, werden alle Ansichten (Switches, VLANs, Subnetze, Topologie) auf diesen Standort eingeschränkt. Wähle "Alle Standorte", um alles standortübergreifend zu sehen.
 
 ### Erste Site
 
