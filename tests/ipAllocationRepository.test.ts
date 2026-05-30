@@ -204,6 +204,29 @@ describe('ipAllocationRepository', () => {
         expect((error as { statusCode?: number }).statusCode).toBe(400)
       }
     })
+
+    it('allows updating to a free IP outside the DHCP range', () => {
+      const created = ipAllocationRepository.create('net-1', {
+        ip_address: '10.0.1.10',
+        status: 'active',
+      })
+      const updated = ipAllocationRepository.update(created.id, { ip_address: '10.0.1.11' })
+      expect(updated.ip_address).toBe('10.0.1.11')
+    })
+
+    it('rejects updating IP into a DHCP range', () => {
+      const created = ipAllocationRepository.create('net-1', {
+        ip_address: '10.0.1.10',
+        status: 'active',
+      })
+      try {
+        ipAllocationRepository.update(created.id, { ip_address: '10.0.1.150' })
+        expect.fail('Expected to throw')
+      } catch (error) {
+        expect((error as { statusCode?: number }).statusCode).toBe(400)
+        expect((error as Error).message).toMatch(/DHCP/)
+      }
+    })
   })
 
   describe('delete', () => {
