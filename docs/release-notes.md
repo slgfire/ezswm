@@ -6,6 +6,15 @@ title: Release Notes
 
 For the in-app changelog (rendered from GitHub releases), click the version number in the sidebar footer.
 
+## v0.20.3 — 2026-06-02
+
+### Dependencies
+- **`@nuxt/ui` 4.8.0 → 4.8.1.** Includes upstream fix `Form: add method="post" to prevent credential leaking via GET before hydration` (relevant for the login form). Also CommandPalette/DashboardSearch prop proxying, SelectMenu `max-height` fallback, Icon recursion fix. ([#151](https://github.com/slgfire/ezswm/pull/151))
+- **Dev tooling** patch bumps: `eslint` 10.4.0 → 10.4.1, `tsx` 4.22.3 → 4.22.4, `vitest` 4.1.7 → 4.1.8, `vue-tsc` 3.3.2 → 3.3.3. ([#152](https://github.com/slgfire/ezswm/pull/152))
+- **CI:** `pnpm/action-setup` v4 → v6 (pnpm v11 support, internally on Node 24). ([#150](https://github.com/slgfire/ezswm/pull/150))
+
+No application behavior changes — pure dependency rollup so `:latest` keeps up with upstream patches.
+
 ## v0.20.1 — 2026-05-30
 
 ### Fixed
