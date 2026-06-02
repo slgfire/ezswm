@@ -19,7 +19,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@nuxt/ui": "4.8.0",
+    "@nuxt/ui": "4.8.1",
     "@nuxtjs/i18n": "10.4.0",
     "@types/qrcode": "1.5.6",
     "bcryptjs": "3.0.3",
