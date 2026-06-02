@@ -1,0 +1,277 @@
+// ezSWM database schema — SQLite via Prisma
+// Reflects the TypeScript types in /types/*.ts.
+// SQLite has no native arrays/JSON columns: array/object fields are stored as
+// JSON strings and (de)serialised in the repository layer.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Core hierarchy: Site -> {Switch, Vlan, Network}
+// ---------------------------------------------------------------------------
+
+model Site {
+  id          String  @id
+  name        String
+  description String?
+  created_at  String
+  updated_at  String
+
+  switches Switch[]
+  vlans    Vlan[]
+  networks Network[]
+  topology TopologyLayout?
+}
+
+model Switch {
+  id                 String  @id
+  site_id            String
+  name               String
+  model              String?
+  manufacturer       String?
+  serial_number      String?
+  location           String?
+  rack_position      String?
+  management_ip      String?
+  firmware_version   String?
+  layout_template_id String?
+  stack_size         Int?
+  role               String?
+  tags               String  @default("[]") // JSON array of strings
+  configured_vlans   String  @default("[]") // JSON array of 802.1Q tag numbers
+  is_favorite        Boolean @default(false)
+  sort_order         Int?
+  notes              String?
+  created_at         String
+  updated_at         String
+
+  site            Site            @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  layout_template LayoutTemplate? @relation(fields: [layout_template_id], references: [id], onDelete: SetNull)
+  ports           Port[]
+  lag_groups      LagGroup[]
+  public_tokens   PublicToken[]
+
+  @@index([site_id])
+  @@index([layout_template_id])
+}
+
+model Port {
+  id                      String  @id
+  switch_id               String
+  unit                    Int
+  index                   Int
+  label                   String?
+  type                    String
+  speed                   String?
+  status                  String
+  port_mode               String?
+  access_vlan             Int?
+  native_vlan             Int?
+  tagged_vlans            String  @default("[]") // JSON array of 802.1Q tag numbers
+  connected_device        String?
+  connected_device_id     String? // FK-ish to Switch, no Prisma relation (stale tolerated)
+  connected_port_id       String? // Self-ref to another Port, no Prisma relation (stale tolerated)
+  connected_port          String?
+  description             String?
+  mac_address             String?
+  lag_group_id            String?
+  connected_allocation_id String?
+  poe                     String? // JSON object {type, max_watts} or null
+  helper_usage            String?
+  helper_label            String?
+  show_in_helper_list     Boolean?
+
+  switch     Switch        @relation(fields: [switch_id], references: [id], onDelete: Cascade)
+  lag_group  LagGroup?     @relation(fields: [lag_group_id], references: [id], onDelete: SetNull)
+  allocation IpAllocation? @relation(fields: [connected_allocation_id], references: [id], onDelete: SetNull)
+
+  @@index([switch_id])
+  @@index([lag_group_id])
+  @@index([connected_allocation_id])
+}
+
+model Vlan {
+  id             String  @id
+  site_id        String
+  vlan_id        Int // 802.1Q tag
+  name           String
+  description    String?
+  status         String
+  routing_device String?
+  color          String
+  is_favorite    Boolean @default(false)
+  created_at     String
+  updated_at     String
+
+  site     Site      @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  networks Network[]
+
+  @@index([site_id])
+  @@index([site_id, vlan_id])
+}
+
+model Network {
+  id          String  @id
+  site_id     String
+  name        String
+  vlan_id     String? // FK to Vlan.id (the entity id, not the 802.1Q tag)
+  subnet      String
+  gateway     String?
+  dns_servers String  @default("[]") // JSON array of strings
+  description String?
+  is_favorite Boolean @default(false)
+  created_at  String
+  updated_at  String
+
+  site        Site           @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  vlan        Vlan?          @relation(fields: [vlan_id], references: [id], onDelete: SetNull)
+  allocations IpAllocation[]
+  ranges      IpRange[]
+
+  @@index([site_id])
+  @@index([vlan_id])
+}
+
+model IpAllocation {
+  id          String  @id
+  network_id  String
+  ip_address  String
+  hostname    String?
+  mac_address String?
+  device_type String?
+  description String?
+  status      String
+  created_at  String
+  updated_at  String
+
+  network        Network @relation(fields: [network_id], references: [id], onDelete: Cascade)
+  connected_to   Port[]
+
+  @@index([network_id])
+  @@index([network_id, ip_address])
+}
+
+model IpRange {
+  id          String  @id
+  network_id  String
+  start_ip    String
+  end_ip      String
+  type        String
+  description String?
+  created_at  String
+  updated_at  String
+
+  network Network @relation(fields: [network_id], references: [id], onDelete: Cascade)
+
+  @@index([network_id])
+}
+
+model LagGroup {
+  id               String  @id
+  switch_id        String
+  name             String
+  remote_device    String?
+  remote_device_id String?
+  description      String?
+  created_at       String
+  updated_at       String
+
+  switch Switch @relation(fields: [switch_id], references: [id], onDelete: Cascade)
+  ports  Port[]
+
+  @@index([switch_id])
+}
+
+// ---------------------------------------------------------------------------
+// Templates, tokens, auth
+// ---------------------------------------------------------------------------
+
+model LayoutTemplate {
+  id            String  @id
+  name          String
+  manufacturer  String?
+  model         String?
+  description   String?
+  datasheet_url String?
+  airflow       String?
+  units         String  @default("[]") // JSON array of LayoutUnit objects (nested)
+  created_at    String
+  updated_at    String
+
+  switches Switch[]
+}
+
+model PublicToken {
+  id             String  @id
+  switch_id      String
+  token          String  @unique
+  created_at     String
+  revoked_at     String?
+  last_access_at String?
+
+  switch Switch @relation(fields: [switch_id], references: [id], onDelete: Cascade)
+
+  @@index([switch_id])
+}
+
+model User {
+  id            String  @id
+  username      String  @unique
+  display_name  String
+  password_hash String
+  role          String
+  language      String
+  is_setup_user Boolean @default(false)
+  created_at    String
+  updated_at    String
+
+  activities ActivityEntry[]
+}
+
+// ---------------------------------------------------------------------------
+// Audit log & per-site layouts & global settings
+// ---------------------------------------------------------------------------
+
+model ActivityEntry {
+  id             String  @id
+  user_id        String?
+  action         String
+  entity_type    String
+  entity_id      String
+  entity_name    String
+  changes        String? // JSON
+  previous_state String? // JSON
+  metadata       String? // JSON
+  timestamp      String
+
+  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([entity_type, entity_id])
+  @@index([timestamp])
+}
+
+model TopologyLayout {
+  site_id        String @id
+  node_positions String // JSON object: Record<nodeId, {x, y}>
+  updated_at     String
+
+  site Site @relation(fields: [site_id], references: [id], onDelete: Cascade)
+}
+
+model AppSettings {
+  id                  String  @id @default("singleton")
+  app_name            String
+  app_logo_url        String?
+  default_vlan        Int?
+  default_port_status String
+  port_speeds         String  @default("[]") // JSON array of strings
+  setup_completed     Boolean @default(false)
+  sites_initialized   Boolean @default(false)
+}
