@@ -1,87 +1,91 @@
-import { mkdtempSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
-import { tmpdir } from 'node:os'
-import { setTestRuntimeConfig, resetTestRuntimeConfig, seedJsonFile } from './testHelpers'
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
+import type { PrismaClient } from '@prisma/client'
 
-describe.skip('publicTokenRepository', () => {
-  let publicTokenRepository: typeof import('../server/repositories/publicTokenRepository').publicTokenRepository
-  let tempDir: string
+import { createTestPrisma, seedSwitch } from './testHelpers'
+import { publicTokenRepository } from '../server/repositories/publicTokenRepository'
+
+describe('publicTokenRepository', () => {
+  let prisma: PrismaClient
+  let resetDb: () => Promise<void>
+  let cleanup: () => Promise<void>
+  let switchId: string
+
+  beforeAll(async () => {
+    const ctx = await createTestPrisma()
+    prisma = ctx.prisma
+    resetDb = ctx.resetDb
+    cleanup = ctx.cleanup
+    globalThis.__prismaTestClient = prisma
+  })
+
+  afterAll(async () => {
+    globalThis.__prismaTestClient = undefined
+    await cleanup()
+  })
 
   beforeEach(async () => {
-    tempDir = mkdtempSync(join(tmpdir(), 'ezswm-vitest-'))
-    setTestRuntimeConfig({ dataDir: tempDir })
-    seedJsonFile(tempDir, 'public-tokens.json', [])
-    const mod = await import('../server/repositories/publicTokenRepository')
-    publicTokenRepository = mod.publicTokenRepository
+    await resetDb()
+    switchId = (await seedSwitch(prisma)).id
   })
 
-  afterEach(() => {
-    rmSync(tempDir, { recursive: true, force: true })
-    resetTestRuntimeConfig()
-  })
-
-  it('creates a token with 32-char token string', () => {
-    const token = publicTokenRepository.create('switch-1')
+  it('creates a token with 32-char token string', async () => {
+    const token = await publicTokenRepository.create(switchId)
     expect(token.token.length).toBe(32)
-    expect(token.switch_id).toBe('switch-1')
+    expect(token.switch_id).toBe(switchId)
     expect(token.revoked_at).toBe(null)
     expect(token.last_access_at).toBe(null)
     expect(token.id.length).toBeGreaterThan(0)
     expect(token.created_at.length).toBeGreaterThan(0)
   })
 
-  it('enforces one active token per switch', () => {
-    publicTokenRepository.create('switch-1')
-    try {
-      publicTokenRepository.create('switch-1')
-      expect.fail('Expected create to throw')
-    } catch (error) {
-      expect((error as { statusCode?: number }).statusCode).toBe(409)
-    }
+  it('enforces one active token per switch', async () => {
+    await publicTokenRepository.create(switchId)
+    await expect(publicTokenRepository.create(switchId))
+      .rejects.toMatchObject({ statusCode: 409 })
   })
 
-  it('allows new token after revoking', () => {
-    const first = publicTokenRepository.create('switch-1')
-    publicTokenRepository.revoke(first.id)
-    const second = publicTokenRepository.create('switch-1')
+  it('allows new token after revoking', async () => {
+    const first = await publicTokenRepository.create(switchId)
+    await publicTokenRepository.revoke(first.id)
+    const second = await publicTokenRepository.create(switchId)
     expect(first.token).not.toBe(second.token)
   })
 
-  it('looks up active token by token string', () => {
-    const created = publicTokenRepository.create('switch-1')
-    const found = publicTokenRepository.getByToken(created.token)
+  it('looks up active token by token string', async () => {
+    const created = await publicTokenRepository.create(switchId)
+    const found = await publicTokenRepository.getByToken(created.token)
     expect(found).toBeTruthy()
     expect(found!.id).toBe(created.id)
   })
 
-  it('returns null for revoked token from getByToken', () => {
-    const created = publicTokenRepository.create('switch-1')
-    publicTokenRepository.revoke(created.id)
-    const found = publicTokenRepository.getByToken(created.token)
+  it('returns null for revoked token from getByToken', async () => {
+    const created = await publicTokenRepository.create(switchId)
+    await publicTokenRepository.revoke(created.id)
+    const found = await publicTokenRepository.getByToken(created.token)
     expect(found).toBe(null)
   })
 
-  it('getLatestBySwitchId returns revoked token', () => {
-    const created = publicTokenRepository.create('switch-1')
-    publicTokenRepository.revoke(created.id)
-    const latest = publicTokenRepository.getLatestBySwitchId('switch-1')
+  it('getLatestBySwitchId returns revoked token', async () => {
+    const created = await publicTokenRepository.create(switchId)
+    await publicTokenRepository.revoke(created.id)
+    const latest = await publicTokenRepository.getLatestBySwitchId(switchId)
     expect(latest).toBeTruthy()
     expect(latest!.revoked_at).toBeTruthy()
   })
 
-  it('deleteBySwitchId removes all tokens for switch', () => {
-    const first = publicTokenRepository.create('switch-1')
-    publicTokenRepository.revoke(first.id)
-    publicTokenRepository.create('switch-1')
-    publicTokenRepository.deleteBySwitchId('switch-1')
-    expect(publicTokenRepository.getLatestBySwitchId('switch-1')).toBe(null)
+  it('deleteBySwitchId removes all tokens for switch', async () => {
+    const first = await publicTokenRepository.create(switchId)
+    await publicTokenRepository.revoke(first.id)
+    await publicTokenRepository.create(switchId)
+    await publicTokenRepository.deleteBySwitchId(switchId)
+    expect(await publicTokenRepository.getLatestBySwitchId(switchId)).toBe(null)
   })
 
-  it('updateLastAccess sets timestamp', () => {
-    const created = publicTokenRepository.create('switch-1')
+  it('updateLastAccess sets timestamp', async () => {
+    const created = await publicTokenRepository.create(switchId)
     expect(created.last_access_at).toBe(null)
-    publicTokenRepository.updateLastAccess(created.id)
-    const updated = publicTokenRepository.getByToken(created.token)
+    await publicTokenRepository.updateLastAccess(created.id)
+    const updated = await publicTokenRepository.getByToken(created.token)
     expect(updated!.last_access_at).toBeTruthy()
   })
 })
