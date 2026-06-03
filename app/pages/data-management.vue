@@ -427,7 +427,7 @@ async function executeImport() {
         data: importParsedData.value
       }
     })
-    importResults.value = result as { imported: number; skipped: number; skippedDetails: string[]; errors: string[] }
+    importResults.value = result as unknown as { imported: number; skipped: number; skippedDetails: string[]; errors: string[] }
 
     if (importResults.value.imported > 0) {
       toast.add({ title: t('dataManagement.import.success', { count: importResults.value.imported }), color: 'success' })

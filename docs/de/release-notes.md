@@ -6,6 +6,18 @@ title: Release Notes
 
 Das **In-App-Changelog** (gerendert aus GitHub-Releases) erreichst du über die Versionsnummer im Sidebar-Footer.
 
+## v0.21.3 — 2026-06-04
+
+### Wiederhergestellt — Import / Backup-Restore / Activity-Undo laufen auf SQLite
+
+Die vier Schreib-Endpoints, die in 0.21.x noch **501** zurückgaben, sind jetzt für SQLite verdrahtet. ([#161](https://github.com/slgfire/ezswm/pull/161), schließt [#156](https://github.com/slgfire/ezswm/issues/156))
+
+- **`POST /api/backup/import` + `POST /api/data/import`** — Whole-DB-Restore. Akzeptiert den `schema: "sqlite-v1"`-Payload aus `/api/backup/export`. Räumt alle Tabellen in umgekehrter FK-Reihenfolge ab und macht Bulk-Inserts in FK-Reihenfolge innerhalb einer einzigen Transaktion. Lehnt nicht-UUID Primärschlüssel sofort ab, damit ein alter pre-0.21 nanoid-Dump sauber failed statt das neue Schema zu beschädigen.
+- **`POST /api/import/{entity}`** — Per-Entity Bulk-Import (CSV/JSON). Zeilen werden validiert, Foreign Keys (z.B. `site_id`, `network_id`) gegen die Live-DB aufgelöst, Duplikate werden in `skipped` gezählt, und ein einzelner schlechter Datensatz gibt einen Per-Row-Fehler statt den ganzen Batch zu killen. Max 5000 Zeilen pro Aufruf.
+- **`POST /api/activity/{id}/undo`** — Restored `previous_state` für **site / vlan / network / ip_allocation / ip_range** (`create` / `update` / `delete`-Aktionen). Switch-Undo und Cross-Table-Aktionen (`update_port`, `bulk_update_ports`, `add_configured_vlans`, `remove_configured_vlans`, `duplicate`) liefern weiterhin **422**, weil ihre Snapshots eingebettete Kinder enthalten — die folgen in einem Patch.
+
+Die In-App **Datenverwaltung**-Import/Restore-UI funktioniert wieder ohne Client-Änderungen.
+
 ## v0.21.2 — 2026-06-04
 
 ### Tests
