@@ -1,9 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import { prisma } from '../db/client'
 import type { Site } from '../../types/site'
+import { slugify, resolveSlugCollision } from '../utils/slugify'
 
 interface SiteRow {
   id: string
+  slug: string
   name: string
   description: string | null
   created_at: string
@@ -13,11 +15,20 @@ interface SiteRow {
 function rowToSite(row: SiteRow): Site {
   return {
     id: row.id,
+    slug: row.slug,
     name: row.name,
     description: row.description ?? undefined,
     created_at: row.created_at,
     updated_at: row.updated_at
   }
+}
+
+async function uniqueSiteSlug(desired: string, excludeId?: string): Promise<string> {
+  return resolveSlugCollision(desired, async (candidate) => {
+    const found = await prisma.site.findUnique({ where: { slug: candidate } })
+    if (!found) return false
+    return excludeId !== found.id
+  })
 }
 
 export const siteRepository = {
@@ -26,16 +37,31 @@ export const siteRepository = {
     return rows.map(rowToSite)
   },
 
-  async getById(id: string): Promise<Site | null> {
-    const row = await prisma.site.findUnique({ where: { id } })
+  /**
+   * Lookup by primary key. `/api/sites/:identifier` routes pass whatever URL
+   * segment they got — that may be a UUID or a slug — so this falls back to a
+   * slug lookup. Site slugs are globally unique, so the fallback is unambiguous.
+   */
+  async getById(identifier: string): Promise<Site | null> {
+    const byId = await prisma.site.findUnique({ where: { id: identifier } })
+    if (byId) return rowToSite(byId)
+    const bySlug = await prisma.site.findUnique({ where: { slug: identifier } })
+    return bySlug ? rowToSite(bySlug) : null
+  },
+
+  async getBySlug(slug: string): Promise<Site | null> {
+    const row = await prisma.site.findUnique({ where: { slug } })
     return row ? rowToSite(row) : null
   },
 
-  async create(data: Omit<Site, 'id' | 'created_at' | 'updated_at'>): Promise<Site> {
+  async create(data: Omit<Site, 'id' | 'slug' | 'created_at' | 'updated_at'> & { slug?: string }): Promise<Site> {
     const now = new Date().toISOString()
+    const desired = data.slug ? slugify(data.slug) : slugify(data.name)
+    const slug = await uniqueSiteSlug(desired)
     const row = await prisma.site.create({
       data: {
         id: randomUUID(),
+        slug,
         name: data.name,
         description: data.description ?? null,
         created_at: now,
@@ -50,11 +76,19 @@ export const siteRepository = {
     if (!existing) {
       throw createError({ statusCode: 404, message: 'Site not found' })
     }
+
+    let slug: string | undefined
+    if (data.slug !== undefined) {
+      const desired = slugify(data.slug)
+      slug = await uniqueSiteSlug(desired, id)
+    }
+
     const row = await prisma.site.update({
       where: { id },
       data: {
         ...(data.name !== undefined ? { name: data.name } : {}),
         ...(data.description !== undefined ? { description: data.description ?? null } : {}),
+        ...(slug !== undefined ? { slug } : {}),
         updated_at: new Date().toISOString()
       }
     })

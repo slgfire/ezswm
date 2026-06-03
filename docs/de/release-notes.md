@@ -6,6 +6,26 @@ title: Release Notes
 
 Das **In-App-Changelog** (gerendert aus GitHub-Releases) erreichst du über die Versionsnummer im Sidebar-Footer.
 
+## v0.22.0 — 2026-06-04
+
+### Neu — Slugs für Sites, Switches, Subnetze
+
+Sites, Switches und Subnetze haben jetzt jeweils einen URL-tauglichen **Slug** zusätzlich zu ihrer UUID-PK. ([#162](https://github.com/slgfire/ezswm/pull/162), schließt [#157](https://github.com/slgfire/ezswm/issues/157), schließt [#139](https://github.com/slgfire/ezswm/issues/139))
+
+- Slugs werden beim Anlegen aus dem Namen geprägt (lowercase, deutsche Umlaute → `ae/oe/ue/ss`, gängige Latein-Akzente transliteriert, Nicht-Alphanumerisches zu `-` zusammengezogen, max. 60 Zeichen). Bei Kollision wird ein `-2`, `-3`, …-Suffix angehängt — Sites sind global eindeutig, Switches und Subnetze pro Site eindeutig.
+- **`/api/sites/{id}`-Endpoints akzeptieren sowohl die UUID als auch den Slug.** `siteRepository.getById()` löst beide Formen transparent auf. Ein altes Bookmark auf `/api/sites/<uuid>` funktioniert weiter und `/api/sites/main-office` jetzt auch.
+- Slugs sind beim Umbenennen **sticky** — eine Namensänderung ändert nicht den Slug, damit URLs nicht brechen, wenn das angezeigte Label getweakt wird. Per `slug`-Feld im PUT lässt sich der Slug aber explizit ändern.
+- Switches und Subnetze liefern ihren Slug ebenfalls im Entity-Payload mit; die Per-Site-Lookups (`switchRepository.getBySlug`, `networkRepository.getBySlug`) stehen für nachfolgende UI-Arbeit am Route-Format bereit.
+
+### Migration
+
+Die Schema-Migration `20260603223256_slugs` fügt `slug`-Spalten zu Site / Switch / Network mit den passenden Unique-Indexes hinzu (`Site.slug` global, `(site_id, slug)` für die beiden anderen). Bestehende Zeilen bekommen einen SQL-seitigen Platzhalter-Slug aus ihrem Namen während des Schema-Rebuilds; das JSON→DB-Migrations-Skript generiert von Anfang an saubere Slugs, wenn ein 0.20.x-Install auf 0.22 hochzieht.
+
+### Tests
+
+- `tests/slugify.test.ts` (10 Cases) deckt die Slugify- + Kollisions-Logik ab.
+- `tests/siteRepositorySlug.test.ts` (9 Cases) deckt `getById(slug)`, sticky Slugs bei Namensänderungen und Kollisions-Suffix bei expliziten Slug-Änderungen ab. **474/474 Tests grün**.
+
 ## v0.21.3 — 2026-06-04
 
 ### Wiederhergestellt — Import / Backup-Restore / Activity-Undo laufen auf SQLite

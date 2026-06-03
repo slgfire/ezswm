@@ -18,6 +18,7 @@ datasource db {
 
 model Site {
   id          String  @id
+  slug        String  @unique
   name        String
   description String?
   created_at  String
@@ -32,6 +33,7 @@ model Site {
 model Switch {
   id                 String  @id
   site_id            String
+  slug               String
   name               String
   model              String?
   manufacturer       String?
@@ -57,6 +59,7 @@ model Switch {
   lag_groups      LagGroup[]
   public_tokens   PublicToken[]
 
+  @@unique([site_id, slug])
   @@index([site_id])
   @@index([layout_template_id])
 }
@@ -119,6 +122,7 @@ model Vlan {
 model Network {
   id          String  @id
   site_id     String
+  slug        String
   name        String
   vlan_id     String? // FK to Vlan.id (the entity id, not the 802.1Q tag)
   subnet      String
@@ -134,6 +138,7 @@ model Network {
   allocations IpAllocation[]
   ranges      IpRange[]
 
+  @@unique([site_id, slug])
   @@index([site_id])
   @@index([vlan_id])
 }

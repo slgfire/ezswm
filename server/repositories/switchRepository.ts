@@ -8,6 +8,7 @@ import type { PoeConfig } from '../../types/layoutTemplate'
 import { layoutTemplateRepository } from './layoutTemplateRepository'
 import { isValidIPv4, isIPInSubnet } from '../utils/ipv4'
 import { incrementMemberLabel } from '../utils/deviceLibrary'
+import { slugify, resolveSlugCollision } from '../utils/slugify'
 
 type TxClient = PrismaClient | Parameters<Parameters<PrismaClient['$transaction']>[0]>[0]
 
@@ -41,6 +42,7 @@ interface PortRow {
 interface SwitchRow {
   id: string
   site_id: string
+  slug: string
   name: string
   model: string | null
   manufacturer: string | null
@@ -95,6 +97,7 @@ function rowToSwitch(row: SwitchRow): Switch {
   return {
     id: row.id,
     site_id: row.site_id,
+    slug: row.slug,
     name: row.name,
     model: row.model ?? undefined,
     manufacturer: row.manufacturer ?? undefined,
@@ -281,6 +284,16 @@ async function syncManagementIpAllocation(
 
 const includePorts = { ports: { orderBy: [{ unit: 'asc' as const }, { index: 'asc' as const }] } }
 
+async function uniqueSwitchSlug(siteId: string, desired: string, excludeId?: string): Promise<string> {
+  return resolveSlugCollision(desired, async (candidate) => {
+    const found = await prisma.switch.findUnique({
+      where: { site_id_slug: { site_id: siteId, slug: candidate } }
+    })
+    if (!found) return false
+    return excludeId !== found.id
+  })
+}
+
 export const switchRepository = {
   async list(siteId?: string): Promise<Switch[]> {
     const rows = await prisma.switch.findMany({
@@ -302,13 +315,36 @@ export const switchRepository = {
     return row ? rowToSwitch(row) : null
   },
 
-  async create(data: Omit<Switch, 'id' | 'ports' | 'created_at' | 'updated_at' | 'is_favorite'>): Promise<Switch> {
+  async getBySlug(siteId: string, slug: string): Promise<Switch | null> {
+    const row = await prisma.switch.findUnique({
+      where: { site_id_slug: { site_id: siteId, slug } },
+      include: includePorts
+    })
+    return row ? rowToSwitch(row) : null
+  },
+
+  /**
+   * Resolve a route param that may hold either a UUID id or a site-scoped slug.
+   * Falls back to id-only when no siteId is available (e.g. /api/switches/[id]
+   * routes that don't pin the lookup to a site).
+   */
+  async getByIdOrSlug(identifier: string, siteId?: string): Promise<Switch | null> {
+    const direct = await this.getById(identifier)
+    if (direct) return direct
+    if (siteId) return this.getBySlug(siteId, identifier)
+    return null
+  },
+
+  async create(data: Omit<Switch, 'id' | 'slug' | 'ports' | 'created_at' | 'updated_at' | 'is_favorite'> & { slug?: string }): Promise<Switch> {
     const nameClash = await prisma.switch.findFirst({
       where: { site_id: data.site_id, name: data.name }
     })
     if (nameClash) {
       throw createError({ statusCode: 409, message: `Switch name '${data.name}' already exists in this site` })
     }
+
+    const desiredSlug = data.slug ? slugify(data.slug) : slugify(data.name)
+    const slug = await uniqueSwitchSlug(data.site_id, desiredSlug)
 
     const ports = data.layout_template_id
       ? await generatePortsFromTemplate(data.layout_template_id, data.stack_size ?? 1)
@@ -322,6 +358,7 @@ export const switchRepository = {
         data: {
           id: newId,
           site_id: data.site_id,
+          slug,
           name: data.name,
           model: data.model ?? null,
           manufacturer: data.manufacturer ?? null,
@@ -375,6 +412,11 @@ export const switchRepository = {
       }
     }
 
+    let slug: string | undefined
+    if (data.slug !== undefined) {
+      slug = await uniqueSwitchSlug(current.site_id, slugify(data.slug), id)
+    }
+
     const templateChanged = data.layout_template_id !== undefined && data.layout_template_id !== current.layout_template_id
     const stackChanged = data.stack_size !== undefined && data.stack_size !== current.stack_size
     const regeneratePorts = templateChanged || stackChanged
@@ -408,6 +450,7 @@ export const switchRepository = {
           ...(data.is_favorite !== undefined ? { is_favorite: data.is_favorite } : {}),
           ...(data.sort_order !== undefined ? { sort_order: data.sort_order ?? null } : {}),
           ...(data.notes !== undefined ? { notes: data.notes ?? null } : {}),
+          ...(slug !== undefined ? { slug } : {}),
           updated_at: new Date().toISOString()
         }
       })
@@ -683,12 +726,14 @@ export const switchRepository = {
 
     const now = new Date().toISOString()
     const newSwitchId = randomUUID()
+    const newSlug = await uniqueSwitchSlug(original.site_id, slugify(copyName))
 
     const result = await prisma.$transaction(async (tx) => {
       await tx.switch.create({
         data: {
           id: newSwitchId,
           site_id: original.site_id,
+          slug: newSlug,
           name: copyName,
           model: original.model ?? null,
           manufacturer: original.manufacturer ?? null,

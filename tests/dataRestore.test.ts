@@ -44,7 +44,7 @@ describe('restoreAll', () => {
           setup_completed: true, sites_initialized: true
         }],
         sites: [{
-          id: siteId, name: 'Restored', description: null,
+          id: siteId, slug: 'restored', name: 'Restored', description: null,
           created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z'
         }],
         ...extra
@@ -53,7 +53,7 @@ describe('restoreAll', () => {
   }
 
   it('restores a basic payload', async () => {
-    await prisma.site.create({ data: { id: randomUUID(), name: 'will-be-wiped', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } })
+    await prisma.site.create({ data: { id: randomUUID(), slug: 'will-be-wiped', name: 'will-be-wiped', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } })
 
     const result = await restoreAll(prisma, mkPayload())
 
@@ -77,12 +77,12 @@ describe('restoreAll', () => {
   })
 
   it('rejects non-UUID ids upfront (no partial restore)', async () => {
-    await prisma.site.create({ data: { id: randomUUID(), name: 'pre', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } })
+    await prisma.site.create({ data: { id: randomUUID(), slug: 'pre', name: 'pre', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } })
 
     const payload = {
       schema: 'sqlite-v1',
       data: {
-        sites: [{ id: 'not-a-uuid', name: 'bad', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }]
+        sites: [{ id: 'not-a-uuid', slug: 'bad', name: 'bad', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }]
       }
     }
     await expect(restoreAll(prisma, payload)).rejects.toMatchObject({ statusCode: 400 })
@@ -101,14 +101,14 @@ describe('restoreAll', () => {
     const payload = {
       schema: 'sqlite-v1',
       data: {
-        sites: [{ id: siteId, name: 'X', description: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
+        sites: [{ id: siteId, slug: 'site-x', name: 'X', description: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
         vlans: [{
           id: vlanId, site_id: siteId, vlan_id: 10, name: 'V', description: null,
           status: 'active', routing_device: null, color: '#EF4444', is_favorite: false,
           created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z'
         }],
         networks: [{
-          id: networkId, site_id: siteId, name: 'N', vlan_id: vlanId, subnet: '10.0.0.0/24',
+          id: networkId, site_id: siteId, slug: 'net-n', name: 'N', vlan_id: vlanId, subnet: '10.0.0.0/24',
           gateway: '10.0.0.1', dns_servers: JSON.stringify([]), description: null, is_favorite: false,
           created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z'
         }],
@@ -140,10 +140,11 @@ describe('restoreAll', () => {
     const payload = {
       schema: 'sqlite-v1',
       data: {
-        sites: [{ id: siteId, name: 'S', description: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
+        sites: [{ id: siteId, slug: 'site-s', name: 'S', description: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
         networks: [{
           id: randomUUID(),
           site_id: orphanSiteRef, // ← points at a UUID that won't exist
+          slug: 'net-orphan',
           name: 'orphan',
           vlan_id: null,
           subnet: '10.0.0.0/24',

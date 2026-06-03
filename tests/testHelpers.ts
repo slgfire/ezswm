@@ -108,11 +108,13 @@ export async function createTestPrisma(): Promise<TestPrismaContext> {
 
 const nowIso = () => new Date().toISOString()
 
-export async function seedSite(prisma: PrismaClient, overrides: { id?: string; name?: string; description?: string | null } = {}): Promise<{ id: string }> {
+export async function seedSite(prisma: PrismaClient, overrides: { id?: string; slug?: string; name?: string; description?: string | null } = {}): Promise<{ id: string }> {
   const id = overrides.id ?? randomUUID()
+  const slug = overrides.slug ?? `test-${id.slice(0, 6)}`
   await prisma.site.create({
     data: {
       id,
+      slug,
       name: overrides.name ?? 'Test Site',
       description: overrides.description ?? null,
       created_at: nowIso(),
@@ -125,6 +127,7 @@ export async function seedSite(prisma: PrismaClient, overrides: { id?: string; n
 export async function seedNetwork(prisma: PrismaClient, overrides: {
   id?: string
   site_id?: string
+  slug?: string
   name?: string
   subnet?: string
   gateway?: string | null
@@ -133,10 +136,12 @@ export async function seedNetwork(prisma: PrismaClient, overrides: {
 } = {}): Promise<{ id: string }> {
   const id = overrides.id ?? randomUUID()
   const site_id = overrides.site_id ?? (await seedSite(prisma)).id
+  const slug = overrides.slug ?? `net-${id.slice(0, 6)}`
   await prisma.network.create({
     data: {
       id,
       site_id,
+      slug,
       name: overrides.name ?? 'Test Network',
       subnet: overrides.subnet ?? '10.0.1.0/24',
       gateway: overrides.gateway ?? '10.0.1.1',
@@ -177,16 +182,19 @@ export async function seedIpRange(prisma: PrismaClient, overrides: {
 export async function seedSwitch(prisma: PrismaClient, overrides: {
   id?: string
   site_id?: string
+  slug?: string
   name?: string
   layout_template_id?: string | null
   stack_size?: number | null
 } = {}): Promise<{ id: string }> {
   const id = overrides.id ?? randomUUID()
   const site_id = overrides.site_id ?? (await seedSite(prisma)).id
+  const slug = overrides.slug ?? `sw-${id.slice(0, 6)}`
   await prisma.switch.create({
     data: {
       id,
       site_id,
+      slug,
       name: overrides.name ?? 'Test Switch',
       tags: JSON.stringify([]),
       configured_vlans: JSON.stringify([]),

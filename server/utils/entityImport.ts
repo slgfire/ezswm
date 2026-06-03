@@ -7,6 +7,7 @@ import { networkRepository } from '../repositories/networkRepository'
 import { ipAllocationRepository } from '../repositories/ipAllocationRepository'
 import { ipRangeRepository } from '../repositories/ipRangeRepository'
 import { layoutTemplateRepository } from '../repositories/layoutTemplateRepository'
+import { slugify, resolveSlugCollision } from './slugify'
 
 export type EntityType = 'switches' | 'vlans' | 'networks' | 'allocations' | 'ranges' | 'templates'
 
@@ -67,11 +68,19 @@ async function importSwitches(rows: Record<string, unknown>[]): Promise<ImportRe
       result.errors.push({ row: i + 1, message: `site_id ${row.site_id} not found` })
       continue
     }
+    const slug = await resolveSlugCollision(slugify(String(row.name)), async (candidate) => {
+      const found = await prisma.switch.findUnique({
+        where: { site_id_slug: { site_id: site.id, slug: candidate } }
+      })
+      return !!found
+    })
+
     try {
       await prisma.switch.create({
         data: {
           id: randomUUID(),
           site_id: site.id,
+          slug,
           name: String(row.name),
           model: row.model ? String(row.model) : null,
           manufacturer: row.manufacturer ? String(row.manufacturer) : null,

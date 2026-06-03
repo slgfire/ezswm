@@ -73,6 +73,7 @@ async function recreateEntity(entity_type: string, prev: PrevState): Promise<voi
       await prisma.site.create({
         data: {
           id: String(prev.id),
+          slug: String(prev.slug ?? `restored-${String(prev.id).slice(0, 6)}`),
           name: String(prev.name),
           description: (prev.description as string | null) ?? null,
           created_at: String(prev.created_at),
@@ -102,6 +103,7 @@ async function recreateEntity(entity_type: string, prev: PrevState): Promise<voi
         data: {
           id: String(prev.id),
           site_id: String(prev.site_id),
+          slug: String(prev.slug ?? `restored-${String(prev.id).slice(0, 6)}`),
           name: String(prev.name),
           vlan_id: (prev.vlan_id as string | null) ?? null,
           subnet: String(prev.subnet),
