@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing network ID' })
   }
 
-  const network = networkRepository.getById(id)
+  const network = await networkRepository.getById(id)
 
   if (!network) {
     throw createError({ statusCode: 404, statusMessage: 'Network not found' })
@@ -19,9 +19,9 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = createIpAllocationSchema.parse(body)
 
-  const created = ipAllocationRepository.create(id, parsed)
+  const created = await ipAllocationRepository.create(id, parsed)
 
-  activityRepository.log({
+  await activityRepository.log({
     user_id: event.context.auth?.userId,
     action: 'create',
     entity_type: 'ip_allocation',

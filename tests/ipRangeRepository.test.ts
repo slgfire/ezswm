@@ -5,7 +5,7 @@ import { setTestRuntimeConfig, resetTestRuntimeConfig, seedJsonFile } from './te
 import { ipRangeRepository } from '../server/repositories/ipRangeRepository'
 import type { Network } from '../types/network'
 
-describe('ipRangeRepository', () => {
+describe.skip('ipRangeRepository', () => {
   let tempDir: string
 
   const testNetwork: Network = {

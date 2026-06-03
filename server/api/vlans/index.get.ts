@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   const status = query.status as string | undefined
   const search = query.search as string | undefined
 
-  let items = vlanRepository.list()
+  let items = await vlanRepository.list()
 
   if (siteId) {
     items = items.filter((v) => v.site_id === siteId)
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Add network_count to each VLAN
-  const networks = networkRepository.list()
+  const networks = await networkRepository.list()
   const data = items.map((v) => ({
     ...v,
     network_count: networks.filter((n) => n.vlan_id === v.id).length,

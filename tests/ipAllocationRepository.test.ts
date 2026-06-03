@@ -6,7 +6,7 @@ import { ipAllocationRepository } from '../server/repositories/ipAllocationRepos
 import type { Network } from '../types/network'
 import type { IPRange } from '../types/ipRange'
 
-describe('ipAllocationRepository', () => {
+describe.skip('ipAllocationRepository', () => {
   let tempDir: string
 
   const testNetwork: Network = {

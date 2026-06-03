@@ -1,12 +1,12 @@
 import { userRepository } from '../../repositories/userRepository'
 
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   const auth = event.context.auth
   if (!auth) {
     throw createError({ statusCode: 401, message: 'Not authenticated' })
   }
 
-  const user = userRepository.getById(auth.userId)
+  const user = await userRepository.getById(auth.userId)
   if (!user) {
     throw createError({ statusCode: 404, message: 'User not found' })
   }

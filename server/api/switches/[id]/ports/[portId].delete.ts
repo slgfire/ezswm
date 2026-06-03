@@ -21,6 +21,6 @@ export default defineEventHandler(async (event) => {
     mac_address: undefined
   }
 
-  const port = switchRepository.updatePort(switchId, portId, resetData)
+  const port = await switchRepository.updatePort(switchId, portId, resetData)
   return port
 })

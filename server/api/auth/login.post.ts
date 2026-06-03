@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const validated = loginSchema.parse(body)
 
-  const user = userRepository.getByUsername(validated.username)
+  const user = await userRepository.getByUsername(validated.username)
   if (!user) {
     throw createError({ statusCode: 401, message: 'Invalid username or password' })
   }

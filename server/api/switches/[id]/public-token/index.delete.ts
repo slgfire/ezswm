@@ -6,11 +6,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Missing switch ID' })
   }
 
-  const token = publicTokenRepository.getBySwitchId(switchId)
+  const token = await publicTokenRepository.getBySwitchId(switchId)
   if (!token) {
     throw createError({ statusCode: 404, message: 'No active public token found' })
   }
 
-  const revoked = publicTokenRepository.revoke(token.id)
+  const revoked = await publicTokenRepository.revoke(token.id)
   return revoked
 })

@@ -12,25 +12,25 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Not found' })
   }
 
-  const tokenRecord = publicTokenRepository.getByToken(tokenStr)
+  const tokenRecord = await publicTokenRepository.getByToken(tokenStr)
   if (!tokenRecord) {
     throw createError({ statusCode: 404, message: 'Not found' })
   }
 
-  const sw = switchRepository.getById(tokenRecord.switch_id)
+  const sw = await switchRepository.getById(tokenRecord.switch_id)
   if (!sw) {
     throw createError({ statusCode: 404, message: 'Not found' })
   }
 
   // Update last access
-  publicTokenRepository.updateLastAccess(tokenRecord.id)
+  await publicTokenRepository.updateLastAccess(tokenRecord.id)
 
   // Load site name
-  const site = siteRepository.getById(sw.site_id)
+  const site = await siteRepository.getById(sw.site_id)
   const siteName = site?.name ?? null
 
   // Load VLANs scoped to switch's site
-  const allVlans = vlanRepository.list()
+  const allVlans = await vlanRepository.list()
   const siteVlans = allVlans.filter(v => v.site_id === sw.site_id)
 
   // Collect VLAN IDs used by this switch's ports
@@ -73,7 +73,7 @@ export default defineEventHandler(async (event) => {
   // Build public layout units (synthetic block IDs)
   let publicUnits: { unit_number: number; label?: string; blocks: { id: string; type: string; count: number; start_index: number; rows: number; row_layout?: string; label?: string }[] }[] = []
   if (sw.layout_template_id) {
-    const template = layoutTemplateRepository.getById(sw.layout_template_id)
+    const template = await layoutTemplateRepository.getById(sw.layout_template_id)
     if (template) {
       publicUnits = template.units.map((unit: LayoutUnit) => ({
         unit_number: unit.unit_number,

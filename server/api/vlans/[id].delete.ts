@@ -8,15 +8,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing VLAN ID' })
   }
 
-  const existing = vlanRepository.getById(id)
+  const existing = await vlanRepository.getById(id)
 
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'VLAN not found' })
   }
 
-  vlanRepository.delete(id)
+  await vlanRepository.delete(id)
 
-  activityRepository.log({
+  await activityRepository.log({
     user_id: event.context.auth?.userId,
     action: 'delete',
     entity_type: 'vlan',

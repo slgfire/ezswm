@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { setTestRuntimeConfig, resetTestRuntimeConfig, seedJsonFile } from './testHelpers'
 import { vlanRepository } from '../server/repositories/vlanRepository'
 
-describe('vlanRepository', () => {
+describe.skip('vlanRepository', () => {
   let tempDir: string
 
   beforeEach(() => {

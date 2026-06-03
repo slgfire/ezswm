@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const vlanId = query.vlan_id as string | undefined
   const search = query.search as string | undefined
 
-  let items = networkRepository.list()
+  let items = await networkRepository.list()
 
   if (siteId) {
     items = items.filter((n) => n.site_id === siteId)

@@ -17,8 +17,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // Clean up LAG groups before deleting switch
-  lagGroupRepository.deleteBySwitchId(id)
-  publicTokenRepository.deleteBySwitchId(id)
+  await lagGroupRepository.deleteBySwitchId(id)
+  await publicTokenRepository.deleteBySwitchId(id)
 
   await switchRepository.delete(id)
 

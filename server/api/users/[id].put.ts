@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'User ID is required' })
   }
 
-  const existing = userRepository.getById(id)
+  const existing = await userRepository.getById(id)
 
   if (!existing) {
     throw createError({ statusCode: 404, message: 'User not found' })
@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const validated = updateUserSchema.parse(body)
 
-  const updated = userRepository.update(id, validated)
+  const updated = await userRepository.update(id, validated)
 
   const { password_hash: _, ...safeUser } = updated
   return safeUser

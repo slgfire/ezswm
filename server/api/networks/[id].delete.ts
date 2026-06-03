@@ -10,19 +10,19 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing network ID' })
   }
 
-  const existing = networkRepository.getById(id)
+  const existing = await networkRepository.getById(id)
 
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Network not found' })
   }
 
   // Cascade delete related allocations and ranges
-  ipAllocationRepository.deleteByNetworkId(id)
-  ipRangeRepository.deleteByNetworkId(id)
+  await ipAllocationRepository.deleteByNetworkId(id)
+  await ipRangeRepository.deleteByNetworkId(id)
 
-  networkRepository.delete(id)
+  await networkRepository.delete(id)
 
-  activityRepository.log({
+  await activityRepository.log({
     user_id: event.context.auth?.userId,
     action: 'delete',
     entity_type: 'network',

@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
 
   const search = query.search as string | undefined
 
-  const allSites = siteRepository.list()
+  const allSites = await siteRepository.list()
   let items = [...allSites]
 
   if (search) {
@@ -13,10 +13,10 @@ export default defineEventHandler(async (event) => {
     items = items.filter((s) => s.name.toLowerCase().includes(term) || s.description?.toLowerCase().includes(term))
   }
 
-  const data = items.map(site => ({
+  const data = await Promise.all(items.map(async site => ({
     ...site,
-    _counts: siteRepository.getEntityCounts(site.id)
-  }))
+    _counts: await siteRepository.getEntityCounts(site.id)
+  })))
 
   return {
     data,

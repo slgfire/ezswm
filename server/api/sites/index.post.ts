@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = createSiteSchema.parse(body)
 
-  const created = siteRepository.create(parsed)
+  const created = await siteRepository.create(parsed)
 
   await activityRepository.log({
     user_id: event.context.auth?.userId,

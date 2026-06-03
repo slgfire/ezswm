@@ -1,5 +1,5 @@
 import { settingsRepository } from '../../repositories/settingsRepository'
 
-export default defineEventHandler(() => {
-  return settingsRepository.get()
+export default defineEventHandler(async () => {
+  return await settingsRepository.get()
 })

@@ -6,16 +6,16 @@ import { ipRangeRepository } from '../../repositories/ipRangeRepository'
 import { activityRepository } from '../../repositories/activityRepository'
 import { parseSubnet, ipToLong } from '../../utils/ipv4'
 
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const siteId = query.site_id as string | undefined
 
-  let switches = switchRepository.list()
-  let vlans = vlanRepository.list()
-  let networks = networkRepository.list()
-  const allocations = ipAllocationRepository.list()
-  const ranges = ipRangeRepository.list()
-  const { entries: recentActivity } = activityRepository.list(10)
+  let switches = await switchRepository.list()
+  let vlans = await vlanRepository.list()
+  let networks = await networkRepository.list()
+  const allocations = await ipAllocationRepository.list()
+  const ranges = await ipRangeRepository.list()
+  const { entries: recentActivity } = await activityRepository.list(10)
 
   if (siteId) {
     switches = switches.filter(s => s.site_id === siteId)

@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing site ID' })
   }
 
-  const existing = siteRepository.getById(id)
+  const existing = await siteRepository.getById(id)
 
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Site not found' })
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = updateSiteSchema.parse(body)
 
-  const updated = siteRepository.update(id, parsed as Partial<Omit<Site, 'id' | 'created_at'>>)
+  const updated = await siteRepository.update(id, parsed as Partial<Omit<Site, 'id' | 'created_at'>>)
 
   await activityRepository.log({
     user_id: event.context.auth?.userId,

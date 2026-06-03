@@ -10,15 +10,15 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const validated = createLagGroupSchema.parse(body)
 
-  const group = lagGroupRepository.create(switchId, validated)
+  const group = await lagGroupRepository.create(switchId, validated)
 
   // Resolve port labels for activity log metadata
-  const sw = switchRepository.getById(switchId)
+  const sw = await switchRepository.getById(switchId)
   const portLabels = group.port_ids
     .map(pid => sw?.ports.find(p => p.id === pid)?.label || pid)
     .slice(0, 10)
 
-  activityRepository.log({
+  await activityRepository.log({
     user_id: event.context.auth?.userId,
     action: 'create',
     entity_type: 'lag_group',

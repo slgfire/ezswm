@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing network ID' })
   }
 
-  const existing = networkRepository.getById(id)
+  const existing = await networkRepository.getById(id)
 
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Network not found' })
@@ -19,9 +19,9 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = updateNetworkSchema.parse(body)
 
-  const updated = networkRepository.update(id, parsed as Partial<Omit<Network, 'id' | 'created_at'>>)
+  const updated = await networkRepository.update(id, parsed as Partial<Omit<Network, 'id' | 'created_at'>>)
 
-  activityRepository.log({
+  await activityRepository.log({
     user_id: event.context.auth?.userId,
     action: 'update',
     entity_type: 'network',

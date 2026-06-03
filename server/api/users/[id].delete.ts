@@ -12,13 +12,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Cannot delete your own account' })
   }
 
-  const existing = userRepository.getById(id)
+  const existing = await userRepository.getById(id)
 
   if (!existing) {
     throw createError({ statusCode: 404, message: 'User not found' })
   }
 
-  userRepository.delete(id)
+  await userRepository.delete(id)
 
   setResponseStatus(event, 204)
   return null

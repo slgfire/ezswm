@@ -6,6 +6,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'order array required' })
   }
 
-  switchRepository.updateSortOrder(body.order)
+  await switchRepository.updateSortOrder(body.order)
   return { ok: true }
 })
