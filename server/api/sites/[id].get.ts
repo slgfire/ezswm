@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing site ID' })
   }
 
-  const site = siteRepository.getById(id)
+  const site = await siteRepository.getById(id)
 
   if (!site) {
     throw createError({ statusCode: 404, statusMessage: 'Site not found' })
@@ -15,6 +15,6 @@ export default defineEventHandler(async (event) => {
 
   return {
     ...site,
-    _counts: siteRepository.getEntityCounts(id)
+    _counts: await siteRepository.getEntityCounts(id)
   }
 })

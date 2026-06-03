@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing network ID' })
   }
 
-  const network = networkRepository.getById(id)
+  const network = await networkRepository.getById(id)
 
   if (!network) {
     throw createError({ statusCode: 404, statusMessage: 'Network not found' })
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   const type = query.type as string | undefined
   const search = query.search as string | undefined
 
-  let items = ipRangeRepository.list(id)
+  let items = await ipRangeRepository.list(id)
 
   if (type) {
     items = items.filter((r) => r.type === type)

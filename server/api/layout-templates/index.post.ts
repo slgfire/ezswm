@@ -7,9 +7,9 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const validated = createLayoutTemplateSchema.parse(body)
 
-  const template = layoutTemplateRepository.create(validated as Omit<LayoutTemplate, 'id' | 'created_at' | 'updated_at'>)
+  const template = await layoutTemplateRepository.create(validated as Omit<LayoutTemplate, 'id' | 'created_at' | 'updated_at'>)
 
-  activityRepository.log({
+  await activityRepository.log({
     entity_type: 'layout_template',
     entity_id: template.id,
     action: 'create',

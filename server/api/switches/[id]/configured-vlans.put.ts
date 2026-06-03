@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   const switchId = event.context.params?.id
   if (!switchId) throw createError({ statusCode: 400, statusMessage: 'Missing switch ID' })
 
-  const sw = switchRepository.getById(switchId)
+  const sw = await switchRepository.getById(switchId)
   if (!sw) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
 
   const body = await readBody(event)
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const siteVlans = vlanRepository.list().filter(v => v.site_id === sw.site_id)
+  const siteVlans = (await vlanRepository.list()).filter(v => v.site_id === sw.site_id)
   const siteVlanIds = siteVlans.map(v => v.vlan_id)
 
   if (parsed.action === 'add') {
@@ -46,8 +46,8 @@ export default defineEventHandler(async (event) => {
       .filter(v => v >= 1 && v <= 4094)
       .sort((a, b) => a - b)
 
-    switchRepository.update(switchId, { configured_vlans: merged } as Partial<import('~~/types').Switch>)
-    const updated = switchRepository.getById(switchId)!
+    await switchRepository.update(switchId, { configured_vlans: merged } as Partial<import('~~/types').Switch>)
+    const updated = (await switchRepository.getById(switchId))!
 
     await activityRepository.log({
       user_id: event.context.auth?.userId,
@@ -99,7 +99,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // No requires_decision — safe to remove (auto-remove from tagged_vlans)
-    const result = switchRepository.applyConfiguredVlansRemoval(switchId, vlanId, {
+    const result = await switchRepository.applyConfiguredVlansRemoval(switchId, vlanId, {
       expectedUpdatedAt: parsed.expected_updated_at
     })
 
@@ -112,7 +112,7 @@ export default defineEventHandler(async (event) => {
       metadata: { vlan_ids: [vlanId], ports_updated: result.portsUpdated }
     })
 
-    const updated = switchRepository.getById(switchId)!
+    const updated = (await switchRepository.getById(switchId))!
     return { configured_vlans: updated.configured_vlans, updated_at: result.updatedAt }
   }
 
@@ -158,7 +158,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const result = switchRepository.applyConfiguredVlansRemoval(switchId, vlanId, {
+    const result = await switchRepository.applyConfiguredVlansRemoval(switchId, vlanId, {
       expectedUpdatedAt: parsed.expected_updated_at,
       portCleanup: parsed.port_cleanup
     })
@@ -176,7 +176,7 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    const updated = switchRepository.getById(switchId)!
+    const updated = (await switchRepository.getById(switchId))!
     return { configured_vlans: updated.configured_vlans, updated_at: result.updatedAt, ports_updated: result.portsUpdated }
   }
 })

@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
 
   // Verify all VLANs exist as site entities
   if (requestedVlans.length > 0) {
-    const siteVlans = vlanRepository.list().filter(v => v.site_id === sw.site_id)
+    const siteVlans = (await vlanRepository.list()).filter(v => v.site_id === sw.site_id)
     const siteVlanIds = siteVlans.map(v => v.vlan_id)
     for (const vlanId of requestedVlans) {
       if (!siteVlanIds.includes(vlanId)) {
@@ -70,18 +70,18 @@ export default defineEventHandler(async (event) => {
   if (parsed.updates.helper_usage === null) parsed.updates.helper_usage = undefined
 
   // All validation passed — single atomic write
-  const updatedPorts = switchRepository.bulkUpdatePorts(switchId, parsed.port_ids, parsed.updates as Partial<Omit<Port, 'id' | 'unit' | 'index'>>)
+  const updatedPorts = await switchRepository.bulkUpdatePorts(switchId, parsed.port_ids, parsed.updates as Partial<Omit<Port, 'id' | 'unit' | 'index'>>)
 
   // If override, also update configured_vlans
   if (vlansToAdd.length > 0) {
-    const currentSw = switchRepository.getById(switchId)!
+    const currentSw = (await switchRepository.getById(switchId))!
     const merged = [...new Set([...(currentSw.configured_vlans || []), ...vlansToAdd])]
       .filter(v => v >= 1 && v <= 4094)
       .sort((a, b) => a - b)
-    switchRepository.update(switchId, { configured_vlans: merged } as Partial<import('~~/types').Switch>)
+    await switchRepository.update(switchId, { configured_vlans: merged } as Partial<import('~~/types').Switch>)
   }
 
-  const updatedSw = switchRepository.getById(switchId)!
+  const updatedSw = (await switchRepository.getById(switchId))!
 
   await activityRepository.log({
     user_id: event.context.auth?.userId,

@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing allocation ID' })
   }
 
-  const existing = ipAllocationRepository.getById(allocId)
+  const existing = await ipAllocationRepository.getById(allocId)
 
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'IP allocation not found' })
@@ -17,20 +17,20 @@ export default defineEventHandler(async (event) => {
 
   // Clear connected_allocation_id on all ports referencing this allocation
   // Keep connected_device string as fallback display
-  const allSwitches = switchRepository.list()
+  const allSwitches = await switchRepository.list()
   for (const sw of allSwitches) {
     for (const port of sw.ports) {
       if (port.connected_allocation_id === allocId) {
         try {
-          switchRepository.updatePort(sw.id, port.id, { connected_allocation_id: undefined })
+          await switchRepository.updatePort(sw.id, port.id, { connected_allocation_id: undefined })
         } catch { /* best-effort cleanup */ }
       }
     }
   }
 
-  ipAllocationRepository.delete(allocId)
+  await ipAllocationRepository.delete(allocId)
 
-  activityRepository.log({
+  await activityRepository.log({
     user_id: event.context.auth?.userId,
     action: 'delete',
     entity_type: 'ip_allocation',

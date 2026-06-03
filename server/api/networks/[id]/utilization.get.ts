@@ -10,15 +10,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing network ID' })
   }
 
-  const network = networkRepository.getById(id)
+  const network = await networkRepository.getById(id)
 
   if (!network) {
     throw createError({ statusCode: 404, statusMessage: 'Network not found' })
   }
 
   const subnetInfo = parseSubnet(network.subnet)
-  const allocations = ipAllocationRepository.list(id)
-  const ranges = ipRangeRepository.list(id)
+  const allocations = await ipAllocationRepository.list(id)
+  const ranges = await ipRangeRepository.list(id)
 
   const usableIps = subnetInfo.usable_hosts
   const allocatedCount = allocations.length

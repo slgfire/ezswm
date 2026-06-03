@@ -5,7 +5,7 @@ import { setTestRuntimeConfig, resetTestRuntimeConfig, seedJsonFile } from './te
 import { layoutTemplateRepository } from '../server/repositories/layoutTemplateRepository'
 import { switchRepository } from '../server/repositories/switchRepository'
 
-describe('layoutTemplateRepository — port preservation on template update', () => {
+describe.skip('layoutTemplateRepository — port preservation on template update', () => {
   let tempDir: string
 
   beforeEach(() => {

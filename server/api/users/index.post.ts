@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
   const hashedPassword = await hashPassword(validated.password)
 
   const { password: _pw, ...userData } = validated
-  const user = userRepository.create({
+  const user = await userRepository.create({
     ...userData,
     password_hash: hashedPassword,
   } as Omit<User, 'id' | 'created_at' | 'updated_at'>)

@@ -9,17 +9,17 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing VLAN ID' })
   }
 
-  const vlan = vlanRepository.getById(id)
+  const vlan = await vlanRepository.getById(id)
 
   if (!vlan) {
     throw createError({ statusCode: 404, statusMessage: 'VLAN not found' })
   }
 
   // Find networks referencing this VLAN
-  const networks = networkRepository.list().filter((n) => n.vlan_id === id)
+  const networks = (await networkRepository.list()).filter((n) => n.vlan_id === id)
 
   // Find ports using this VLAN as native_vlan or in tagged_vlans
-  const switches = switchRepository.list()
+  const switches = await switchRepository.list()
   const ports: Array<{
     switch_id: string
     switch_name: string

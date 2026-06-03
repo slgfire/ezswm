@@ -8,15 +8,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Template ID is required' })
   }
 
-  const existing = layoutTemplateRepository.getById(id)
+  const existing = await layoutTemplateRepository.getById(id)
 
   if (!existing) {
     throw createError({ statusCode: 404, message: 'Layout template not found' })
   }
 
-  layoutTemplateRepository.delete(id)
+  await layoutTemplateRepository.delete(id)
 
-  activityRepository.log({
+  await activityRepository.log({
     entity_type: 'layout_template',
     entity_id: id,
     action: 'delete',

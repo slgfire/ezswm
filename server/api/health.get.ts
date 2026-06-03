@@ -1,12 +1,19 @@
-import { isDataDirWritable } from '../storage/jsonStorage'
+import { prisma } from '../db/client'
 
-export default defineEventHandler(() => {
+export default defineEventHandler(async () => {
   const config = useRuntimeConfig()
+  let dbOk = false
+  try {
+    await prisma.$queryRaw`SELECT 1`
+    dbOk = true
+  } catch {
+    dbOk = false
+  }
   return {
-    status: 'ok',
+    status: dbOk ? 'ok' : 'degraded',
     version: config.public.appVersion,
     uptime: Math.floor(process.uptime()),
     data_dir: config.dataDir,
-    data_writable: isDataDirWritable()
+    database_ok: dbOk
   }
 })

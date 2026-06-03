@@ -36,6 +36,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     jwtSecret: process.env.JWT_SECRET || '',
     dataDir: process.env.DATA_DIR || './data',
+    // Default DATABASE_URL is relative to /prisma (Prisma convention). In Docker
+    // and production we set an absolute path via env.
+    databaseUrl: process.env.DATABASE_URL || 'file:../data/db.sqlite',
     public: {
       appVersion: process.env.npm_package_version || '0.0.0'
     }

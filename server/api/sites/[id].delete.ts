@@ -9,21 +9,21 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing site ID' })
   }
 
-  const existing = siteRepository.getById(id)
+  const existing = await siteRepository.getById(id)
 
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Site not found' })
   }
 
-  if (siteRepository.hasEntities(id)) {
+  if (await siteRepository.hasEntities(id)) {
     throw createError({
       statusCode: 400,
       statusMessage: 'Cannot delete site with existing entities'
     })
   }
 
-  siteRepository.delete(id)
-  topologyLayoutRepository.deleteBySiteId(id)
+  await siteRepository.delete(id)
+  await topologyLayoutRepository.deleteBySiteId(id)
 
   await activityRepository.log({
     user_id: event.context.auth?.userId,

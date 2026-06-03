@@ -1,6 +1,6 @@
 {
   "name": "ezswm",
-  "version": "0.20.3",
+  "version": "0.21.0",
   "type": "module",
   "private": true,
   "packageManager": "pnpm@11.0.9",
@@ -16,10 +16,15 @@
     "docs:build": "pnpm --filter ezswm-docs build",
     "docs:preview": "pnpm --filter ezswm-docs preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@nuxt/ui": "4.8.1",
+    "@prisma/client": "6.18.0",
     "@nuxtjs/i18n": "10.4.0",
     "@types/qrcode": "1.5.6",
     "bcryptjs": "3.0.3",
@@ -27,6 +32,7 @@
     "marked": "^18.0.4",
     "nanoid": "5.1.11",
     "nuxt": "4.4.6",
+    "prisma": "6.18.0",
     "qrcode": "1.5.4",
     "tailwindcss": "4.3.0",
     "v-network-graph": "0.9.22",

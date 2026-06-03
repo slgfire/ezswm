@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing site ID' })
   }
 
-  if (!siteRepository.getById(siteId)) {
+  if (!(await siteRepository.getById(siteId))) {
     throw createError({ statusCode: 404, statusMessage: 'Site not found' })
   }
 
@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   const parsed = saveLayoutSchema.parse(body)
 
   // Ownership check: all node IDs must belong to switches in this site
-  const siteSwitches = switchRepository.list().filter(sw => sw.site_id === siteId)
+  const siteSwitches = (await switchRepository.list()).filter(sw => sw.site_id === siteId)
   const validIds = new Set(siteSwitches.map(sw => sw.id))
 
   const filteredPositions: Record<string, { x: number; y: number }> = {}
@@ -27,6 +27,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const layout = topologyLayoutRepository.save(siteId, filteredPositions)
+  const layout = await topologyLayoutRepository.save(siteId, filteredPositions)
   return layout
 })

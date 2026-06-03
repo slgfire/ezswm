@@ -2,7 +2,7 @@ import { switchRepository } from '../../../../../repositories/switchRepository'
 import { ipAllocationRepository } from '../../../../../repositories/ipAllocationRepository'
 import { networkRepository } from '../../../../../repositories/networkRepository'
 
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   const networkId = event.context.params?.id
   const allocId = event.context.params?.allocId
 
@@ -10,17 +10,17 @@ export default defineEventHandler((event) => {
   if (!allocId) throw createError({ statusCode: 400, message: 'Allocation ID required' })
 
   // Validate parent network exists
-  const network = networkRepository.getById(networkId)
+  const network = await networkRepository.getById(networkId)
   if (!network) throw createError({ statusCode: 404, message: 'Network not found' })
 
   // Validate allocation exists and belongs to this network
-  const allocation = ipAllocationRepository.getById(allocId)
+  const allocation = await ipAllocationRepository.getById(allocId)
   if (!allocation) throw createError({ statusCode: 404, message: 'Allocation not found' })
   if (allocation.network_id !== networkId) {
     throw createError({ statusCode: 404, message: 'Allocation does not belong to this network' })
   }
 
-  const allSwitches = switchRepository.list()
+  const allSwitches = await switchRepository.list()
   const ports: { switch_id: string; switch_name: string; port_id: string; port_label: string }[] = []
 
   for (const sw of allSwitches) {

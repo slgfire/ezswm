@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing range ID' })
   }
 
-  const existing = ipRangeRepository.getById(rangeId)
+  const existing = await ipRangeRepository.getById(rangeId)
 
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'IP range not found' })
@@ -19,9 +19,9 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = updateIpRangeSchema.parse(body)
 
-  const updated = ipRangeRepository.update(rangeId, parsed as Partial<Omit<IPRange, 'id' | 'created_at' | 'network_id'>>)
+  const updated = await ipRangeRepository.update(rangeId, parsed as Partial<Omit<IPRange, 'id' | 'created_at' | 'network_id'>>)
 
-  activityRepository.log({
+  await activityRepository.log({
     user_id: event.context.auth?.userId,
     action: 'update',
     entity_type: 'ip_range',

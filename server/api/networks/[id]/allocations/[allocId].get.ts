@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing allocation ID' })
   }
 
-  const allocation = ipAllocationRepository.getById(allocId)
+  const allocation = await ipAllocationRepository.getById(allocId)
 
   if (!allocation) {
     throw createError({ statusCode: 404, statusMessage: 'IP allocation not found' })

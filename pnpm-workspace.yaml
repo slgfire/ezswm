@@ -5,6 +5,9 @@ packages:
 # allowed to run install/postinstall scripts (native binaries).
 allowBuilds:
   '@parcel/watcher': true
+  '@prisma/client': true
+  '@prisma/engines': true
   esbuild: true
+  prisma: true
   unrs-resolver: true
   vue-demi: true

@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing VLAN ID' })
   }
 
-  const existing = vlanRepository.getById(id)
+  const existing = await vlanRepository.getById(id)
 
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'VLAN not found' })
@@ -19,9 +19,9 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = updateVlanSchema.parse(body)
 
-  const updated = vlanRepository.update(id, parsed as Partial<Omit<VLAN, 'id' | 'created_at'>>)
+  const updated = await vlanRepository.update(id, parsed as Partial<Omit<VLAN, 'id' | 'created_at'>>)
 
-  activityRepository.log({
+  await activityRepository.log({
     user_id: event.context.auth?.userId,
     action: 'update',
     entity_type: 'vlan',

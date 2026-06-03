@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing VLAN ID' })
   }
 
-  const vlan = vlanRepository.getById(id)
+  const vlan = await vlanRepository.getById(id)
 
   if (!vlan) {
     throw createError({ statusCode: 404, statusMessage: 'VLAN not found' })

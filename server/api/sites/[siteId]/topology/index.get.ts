@@ -19,17 +19,17 @@ function deriveVlans(port: Port): number[] {
   return [...new Set(vlans)]
 }
 
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   const siteId = event.context.params?.siteId
   if (!siteId) {
     throw createError({ statusCode: 400, statusMessage: 'Missing site ID' })
   }
 
-  if (!siteRepository.getById(siteId)) {
+  if (!(await siteRepository.getById(siteId))) {
     throw createError({ statusCode: 404, statusMessage: 'Site not found' })
   }
 
-  const allSwitches = switchRepository.list()
+  const allSwitches = await switchRepository.list()
   const siteSwitches = allSwitches.filter(sw => sw.site_id === siteId)
   const siteSwIds = new Set(siteSwitches.map(sw => sw.id))
 
@@ -54,7 +54,7 @@ export default defineEventHandler((event) => {
   const seenEdges = new Set<string>()
 
   // Preload LAG groups for this site's switches
-  const allLags = lagGroupRepository.list()
+  const allLags = await lagGroupRepository.list()
   const lagByPortId = new Map<string, { id: string; name: string }>()
   for (const lag of allLags) {
     if (siteSwIds.has(lag.switch_id)) {
@@ -131,7 +131,7 @@ export default defineEventHandler((event) => {
       if (isCrossSite && !ghostNodeMap.has(targetId)) {
         const remoteSw = allSwitches.find(s => s.id === targetId)
         if (remoteSw) {
-          const remoteSite = siteRepository.getById(remoteSw.site_id)
+          const remoteSite = await siteRepository.getById(remoteSw.site_id)
           ghostNodeMap.set(targetId, {
             id: remoteSw.id,
             name: remoteSw.name,

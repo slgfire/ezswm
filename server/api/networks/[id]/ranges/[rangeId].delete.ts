@@ -8,15 +8,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing range ID' })
   }
 
-  const existing = ipRangeRepository.getById(rangeId)
+  const existing = await ipRangeRepository.getById(rangeId)
 
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'IP range not found' })
   }
 
-  ipRangeRepository.delete(rangeId)
+  await ipRangeRepository.delete(rangeId)
 
-  activityRepository.log({
+  await activityRepository.log({
     user_id: event.context.auth?.userId,
     action: 'delete',
     entity_type: 'ip_range',

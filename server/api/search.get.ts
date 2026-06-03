@@ -6,7 +6,7 @@ import { layoutTemplateRepository } from '../repositories/layoutTemplateReposito
 import { lagGroupRepository } from '../repositories/lagGroupRepository'
 import { ipRangeRepository } from '../repositories/ipRangeRepository'
 
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const q = String(query.q || '').toLowerCase().trim()
   const siteId = query.site_id as string | undefined
@@ -17,7 +17,7 @@ export default defineEventHandler((event) => {
 
   const MAX_PER_TYPE = 10
 
-  const allSwitches = switchRepository.list()
+  const allSwitches = await switchRepository.list()
   const switches = (siteId ? allSwitches.filter(s => s.site_id === siteId) : allSwitches)
     .filter(s =>
       s.name.toLowerCase().includes(q) ||
@@ -34,7 +34,7 @@ export default defineEventHandler((event) => {
     .slice(0, MAX_PER_TYPE)
     .map(({ ports: _, ...s }) => s)
 
-  const allVlans = vlanRepository.list()
+  const allVlans = await vlanRepository.list()
   const vlans = (siteId ? allVlans.filter(v => v.site_id === siteId) : allVlans)
     .filter(v =>
       String(v.vlan_id).includes(q) ||
@@ -44,7 +44,7 @@ export default defineEventHandler((event) => {
     )
     .slice(0, MAX_PER_TYPE)
 
-  const allNetworks = networkRepository.list()
+  const allNetworks = await networkRepository.list()
   const networks = (siteId ? allNetworks.filter(n => n.site_id === siteId) : allNetworks)
     .filter(n =>
       n.name.toLowerCase().includes(q) ||
@@ -54,7 +54,7 @@ export default defineEventHandler((event) => {
     )
     .slice(0, MAX_PER_TYPE)
 
-  const allocations = ipAllocationRepository.list()
+  const allocations = (await ipAllocationRepository.list())
     .filter(a =>
       a.ip_address.includes(q) ||
       a.hostname?.toLowerCase().includes(q) ||
@@ -63,7 +63,7 @@ export default defineEventHandler((event) => {
     )
     .slice(0, MAX_PER_TYPE)
 
-  const templates = layoutTemplateRepository.list()
+  const templates = (await layoutTemplateRepository.list())
     .filter(t =>
       t.name.toLowerCase().includes(q) ||
       t.manufacturer?.toLowerCase().includes(q) ||
@@ -73,7 +73,7 @@ export default defineEventHandler((event) => {
     .slice(0, MAX_PER_TYPE)
     .map(({ units: _, ...t }) => t)
 
-  const allLagGroups = lagGroupRepository.list()
+  const allLagGroups = await lagGroupRepository.list()
   const lagGroups = allLagGroups
     .filter(lg => {
       if (siteId) {
@@ -101,7 +101,7 @@ export default defineEventHandler((event) => {
       }
     })
 
-  const ranges = ipRangeRepository.list()
+  const ranges = (await ipRangeRepository.list())
     .filter(r => {
       const net = allNetworks.find(n => n.id === r.network_id)
       return (

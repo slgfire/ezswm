@@ -1,52 +1,9 @@
-import { readJson, writeJson } from '../../storage/jsonStorage'
-import { nanoid } from 'nanoid'
-
-const ENTITY_FILE_MAP: Record<string, string> = {
-  switches: 'switches.json',
-  vlans: 'vlans.json',
-  networks: 'networks.json',
-  'ip-allocations': 'ip-allocations.json',
-  'layout-templates': 'layout-templates.json'
-}
-
-export default defineEventHandler(async (event) => {
-  const entity = event.context.params?.entity
-  if (!entity || !ENTITY_FILE_MAP[entity]) {
-    throw createError({ statusCode: 400, message: `Unknown entity: ${entity}` })
-  }
-
-  const body = await readBody(event)
-  if (!Array.isArray(body)) {
-    throw createError({ statusCode: 400, message: 'Request body must be a JSON array' })
-  }
-
-  if (body.length > 5000) {
-    throw createError({ statusCode: 400, message: 'Maximum 5000 rows allowed' })
-  }
-
-  const fileName = ENTITY_FILE_MAP[entity]
-  const existing = readJson<Record<string, unknown>[]>(fileName)
-  const now = new Date().toISOString()
-
-  let imported = 0
-  const errors: Array<{ row: number; message: string }> = []
-
-  for (let i = 0; i < body.length; i++) {
-    try {
-      const item = {
-        ...body[i],
-        id: nanoid(),
-        created_at: now,
-        updated_at: now
-      }
-      existing.push(item)
-      imported++
-    } catch (e: unknown) {
-      errors.push({ row: i + 1, message: e instanceof Error ? e.message : String(e) })
-    }
-  }
-
-  writeJson(fileName, existing)
-
-  return { imported, errors, total: body.length }
+// Per-entity CSV/JSON import is being reworked for SQLite + UUIDv4. The
+// legacy nanoid-based importer is incompatible with the new schema's
+// FK constraints, so we return 501 until the new flow lands.
+export default defineEventHandler(() => {
+  throw createError({
+    statusCode: 501,
+    message: 'Entity import is being reworked for the new SQLite storage and will return in a follow-up release.'
+  })
 })

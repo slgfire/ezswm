@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Template ID is required' })
   }
 
-  const template = layoutTemplateRepository.getById(id)
+  const template = await layoutTemplateRepository.getById(id)
 
   if (!template) {
     throw createError({ statusCode: 404, message: 'Layout template not found' })

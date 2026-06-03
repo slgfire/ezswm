@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing range ID' })
   }
 
-  const range = ipRangeRepository.getById(rangeId)
+  const range = await ipRangeRepository.getById(rangeId)
 
   if (!range) {
     throw createError({ statusCode: 404, statusMessage: 'IP range not found' })

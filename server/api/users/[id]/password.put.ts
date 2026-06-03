@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'User ID is required' })
   }
 
-  const user = userRepository.getById(id)
+  const user = await userRepository.getById(id)
 
   if (!user) {
     throw createError({ statusCode: 404, message: 'User not found' })
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
 
   const hashedPassword = await hashPassword(validated.new_password)
 
-  userRepository.update(id, { password_hash: hashedPassword })
+  await userRepository.update(id, { password_hash: hashedPassword })
 
   return { message: 'Password changed successfully' }
 })

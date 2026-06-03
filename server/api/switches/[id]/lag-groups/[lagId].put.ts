@@ -15,13 +15,13 @@ export default defineEventHandler(async (event) => {
   const validated = updateLagGroupSchema.parse(body)
 
   // Get current state before update for diff
-  const before = lagGroupRepository.getById(lagId)
+  const before = await lagGroupRepository.getById(lagId)
   if (!before) throw createError({ statusCode: 404, message: 'LAG group not found' })
 
-  const updated = lagGroupRepository.update(lagId, validated as Partial<Omit<LAGGroup, 'id' | 'switch_id' | 'created_at'>>)
+  const updated = await lagGroupRepository.update(lagId, validated as Partial<Omit<LAGGroup, 'id' | 'switch_id' | 'created_at'>>)
 
   // Compute diff for metadata (server-side, don't trust client)
-  const sw = switchRepository.getById(switchId)
+  const sw = await switchRepository.getById(switchId)
   const resolveLabel = (pid: string) => sw?.ports.find(p => p.id === pid)?.label || pid
 
   const metadata: Record<string, unknown> = {}
@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
     metadata.before_remote_device = before.remote_device || null
   }
 
-  activityRepository.log({
+  await activityRepository.log({
     user_id: event.context.auth?.userId,
     action: 'update',
     entity_type: 'lag_group',

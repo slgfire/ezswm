@@ -1,86 +1,96 @@
+import { randomUUID } from 'node:crypto'
 import { nanoid } from 'nanoid'
-import { readJson, writeJson } from '../storage/jsonStorage'
-import type { PublicToken } from '~~/types/publicToken'
+import { prisma } from '../db/client'
+import type { PublicToken } from '../../types/publicToken'
 
-const FILE = 'public-tokens.json'
-
-function readAll(): PublicToken[] {
-  return readJson<PublicToken[]>(FILE)
+interface TokenRow {
+  id: string
+  switch_id: string
+  token: string
+  created_at: string
+  revoked_at: string | null
+  last_access_at: string | null
 }
 
-function writeAll(tokens: PublicToken[]): void {
-  writeJson(FILE, tokens)
+function rowToToken(row: TokenRow): PublicToken {
+  return {
+    id: row.id,
+    switch_id: row.switch_id,
+    token: row.token,
+    created_at: row.created_at,
+    revoked_at: row.revoked_at,
+    last_access_at: row.last_access_at
+  }
 }
 
 export const publicTokenRepository = {
-  getByToken(token: string): PublicToken | null {
-    const all = readAll()
-    return all.find(t => t.token === token && t.revoked_at === null) ?? null
+  async getByToken(token: string): Promise<PublicToken | null> {
+    const row = await prisma.publicToken.findFirst({
+      where: { token, revoked_at: null }
+    })
+    return row ? rowToToken(row) : null
   },
 
-  getBySwitchId(switchId: string): PublicToken | null {
-    const all = readAll()
-    return all.find(t => t.switch_id === switchId && t.revoked_at === null) ?? null
+  async getBySwitchId(switchId: string): Promise<PublicToken | null> {
+    const row = await prisma.publicToken.findFirst({
+      where: { switch_id: switchId, revoked_at: null }
+    })
+    return row ? rowToToken(row) : null
   },
 
-  getLatestBySwitchId(switchId: string): PublicToken | null {
-    const all = readAll()
-    const forSwitch = all
-      .filter(t => t.switch_id === switchId)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    return forSwitch[0] ?? null
+  async getLatestBySwitchId(switchId: string): Promise<PublicToken | null> {
+    const row = await prisma.publicToken.findFirst({
+      where: { switch_id: switchId },
+      orderBy: { created_at: 'desc' }
+    })
+    return row ? rowToToken(row) : null
   },
 
-  create(switchId: string): PublicToken {
-    const existing = this.getBySwitchId(switchId)
+  async create(switchId: string): Promise<PublicToken> {
+    const existing = await this.getBySwitchId(switchId)
     if (existing) {
       const err: Error & { statusCode?: number } = new Error('Switch already has an active public token')
       err.statusCode = 409
       throw err
     }
 
-    const token: PublicToken = {
-      id: nanoid(),
-      switch_id: switchId,
-      token: nanoid(32),
-      created_at: new Date().toISOString(),
-      revoked_at: null,
-      last_access_at: null
-    }
-
-    const all = readAll()
-    all.push(token)
-    writeAll(all)
-    return token
+    const row = await prisma.publicToken.create({
+      data: {
+        id: randomUUID(),
+        switch_id: switchId,
+        // The token itself stays nanoid: it's a URL-friendly shared secret,
+        // not a primary key, and short URLs are nicer than UUIDs.
+        token: nanoid(32),
+        created_at: new Date().toISOString(),
+        revoked_at: null,
+        last_access_at: null
+      }
+    })
+    return rowToToken(row)
   },
 
-  revoke(id: string): PublicToken {
-    const all = readAll()
-    const index = all.findIndex(t => t.id === id)
-    if (index === -1) {
+  async revoke(id: string): Promise<PublicToken> {
+    try {
+      const row = await prisma.publicToken.update({
+        where: { id },
+        data: { revoked_at: new Date().toISOString() }
+      })
+      return rowToToken(row)
+    } catch {
       const err: Error & { statusCode?: number } = new Error('Token not found')
       err.statusCode = 404
       throw err
     }
-    all[index]!.revoked_at = new Date().toISOString()
-    writeAll(all)
-    return all[index]!
   },
 
-  updateLastAccess(id: string): void {
-    const all = readAll()
-    const token = all.find(t => t.id === id)
-    if (token) {
-      token.last_access_at = new Date().toISOString()
-      writeAll(all)
-    }
+  async updateLastAccess(id: string): Promise<void> {
+    await prisma.publicToken.update({
+      where: { id },
+      data: { last_access_at: new Date().toISOString() }
+    }).catch(() => { /* token may have been deleted */ })
   },
 
-  deleteBySwitchId(switchId: string): void {
-    const all = readAll()
-    const filtered = all.filter(t => t.switch_id !== switchId)
-    if (filtered.length !== all.length) {
-      writeAll(filtered)
-    }
+  async deleteBySwitchId(switchId: string): Promise<void> {
+    await prisma.publicToken.deleteMany({ where: { switch_id: switchId } })
   }
 }

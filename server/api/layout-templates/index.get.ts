@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const search = (query.search as string) || ''
   const manufacturer = (query.manufacturer as string) || ''
 
-  let templates = layoutTemplateRepository.list()
+  let templates = await layoutTemplateRepository.list()
 
   if (search) {
     const searchLower = search.toLowerCase()
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
     templates = templates.filter((t) => t.manufacturer === manufacturer)
   }
 
-  const switches = switchRepository.list()
+  const switches = await switchRepository.list()
   const usageMap = new Map<string, number>()
   for (const sw of switches) {
     if (sw.layout_template_id) {
@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
   }))
 
   const manufacturers = [...new Set(
-    layoutTemplateRepository.list()
+    (await layoutTemplateRepository.list())
       .map((t) => t.manufacturer)
       .filter(Boolean)
   )].sort()

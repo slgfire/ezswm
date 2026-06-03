@@ -1,94 +1,139 @@
-import { nanoid } from 'nanoid'
-import { readJson, writeJson } from '../storage/jsonStorage'
+import { randomUUID } from 'node:crypto'
+import { prisma } from '../db/client'
 import type { VLAN } from '../../types/vlan'
 import { VLAN_COLOR_POOL } from '../../types/vlan'
 
-const FILE_NAME = 'vlans.json'
+interface VlanRow {
+  id: string
+  site_id: string
+  vlan_id: number
+  name: string
+  description: string | null
+  status: string
+  routing_device: string | null
+  color: string
+  is_favorite: boolean
+  created_at: string
+  updated_at: string
+}
+
+function rowToVlan(row: VlanRow): VLAN {
+  return {
+    id: row.id,
+    site_id: row.site_id,
+    vlan_id: row.vlan_id,
+    name: row.name,
+    description: row.description ?? undefined,
+    status: row.status as VLAN['status'],
+    routing_device: row.routing_device ?? undefined,
+    color: row.color,
+    is_favorite: row.is_favorite,
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  }
+}
 
 export const vlanRepository = {
-  list(): VLAN[] {
-    return readJson<VLAN[]>(FILE_NAME)
+  async list(siteId?: string): Promise<VLAN[]> {
+    const rows = await prisma.vlan.findMany({
+      where: siteId ? { site_id: siteId } : undefined,
+      orderBy: [{ site_id: 'asc' }, { vlan_id: 'asc' }]
+    })
+    return rows.map(rowToVlan)
   },
 
-  getById(id: string): VLAN | null {
-    const vlans = this.list()
-    return vlans.find(v => v.id === id) || null
+  async getById(id: string): Promise<VLAN | null> {
+    const row = await prisma.vlan.findUnique({ where: { id } })
+    return row ? rowToVlan(row) : null
   },
 
-  getByVlanId(vlanId: number): VLAN | null {
-    const vlans = this.list()
-    return vlans.find(v => v.vlan_id === vlanId) || null
+  async getNextAvailableColor(siteId?: string): Promise<string | null> {
+    const rows = await prisma.vlan.findMany({
+      where: siteId ? { site_id: siteId } : undefined,
+      select: { color: true }
+    })
+    const usedColors = new Set(rows.map(r => r.color))
+    return VLAN_COLOR_POOL.find(c => !usedColors.has(c)) ?? null
   },
 
-  getNextAvailableColor(): string | null {
-    const vlans = this.list()
-    const usedColors = new Set(vlans.map(v => v.color))
-    return VLAN_COLOR_POOL.find(c => !usedColors.has(c)) || null
-  },
-
-  create(data: Omit<VLAN, 'id' | 'created_at' | 'updated_at' | 'is_favorite'>): VLAN {
-    const vlans = this.list()
-
-    const siteVlans = vlans.filter(v => v.site_id === data.site_id)
-    if (siteVlans.some(v => v.vlan_id === data.vlan_id)) {
+  async create(data: Omit<VLAN, 'id' | 'created_at' | 'updated_at' | 'is_favorite'>): Promise<VLAN> {
+    const tagClash = await prisma.vlan.findFirst({
+      where: { site_id: data.site_id, vlan_id: data.vlan_id }
+    })
+    if (tagClash) {
       throw createError({ statusCode: 409, message: `VLAN ID ${data.vlan_id} already exists in this site` })
     }
-
-    if (siteVlans.some(v => v.color === data.color)) {
+    const colorClash = await prisma.vlan.findFirst({
+      where: { site_id: data.site_id, color: data.color }
+    })
+    if (colorClash) {
       throw createError({ statusCode: 409, message: `Color ${data.color} is already used by another VLAN in this site` })
     }
 
     const now = new Date().toISOString()
-    const vlan: VLAN = {
-      id: nanoid(),
-      ...data,
-      is_favorite: false,
-      created_at: now,
-      updated_at: now
-    }
-
-    vlans.push(vlan)
-    writeJson(FILE_NAME, vlans)
-    return vlan
+    const row = await prisma.vlan.create({
+      data: {
+        id: randomUUID(),
+        site_id: data.site_id,
+        vlan_id: data.vlan_id,
+        name: data.name,
+        description: data.description ?? null,
+        status: data.status,
+        routing_device: data.routing_device ?? null,
+        color: data.color,
+        is_favorite: false,
+        created_at: now,
+        updated_at: now
+      }
+    })
+    return rowToVlan(row)
   },
 
-  update(id: string, data: Partial<Omit<VLAN, 'id' | 'created_at'>>): VLAN {
-    const vlans = this.list()
-    const index = vlans.findIndex(v => v.id === id)
-    if (index === -1) {
+  async update(id: string, data: Partial<Omit<VLAN, 'id' | 'created_at'>>): Promise<VLAN> {
+    const current = await prisma.vlan.findUnique({ where: { id } })
+    if (!current) {
       throw createError({ statusCode: 404, message: 'VLAN not found' })
     }
 
-    const siteId = vlans[index]!.site_id
-    if (data.vlan_id !== undefined && data.vlan_id !== vlans[index]!.vlan_id) {
-      if (vlans.some(v => v.site_id === siteId && v.vlan_id === data.vlan_id)) {
+    if (data.vlan_id !== undefined && data.vlan_id !== current.vlan_id) {
+      const clash = await prisma.vlan.findFirst({
+        where: { site_id: current.site_id, vlan_id: data.vlan_id, NOT: { id } }
+      })
+      if (clash) {
         throw createError({ statusCode: 409, message: `VLAN ID ${data.vlan_id} already exists in this site` })
       }
     }
-
-    if (data.color !== undefined && data.color !== vlans[index]!.color) {
-      if (vlans.some(v => v.site_id === siteId && v.color === data.color)) {
+    if (data.color !== undefined && data.color !== current.color) {
+      const clash = await prisma.vlan.findFirst({
+        where: { site_id: current.site_id, color: data.color, NOT: { id } }
+      })
+      if (clash) {
         throw createError({ statusCode: 409, message: `Color ${data.color} is already used by another VLAN in this site` })
       }
     }
 
-    vlans[index] = {
-      ...vlans[index],
-      ...data,
-      updated_at: new Date().toISOString()
-    } as VLAN
-
-    writeJson(FILE_NAME, vlans)
-    return vlans[index]!
+    const row = await prisma.vlan.update({
+      where: { id },
+      data: {
+        ...(data.vlan_id !== undefined ? { vlan_id: data.vlan_id } : {}),
+        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.description !== undefined ? { description: data.description ?? null } : {}),
+        ...(data.status !== undefined ? { status: data.status } : {}),
+        ...(data.routing_device !== undefined ? { routing_device: data.routing_device ?? null } : {}),
+        ...(data.color !== undefined ? { color: data.color } : {}),
+        ...(data.is_favorite !== undefined ? { is_favorite: data.is_favorite } : {}),
+        updated_at: new Date().toISOString()
+      }
+    })
+    return rowToVlan(row)
   },
 
-  delete(id: string): boolean {
-    const vlans = this.list()
-    const index = vlans.findIndex(v => v.id === id)
-    if (index === -1) return false
-
-    vlans.splice(index, 1)
-    writeJson(FILE_NAME, vlans)
-    return true
+  async delete(id: string): Promise<boolean> {
+    try {
+      await prisma.vlan.delete({ where: { id } })
+      return true
+    } catch {
+      return false
+    }
   }
 }

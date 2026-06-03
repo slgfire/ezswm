@@ -1,12 +1,36 @@
-import { nanoid } from 'nanoid'
-import { readJson, writeJson } from '../storage/jsonStorage'
+import { randomUUID } from 'node:crypto'
+import { prisma } from '../db/client'
+import type { LayoutTemplate, LayoutUnit } from '../../types/layoutTemplate'
+import type { PortType } from '../../types/port'
 import { incrementMemberLabel } from '../utils/deviceLibrary'
-import type { LayoutTemplate } from '../../types/layoutTemplate'
-import type { Port, PortType } from '../../types/port'
-import type { Switch } from '../../types/switch'
 
-const FILE_NAME = 'layout-templates.json'
-const SWITCHES_FILE = 'switches.json'
+interface TemplateRow {
+  id: string
+  name: string
+  manufacturer: string | null
+  model: string | null
+  description: string | null
+  datasheet_url: string | null
+  airflow: string | null
+  units: string
+  created_at: string
+  updated_at: string
+}
+
+function rowToTemplate(row: TemplateRow): LayoutTemplate {
+  return {
+    id: row.id,
+    name: row.name,
+    manufacturer: row.manufacturer ?? undefined,
+    model: row.model ?? undefined,
+    description: row.description ?? undefined,
+    datasheet_url: row.datasheet_url ?? undefined,
+    airflow: (row.airflow as LayoutTemplate['airflow']) ?? undefined,
+    units: JSON.parse(row.units) as LayoutUnit[],
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  }
+}
 
 function generatePortLabel(blockLabel: string | undefined, unitNumber: number, portIndex: number): string {
   if (!blockLabel) return `${unitNumber}/${portIndex}`
@@ -20,15 +44,13 @@ interface ExpectedPort {
   label: string
 }
 
-function buildExpectedPorts(template: LayoutTemplate, stackSize: number): ExpectedPort[] {
+function buildExpectedPorts(units: LayoutUnit[], stackSize: number): ExpectedPort[] {
   const expected: ExpectedPort[] = []
   for (let member = 1; member <= stackSize; member++) {
-    const unitOffset = (member - 1) * template.units.length
-    for (const unit of template.units) {
+    const unitOffset = (member - 1) * units.length
+    for (const unit of units) {
       for (const block of unit.blocks) {
-        const memberLabel = block.label
-          ? incrementMemberLabel(block.label, member)
-          : block.label
+        const memberLabel = block.label ? incrementMemberLabel(block.label, member) : block.label
         for (let i = 0; i < block.count; i++) {
           const portIndex = block.start_index + i
           const stackedUnit = unit.unit_number + unitOffset
@@ -45,197 +67,219 @@ function buildExpectedPorts(template: LayoutTemplate, stackSize: number): Expect
   return expected
 }
 
-function syncPortsToTemplate(template: LayoutTemplate): void {
-  const switches = readJson<Switch[]>(SWITCHES_FILE)
-  let changed = false
+function assignBlockIds(units: LayoutUnit[]): LayoutUnit[] {
+  return units.map(unit => ({
+    ...unit,
+    blocks: unit.blocks.map(block => ({ ...block, id: block.id || randomUUID() }))
+  }))
+}
+
+/**
+ * For every switch using this template, reconcile its ports against the new
+ * expected layout. Matched ports keep their settings; unmatched ports are
+ * dropped; new positions become fresh ports. Cross-switch labels referring to
+ * a renamed port get updated.
+ */
+async function syncPortsToTemplate(templateId: string, units: LayoutUnit[]): Promise<void> {
+  const switches = await prisma.switch.findMany({
+    where: { layout_template_id: templateId },
+    include: { ports: { orderBy: [{ unit: 'asc' }, { index: 'asc' }] } }
+  })
 
   for (const sw of switches) {
-    if (sw.layout_template_id !== template.id) continue
-
     const stackSize = sw.stack_size ?? 1
-    const expectedPorts = buildExpectedPorts(template, stackSize)
+    const expectedPorts = buildExpectedPorts(units, stackSize)
 
-    // Match existing ports by (unit, index, type) to keep their settings.
-    // Same-key duplicates (rare) are matched in original order; unmatched
-    // expected ports become fresh ports; unmatched existing ports are dropped.
     const consumed = new Set<string>()
-    const newPorts: Port[] = []
+    const labelUpdates: Array<{ portId: string; newLabel: string }> = []
+    const newPortInserts: Array<ExpectedPort> = []
+    let changed = false
 
     for (const ep of expectedPorts) {
       const existing = sw.ports.find(p =>
-        !consumed.has(p.id) &&
-        p.unit === ep.unit &&
-        p.index === ep.index &&
-        p.type === ep.type
+        !consumed.has(p.id)
+        && p.unit === ep.unit
+        && p.index === ep.index
+        && p.type === ep.type
       )
-
       if (existing) {
         consumed.add(existing.id)
-        const oldLabel = existing.label
-        existing.label = ep.label
-        newPorts.push(existing)
-
-        if (oldLabel !== ep.label) {
+        if (existing.label !== ep.label) {
+          labelUpdates.push({ portId: existing.id, newLabel: ep.label })
           changed = true
-          for (const otherSw of switches) {
-            for (const otherPort of otherSw.ports) {
-              if (otherPort.connected_device_id === sw.id && otherPort.connected_port_id === existing.id) {
-                otherPort.connected_port = ep.label
-              }
-            }
-          }
         }
       } else {
-        newPorts.push({
-          id: nanoid(),
-          unit: ep.unit,
-          index: ep.index,
-          label: ep.label,
-          type: ep.type,
-          status: 'down',
-          tagged_vlans: []
-        })
+        newPortInserts.push(ep)
         changed = true
       }
     }
 
-    if (consumed.size !== sw.ports.length) {
-      // Some existing ports no longer match the template — drop them
-      changed = true
-    }
+    const toDelete = sw.ports.filter(p => !consumed.has(p.id)).map(p => p.id)
+    if (toDelete.length > 0) changed = true
 
-    sw.ports = newPorts
-    sw.updated_at = new Date().toISOString()
-  }
+    if (!changed) continue
 
-  if (changed) {
-    writeJson(SWITCHES_FILE, switches)
+    await prisma.$transaction(async (tx) => {
+      // Drop unmatched ports.
+      if (toDelete.length > 0) {
+        await tx.port.deleteMany({ where: { id: { in: toDelete } } })
+      }
+
+      // Update labels on matched ports + cross-switch connected_port mirror.
+      for (const upd of labelUpdates) {
+        await tx.port.update({ where: { id: upd.portId }, data: { label: upd.newLabel } })
+        await tx.port.updateMany({
+          where: { connected_port_id: upd.portId, connected_device_id: sw.id },
+          data: { connected_port: upd.newLabel }
+        })
+      }
+
+      // Insert new ports.
+      if (newPortInserts.length > 0) {
+        await tx.port.createMany({
+          data: newPortInserts.map(ep => ({
+            id: randomUUID(),
+            switch_id: sw.id,
+            unit: ep.unit,
+            index: ep.index,
+            label: ep.label,
+            type: ep.type,
+            status: 'down',
+            tagged_vlans: JSON.stringify([])
+          }))
+        })
+      }
+
+      await tx.switch.update({
+        where: { id: sw.id },
+        data: { updated_at: new Date().toISOString() }
+      })
+    })
   }
 }
 
 export const layoutTemplateRepository = {
-  list(): LayoutTemplate[] {
-    return readJson<LayoutTemplate[]>(FILE_NAME)
+  async list(): Promise<LayoutTemplate[]> {
+    const rows = await prisma.layoutTemplate.findMany({ orderBy: { name: 'asc' } })
+    return rows.map(rowToTemplate)
   },
 
-  getById(id: string): LayoutTemplate | null {
-    const templates = this.list()
-    return templates.find(t => t.id === id) || null
+  async getById(id: string): Promise<LayoutTemplate | null> {
+    const row = await prisma.layoutTemplate.findUnique({ where: { id } })
+    return row ? rowToTemplate(row) : null
   },
 
-  create(data: Omit<LayoutTemplate, 'id' | 'created_at' | 'updated_at'>): LayoutTemplate {
-    const templates = this.list()
-
-    if (templates.some(t => t.name === data.name)) {
+  async create(data: Omit<LayoutTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<LayoutTemplate> {
+    const clash = await prisma.layoutTemplate.findFirst({ where: { name: data.name } })
+    if (clash) {
       throw createError({ statusCode: 409, message: `Template name '${data.name}' already exists` })
     }
 
-    // Assign IDs to blocks
-    const units = data.units.map(unit => ({
-      ...unit,
-      blocks: unit.blocks.map(block => ({
-        ...block,
-        id: block.id || nanoid()
-      }))
-    }))
-
+    const units = assignBlockIds(data.units)
     const now = new Date().toISOString()
-    const template: LayoutTemplate = {
-      id: nanoid(),
-      ...data,
-      units,
-      created_at: now,
-      updated_at: now
-    }
-
-    templates.push(template)
-    writeJson(FILE_NAME, templates)
-    return template
+    const row = await prisma.layoutTemplate.create({
+      data: {
+        id: randomUUID(),
+        name: data.name,
+        manufacturer: data.manufacturer ?? null,
+        model: data.model ?? null,
+        description: data.description ?? null,
+        datasheet_url: data.datasheet_url ?? null,
+        airflow: data.airflow ?? null,
+        units: JSON.stringify(units),
+        created_at: now,
+        updated_at: now
+      }
+    })
+    return rowToTemplate(row)
   },
 
-  update(id: string, data: Partial<Omit<LayoutTemplate, 'id' | 'created_at'>>): LayoutTemplate {
-    const templates = this.list()
-    const index = templates.findIndex(t => t.id === id)
-    if (index === -1) {
+  async update(id: string, data: Partial<Omit<LayoutTemplate, 'id' | 'created_at'>>): Promise<LayoutTemplate> {
+    const current = await prisma.layoutTemplate.findUnique({ where: { id } })
+    if (!current) {
       throw createError({ statusCode: 404, message: 'Layout template not found' })
     }
 
-    if (data.name && data.name !== templates[index]!.name) {
-      if (templates.some(t => t.name === data.name)) {
+    if (data.name && data.name !== current.name) {
+      const clash = await prisma.layoutTemplate.findFirst({ where: { name: data.name, NOT: { id } } })
+      if (clash) {
         throw createError({ statusCode: 409, message: `Template name '${data.name}' already exists` })
       }
     }
 
+    let unitsJson = current.units
     if (data.units) {
-      data.units = data.units.map(unit => ({
-        ...unit,
-        blocks: unit.blocks.map(block => ({
-          ...block,
-          id: block.id || nanoid()
-        }))
-      }))
+      const newUnits = assignBlockIds(data.units)
+      unitsJson = JSON.stringify(newUnits)
     }
 
-    templates[index] = {
-      ...templates[index],
-      ...data,
-      updated_at: new Date().toISOString()
-    } as LayoutTemplate
+    const row = await prisma.layoutTemplate.update({
+      where: { id },
+      data: {
+        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.manufacturer !== undefined ? { manufacturer: data.manufacturer ?? null } : {}),
+        ...(data.model !== undefined ? { model: data.model ?? null } : {}),
+        ...(data.description !== undefined ? { description: data.description ?? null } : {}),
+        ...(data.datasheet_url !== undefined ? { datasheet_url: data.datasheet_url ?? null } : {}),
+        ...(data.airflow !== undefined ? { airflow: data.airflow ?? null } : {}),
+        ...(data.units !== undefined ? { units: unitsJson } : {}),
+        updated_at: new Date().toISOString()
+      }
+    })
 
-    writeJson(FILE_NAME, templates)
-
-    // Sync ports to all switches using this template
     if (data.units) {
-      syncPortsToTemplate(templates[index]!)
+      await syncPortsToTemplate(id, JSON.parse(unitsJson) as LayoutUnit[])
     }
 
-    return templates[index]!
+    return rowToTemplate(row)
   },
 
-  duplicate(id: string): LayoutTemplate {
-    const original = this.getById(id)
+  async duplicate(id: string): Promise<LayoutTemplate> {
+    const original = await this.getById(id)
     if (!original) {
       throw createError({ statusCode: 404, message: 'Layout template not found' })
     }
 
-    const templates = this.list()
+    const existingNames = (await prisma.layoutTemplate.findMany({ select: { name: true } }))
+      .map(t => t.name)
+    const existingSet = new Set(existingNames)
     let copyName = `${original.name} (Copy)`
     let counter = 1
-    while (templates.some(t => t.name === copyName)) {
+    while (existingSet.has(copyName)) {
       counter++
       copyName = `${original.name} (Copy ${counter})`
     }
 
     const now = new Date().toISOString()
-    const duplicate: LayoutTemplate = {
-      id: nanoid(),
-      name: copyName,
-      manufacturer: original.manufacturer,
-      model: original.model,
-      description: original.description,
-      units: original.units.map(unit => ({
-        ...unit,
-        blocks: unit.blocks.map(block => ({
-          ...block,
-          id: nanoid()
-        }))
-      })),
-      created_at: now,
-      updated_at: now
-    }
+    const duplicateUnits = original.units.map(unit => ({
+      ...unit,
+      blocks: unit.blocks.map(block => ({ ...block, id: randomUUID() }))
+    }))
 
-    templates.push(duplicate)
-    writeJson(FILE_NAME, templates)
-    return duplicate
+    const row = await prisma.layoutTemplate.create({
+      data: {
+        id: randomUUID(),
+        name: copyName,
+        manufacturer: original.manufacturer ?? null,
+        model: original.model ?? null,
+        description: original.description ?? null,
+        datasheet_url: original.datasheet_url ?? null,
+        airflow: original.airflow ?? null,
+        units: JSON.stringify(duplicateUnits),
+        created_at: now,
+        updated_at: now
+      }
+    })
+    return rowToTemplate(row)
   },
 
-  delete(id: string): boolean {
-    const templates = this.list()
-    const index = templates.findIndex(t => t.id === id)
-    if (index === -1) return false
-
-    templates.splice(index, 1)
-    writeJson(FILE_NAME, templates)
-    return true
+  async delete(id: string): Promise<boolean> {
+    try {
+      // Schema sets Switch.layout_template_id to NULL on delete (onDelete: SetNull).
+      await prisma.layoutTemplate.delete({ where: { id } })
+      return true
+    } catch {
+      return false
+    }
   }
 }

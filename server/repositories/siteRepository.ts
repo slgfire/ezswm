@@ -1,81 +1,86 @@
-import { nanoid } from 'nanoid'
-import { readJson, writeJson } from '../storage/jsonStorage'
+import { randomUUID } from 'node:crypto'
+import { prisma } from '../db/client'
 import type { Site } from '../../types/site'
-import type { Switch } from '../../types/switch'
-import type { VLAN } from '../../types/vlan'
-import type { Network } from '../../types/network'
 
-const FILE_NAME = 'sites.json'
+interface SiteRow {
+  id: string
+  name: string
+  description: string | null
+  created_at: string
+  updated_at: string
+}
+
+function rowToSite(row: SiteRow): Site {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description ?? undefined,
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  }
+}
 
 export const siteRepository = {
-  list(): Site[] {
-    return readJson<Site[]>(FILE_NAME)
+  async list(): Promise<Site[]> {
+    const rows = await prisma.site.findMany({ orderBy: { name: 'asc' } })
+    return rows.map(rowToSite)
   },
 
-  getById(id: string): Site | null {
-    const sites = this.list()
-    return sites.find(s => s.id === id) || null
+  async getById(id: string): Promise<Site | null> {
+    const row = await prisma.site.findUnique({ where: { id } })
+    return row ? rowToSite(row) : null
   },
 
-  create(data: Omit<Site, 'id' | 'created_at' | 'updated_at'>): Site {
-    const sites = this.list()
-
+  async create(data: Omit<Site, 'id' | 'created_at' | 'updated_at'>): Promise<Site> {
     const now = new Date().toISOString()
-    const site: Site = {
-      id: nanoid(),
-      ...data,
-      created_at: now,
-      updated_at: now
-    }
-
-    sites.push(site)
-    writeJson(FILE_NAME, sites)
-    return site
+    const row = await prisma.site.create({
+      data: {
+        id: randomUUID(),
+        name: data.name,
+        description: data.description ?? null,
+        created_at: now,
+        updated_at: now
+      }
+    })
+    return rowToSite(row)
   },
 
-  update(id: string, data: Partial<Omit<Site, 'id' | 'created_at'>>): Site {
-    const sites = this.list()
-    const index = sites.findIndex(s => s.id === id)
-    if (index === -1) {
+  async update(id: string, data: Partial<Omit<Site, 'id' | 'created_at'>>): Promise<Site> {
+    const existing = await prisma.site.findUnique({ where: { id } })
+    if (!existing) {
       throw createError({ statusCode: 404, message: 'Site not found' })
     }
-
-    sites[index] = {
-      ...sites[index],
-      ...data,
-      updated_at: new Date().toISOString()
-    } as Site
-
-    writeJson(FILE_NAME, sites)
-    return sites[index]!
+    const row = await prisma.site.update({
+      where: { id },
+      data: {
+        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.description !== undefined ? { description: data.description ?? null } : {}),
+        updated_at: new Date().toISOString()
+      }
+    })
+    return rowToSite(row)
   },
 
-  delete(id: string): boolean {
-    const sites = this.list()
-    const index = sites.findIndex(s => s.id === id)
-    if (index === -1) {
+  async delete(id: string): Promise<boolean> {
+    try {
+      await prisma.site.delete({ where: { id } })
+      return true
+    } catch {
       return false
     }
-
-    sites.splice(index, 1)
-    writeJson(FILE_NAME, sites)
-    return true
   },
 
-  getEntityCounts(siteId: string): { switches: number; vlans: number; networks: number } {
-    const switches = readJson<Switch[]>('switches.json')
-    const vlans = readJson<VLAN[]>('vlans.json')
-    const networks = readJson<Network[]>('networks.json')
-
-    return {
-      switches: switches.filter((s) => s.site_id === siteId).length,
-      vlans: vlans.filter((v) => v.site_id === siteId).length,
-      networks: networks.filter((n) => n.site_id === siteId).length
-    }
+  async getEntityCounts(siteId: string): Promise<{ switches: number; vlans: number; networks: number }> {
+    const [switches, vlans, networks] = await Promise.all([
+      prisma.switch.count({ where: { site_id: siteId } }),
+      prisma.vlan.count({ where: { site_id: siteId } }),
+      prisma.network.count({ where: { site_id: siteId } })
+    ])
+    return { switches, vlans, networks }
   },
 
-  hasEntities(siteId: string): boolean {
-    const counts = this.getEntityCounts(siteId)
+  async hasEntities(siteId: string): Promise<boolean> {
+    const counts = await this.getEntityCounts(siteId)
     return counts.switches > 0 || counts.vlans > 0 || counts.networks > 0
   }
 }

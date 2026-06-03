@@ -2,7 +2,7 @@ import { layoutTemplateRepository } from '../../../repositories/layoutTemplateRe
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
-  const duplicate = layoutTemplateRepository.duplicate(id)
+  const duplicate = await layoutTemplateRepository.duplicate(id)
   setResponseStatus(event, 201)
   return duplicate
 })

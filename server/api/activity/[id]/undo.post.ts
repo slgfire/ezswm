@@ -1,79 +1,10 @@
-import { activityRepository } from '../../../repositories/activityRepository'
-import { switchRepository } from '../../../repositories/switchRepository'
-import { vlanRepository } from '../../../repositories/vlanRepository'
-import { networkRepository } from '../../../repositories/networkRepository'
-import { layoutTemplateRepository } from '../../../repositories/layoutTemplateRepository'
-import { readJson, writeJson } from '../../../storage/jsonStorage'
-
-export default defineEventHandler((event) => {
-  const id = event.context.params?.id
-  if (!id) throw createError({ statusCode: 400, message: 'Activity ID required' })
-
-  const entry = activityRepository.getById(id)
-  if (!entry) throw createError({ statusCode: 404, message: 'Activity entry not found' })
-  if (!entry.previous_state && entry.action !== 'create') {
-    throw createError({ statusCode: 400, message: 'No previous state available for undo' })
-  }
-
-  const entityType = entry.entity_type
-  const entityId = entry.entity_id
-
-  try {
-    switch (entry.action) {
-      case 'create': {
-        // Undo create = delete
-        const repos: Record<string, { delete: (id: string) => boolean }> = {
-          switch: switchRepository,
-          vlan: vlanRepository,
-          network: networkRepository,
-          layout_template: layoutTemplateRepository
-        }
-        const repo = repos[entityType]
-        if (repo) repo.delete(entityId)
-        break
-      }
-      case 'update': {
-        // Undo update = restore previous state
-        if (!entry.previous_state) break
-        const fileMap: Record<string, string> = {
-          switch: 'switches.json',
-          vlan: 'vlans.json',
-          network: 'networks.json',
-          layout_template: 'layout-templates.json'
-        }
-        const fileName = fileMap[entityType]
-        if (fileName) {
-          const items = readJson<Record<string, unknown>[]>(fileName)
-          const idx = items.findIndex((i) => i.id === entityId)
-          if (idx !== -1) {
-            items[idx] = entry.previous_state
-            writeJson(fileName, items)
-          }
-        }
-        break
-      }
-      case 'delete': {
-        // Undo delete = recreate from previous state
-        if (!entry.previous_state) break
-        const fileMap: Record<string, string> = {
-          switch: 'switches.json',
-          vlan: 'vlans.json',
-          network: 'networks.json',
-          layout_template: 'layout-templates.json'
-        }
-        const fileName = fileMap[entityType]
-        if (fileName) {
-          const items = readJson<Record<string, unknown>[]>(fileName)
-          items.push(entry.previous_state)
-          writeJson(fileName, items)
-        }
-        break
-      }
-    }
-
-    return { success: true, action: entry.action, entity_type: entityType }
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err)
-    throw createError({ statusCode: 500, message: `Undo failed: ${message}` })
-  }
+// Activity undo is being reworked for the SQLite schema. The legacy
+// implementation wrote `previous_state` snapshots back into the JSON files
+// directly, which doesn't translate cleanly to multi-table updates with FK
+// constraints. Returning 501 until the new flow lands.
+export default defineEventHandler(() => {
+  throw createError({
+    statusCode: 501,
+    message: 'Activity undo is being reworked for the new SQLite storage and will return in a follow-up release.'
+  })
 })

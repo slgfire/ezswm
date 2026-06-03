@@ -7,12 +7,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Missing switch ID' })
   }
 
-  const sw = switchRepository.getById(switchId)
+  const sw = await switchRepository.getById(switchId)
   if (!sw) {
     throw createError({ statusCode: 404, message: 'Switch not found' })
   }
 
-  const token = publicTokenRepository.create(switchId)
+  const token = await publicTokenRepository.create(switchId)
   setResponseStatus(event, 201)
   return token
 })

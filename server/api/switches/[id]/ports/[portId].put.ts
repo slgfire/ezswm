@@ -55,10 +55,10 @@ export default defineEventHandler(async (event) => {
   if (parsed.helper_label === null) parsed.helper_label = undefined
 
   // Get site VLANs for validation
-  const siteVlans = vlanRepository.list().filter(v => v.site_id === existing.site_id)
+  const siteVlans = (await vlanRepository.list()).filter(v => v.site_id === existing.site_id)
   const siteVlanIds = siteVlans.map(v => v.vlan_id)
 
-  const result = switchRepository.applyPortVlanUpdate(
+  const result = await switchRepository.applyPortVlanUpdate(
     switchId,
     portId,
     parsed as Partial<Omit<Port, 'id' | 'unit' | 'index'>>,
@@ -88,7 +88,7 @@ export default defineEventHandler(async (event) => {
       // 1. Add VLANs to target switch's configured_vlans
       const validVlans = portVlans.filter(v => siteVlanIds.includes(v))
       if (validVlans.length > 0) {
-        const targetResult = switchRepository.addVlansToSwitch(connectedDeviceId, validVlans)
+        const targetResult = await switchRepository.addVlansToSwitch(connectedDeviceId, validVlans)
         vlansAddedToTargetSwitch = targetResult.addedVlans
       }
 
@@ -112,7 +112,7 @@ export default defineEventHandler(async (event) => {
           targetPortUpdate.tagged_vlans = taggedVlans ?? []
         }
         try {
-          switchRepository.applyPortVlanUpdate(connectedDeviceId, connectedPortId, targetPortUpdate, { siteVlanIds })
+          await switchRepository.applyPortVlanUpdate(connectedDeviceId, connectedPortId, targetPortUpdate, { siteVlanIds })
         } catch {
           // Target port update is best-effort — don't fail the main save
         }
