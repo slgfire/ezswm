@@ -1,10 +1,18 @@
-// Bulk restore is not yet ported to the SQLite schema. The legacy JSON-based
-// importer would no-op after the 0.21 migration (the JSON files have been
-// archived). Returning 501 with a clear message until the SQLite restore
-// flow lands.
-export default defineEventHandler(() => {
-  throw createError({
-    statusCode: 501,
-    message: 'Backup restore is being reworked for the new SQLite storage and will return in a follow-up release.'
-  })
+import { prisma } from '../../db/client'
+import { restoreAll } from '../../utils/dataRestore'
+
+// Whole-DB restore. Accepts the `schema: "sqlite-v1"` payload produced by
+// /api/backup/export. Wipes every table and bulk-inserts the dump in FK-safe
+// order inside a single transaction. Rejects nanoid-shaped IDs upfront so old
+// pre-0.21 dumps fail cleanly instead of corrupting the new schema.
+export default defineEventHandler(async (event) => {
+  const body = await readBody(event)
+  try {
+    const result = await restoreAll(prisma, body)
+    return { success: true, restored: result.inserted }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    const statusCode = (err as { statusCode?: number })?.statusCode ?? 500
+    throw createError({ statusCode, message: `Restore failed: ${message}` })
+  }
 })

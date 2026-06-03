@@ -6,6 +6,22 @@ title: Release Notes
 
 For the in-app changelog (rendered from GitHub releases), click the version number in the sidebar footer.
 
+## v0.21.3 — 2026-06-04
+
+### Restored — Import / Backup-Restore / Activity-Undo are back on SQLite
+
+The four write-side endpoints that returned **501** in 0.21.x are now wired up against SQLite. ([#161](https://github.com/slgfire/ezswm/pull/161), closes [#156](https://github.com/slgfire/ezswm/issues/156))
+
+- **`POST /api/backup/import` + `POST /api/data/import`** — whole-DB restore. Accepts the `schema: "sqlite-v1"` payload from `/api/backup/export`. Wipes every table in reverse FK order and bulk-inserts the dump in forward FK order inside a single transaction. Rejects non-UUID primary keys upfront so an old pre-0.21 nanoid dump fails cleanly instead of corrupting the new schema.
+- **`POST /api/import/{entity}`** — per-entity bulk import (CSV/JSON). Rows are validated, foreign keys (e.g. `site_id`, `network_id`) are resolved against the live DB, duplicates are counted in `skipped`, and a single bad row reports a per-row error instead of sinking the whole batch. Max 5000 rows per call.
+- **`POST /api/activity/{id}/undo`** — restores `previous_state` for **site / vlan / network / ip_allocation / ip_range** entries (`create` / `update` / `delete` actions). Switch undo and cross-table actions (`update_port`, `bulk_update_ports`, `add_configured_vlans`, `remove_configured_vlans`, `duplicate`) still return **422** because their snapshots include embedded children — those land in a follow-up.
+
+The in-app **Data Management** Import / Restore UI works again with no client changes.
+
+### Tests
+- Three new test files (`dataRestore`, `entityImport`, `activityUndo`) cover the restored paths. **478/478 tests pass**.
+- Vitest setup now stubs `defineEventHandler` / `readBody` / `getQuery` / `setHeader` / `setResponseStatus` so handler modules import cleanly under Node.
+
 ## v0.21.2 — 2026-06-04
 
 ### Tests
