@@ -4,6 +4,32 @@ import { join } from 'node:path'
 import type { PrismaClient } from '@prisma/client'
 
 import { buildIdMap, mergeIdMaps, remapJson } from '../utils/idMapping'
+import { slugify } from '../utils/slugify'
+
+/**
+ * Mint slugs inside the migration. Collisions are resolved by suffixing -2/-3
+ * within the per-scope `seen` set so we never violate the unique constraint.
+ */
+function mintSlug(seen: Set<string>, source: string): string {
+  const base = slugify(source)
+  if (!seen.has(base)) {
+    seen.add(base)
+    return base
+  }
+  let counter = 2
+  while (counter < 10_000) {
+    const candidate = `${base}-${counter}`
+    if (!seen.has(candidate)) {
+      seen.add(candidate)
+      return candidate
+    }
+    counter++
+  }
+  // Should be unreachable in practice — fallback keeps us deterministic.
+  const fallback = `${base}-${Date.now()}`
+  seen.add(fallback)
+  return fallback
+}
 
 // ---------------------------------------------------------------------------
 // Types reflecting the legacy JSON shapes (lenient: data is user-owned).
@@ -148,9 +174,11 @@ export async function runJsonToPrismaMigration(opts: {
   //    any error, so a partial migration is impossible.
   await prisma.$transaction(async (tx) => {
     // --- Sites
+    const siteSlugs = new Set<string>()
     for (const s of sites) {
       await tx.site.create({ data: {
         id: siteMap.get(s.id)!,
+        slug: mintSlug(siteSlugs, pickString(s, 'name')),
         name: pickString(s, 'name'),
         description: pickStringOrNull(s, 'description'),
         created_at: getCreatedAt(s),
@@ -210,15 +238,19 @@ export async function runJsonToPrismaMigration(opts: {
     counts.templates = templates.length
 
     // --- Switches
+    const switchSlugs = new Map<string, Set<string>>() // site_id → seen slugs
     for (const sw of switches) {
       const siteId = typeof sw.site_id === 'string' ? siteMap.get(sw.site_id) : undefined
       if (!siteId) continue // orphan switch — skip silently
       const templateId = typeof sw.layout_template_id === 'string'
         ? templateMap.get(sw.layout_template_id) ?? null
         : null
+      let scope = switchSlugs.get(siteId)
+      if (!scope) { scope = new Set<string>(); switchSlugs.set(siteId, scope) }
       await tx.switch.create({ data: {
         id: switchMap.get(sw.id)!,
         site_id: siteId,
+        slug: mintSlug(scope, pickString(sw, 'name')),
         name: pickString(sw, 'name'),
         model: pickStringOrNull(sw, 'model'),
         manufacturer: pickStringOrNull(sw, 'manufacturer'),
@@ -262,13 +294,17 @@ export async function runJsonToPrismaMigration(opts: {
     counts.vlans = vlans.length
 
     // --- Networks
+    const networkSlugs = new Map<string, Set<string>>() // site_id → seen slugs
     for (const n of networks) {
       const siteId = typeof n.site_id === 'string' ? siteMap.get(n.site_id) : undefined
       if (!siteId) continue
       const vlanRef = typeof n.vlan_id === 'string' ? vlanMap.get(n.vlan_id) ?? null : null
+      let scope = networkSlugs.get(siteId)
+      if (!scope) { scope = new Set<string>(); networkSlugs.set(siteId, scope) }
       await tx.network.create({ data: {
         id: networkMap.get(n.id)!,
         site_id: siteId,
+        slug: mintSlug(scope, pickString(n, 'name')),
         name: pickString(n, 'name'),
         vlan_id: vlanRef,
         subnet: pickString(n, 'subnet'),

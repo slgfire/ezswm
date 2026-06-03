@@ -2,10 +2,12 @@ import { randomUUID } from 'node:crypto'
 import { prisma } from '../db/client'
 import type { Network } from '../../types/network'
 import { isValidCIDR, isValidIPv4, isIPInSubnet } from '../utils/ipv4'
+import { slugify, resolveSlugCollision } from '../utils/slugify'
 
 interface NetworkRow {
   id: string
   site_id: string
+  slug: string
   name: string
   vlan_id: string | null
   subnet: string
@@ -21,6 +23,7 @@ function rowToNetwork(row: NetworkRow): Network {
   return {
     id: row.id,
     site_id: row.site_id,
+    slug: row.slug,
     name: row.name,
     vlan_id: row.vlan_id ?? undefined,
     subnet: row.subnet,
@@ -55,6 +58,16 @@ function validateNetworkInputs(data: { subnet?: string; gateway?: string | null;
   }
 }
 
+async function uniqueNetworkSlug(siteId: string, desired: string, excludeId?: string): Promise<string> {
+  return resolveSlugCollision(desired, async (candidate) => {
+    const found = await prisma.network.findUnique({
+      where: { site_id_slug: { site_id: siteId, slug: candidate } }
+    })
+    if (!found) return false
+    return excludeId !== found.id
+  })
+}
+
 export const networkRepository = {
   async list(siteId?: string): Promise<Network[]> {
     const rows = await prisma.network.findMany({
@@ -69,14 +82,33 @@ export const networkRepository = {
     return row ? rowToNetwork(row) : null
   },
 
-  async create(data: Omit<Network, 'id' | 'created_at' | 'updated_at' | 'is_favorite'>): Promise<Network> {
+  async getBySlug(siteId: string, slug: string): Promise<Network | null> {
+    const row = await prisma.network.findUnique({ where: { site_id_slug: { site_id: siteId, slug } } })
+    return row ? rowToNetwork(row) : null
+  },
+
+  /**
+   * Lookup by UUID or `site_slug:network_slug`. Falls back to UUID-only when the
+   * caller hasn't yet adapted to the new slug format.
+   */
+  async getByIdOrSlug(identifier: string, siteId?: string): Promise<Network | null> {
+    const direct = await this.getById(identifier)
+    if (direct) return direct
+    if (siteId) return this.getBySlug(siteId, identifier)
+    return null
+  },
+
+  async create(data: Omit<Network, 'id' | 'slug' | 'created_at' | 'updated_at' | 'is_favorite'> & { slug?: string }): Promise<Network> {
     validateNetworkInputs(data)
+    const desired = data.slug ? slugify(data.slug) : slugify(data.name)
+    const slug = await uniqueNetworkSlug(data.site_id, desired)
 
     const now = new Date().toISOString()
     const row = await prisma.network.create({
       data: {
         id: randomUUID(),
         site_id: data.site_id,
+        slug,
         name: data.name,
         vlan_id: data.vlan_id ?? null,
         subnet: data.subnet,
@@ -99,6 +131,12 @@ export const networkRepository = {
 
     validateNetworkInputs(data, current.subnet)
 
+    let slug: string | undefined
+    if (data.slug !== undefined) {
+      const desired = slugify(data.slug)
+      slug = await uniqueNetworkSlug(current.site_id, desired, id)
+    }
+
     const row = await prisma.network.update({
       where: { id },
       data: {
@@ -109,6 +147,7 @@ export const networkRepository = {
         ...(data.dns_servers !== undefined ? { dns_servers: JSON.stringify(data.dns_servers) } : {}),
         ...(data.description !== undefined ? { description: data.description ?? null } : {}),
         ...(data.is_favorite !== undefined ? { is_favorite: data.is_favorite } : {}),
+        ...(slug !== undefined ? { slug } : {}),
         updated_at: new Date().toISOString()
       }
     })

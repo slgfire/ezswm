@@ -6,6 +6,26 @@ title: Release Notes
 
 For the in-app changelog (rendered from GitHub releases), click the version number in the sidebar footer.
 
+## v0.22.0 — 2026-06-04
+
+### Added — Slugs for sites, switches, subnets
+
+Sites, switches and subnets now each carry a URL-safe **slug** in addition to their UUID primary key. ([#162](https://github.com/slgfire/ezswm/pull/162), closes [#157](https://github.com/slgfire/ezswm/issues/157), closes [#139](https://github.com/slgfire/ezswm/issues/139))
+
+- Slugs are minted from the name on create (lowercase, German umlauts → `ae/oe/ue/ss`, common Latin accents transliterated, non-alphanumeric runs collapsed to `-`, capped at 60 chars). On collision a `-2`, `-3`, … suffix is appended within the entity's scope (sites are globally unique; switches and subnets are unique per site).
+- **`/api/sites/{id}` endpoints accept either the UUID or the slug.** `siteRepository.getById()` resolves both forms transparently, so old `/api/sites/<uuid>` URLs keep working and `/api/sites/main-office` now does too.
+- Slugs stay **sticky on rename** — changing a name does not change the slug, so URLs don't break when the displayed label is tweaked. The slug can still be updated explicitly via the `slug` field in PUT requests.
+- Switches and subnets expose their slug on the entity payload; the per-site lookup helpers (`switchRepository.getBySlug`, `networkRepository.getBySlug`) are available for downstream UI work that switches the route format.
+
+### Migration
+
+The schema migration `20260603223256_slugs` adds `slug` columns to Site / Switch / Network with the appropriate unique indexes (`Site.slug` globally, `(site_id, slug)` for the other two). Existing rows get a SQL-side placeholder slug from their name during the schema rebuild; the JSON→DB migration script generates clean slugs from the start when a 0.20.x install upgrades to 0.22.
+
+### Tests
+
+- `tests/slugify.test.ts` (10 cases) covers the slugify + collision logic.
+- `tests/siteRepositorySlug.test.ts` (9 cases) covers `getById(slug)`, sticky slugs on name updates, collision suffixing on explicit slug changes. **474/474 tests pass**.
+
 ## v0.21.3 — 2026-06-04
 
 ### Restored — Import / Backup-Restore / Activity-Undo are back on SQLite
