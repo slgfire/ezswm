@@ -6,6 +6,13 @@ title: Release Notes
 
 For the in-app changelog (rendered from GitHub releases), click the version number in the sidebar footer.
 
+## v0.21.1 — 2026-06-03
+
+### Docs
+- **README + docs site refreshed for the 0.21 SQLite switch.** Installation guide gains a `DATABASE_URL` row + an "Upgrading from 0.20.x" section that walks through the on-boot migration. User guide's Data Management section now reflects that the import/restore/undo paths are temporarily 501 (tracked in [#156](https://github.com/slgfire/ezswm/issues/156)) while export keeps working with the new `schema: "sqlite-v1"` payload. API reference marks the affected endpoints and documents the new export shape. Architecture diagrams updated from "JSON files" to "SQLite via Prisma". ([#159](https://github.com/slgfire/ezswm/pull/159), closes [#158](https://github.com/slgfire/ezswm/issues/158))
+
+No runtime changes — image is byte-identical to 0.21.0 modulo the docs build.
+
 ## v0.21.0 — 2026-06-03
 
 ### Changed — Storage moved from JSON files to SQLite

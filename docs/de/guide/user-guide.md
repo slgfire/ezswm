@@ -505,19 +505,27 @@ Dies ist ein rein clientseitiges Werkzeug — es werden keine Daten gespeichert.
 
 ## Datenverwaltung
 
-### Export und Import
+### Export
 
 ![Datenverwaltung](/images/screenshot-data-management.png)
 
-Jeder Entitätstyp (Switches, VLANs, Subnetze, IP-Zuweisungen, IP-Bereiche, Layout-Templates) kann einzeln als JSON oder CSV exportiert und wieder importiert werden. Dateien können per Drag & Drop in den Upload-Bereich gezogen werden. Dies ist nützlich, um bestimmte Daten zwischen Instanzen zu übertragen oder Subnetzpläne in Bulk zu laden.
+Jeder Entitätstyp (Switches, VLANs, Subnetze, IP-Zuweisungen, IP-Bereiche, Layout-Templates) kann einzeln als JSON oder CSV exportiert werden. Der Tab **Backup & Restore** liefert zusätzlich einen einzelnen JSON-Dump aller Tabellen, markiert mit `schema: "sqlite-v1"`.
 
-### Vollständiges Backup und Wiederherstellung
+### Import & Restore (temporär deaktiviert in 0.21.x)
 
-Der Tab **Backup & Restore** in der Datenverwaltung bietet vollständiges Backup und Wiederherstellung. Ein Backup erzeugt eine einzelne JSON-Datei mit allen Entitäten. Die Wiederherstellung ersetzt alle Daten durch den Inhalt einer Backup-Datei.
+::: warning Import & Restore werden für SQLite umgebaut
+Der 0.21-Storage-Switch hat die Schreibseite des Import-/Restore-Flows auf dem alten JSON-Pfad zurückgelassen, der sich nicht sauber auf das neue Schema mit FK-Constraints übersetzen lässt. Die Import-Endpoints und der Activity-Log-Undo-Button liefern aktuell **`501 Not Implemented`**:
+
+- Per-Entity-Import (CSV/JSON in eine Liste droppen)
+- Vollständiger Backup-Restore (Backup & Restore Tab)
+- Activity-Log "Rückgängig"-Button
+
+Sie kommen in einem Patch-Release zurück. Die **Export**-Seite funktioniert weiterhin, und ein manuelles Rollback geht über das Zurückspielen einer alten `db.sqlite`-Datei. Fortschritt unter [#156](https://github.com/slgfire/ezswm/issues/156).
+:::
 
 ### Backup-Format
 
-Backups sind einfache JSON-Dateien. Sie können versioniert, verglichen oder bei Bedarf manuell bearbeitet werden.
+Backups sind JSON-Dumps der zugrundeliegenden SQLite-Tabellen, ein Array pro Entity, mit einem `schema: "sqlite-v1"`-Marker am Anfang. JSON-Spalten (Tags, `configured_vlans`, `tagged_vlans` auf Ports, Template-`units`, Activity-`changes`/`previous_state`) bleiben als JSON-Strings — der Restore-Pfad parsed sie beim Wiedereinspielen.
 
 ## Einstellungen
 
@@ -561,6 +569,10 @@ Das folgende Diagramm zeigt, wie Anfragen durch ezSWM fließen:
 flowchart LR
     Browser -->|HTTP| Nuxt[Nuxt Server]
     Nuxt -->|API Routes| Repos[Repositories]
-    Repos -->|Atomic R/W| JSON[JSON Files\n/app/data]
+    Repos -->|Prisma| SQLite[(SQLite\n/app/data/db.sqlite)]
     Nuxt -->|Auth| JWT[JWT Middleware]
 ```
+
+### Upgrade auf 0.21.x
+
+Mit 0.21.0 ist der Storage von flachen JSON-Files auf eingebettetes SQLite umgestellt. Beim ersten Start des neuen Images erkennt die App die alten `data/*.json` neben einer leeren Datenbank, führt die einmalige Migration in einer einzigen Transaktion aus (jeder Datensatz bekommt eine frische UUIDv4, alle Cross-References werden gemappt) und verschiebt die originalen JSON-Files nach `data/_archive_<ISO>/`. URLs ändern sich, weil die IDs neu generiert werden — Bookmarks auf einzelne Entities brechen einmalig, das UI selbst ist unverändert. Die exakte Abfolge und der Fehler-Pfad stehen im [Installations-Guide](/de/guide/installation#upgrade-von-0-20-x-auf-0-21-x).
