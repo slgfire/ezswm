@@ -1,81 +1,173 @@
-import { nanoid } from 'nanoid'
-import { readJson, writeJson } from '../storage/jsonStorage'
+import { randomUUID } from 'node:crypto'
+import type { PrismaClient } from '@prisma/client'
+
+import { prisma } from '../db/client'
 import type { Switch } from '../../types/switch'
-import type { Port, PortSpeed } from '../../types/port'
-import type { IPAllocation } from '../../types/ipAllocation'
+import type { Port, PortSpeed, PortType, PortStatus, PortMode, PortHelperUsage } from '../../types/port'
+import type { PoeConfig } from '../../types/layoutTemplate'
 import { layoutTemplateRepository } from './layoutTemplateRepository'
 import { isValidIPv4, isIPInSubnet } from '../utils/ipv4'
 import { incrementMemberLabel } from '../utils/deviceLibrary'
 
-const FILE_NAME = 'switches.json'
-const ALLOC_FILE_NAME = 'ip-allocations.json'
-const NETWORK_FILE_NAME = 'networks.json'
+type TxClient = PrismaClient | Parameters<Parameters<PrismaClient['$transaction']>[0]>[0]
 
-/**
- * Auto-create or update an IP allocation when a switch gets a management_ip.
- * Finds the matching network by CIDR and upserts the allocation.
- * Silently skips if no matching network is found.
- */
-function syncManagementIpAllocation(switchId: string, switchName: string, newIp: string | undefined, oldIp?: string): void {
-  try {
-    const allocations = readJson<IPAllocation[]>(ALLOC_FILE_NAME)
-    const networks = readJson<{ id: string; subnet: string }[]>(NETWORK_FILE_NAME)
+interface PortRow {
+  id: string
+  switch_id: string
+  unit: number
+  index: number
+  label: string | null
+  type: string
+  speed: string | null
+  status: string
+  port_mode: string | null
+  access_vlan: number | null
+  native_vlan: number | null
+  tagged_vlans: string
+  connected_device: string | null
+  connected_device_id: string | null
+  connected_port_id: string | null
+  connected_port: string | null
+  description: string | null
+  mac_address: string | null
+  lag_group_id: string | null
+  connected_allocation_id: string | null
+  poe: string | null
+  helper_usage: string | null
+  helper_label: string | null
+  show_in_helper_list: boolean | null
+}
 
-    // Remove old allocation if IP changed or removed
-    if (oldIp && oldIp !== newIp) {
-      const oldIndex = allocations.findIndex(a => a.ip_address === oldIp && a.description === `Management IP for switch: ${switchName}`)
-      if (oldIndex === -1) {
-        // Also try matching by switch ID in description (in case switch was renamed)
-        const altIndex = allocations.findIndex(a => a.ip_address === oldIp && a.description?.startsWith('Management IP for switch:'))
-        if (altIndex !== -1) {
-          allocations.splice(altIndex, 1)
-        }
-      } else {
-        allocations.splice(oldIndex, 1)
-      }
-    }
+interface SwitchRow {
+  id: string
+  site_id: string
+  name: string
+  model: string | null
+  manufacturer: string | null
+  serial_number: string | null
+  location: string | null
+  rack_position: string | null
+  management_ip: string | null
+  firmware_version: string | null
+  layout_template_id: string | null
+  stack_size: number | null
+  role: string | null
+  tags: string
+  configured_vlans: string
+  is_favorite: boolean
+  sort_order: number | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+  ports?: PortRow[]
+}
 
-    // Create new allocation if IP is set
-    if (newIp && isValidIPv4(newIp)) {
-      // Find matching network
-      const matchingNetwork = networks.find(n => isIPInSubnet(newIp, n.subnet))
-      if (!matchingNetwork) {
-        // No matching network - write back any removals and return
-        if (oldIp && oldIp !== newIp) {
-          writeJson(ALLOC_FILE_NAME, allocations)
-        }
-        return
-      }
-
-      // Check if this IP is already allocated
-      const existingAlloc = allocations.find(a => a.ip_address === newIp)
-      if (existingAlloc) {
-        // Update existing allocation to reflect this switch
-        existingAlloc.hostname = switchName
-        existingAlloc.device_type = 'switch'
-        existingAlloc.description = `Management IP for switch: ${switchName}`
-        existingAlloc.updated_at = new Date().toISOString()
-      } else {
-        // Create new allocation
-        const now = new Date().toISOString()
-        allocations.push({
-          id: nanoid(),
-          network_id: matchingNetwork.id,
-          ip_address: newIp,
-          hostname: switchName,
-          device_type: 'switch',
-          description: `Management IP for switch: ${switchName}`,
-          status: 'active',
-          created_at: now,
-          updated_at: now
-        })
-      }
-    }
-
-    writeJson(ALLOC_FILE_NAME, allocations)
-  } catch {
-    // Silently ignore errors - management IP allocation is best-effort
+function rowToPort(row: PortRow): Port {
+  return {
+    id: row.id,
+    unit: row.unit,
+    index: row.index,
+    label: row.label ?? undefined,
+    type: row.type as PortType,
+    speed: (row.speed as PortSpeed | null) ?? undefined,
+    status: row.status as PortStatus,
+    port_mode: (row.port_mode as PortMode | null) ?? undefined,
+    access_vlan: row.access_vlan ?? undefined,
+    native_vlan: row.native_vlan ?? undefined,
+    tagged_vlans: JSON.parse(row.tagged_vlans) as number[],
+    connected_device: row.connected_device ?? undefined,
+    connected_device_id: row.connected_device_id ?? undefined,
+    connected_port_id: row.connected_port_id ?? undefined,
+    connected_port: row.connected_port ?? undefined,
+    description: row.description ?? undefined,
+    mac_address: row.mac_address ?? undefined,
+    lag_group_id: row.lag_group_id ?? undefined,
+    connected_allocation_id: row.connected_allocation_id ?? undefined,
+    poe: row.poe === null ? null : (JSON.parse(row.poe) as PoeConfig),
+    helper_usage: (row.helper_usage as PortHelperUsage | null) ?? undefined,
+    helper_label: row.helper_label ?? undefined,
+    show_in_helper_list: row.show_in_helper_list ?? undefined
   }
+}
+
+function rowToSwitch(row: SwitchRow): Switch {
+  const ports = (row.ports ?? []).map(rowToPort)
+  return {
+    id: row.id,
+    site_id: row.site_id,
+    name: row.name,
+    model: row.model ?? undefined,
+    manufacturer: row.manufacturer ?? undefined,
+    serial_number: row.serial_number ?? undefined,
+    location: row.location ?? undefined,
+    rack_position: row.rack_position ?? undefined,
+    management_ip: row.management_ip ?? undefined,
+    firmware_version: row.firmware_version ?? undefined,
+    layout_template_id: row.layout_template_id ?? undefined,
+    stack_size: row.stack_size ?? undefined,
+    role: (row.role as Switch['role']) ?? undefined,
+    tags: JSON.parse(row.tags) as string[],
+    ports,
+    configured_vlans: JSON.parse(row.configured_vlans) as number[],
+    is_favorite: row.is_favorite,
+    sort_order: row.sort_order ?? undefined,
+    notes: row.notes ?? undefined,
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  }
+}
+
+function portCreateInput(p: Partial<Port> & { id: string; unit: number; index: number; type: PortType; status: PortStatus }) {
+  return {
+    id: p.id,
+    unit: p.unit,
+    index: p.index,
+    label: p.label ?? null,
+    type: p.type,
+    speed: p.speed ?? null,
+    status: p.status,
+    port_mode: p.port_mode ?? null,
+    access_vlan: p.access_vlan ?? null,
+    native_vlan: p.native_vlan ?? null,
+    tagged_vlans: JSON.stringify(p.tagged_vlans ?? []),
+    connected_device: p.connected_device ?? null,
+    connected_device_id: p.connected_device_id ?? null,
+    connected_port_id: p.connected_port_id ?? null,
+    connected_port: p.connected_port ?? null,
+    description: p.description ?? null,
+    mac_address: p.mac_address ?? null,
+    lag_group_id: p.lag_group_id ?? null,
+    connected_allocation_id: p.connected_allocation_id ?? null,
+    poe: p.poe === null || p.poe === undefined ? null : JSON.stringify(p.poe),
+    helper_usage: p.helper_usage ?? null,
+    helper_label: p.helper_label ?? null,
+    show_in_helper_list: p.show_in_helper_list ?? null
+  }
+}
+
+function portUpdateInput(p: Partial<Omit<Port, 'id' | 'unit' | 'index'>>) {
+  const out: Record<string, unknown> = {}
+  if (p.label !== undefined) out.label = p.label ?? null
+  if (p.type !== undefined) out.type = p.type
+  if (p.speed !== undefined) out.speed = p.speed ?? null
+  if (p.status !== undefined) out.status = p.status
+  if (p.port_mode !== undefined) out.port_mode = p.port_mode ?? null
+  if (p.access_vlan !== undefined) out.access_vlan = p.access_vlan ?? null
+  if (p.native_vlan !== undefined) out.native_vlan = p.native_vlan ?? null
+  if (p.tagged_vlans !== undefined) out.tagged_vlans = JSON.stringify(p.tagged_vlans)
+  if (p.connected_device !== undefined) out.connected_device = p.connected_device ?? null
+  if (p.connected_device_id !== undefined) out.connected_device_id = p.connected_device_id ?? null
+  if (p.connected_port_id !== undefined) out.connected_port_id = p.connected_port_id ?? null
+  if (p.connected_port !== undefined) out.connected_port = p.connected_port ?? null
+  if (p.description !== undefined) out.description = p.description ?? null
+  if (p.mac_address !== undefined) out.mac_address = p.mac_address ?? null
+  if (p.lag_group_id !== undefined) out.lag_group_id = p.lag_group_id ?? null
+  if (p.connected_allocation_id !== undefined) out.connected_allocation_id = p.connected_allocation_id ?? null
+  if (p.poe !== undefined) out.poe = p.poe === null ? null : JSON.stringify(p.poe)
+  if (p.helper_usage !== undefined) out.helper_usage = p.helper_usage ?? null
+  if (p.helper_label !== undefined) out.helper_label = p.helper_label ?? null
+  if (p.show_in_helper_list !== undefined) out.show_in_helper_list = p.show_in_helper_list ?? null
+  return out
 }
 
 function generatePortLabel(blockLabel: string | undefined, unitNumber: number, portIndex: number): string {
@@ -83,8 +175,8 @@ function generatePortLabel(blockLabel: string | undefined, unitNumber: number, p
   return blockLabel.match(/[/\-:.]$/) ? `${blockLabel}${portIndex}` : `${blockLabel} ${unitNumber}/${portIndex}`
 }
 
-function generatePortsFromTemplate(templateId: string, stackSize: number = 1): Port[] {
-  const template = layoutTemplateRepository.getById(templateId)
+async function generatePortsFromTemplate(templateId: string, stackSize: number = 1): Promise<Port[]> {
+  const template = await layoutTemplateRepository.getById(templateId)
   if (!template) return []
 
   const ports: Port[] = []
@@ -94,14 +186,12 @@ function generatePortsFromTemplate(templateId: string, stackSize: number = 1): P
     for (const unit of baseUnits) {
       const unitOffset = (member - 1) * baseUnits.length
       for (const block of unit.blocks) {
-        const memberLabel = block.label
-          ? incrementMemberLabel(block.label, member)
-          : block.label
+        const memberLabel = block.label ? incrementMemberLabel(block.label, member) : block.label
 
         for (let i = 0; i < block.count; i++) {
           const portIndex = block.start_index + i
           ports.push({
-            id: nanoid(),
+            id: randomUUID(),
             unit: unit.unit_number + unitOffset,
             index: portIndex,
             label: generatePortLabel(memberLabel, unit.unit_number + unitOffset, portIndex),
@@ -109,7 +199,7 @@ function generatePortsFromTemplate(templateId: string, stackSize: number = 1): P
             speed: block.default_speed as PortSpeed | undefined,
             status: 'down',
             tagged_vlans: [],
-            ...(block.poe ? { poe: { ...block.poe } } : {}),
+            ...(block.poe ? { poe: { ...block.poe } } : {})
           })
         }
       }
@@ -118,289 +208,391 @@ function generatePortsFromTemplate(templateId: string, stackSize: number = 1): P
   return ports
 }
 
-/** Deduplicate, sort, and filter to valid VLAN IDs (1-4094) */
 function normalizeConfiguredVlans(vlans: number[]): number[] {
   return [...new Set(vlans)]
     .filter(v => Number.isInteger(v) && v >= 1 && v <= 4094)
     .sort((a, b) => a - b)
 }
 
-export const switchRepository = {
-  list(): Switch[] {
-    const switches = readJson<Switch[]>(FILE_NAME)
-    return switches.sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999))
-  },
-
-  updateSortOrder(order: string[]): void {
-    const switches = readJson<Switch[]>(FILE_NAME)
-    for (let i = 0; i < order.length; i++) {
-      const sw = switches.find(s => s.id === order[i])
-      if (sw) sw.sort_order = i
+/**
+ * If the switch's management_ip falls inside a known network, ensure the
+ * matching IpAllocation reflects this switch as its owner. Best-effort —
+ * errors are logged but do not interrupt the caller. Runs inside the caller's
+ * transaction if a tx is supplied.
+ */
+async function syncManagementIpAllocation(
+  tx: TxClient,
+  switchId: string,
+  switchName: string,
+  newIp: string | undefined,
+  oldIp?: string
+): Promise<void> {
+  try {
+    if (oldIp && oldIp !== newIp) {
+      await tx.ipAllocation.deleteMany({
+        where: {
+          ip_address: oldIp,
+          description: { startsWith: 'Management IP for switch:' }
+        }
+      })
     }
-    writeJson(FILE_NAME, switches)
+
+    if (!newIp || !isValidIPv4(newIp)) return
+
+    const networks = await tx.network.findMany({
+      select: { id: true, subnet: true }
+    })
+    const matchingNetwork = networks.find(n => isIPInSubnet(newIp, n.subnet))
+    if (!matchingNetwork) return
+
+    const now = new Date().toISOString()
+    const desc = `Management IP for switch: ${switchName}`
+
+    const existing = await tx.ipAllocation.findFirst({ where: { ip_address: newIp } })
+    if (existing) {
+      await tx.ipAllocation.update({
+        where: { id: existing.id },
+        data: {
+          hostname: switchName,
+          device_type: 'switch',
+          description: desc,
+          updated_at: now
+        }
+      })
+    } else {
+      await tx.ipAllocation.create({
+        data: {
+          id: randomUUID(),
+          network_id: matchingNetwork.id,
+          ip_address: newIp,
+          hostname: switchName,
+          device_type: 'switch',
+          description: desc,
+          status: 'active',
+          created_at: now,
+          updated_at: now
+        }
+      })
+    }
+  } catch (err) {
+    console.warn(`[ezSWM] syncManagementIpAllocation(${switchId}) failed (best-effort):`, err)
+  }
+}
+
+const includePorts = { ports: { orderBy: [{ unit: 'asc' as const }, { index: 'asc' as const }] } }
+
+export const switchRepository = {
+  async list(siteId?: string): Promise<Switch[]> {
+    const rows = await prisma.switch.findMany({
+      where: siteId ? { site_id: siteId } : undefined,
+      include: includePorts,
+      orderBy: [{ sort_order: 'asc' }, { name: 'asc' }]
+    })
+    return rows.map(rowToSwitch)
   },
 
-  getById(id: string): Switch | null {
-    const switches = this.list()
-    return switches.find(s => s.id === id) || null
+  async updateSortOrder(order: string[]): Promise<void> {
+    await prisma.$transaction(
+      order.map((id, i) => prisma.switch.update({ where: { id }, data: { sort_order: i } }))
+    )
   },
 
-  create(data: Omit<Switch, 'id' | 'ports' | 'created_at' | 'updated_at' | 'is_favorite'>): Switch {
-    const switches = this.list()
+  async getById(id: string): Promise<Switch | null> {
+    const row = await prisma.switch.findUnique({ where: { id }, include: includePorts })
+    return row ? rowToSwitch(row) : null
+  },
 
-    const siteSwitches = switches.filter(s => s.site_id === data.site_id)
-    if (siteSwitches.some(s => s.name === data.name)) {
+  async create(data: Omit<Switch, 'id' | 'ports' | 'created_at' | 'updated_at' | 'is_favorite'>): Promise<Switch> {
+    const nameClash = await prisma.switch.findFirst({
+      where: { site_id: data.site_id, name: data.name }
+    })
+    if (nameClash) {
       throw createError({ statusCode: 409, message: `Switch name '${data.name}' already exists in this site` })
     }
 
     const ports = data.layout_template_id
-      ? generatePortsFromTemplate(data.layout_template_id, data.stack_size ?? 1)
+      ? await generatePortsFromTemplate(data.layout_template_id, data.stack_size ?? 1)
       : []
 
     const now = new Date().toISOString()
-    const sw: Switch = {
-      id: nanoid(),
-      ...data,
-      ports,
-      configured_vlans: [],
-      is_favorite: false,
-      created_at: now,
-      updated_at: now
-    }
+    const newId = randomUUID()
 
-    switches.push(sw)
-    writeJson(FILE_NAME, switches)
+    const result = await prisma.$transaction(async (tx) => {
+      await tx.switch.create({
+        data: {
+          id: newId,
+          site_id: data.site_id,
+          name: data.name,
+          model: data.model ?? null,
+          manufacturer: data.manufacturer ?? null,
+          serial_number: data.serial_number ?? null,
+          location: data.location ?? null,
+          rack_position: data.rack_position ?? null,
+          management_ip: data.management_ip ?? null,
+          firmware_version: data.firmware_version ?? null,
+          layout_template_id: data.layout_template_id ?? null,
+          stack_size: data.stack_size ?? null,
+          role: data.role ?? null,
+          tags: JSON.stringify(data.tags ?? []),
+          configured_vlans: JSON.stringify([]),
+          is_favorite: false,
+          sort_order: data.sort_order ?? null,
+          notes: data.notes ?? null,
+          created_at: now,
+          updated_at: now
+        }
+      })
 
-    // Auto-create IP allocation for management IP
-    if (sw.management_ip) {
-      syncManagementIpAllocation(sw.id, sw.name, sw.management_ip)
-    }
+      if (ports.length > 0) {
+        await tx.port.createMany({
+          data: ports.map(p => ({ switch_id: newId, ...portCreateInput(p as Parameters<typeof portCreateInput>[0]) }))
+        })
+      }
 
-    return sw
+      if (data.management_ip) {
+        await syncManagementIpAllocation(tx, newId, data.name, data.management_ip)
+      }
+
+      const row = await tx.switch.findUniqueOrThrow({ where: { id: newId }, include: includePorts })
+      return rowToSwitch(row)
+    })
+
+    return result
   },
 
-  update(id: string, data: Partial<Omit<Switch, 'id' | 'ports' | 'created_at'>>): Switch {
-    const switches = this.list()
-    const index = switches.findIndex(s => s.id === id)
-    if (index === -1) {
+  async update(id: string, data: Partial<Omit<Switch, 'id' | 'ports' | 'created_at'>>): Promise<Switch> {
+    const current = await prisma.switch.findUnique({ where: { id }, include: includePorts })
+    if (!current) {
       throw createError({ statusCode: 404, message: 'Switch not found' })
     }
 
-    const current = switches[index]!
-
     if (data.name && data.name !== current.name) {
-      const siteId = current.site_id
-      if (switches.some(s => s.site_id === siteId && s.name === data.name)) {
+      const clash = await prisma.switch.findFirst({
+        where: { site_id: current.site_id, name: data.name, NOT: { id } }
+      })
+      if (clash) {
         throw createError({ statusCode: 409, message: `Switch name '${data.name}' already exists in this site` })
       }
     }
 
-    // Regenerate ports if layout_template_id or stack_size changed
-    let ports = current.ports
-    if (
-      (data.layout_template_id && data.layout_template_id !== current.layout_template_id) ||
-      (data.stack_size !== undefined && data.stack_size !== current.stack_size)
-    ) {
-      const templateId = data.layout_template_id ?? current.layout_template_id
-      const stackSize = data.stack_size ?? current.stack_size ?? 1
-      if (templateId) {
-        ports = generatePortsFromTemplate(templateId, stackSize)
-      }
-    }
+    const templateChanged = data.layout_template_id !== undefined && data.layout_template_id !== current.layout_template_id
+    const stackChanged = data.stack_size !== undefined && data.stack_size !== current.stack_size
+    const regeneratePorts = templateChanged || stackChanged
+    const newTemplateId = data.layout_template_id ?? current.layout_template_id
+    const newStackSize = data.stack_size ?? current.stack_size ?? 1
+    const newPorts = regeneratePorts && newTemplateId
+      ? await generatePortsFromTemplate(newTemplateId, newStackSize)
+      : null
 
     const oldManagementIp = current.management_ip
     const oldName = current.name
 
-    switches[index] = {
-      ...current,
-      ...data,
-      ports,
-      updated_at: new Date().toISOString()
-    }
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.switch.update({
+        where: { id },
+        data: {
+          ...(data.site_id !== undefined ? { site_id: data.site_id } : {}),
+          ...(data.name !== undefined ? { name: data.name } : {}),
+          ...(data.model !== undefined ? { model: data.model ?? null } : {}),
+          ...(data.manufacturer !== undefined ? { manufacturer: data.manufacturer ?? null } : {}),
+          ...(data.serial_number !== undefined ? { serial_number: data.serial_number ?? null } : {}),
+          ...(data.location !== undefined ? { location: data.location ?? null } : {}),
+          ...(data.rack_position !== undefined ? { rack_position: data.rack_position ?? null } : {}),
+          ...(data.management_ip !== undefined ? { management_ip: data.management_ip ?? null } : {}),
+          ...(data.firmware_version !== undefined ? { firmware_version: data.firmware_version ?? null } : {}),
+          ...(data.layout_template_id !== undefined ? { layout_template_id: data.layout_template_id ?? null } : {}),
+          ...(data.stack_size !== undefined ? { stack_size: data.stack_size ?? null } : {}),
+          ...(data.role !== undefined ? { role: data.role ?? null } : {}),
+          ...(data.tags !== undefined ? { tags: JSON.stringify(data.tags) } : {}),
+          ...(data.configured_vlans !== undefined ? { configured_vlans: JSON.stringify(normalizeConfiguredVlans(data.configured_vlans)) } : {}),
+          ...(data.is_favorite !== undefined ? { is_favorite: data.is_favorite } : {}),
+          ...(data.sort_order !== undefined ? { sort_order: data.sort_order ?? null } : {}),
+          ...(data.notes !== undefined ? { notes: data.notes ?? null } : {}),
+          updated_at: new Date().toISOString()
+        }
+      })
 
-    writeJson(FILE_NAME, switches)
+      if (newPorts) {
+        await tx.port.deleteMany({ where: { switch_id: id } })
+        await tx.port.createMany({
+          data: newPorts.map(p => ({ switch_id: id, ...portCreateInput(p as Parameters<typeof portCreateInput>[0]) }))
+        })
+      }
 
-    // Auto-update IP allocation for management IP changes
-    const updated = switches[index]!
-    const newManagementIp = updated.management_ip
-    const newName = updated.name
-    if (newManagementIp !== oldManagementIp || (newName !== oldName && newManagementIp)) {
-      syncManagementIpAllocation(updated.id, newName, newManagementIp, oldManagementIp)
-    }
+      const newManagementIp = data.management_ip !== undefined ? (data.management_ip ?? undefined) : (oldManagementIp ?? undefined)
+      const newName = data.name ?? oldName
+      if (newManagementIp !== (oldManagementIp ?? undefined) || (newName !== oldName && newManagementIp)) {
+        await syncManagementIpAllocation(tx, id, newName, newManagementIp, oldManagementIp ?? undefined)
+      }
+
+      const row = await tx.switch.findUniqueOrThrow({ where: { id }, include: includePorts })
+      return rowToSwitch(row)
+    })
 
     return updated
   },
 
-  updatePort(switchId: string, portId: string, data: Partial<Omit<Port, 'id' | 'unit' | 'index'>>): Port {
-    const switches = this.list()
-    const swIndex = switches.findIndex(s => s.id === switchId)
-    if (swIndex === -1) {
-      throw createError({ statusCode: 404, message: 'Switch not found' })
-    }
-
-    const sw = switches[swIndex]!
-    const portIndex = sw.ports.findIndex(p => p.id === portId)
-    if (portIndex === -1) {
-      throw createError({ statusCode: 404, message: 'Port not found' })
-    }
-
-    const oldPort = sw.ports[portIndex]!
-
-    // Handle bidirectional link: remove old link if connection changed or removed
-    if (oldPort.connected_device_id && oldPort.connected_port_id) {
-      const deviceChanged = data.connected_device_id !== undefined && data.connected_device_id !== oldPort.connected_device_id
-      const portChanged = data.connected_port_id !== undefined && data.connected_port_id !== oldPort.connected_port_id
-      const removed = data.connected_device_id === null || data.connected_device_id === undefined
-
-      if (removed || deviceChanged || portChanged) {
-        this._removeRemoteLink(switches, oldPort.connected_device_id, oldPort.connected_port_id)
+  async updatePort(switchId: string, portId: string, data: Partial<Omit<Port, 'id' | 'unit' | 'index'>>): Promise<Port> {
+    const updated = await prisma.$transaction(async (tx) => {
+      const oldPort = await tx.port.findUnique({ where: { id: portId } })
+      if (!oldPort || oldPort.switch_id !== switchId) {
+        throw createError({ statusCode: 404, message: 'Port not found' })
       }
-    }
 
-    sw.ports[portIndex] = {
-      ...oldPort,
-      ...data
-    } as Port
+      // Remove old bidirectional link if changed/removed.
+      if (oldPort.connected_device_id && oldPort.connected_port_id) {
+        const deviceChanged = data.connected_device_id !== undefined && data.connected_device_id !== oldPort.connected_device_id
+        const portChanged = data.connected_port_id !== undefined && data.connected_port_id !== oldPort.connected_port_id
+        const removed = data.connected_device_id === null || data.connected_device_id === undefined
+        if (removed || deviceChanged || portChanged) {
+          await tx.port.update({
+            where: { id: oldPort.connected_port_id },
+            data: {
+              connected_device: null,
+              connected_device_id: null,
+              connected_port_id: null,
+              connected_port: null
+            }
+          }).catch(() => { /* remote port may not exist anymore */ })
+        }
+      }
 
-    const updatedPort = sw.ports[portIndex]!
-
-    // Handle bidirectional link creation (after local port is updated so label/settings are current)
-    if (data.connected_device_id && data.connected_port_id) {
-      this._createRemoteLink(switches, data.connected_device_id, data.connected_port_id, switchId, portId, {
-        speed: updatedPort.speed,
-        native_vlan: updatedPort.native_vlan,
-        tagged_vlans: updatedPort.tagged_vlans,
-        status: updatedPort.status
+      const updatedRow = await tx.port.update({
+        where: { id: portId },
+        data: portUpdateInput(data)
       })
-    }
 
-    sw.updated_at = new Date().toISOString()
-    writeJson(FILE_NAME, switches)
-    return updatedPort
-  },
-
-  bulkUpdatePorts(switchId: string, portIds: string[], updates: Partial<Omit<Port, 'id' | 'unit' | 'index'>>): Port[] {
-    const switches = this.list()
-    const swIndex = switches.findIndex(s => s.id === switchId)
-    if (swIndex === -1) {
-      throw createError({ statusCode: 404, message: 'Switch not found' })
-    }
-
-    const sw = switches[swIndex]!
-    const updatedPorts: Port[] = []
-    for (const portId of portIds) {
-      const portIndex = sw.ports.findIndex(p => p.id === portId)
-      if (portIndex !== -1) {
-        sw.ports[portIndex] = {
-          ...sw.ports[portIndex]!,
-          ...updates
-        } as Port
-        updatedPorts.push(sw.ports[portIndex]!)
+      // Add new bidirectional link if specified.
+      if (data.connected_device_id && data.connected_port_id) {
+        const localSwitch = await tx.switch.findUnique({ where: { id: switchId } })
+        await tx.port.update({
+          where: { id: data.connected_port_id },
+          data: {
+            connected_device: localSwitch?.name ?? null,
+            connected_device_id: switchId,
+            connected_port_id: portId,
+            connected_port: updatedRow.label,
+            connected_allocation_id: null,
+            ...(updatedRow.speed !== null ? { speed: updatedRow.speed } : {}),
+            ...(updatedRow.native_vlan !== null ? { native_vlan: updatedRow.native_vlan } : {}),
+            tagged_vlans: updatedRow.tagged_vlans,
+            ...(updatedRow.status === 'up' ? { status: 'up' } : {})
+          }
+        }).catch(() => { /* remote port may not exist */ })
       }
-    }
 
-    sw.updated_at = new Date().toISOString()
-    writeJson(FILE_NAME, switches)
-    return updatedPorts
+      await tx.switch.update({
+        where: { id: switchId },
+        data: { updated_at: new Date().toISOString() }
+      })
+
+      return updatedRow
+    })
+
+    return rowToPort(updated)
   },
 
-  applyPortVlanUpdate(
+  async bulkUpdatePorts(switchId: string, portIds: string[], updates: Partial<Omit<Port, 'id' | 'unit' | 'index'>>): Promise<Port[]> {
+    const updated = await prisma.$transaction(async (tx) => {
+      const rows: PortRow[] = []
+      for (const portId of portIds) {
+        const port = await tx.port.findUnique({ where: { id: portId } })
+        if (!port || port.switch_id !== switchId) continue
+        const row = await tx.port.update({ where: { id: portId }, data: portUpdateInput(updates) })
+        rows.push(row)
+      }
+      await tx.switch.update({ where: { id: switchId }, data: { updated_at: new Date().toISOString() } })
+      return rows
+    })
+    return updated.map(rowToPort)
+  },
+
+  async applyPortVlanUpdate(
     switchId: string,
     portId: string,
     portData: Partial<Omit<Port, 'id' | 'unit' | 'index'>>,
-    options: {
-      expectedUpdatedAt?: string
-      siteVlanIds?: number[]
-    } = {}
-  ): { port: Port; updatedAt: string; vlansAddedToSwitch: number[] } {
-    const switches = this.list()
-    const sw = switches.find(s => s.id === switchId)
-    if (!sw) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
+    options: { expectedUpdatedAt?: string; siteVlanIds?: number[] } = {}
+  ): Promise<{ port: Port; updatedAt: string; vlansAddedToSwitch: number[] }> {
+    return prisma.$transaction(async (tx) => {
+      const sw = await tx.switch.findUnique({ where: { id: switchId } })
+      if (!sw) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
 
-    // Optimistic concurrency check
-    if (options.expectedUpdatedAt && sw.updated_at !== options.expectedUpdatedAt) {
-      throw createError({
-        statusCode: 409,
-        statusMessage: 'Switch was modified since page load',
-        data: { current_updated_at: sw.updated_at }
-      })
-    }
+      if (options.expectedUpdatedAt && sw.updated_at !== options.expectedUpdatedAt) {
+        throw createError({
+          statusCode: 409,
+          statusMessage: 'Switch was modified since page load',
+          data: { current_updated_at: sw.updated_at }
+        })
+      }
 
-    const port = sw.ports.find(p => p.id === portId)
-    if (!port) throw createError({ statusCode: 404, statusMessage: 'Port not found' })
+      const port = await tx.port.findUnique({ where: { id: portId } })
+      if (!port || port.switch_id !== switchId) throw createError({ statusCode: 404, statusMessage: 'Port not found' })
 
-    // Collect all VLAN IDs from the request
-    const requestedVlans: number[] = []
-    if (portData.access_vlan) requestedVlans.push(portData.access_vlan)
-    if (portData.native_vlan) requestedVlans.push(portData.native_vlan)
-    if (portData.tagged_vlans) requestedVlans.push(...portData.tagged_vlans)
+      const requestedVlans: number[] = []
+      if (portData.access_vlan) requestedVlans.push(portData.access_vlan)
+      if (portData.native_vlan) requestedVlans.push(portData.native_vlan)
+      if (portData.tagged_vlans) requestedVlans.push(...portData.tagged_vlans)
 
-    // Verify all VLANs exist as site entities
-    if (options.siteVlanIds && requestedVlans.length > 0) {
-      for (const vlanId of requestedVlans) {
-        if (!options.siteVlanIds.includes(vlanId)) {
-          throw createError({
-            statusCode: 404,
-            statusMessage: `VLAN ${vlanId} does not exist in this site`
-          })
+      if (options.siteVlanIds && requestedVlans.length > 0) {
+        for (const vlanId of requestedVlans) {
+          if (!options.siteVlanIds.includes(vlanId)) {
+            throw createError({ statusCode: 404, statusMessage: `VLAN ${vlanId} does not exist in this site` })
+          }
         }
       }
-    }
 
-    // Auto-add any unconfigured VLANs to this switch's configured_vlans
-    const configuredVlans = sw.configured_vlans || []
-    const vlansToAdd: number[] = []
-    for (const vlanId of requestedVlans) {
-      if (!configuredVlans.includes(vlanId)) {
-        vlansToAdd.push(vlanId)
+      const configuredVlans = JSON.parse(sw.configured_vlans) as number[]
+      const vlansToAdd = requestedVlans.filter(v => !configuredVlans.includes(v))
+
+      const updatedAt = new Date().toISOString()
+
+      if (vlansToAdd.length > 0) {
+        await tx.switch.update({
+          where: { id: switchId },
+          data: {
+            configured_vlans: JSON.stringify(normalizeConfiguredVlans([...configuredVlans, ...vlansToAdd])),
+            updated_at: updatedAt
+          }
+        })
+      } else {
+        await tx.switch.update({ where: { id: switchId }, data: { updated_at: updatedAt } })
       }
-    }
 
-    if (vlansToAdd.length > 0) {
-      sw.configured_vlans = normalizeConfiguredVlans([...configuredVlans, ...vlansToAdd])
-    }
+      const updatedPort = await tx.port.update({ where: { id: portId }, data: portUpdateInput(portData) })
 
-    // Merge port data
-    Object.assign(port, portData)
-
-    sw.updated_at = new Date().toISOString()
-    writeJson(FILE_NAME, switches)
-
-    return {
-      port,
-      updatedAt: sw.updated_at,
-      vlansAddedToSwitch: vlansToAdd
-    }
+      return {
+        port: rowToPort(updatedPort),
+        updatedAt,
+        vlansAddedToSwitch: vlansToAdd
+      }
+    })
   },
 
-  /**
-   * Add VLANs to a target switch's configured_vlans list.
-   * Used when overriding during connected switch selection.
-   */
-  addVlansToSwitch(
-    switchId: string,
-    vlanIds: number[]
-  ): { addedVlans: number[]; updatedAt: string } {
-    const switches = this.list()
-    const sw = switches.find(s => s.id === switchId)
-    if (!sw) throw createError({ statusCode: 404, statusMessage: 'Target switch not found' })
+  async addVlansToSwitch(switchId: string, vlanIds: number[]): Promise<{ addedVlans: number[]; updatedAt: string }> {
+    return prisma.$transaction(async (tx) => {
+      const sw = await tx.switch.findUnique({ where: { id: switchId } })
+      if (!sw) throw createError({ statusCode: 404, statusMessage: 'Target switch not found' })
 
-    const configuredVlans = sw.configured_vlans || []
-    const vlansToAdd = vlanIds.filter(v => !configuredVlans.includes(v))
+      const configuredVlans = JSON.parse(sw.configured_vlans) as number[]
+      const vlansToAdd = vlanIds.filter(v => !configuredVlans.includes(v))
+      let updatedAt = sw.updated_at
 
-    if (vlansToAdd.length > 0) {
-      sw.configured_vlans = normalizeConfiguredVlans([...configuredVlans, ...vlansToAdd])
-      sw.updated_at = new Date().toISOString()
-      writeJson(FILE_NAME, switches)
-    }
+      if (vlansToAdd.length > 0) {
+        updatedAt = new Date().toISOString()
+        await tx.switch.update({
+          where: { id: switchId },
+          data: {
+            configured_vlans: JSON.stringify(normalizeConfiguredVlans([...configuredVlans, ...vlansToAdd])),
+            updated_at: updatedAt
+          }
+        })
+      }
 
-    return {
-      addedVlans: vlansToAdd,
-      updatedAt: sw.updated_at
-    }
+      return { addedVlans: vlansToAdd, updatedAt }
+    })
   },
 
-  applyConfiguredVlansRemoval(
+  async applyConfiguredVlansRemoval(
     switchId: string,
     vlanId: number,
     options: {
@@ -412,164 +604,165 @@ export const switchRepository = {
         action?: 'auto_remove'
       }>
     } = {}
-  ): { updatedAt: string; portsUpdated: number } {
-    const switches = this.list()
-    const sw = switches.find(s => s.id === switchId)
-    if (!sw) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
+  ): Promise<{ updatedAt: string; portsUpdated: number }> {
+    return prisma.$transaction(async (tx) => {
+      const sw = await tx.switch.findUnique({ where: { id: switchId }, include: includePorts })
+      if (!sw) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
 
-    // Optimistic concurrency check
-    if (options.expectedUpdatedAt && sw.updated_at !== options.expectedUpdatedAt) {
-      throw createError({
-        statusCode: 409,
-        statusMessage: 'Switch was modified since page load',
-        data: { current_updated_at: sw.updated_at }
-      })
-    }
-
-    const configuredVlans = sw.configured_vlans || []
-    if (!configuredVlans.includes(vlanId)) {
-      throw createError({ statusCode: 422, statusMessage: `VLAN ${vlanId} is not in configured_vlans` })
-    }
-
-    // Apply port cleanup
-    let portsUpdated = 0
-    if (options.portCleanup) {
-      for (const cleanup of options.portCleanup) {
-        const port = sw.ports.find(p => p.id === cleanup.port_id)
-        if (!port) continue
-
-        if (cleanup.field === 'tagged_vlans') {
-          port.tagged_vlans = (port.tagged_vlans || []).filter(v => v !== vlanId)
-        } else if (cleanup.field === 'access_vlan') {
-          port.access_vlan = cleanup.new_value ?? undefined
-        } else if (cleanup.field === 'native_vlan') {
-          port.native_vlan = cleanup.new_value ?? undefined
-        }
-        portsUpdated++
+      if (options.expectedUpdatedAt && sw.updated_at !== options.expectedUpdatedAt) {
+        throw createError({
+          statusCode: 409,
+          statusMessage: 'Switch was modified since page load',
+          data: { current_updated_at: sw.updated_at }
+        })
       }
-    }
 
-    // Also auto-remove from tagged_vlans on ports not in portCleanup
-    for (const port of sw.ports) {
-      if (port.tagged_vlans?.includes(vlanId)) {
-        const alreadyHandled = options.portCleanup?.some(
-          c => c.port_id === port.id && c.field === 'tagged_vlans'
-        )
-        if (!alreadyHandled) {
-          port.tagged_vlans = port.tagged_vlans.filter(v => v !== vlanId)
+      const configuredVlans = JSON.parse(sw.configured_vlans) as number[]
+      if (!configuredVlans.includes(vlanId)) {
+        throw createError({ statusCode: 422, statusMessage: `VLAN ${vlanId} is not in configured_vlans` })
+      }
+
+      let portsUpdated = 0
+      const handledPortIds = new Set<string>()
+
+      if (options.portCleanup) {
+        for (const cleanup of options.portCleanup) {
+          const port = sw.ports.find(p => p.id === cleanup.port_id)
+          if (!port) continue
+          if (cleanup.field === 'tagged_vlans') {
+            const tagged = (JSON.parse(port.tagged_vlans) as number[]).filter(v => v !== vlanId)
+            await tx.port.update({ where: { id: port.id }, data: { tagged_vlans: JSON.stringify(tagged) } })
+          } else if (cleanup.field === 'access_vlan') {
+            await tx.port.update({ where: { id: port.id }, data: { access_vlan: cleanup.new_value ?? null } })
+          } else if (cleanup.field === 'native_vlan') {
+            await tx.port.update({ where: { id: port.id }, data: { native_vlan: cleanup.new_value ?? null } })
+          }
+          portsUpdated++
+          if (cleanup.field === 'tagged_vlans') handledPortIds.add(port.id)
+        }
+      }
+
+      for (const port of sw.ports) {
+        const tagged = JSON.parse(port.tagged_vlans) as number[]
+        if (tagged.includes(vlanId) && !handledPortIds.has(port.id)) {
+          await tx.port.update({
+            where: { id: port.id },
+            data: { tagged_vlans: JSON.stringify(tagged.filter(v => v !== vlanId)) }
+          })
           portsUpdated++
         }
       }
-    }
 
-    // Remove from configured_vlans
-    sw.configured_vlans = normalizeConfiguredVlans(configuredVlans.filter(v => v !== vlanId))
-    sw.updated_at = new Date().toISOString()
-    writeJson(FILE_NAME, switches)
+      const updatedAt = new Date().toISOString()
+      await tx.switch.update({
+        where: { id: switchId },
+        data: {
+          configured_vlans: JSON.stringify(normalizeConfiguredVlans(configuredVlans.filter(v => v !== vlanId))),
+          updated_at: updatedAt
+        }
+      })
 
-    return { updatedAt: sw.updated_at, portsUpdated }
+      return { updatedAt, portsUpdated }
+    })
   },
 
-  duplicate(id: string): Switch {
-    const original = this.getById(id)
+  async duplicate(id: string): Promise<Switch> {
+    const original = await this.getById(id)
     if (!original) {
       throw createError({ statusCode: 404, message: 'Switch not found' })
     }
 
-    const switches = this.list()
+    const existing = await prisma.switch.findMany({ where: { site_id: original.site_id }, select: { name: true } })
+    const existingNames = new Set(existing.map(s => s.name))
     let copyName = `${original.name} (Copy)`
     let counter = 1
-    while (switches.some(s => s.name === copyName)) {
+    while (existingNames.has(copyName)) {
       counter++
       copyName = `${original.name} (Copy ${counter})`
     }
 
     const now = new Date().toISOString()
-    const duplicate: Switch = {
-      ...original,
-      id: nanoid(),
-      name: copyName,
-      ports: original.ports.map(p => ({
-        ...p,
-        id: nanoid(),
-        connected_device: undefined,
-        connected_device_id: undefined,
-        connected_port_id: undefined,
-        connected_port: undefined,
-        connected_allocation_id: undefined
-      })),
-      is_favorite: false,
-      created_at: now,
-      updated_at: now
-    }
+    const newSwitchId = randomUUID()
 
-    switches.push(duplicate)
-    writeJson(FILE_NAME, switches)
-    return duplicate
-  },
+    const result = await prisma.$transaction(async (tx) => {
+      await tx.switch.create({
+        data: {
+          id: newSwitchId,
+          site_id: original.site_id,
+          name: copyName,
+          model: original.model ?? null,
+          manufacturer: original.manufacturer ?? null,
+          serial_number: original.serial_number ?? null,
+          location: original.location ?? null,
+          rack_position: original.rack_position ?? null,
+          management_ip: original.management_ip ?? null,
+          firmware_version: original.firmware_version ?? null,
+          layout_template_id: original.layout_template_id ?? null,
+          stack_size: original.stack_size ?? null,
+          role: original.role ?? null,
+          tags: JSON.stringify(original.tags ?? []),
+          configured_vlans: JSON.stringify(original.configured_vlans ?? []),
+          is_favorite: false,
+          sort_order: original.sort_order ?? null,
+          notes: original.notes ?? null,
+          created_at: now,
+          updated_at: now
+        }
+      })
 
-  delete(id: string): boolean {
-    const switches = this.list()
-    const index = switches.findIndex(s => s.id === id)
-    if (index === -1) return false
-
-    // Remove bidirectional links from connected switches
-    const sw = switches[index]!
-    for (const port of sw.ports) {
-      if (port.connected_device_id && port.connected_port_id) {
-        this._removeRemoteLink(switches, port.connected_device_id, port.connected_port_id)
+      if (original.ports.length > 0) {
+        await tx.port.createMany({
+          data: original.ports.map(p => ({
+            switch_id: newSwitchId,
+            ...portCreateInput({
+              ...p,
+              id: randomUUID(),
+              connected_device: undefined,
+              connected_device_id: undefined,
+              connected_port_id: undefined,
+              connected_port: undefined,
+              connected_allocation_id: undefined
+            })
+          }))
+        })
       }
-    }
 
-    // Clean up management IP allocation
-    if (sw.management_ip) {
-      syncManagementIpAllocation(sw.id, sw.name, undefined, sw.management_ip)
-    }
+      const row = await tx.switch.findUniqueOrThrow({ where: { id: newSwitchId }, include: includePorts })
+      return rowToSwitch(row)
+    })
 
-    switches.splice(index, 1)
-    writeJson(FILE_NAME, switches)
+    return result
+  },
+
+  async delete(id: string): Promise<boolean> {
+    const sw = await prisma.switch.findUnique({ where: { id }, include: includePorts })
+    if (!sw) return false
+
+    await prisma.$transaction(async (tx) => {
+      // Clear bidirectional links on remote ports before cascade deletes our ports.
+      for (const port of sw.ports) {
+        if (port.connected_device_id && port.connected_port_id) {
+          await tx.port.update({
+            where: { id: port.connected_port_id },
+            data: {
+              connected_device: null,
+              connected_device_id: null,
+              connected_port_id: null,
+              connected_port: null
+            }
+          }).catch(() => { /* remote may not exist */ })
+        }
+      }
+
+      // Clean up management IP allocation if any.
+      if (sw.management_ip) {
+        await syncManagementIpAllocation(tx, id, sw.name, undefined, sw.management_ip)
+      }
+
+      // Schema cascades to Port, LagGroup, PublicToken.
+      await tx.switch.delete({ where: { id } })
+    })
+
     return true
-  },
-
-  _removeRemoteLink(switches: Switch[], remoteSwitchId: string, remotePortId: string): void {
-    const remoteSw = switches.find(s => s.id === remoteSwitchId)
-    if (!remoteSw) return
-
-    const remotePort = remoteSw.ports.find(p => p.id === remotePortId)
-    if (!remotePort) return
-
-    remotePort.connected_device = undefined
-    remotePort.connected_device_id = undefined
-    remotePort.connected_port_id = undefined
-    remotePort.connected_port = undefined
-  },
-
-  _createRemoteLink(switches: Switch[], remoteSwitchId: string, remotePortId: string, localSwitchId: string, localPortId: string, syncSettings?: Partial<Port>): void {
-    const remoteSw = switches.find(s => s.id === remoteSwitchId)
-    if (!remoteSw) return
-
-    const localSw = switches.find(s => s.id === localSwitchId)
-    if (!localSw) return
-
-    const remotePort = remoteSw.ports.find(p => p.id === remotePortId)
-    if (!remotePort) return
-
-    const localPort = localSw.ports.find(p => p.id === localPortId)
-    if (!localPort) return
-
-    // Set bidirectional link
-    remotePort.connected_device = localSw.name
-    remotePort.connected_device_id = localSwitchId
-    remotePort.connected_port_id = localPortId
-    remotePort.connected_port = localPort.label
-    remotePort.connected_allocation_id = undefined
-
-    // Sync port settings to remote side
-    if (syncSettings) {
-      if (syncSettings.speed) remotePort.speed = syncSettings.speed
-      if (syncSettings.native_vlan !== undefined) remotePort.native_vlan = syncSettings.native_vlan
-      if (syncSettings.tagged_vlans) remotePort.tagged_vlans = [...syncSettings.tagged_vlans]
-      if (syncSettings.status === 'up') remotePort.status = 'up'
-    }
   }
 }

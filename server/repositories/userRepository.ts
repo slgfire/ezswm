@@ -1,68 +1,90 @@
-import { nanoid } from 'nanoid'
-import { readJson, writeJson } from '../storage/jsonStorage'
+import { randomUUID } from 'node:crypto'
+import { prisma } from '../db/client'
 import type { User } from '../../types/user'
 
-const FILE_NAME = 'users.json'
+interface UserRow {
+  id: string
+  username: string
+  display_name: string
+  password_hash: string
+  role: string
+  language: string
+  is_setup_user: boolean
+  created_at: string
+  updated_at: string
+}
+
+function rowToUser(row: UserRow): User {
+  return {
+    id: row.id,
+    username: row.username,
+    display_name: row.display_name,
+    password_hash: row.password_hash,
+    role: row.role as User['role'],
+    language: row.language as User['language'],
+    is_setup_user: row.is_setup_user,
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  }
+}
 
 export const userRepository = {
-  list(): User[] {
-    return readJson<User[]>(FILE_NAME)
+  async list(): Promise<User[]> {
+    const rows = await prisma.user.findMany({ orderBy: { username: 'asc' } })
+    return rows.map(rowToUser)
   },
 
-  getById(id: string): User | null {
-    const users = this.list()
-    return users.find(u => u.id === id) || null
+  async getById(id: string): Promise<User | null> {
+    const row = await prisma.user.findUnique({ where: { id } })
+    return row ? rowToUser(row) : null
   },
 
-  getByUsername(username: string): User | null {
-    const users = this.list()
-    return users.find(u => u.username === username) || null
+  async getByUsername(username: string): Promise<User | null> {
+    const row = await prisma.user.findUnique({ where: { username } })
+    return row ? rowToUser(row) : null
   },
 
-  create(data: Omit<User, 'id' | 'created_at' | 'updated_at'>): User {
-    const users = this.list()
-
-    if (users.some(u => u.username === data.username)) {
+  async create(data: Omit<User, 'id' | 'created_at' | 'updated_at'>): Promise<User> {
+    const existing = await prisma.user.findUnique({ where: { username: data.username } })
+    if (existing) {
       throw createError({ statusCode: 409, message: `Username '${data.username}' already exists` })
     }
 
     const now = new Date().toISOString()
-    const user: User = {
-      id: nanoid(),
-      ...data,
-      created_at: now,
-      updated_at: now
-    }
-
-    users.push(user)
-    writeJson(FILE_NAME, users)
-    return user
+    const row = await prisma.user.create({
+      data: {
+        id: randomUUID(),
+        username: data.username,
+        display_name: data.display_name,
+        password_hash: data.password_hash,
+        role: data.role,
+        language: data.language,
+        is_setup_user: data.is_setup_user,
+        created_at: now,
+        updated_at: now
+      }
+    })
+    return rowToUser(row)
   },
 
-  update(id: string, data: Partial<Omit<User, 'id' | 'created_at'>>): User {
-    const users = this.list()
-    const index = users.findIndex(u => u.id === id)
-    if (index === -1) {
+  async update(id: string, data: Partial<Omit<User, 'id' | 'created_at'>>): Promise<User> {
+    const existing = await prisma.user.findUnique({ where: { id } })
+    if (!existing) {
       throw createError({ statusCode: 404, message: 'User not found' })
     }
-
-    users[index] = {
-      ...users[index],
-      ...data,
-      updated_at: new Date().toISOString()
-    } as User
-
-    writeJson(FILE_NAME, users)
-    return users[index]!
+    const row = await prisma.user.update({
+      where: { id },
+      data: { ...data, updated_at: new Date().toISOString() }
+    })
+    return rowToUser(row)
   },
 
-  delete(id: string): boolean {
-    const users = this.list()
-    const index = users.findIndex(u => u.id === id)
-    if (index === -1) return false
-
-    users.splice(index, 1)
-    writeJson(FILE_NAME, users)
-    return true
+  async delete(id: string): Promise<boolean> {
+    try {
+      await prisma.user.delete({ where: { id } })
+      return true
+    } catch {
+      return false
+    }
   }
 }

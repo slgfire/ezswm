@@ -1,32 +1,52 @@
-import { nanoid } from 'nanoid'
-import { readJson, writeJson } from '../storage/jsonStorage'
+import { randomUUID } from 'node:crypto'
+import { prisma } from '../db/client'
 import type { IPRange } from '../../types/ipRange'
 import { isValidIPv4, isIPInSubnet, ipToLong, doRangesOverlap, subnetRangeError } from '../utils/ipv4'
-import { networkRepository } from './networkRepository'
 
-const FILE_NAME = 'ip-ranges.json'
+interface RangeRow {
+  id: string
+  network_id: string
+  start_ip: string
+  end_ip: string
+  type: string
+  description: string | null
+  created_at: string
+  updated_at: string
+}
+
+function rowToRange(row: RangeRow): IPRange {
+  return {
+    id: row.id,
+    network_id: row.network_id,
+    start_ip: row.start_ip,
+    end_ip: row.end_ip,
+    type: row.type as IPRange['type'],
+    description: row.description ?? undefined,
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  }
+}
 
 export const ipRangeRepository = {
-  list(networkId?: string): IPRange[] {
-    const ranges = readJson<IPRange[]>(FILE_NAME)
-    if (networkId) {
-      return ranges.filter(r => r.network_id === networkId)
-    }
-    return ranges
+  async list(networkId?: string): Promise<IPRange[]> {
+    const rows = await prisma.ipRange.findMany({
+      where: networkId ? { network_id: networkId } : undefined,
+      orderBy: [{ network_id: 'asc' }, { start_ip: 'asc' }]
+    })
+    return rows.map(rowToRange)
   },
 
-  getById(id: string): IPRange | null {
-    const ranges = readJson<IPRange[]>(FILE_NAME)
-    return ranges.find(r => r.id === id) || null
+  async getById(id: string): Promise<IPRange | null> {
+    const row = await prisma.ipRange.findUnique({ where: { id } })
+    return row ? rowToRange(row) : null
   },
 
-  create(networkId: string, data: Omit<IPRange, 'id' | 'network_id' | 'created_at' | 'updated_at'>): IPRange {
-    const network = networkRepository.getById(networkId)
+  async create(networkId: string, data: Omit<IPRange, 'id' | 'network_id' | 'created_at' | 'updated_at'>): Promise<IPRange> {
+    const network = await prisma.network.findUnique({ where: { id: networkId } })
     if (!network) {
       throw createError({ statusCode: 404, message: 'Network not found' })
     }
 
-    // Block DHCP ranges for /31 and /32 networks
     const prefix = parseInt(network.subnet.split('/')[1] || '0', 10)
     if (prefix >= 31 && data.type === 'dhcp') {
       const msg = prefix === 32
@@ -50,37 +70,38 @@ export const ipRangeRepository = {
       throw createError({ statusCode: 400, message: subnetRangeError(data.end_ip, network.subnet) })
     }
 
-    // Check overlap with existing ranges in the same network
-    const existingRanges = this.list(networkId)
-    for (const existing of existingRanges) {
-      if (doRangesOverlap(data.start_ip, data.end_ip, existing.start_ip, existing.end_ip)) {
-        throw createError({ statusCode: 409, message: `Range ${data.start_ip}-${data.end_ip} overlaps with existing range ${existing.start_ip}-${existing.end_ip} (${existing.type})` })
+    const existing = await prisma.ipRange.findMany({ where: { network_id: networkId } })
+    for (const r of existing) {
+      if (doRangesOverlap(data.start_ip, data.end_ip, r.start_ip, r.end_ip)) {
+        throw createError({
+          statusCode: 409,
+          message: `Range ${data.start_ip}-${data.end_ip} overlaps with existing range ${r.start_ip}-${r.end_ip} (${r.type})`
+        })
       }
     }
 
-    const ranges = readJson<IPRange[]>(FILE_NAME)
     const now = new Date().toISOString()
-    const range: IPRange = {
-      id: nanoid(),
-      network_id: networkId,
-      ...data,
-      created_at: now,
-      updated_at: now
-    }
-
-    ranges.push(range)
-    writeJson(FILE_NAME, ranges)
-    return range
+    const row = await prisma.ipRange.create({
+      data: {
+        id: randomUUID(),
+        network_id: networkId,
+        start_ip: data.start_ip,
+        end_ip: data.end_ip,
+        type: data.type,
+        description: data.description ?? null,
+        created_at: now,
+        updated_at: now
+      }
+    })
+    return rowToRange(row)
   },
 
-  update(id: string, data: Partial<Omit<IPRange, 'id' | 'network_id' | 'created_at'>>): IPRange {
-    const ranges = readJson<IPRange[]>(FILE_NAME)
-    const index = ranges.findIndex(r => r.id === id)
-    if (index === -1) {
+  async update(id: string, data: Partial<Omit<IPRange, 'id' | 'network_id' | 'created_at'>>): Promise<IPRange> {
+    const current = await prisma.ipRange.findUnique({ where: { id } })
+    if (!current) {
       throw createError({ statusCode: 404, message: 'IP range not found' })
     }
 
-    const current = ranges[index]!
     const startIp = data.start_ip || current.start_ip
     const endIp = data.end_ip || current.end_ip
 
@@ -90,12 +111,11 @@ export const ipRangeRepository = {
     if (data.end_ip && !isValidIPv4(data.end_ip)) {
       throw createError({ statusCode: 400, message: 'Invalid end IP' })
     }
-
     if (ipToLong(startIp) > ipToLong(endIp)) {
       throw createError({ statusCode: 400, message: 'Start IP must be less than or equal to end IP' })
     }
 
-    const network = networkRepository.getById(current.network_id)
+    const network = await prisma.network.findUnique({ where: { id: current.network_id } })
     if (network) {
       if (!isIPInSubnet(startIp, network.subnet)) {
         throw createError({ statusCode: 400, message: subnetRangeError(startIp, network.subnet) })
@@ -105,39 +125,42 @@ export const ipRangeRepository = {
       }
     }
 
-    // Check overlap excluding self
-    const networkRanges = ranges.filter(r => r.network_id === current.network_id && r.id !== id)
-    for (const existing of networkRanges) {
-      if (doRangesOverlap(startIp, endIp, existing.start_ip, existing.end_ip)) {
-        throw createError({ statusCode: 409, message: `Range ${startIp}-${endIp} overlaps with existing range ${existing.start_ip}-${existing.end_ip} (${existing.type})` })
+    const networkRanges = await prisma.ipRange.findMany({
+      where: { network_id: current.network_id, NOT: { id } }
+    })
+    for (const r of networkRanges) {
+      if (doRangesOverlap(startIp, endIp, r.start_ip, r.end_ip)) {
+        throw createError({
+          statusCode: 409,
+          message: `Range ${startIp}-${endIp} overlaps with existing range ${r.start_ip}-${r.end_ip} (${r.type})`
+        })
       }
     }
 
-    ranges[index] = {
-      ...current,
-      ...data,
-      updated_at: new Date().toISOString()
-    } as IPRange
-
-    writeJson(FILE_NAME, ranges)
-    return ranges[index]!
+    const row = await prisma.ipRange.update({
+      where: { id },
+      data: {
+        ...(data.start_ip !== undefined ? { start_ip: data.start_ip } : {}),
+        ...(data.end_ip !== undefined ? { end_ip: data.end_ip } : {}),
+        ...(data.type !== undefined ? { type: data.type } : {}),
+        ...(data.description !== undefined ? { description: data.description ?? null } : {}),
+        updated_at: new Date().toISOString()
+      }
+    })
+    return rowToRange(row)
   },
 
-  delete(id: string): boolean {
-    const ranges = readJson<IPRange[]>(FILE_NAME)
-    const index = ranges.findIndex(r => r.id === id)
-    if (index === -1) return false
-
-    ranges.splice(index, 1)
-    writeJson(FILE_NAME, ranges)
-    return true
+  async delete(id: string): Promise<boolean> {
+    try {
+      await prisma.ipRange.delete({ where: { id } })
+      return true
+    } catch {
+      return false
+    }
   },
 
-  deleteByNetworkId(networkId: string): number {
-    const ranges = readJson<IPRange[]>(FILE_NAME)
-    const filtered = ranges.filter(r => r.network_id !== networkId)
-    const deleted = ranges.length - filtered.length
-    writeJson(FILE_NAME, filtered)
-    return deleted
+  async deleteByNetworkId(networkId: string): Promise<number> {
+    const result = await prisma.ipRange.deleteMany({ where: { network_id: networkId } })
+    return result.count
   }
 }

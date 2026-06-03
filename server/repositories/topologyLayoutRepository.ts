@@ -1,40 +1,33 @@
-import { readJson, writeJson } from '../storage/jsonStorage'
+import { prisma } from '../db/client'
 import type { TopologyLayout } from '../../types/topology'
 
-const FILE_NAME = 'topology-layouts.json'
-
-type LayoutStore = Record<string, TopologyLayout>
-
-function readAll(): LayoutStore {
-  return readJson<LayoutStore>(FILE_NAME)
-}
-
-function writeAll(data: LayoutStore): void {
-  writeJson(FILE_NAME, data)
-}
-
 export const topologyLayoutRepository = {
-  getBySiteId(siteId: string): TopologyLayout | null {
-    const all = readAll()
-    return all[siteId] ?? null
-  },
-
-  save(siteId: string, nodePositions: Record<string, { x: number; y: number }>): TopologyLayout {
-    const all = readAll()
-    const layout: TopologyLayout = {
-      node_positions: nodePositions,
-      updated_at: new Date().toISOString()
+  async getBySiteId(siteId: string): Promise<TopologyLayout | null> {
+    const row = await prisma.topologyLayout.findUnique({ where: { site_id: siteId } })
+    if (!row) return null
+    return {
+      node_positions: JSON.parse(row.node_positions) as Record<string, { x: number; y: number }>,
+      updated_at: row.updated_at
     }
-    all[siteId] = layout
-    writeAll(all)
-    return layout
   },
 
-  deleteBySiteId(siteId: string): boolean {
-    const all = readAll()
-    if (!(siteId in all)) return false
-    delete all[siteId]
-    writeAll(all)
-    return true
+  async save(siteId: string, nodePositions: Record<string, { x: number; y: number }>): Promise<TopologyLayout> {
+    const updated_at = new Date().toISOString()
+    const node_positions = JSON.stringify(nodePositions)
+    await prisma.topologyLayout.upsert({
+      where: { site_id: siteId },
+      create: { site_id: siteId, node_positions, updated_at },
+      update: { node_positions, updated_at }
+    })
+    return { node_positions: nodePositions, updated_at }
+  },
+
+  async deleteBySiteId(siteId: string): Promise<boolean> {
+    try {
+      await prisma.topologyLayout.delete({ where: { site_id: siteId } })
+      return true
+    } catch {
+      return false
+    }
   }
 }

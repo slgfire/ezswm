@@ -1,28 +1,65 @@
-import { nanoid } from 'nanoid'
-import { readJson, writeJson } from '../storage/jsonStorage'
+import { randomUUID } from 'node:crypto'
+import { prisma } from '../db/client'
 import type { IPAllocation } from '../../types/ipAllocation'
-import type { IPRange } from '../../types/ipRange'
 import { isValidIPv4, isIPInSubnet, isUsableHostIP, isValidMacAddress, subnetRangeError, parseSubnet, ipToLong } from '../utils/ipv4'
-import { networkRepository } from './networkRepository'
 
-const FILE_NAME = 'ip-allocations.json'
+interface AllocationRow {
+  id: string
+  network_id: string
+  ip_address: string
+  hostname: string | null
+  mac_address: string | null
+  device_type: string | null
+  description: string | null
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+function rowToAllocation(row: AllocationRow): IPAllocation {
+  return {
+    id: row.id,
+    network_id: row.network_id,
+    ip_address: row.ip_address,
+    hostname: row.hostname ?? undefined,
+    mac_address: row.mac_address ?? undefined,
+    device_type: row.device_type as IPAllocation['device_type'] | undefined,
+    description: row.description ?? undefined,
+    status: row.status as IPAllocation['status'],
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  }
+}
+
+async function assertDhcpRangeFree(networkId: string, ip: string): Promise<void> {
+  const ranges = await prisma.ipRange.findMany({ where: { network_id: networkId, type: 'dhcp' } })
+  const ipLong = ipToLong(ip)
+  for (const range of ranges) {
+    if (ipLong >= ipToLong(range.start_ip) && ipLong <= ipToLong(range.end_ip)) {
+      throw createError({
+        statusCode: 400,
+        message: `IP ${ip} is inside a DHCP dynamic range (${range.start_ip} - ${range.end_ip}). Static IPs cannot be assigned within dynamic DHCP ranges.`
+      })
+    }
+  }
+}
 
 export const ipAllocationRepository = {
-  list(networkId?: string): IPAllocation[] {
-    const allocations = readJson<IPAllocation[]>(FILE_NAME)
-    if (networkId) {
-      return allocations.filter(a => a.network_id === networkId)
-    }
-    return allocations
+  async list(networkId?: string): Promise<IPAllocation[]> {
+    const rows = await prisma.ipAllocation.findMany({
+      where: networkId ? { network_id: networkId } : undefined,
+      orderBy: [{ network_id: 'asc' }, { ip_address: 'asc' }]
+    })
+    return rows.map(rowToAllocation)
   },
 
-  getById(id: string): IPAllocation | null {
-    const allocations = readJson<IPAllocation[]>(FILE_NAME)
-    return allocations.find(a => a.id === id) || null
+  async getById(id: string): Promise<IPAllocation | null> {
+    const row = await prisma.ipAllocation.findUnique({ where: { id } })
+    return row ? rowToAllocation(row) : null
   },
 
-  create(networkId: string, data: Omit<IPAllocation, 'id' | 'network_id' | 'created_at' | 'updated_at'>): IPAllocation {
-    const network = networkRepository.getById(networkId)
+  async create(networkId: string, data: Omit<IPAllocation, 'id' | 'network_id' | 'created_at' | 'updated_at'>): Promise<IPAllocation> {
+    const network = await prisma.network.findUnique({ where: { id: networkId } })
     if (!network) {
       throw createError({ statusCode: 404, message: 'Network not found' })
     }
@@ -36,76 +73,70 @@ export const ipAllocationRepository = {
       if (!isIPInSubnet(data.ip_address, network.subnet)) {
         throw createError({ statusCode: 400, message: subnetRangeError(data.ip_address, network.subnet) })
       }
-      // IP is in subnet but is network or broadcast address
-      throw createError({ statusCode: 400, message: `IP ${data.ip_address} is the ${data.ip_address === info.network_address ? 'network' : 'broadcast'} address of ${network.subnet}. Valid range: ${info.first_usable} - ${info.last_usable}` })
+      throw createError({
+        statusCode: 400,
+        message: `IP ${data.ip_address} is the ${data.ip_address === info.network_address ? 'network' : 'broadcast'} address of ${network.subnet}. Valid range: ${info.first_usable} - ${info.last_usable}`
+      })
     }
 
     if (data.mac_address && !isValidMacAddress(data.mac_address)) {
       throw createError({ statusCode: 400, message: 'Invalid MAC address format (expected XX:XX:XX:XX:XX:XX)' })
     }
 
-    // Check if IP falls inside a DHCP dynamic range
-    const ipRanges = readJson<IPRange[]>('ip-ranges.json')
-    const networkRanges = ipRanges.filter(r => r.network_id === networkId)
-    const ipLong = ipToLong(data.ip_address)
-    for (const range of networkRanges) {
-      if (range.type === 'dhcp' && ipLong >= ipToLong(range.start_ip) && ipLong <= ipToLong(range.end_ip)) {
-        throw createError({ statusCode: 400, message: `IP ${data.ip_address} is inside a DHCP dynamic range (${range.start_ip} - ${range.end_ip}). Static IPs cannot be assigned within dynamic DHCP ranges.` })
-      }
-    }
+    await assertDhcpRangeFree(networkId, data.ip_address)
 
-    // Global IP uniqueness
-    const allAllocations = readJson<IPAllocation[]>(FILE_NAME)
-    if (allAllocations.some(a => a.ip_address === data.ip_address)) {
+    const clash = await prisma.ipAllocation.findFirst({ where: { ip_address: data.ip_address } })
+    if (clash) {
       throw createError({ statusCode: 409, message: `IP address ${data.ip_address} is already allocated` })
     }
 
     const now = new Date().toISOString()
-    const allocation: IPAllocation = {
-      id: nanoid(),
-      network_id: networkId,
-      ...data,
-      created_at: now,
-      updated_at: now
-    }
-
-    allAllocations.push(allocation)
-    writeJson(FILE_NAME, allAllocations)
-    return allocation
+    const row = await prisma.ipAllocation.create({
+      data: {
+        id: randomUUID(),
+        network_id: networkId,
+        ip_address: data.ip_address,
+        hostname: data.hostname ?? null,
+        mac_address: data.mac_address ?? null,
+        device_type: data.device_type ?? null,
+        description: data.description ?? null,
+        status: data.status,
+        created_at: now,
+        updated_at: now
+      }
+    })
+    return rowToAllocation(row)
   },
 
-  update(id: string, data: Partial<Omit<IPAllocation, 'id' | 'network_id' | 'created_at'>>): IPAllocation {
-    const allocations = readJson<IPAllocation[]>(FILE_NAME)
-    const index = allocations.findIndex(a => a.id === id)
-    if (index === -1) {
+  async update(id: string, data: Partial<Omit<IPAllocation, 'id' | 'network_id' | 'created_at'>>): Promise<IPAllocation> {
+    const current = await prisma.ipAllocation.findUnique({ where: { id } })
+    if (!current) {
       throw createError({ statusCode: 404, message: 'IP allocation not found' })
     }
 
-    if (data.ip_address && data.ip_address !== allocations[index]!.ip_address) {
+    if (data.ip_address && data.ip_address !== current.ip_address) {
       if (!isValidIPv4(data.ip_address)) {
         throw createError({ statusCode: 400, message: 'Invalid IP address' })
       }
 
-      const network = networkRepository.getById(allocations[index]!.network_id)
+      const network = await prisma.network.findUnique({ where: { id: current.network_id } })
       if (network && !isUsableHostIP(data.ip_address, network.subnet)) {
         const info = parseSubnet(network.subnet)
         if (!isIPInSubnet(data.ip_address, network.subnet)) {
           throw createError({ statusCode: 400, message: subnetRangeError(data.ip_address, network.subnet) })
         }
-        throw createError({ statusCode: 400, message: `IP ${data.ip_address} is the ${data.ip_address === info.network_address ? 'network' : 'broadcast'} address of ${network.subnet}. Valid range: ${info.first_usable} - ${info.last_usable}` })
+        throw createError({
+          statusCode: 400,
+          message: `IP ${data.ip_address} is the ${data.ip_address === info.network_address ? 'network' : 'broadcast'} address of ${network.subnet}. Valid range: ${info.first_usable} - ${info.last_usable}`
+        })
       }
 
-      // Check if IP falls inside a DHCP dynamic range
-      const ipRanges = readJson<IPRange[]>('ip-ranges.json')
-      const networkRanges = ipRanges.filter(r => r.network_id === allocations[index]!.network_id)
-      const ipLong = ipToLong(data.ip_address)
-      for (const range of networkRanges) {
-        if (range.type === 'dhcp' && ipLong >= ipToLong(range.start_ip) && ipLong <= ipToLong(range.end_ip)) {
-          throw createError({ statusCode: 400, message: `IP ${data.ip_address} is inside a DHCP dynamic range (${range.start_ip} - ${range.end_ip}). Static IPs cannot be assigned within dynamic DHCP ranges.` })
-        }
-      }
+      await assertDhcpRangeFree(current.network_id, data.ip_address)
 
-      if (allocations.some(a => a.ip_address === data.ip_address && a.id !== id)) {
+      const clash = await prisma.ipAllocation.findFirst({
+        where: { ip_address: data.ip_address, NOT: { id } }
+      })
+      if (clash) {
         throw createError({ statusCode: 409, message: `IP address ${data.ip_address} is already allocated` })
       }
     }
@@ -114,31 +145,32 @@ export const ipAllocationRepository = {
       throw createError({ statusCode: 400, message: 'Invalid MAC address format' })
     }
 
-    allocations[index] = {
-      ...allocations[index],
-      ...data,
-      updated_at: new Date().toISOString()
-    } as IPAllocation
-
-    writeJson(FILE_NAME, allocations)
-    return allocations[index]!
+    const row = await prisma.ipAllocation.update({
+      where: { id },
+      data: {
+        ...(data.ip_address !== undefined ? { ip_address: data.ip_address } : {}),
+        ...(data.hostname !== undefined ? { hostname: data.hostname ?? null } : {}),
+        ...(data.mac_address !== undefined ? { mac_address: data.mac_address ?? null } : {}),
+        ...(data.device_type !== undefined ? { device_type: data.device_type ?? null } : {}),
+        ...(data.description !== undefined ? { description: data.description ?? null } : {}),
+        ...(data.status !== undefined ? { status: data.status } : {}),
+        updated_at: new Date().toISOString()
+      }
+    })
+    return rowToAllocation(row)
   },
 
-  delete(id: string): boolean {
-    const allocations = readJson<IPAllocation[]>(FILE_NAME)
-    const index = allocations.findIndex(a => a.id === id)
-    if (index === -1) return false
-
-    allocations.splice(index, 1)
-    writeJson(FILE_NAME, allocations)
-    return true
+  async delete(id: string): Promise<boolean> {
+    try {
+      await prisma.ipAllocation.delete({ where: { id } })
+      return true
+    } catch {
+      return false
+    }
   },
 
-  deleteByNetworkId(networkId: string): number {
-    const allocations = readJson<IPAllocation[]>(FILE_NAME)
-    const filtered = allocations.filter(a => a.network_id !== networkId)
-    const deleted = allocations.length - filtered.length
-    writeJson(FILE_NAME, filtered)
-    return deleted
+  async deleteByNetworkId(networkId: string): Promise<number> {
+    const result = await prisma.ipAllocation.deleteMany({ where: { network_id: networkId } })
+    return result.count
   }
 }
