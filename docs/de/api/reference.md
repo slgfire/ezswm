@@ -164,18 +164,45 @@ In der UI heißt diese Entität seit v0.20.0 **Subnetze**. Die API-Pfade bleiben
 
 | Methode | Endpunkt | Beschreibung |
 |---------|----------|--------------|
-| GET | `/api/backup/export` | Vollständiges Backup als Archiv exportieren |
-| POST | `/api/backup/import` | Vollständiges Backup aus Archiv importieren |
-| GET | `/api/data/export` | Alle Daten als JSON exportieren |
-| POST | `/api/data/import` | Alle Daten aus JSON importieren |
-| GET | `/api/data/template` | Leere Datenvorlage herunterladen |
-| GET | `/api/export/:entity` | Einzelnen Entitätstyp als CSV exportieren |
-| POST | `/api/import/:entity` | Einzelnen Entitätstyp aus CSV importieren |
-| GET | `/api/import/template/:entity` | CSV-Vorlage für Entität herunterladen |
+| GET | `/api/backup/export` | Vollständiger DB-Dump als JSON (`schema: "sqlite-v1"`). |
+| POST | `/api/backup/import` | **501** in 0.21.x — wird für SQLite umgebaut, siehe [#156](https://github.com/slgfire/ezswm/issues/156). |
+| GET | `/api/data/export` | Alias von `/api/backup/export`. |
+| POST | `/api/data/import` | **501** in 0.21.x — siehe [#156](https://github.com/slgfire/ezswm/issues/156). |
+| GET | `/api/data/template` | Leere Datenvorlage herunterladen. |
+| GET | `/api/export/:entity` | Einzelne Entity-Tabelle als JSON oder CSV exportieren. |
+| POST | `/api/import/:entity` | **501** in 0.21.x — siehe [#156](https://github.com/slgfire/ezswm/issues/156). |
+| GET | `/api/import/template/:entity` | CSV-Vorlage für Entität herunterladen. |
+
+### Backup-Export-Format
+
+```json
+{
+  "version": "0.21.0",
+  "created_at": "2026-06-03T20:34:46.634Z",
+  "schema": "sqlite-v1",
+  "data": {
+    "users": [...],
+    "switches": [...],
+    "ports": [...],
+    "vlans": [...],
+    "networks": [...],
+    "ipAllocations": [...],
+    "ipRanges": [...],
+    "layoutTemplates": [...],
+    "lagGroups": [...],
+    "activity": [...],
+    "settings": [...],
+    "publicTokens": [...],
+    "topologyLayouts": [...]
+  }
+}
+```
+
+Feld-Formen spiegeln die SQLite-Spalten. JSON-Spalten (`tags`, `configured_vlans`, `tagged_vlans` auf Ports, Template-`units`, Activity-`changes`/`previous_state`/`metadata`, Network-`dns_servers`, Topology-`node_positions`) kommen als JSON-Strings — der Restore-Pfad parsed sie beim Wiedereinspielen.
 
 ## Aktivität
 
 | Methode | Endpunkt | Beschreibung |
 |---------|----------|--------------|
-| GET | `/api/activity` | Aktuelle Aktivitätsprotokoll-Einträge auflisten |
-| POST | `/api/activity/:id/undo` | Aktivitätsprotokoll-Eintrag rückgängig machen |
+| GET | `/api/activity` | Aktuelle Aktivitätsprotokoll-Einträge auflisten. |
+| POST | `/api/activity/:id/undo` | **501** in 0.21.x — wird für SQLite umgebaut, siehe [#156](https://github.com/slgfire/ezswm/issues/156). |

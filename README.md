@@ -9,7 +9,7 @@
   [![Built with Claude Code](https://img.shields.io/badge/Built_with-Claude_Code-6B5CE7.svg)](https://claude.ai/claude-code)
   [![Dependabot](https://img.shields.io/badge/Dependabot-enabled-0366d6.svg?logo=dependabot)](https://github.com/slgfire/ezswm/security/dependabot)
 
-  **Document your switches, VLANs, and IPs — visually. No database required.**
+  **Document your switches, VLANs, and IPs — visually. SQLite, zero setup.**
 
   [Documentation](https://slgfire.github.io/ezswm/) | [Installation](https://slgfire.github.io/ezswm/guide/installation) | [User Guide](https://slgfire.github.io/ezswm/guide/user-guide) | [API Reference](https://slgfire.github.io/ezswm/api/reference)
 
@@ -21,7 +21,7 @@
 
 ezSWM (easy Switch Management) is an open-source, web-based infrastructure documentation tool designed for LAN parties, homelab setups, and small-to-medium network environments. It provides a visual, intuitive way to document your switch infrastructure — ports, VLANs, IP allocations, and connections — without the overhead of a traditional IPAM/DCIM solution.
 
-All data is stored as flat JSON files. No database setup, no migrations, no external dependencies. Just Docker and go.
+All data lives in a single embedded SQLite file inside the volume you mount — no external database server to run, no migrations to wire up manually. Schema upgrades apply themselves on container start.
 
 > This project was built with significant assistance from [Claude Code](https://claude.ai/claude-code) (Anthropic's AI coding assistant). Architecture decisions, code implementation, and iterative refinement were done collaboratively between human and AI.
 
@@ -87,7 +87,7 @@ pnpm dev
 | UI | [Nuxt UI v4](https://ui.nuxt.com) + Tailwind CSS v4 |
 | Validation | Zod (server) + UForm (client) |
 | Auth | JWT + bcrypt |
-| Storage | Atomic JSON file writes |
+| Storage | SQLite via Prisma (`<DATA_DIR>/db.sqlite`) |
 | Container | Docker multi-stage (node:22-alpine) |
 | CI | GitHub Actions (auto Docker image build) |
 | i18n | Nuxt i18n (EN/DE) |

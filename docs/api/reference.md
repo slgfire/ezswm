@@ -164,18 +164,45 @@ The UI calls this entity **Subnets** since v0.20.0. The API paths stay `/api/net
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/backup/export` | Export full backup as archive |
-| POST | `/api/backup/import` | Import full backup from archive |
-| GET | `/api/data/export` | Export all data as JSON |
-| POST | `/api/data/import` | Import all data from JSON |
-| GET | `/api/data/template` | Download blank data template |
-| GET | `/api/export/:entity` | Export a single entity type as CSV |
-| POST | `/api/import/:entity` | Import a single entity type from CSV |
-| GET | `/api/import/template/:entity` | Download CSV template for entity |
+| GET | `/api/backup/export` | Full DB dump as a JSON payload (`schema: "sqlite-v1"`). |
+| POST | `/api/backup/import` | **501** in 0.21.x — being reworked for SQLite, see [#156](https://github.com/slgfire/ezswm/issues/156). |
+| GET | `/api/data/export` | Alias of `/api/backup/export`. |
+| POST | `/api/data/import` | **501** in 0.21.x — see [#156](https://github.com/slgfire/ezswm/issues/156). |
+| GET | `/api/data/template` | Download blank data template. |
+| GET | `/api/export/:entity` | Export a single entity table as JSON or CSV. |
+| POST | `/api/import/:entity` | **501** in 0.21.x — see [#156](https://github.com/slgfire/ezswm/issues/156). |
+| GET | `/api/import/template/:entity` | Download CSV template for entity. |
+
+### Backup-export payload
+
+```json
+{
+  "version": "0.21.0",
+  "created_at": "2026-06-03T20:34:46.634Z",
+  "schema": "sqlite-v1",
+  "data": {
+    "users": [...],
+    "switches": [...],
+    "ports": [...],
+    "vlans": [...],
+    "networks": [...],
+    "ipAllocations": [...],
+    "ipRanges": [...],
+    "layoutTemplates": [...],
+    "lagGroups": [...],
+    "activity": [...],
+    "settings": [...],
+    "publicTokens": [...],
+    "topologyLayouts": [...]
+  }
+}
+```
+
+Field shapes mirror the SQLite columns. JSON-column fields (`tags`, `configured_vlans`, port `tagged_vlans`, layout `units`, activity `changes`/`previous_state`/`metadata`, network `dns_servers`, topology `node_positions`) ship as JSON strings — the restore path parses them back on the way in.
 
 ## Activity
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/activity` | List recent activity log entries |
-| POST | `/api/activity/:id/undo` | Undo an activity log entry |
+| GET | `/api/activity` | List recent activity log entries. |
+| POST | `/api/activity/:id/undo` | **501** in 0.21.x — being reworked for SQLite, see [#156](https://github.com/slgfire/ezswm/issues/156). |
