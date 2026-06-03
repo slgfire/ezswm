@@ -77,7 +77,6 @@ describe('restoreAll', () => {
   })
 
   it('rejects non-UUID ids upfront (no partial restore)', async () => {
-    const siteId = 'pre-existing-site'
     await prisma.site.create({ data: { id: randomUUID(), name: 'pre', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } })
 
     const payload = {
