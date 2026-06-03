@@ -1,6 +1,6 @@
 {
   "name": "ezswm",
-  "version": "0.20.3",
+  "version": "0.21.0",
   "type": "module",
   "private": true,
   "packageManager": "pnpm@11.0.9",
@@ -32,6 +32,7 @@
     "marked": "^18.0.4",
     "nanoid": "5.1.11",
     "nuxt": "4.4.6",
+    "prisma": "6.18.0",
     "qrcode": "1.5.4",
     "tailwindcss": "4.3.0",
     "v-network-graph": "0.9.22",
@@ -47,7 +48,6 @@
     "@types/jsonwebtoken": "9.0.10",
     "@types/node": "^25.8.0",
     "eslint": "10.4.1",
-    "prisma": "6.18.0",
     "tsx": "4.22.4",
     "typescript": "6.0.3",
     "vitest": "4.1.8",

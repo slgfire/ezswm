@@ -6,6 +6,28 @@ title: Release Notes
 
 For the in-app changelog (rendered from GitHub releases), click the version number in the sidebar footer.
 
+## v0.21.0 — 2026-06-03
+
+### Changed — Storage moved from JSON files to SQLite
+
+The internal storage layer is now **SQLite via Prisma** instead of flat JSON files. The one-shot migration runs **automatically on first boot** when the database is empty and legacy `data/*.json` files are present: every record is rewritten into SQLite with a fresh **UUIDv4** primary key, all cross-references are remapped (including those embedded in activity-log snapshots), and the original JSON files are moved into `data/_archive_<ISO>/` for safekeeping. If anything fails the database is left empty and the JSON files stay untouched, so you can investigate and restart. ([#154](https://github.com/slgfire/ezswm/pull/154), closes [#139](https://github.com/slgfire/ezswm/issues/139) phase 1)
+
+#### Why
+- **Cascade deletes are now transactional.** Deleting a network atomically removes its IP allocations and ranges via the SQLite `ON DELETE CASCADE` constraints.
+- **Concurrent writes can't lose data** thanks to SQLite's write-serialisation; the previous JSON read-modify-write pattern was last-write-wins.
+- **Lookups are indexed** instead of full-file linear scans — the audit log has indexes on `timestamp` and `(entity_type, entity_id)`, and every foreign-key column is indexed.
+- **Schema migrations** are now managed by Prisma instead of ad-hoc JSON backfills in the init plugin.
+
+#### Breaking — entity URLs change
+All entity primary keys are regenerated as UUIDv4 during the migration, so URLs like `/sites/<id>`, `/sites/<id>/switches/<id>`, `/layout-templates/<id>` etc. have **new IDs after upgrading**. Bookmarks pointing at specific entities break once. Names and labels in the UI are unchanged.
+
+#### Compatibility note — temporarily disabled features
+The bulk import endpoints and the activity-log undo button were JSON-file-specific and currently return **`501 Not Implemented`** with a clear message. SQLite-aware replacements will land in a follow-up release. Backup *export* (the read side) is fully working against SQLite and produces a new `schema: "sqlite-v1"` payload.
+
+#### Docker / configuration
+- New env var `DATABASE_URL` (default `file:/app/data/db.sqlite` in the image). The data directory is unchanged — the SQLite file + WAL + the migration archive all live there.
+- Image entrypoint now runs `prisma migrate deploy` before starting the server, so schema upgrades apply themselves on container start.
+
 ## v0.20.3 — 2026-06-02
 
 ### Dependencies
