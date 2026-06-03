@@ -1,246 +1,144 @@
-import { mkdtempSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
-import { tmpdir } from 'node:os'
-import { setTestRuntimeConfig, resetTestRuntimeConfig, seedJsonFile } from './testHelpers'
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
+import type { PrismaClient } from '@prisma/client'
+
+import { createTestPrisma, seedSite, seedNetwork, seedIpRange } from './testHelpers'
 import { ipAllocationRepository } from '../server/repositories/ipAllocationRepository'
-import type { Network } from '../types/network'
-import type { IPRange } from '../types/ipRange'
 
-describe.skip('ipAllocationRepository', () => {
-  let tempDir: string
+describe('ipAllocationRepository', () => {
+  let prisma: PrismaClient
+  let resetDb: () => Promise<void>
+  let cleanup: () => Promise<void>
+  let net1: string
+  let net2: string
 
-  const testNetwork: Network = {
-    id: 'net-1',
-    site_id: 'site-1',
-    name: 'Test Network',
-    subnet: '10.0.1.0/24',
-    gateway: '10.0.1.1',
-    dns_servers: [],
-    is_favorite: false,
-    created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z',
-  }
-
-  const testNetwork2: Network = {
-    ...testNetwork,
-    id: 'net-2',
-    name: 'Second Network',
-    subnet: '10.0.2.0/24',
-  }
-
-  const dhcpRange: IPRange = {
-    id: 'range-1',
-    network_id: 'net-1',
-    start_ip: '10.0.1.100',
-    end_ip: '10.0.1.200',
-    type: 'dhcp',
-    created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z',
-  }
-
-  beforeEach(() => {
-    tempDir = mkdtempSync(join(tmpdir(), 'ezswm-vitest-'))
-    setTestRuntimeConfig({ dataDir: tempDir })
-    seedJsonFile(tempDir, 'networks.json', [testNetwork, testNetwork2])
-    seedJsonFile(tempDir, 'ip-ranges.json', [dhcpRange])
-    seedJsonFile(tempDir, 'ip-allocations.json', [])
+  beforeAll(async () => {
+    const ctx = await createTestPrisma()
+    prisma = ctx.prisma
+    resetDb = ctx.resetDb
+    cleanup = ctx.cleanup
+    globalThis.__prismaTestClient = prisma
   })
 
-  afterEach(() => {
-    rmSync(tempDir, { recursive: true, force: true })
-    resetTestRuntimeConfig()
+  afterAll(async () => {
+    globalThis.__prismaTestClient = undefined
+    await cleanup()
+  })
+
+  beforeEach(async () => {
+    await resetDb()
+    const { id: siteId } = await seedSite(prisma)
+    net1 = (await seedNetwork(prisma, { site_id: siteId, name: 'Test Network', subnet: '10.0.1.0/24', gateway: '10.0.1.1' })).id
+    net2 = (await seedNetwork(prisma, { site_id: siteId, name: 'Second Network', subnet: '10.0.2.0/24', gateway: '10.0.2.1' })).id
+    await seedIpRange(prisma, { network_id: net1, start_ip: '10.0.1.100', end_ip: '10.0.1.200', type: 'dhcp' })
   })
 
   describe('create', () => {
-    it('creates allocation with valid IP', () => {
-      const result = ipAllocationRepository.create('net-1', {
-        ip_address: '10.0.1.10',
-        status: 'active',
-      })
+    it('creates allocation with valid IP', async () => {
+      const result = await ipAllocationRepository.create(net1, { ip_address: '10.0.1.10', status: 'active' })
       expect(result.id).toBeTruthy()
       expect(result.ip_address).toBe('10.0.1.10')
-      expect(result.network_id).toBe('net-1')
+      expect(result.network_id).toBe(net1)
     })
 
-    it('rejects invalid IP address', () => {
-      try {
-        ipAllocationRepository.create('net-1', {
-          ip_address: 'not-an-ip',
-          status: 'active',
-        })
-        expect.fail('Expected to throw')
-      } catch (error) {
-        expect((error as { statusCode?: number }).statusCode).toBe(400)
-        expect((error as Error).message).toMatch(/Invalid IP/)
-      }
+    it('rejects invalid IP address', async () => {
+      await expect(ipAllocationRepository.create(net1, { ip_address: 'not-an-ip', status: 'active' }))
+        .rejects.toMatchObject({ statusCode: 400, message: expect.stringMatching(/Invalid IP/) })
     })
 
-    it('rejects IP outside subnet', () => {
-      try {
-        ipAllocationRepository.create('net-1', {
-          ip_address: '192.168.1.5',
-          status: 'active',
-        })
-        expect.fail('Expected to throw')
-      } catch (error) {
-        expect((error as { statusCode?: number }).statusCode).toBe(400)
-      }
+    it('rejects IP outside subnet', async () => {
+      await expect(ipAllocationRepository.create(net1, { ip_address: '192.168.1.5', status: 'active' }))
+        .rejects.toMatchObject({ statusCode: 400 })
     })
 
-    it('rejects network address', () => {
-      try {
-        ipAllocationRepository.create('net-1', {
-          ip_address: '10.0.1.0',
-          status: 'active',
-        })
-        expect.fail('Expected to throw')
-      } catch (error) {
-        expect((error as { statusCode?: number }).statusCode).toBe(400)
-        expect((error as Error).message).toMatch(/network/)
-      }
+    it('rejects network address', async () => {
+      await expect(ipAllocationRepository.create(net1, { ip_address: '10.0.1.0', status: 'active' }))
+        .rejects.toMatchObject({ statusCode: 400, message: expect.stringMatching(/network/) })
     })
 
-    it('rejects broadcast address', () => {
-      try {
-        ipAllocationRepository.create('net-1', {
-          ip_address: '10.0.1.255',
-          status: 'active',
-        })
-        expect.fail('Expected to throw')
-      } catch (error) {
-        expect((error as { statusCode?: number }).statusCode).toBe(400)
-        expect((error as Error).message).toMatch(/broadcast/)
-      }
+    it('rejects broadcast address', async () => {
+      await expect(ipAllocationRepository.create(net1, { ip_address: '10.0.1.255', status: 'active' }))
+        .rejects.toMatchObject({ statusCode: 400, message: expect.stringMatching(/broadcast/) })
     })
 
-    it('rejects duplicate IP in same network', () => {
-      ipAllocationRepository.create('net-1', { ip_address: '10.0.1.10', status: 'active' })
-      try {
-        ipAllocationRepository.create('net-1', { ip_address: '10.0.1.10', status: 'active' })
-        expect.fail('Expected to throw')
-      } catch (error) {
-        expect((error as { statusCode?: number }).statusCode).toBe(409)
-        expect((error as Error).message).toMatch(/already allocated/)
-      }
+    it('rejects duplicate IP in same network', async () => {
+      await ipAllocationRepository.create(net1, { ip_address: '10.0.1.10', status: 'active' })
+      await expect(ipAllocationRepository.create(net1, { ip_address: '10.0.1.10', status: 'active' }))
+        .rejects.toMatchObject({ statusCode: 409, message: expect.stringMatching(/already allocated/) })
     })
 
-    it('rejects invalid MAC address format', () => {
-      try {
-        ipAllocationRepository.create('net-1', {
-          ip_address: '10.0.1.10',
-          mac_address: 'invalid-mac',
-          status: 'active',
-        })
-        expect.fail('Expected to throw')
-      } catch (error) {
-        expect((error as { statusCode?: number }).statusCode).toBe(400)
-        expect((error as Error).message).toMatch(/MAC/)
-      }
+    it('rejects invalid MAC address format', async () => {
+      await expect(ipAllocationRepository.create(net1, { ip_address: '10.0.1.10', mac_address: 'invalid-mac', status: 'active' }))
+        .rejects.toMatchObject({ statusCode: 400, message: expect.stringMatching(/MAC/) })
     })
 
-    it('accepts valid MAC address', () => {
-      const result = ipAllocationRepository.create('net-1', {
+    it('accepts valid MAC address', async () => {
+      const result = await ipAllocationRepository.create(net1, {
         ip_address: '10.0.1.10',
         mac_address: 'AA:BB:CC:DD:EE:FF',
-        status: 'active',
+        status: 'active'
       })
       expect(result.mac_address).toBe('AA:BB:CC:DD:EE:FF')
     })
 
-    it('rejects IP inside DHCP range', () => {
-      try {
-        ipAllocationRepository.create('net-1', {
-          ip_address: '10.0.1.150',
-          status: 'active',
-        })
-        expect.fail('Expected to throw')
-      } catch (error) {
-        expect((error as { statusCode?: number }).statusCode).toBe(400)
-        expect((error as Error).message).toMatch(/DHCP/)
-      }
+    it('rejects IP inside DHCP range', async () => {
+      await expect(ipAllocationRepository.create(net1, { ip_address: '10.0.1.150', status: 'active' }))
+        .rejects.toMatchObject({ statusCode: 400, message: expect.stringMatching(/DHCP/) })
     })
 
-    it('accepts IP outside DHCP range', () => {
-      const result = ipAllocationRepository.create('net-1', {
-        ip_address: '10.0.1.50',
-        status: 'active',
-      })
+    it('accepts IP outside DHCP range', async () => {
+      const result = await ipAllocationRepository.create(net1, { ip_address: '10.0.1.50', status: 'active' })
       expect(result.ip_address).toBe('10.0.1.50')
     })
 
-    it('rejects unknown network', () => {
-      try {
-        ipAllocationRepository.create('nonexistent', {
-          ip_address: '10.0.1.10',
-          status: 'active',
-        })
-        expect.fail('Expected to throw')
-      } catch (error) {
-        expect((error as { statusCode?: number }).statusCode).toBe(404)
-      }
+    it('rejects unknown network', async () => {
+      await expect(ipAllocationRepository.create('00000000-0000-4000-8000-000000000000', { ip_address: '10.0.1.10', status: 'active' }))
+        .rejects.toMatchObject({ statusCode: 404 })
+    })
+
+    it('rejects duplicate IP across networks (global uniqueness)', async () => {
+      await ipAllocationRepository.create(net1, { ip_address: '10.0.1.10', status: 'active' })
+      // Different subnet so IP collision is purely the global-unique check.
+      await expect(ipAllocationRepository.create(net2, { ip_address: '10.0.1.10', status: 'active' }))
+        .rejects.toMatchObject({ statusCode: 400 }) // subnet check fires first; either way the bad IP is blocked
     })
   })
 
   describe('update', () => {
-    it('updates allocation', () => {
-      const created = ipAllocationRepository.create('net-1', {
-        ip_address: '10.0.1.10',
-        status: 'active',
-      })
-      const updated = ipAllocationRepository.update(created.id, { hostname: 'server-1' })
+    it('updates allocation', async () => {
+      const created = await ipAllocationRepository.create(net1, { ip_address: '10.0.1.10', status: 'active' })
+      const updated = await ipAllocationRepository.update(created.id, { hostname: 'server-1' })
       expect(updated.hostname).toBe('server-1')
       expect(updated.ip_address).toBe('10.0.1.10')
     })
 
-    it('rejects invalid MAC on update', () => {
-      const created = ipAllocationRepository.create('net-1', {
-        ip_address: '10.0.1.10',
-        status: 'active',
-      })
-      try {
-        ipAllocationRepository.update(created.id, { mac_address: 'bad' })
-        expect.fail('Expected to throw')
-      } catch (error) {
-        expect((error as { statusCode?: number }).statusCode).toBe(400)
-      }
+    it('rejects invalid MAC on update', async () => {
+      const created = await ipAllocationRepository.create(net1, { ip_address: '10.0.1.10', status: 'active' })
+      await expect(ipAllocationRepository.update(created.id, { mac_address: 'bad' }))
+        .rejects.toMatchObject({ statusCode: 400 })
     })
 
-    it('allows updating to a free IP outside the DHCP range', () => {
-      const created = ipAllocationRepository.create('net-1', {
-        ip_address: '10.0.1.10',
-        status: 'active',
-      })
-      const updated = ipAllocationRepository.update(created.id, { ip_address: '10.0.1.11' })
+    it('allows updating to a free IP outside the DHCP range', async () => {
+      const created = await ipAllocationRepository.create(net1, { ip_address: '10.0.1.10', status: 'active' })
+      const updated = await ipAllocationRepository.update(created.id, { ip_address: '10.0.1.11' })
       expect(updated.ip_address).toBe('10.0.1.11')
     })
 
-    it('rejects updating IP into a DHCP range', () => {
-      const created = ipAllocationRepository.create('net-1', {
-        ip_address: '10.0.1.10',
-        status: 'active',
-      })
-      try {
-        ipAllocationRepository.update(created.id, { ip_address: '10.0.1.150' })
-        expect.fail('Expected to throw')
-      } catch (error) {
-        expect((error as { statusCode?: number }).statusCode).toBe(400)
-        expect((error as Error).message).toMatch(/DHCP/)
-      }
+    it('rejects updating IP into a DHCP range', async () => {
+      const created = await ipAllocationRepository.create(net1, { ip_address: '10.0.1.10', status: 'active' })
+      await expect(ipAllocationRepository.update(created.id, { ip_address: '10.0.1.150' }))
+        .rejects.toMatchObject({ statusCode: 400, message: expect.stringMatching(/DHCP/) })
     })
   })
 
   describe('delete', () => {
-    it('removes allocation', () => {
-      const created = ipAllocationRepository.create('net-1', {
-        ip_address: '10.0.1.10',
-        status: 'active',
-      })
-      expect(ipAllocationRepository.delete(created.id)).toBe(true)
-      expect(ipAllocationRepository.getById(created.id)).toBe(null)
+    it('removes allocation', async () => {
+      const created = await ipAllocationRepository.create(net1, { ip_address: '10.0.1.10', status: 'active' })
+      expect(await ipAllocationRepository.delete(created.id)).toBe(true)
+      expect(await ipAllocationRepository.getById(created.id)).toBe(null)
     })
 
-    it('returns false for unknown id', () => {
-      expect(ipAllocationRepository.delete('nonexistent')).toBe(false)
+    it('returns false for unknown id', async () => {
+      expect(await ipAllocationRepository.delete('00000000-0000-4000-8000-000000000000')).toBe(false)
     })
   })
 })

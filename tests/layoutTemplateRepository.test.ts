@@ -1,70 +1,74 @@
-import { mkdtempSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
-import { tmpdir } from 'node:os'
-import { setTestRuntimeConfig, resetTestRuntimeConfig, seedJsonFile } from './testHelpers'
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
+import type { PrismaClient } from '@prisma/client'
+
+import { createTestPrisma, seedSite } from './testHelpers'
 import { layoutTemplateRepository } from '../server/repositories/layoutTemplateRepository'
 import { switchRepository } from '../server/repositories/switchRepository'
 
-describe.skip('layoutTemplateRepository — port preservation on template update', () => {
-  let tempDir: string
+describe('layoutTemplateRepository — port preservation on template update', () => {
+  let prisma: PrismaClient
+  let resetDb: () => Promise<void>
+  let cleanup: () => Promise<void>
+  let siteId: string
 
-  beforeEach(() => {
-    tempDir = mkdtempSync(join(tmpdir(), 'ezswm-vitest-'))
-    setTestRuntimeConfig({ dataDir: tempDir })
-    seedJsonFile(tempDir, 'layout-templates.json', [])
-    seedJsonFile(tempDir, 'switches.json', [])
-    seedJsonFile(tempDir, 'sites.json', [{ id: 'site-1', name: 'Test Site' }])
+  beforeAll(async () => {
+    const ctx = await createTestPrisma()
+    prisma = ctx.prisma
+    resetDb = ctx.resetDb
+    cleanup = ctx.cleanup
+    globalThis.__prismaTestClient = prisma
   })
 
-  afterEach(() => {
-    rmSync(tempDir, { recursive: true, force: true })
-    resetTestRuntimeConfig()
+  afterAll(async () => {
+    globalThis.__prismaTestClient = undefined
+    await cleanup()
   })
 
-  it('preserves all per-port settings when only block labels change', () => {
-    // 1. Create a template with two blocks
-    const template = layoutTemplateRepository.create({
+  beforeEach(async () => {
+    await resetDb()
+    siteId = (await seedSite(prisma, { name: 'Test Site' })).id
+  })
+
+  it('preserves all per-port settings when only block labels change', async () => {
+    const template = await layoutTemplateRepository.create({
       name: 'Test Template',
       units: [{
         unit_number: 1,
         blocks: [
-          { type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'RJ' },
-          { type: 'sfp+', count: 2, start_index: 5, rows: 1, label: 'SFP' }
+          { id: '', type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'RJ' },
+          { id: '', type: 'sfp+', count: 2, start_index: 5, rows: 1, label: 'SFP' }
         ]
       }]
     })
 
-    // 2. Create a switch with that template
-    const sw = switchRepository.create({
-      site_id: 'site-1',
+    const sw = await switchRepository.create({
+      site_id: siteId,
       name: 'sw-test',
-      layout_template_id: template.id
+      layout_template_id: template.id,
+      tags: [],
+      configured_vlans: []
     })
 
     expect(sw.ports.length).toBe(6)
-    // Order should be indices 1..6
     expect(sw.ports.map(p => p.index)).toEqual([1, 2, 3, 4, 5, 6])
 
-    // 3. Configure ports with distinct markers
     for (const port of sw.ports) {
-      switchRepository.updatePort(sw.id, port.id, {
+      await switchRepository.updatePort(sw.id, port.id, {
         description: `Config for port idx=${port.index}`
       })
     }
 
-    // 4. Update template — only change block labels
-    layoutTemplateRepository.update(template.id, {
+    await layoutTemplateRepository.update(template.id, {
       units: [{
         unit_number: 1,
         blocks: [
-          { type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'RJ-new' },
-          { type: 'sfp+', count: 2, start_index: 5, rows: 1, label: 'SFP-new' }
+          { id: '', type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'RJ-new' },
+          { id: '', type: 'sfp+', count: 2, start_index: 5, rows: 1, label: 'SFP-new' }
         ]
       }]
     })
 
-    // 5. Verify each port still has the correct configuration
-    const updated = switchRepository.getById(sw.id)
+    const updated = await switchRepository.getById(sw.id)
     expect(updated).toBeTruthy()
     const portsByIndex = new Map(updated!.ports.map(p => [p.index, p]))
     for (let idx = 1; idx <= 6; idx++) {
@@ -74,130 +78,133 @@ describe.skip('layoutTemplateRepository — port preservation on template update
     }
   })
 
-  it('preserves all per-port settings when stack_size > 1 and labels change', () => {
-    const template = layoutTemplateRepository.create({
+  it('preserves all per-port settings when stack_size > 1 and labels change', async () => {
+    const template = await layoutTemplateRepository.create({
       name: 'Stacked Template',
       units: [{
         unit_number: 1,
         blocks: [
-          { type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'RJ' },
-          { type: 'sfp+', count: 2, start_index: 5, rows: 1, label: 'SFP' }
+          { id: '', type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'RJ' },
+          { id: '', type: 'sfp+', count: 2, start_index: 5, rows: 1, label: 'SFP' }
         ]
       }]
     })
-    const sw = switchRepository.create({
-      site_id: 'site-1',
+
+    const sw = await switchRepository.create({
+      site_id: siteId,
       name: 'sw-stacked',
       layout_template_id: template.id,
-      stack_size: 2
+      stack_size: 2,
+      tags: [],
+      configured_vlans: []
     })
 
-    expect(sw.ports.length).toBe(12) // 6 ports × 2 members
+    expect(sw.ports.length).toBe(12)
     for (const port of sw.ports) {
-      switchRepository.updatePort(sw.id, port.id, {
+      await switchRepository.updatePort(sw.id, port.id, {
         description: `port unit=${port.unit} idx=${port.index}`
       })
     }
 
-    layoutTemplateRepository.update(template.id, {
+    await layoutTemplateRepository.update(template.id, {
       units: [{
         unit_number: 1,
         blocks: [
-          { type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'RJ-new' },
-          { type: 'sfp+', count: 2, start_index: 5, rows: 1, label: 'SFP-new' }
+          { id: '', type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'RJ-new' },
+          { id: '', type: 'sfp+', count: 2, start_index: 5, rows: 1, label: 'SFP-new' }
         ]
       }]
     })
 
-    const updated = switchRepository.getById(sw.id)
+    const updated = await switchRepository.getById(sw.id)
     expect(updated!.ports.length).toBe(12)
     for (const port of updated!.ports) {
       expect(port.description, `port unit=${port.unit} idx=${port.index}`).toBe(`port unit=${port.unit} idx=${port.index}`)
     }
   })
 
-  it('preserves per-port settings when block rows count changes', () => {
-    const template = layoutTemplateRepository.create({
+  it('preserves per-port settings when block rows count changes', async () => {
+    const template = await layoutTemplateRepository.create({
       name: 'Rows Template',
       units: [{
         unit_number: 1,
         blocks: [
-          { type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'RJ' },
-          { type: 'sfp+', count: 2, start_index: 5, rows: 1, label: 'SFP' }
+          { id: '', type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'RJ' },
+          { id: '', type: 'sfp+', count: 2, start_index: 5, rows: 1, label: 'SFP' }
         ]
       }]
     })
-    const sw = switchRepository.create({
-      site_id: 'site-1',
+
+    const sw = await switchRepository.create({
+      site_id: siteId,
       name: 'sw-rows',
-      layout_template_id: template.id
+      layout_template_id: template.id,
+      tags: [],
+      configured_vlans: []
     })
     for (const port of sw.ports) {
-      switchRepository.updatePort(sw.id, port.id, { description: `idx=${port.index}` })
+      await switchRepository.updatePort(sw.id, port.id, { description: `idx=${port.index}` })
     }
 
-    // Change rows from 2 to 1 (visual only — port indices unchanged)
-    layoutTemplateRepository.update(template.id, {
+    await layoutTemplateRepository.update(template.id, {
       units: [{
         unit_number: 1,
         blocks: [
-          { type: 'rj45', count: 4, start_index: 1, rows: 1, label: 'RJ' },
-          { type: 'sfp+', count: 2, start_index: 5, rows: 1, label: 'SFP' }
+          { id: '', type: 'rj45', count: 4, start_index: 1, rows: 1, label: 'RJ' },
+          { id: '', type: 'sfp+', count: 2, start_index: 5, rows: 1, label: 'SFP' }
         ]
       }]
     })
 
-    const updated = switchRepository.getById(sw.id)
+    const updated = await switchRepository.getById(sw.id)
     for (const port of updated!.ports) {
       expect(port.description).toBe(`idx=${port.index}`)
     }
   })
 
-  it('preserves per-port settings when two blocks share index ranges', () => {
-    // Matches screenshot from issue #132: RJ45 block ports 1..N and
-    // SFP+ block ports 1..M both starting at start_index=1 (or similar overlap)
-    const template = layoutTemplateRepository.create({
+  it('preserves per-port settings when two blocks share index ranges', async () => {
+    const template = await layoutTemplateRepository.create({
       name: 'OverlapTemplate',
       units: [{
         unit_number: 1,
         blocks: [
-          { type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'RJ45' },
-          { type: 'sfp+', count: 2, start_index: 1, rows: 1, label: 'SFP+' }
+          { id: '', type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'RJ45' },
+          { id: '', type: 'sfp+', count: 2, start_index: 1, rows: 1, label: 'SFP+' }
         ]
       }]
     })
-    const sw = switchRepository.create({
-      site_id: 'site-1',
+
+    const sw = await switchRepository.create({
+      site_id: siteId,
       name: 'sw-overlap',
-      layout_template_id: template.id
+      layout_template_id: template.id,
+      tags: [],
+      configured_vlans: []
     })
 
     expect(sw.ports.length).toBe(6)
 
-    // Tag each port with a unique marker tied to its (id, unit, index, type)
     for (const port of sw.ports) {
-      switchRepository.updatePort(sw.id, port.id, {
+      await switchRepository.updatePort(sw.id, port.id, {
         description: `id=${port.id} type=${port.type} idx=${port.index}`
       })
     }
 
-    // Snapshot pre-update assignment: which type lives on which port id
     const before = new Map(
-      switchRepository.getById(sw.id)!.ports.map(p => [p.id, { type: p.type, index: p.index, description: p.description }])
+      (await switchRepository.getById(sw.id))!.ports.map(p => [p.id, { type: p.type, index: p.index, description: p.description }])
     )
 
-    // Template update — only labels change
-    layoutTemplateRepository.update(template.id, {
+    await layoutTemplateRepository.update(template.id, {
       units: [{
         unit_number: 1,
         blocks: [
-          { type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'RJ45-new' },
-          { type: 'sfp+', count: 2, start_index: 1, rows: 1, label: 'SFP+-new' }
+          { id: '', type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'RJ45-new' },
+          { id: '', type: 'sfp+', count: 2, start_index: 1, rows: 1, label: 'SFP+-new' }
         ]
       }]
     })
 
-    const after = switchRepository.getById(sw.id)!
+    const after = (await switchRepository.getById(sw.id))!
     for (const port of after.ports) {
       const original = before.get(port.id)
       expect(original, `port id=${port.id} should still exist after sync`).toBeTruthy()
@@ -207,36 +214,39 @@ describe.skip('layoutTemplateRepository — port preservation on template update
     }
   })
 
-  it('preserves port ids when only block labels change', () => {
-    const template = layoutTemplateRepository.create({
+  it('preserves port ids when only block labels change', async () => {
+    const template = await layoutTemplateRepository.create({
       name: 'IdTemplate',
       units: [{
         unit_number: 1,
         blocks: [
-          { type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'A' },
-          { type: 'sfp+', count: 2, start_index: 5, rows: 1, label: 'B' }
+          { id: '', type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'A' },
+          { id: '', type: 'sfp+', count: 2, start_index: 5, rows: 1, label: 'B' }
         ]
       }]
     })
-    const sw = switchRepository.create({
-      site_id: 'site-1',
+
+    const sw = await switchRepository.create({
+      site_id: siteId,
       name: 'sw-ids',
-      layout_template_id: template.id
+      layout_template_id: template.id,
+      tags: [],
+      configured_vlans: []
     })
 
     const idsByIndex = new Map(sw.ports.map(p => [p.index, p.id]))
 
-    layoutTemplateRepository.update(template.id, {
+    await layoutTemplateRepository.update(template.id, {
       units: [{
         unit_number: 1,
         blocks: [
-          { type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'A-new' },
-          { type: 'sfp+', count: 2, start_index: 5, rows: 1, label: 'B-new' }
+          { id: '', type: 'rj45', count: 4, start_index: 1, rows: 2, label: 'A-new' },
+          { id: '', type: 'sfp+', count: 2, start_index: 5, rows: 1, label: 'B-new' }
         ]
       }]
     })
 
-    const updated = switchRepository.getById(sw.id)
+    const updated = await switchRepository.getById(sw.id)
     for (const port of updated!.ports) {
       expect(port.id, `port idx=${port.index} id must be unchanged`).toBe(idsByIndex.get(port.index))
     }

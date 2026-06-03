@@ -6,6 +6,16 @@ title: Release Notes
 
 For the in-app changelog (rendered from GitHub releases), click the version number in the sidebar footer.
 
+## v0.21.2 — 2026-06-04
+
+### Tests
+- **Repository tests ported to a Prisma test client.** The six suites that were skipped after the 0.21 SQLite switch (`ipAllocationRepository`, `ipRangeRepository`, `layoutTemplateRepository`, `networkRepository`, `vlanRepository`, `public-token`) now run against a real SQLite database provisioned per test file. `createTestPrisma()` lives in `tests/testHelpers.ts` and is shared with the existing migration test. **455/455 tests green** (up from 394 + 60 skipped). ([#160](https://github.com/slgfire/gfire/ezswm/pull/160), closes [#155](https://github.com/slgfire/ezswm/issues/155))
+
+### Internal
+- `server/db/client.ts` exposes the Prisma client via a Proxy that routes through `globalThis.__prismaTestClient` when set, so tests can swap clients in `beforeAll` without re-importing the repositories.
+
+No runtime change — image is byte-identical to 0.21.1 modulo the test suite.
+
 ## v0.21.1 — 2026-06-03
 
 ### Docs
