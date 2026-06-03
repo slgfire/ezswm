@@ -94,10 +94,14 @@ jobs:
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Start app
+      - name: Apply Prisma migrations
         run: |
           mkdir -p /tmp/ezswm-e2e-data
-          NUXT_DATA_DIR=/tmp/ezswm-e2e-data PORT=3000 HOST=127.0.0.1 node .output/server/index.mjs > /tmp/ezswm-e2e.log 2>&1 &
+          DATABASE_URL="file:/tmp/ezswm-e2e-data/db.sqlite" pnpm prisma migrate deploy
+
+      - name: Start app
+        run: |
+          DATABASE_URL="file:/tmp/ezswm-e2e-data/db.sqlite" NUXT_DATA_DIR=/tmp/ezswm-e2e-data PORT=3000 HOST=127.0.0.1 node .output/server/index.mjs > /tmp/ezswm-e2e.log 2>&1 &
           echo $! > /tmp/ezswm-e2e.pid
 
       - name: Wait for app

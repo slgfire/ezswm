@@ -14,6 +14,8 @@ RUN corepack enable
 # workspace shape (otherwise subsequent commands trigger a re-resolution).
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY docs/package.json ./docs/
+# The pnpm postinstall hook runs `prisma generate`, which needs the schema.
+COPY prisma ./prisma
 
 RUN pnpm install --frozen-lockfile
 
