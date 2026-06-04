@@ -1,15 +1,18 @@
 import { networkRepository } from '../../repositories/networkRepository'
+import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
 
-  const siteId = query.site_id as string | undefined
+  const siteId = await resolveSiteIdQuery(query.site_id as string | undefined)
   const vlanId = query.vlan_id as string | undefined
   const search = query.search as string | undefined
 
   let items = await networkRepository.list()
 
-  if (siteId) {
+  if (siteId === null) {
+    items = []
+  } else if (siteId) {
     items = items.filter((n) => n.site_id === siteId)
   }
 

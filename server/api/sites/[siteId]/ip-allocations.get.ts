@@ -3,21 +3,13 @@ import { networkRepository } from '../../../repositories/networkRepository'
 import { vlanRepository } from '../../../repositories/vlanRepository'
 import { siteRepository } from '../../../repositories/siteRepository'
 import { enrichAllocations } from '../../../utils/enrichAllocations'
+import { resolveSiteParam } from '../../../utils/resolveSiteParam'
 
 export default defineEventHandler(async (event) => {
-  const siteId = event.context.params?.siteId
-  if (!siteId) {
-    throw createError({ statusCode: 400, statusMessage: 'Missing site ID' })
-  }
+  const site = await resolveSiteParam(event.context.params?.siteId)
 
   const allNetworks = await networkRepository.list()
-  let networks = allNetworks
-  if (siteId !== 'all') {
-    if (!(await siteRepository.getById(siteId))) {
-      throw createError({ statusCode: 404, statusMessage: 'Site not found' })
-    }
-    networks = allNetworks.filter(n => n.site_id === siteId)
-  }
+  const networks = site ? allNetworks.filter(n => n.site_id === site.id) : allNetworks
 
   const data = enrichAllocations(
     await ipAllocationRepository.list(),

@@ -1,17 +1,12 @@
 import { topologyLayoutRepository } from '../../../repositories/topologyLayoutRepository'
-import { siteRepository } from '../../../repositories/siteRepository'
+import { resolveSiteParam } from '../../../utils/resolveSiteParam'
 
 export default defineEventHandler(async (event) => {
-  const siteId = event.context.params?.siteId
-  if (!siteId) {
-    throw createError({ statusCode: 400, statusMessage: 'Missing site ID' })
+  const site = await resolveSiteParam(event.context.params?.siteId)
+  if (!site) {
+    throw createError({ statusCode: 400, statusMessage: 'Topology layout is not available for the "all" view' })
   }
-
-  if (!(await siteRepository.getById(siteId))) {
-    throw createError({ statusCode: 404, statusMessage: 'Site not found' })
-  }
-
-  await topologyLayoutRepository.deleteBySiteId(siteId)
+  await topologyLayoutRepository.deleteBySiteId(site.id)
   setResponseStatus(event, 204)
   return null
 })

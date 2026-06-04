@@ -1,6 +1,7 @@
 import { switchRepository } from '../../../../repositories/switchRepository'
 import { lagGroupRepository } from '../../../../repositories/lagGroupRepository'
 import { siteRepository } from '../../../../repositories/siteRepository'
+import { resolveSiteParam } from '../../../../utils/resolveSiteParam'
 import type { TopologyNode, TopologyLink, TopologyGhostNode } from '~~/types/topology'
 import type { Port } from '~~/types/port'
 
@@ -20,14 +21,11 @@ function deriveVlans(port: Port): number[] {
 }
 
 export default defineEventHandler(async (event) => {
-  const siteId = event.context.params?.siteId
-  if (!siteId) {
-    throw createError({ statusCode: 400, statusMessage: 'Missing site ID' })
+  const site = await resolveSiteParam(event.context.params?.siteId)
+  if (!site) {
+    throw createError({ statusCode: 400, statusMessage: 'Topology is not available for the "all" view' })
   }
-
-  if (!(await siteRepository.getById(siteId))) {
-    throw createError({ statusCode: 404, statusMessage: 'Site not found' })
-  }
+  const siteId = site.id
 
   const allSwitches = await switchRepository.list()
   const siteSwitches = allSwitches.filter(sw => sw.site_id === siteId)

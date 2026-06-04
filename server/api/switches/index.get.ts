@@ -1,9 +1,10 @@
 import { switchRepository } from '../../repositories/switchRepository'
+import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
 
-  const siteId = query.site_id as string | undefined
+  const siteId = await resolveSiteIdQuery(query.site_id as string | undefined)
   const location = query.location as string | undefined
   const manufacturer = query.manufacturer as string | undefined
   const role = query.role as string | undefined
@@ -14,7 +15,10 @@ export default defineEventHandler(async (event) => {
   const allSwitches = await switchRepository.list()
   let items = [...allSwitches]
 
-  if (siteId) {
+  if (siteId === null) {
+    // Caller asked for an unknown site — return an empty filtered list.
+    items = []
+  } else if (siteId) {
     items = items.filter((s) => s.site_id === siteId)
   }
 

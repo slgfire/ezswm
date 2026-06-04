@@ -6,6 +6,23 @@ title: Release Notes
 
 Das **In-App-Changelog** (gerendert aus GitHub-Releases) erreichst du über die Versionsnummer im Sidebar-Footer.
 
+## v0.22.1 — 2026-06-04
+
+### Neu — Site-URLs nutzen jetzt Slugs (#163)
+
+Folgt auf 0.22.0 (das Slugs im Datenmodell brachte, aber das UI auf UUID-URLs ließ). Site-URLs nutzen jetzt den Slug als kanonische Form. ([#164](https://github.com/slgfire/ezswm/pull/164), schließt [#163](https://github.com/slgfire/ezswm/issues/163))
+
+- Alle Sidebar- / Nav-Links leiten sich vom Slug der Site ab. `/sites/main-office` statt `/sites/2b917665-d37f-4feb-8648-9b0fc80bd451`.
+- Eine globale Redirect-Middleware (`app/middleware/site-uuid-to-slug.global.ts`) fängt `/sites/<uuid>/...`-URLs ab und leitet per 301 auf die Slug-Form um. Alte Bookmarks heilen sich selbst — die Adresszeile aktualisiert sich beim Navigieren.
+- API-List-Endpoints (`/api/switches`, `/api/networks`, `/api/vlans`, `/api/search`, `/api/dashboard/stats`) akzeptieren jetzt Slug **oder** UUID für den `?site_id=...`-Filter. Genauso für die site-scoped Routes (`/api/sites/<id>/topology`, `/api/sites/<id>/ip-allocations`).
+- Switch- und Subnet-Detail-URLs (`/sites/<slug>/switches/<switch-uuid>`) nutzen für die nested Entity weiterhin UUID. Die Slug-Umstellung dafür folgt — die Slug-Felder sind bereits in den API-Payloads, nur die UI-Arbeit ist eigene Folge-Issue.
+
+### Intern
+- `server/utils/resolveSiteParam.ts` zentralisiert die Slug-oder-ID → kanonische Site Auflösung. Wird von jedem site-scoped oder site-gefilterten Endpoint genutzt.
+- `SiteSwitcher.vue` liest das Route-Segment, findet die passende Site und gibt die Slug-Form an `setSite()` weiter — `currentSiteId` enthält damit einen Slug-Wert, und `sitePrefix` rendert die URLs entsprechend.
+
+Keine Datenmigration nötig — 0.22.0 hat die Slugs bereits gefüllt. **497/497 Tests grün**.
+
 ## v0.22.0 — 2026-06-04
 
 ### Neu — Slugs für Sites, Switches, Subnetze

@@ -6,6 +6,23 @@ title: Release Notes
 
 For the in-app changelog (rendered from GitHub releases), click the version number in the sidebar footer.
 
+## v0.22.1 — 2026-06-04
+
+### Added — Site URLs now use slugs (#163)
+
+Following up on 0.22.0 (which shipped slugs in the data model but kept the UI on UUID URLs), site URLs now use the slug as the canonical form. ([#164](https://github.com/slgfire/ezswm/pull/164), closes [#163](https://github.com/slgfire/ezswm/issues/163))
+
+- All sidebar / nav links derive from the site's slug. `/sites/main-office` instead of `/sites/2b917665-d37f-4feb-8648-9b0fc80bd451`.
+- A global redirect middleware (`app/middleware/site-uuid-to-slug.global.ts`) catches `/sites/<uuid>/...` URLs and 301s to the slug form. Old bookmarks self-heal — the address bar updates as you navigate.
+- API list endpoints (`/api/switches`, `/api/networks`, `/api/vlans`, `/api/search`, `/api/dashboard/stats`) now accept slug **or** UUID for the `?site_id=...` filter. Same for the site-scoped routes (`/api/sites/<id>/topology`, `/api/sites/<id>/ip-allocations`).
+- Switch and subnet detail URLs (`/sites/<slug>/switches/<switch-uuid>`) still use UUID for the nested entity. Switching those to slugs is its own follow-up — the slug fields are already on the API payloads, the UI work is queued.
+
+### Internal
+- `server/utils/resolveSiteParam.ts` centralizes the slug-or-id → canonical Site resolution. Used by every site-scoped or site-filtered endpoint.
+- `SiteSwitcher.vue` reads the route segment, looks up the matching Site, and emits the slug form so `setSite()` populates `currentSiteId` with a slug-shaped value. The sidebar's `sitePrefix` then naturally renders slug URLs.
+
+No data migration needed — 0.22.0 already populated the slugs. **497/497 tests pass**.
+
 ## v0.22.0 — 2026-06-04
 
 ### Added — Slugs for sites, switches, subnets
