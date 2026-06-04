@@ -5,10 +5,11 @@ import { ipAllocationRepository } from '../../repositories/ipAllocationRepositor
 import { ipRangeRepository } from '../../repositories/ipRangeRepository'
 import { activityRepository } from '../../repositories/activityRepository'
 import { parseSubnet, ipToLong } from '../../utils/ipv4'
+import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
-  const siteId = query.site_id as string | undefined
+  const siteId = await resolveSiteIdQuery(query.site_id as string | undefined)
 
   let switches = await switchRepository.list()
   let vlans = await vlanRepository.list()
@@ -17,7 +18,9 @@ export default defineEventHandler(async (event) => {
   const ranges = await ipRangeRepository.list()
   const { entries: recentActivity } = await activityRepository.list(10)
 
-  if (siteId) {
+  if (siteId === null) {
+    switches = []; vlans = []; networks = []
+  } else if (siteId) {
     switches = switches.filter(s => s.site_id === siteId)
     vlans = vlans.filter(v => v.site_id === siteId)
     networks = networks.filter(n => n.site_id === siteId)

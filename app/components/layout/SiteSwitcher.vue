@@ -23,18 +23,28 @@ const { setSite } = useCurrentSite()
 const sites = ref<Site[]>([])
 const selectedSiteId = ref('all')
 
+// URLs use the slug. Dropdown values follow the same convention so router.push
+// in onSiteChange lands on the slug URL straight away.
+function urlIdForSite(site: Site): string {
+  return site.slug || site.id
+}
+
 const siteOptions = computed(() => {
   const options: { label: string; value: string }[] = [
     { label: t('sites.allSites'), value: 'all' }
   ]
   for (const site of sites.value) {
-    options.push({ label: site.name, value: site.id })
+    options.push({ label: site.name, value: urlIdForSite(site) })
   }
   return options
 })
 
+function findSite(idOrSlug: string): Site | undefined {
+  return sites.value.find(s => s.id === idOrSlug || s.slug === idOrSlug)
+}
+
 function onSiteChange(value: string) {
-  const site = sites.value.find((s) => s.id === value)
+  const site = findSite(value)
   setSite(value, site)
 
   const sitePathMatch = route.path.match(/\/sites\/[^/]+\/(.+)/)
@@ -55,28 +65,32 @@ async function loadSites() {
     sites.value = []
   }
 
-  // Set current site from URL
-  const siteId = route.params.siteId as string
-  if (siteId && siteId !== 'all') {
-    selectedSiteId.value = siteId
-    const site = sites.value.find((s) => s.id === siteId)
-    setSite(siteId, site || undefined)
-  } else if (siteId === 'all') {
+  // Set current site from URL. The URL may carry either the UUID (legacy
+  // bookmark) or the slug (new canonical form).
+  const param = route.params.siteId as string
+  if (param && param !== 'all') {
+    const site = findSite(param)
+    const urlId = site ? urlIdForSite(site) : param
+    selectedSiteId.value = urlId
+    setSite(urlId, site || undefined)
+  } else if (param === 'all') {
     selectedSiteId.value = 'all'
     setSite('all', undefined)
   } else if (sites.value.length > 0) {
     // Not on a site page — default to first site
-    selectedSiteId.value = sites.value[0]!.id
-    setSite(sites.value[0]!.id, sites.value[0]!)
+    const first = sites.value[0]!
+    const urlId = urlIdForSite(first)
+    selectedSiteId.value = urlId
+    setSite(urlId, first)
   }
 }
 
-// Sync when URL changes
-watch(() => route.params.siteId, (siteId) => {
-  if (siteId && typeof siteId === 'string') {
-    selectedSiteId.value = siteId
-    const site = sites.value.find((s) => s.id === siteId)
-    setSite(siteId, site || undefined)
+watch(() => route.params.siteId, (param) => {
+  if (param && typeof param === 'string') {
+    const site = findSite(param)
+    const urlId = site ? urlIdForSite(site) : param
+    selectedSiteId.value = urlId
+    setSite(urlId, site || undefined)
   }
 })
 

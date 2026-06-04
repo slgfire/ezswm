@@ -1,23 +1,19 @@
 import { topologyLayoutRepository } from '../../../repositories/topologyLayoutRepository'
-import { siteRepository } from '../../../repositories/siteRepository'
 import { switchRepository } from '../../../repositories/switchRepository'
 import { saveLayoutSchema } from '../../../validators/topologySchemas'
+import { resolveSiteParam } from '../../../utils/resolveSiteParam'
 
 export default defineEventHandler(async (event) => {
-  const siteId = event.context.params?.siteId
-  if (!siteId) {
-    throw createError({ statusCode: 400, statusMessage: 'Missing site ID' })
-  }
-
-  if (!(await siteRepository.getById(siteId))) {
-    throw createError({ statusCode: 404, statusMessage: 'Site not found' })
+  const site = await resolveSiteParam(event.context.params?.siteId)
+  if (!site) {
+    throw createError({ statusCode: 400, statusMessage: 'Topology layout is not available for the "all" view' })
   }
 
   const body = await readBody(event)
   const parsed = saveLayoutSchema.parse(body)
 
   // Ownership check: all node IDs must belong to switches in this site
-  const siteSwitches = (await switchRepository.list()).filter(sw => sw.site_id === siteId)
+  const siteSwitches = (await switchRepository.list()).filter(sw => sw.site_id === site.id)
   const validIds = new Set(siteSwitches.map(sw => sw.id))
 
   const filteredPositions: Record<string, { x: number; y: number }> = {}
@@ -27,6 +23,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const layout = await topologyLayoutRepository.save(siteId, filteredPositions)
+  const layout = await topologyLayoutRepository.save(site.id, filteredPositions)
   return layout
 })

@@ -5,11 +5,13 @@ import { ipAllocationRepository } from '../repositories/ipAllocationRepository'
 import { layoutTemplateRepository } from '../repositories/layoutTemplateRepository'
 import { lagGroupRepository } from '../repositories/lagGroupRepository'
 import { ipRangeRepository } from '../repositories/ipRangeRepository'
+import { resolveSiteIdQuery } from '../utils/resolveSiteParam'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const q = String(query.q || '').toLowerCase().trim()
-  const siteId = query.site_id as string | undefined
+  const rawSiteId = await resolveSiteIdQuery(query.site_id as string | undefined)
+  const siteId = rawSiteId === null ? '__no-match__' : rawSiteId
 
   if (!q || q.length < 2) {
     return { switches: [], vlans: [], networks: [], allocations: [], ranges: [], templates: [], lagGroups: [] }
