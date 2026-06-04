@@ -48,7 +48,7 @@
               <NuxtLink
                 v-for="(sw, i) in results.switches"
                 :key="sw.id"
-                :to="`${searchSitePrefix}/switches/${sw.id}`"
+                :to="`${searchSitePrefix}/switches/${sw.slug || sw.id}`"
                 :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('switches', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('switches', i)"
@@ -92,7 +92,7 @@
               <NuxtLink
                 v-for="(net, i) in results.networks"
                 :key="net.id"
-                :to="`${searchSitePrefix}/subnets/${net.id}`"
+                :to="`${searchSitePrefix}/subnets/${net.slug || net.id}`"
                 :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('networks', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('networks', i)"
@@ -275,9 +275,9 @@ const selectedIndex = ref(-1)
 const searchInputRef = ref<HTMLInputElement | null>(null)
 
 interface SearchResults {
-  switches: Array<{ id: string; name: string; manufacturer?: string; model?: string; management_ip?: string; role?: string; tags?: string[] }>
+  switches: Array<{ id: string; slug?: string; name: string; manufacturer?: string; model?: string; management_ip?: string; role?: string; tags?: string[] }>
   vlans: Array<{ id: string; vlan_id: number; name: string; color: string }>
-  networks: Array<{ id: string; name: string; subnet: string }>
+  networks: Array<{ id: string; slug?: string; name: string; subnet: string }>
   allocations: Array<{ id: string; ip_address: string; hostname?: string; network_id: string }>
   ranges: Array<{ id: string; start_ip: string; end_ip: string; type: string; network_id: string; network_name: string; site_id: string }>
   templates: Array<{ id: string; name: string; manufacturer?: string; model?: string }>
@@ -325,13 +325,13 @@ const flatResults = computed(() => {
   const prefix = searchSitePrefix.value
   const items: { type: string; index: number; url: string }[] = []
   for (const sw of results.value.switches || []) {
-    items.push({ type: 'switches', index: items.length, url: `${prefix}/switches/${sw.id}` })
+    items.push({ type: 'switches', index: items.length, url: `${prefix}/switches/${sw.slug || sw.id}` })
   }
   for (const v of results.value.vlans || []) {
     items.push({ type: 'vlans', index: items.length, url: `${prefix}/vlans/${v.id}` })
   }
   for (const n of results.value.networks || []) {
-    items.push({ type: 'networks', index: items.length, url: `${prefix}/subnets/${n.id}` })
+    items.push({ type: 'networks', index: items.length, url: `${prefix}/subnets/${n.slug || n.id}` })
   }
   for (const a of results.value.allocations || []) {
     items.push({ type: 'allocations', index: items.length, url: `${prefix}/subnets/${a.network_id}` })

@@ -207,7 +207,7 @@
           <div class="h-px flex-1 bg-default" />
         </div>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <NuxtLink v-for="sw in group.items" :key="sw.id" :to="`/sites/${siteId}/switches/${sw.id}`">
+          <NuxtLink v-for="sw in group.items" :key="sw.id" :to="`/sites/${siteId}/switches/${sw.slug || sw.id}`">
             <SwitchCard
               :sw="sw"
               :site-id="siteId"
@@ -233,7 +233,7 @@
         @end="saveSortOrder"
       >
         <template #item="{ element: sw }">
-          <NuxtLink :to="`/sites/${siteId}/switches/${sw.id}`">
+          <NuxtLink :to="`/sites/${siteId}/switches/${sw.slug || sw.id}`">
             <SwitchCard
               :sw="sw"
               :site-id="siteId"
@@ -263,7 +263,7 @@
           <div class="h-px flex-1 bg-default" />
         </div>
         <div class="flex flex-col gap-2">
-          <NuxtLink v-for="sw in group.items" :key="sw.id" :to="`/sites/${siteId}/switches/${sw.id}`">
+          <NuxtLink v-for="sw in group.items" :key="sw.id" :to="`/sites/${siteId}/switches/${sw.slug || sw.id}`">
             <SwitchCard
               :sw="sw"
               :site-id="siteId"
@@ -377,7 +377,7 @@ function confirmDelete(row: Switch) { deleteTarget.value = row; showDeleteDialog
 
 async function toggleFavorite(sw: Switch) {
   try {
-    await $fetch(`/api/switches/${sw.id}`, {
+    await $fetch(`/api/switches/${sw.slug || sw.id}`, {
       method: 'PUT',
       body: { is_favorite: !sw.is_favorite }
     })
@@ -404,7 +404,7 @@ async function onDuplicate(row: Switch) {
     const result = await duplicate(row.id)
     toast.add({ title: t('switches.messages.duplicated'), color: 'success' })
     await loadData()
-    if (result?.id) await navigateTo(`/sites/${siteId.value}/switches/${result.id}`)
+    if (result?.id) await navigateTo(`/sites/${siteId.value}/switches/${result.slug || result.id}`)
   } catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' }) }
 }
 

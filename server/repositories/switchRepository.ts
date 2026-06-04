@@ -310,9 +310,20 @@ export const switchRepository = {
     )
   },
 
-  async getById(id: string): Promise<Switch | null> {
-    const row = await prisma.switch.findUnique({ where: { id }, include: includePorts })
-    return row ? rowToSwitch(row) : null
+  /**
+   * Lookup by primary key. Falls back to a *globally unique* slug match so that
+   * `/sites/<slug>/switches/<switch-slug>` works without the caller needing to
+   * pass an explicit site context. If the slug exists in multiple sites (a
+   * conflict the schema allows because `(site_id, slug)` is per-site unique),
+   * the lookup returns `null` — callers that know the site context should use
+   * `getBySlug(siteId, slug)` instead.
+   */
+  async getById(identifier: string): Promise<Switch | null> {
+    const byPk = await prisma.switch.findUnique({ where: { id: identifier }, include: includePorts })
+    if (byPk) return rowToSwitch(byPk)
+    const matches = await prisma.switch.findMany({ where: { slug: identifier }, include: includePorts })
+    if (matches.length === 1) return rowToSwitch(matches[0]!)
+    return null
   },
 
   async getBySlug(siteId: string, slug: string): Promise<Switch | null> {
@@ -412,10 +423,9 @@ export const switchRepository = {
       }
     }
 
-    // Slug resolution: explicit `slug` wins; otherwise a name change re-derives
-    // the slug so URLs stay in sync with the displayed name.
+    // Slug resolution: see siteRepository.update for the full rationale.
     let slug: string | undefined
-    if (data.slug !== undefined) {
+    if (data.slug !== undefined && data.slug !== current.slug) {
       slug = await uniqueSwitchSlug(current.site_id, slugify(data.slug), id)
     } else if (data.name !== undefined && data.name !== current.name) {
       slug = await uniqueSwitchSlug(current.site_id, slugify(data.name), id)

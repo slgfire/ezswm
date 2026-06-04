@@ -158,7 +158,7 @@
             <div v-for="net in visibleUtilization" :key="net.id">
               <div class="flex items-center gap-2">
                 <span v-if="net.vlan_color" class="h-2 w-2 shrink-0 rounded-full" :style="{ backgroundColor: net.vlan_color }" />
-                <NuxtLink :to="`/sites/${siteId}/subnets/${net.id}`" class="min-w-0 flex-1 truncate text-sm hover:text-primary-400">{{ net.name }}</NuxtLink>
+                <NuxtLink :to="`/sites/${siteId}/subnets/${net.slug || net.id}`" class="min-w-0 flex-1 truncate text-sm hover:text-primary-400">{{ net.name }}</NuxtLink>
                 <code class="shrink-0 font-mono text-[11px] text-gray-500">{{ net.subnet }}</code>
                 <span class="w-9 shrink-0 text-right font-mono text-xs" :class="net.percentage > 80 ? 'text-red-400' : net.percentage > 50 ? 'text-yellow-400' : 'text-gray-400'">{{ net.percentage }}%</span>
               </div>
@@ -249,7 +249,7 @@ const { t } = useI18n()
 interface DashboardStats {
   counts: { switches: number; vlans: number; networks: number; allocations: number }
   portStatus: { up: number; down: number; disabled: number }
-  networkUtilization: { id: string; name: string; subnet: string; total_hosts: number; allocated: number; ranges: number; percentage: number; dhcp_percent: number; reserved_percent: number; vlan_color: string | null; vlan_name: string | null; vlan_id: number | null }[]
+  networkUtilization: { id: string; slug?: string; name: string; subnet: string; total_hosts: number; allocated: number; ranges: number; percentage: number; dhcp_percent: number; reserved_percent: number; vlan_color: string | null; vlan_name: string | null; vlan_id: number | null }[]
   orphanVlans: { id: string; vlan_id: number; name: string }[]
   highUsageNetworks: { id: string; name: string; subnet: string; percentage: number }[]
   duplicateIps: string[]

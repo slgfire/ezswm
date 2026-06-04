@@ -77,12 +77,16 @@ export const siteRepository = {
       throw createError({ statusCode: 404, message: 'Site not found' })
     }
 
-    // Slug resolution: an explicit `slug` field always wins. Otherwise, if the
-    // name changes we re-derive the slug from the new name so URLs stay in
-    // sync with what the operator sees in the UI. (Bookmarks on the old slug
-    // get caught by the UUID→slug redirect middleware via the underlying UUID.)
+    // Slug resolution:
+    //  - If `slug` is explicitly set to a different value than the current one →
+    //    treat as an explicit slug change (collision-resolved).
+    //  - Else if the name changes → re-derive the slug from the new name so
+    //    URLs stay in sync with what the operator sees in the UI.
+    //  - Otherwise leave the slug alone.
+    // The "different value" guard handles the common case where the edit form
+    // happens to round-trip the current slug along with name/description.
     let slug: string | undefined
-    if (data.slug !== undefined) {
+    if (data.slug !== undefined && data.slug !== existing.slug) {
       slug = await uniqueSiteSlug(slugify(data.slug), id)
     } else if (data.name !== undefined && data.name !== existing.name) {
       slug = await uniqueSiteSlug(slugify(data.name), id)

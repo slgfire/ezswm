@@ -518,7 +518,7 @@ async function onDuplicate() {
     const result = await duplicate(id)
     toast.add({ title: t('switches.messages.duplicated'), color: 'success' })
     if (result?.id) {
-      await navigateTo(`/sites/${siteId.value}/switches/${result.id}`)
+      await navigateTo(`/sites/${siteId.value}/switches/${result.slug || result.id}`)
     }
   } catch (e: unknown) {
     const err = e as { data?: { message?: string } }

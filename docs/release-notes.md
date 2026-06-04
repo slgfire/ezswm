@@ -6,6 +6,28 @@ title: Release Notes
 
 For the in-app changelog (rendered from GitHub releases), click the version number in the sidebar footer.
 
+## v0.23.0 — 2026-06-05
+
+### Added — Switches and subnets join sites on slug URLs (#165)
+
+Every site-scoped detail URL now uses the slug form, end to end:
+
+- `/sites/main-office/switches/core-01` instead of `/sites/main-office/switches/<switch-uuid>`
+- `/sites/main-office/subnets/management` instead of `/sites/main-office/subnets/<network-uuid>`
+
+The global redirect middleware now catches UUID-shaped switch and subnet segments alongside the site segment, so old bookmarks self-heal in a single hop. List pages, search results, breadcrumb navigation, dashboard favorites and the in-app deep-links all generate the slug form. ([#168](https://github.com/slgfire/ezswm/pull/168), closes [#165](https://github.com/slgfire/ezswm/issues/165))
+
+Under the hood:
+- `switchRepository.getById` and `networkRepository.getById` fall back to a globally-unique slug lookup. If a slug exists in multiple sites the lookup returns `null` and the caller can scope by site via the existing `getBySlug(siteId, slug)` method.
+
+### Fixed — Migration-placeholder slugs auto-cleaned on boot
+
+If you upgraded a 0.21.x install to 0.22.x, the slug schema migration filled in placeholder slugs like `saarlan-839425` (lowercase name + 6-char id suffix) so the unique constraint could land. On boot, the init plugin now detects these exact placeholder slugs and regenerates clean ones (`saarlan`), with collision suffixing if needed. Idempotent — re-runs are a no-op. ([#168](https://github.com/slgfire/ezswm/pull/168))
+
+### Fixed — Edit form round-tripping the current slug no longer locks it in
+
+The slug-resolution path in `siteRepository.update` / `switchRepository.update` / `networkRepository.update` now only treats an incoming `slug` field as "explicit" when it differs from the stored value. Previously, an edit form that round-tripped the existing slug along with a name change would freeze the slug to the old value — defeating the 0.22.2 "slug follows name" change. Now name renames re-derive the slug as intended. ([#168](https://github.com/slgfire/ezswm/pull/168))
+
 ## v0.22.2 — 2026-06-04
 
 ### Changed — Slug now follows the name on rename

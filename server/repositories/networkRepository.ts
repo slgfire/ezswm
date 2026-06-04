@@ -77,9 +77,18 @@ export const networkRepository = {
     return rows.map(rowToNetwork)
   },
 
-  async getById(id: string): Promise<Network | null> {
-    const row = await prisma.network.findUnique({ where: { id } })
-    return row ? rowToNetwork(row) : null
+  /**
+   * Lookup by primary key. Falls back to a *globally unique* slug match so
+   * /sites/<slug>/subnets/<network-slug> works without an explicit site
+   * context. Ambiguous slug (exists in multiple sites) → null; callers with
+   * a known site should use `getBySlug(siteId, slug)`.
+   */
+  async getById(identifier: string): Promise<Network | null> {
+    const byPk = await prisma.network.findUnique({ where: { id: identifier } })
+    if (byPk) return rowToNetwork(byPk)
+    const matches = await prisma.network.findMany({ where: { slug: identifier } })
+    if (matches.length === 1) return rowToNetwork(matches[0]!)
+    return null
   },
 
   async getBySlug(siteId: string, slug: string): Promise<Network | null> {
@@ -131,10 +140,9 @@ export const networkRepository = {
 
     validateNetworkInputs(data, current.subnet)
 
-    // Slug resolution: explicit `slug` wins; otherwise a name change re-derives
-    // the slug so URLs stay in sync with the displayed name.
+    // Slug resolution: see siteRepository.update for the full rationale.
     let slug: string | undefined
-    if (data.slug !== undefined) {
+    if (data.slug !== undefined && data.slug !== current.slug) {
       slug = await uniqueNetworkSlug(current.site_id, slugify(data.slug), id)
     } else if (data.name !== undefined && data.name !== current.name) {
       slug = await uniqueNetworkSlug(current.site_id, slugify(data.name), id)

@@ -59,7 +59,7 @@
           <NuxtLink
             v-for="(net, i) in group.items"
             :key="net.id"
-            :to="`/sites/${siteId}/subnets/${net.id}`"
+            :to="`/sites/${siteId}/subnets/${net.slug || net.id}`"
             class="row-hover group flex items-stretch pr-5"
             :class="i > 0 ? 'border-t border-default' : ''"
           >
