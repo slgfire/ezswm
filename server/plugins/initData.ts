@@ -3,6 +3,7 @@ import { join } from 'node:path'
 
 import { prisma } from '../db/client'
 import { runJsonToPrismaMigration } from '../migrations/jsonToPrisma'
+import { cleanupMigrationPlaceholderSlugs } from '../utils/slugPlaceholderCleanup'
 
 // Legacy JSON files the migration looks for. If any of these are present in
 // dataDir AND the database is empty, we trigger the one-shot import.
@@ -102,6 +103,19 @@ export default defineNitroPlugin(async () => {
         })
       }
     }
+  }
+
+  // Tidy up SQL-migration placeholder slugs left behind by the 0.22 schema
+  // migration. Idempotent: a clean install or already-cleaned DB results in
+  // a no-op zero-update pass.
+  try {
+    const cleaned = await cleanupMigrationPlaceholderSlugs(prisma)
+    const total = cleaned.sites + cleaned.switches + cleaned.networks
+    if (total > 0) {
+      console.log(`[ezSWM] Cleaned ${total} migration-placeholder slug(s): ${JSON.stringify(cleaned)}`)
+    }
+  } catch (err) {
+    console.warn('[ezSWM] Slug cleanup pass failed (non-fatal):', err)
   }
 
   console.log(`[ezSWM] Database ready (data dir: ${dataDir})`)

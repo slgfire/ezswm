@@ -6,6 +6,28 @@ title: Release Notes
 
 Das **In-App-Changelog** (gerendert aus GitHub-Releases) erreichst du über die Versionsnummer im Sidebar-Footer.
 
+## v0.23.0 — 2026-06-05
+
+### Neu — Switches und Subnetze nutzen jetzt auch Slug-URLs (#165)
+
+Jede site-scoped Detail-URL liegt jetzt durchgehend in Slug-Form:
+
+- `/sites/hauptstandort/switches/core-01` statt `/sites/hauptstandort/switches/<switch-uuid>`
+- `/sites/hauptstandort/subnets/management` statt `/sites/hauptstandort/subnets/<network-uuid>`
+
+Die globale Redirect-Middleware fängt jetzt auch UUID-Segmente bei Switches und Subnetzen ab — alte Bookmarks heilen sich in einem einzigen Hop. Listen, Suchergebnisse, Breadcrumb-Navigation, Favoriten im Dashboard und die In-App-Deep-Links generieren alle die Slug-Form. ([#168](https://github.com/slgfire/ezswm/pull/168), schließt [#165](https://github.com/slgfire/ezswm/issues/165))
+
+Unter der Haube:
+- `switchRepository.getById` und `networkRepository.getById` fallen jetzt auf einen *global eindeutigen* Slug-Lookup zurück. Existiert der Slug in mehreren Sites, gibt der Lookup `null` zurück — der Aufrufer kann dann mit `getBySlug(siteId, slug)` site-scoped suchen.
+
+### Behoben — Migrations-Platzhalter-Slugs werden beim Start automatisch bereinigt
+
+Wer einen 0.21.x-Install auf 0.22.x upgegradet hat, bekam beim Schema-Switch Platzhalter-Slugs wie `saarlan-839425` (lowercase Name + 6-Zeichen-ID-Suffix) damit die Unique-Constraint zog. Das Init-Plugin erkennt jetzt genau dieses Muster und generiert saubere Slugs (`saarlan`), mit Kollisions-Suffix bei Bedarf. Idempotent — bei Re-Runs passiert nichts. ([#168](https://github.com/slgfire/ezswm/pull/168))
+
+### Behoben — Edit-Form mit unverändertem Slug pinnt nicht mehr versehentlich
+
+Die Slug-Auflösung in `siteRepository.update` / `switchRepository.update` / `networkRepository.update` betrachtet einen mitgeschickten `slug`-Wert nur dann als "explizit gesetzt", wenn er sich vom gespeicherten Wert unterscheidet. Vorher hat ein Edit-Form, das den existierenden Slug mit dem neuen Namen mitschickte, den Slug auf der alten Form festgenagelt — und damit das "Slug folgt Name"-Verhalten von 0.22.2 ausgehebelt. Jetzt zieht der Slug bei einem Rename wie erwartet nach. ([#168](https://github.com/slgfire/ezswm/pull/168))
+
 ## v0.22.2 — 2026-06-04
 
 ### Geändert — Slug folgt jetzt dem Namen bei Umbenennung

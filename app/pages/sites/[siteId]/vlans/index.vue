@@ -177,7 +177,7 @@
               <NuxtLink
                 v-for="net in panelNetworks"
                 :key="net.id"
-                :to="`/sites/${siteId}/subnets/${net.id}`"
+                :to="`/sites/${siteId}/subnets/${net.slug || net.id}`"
                 class="flex items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-elevated"
               >
                 <span class="font-medium text-primary-500">{{ net.name }}</span>
