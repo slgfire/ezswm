@@ -6,6 +6,18 @@ title: Release Notes
 
 Das **In-App-Changelog** (gerendert aus GitHub-Releases) erreichst du über die Versionsnummer im Sidebar-Footer.
 
+## v0.22.2 — 2026-06-04
+
+### Geändert — Slug folgt jetzt dem Namen bei Umbenennung
+
+Beim Umbenennen einer Site / eines Switches / eines Subnetzes wird der Slug jetzt mit umbenannt, sodass die URL synchron zum angezeigten Namen bleibt. ([#167](https://github.com/slgfire/ezswm/pull/167))
+
+- 0.22.0 / 0.22.1 hatten Slugs als *sticky* implementiert (Industrie-Standard für Public Apps, die Link-Shares nicht brechen wollen). Für ein Single-Operator-Homelab-Tool ist das unnötige Komplexität — wer "Hauptstandort" zu "HQ" umbenennt, will fast immer dass die URL nachzieht.
+- Ein explizit gesetztes `slug`-Feld im PUT-Payload gewinnt weiterhin, falls man später mal einen festen Slug pinnen möchte (UI dafür noch nicht da, getrackt in #166).
+- Alte Slug-URLs die geshart und dann orphaned wurden: die existierende UUID→Slug-Redirect-Middleware ([#164](https://github.com/slgfire/ezswm/pull/164)) deckt die UUID-Form ab, die sich nie ändert. Direkte Slug-zu-Slug-History wird nicht getrackt — falls das doch wichtig wird, können wir das nachziehen.
+
+500/500 Tests grün.
+
 ## v0.22.1 — 2026-06-04
 
 ### Neu — Site-URLs nutzen jetzt Slugs (#163)

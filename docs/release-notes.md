@@ -6,6 +6,18 @@ title: Release Notes
 
 For the in-app changelog (rendered from GitHub releases), click the version number in the sidebar footer.
 
+## v0.22.2 — 2026-06-04
+
+### Changed — Slug now follows the name on rename
+
+Renaming a site / switch / subnet now also re-derives the slug, so the URL stays in sync with what's displayed. ([#167](https://github.com/slgfire/ezswm/pull/167))
+
+- 0.22.0 / 0.22.1 made slugs *sticky* on rename (industry default for public apps that fear breaking link shares). For a single-operator homelab tool that's needless complexity — when you rename "Main Office" to "HQ" you almost certainly want the URL to update with it.
+- An explicit `slug` field in the PUT payload still wins, so power users can pin a stable slug if they ever need to (the UI doesn't expose this today; tracked in #166).
+- Old slug URLs that get shared and then orphaned: the existing UUID→slug redirect middleware ([#164](https://github.com/slgfire/ezswm/pull/164)) covers the UUID form, which never changes. Direct slug-to-slug history is not tracked — if that turns out to matter, we can revisit.
+
+500/500 tests pass.
+
 ## v0.22.1 — 2026-06-04
 
 ### Added — Site URLs now use slugs (#163)
