@@ -67,17 +67,38 @@ describe('siteRepository slug behavior', () => {
     expect(await siteRepository.getBySlug('original')).toBe(null)
   })
 
-  it('update does NOT change slug when only name changes', async () => {
-    const created = await siteRepository.create({ name: 'Stable' })
-    const updated = await siteRepository.update(created.id, { name: 'Renamed in UI' })
-    expect(updated.slug).toBe('stable') // unchanged — slug is sticky
-    expect(updated.name).toBe('Renamed in UI')
+  it('update re-derives slug when name changes (slug follows name)', async () => {
+    const created = await siteRepository.create({ name: 'Original' })
+    expect(created.slug).toBe('original')
+    const updated = await siteRepository.update(created.id, { name: 'Renamed Site' })
+    expect(updated.slug).toBe('renamed-site')
+    expect(updated.name).toBe('Renamed Site')
   })
 
-  it('update collision: appends -2 if the new slug is already taken', async () => {
+  it('update keeps slug when name change is a no-op', async () => {
+    const created = await siteRepository.create({ name: 'Identity' })
+    const updated = await siteRepository.update(created.id, { name: 'Identity' })
+    expect(updated.slug).toBe('identity')
+  })
+
+  it('update collision: name-derived slug skips already-taken values', async () => {
+    await siteRepository.create({ name: 'Taken' })
+    const other = await siteRepository.create({ name: 'Other' })
+    const updated = await siteRepository.update(other.id, { name: 'Taken' })
+    expect(updated.slug).toBe('taken-2')
+  })
+
+  it('update collision: appends -2 if the explicit slug is already taken', async () => {
     await siteRepository.create({ name: 'Taken' })
     const other = await siteRepository.create({ name: 'Other' })
     const updated = await siteRepository.update(other.id, { slug: 'taken' })
     expect(updated.slug).toBe('taken-2')
+  })
+
+  it('update: explicit slug wins over name-derived', async () => {
+    const created = await siteRepository.create({ name: 'Original' })
+    const updated = await siteRepository.update(created.id, { name: 'Whatever', slug: 'pinned' })
+    expect(updated.slug).toBe('pinned')
+    expect(updated.name).toBe('Whatever')
   })
 })

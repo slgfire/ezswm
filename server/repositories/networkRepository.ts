@@ -131,10 +131,13 @@ export const networkRepository = {
 
     validateNetworkInputs(data, current.subnet)
 
+    // Slug resolution: explicit `slug` wins; otherwise a name change re-derives
+    // the slug so URLs stay in sync with the displayed name.
     let slug: string | undefined
     if (data.slug !== undefined) {
-      const desired = slugify(data.slug)
-      slug = await uniqueNetworkSlug(current.site_id, desired, id)
+      slug = await uniqueNetworkSlug(current.site_id, slugify(data.slug), id)
+    } else if (data.name !== undefined && data.name !== current.name) {
+      slug = await uniqueNetworkSlug(current.site_id, slugify(data.name), id)
     }
 
     const row = await prisma.network.update({

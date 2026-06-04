@@ -77,10 +77,15 @@ export const siteRepository = {
       throw createError({ statusCode: 404, message: 'Site not found' })
     }
 
+    // Slug resolution: an explicit `slug` field always wins. Otherwise, if the
+    // name changes we re-derive the slug from the new name so URLs stay in
+    // sync with what the operator sees in the UI. (Bookmarks on the old slug
+    // get caught by the UUID→slug redirect middleware via the underlying UUID.)
     let slug: string | undefined
     if (data.slug !== undefined) {
-      const desired = slugify(data.slug)
-      slug = await uniqueSiteSlug(desired, id)
+      slug = await uniqueSiteSlug(slugify(data.slug), id)
+    } else if (data.name !== undefined && data.name !== existing.name) {
+      slug = await uniqueSiteSlug(slugify(data.name), id)
     }
 
     const row = await prisma.site.update({

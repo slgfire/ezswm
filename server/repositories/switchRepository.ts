@@ -412,9 +412,13 @@ export const switchRepository = {
       }
     }
 
+    // Slug resolution: explicit `slug` wins; otherwise a name change re-derives
+    // the slug so URLs stay in sync with the displayed name.
     let slug: string | undefined
     if (data.slug !== undefined) {
       slug = await uniqueSwitchSlug(current.site_id, slugify(data.slug), id)
+    } else if (data.name !== undefined && data.name !== current.name) {
+      slug = await uniqueSwitchSlug(current.site_id, slugify(data.name), id)
     }
 
     const templateChanged = data.layout_template_id !== undefined && data.layout_template_id !== current.layout_template_id
