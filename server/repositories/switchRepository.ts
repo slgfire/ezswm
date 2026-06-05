@@ -412,11 +412,17 @@ export const switchRepository = {
     return result
   },
 
-  async update(id: string, data: Partial<Omit<Switch, 'id' | 'ports' | 'created_at'>>): Promise<Switch> {
-    const current = await prisma.switch.findUnique({ where: { id }, include: includePorts })
+  async update(idOrSlug: string, data: Partial<Omit<Switch, 'id' | 'ports' | 'created_at'>>): Promise<Switch> {
+    // Accept either a UUID or a globally-unique slug.
+    let current = await prisma.switch.findUnique({ where: { id: idOrSlug }, include: includePorts })
+    if (!current) {
+      const matches = await prisma.switch.findMany({ where: { slug: idOrSlug }, include: includePorts })
+      if (matches.length === 1) current = matches[0]!
+    }
     if (!current) {
       throw createError({ statusCode: 404, message: 'Switch not found' })
     }
+    const id = current.id
 
     if (data.name && data.name !== current.name) {
       const clash = await prisma.switch.findFirst({
@@ -797,9 +803,14 @@ export const switchRepository = {
     return result
   },
 
-  async delete(id: string): Promise<boolean> {
-    const sw = await prisma.switch.findUnique({ where: { id }, include: includePorts })
+  async delete(idOrSlug: string): Promise<boolean> {
+    let sw = await prisma.switch.findUnique({ where: { id: idOrSlug }, include: includePorts })
+    if (!sw) {
+      const matches = await prisma.switch.findMany({ where: { slug: idOrSlug }, include: includePorts })
+      if (matches.length === 1) sw = matches[0]!
+    }
     if (!sw) return false
+    const id = sw.id
 
     await prisma.$transaction(async (tx) => {
       // Clear bidirectional links on remote ports before cascade deletes our ports.

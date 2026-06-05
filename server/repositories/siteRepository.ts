@@ -71,11 +71,15 @@ export const siteRepository = {
     return rowToSite(row)
   },
 
-  async update(id: string, data: Partial<Omit<Site, 'id' | 'created_at'>>): Promise<Site> {
-    const existing = await prisma.site.findUnique({ where: { id } })
+  async update(idOrSlug: string, data: Partial<Omit<Site, 'id' | 'created_at'>>): Promise<Site> {
+    // Accept either a UUID or a slug — the rest of the function uses the
+    // canonical UUID so the Prisma `where: { id }` clause works.
+    const existing = (await prisma.site.findUnique({ where: { id: idOrSlug } }))
+      ?? (await prisma.site.findUnique({ where: { slug: idOrSlug } }))
     if (!existing) {
       throw createError({ statusCode: 404, message: 'Site not found' })
     }
+    const id = existing.id
 
     // Slug resolution:
     //  - If `slug` is explicitly set to a different value than the current one →
@@ -104,9 +108,12 @@ export const siteRepository = {
     return rowToSite(row)
   },
 
-  async delete(id: string): Promise<boolean> {
+  async delete(idOrSlug: string): Promise<boolean> {
+    const existing = (await prisma.site.findUnique({ where: { id: idOrSlug } }))
+      ?? (await prisma.site.findUnique({ where: { slug: idOrSlug } }))
+    if (!existing) return false
     try {
-      await prisma.site.delete({ where: { id } })
+      await prisma.site.delete({ where: { id: existing.id } })
       return true
     } catch {
       return false

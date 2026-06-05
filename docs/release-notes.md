@@ -6,6 +6,14 @@ title: Release Notes
 
 For the in-app changelog (rendered from GitHub releases), click the version number in the sidebar footer.
 
+## v0.23.2 — 2026-06-05
+
+### Fixed — Editing or deleting a site / switch / subnet via its slug URL no longer 404s
+
+Same shape of bug as the create-from-slug-URL fix in 0.23.1: `siteRepository.update` / `networkRepository.update` / `switchRepository.update` (and the matching `delete` calls) were calling `prisma.X.update({ where: { id } })` with the URL parameter, which since 0.22.1 is the slug, not the UUID. Result: every edit and delete on `/sites/<slug>`, `/sites/<slug>/switches/<slug>` and `/sites/<slug>/subnets/<slug>` came back as "Site/Switch/Network not found" — even though loading the same page worked. ([#170](https://github.com/slgfire/ezswm/pull/170))
+
+All three repos' `update` and `delete` methods now accept slug or UUID and resolve to the canonical UUID before persistence. `tests/updateDeleteWithSlug.test.ts` (8 cases) covers each combination. **513/513 tests pass**.
+
 ## v0.23.1 — 2026-06-05
 
 ### Fixed — Creating a subnet / VLAN / switch from a slug URL no longer errors out
