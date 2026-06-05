@@ -136,11 +136,18 @@ export const networkRepository = {
     return rowToNetwork(row)
   },
 
-  async update(id: string, data: Partial<Omit<Network, 'id' | 'created_at'>>): Promise<Network> {
-    const current = await prisma.network.findUnique({ where: { id } })
+  async update(idOrSlug: string, data: Partial<Omit<Network, 'id' | 'created_at'>>): Promise<Network> {
+    // Accept either a UUID or a globally-unique slug. Per-site duplicate slugs
+    // collapse to null and the caller has to scope explicitly.
+    let current = await prisma.network.findUnique({ where: { id: idOrSlug } })
+    if (!current) {
+      const matches = await prisma.network.findMany({ where: { slug: idOrSlug } })
+      if (matches.length === 1) current = matches[0]!
+    }
     if (!current) {
       throw createError({ statusCode: 404, message: 'Network not found' })
     }
+    const id = current.id
 
     validateNetworkInputs(data, current.subnet)
 
@@ -169,10 +176,16 @@ export const networkRepository = {
     return rowToNetwork(row)
   },
 
-  async delete(id: string): Promise<boolean> {
+  async delete(idOrSlug: string): Promise<boolean> {
+    let current = await prisma.network.findUnique({ where: { id: idOrSlug } })
+    if (!current) {
+      const matches = await prisma.network.findMany({ where: { slug: idOrSlug } })
+      if (matches.length === 1) current = matches[0]!
+    }
+    if (!current) return false
     try {
       // Cascades to IpAllocation + IpRange via Prisma schema (onDelete: Cascade).
-      await prisma.network.delete({ where: { id } })
+      await prisma.network.delete({ where: { id: current.id } })
       return true
     } catch {
       return false
