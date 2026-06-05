@@ -38,3 +38,20 @@ export async function resolveSiteIdQuery(siteIdParam: string | undefined): Promi
   const site = await siteRepository.getById(siteIdParam)
   return site ? site.id : null
 }
+
+/**
+ * Resolve a `site_id` value from a create/update request body — UUID or slug —
+ * to the canonical Site UUID. Throws 404 if neither matches.
+ *
+ * Used by repository .create() methods so the rest of the persistence path can
+ * assume a UUID and the foreign-key constraint always lands. Without this the
+ * frontend can accidentally ship a slug as `site_id` (since URL params are
+ * now slug-shaped) and the insert fails with an opaque DB error.
+ */
+export async function resolveSiteIdToUuid(siteIdValue: string): Promise<string> {
+  const site = await siteRepository.getById(siteIdValue)
+  if (!site) {
+    throw createError({ statusCode: 404, statusMessage: `Site not found: ${siteIdValue}` })
+  }
+  return site.id
+}

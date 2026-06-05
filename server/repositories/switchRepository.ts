@@ -9,6 +9,7 @@ import { layoutTemplateRepository } from './layoutTemplateRepository'
 import { isValidIPv4, isIPInSubnet } from '../utils/ipv4'
 import { incrementMemberLabel } from '../utils/deviceLibrary'
 import { slugify, resolveSlugCollision } from '../utils/slugify'
+import { resolveSiteIdToUuid } from '../utils/resolveSiteParam'
 
 type TxClient = PrismaClient | Parameters<Parameters<PrismaClient['$transaction']>[0]>[0]
 
@@ -347,15 +348,18 @@ export const switchRepository = {
   },
 
   async create(data: Omit<Switch, 'id' | 'slug' | 'ports' | 'created_at' | 'updated_at' | 'is_favorite'> & { slug?: string }): Promise<Switch> {
+    // site_id may arrive as a UUID or a slug; resolve before any lookups.
+    const siteUuid = await resolveSiteIdToUuid(data.site_id)
+
     const nameClash = await prisma.switch.findFirst({
-      where: { site_id: data.site_id, name: data.name }
+      where: { site_id: siteUuid, name: data.name }
     })
     if (nameClash) {
       throw createError({ statusCode: 409, message: `Switch name '${data.name}' already exists in this site` })
     }
 
     const desiredSlug = data.slug ? slugify(data.slug) : slugify(data.name)
-    const slug = await uniqueSwitchSlug(data.site_id, desiredSlug)
+    const slug = await uniqueSwitchSlug(siteUuid, desiredSlug)
 
     const ports = data.layout_template_id
       ? await generatePortsFromTemplate(data.layout_template_id, data.stack_size ?? 1)
@@ -368,7 +372,7 @@ export const switchRepository = {
       await tx.switch.create({
         data: {
           id: newId,
-          site_id: data.site_id,
+          site_id: siteUuid,
           slug,
           name: data.name,
           model: data.model ?? null,
