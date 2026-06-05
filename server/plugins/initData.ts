@@ -62,6 +62,18 @@ export default defineNitroPlugin(async () => {
       const total = Object.values(result.counts).reduce((s, n) => s + n, 0)
       console.log(`[ezSWM] Migration complete: ${total} records imported.`)
       console.log(`[ezSWM] Per-entity counts: ${JSON.stringify(result.counts)}`)
+      const skippedTotal = Object.values(result.skipped).reduce((s, n) => s + n, 0)
+      if (skippedTotal > 0) {
+        console.warn(`[ezSWM] ⚠️ ${skippedTotal} record(s) skipped during migration due to dangling foreign keys:`)
+        console.warn(`[ezSWM] Per-entity skipped: ${JSON.stringify(result.skipped)}`)
+        // Cap the per-row list so the log doesn't blow up on dirty datasets.
+        const sample = result.skipReasons.slice(0, 50)
+        for (const reason of sample) console.warn(`[ezSWM]   ${reason}`)
+        if (result.skipReasons.length > sample.length) {
+          console.warn(`[ezSWM]   ... ${result.skipReasons.length - sample.length} more (truncated)`)
+        }
+        console.warn(`[ezSWM] If IP allocations were skipped you can recover them after the migration via POST /api/admin/recover-allocations?apply=1`)
+      }
       console.log(`[ezSWM] Original JSON files archived to ${result.archived}`)
       migrated = true
     } catch (err) {

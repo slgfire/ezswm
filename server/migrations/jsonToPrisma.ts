@@ -58,6 +58,8 @@ interface LegacySwitch extends Json {
 
 interface MigrationResult {
   counts: Record<string, number>
+  skipped: Record<string, number>
+  skipReasons: string[]
   archived: string
 }
 
@@ -169,6 +171,12 @@ export async function runJsonToPrismaMigration(opts: {
   )
 
   const counts: Record<string, number> = {}
+  const skipped: Record<string, number> = {}
+  const skipReasons: string[] = []
+  function noteSkip(category: string, reason: string) {
+    skipped[category] = (skipped[category] ?? 0) + 1
+    skipReasons.push(`[${category}] ${reason}`)
+  }
 
   // 3. Run everything in a single transaction. SQLite rolls back atomically on
   //    any error, so a partial migration is impossible.
@@ -239,9 +247,10 @@ export async function runJsonToPrismaMigration(opts: {
 
     // --- Switches
     const switchSlugs = new Map<string, Set<string>>() // site_id → seen slugs
+    let switchesInserted = 0
     for (const sw of switches) {
       const siteId = typeof sw.site_id === 'string' ? siteMap.get(sw.site_id) : undefined
-      if (!siteId) continue // orphan switch — skip silently
+      if (!siteId) { noteSkip('switches', `id=${sw.id} name=${pickString(sw, 'name')} references unknown site_id=${String(sw.site_id)}`); continue }
       const templateId = typeof sw.layout_template_id === 'string'
         ? templateMap.get(sw.layout_template_id) ?? null
         : null
@@ -270,13 +279,15 @@ export async function runJsonToPrismaMigration(opts: {
         created_at: getCreatedAt(sw),
         updated_at: getUpdatedAt(sw)
       } })
+      switchesInserted++
     }
-    counts.switches = switches.length
+    counts.switches = switchesInserted
 
     // --- Vlans
+    let vlansInserted = 0
     for (const v of vlans) {
       const siteId = typeof v.site_id === 'string' ? siteMap.get(v.site_id) : undefined
-      if (!siteId) continue
+      if (!siteId) { noteSkip('vlans', `id=${v.id} name=${pickString(v, 'name')} references unknown site_id=${String(v.site_id)}`); continue }
       await tx.vlan.create({ data: {
         id: vlanMap.get(v.id)!,
         site_id: siteId,
@@ -290,14 +301,16 @@ export async function runJsonToPrismaMigration(opts: {
         created_at: getCreatedAt(v),
         updated_at: getUpdatedAt(v)
       } })
+      vlansInserted++
     }
-    counts.vlans = vlans.length
+    counts.vlans = vlansInserted
 
     // --- Networks
     const networkSlugs = new Map<string, Set<string>>() // site_id → seen slugs
+    let networksInserted = 0
     for (const n of networks) {
       const siteId = typeof n.site_id === 'string' ? siteMap.get(n.site_id) : undefined
-      if (!siteId) continue
+      if (!siteId) { noteSkip('networks', `id=${n.id} name=${pickString(n, 'name')} references unknown site_id=${String(n.site_id)}`); continue }
       const vlanRef = typeof n.vlan_id === 'string' ? vlanMap.get(n.vlan_id) ?? null : null
       let scope = networkSlugs.get(siteId)
       if (!scope) { scope = new Set<string>(); networkSlugs.set(siteId, scope) }
@@ -315,13 +328,18 @@ export async function runJsonToPrismaMigration(opts: {
         created_at: getCreatedAt(n),
         updated_at: getUpdatedAt(n)
       } })
+      networksInserted++
     }
-    counts.networks = networks.length
+    counts.networks = networksInserted
 
     // --- IpAllocations (before Ports, so Port.connected_allocation_id can resolve)
+    let allocInserted = 0
     for (const a of allocations) {
       const networkId = typeof a.network_id === 'string' ? networkMap.get(a.network_id) : undefined
-      if (!networkId) continue
+      if (!networkId) {
+        noteSkip('allocations', `id=${a.id} ip=${pickString(a, 'ip_address')} references unknown network_id=${String(a.network_id)}`)
+        continue
+      }
       await tx.ipAllocation.create({ data: {
         id: allocationMap.get(a.id)!,
         network_id: networkId,
@@ -334,13 +352,15 @@ export async function runJsonToPrismaMigration(opts: {
         created_at: getCreatedAt(a),
         updated_at: getUpdatedAt(a)
       } })
+      allocInserted++
     }
-    counts.allocations = allocations.length
+    counts.allocations = allocInserted
 
     // --- LagGroups (before Ports, so Port.lag_group_id can resolve)
+    let lagsInserted = 0
     for (const lg of lagGroups) {
       const switchId = typeof lg.switch_id === 'string' ? switchMap.get(lg.switch_id) : undefined
-      if (!switchId) continue
+      if (!switchId) { noteSkip('lagGroups', `id=${lg.id} name=${pickString(lg, 'name')} references unknown switch_id=${String(lg.switch_id)}`); continue }
       await tx.lagGroup.create({ data: {
         id: lagMap.get(lg.id)!,
         switch_id: switchId,
@@ -351,8 +371,9 @@ export async function runJsonToPrismaMigration(opts: {
         created_at: getCreatedAt(lg),
         updated_at: getUpdatedAt(lg)
       } })
+      lagsInserted++
     }
-    counts.lagGroups = lagGroups.length
+    counts.lagGroups = lagsInserted
 
     // --- Ports (embedded in switches)
     let portCount = 0
@@ -405,9 +426,10 @@ export async function runJsonToPrismaMigration(opts: {
     counts.ports = portCount
 
     // --- IpRanges
+    let rangesInserted = 0
     for (const r of ranges) {
       const networkId = typeof r.network_id === 'string' ? networkMap.get(r.network_id) : undefined
-      if (!networkId) continue
+      if (!networkId) { noteSkip('ranges', `id=${r.id} start=${pickString(r, 'start_ip')} references unknown network_id=${String(r.network_id)}`); continue }
       await tx.ipRange.create({ data: {
         id: rangeMap.get(r.id)!,
         network_id: networkId,
@@ -418,13 +440,15 @@ export async function runJsonToPrismaMigration(opts: {
         created_at: getCreatedAt(r),
         updated_at: getUpdatedAt(r)
       } })
+      rangesInserted++
     }
-    counts.ranges = ranges.length
+    counts.ranges = rangesInserted
 
     // --- PublicTokens
+    let tokensInserted = 0
     for (const t of tokens) {
       const switchId = typeof t.switch_id === 'string' ? switchMap.get(t.switch_id) : undefined
-      if (!switchId) continue
+      if (!switchId) { noteSkip('publicTokens', `id=${t.id} references unknown switch_id=${String(t.switch_id)}`); continue }
       await tx.publicToken.create({ data: {
         id: tokenMap.get(t.id)!,
         switch_id: switchId,
@@ -433,8 +457,9 @@ export async function runJsonToPrismaMigration(opts: {
         revoked_at: pickStringOrNull(t, 'revoked_at'),
         last_access_at: pickStringOrNull(t, 'last_access_at')
       } })
+      tokensInserted++
     }
-    counts.tokens = tokens.length
+    counts.tokens = tokensInserted
 
     // --- TopologyLayouts (keyed by site_id in legacy JSON)
     let topoCount = 0
@@ -494,5 +519,5 @@ export async function runJsonToPrismaMigration(opts: {
     await rename(join(dataDir, entry), join(archiveDir, entry))
   }
 
-  return { counts, archived: archiveDir }
+  return { counts, skipped, skipReasons, archived: archiveDir }
 }

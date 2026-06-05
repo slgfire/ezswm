@@ -6,6 +6,36 @@ title: Release Notes
 
 For the in-app changelog (rendered from GitHub releases), click the version number in the sidebar footer.
 
+## v0.23.3 — 2026-06-05
+
+### Fixed — Migration no longer drops IP allocations silently
+
+The 0.21 JSON→SQLite migration script skipped any row whose foreign key didn't resolve (e.g. an `ip_allocation` pointing at a network whose `site_id` wasn't in the input set, an orphan `lag_group` for a deleted switch) — but the post-run summary reported the count from the JSON file, not the count actually inserted. Result on a real-world dataset: a handful of subnets came out of the migration empty, with no log line to explain why. Reported by a user after a colleague noticed missing IP allocations post-migration. ([#171](https://github.com/slgfire/ezswm/pull/171))
+
+- Every skipped row is now logged with a reason: `[allocations] id=abc ip=10.0.1.10 references unknown network_id=xyz`.
+- The per-entity counts now reflect what actually landed in the DB.
+- The init-plugin log adds a `⚠️` summary block when anything was skipped, plus a pointer to the recovery endpoint below.
+
+### Added — Recover lost allocations from the archived JSON
+
+For installs that already ran the silent-skip migration, a new endpoint replays the archived `ip-allocations.json` against the live DB and tries to insert anything that's still missing.
+
+- `POST /api/admin/recover-allocations` — dry-run by default; pass `?apply=1` to actually insert.
+- Strategy: for each archived allocation, find the current network whose subnet contains the IP. If multiple networks match (overlapping subnets across sites), disambiguate by joining through the archived network → site → site name. Ambiguous cases are reported and left alone.
+- Idempotent — allocations that already exist (matched by network + IP) are reported and skipped.
+- Reports `archivedAllocations`, `alreadyInDb`, `recovered`, `skippedAmbiguous`, `skippedNoSubnetMatch`, `skippedInvalidIp`, plus a per-row `details` array.
+- Admin role required.
+
+Tests: `tests/recoverArchivedAllocations.test.ts` (8 cases) — empty archive, dry-run, apply, idempotent re-run, overlap-disambiguation, no-match, ambiguous, invalid IP. **521/521 tests pass**.
+
+#### How to use it
+
+```sh
+# Inside the running container, or against the API directly:
+curl -b cookies.txt -X POST 'https://ezswm.example/api/admin/recover-allocations'           # dry-run
+curl -b cookies.txt -X POST 'https://ezswm.example/api/admin/recover-allocations?apply=1'  # really insert
+```
+
 ## v0.23.2 — 2026-06-05
 
 ### Fixed — Editing or deleting a site / switch / subnet via its slug URL no longer 404s
