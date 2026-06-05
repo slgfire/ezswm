@@ -6,6 +6,17 @@ title: Release Notes
 
 Das **In-App-Changelog** (gerendert aus GitHub-Releases) erreichst du über die Versionsnummer im Sidebar-Footer.
 
+## v0.23.4 — 2026-06-05
+
+### Behoben — Switch-/Subnet-Detail-Seite zeigt 404 wenn der gleiche Slug in mehreren Sites existiert
+
+Slugs sind per-Site eindeutig (`@@unique([site_id, slug])`), nicht global — zwei Sites dürfen einen Switch namens "sw-core" oder ein Subnet namens "lan" haben. Die Detail-Page-Composables (`useSwitch`, `useNetworks`) haben aber `/api/switches/<slug>` bzw. `/api/networks/<slug>` ohne Site-Context aufgerufen. Der Backend-Fallback hat korrekterweise `null` zurückgegeben (mehrdeutiger Slug, kein kanonischer Gewinner) und die UI zeigte 404. ([#172](https://github.com/slgfire/ezswm/pull/172))
+
+Der Fix reicht `route.params.siteId` als `?siteId=<uuid-oder-slug>`-Query-Parameter ans Backend durch. Die Handler lösen den Parameter über das bestehende `resolveSiteIdQuery` auf (Slug oder UUID → kanonische UUID) und geben ihn an `switchRepository.getByIdOrSlug` / `networkRepository.getByIdOrSlug` weiter, die jetzt **zuerst** den per-Site Slug versuchen, bevor sie auf UUID- / global-eindeutigen-Slug-Lookup zurückfallen. Update- + Delete-Pfade in beiden Repos akzeptieren denselben optionalen Site-Context.
+
+- 8 neue Regression-Tests in `tests/slugCollisionDisambiguation.test.ts` decken ab: Per-Site Disambiguierung auf get/update/delete, mehrdeutiger Slug gibt ohne siteId weiterhin `null`, global eindeutiger Slug funktioniert weiterhin ohne siteId, mehrdeutiges Update ohne siteId wirft 404 statt eine zufällige Zeile zu mutieren.
+- 529/529 Tests grün.
+
 ## v0.23.3 — 2026-06-05
 
 ### Behoben — Migration verschluckt keine IP-Allocations mehr stumm

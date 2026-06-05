@@ -505,7 +505,7 @@ async function onSave() {
   saving.value = true
   try {
     const dnsServers = editDnsInput.value ? editDnsInput.value.split(',').map((s: string) => s.trim()).filter(Boolean) : []
-    await updateNetwork(networkId, { name: editForm.value.name.trim(), subnet: editForm.value.subnet.trim(), gateway: editForm.value.gateway.trim() || undefined, dns_servers: dnsServers, vlan_id: editForm.value.vlan_id || undefined, description: editForm.value.description.trim() || undefined })
+    await updateNetwork(networkId, { name: editForm.value.name.trim(), subnet: editForm.value.subnet.trim(), gateway: editForm.value.gateway.trim() || undefined, dns_servers: dnsServers, vlan_id: editForm.value.vlan_id || undefined, description: editForm.value.description.trim() || undefined }, siteId.value)
     toast.add({ title: t('networks.messages.updated'), color: 'success' })
     editing.value = false
     await loadNetwork()
@@ -515,7 +515,7 @@ async function onSave() {
 
 async function confirmDeleteNetwork() {
   deleting.value = true
-  try { await removeNetwork(networkId); toast.add({ title: t('networks.messages.deleted'), color: 'success' }); showDeleteDialog.value = false; await router.push(`/sites/${siteId.value}/subnets`) }
+  try { await removeNetwork(networkId, siteId.value); toast.add({ title: t('networks.messages.deleted'), color: 'success' }); showDeleteDialog.value = false; await router.push(`/sites/${siteId.value}/subnets`) }
   catch (err: unknown) { const error = err as { data?: { message?: string } }; toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' }) }
   finally { deleting.value = false }
 }
@@ -652,7 +652,7 @@ async function onSaveRangeEdit() {
 
 async function loadNetwork() {
   pageLoading.value = true
-  try { network.value = await $fetch<Network>(`/api/networks/${networkId}`) }
+  try { network.value = await $fetch<Network>(`/api/networks/${networkId}`, { params: { siteId: siteId.value } }) }
   catch { toast.add({ title: t('errors.notFound'), color: 'error' }); await router.push(`/sites/${siteId.value}/subnets`) }
   finally { pageLoading.value = false }
 }
