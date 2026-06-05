@@ -404,7 +404,7 @@ const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 
 const id = route.params.id as string
-const { item, loading, fetch: fetchSwitch, update } = useSwitch(id)
+const { item, loading, fetch: fetchSwitch, update } = useSwitch(id, siteId.value)
 
 useHead({ title: computed(() => item.value?.name || t('switches.title')) })
 const { duplicate } = useSwitches()

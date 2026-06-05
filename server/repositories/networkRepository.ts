@@ -102,10 +102,14 @@ export const networkRepository = {
    * caller hasn't yet adapted to the new slug format.
    */
   async getByIdOrSlug(identifier: string, siteId?: string): Promise<Network | null> {
-    const direct = await this.getById(identifier)
-    if (direct) return direct
-    if (siteId) return this.getBySlug(siteId, identifier)
-    return null
+    // When a site is known, try the per-site slug first — that disambiguates
+    // the case where the same slug exists on multiple sites (per-site unique,
+    // not globally), which would otherwise make `getById` return null.
+    if (siteId) {
+      const scoped = await this.getBySlug(siteId, identifier)
+      if (scoped) return scoped
+    }
+    return this.getById(identifier)
   },
 
   async create(data: Omit<Network, 'id' | 'slug' | 'created_at' | 'updated_at' | 'is_favorite'> & { slug?: string }): Promise<Network> {
@@ -136,10 +140,17 @@ export const networkRepository = {
     return rowToNetwork(row)
   },
 
-  async update(idOrSlug: string, data: Partial<Omit<Network, 'id' | 'created_at'>>): Promise<Network> {
-    // Accept either a UUID or a globally-unique slug. Per-site duplicate slugs
-    // collapse to null and the caller has to scope explicitly.
-    let current = await prisma.network.findUnique({ where: { id: idOrSlug } })
+  async update(idOrSlug: string, data: Partial<Omit<Network, 'id' | 'created_at'>>, siteId?: string): Promise<Network> {
+    // Accept either a UUID or a slug. When a site is known, try the per-site
+    // slug first so callers on /sites/<site>/subnets/<slug> can resolve even
+    // when the slug isn't globally unique.
+    let current = null
+    if (siteId) {
+      current = await prisma.network.findUnique({
+        where: { site_id_slug: { site_id: siteId, slug: idOrSlug } }
+      })
+    }
+    if (!current) current = await prisma.network.findUnique({ where: { id: idOrSlug } })
     if (!current) {
       const matches = await prisma.network.findMany({ where: { slug: idOrSlug } })
       if (matches.length === 1) current = matches[0]!
@@ -176,8 +187,14 @@ export const networkRepository = {
     return rowToNetwork(row)
   },
 
-  async delete(idOrSlug: string): Promise<boolean> {
-    let current = await prisma.network.findUnique({ where: { id: idOrSlug } })
+  async delete(idOrSlug: string, siteId?: string): Promise<boolean> {
+    let current = null
+    if (siteId) {
+      current = await prisma.network.findUnique({
+        where: { site_id_slug: { site_id: siteId, slug: idOrSlug } }
+      })
+    }
+    if (!current) current = await prisma.network.findUnique({ where: { id: idOrSlug } })
     if (!current) {
       const matches = await prisma.network.findMany({ where: { slug: idOrSlug } })
       if (matches.length === 1) current = matches[0]!

@@ -24,12 +24,15 @@ export function useNetworks() {
     return await apiFetch<Network>('/api/networks', { method: 'POST', body })
   }
 
-  async function update(id: string, body: Partial<Network>) {
-    return await apiFetch<Network>(`/api/networks/${id}`, { method: 'PUT', body })
+  // Optional siteId disambiguates when the same subnet slug exists across
+  // multiple sites (slugs are per-site unique, not globally). Callers on
+  // /sites/<site>/subnets/<slug> should pass route.params.siteId.
+  async function update(id: string, body: Partial<Network>, siteId?: string) {
+    return await apiFetch<Network>(`/api/networks/${id}`, { method: 'PUT', body, params: siteId ? { siteId } : undefined })
   }
 
-  async function remove(id: string) {
-    await apiFetch(`/api/networks/${id}`, { method: 'DELETE' })
+  async function remove(id: string, siteId?: string) {
+    await apiFetch(`/api/networks/${id}`, { method: 'DELETE', params: siteId ? { siteId } : undefined })
   }
 
   return { items, total, loading, fetch, create, update, remove }

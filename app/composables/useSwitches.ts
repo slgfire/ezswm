@@ -35,23 +35,28 @@ export function useSwitches() {
   return { items, total, loading, fetch, create, remove, duplicate }
 }
 
-export function useSwitch(id: string) {
+export function useSwitch(id: string, siteId?: string) {
   const item = ref<Switch | null>(null)
   const loading = ref(false)
   const { apiFetch } = useApiFetch()
+
+  // Site context disambiguates per-site-unique slugs (a switch named "sw-core"
+  // can exist on multiple sites). Pages on /sites/<site>/switches/<switch>
+  // should pass route.params.siteId so the backend resolves the right one.
+  const params = siteId ? { siteId } : undefined
 
   async function fetch() {
     const isRefresh = !!item.value
     if (!isRefresh) loading.value = true
     try {
-      item.value = await apiFetch<Switch>(`/api/switches/${id}`)
+      item.value = await apiFetch<Switch>(`/api/switches/${id}`, { params })
     } finally {
       if (!isRefresh) loading.value = false
     }
   }
 
   async function update(body: Partial<Switch>) {
-    item.value = await apiFetch<Switch>(`/api/switches/${id}`, { method: 'PUT', body })
+    item.value = await apiFetch<Switch>(`/api/switches/${id}`, { method: 'PUT', body, params })
     return item.value
   }
 

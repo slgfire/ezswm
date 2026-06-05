@@ -1,6 +1,7 @@
 import { networkRepository } from '../../repositories/networkRepository'
 import { updateNetworkSchema } from '../../validators/networkSchemas'
 import { activityRepository } from '../../repositories/activityRepository'
+import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
 import type { Network } from '../../../types/network'
 
 export default defineEventHandler(async (event) => {
@@ -10,7 +11,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing network ID' })
   }
 
-  const existing = await networkRepository.getById(id)
+  const query = getQuery(event)
+  const siteIdParam = typeof query.siteId === 'string' ? query.siteId : undefined
+  const siteUuid = await resolveSiteIdQuery(siteIdParam) ?? undefined
+
+  const existing = await networkRepository.getByIdOrSlug(id, siteUuid)
 
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Network not found' })
@@ -19,13 +24,13 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = updateNetworkSchema.parse(body)
 
-  const updated = await networkRepository.update(id, parsed as Partial<Omit<Network, 'id' | 'created_at'>>)
+  const updated = await networkRepository.update(existing.id, parsed as Partial<Omit<Network, 'id' | 'created_at'>>)
 
   await activityRepository.log({
     user_id: event.context.auth?.userId,
     action: 'update',
     entity_type: 'network',
-    entity_id: id,
+    entity_id: existing.id,
     entity_name: updated.name,
     changes: parsed,
     previous_state: existing as unknown as Record<string, unknown>,

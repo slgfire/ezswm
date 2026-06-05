@@ -341,10 +341,14 @@ export const switchRepository = {
    * routes that don't pin the lookup to a site).
    */
   async getByIdOrSlug(identifier: string, siteId?: string): Promise<Switch | null> {
-    const direct = await this.getById(identifier)
-    if (direct) return direct
-    if (siteId) return this.getBySlug(siteId, identifier)
-    return null
+    // When a site is known, try the per-site slug first — that disambiguates
+    // the case where the same slug exists on multiple sites (per-site unique,
+    // not globally), which would otherwise make `getById` return null.
+    if (siteId) {
+      const scoped = await this.getBySlug(siteId, identifier)
+      if (scoped) return scoped
+    }
+    return this.getById(identifier)
   },
 
   async create(data: Omit<Switch, 'id' | 'slug' | 'ports' | 'created_at' | 'updated_at' | 'is_favorite'> & { slug?: string }): Promise<Switch> {
@@ -412,9 +416,18 @@ export const switchRepository = {
     return result
   },
 
-  async update(idOrSlug: string, data: Partial<Omit<Switch, 'id' | 'ports' | 'created_at'>>): Promise<Switch> {
-    // Accept either a UUID or a globally-unique slug.
-    let current = await prisma.switch.findUnique({ where: { id: idOrSlug }, include: includePorts })
+  async update(idOrSlug: string, data: Partial<Omit<Switch, 'id' | 'ports' | 'created_at'>>, siteId?: string): Promise<Switch> {
+    // Accept either a UUID or a slug. When a site is known, try the per-site
+    // slug first so callers on /sites/<site>/switches/<slug> can resolve even
+    // when the slug isn't globally unique.
+    let current = null
+    if (siteId) {
+      current = await prisma.switch.findUnique({
+        where: { site_id_slug: { site_id: siteId, slug: idOrSlug } },
+        include: includePorts
+      })
+    }
+    if (!current) current = await prisma.switch.findUnique({ where: { id: idOrSlug }, include: includePorts })
     if (!current) {
       const matches = await prisma.switch.findMany({ where: { slug: idOrSlug }, include: includePorts })
       if (matches.length === 1) current = matches[0]!
@@ -803,8 +816,15 @@ export const switchRepository = {
     return result
   },
 
-  async delete(idOrSlug: string): Promise<boolean> {
-    let sw = await prisma.switch.findUnique({ where: { id: idOrSlug }, include: includePorts })
+  async delete(idOrSlug: string, siteId?: string): Promise<boolean> {
+    let sw = null
+    if (siteId) {
+      sw = await prisma.switch.findUnique({
+        where: { site_id_slug: { site_id: siteId, slug: idOrSlug } },
+        include: includePorts
+      })
+    }
+    if (!sw) sw = await prisma.switch.findUnique({ where: { id: idOrSlug }, include: includePorts })
     if (!sw) {
       const matches = await prisma.switch.findMany({ where: { slug: idOrSlug }, include: includePorts })
       if (matches.length === 1) sw = matches[0]!

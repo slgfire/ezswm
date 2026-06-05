@@ -6,6 +6,17 @@ title: Release Notes
 
 For the in-app changelog (rendered from GitHub releases), click the version number in the sidebar footer.
 
+## v0.23.4 — 2026-06-05
+
+### Fixed — Switch/Subnet detail pages 404 when the same slug exists on multiple sites
+
+Slugs are per-site unique (`@@unique([site_id, slug])`), not globally unique — two sites are allowed to have a switch named "sw-core" or a subnet named "lan". The detail-page composables (`useSwitch`, `useNetworks`) were calling `/api/switches/<slug>` and `/api/networks/<slug>` without any site context, so the backend's global-slug fallback returned null (correctly, since the lookup was ambiguous) and the UI showed a 404. ([#172](https://github.com/slgfire/ezswm/pull/172))
+
+The fix threads `route.params.siteId` through to the backend as a `?siteId=<uuid-or-slug>` query parameter. The handlers resolve it via the existing `resolveSiteIdQuery` (slug or UUID → canonical UUID) and pass it down to `switchRepository.getByIdOrSlug` / `networkRepository.getByIdOrSlug`, which now try the per-site slug **first**, then fall back to UUID / global-unique-slug lookup. Update + delete paths in both repos accept the same optional site context.
+
+- 8 new regression tests in `tests/slugCollisionDisambiguation.test.ts` cover: per-site disambiguation on get/update/delete, ambiguous slug still returns null without siteId, globally unique slug still resolves without siteId, ambiguous update without siteId throws 404 instead of mutating a random row.
+- 529/529 tests pass.
+
 ## v0.23.3 — 2026-06-05
 
 ### Fixed — Migration no longer drops IP allocations silently
