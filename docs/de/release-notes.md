@@ -6,6 +6,36 @@ title: Release Notes
 
 Das **In-App-Changelog** (gerendert aus GitHub-Releases) erreichst du über die Versionsnummer im Sidebar-Footer.
 
+## v0.23.3 — 2026-06-05
+
+### Behoben — Migration verschluckt keine IP-Allocations mehr stumm
+
+Das 0.21-JSON→SQLite-Migrationsskript hat jede Zeile übersprungen, deren Foreign Key nicht aufgelöst werden konnte (z.B. eine `ip_allocation`, deren Network außerhalb der Eingabe-Daten lag, oder eine verwaiste `lag_group` zu einem gelöschten Switch) — aber die abschließende Zusammenfassung hat die Anzahl aus der JSON-Datei gezählt, nicht die tatsächlich eingefügten Rows. Resultat auf einem realen Datensatz: ein paar Subnets kamen leer aus der Migration raus, ohne Log-Zeile, die das erklärt. Vom Kollegen eines Users gemeldet. ([#171](https://github.com/slgfire/ezswm/pull/171))
+
+- Jede übersprungene Zeile wird jetzt mit Begründung geloggt: `[allocations] id=abc ip=10.0.1.10 references unknown network_id=xyz`.
+- Die Per-Entity-Counts spiegeln jetzt das wieder, was wirklich in der DB landet.
+- Der Init-Plugin-Log ergänzt einen `⚠️`-Block, wenn etwas übersprungen wurde — mit einem Hinweis auf den Recovery-Endpoint unten.
+
+### Neu — Verlorene Allocations aus dem Archiv zurückholen
+
+Für Installs, die die stille Migration schon gefahren haben, gibt es jetzt einen Endpoint, der die archivierte `ip-allocations.json` gegen die aktuelle DB nachspielt und alles nachzieht, was noch fehlt.
+
+- `POST /api/admin/recover-allocations` — Default ist **Dry-Run**; mit `?apply=1` wird wirklich geschrieben.
+- Strategie: für jede archivierte Allocation wird das aktuelle Network gesucht, dessen Subnet die IP enthält. Bei mehreren Treffern (überlappende Subnets in unterschiedlichen Sites) wird über den archivierten Network → Site → Site-Name disambiguiert. Mehrdeutige Fälle werden gemeldet und in Ruhe gelassen.
+- Idempotent — Allocations, die schon in der DB sind (Match über Network + IP), werden gezählt und übersprungen.
+- Report: `archivedAllocations`, `alreadyInDb`, `recovered`, `skippedAmbiguous`, `skippedNoSubnetMatch`, `skippedInvalidIp` plus eine Per-Row `details`-Liste.
+- Admin-Rolle erforderlich.
+
+Tests: `tests/recoverArchivedAllocations.test.ts` (8 Cases) — leeres Archiv, Dry-Run, Apply, idempotenter Re-Run, Subnet-Disambiguierung, kein Match, mehrdeutig, ungültige IP. **521/521 Tests grün**.
+
+#### Benutzung
+
+```sh
+# Im laufenden Container, oder direkt gegen die API:
+curl -b cookies.txt -X POST 'https://ezswm.example/api/admin/recover-allocations'           # dry-run
+curl -b cookies.txt -X POST 'https://ezswm.example/api/admin/recover-allocations?apply=1'  # wirklich schreiben
+```
+
 ## v0.23.2 — 2026-06-05
 
 ### Behoben — Edit/Delete einer Site / Switch / Subnet via Slug-URL fliegt nicht mehr mit 404
