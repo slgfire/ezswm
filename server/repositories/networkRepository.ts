@@ -3,6 +3,7 @@ import { prisma } from '../db/client'
 import type { Network } from '../../types/network'
 import { isValidCIDR, isValidIPv4, isIPInSubnet } from '../utils/ipv4'
 import { slugify, resolveSlugCollision } from '../utils/slugify'
+import { resolveSiteIdToUuid } from '../utils/resolveSiteParam'
 
 interface NetworkRow {
   id: string
@@ -109,14 +110,17 @@ export const networkRepository = {
 
   async create(data: Omit<Network, 'id' | 'slug' | 'created_at' | 'updated_at' | 'is_favorite'> & { slug?: string }): Promise<Network> {
     validateNetworkInputs(data)
+    // `site_id` from the request body may arrive as a UUID *or* a slug since
+    // the URL-driven create forms use slug-shaped route params.
+    const siteUuid = await resolveSiteIdToUuid(data.site_id)
     const desired = data.slug ? slugify(data.slug) : slugify(data.name)
-    const slug = await uniqueNetworkSlug(data.site_id, desired)
+    const slug = await uniqueNetworkSlug(siteUuid, desired)
 
     const now = new Date().toISOString()
     const row = await prisma.network.create({
       data: {
         id: randomUUID(),
-        site_id: data.site_id,
+        site_id: siteUuid,
         slug,
         name: data.name,
         vlan_id: data.vlan_id ?? null,

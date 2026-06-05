@@ -6,6 +6,16 @@ title: Release Notes
 
 Das **In-App-Changelog** (gerendert aus GitHub-Releases) erreichst du über die Versionsnummer im Sidebar-Footer.
 
+## v0.23.1 — 2026-06-05
+
+### Behoben — Subnet / VLAN / Switch anlegen aus Slug-URL fliegt nicht mehr mit Server-Error
+
+Nach dem 0.22.1 Site-Slug-URL-Rollout hat `/sites/<slug>/subnets/create` (und die VLAN- / Switch-Pendants) den Site-**Slug** als `site_id` im POST-Body geschickt — weil das in `route.params.siteId` drinstand. Die DB hat den Insert dann mit der FK-Constraint abgelehnt, weil dort eine Site-UUID erwartet wird. Resultat: generischer 500-Server-Error-Toast bei jedem Anlege-Versuch aus einer Slug-URL.
+
+`networkRepository.create`, `vlanRepository.create` und `switchRepository.create` lösen `data.site_id` jetzt zuerst über `resolveSiteIdToUuid()` auf — akzeptiert UUID *oder* Slug und wirft sauber 404 wenn nichts matched. Der Rest des Persistence-Paths kann weiterhin von einer UUID ausgehen. ([#169](https://github.com/slgfire/ezswm/pull/169))
+
+- **505/505 Tests grün** (5 neue Regression-Tests in `tests/createWithSiteSlug.test.ts` decken Network, VLAN, Switch mit Slug + UUID + Unknown-Site ab).
+
 ## v0.23.0 — 2026-06-05
 
 ### Neu — Switches und Subnetze nutzen jetzt auch Slug-URLs (#165)

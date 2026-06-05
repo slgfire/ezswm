@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { prisma } from '../db/client'
 import type { VLAN } from '../../types/vlan'
 import { VLAN_COLOR_POOL } from '../../types/vlan'
+import { resolveSiteIdToUuid } from '../utils/resolveSiteParam'
 
 interface VlanRow {
   id: string
@@ -57,14 +58,17 @@ export const vlanRepository = {
   },
 
   async create(data: Omit<VLAN, 'id' | 'created_at' | 'updated_at' | 'is_favorite'>): Promise<VLAN> {
+    // site_id from the body may be UUID or slug — resolve to canonical UUID.
+    const siteUuid = await resolveSiteIdToUuid(data.site_id)
+
     const tagClash = await prisma.vlan.findFirst({
-      where: { site_id: data.site_id, vlan_id: data.vlan_id }
+      where: { site_id: siteUuid, vlan_id: data.vlan_id }
     })
     if (tagClash) {
       throw createError({ statusCode: 409, message: `VLAN ID ${data.vlan_id} already exists in this site` })
     }
     const colorClash = await prisma.vlan.findFirst({
-      where: { site_id: data.site_id, color: data.color }
+      where: { site_id: siteUuid, color: data.color }
     })
     if (colorClash) {
       throw createError({ statusCode: 409, message: `Color ${data.color} is already used by another VLAN in this site` })
@@ -74,7 +78,7 @@ export const vlanRepository = {
     const row = await prisma.vlan.create({
       data: {
         id: randomUUID(),
-        site_id: data.site_id,
+        site_id: siteUuid,
         vlan_id: data.vlan_id,
         name: data.name,
         description: data.description ?? null,

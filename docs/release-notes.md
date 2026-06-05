@@ -6,6 +6,16 @@ title: Release Notes
 
 For the in-app changelog (rendered from GitHub releases), click the version number in the sidebar footer.
 
+## v0.23.1 — 2026-06-05
+
+### Fixed — Creating a subnet / VLAN / switch from a slug URL no longer errors out
+
+After the 0.22.1 site-slug URL rollout, `/sites/<slug>/subnets/create` (and the equivalent VLAN / switch forms) started sending the site **slug** as `site_id` in the POST body — because that's what was in `route.params.siteId`. The DB then rejected the insert because the FK constraint expects a site UUID. Result: a generic 500 server-error toast every time you tried to create a child entity from a slug URL.
+
+`networkRepository.create`, `vlanRepository.create` and `switchRepository.create` now resolve `data.site_id` through `resolveSiteIdToUuid()` first — accepts a UUID *or* a slug and throws a clean 404 if neither matches. The rest of the persistence path keeps assuming a UUID, so FK constraints land. ([#169](https://github.com/slgfire/ezswm/pull/169))
+
+- **505/505 tests pass** (5 new regression tests in `tests/createWithSiteSlug.test.ts` cover network, VLAN, switch create with slug + UUID + unknown-site cases).
+
 ## v0.23.0 — 2026-06-05
 
 ### Added — Switches and subnets join sites on slug URLs (#165)
