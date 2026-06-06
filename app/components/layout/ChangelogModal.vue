@@ -48,6 +48,7 @@
 <script setup lang="ts">
 const open = defineModel<boolean>('open', { default: false })
 
+const { locale } = useI18n()
 const { releases, loaded, failed, updateAvailable, load } = useVersionCheck()
 
 // Same repo as the API endpoint; hardcoded here to avoid importing the
@@ -62,11 +63,12 @@ const listReleases = computed(() => {
   return releases.value.slice(start, start + 6)
 })
 
-function formatDate(iso: string): string {
+function formatDate(iso: string | null): string {
+  if (!iso) return ''
   return new Date(iso).toLocaleDateString()
 }
 
-watch(open, (isOpen) => {
+watch([open, locale], ([isOpen]) => {
   if (isOpen) load()
 })
 </script>

@@ -1,5 +1,4 @@
-import { renderReleaseHtml, transformReleases } from '../server/utils/changelog'
-import type { GithubRelease } from '../types/changelog'
+import { renderReleaseHtml, parseChangelog } from '../server/utils/changelog'
 
 describe('renderReleaseHtml', () => {
   it('renders markdown headings and lists to html', () => {
@@ -29,45 +28,59 @@ describe('renderReleaseHtml', () => {
   })
 })
 
-describe('transformReleases', () => {
-  const base: GithubRelease = {
-    tag_name: 'v0.0.0',
-    name: null,
-    body: null,
-    draft: false,
-    prerelease: false,
-    published_at: '2026-01-01T00:00:00Z',
-    html_url: 'https://example.com'
-  }
+describe('parseChangelog', () => {
+  const fixture = `
+## [0.23.4] — 2026-06-05
 
-  it('filters out draft and prerelease entries', () => {
-    const result = transformReleases([
-      { ...base, tag_name: 'v0.18.10' },
-      { ...base, tag_name: 'v0.18.9-rc1', prerelease: true },
-      { ...base, tag_name: 'v0.18.8', draft: true }
-    ])
-    expect(result.releases.map(r => r.version)).toEqual(['0.18.10'])
+### Fixed
+- Bug A was fixed.
+
+## [0.23.3] — 2026-06-04
+
+### Fixed
+- Bug B was fixed.
+
+### Added
+- New feature.
+
+## [0.20.x and earlier]
+
+See GitHub for details.
+`.trim()
+
+  it('parses versions in order (newest first)', () => {
+    const releases = parseChangelog(fixture)
+    expect(releases.map(r => r.version)).toEqual(['0.23.4', '0.23.3'])
   })
 
-  it('strips the leading v from tag_name', () => {
-    const result = transformReleases([{ ...base, tag_name: 'v1.2.3' }])
-    expect(result.releases[0]!.version).toBe('1.2.3')
+  it('extracts date from heading', () => {
+    const releases = parseChangelog(fixture)
+    expect(releases[0]?.published_at).toBe('2026-06-05')
+    expect(releases[1]?.published_at).toBe('2026-06-04')
   })
 
-  it('sets latest to the first (newest) release version', () => {
-    const result = transformReleases([
-      { ...base, tag_name: 'v0.18.10' },
-      { ...base, tag_name: 'v0.18.9' }
-    ])
-    expect(result.latest).toBe('0.18.10')
+  it('sets name to v-prefixed version', () => {
+    const releases = parseChangelog(fixture)
+    expect(releases[0]?.name).toBe('v0.23.4')
   })
 
-  it('falls back to tag_name when name is null', () => {
-    const result = transformReleases([{ ...base, tag_name: 'v1.0.0', name: null }])
-    expect(result.releases[0]!.name).toBe('v1.0.0')
+  it('renders section body as html', () => {
+    const releases = parseChangelog(fixture)
+    expect(releases[0]?.html).toContain('<li>')
   })
 
-  it('returns empty latest when there are no releases', () => {
-    expect(transformReleases([]).latest).toBe('')
+  it('skips non-semver headings', () => {
+    const releases = parseChangelog(fixture)
+    expect(releases.every(r => /^\d+\.\d+\.\d+$/.test(r.version))).toBe(true)
+  })
+
+  it('returns null published_at when date is absent', () => {
+    const md = '## [1.0.0]\n\nSome content.'
+    const releases = parseChangelog(md)
+    expect(releases[0]?.published_at).toBeNull()
+  })
+
+  it('returns empty array for empty markdown', () => {
+    expect(parseChangelog('')).toEqual([])
   })
 })

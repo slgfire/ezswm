@@ -1,43 +1,26 @@
-import { defineEventHandler, createError } from 'h3'
-import { RELEASES_API_URL, transformReleases } from '../utils/changelog'
-import type { GithubRelease, ChangelogResponse } from '../../types/changelog'
+import { loadChangelog } from '../utils/changelog'
+import type { ChangelogResponse } from '../../types/changelog'
 
 interface CacheEntry {
   data: ChangelogResponse
   timestamp: number
 }
 
-let cache: CacheEntry | null = null
-let inflight: Promise<ChangelogResponse> | null = null
+const cache = new Map<string, CacheEntry>()
 const CACHE_TTL = 60 * 60 * 1000 // 1 hour
 
-async function fetchChangelog(): Promise<ChangelogResponse> {
-  let response: Response
-  try {
-    response = await fetch(RELEASES_API_URL, {
-      headers: { 'User-Agent': 'ezSWM', Accept: 'application/vnd.github+json' }
-    })
-  } catch {
-    throw createError({ statusCode: 503, message: 'Changelog unavailable — no internet connection' })
+export default defineEventHandler(async (event): Promise<ChangelogResponse> => {
+  const locale = String(getQuery(event).locale ?? 'en')
+
+  // Skip cache in dev so edits to CHANGELOG/*.md are immediately visible.
+  if (process.env.NODE_ENV === 'production') {
+    const hit = cache.get(locale)
+    if (hit && Date.now() - hit.timestamp < CACHE_TTL) return hit.data
   }
 
-  if (!response.ok) {
-    throw createError({ statusCode: 503, message: 'Changelog unavailable — no internet connection' })
+  const data = await loadChangelog(locale)
+  if (process.env.NODE_ENV === 'production') {
+    cache.set(locale, { data, timestamp: Date.now() })
   }
-
-  const raw = (await response.json()) as GithubRelease[]
-  const data = transformReleases(raw)
-  cache = { data, timestamp: Date.now() }
   return data
-}
-
-export default defineEventHandler(async (): Promise<ChangelogResponse> => {
-  if (cache && Date.now() - cache.timestamp < CACHE_TTL) {
-    return cache.data
-  }
-  // Coalesce concurrent requests so a cache miss triggers one GitHub fetch.
-  if (!inflight) {
-    inflight = fetchChangelog().finally(() => { inflight = null })
-  }
-  return inflight
 })

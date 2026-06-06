@@ -56,5 +56,11 @@ export default defineNuxtConfig({
     host: '0.0.0.0'
   },
 
+  nitro: {
+    serverAssets: [
+      { baseName: 'changelog', dir: 'CHANGELOG' }
+    ]
+  },
+
   compatibilityDate: '2025-03-16'
 })
