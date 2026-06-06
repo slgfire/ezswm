@@ -42,15 +42,46 @@ jobs:
             echo "major_minor=${current%.*}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Create tag and release
+      - name: Create tag
         if: steps.detect.outputs.should_tag == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag="${{ steps.detect.outputs.tag }}"
           git tag "${tag}"
           git push origin "${tag}"
-          gh release create "${tag}" --generate-notes --title "${tag}"
+
+      - name: Extract release notes from CHANGELOG
+        if: steps.detect.outputs.should_tag == 'true'
+        id: extract
+        run: |
+          ver="${{ steps.detect.outputs.version }}"
+          notes_file="$(mktemp)"
+          awk -v ver="${ver}" '
+            $0 ~ "^## \\[" ver "\\]" {found=1; next}
+            found && /^## \[/ {exit}
+            found {print}
+          ' CHANGELOG/en.md > "${notes_file}"
+          if [ -s "${notes_file}" ]; then
+            echo "notes_file=${notes_file}" >> "$GITHUB_OUTPUT"
+            echo "has_notes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_notes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create release with curated notes
+        if: steps.detect.outputs.should_tag == 'true' && steps.extract.outputs.has_notes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ steps.detect.outputs.tag }}"
+          gh release create "${tag}" --title "${tag}" --notes-file "${{ steps.extract.outputs.notes_file }}"
+
+      - name: Create release with auto-generated notes (fallback)
+        if: steps.detect.outputs.should_tag == 'true' && steps.extract.outputs.has_notes != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ steps.detect.outputs.tag }}"
+          gh release create "${tag}" --title "${tag}" --generate-notes
 
       # The tag above is pushed with GITHUB_TOKEN, which does not trigger the
       # docker.yml `v*` workflow. Build the versioned image here instead, from
