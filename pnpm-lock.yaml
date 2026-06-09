@@ -15,8 +15,8 @@ importers:
         specifier: 10.4.0
         version: 10.4.0(@vue/compiler-dom@3.5.35)(db0@0.3.4)(eslint@10.4.1(jiti@2.7.0))(ioredis@5.11.1)(magicast@0.5.3)(rollup@4.61.1)(typescript@6.0.3)(vite@7.3.5(@types/node@25.9.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))(vue@3.5.35(typescript@6.0.3))
       '@prisma/client':
-        specifier: 6.18.0
-        version: 6.18.0(prisma@6.18.0(magicast@0.5.3)(typescript@6.0.3))(typescript@6.0.3)
+        specifier: 7.8.0
+        version: 7.8.0(prisma@6.18.0(magicast@0.5.3)(typescript@6.0.3))(typescript@6.0.3)
       '@types/qrcode':
         specifier: 1.5.6
         version: 1.5.6
@@ -2268,12 +2268,15 @@ packages:
   '@poppinss/exception@1.2.3':
     resolution: {integrity: sha512-dCED+QRChTVatE9ibtoaxc+WkdzOSjYTKi/+uacHWIsfodVfpsueo3+DKpgU5Px8qXjgmXkSvhXvSCz3fnP9lw==}
 
-  '@prisma/client@6.18.0':
-    resolution: {integrity: sha512-jnL2I9gDnPnw4A+4h5SuNn8Gc+1mL1Z79U/3I9eE2gbxJG1oSA+62ByPW4xkeDgwE0fqMzzpAZ7IHxYnLZ4iQA==}
-    engines: {node: '>=18.18'}
+  '@prisma/client-runtime-utils@7.8.0':
+    resolution: {integrity: sha512-5NQZztQ0oY/ADFkmd9gPuweH5A1/CCY8YQPorLLO0Mu6a87mY5gsnDkzmFmIHs9NFaLnZojzgddFVN4RpKYrdw==}
+
+  '@prisma/client@7.8.0':
+    resolution: {integrity: sha512-HFp3Dawv/3sU3JtlPha90IB+48lS7zHiH4LKZPjmcE8YH5P9DOXGPvo8dqOtO7MqLDd1p2hOWMcFlRT1DMblHw==}
+    engines: {node: ^20.19 || ^22.12 || >=24.0}
     peerDependencies:
       prisma: '*'
-      typescript: '>=5.1.0'
+      typescript: '>=5.4.0'
     peerDependenciesMeta:
       prisma:
         optional: true
@@ -9450,7 +9453,11 @@ snapshots:
 
   '@poppinss/exception@1.2.3': {}
 
-  '@prisma/client@6.18.0(prisma@6.18.0(magicast@0.5.3)(typescript@6.0.3))(typescript@6.0.3)':
+  '@prisma/client-runtime-utils@7.8.0': {}
+
+  '@prisma/client@7.8.0(prisma@6.18.0(magicast@0.5.3)(typescript@6.0.3))(typescript@6.0.3)':
+    dependencies:
+      '@prisma/client-runtime-utils': 7.8.0
     optionalDependencies:
       prisma: 6.18.0(magicast@0.5.3)(typescript@6.0.3)
       typescript: 6.0.3
