@@ -4,9 +4,10 @@ import { prisma } from '../../db/client'
 // arrive as serialised strings — consumers parse them on the way back in).
 export default defineEventHandler(async (event) => {
   const [
-    users, switches, ports, vlans, networks, ipAllocations, ipRanges,
+    sites, users, switches, ports, vlans, networks, ipAllocations, ipRanges,
     layoutTemplates, lagGroups, activity, settings, publicTokens, topologyLayouts
   ] = await Promise.all([
+    prisma.site.findMany(),
     prisma.user.findMany(),
     prisma.switch.findMany(),
     prisma.port.findMany(),
@@ -27,7 +28,7 @@ export default defineEventHandler(async (event) => {
     created_at: new Date().toISOString(),
     schema: 'sqlite-v1',
     data: {
-      users, switches, ports, vlans, networks, ipAllocations, ipRanges,
+      sites, users, switches, ports, vlans, networks, ipAllocations, ipRanges,
       layoutTemplates, lagGroups, activity, settings, publicTokens, topologyLayouts
     }
   }
