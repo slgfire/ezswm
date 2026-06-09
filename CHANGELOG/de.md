@@ -1,3 +1,10 @@
+## [0.24.1] — 2026-06-10
+
+### Behoben
+- Backup-Export und -Import funktionieren jetzt korrekt. Bisher schlug das Wiederherstellen eines Backups immer fehl, weil Sites in der exportierten Datei fehlten und beim Import ein Datenbankfehler auftrat.
+
+---
+
 ## [0.24.0] — 2026-06-06
 
 ### Geändert

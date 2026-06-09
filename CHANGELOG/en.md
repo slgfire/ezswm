@@ -1,3 +1,10 @@
+## [0.24.1] — 2026-06-10
+
+### Fixed
+- Backup export and restore now work correctly. Previously, restoring a backup always failed because sites were missing from the exported file, causing a database error on import.
+
+---
+
 ## [0.24.0] — 2026-06-06
 
 ### Changed
