@@ -132,6 +132,34 @@ describe('restoreAll', () => {
     expect(alloc?.network_id).toBe(networkId)
   })
 
+  it('restores sites together with their switches (export round-trip shape)', async () => {
+    // Regression: the export endpoint had prisma.site.findMany() missing, so
+    // sites were never included in the backup. Without sites, the restore wipes
+    // them and then fails with an FK violation when inserting switches.
+    const siteId = randomUUID()
+    const switchId = randomUUID()
+    const payload = {
+      schema: 'sqlite-v1',
+      data: {
+        sites: [{ id: siteId, slug: 'home', name: 'Home', description: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
+        switches: [{
+          id: switchId, site_id: siteId, slug: 'sw-core', name: 'core-01',
+          layout_template_id: null, notes: null, tags: '[]',
+          configured_vlans: '[]', is_favorite: false,
+          created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z'
+        }]
+      }
+    }
+
+    const result = await restoreAll(prisma, payload)
+    expect(result.inserted.sites).toBe(1)
+    expect(result.inserted.switches).toBe(1)
+
+    expect(await prisma.site.count()).toBe(1)
+    expect(await prisma.switch.count()).toBe(1)
+    expect((await prisma.switch.findFirst())?.site_id).toBe(siteId)
+  })
+
   it('rolls back atomically on insert failure', async () => {
     // FK violation: network references a non-existent site_id, but UUID format is OK
     // so the pre-validation pass lets it through.
