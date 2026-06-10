@@ -1,3 +1,10 @@
+## [0.25.1] — 2026-06-10
+
+### Fixed
+- Fixed Docker startup crash loop after Prisma 7 upgrade: `prisma.config.ts` was missing from the runtime image, causing `prisma migrate deploy` to fail with "datasource.url property is required".
+
+---
+
 ## [0.25.0] — 2026-06-10
 
 ### Changed

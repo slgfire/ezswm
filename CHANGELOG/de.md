@@ -1,3 +1,10 @@
+## [0.25.1] — 2026-06-10
+
+### Behoben
+- Docker-Startschleife nach Prisma-7-Upgrade behoben: `prisma.config.ts` fehlte im Runtime-Image, was dazu führte, dass `prisma migrate deploy` mit „datasource.url property is required" fehlschlug.
+
+---
+
 ## [0.25.0] — 2026-06-10
 
 ### Geändert

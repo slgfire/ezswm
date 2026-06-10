@@ -34,16 +34,17 @@ FROM node:22-alpine AS runtime
 
 WORKDIR /app
 
-COPY --from=builder /app/.output ./.output
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
-COPY docker-entrypoint.sh ./
+COPY --chown=node:node --from=builder /app/.output ./.output
+COPY --chown=node:node --from=builder /app/prisma ./prisma
+COPY --chown=node:node --from=builder /app/prisma.config.ts ./
+COPY --chown=node:node --from=builder /app/node_modules ./node_modules
+COPY --chown=node:node --from=builder /app/package.json ./
+COPY --chown=node:node docker-entrypoint.sh ./
 
 # Data directory owned by the runtime user. The SQLite db + WAL + archived
 # JSON files all live in /app/data so they sit on the persistent volume.
 RUN mkdir -p /app/data \
- && chown -R node:node /app/data /app/node_modules /app/prisma /app/.output /app/package.json /app/docker-entrypoint.sh \
+ && chown node:node /app/data \
  && chmod +x /app/docker-entrypoint.sh
 
 USER node
