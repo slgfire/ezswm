@@ -1,3 +1,10 @@
+## [0.25.2] — 2026-06-10
+
+### Fixed
+- Changelog modal no longer shows "unavailable" for logged-in users. The `/api/changelog` and `/api/version-latest` endpoints are now public (no auth token required), matching how the changelog is used before and after login.
+
+---
+
 ## [0.25.1] — 2026-06-10
 
 ### Fixed
