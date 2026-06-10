@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = createIpAllocationSchema.parse(body)
 
-  const created = await ipAllocationRepository.create(id, parsed)
+  const created = await ipAllocationRepository.create(network.id, parsed)
 
   await activityRepository.log({
     user_id: event.context.auth?.userId,

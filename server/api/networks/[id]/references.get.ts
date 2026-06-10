@@ -15,8 +15,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Network not found' })
   }
 
-  const allocations = await ipAllocationRepository.list(id)
-  const ranges = await ipRangeRepository.list(id)
+  const allocations = await ipAllocationRepository.list(network.id)
+  const ranges = await ipRangeRepository.list(network.id)
 
   return {
     allocations,

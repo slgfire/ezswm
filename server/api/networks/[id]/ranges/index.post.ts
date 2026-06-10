@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = createIpRangeSchema.parse(body)
 
-  const created = await ipRangeRepository.create(id, parsed)
+  const created = await ipRangeRepository.create(network.id, parsed)
 
   await activityRepository.log({
     user_id: event.context.auth?.userId,

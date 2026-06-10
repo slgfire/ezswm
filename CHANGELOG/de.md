@@ -1,3 +1,10 @@
+## [0.25.3] — 2026-06-10
+
+### Behoben
+- IP-Belegungen und IP-Ranges werden jetzt korrekt angezeigt, wenn ein Subnetz über seine slug-basierte URL aufgerufen wird. Die betroffenen API-Endpunkte lösen den Netzwerk-Slug nun korrekt in die zugehörige UUID auf, bevor Kind-Datensätze abgefragt werden.
+
+---
+
 ## [0.25.2] — 2026-06-10
 
 ### Behoben

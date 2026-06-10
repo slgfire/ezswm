@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   const deviceType = query.device_type as string | undefined
   const search = query.search as string | undefined
 
-  let items = await ipAllocationRepository.list(id)
+  let items = await ipAllocationRepository.list(network.id)
 
   if (status) {
     items = items.filter((a) => a.status === status)

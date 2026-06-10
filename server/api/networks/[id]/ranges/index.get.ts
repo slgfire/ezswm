@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   const type = query.type as string | undefined
   const search = query.search as string | undefined
 
-  let items = await ipRangeRepository.list(id)
+  let items = await ipRangeRepository.list(network.id)
 
   if (type) {
     items = items.filter((r) => r.type === type)
