@@ -104,7 +104,16 @@ cd ezswm
 pnpm install
 ```
 
-Setze das JWT-Secret und starte den Entwicklungsserver:
+Erstelle eine `.env`-Datei (aus `.env.example` kopieren):
+
+```bash
+cp .env.example .env
+# .env öffnen: JWT_SECRET setzen und DATABASE_URL prüfen
+```
+
+> **Hinweis (0.25.0+):** `DATABASE_URL` wird nun relativ zum **Repo-Root** aufgelöst, nicht mehr zum `prisma/`-Verzeichnis. Der Standard `file:./data/db.sqlite` legt `data/db.sqlite` direkt neben dem Projekt-Root an — bei abweichendem Pfad entsprechend anpassen.
+
+Entwicklungsserver starten:
 
 ```bash
 export JWT_SECRET=dev-secret-change-me

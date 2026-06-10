@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { execSync } from 'node:child_process'
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import { PrismaClient } from '@prisma/client'
 
 import { runJsonToPrismaMigration } from '../server/migrations/jsonToPrisma'
@@ -21,7 +22,7 @@ async function freshPrismaClient(dbFile: string): Promise<PrismaClient> {
     stdio: 'pipe',
     cwd: process.cwd()
   })
-  return new PrismaClient({ datasources: { db: { url: `file:${dbFile}` } } })
+  return new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: `file:${dbFile}` }) })
 }
 
 describe('jsonToPrisma migration', () => {
