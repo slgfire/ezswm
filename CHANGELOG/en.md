@@ -1,3 +1,10 @@
+## [0.25.3] — 2026-06-10
+
+### Fixed
+- IP allocations and ranges no longer appear empty when navigating to a subnet via its slug-based URL. The allocation and range API endpoints now correctly resolve the network slug to its UUID before querying child records.
+
+---
+
 ## [0.25.2] — 2026-06-10
 
 ### Fixed

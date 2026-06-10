@@ -17,8 +17,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const subnetInfo = parseSubnet(network.subnet)
-  const allocations = await ipAllocationRepository.list(id)
-  const ranges = await ipRangeRepository.list(id)
+  const allocations = await ipAllocationRepository.list(network.id)
+  const ranges = await ipRangeRepository.list(network.id)
 
   const usableIps = subnetInfo.usable_hosts
   const allocatedCount = allocations.length
