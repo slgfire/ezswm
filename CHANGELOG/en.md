@@ -1,3 +1,10 @@
+## [0.25.4] — 2026-06-11
+
+### Fixed
+- IP range rows in the subnet detail view now display the address range in a uniform style, matching regular allocation rows. The IP count is now shown as a colour-coded badge matching the range type (DHCP, static, reserved), replacing the previous small grey text.
+
+---
+
 ## [0.25.3] — 2026-06-10
 
 ### Fixed
