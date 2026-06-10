@@ -1,3 +1,12 @@
+## [0.25.0] — 2026-06-10
+
+### Changed
+- Upgraded Prisma ORM from 6.18 to 7.8. The database engine now uses the `better-sqlite3` driver adapter instead of the legacy binary engine. Performance and compatibility are equivalent; no data migration is required.
+
+> **Breaking change for source builds:** The `DATABASE_URL` in `.env` is now resolved relative to the repository root (where `prisma.config.ts` lives), not relative to the `prisma/` folder. If you run ezSWM from source and have a custom `DATABASE_URL` path in `.env`, update it accordingly. The default path changes from `file:../data/db.sqlite` to `file:./data/db.sqlite`. Docker deployments using the pre-built image are not affected.
+
+---
+
 ## [0.24.2] — 2026-06-10
 
 ### Fixed

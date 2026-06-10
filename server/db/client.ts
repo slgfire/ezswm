@@ -1,3 +1,4 @@
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import { PrismaClient } from '@prisma/client'
 
 declare global {
@@ -10,7 +11,9 @@ function activeClient(): PrismaClient {
   // else uses the lazily-constructed default Prisma client picked from the env.
   if (globalThis.__prismaTestClient) return globalThis.__prismaTestClient
   if (!globalThis.__prismaProdClient) {
-    globalThis.__prismaProdClient = new PrismaClient()
+    globalThis.__prismaProdClient = new PrismaClient({
+      adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL! }),
+    })
   }
   return globalThis.__prismaProdClient
 }

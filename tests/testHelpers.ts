@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { execSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import { PrismaClient } from '@prisma/client'
 
 interface TestRuntimeConfig {
@@ -71,7 +72,7 @@ export async function createTestPrisma(): Promise<TestPrismaContext> {
     cwd: process.cwd()
   })
 
-  const prisma = new PrismaClient({ datasources: { db: { url: `file:${dbFile}` } } })
+  const prisma = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: `file:${dbFile}` }) })
 
   async function resetDb(): Promise<void> {
     // FK-safe order — leaves with the most dependents first.
