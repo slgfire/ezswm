@@ -1,3 +1,10 @@
+## [0.24.2] — 2026-06-10
+
+### Fixed
+- Removing a tag from a switch in the edit form now works correctly. Previously the tag was not removed when saved if it was the last tag on the switch.
+
+---
+
 ## [0.24.1] — 2026-06-10
 
 ### Fixed
