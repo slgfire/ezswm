@@ -1,3 +1,10 @@
+## [0.25.4] — 2026-06-11
+
+### Behoben
+- IP-Range-Zeilen in der Subnetz-Detailansicht zeigen den Adressbereich jetzt einheitlich im gleichen Stil wie normale Belegungs-Zeilen. Die Anzahl der IPs wird jetzt als farbiger Badge in der Farbe des Range-Typs (DHCP, statisch, reserviert) dargestellt, statt als kleiner grauer Text.
+
+---
+
 ## [0.25.3] — 2026-06-10
 
 ### Behoben
