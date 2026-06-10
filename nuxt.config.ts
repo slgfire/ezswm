@@ -58,7 +58,7 @@ export default defineNuxtConfig({
 
   nitro: {
     serverAssets: [
-      { baseName: 'changelog', dir: 'CHANGELOG' }
+      { baseName: 'changelog', dir: '../CHANGELOG' }
     ]
   },
 
