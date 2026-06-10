@@ -75,7 +75,9 @@ export function useSwitchEditForm(
       const body: Record<string, unknown> = { ...editForm, tags: [...editForm.tags] }
       for (const key of Object.keys(body)) {
         if (body[key] === '' && key !== 'layout_template_id') delete body[key]
-        if (Array.isArray(body[key]) && (body[key] as unknown[]).length === 0) delete body[key]
+        // Empty `tags` array means "remove all" — must reach the API. Other empty
+        // arrays (configured_vlans etc.) are managed via dedicated endpoints.
+        if (Array.isArray(body[key]) && (body[key] as unknown[]).length === 0 && key !== 'tags') delete body[key]
       }
       if (body.layout_template_id === '') delete body.layout_template_id
       body.stack_size = editForm.stack_size || 1

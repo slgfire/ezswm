@@ -1,3 +1,10 @@
+## [0.24.2] — 2026-06-10
+
+### Behoben
+- Tags an einem Switch können jetzt über das Bearbeiten-Formular korrekt entfernt werden. Bisher wurde ein Tag nicht gespeichert entfernt, wenn es das letzte Tag am Switch war.
+
+---
+
 ## [0.24.1] — 2026-06-10
 
 ### Behoben
