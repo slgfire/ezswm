@@ -894,7 +894,7 @@
     "title": "Changelog",
     "whatsNew": "What's new?",
     "viewAll": "View all releases on GitHub",
-    "unavailable": "Changelog unavailable — could not reach GitHub.",
+    "unavailable": "Changelog unavailable.",
     "updateAvailable": "A new version is available"
   }
 }

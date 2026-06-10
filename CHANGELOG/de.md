@@ -1,3 +1,10 @@
+## [0.25.2] — 2026-06-10
+
+### Behoben
+- Changelog-Modal zeigt eingeloggten Benutzern nicht mehr „nicht verfügbar". Die Endpunkte `/api/changelog` und `/api/version-latest` sind jetzt öffentlich (kein Auth-Token erforderlich), passend zur Nutzung vor und nach dem Login.
+
+---
+
 ## [0.25.1] — 2026-06-10
 
 ### Behoben
