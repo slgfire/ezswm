@@ -56,10 +56,10 @@ export function parseChangelog(markdown: string): ChangelogRelease[] {
 // Reads from Nitro server asset storage.
 export async function loadChangelog(locale: string): Promise<ChangelogResponse> {
   const normalized = locale === 'de' ? 'de' : 'en'
-  const storage = useStorage('assets:server')
-  let md = await storage.getItem<string>(`changelog:${normalized}.md`)
+  const storage = useStorage('assets:changelog')
+  let md = await storage.getItem<string>(`${normalized}.md`)
   if (!md && normalized !== 'en') {
-    md = await storage.getItem<string>('changelog:en.md')
+    md = await storage.getItem<string>('en.md')
   }
   const releases = md ? parseChangelog(md) : []
   return { latest: releases[0]?.version ?? '', releases }

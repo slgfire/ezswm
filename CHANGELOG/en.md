@@ -1,3 +1,10 @@
+## [0.25.6] — 2026-06-11
+
+### Fixed
+- Changelog modal now works correctly in the production Docker image. The CHANGELOG files were bundled (after the v0.25.5 path fix) but read from the wrong Nitro storage namespace (`assets:server` instead of `assets:changelog`), so the API still returned an empty list.
+
+---
+
 ## [0.25.5] — 2026-06-11
 
 ### Fixed
