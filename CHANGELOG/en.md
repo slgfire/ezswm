@@ -1,3 +1,10 @@
+## [0.25.5] — 2026-06-11
+
+### Fixed
+- Changelog modal now shows release notes in the production Docker image. The CHANGELOG files were not being bundled into the server build because the asset path was resolved relative to the Nuxt `app/` directory instead of the project root.
+
+---
+
 ## [0.25.4] — 2026-06-11
 
 ### Fixed

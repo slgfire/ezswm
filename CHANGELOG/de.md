@@ -1,3 +1,10 @@
+## [0.25.5] — 2026-06-11
+
+### Behoben
+- Das Changelog-Modal zeigt im produktiven Docker-Image jetzt die Release-Notes an. Die CHANGELOG-Dateien wurden nicht in den Server-Build eingebettet, weil der Asset-Pfad relativ zum Nuxt-`app/`-Verzeichnis statt zum Projekt-Root aufgelöst wurde.
+
+---
+
 ## [0.25.4] — 2026-06-11
 
 ### Behoben
