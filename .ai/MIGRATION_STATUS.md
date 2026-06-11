@@ -3,9 +3,20 @@
 ## Latest Stage
 
 Date: 2026-06-11
-Stage: NetBox Import in Quick-Create + Auto-Fill from Template
+Stage: Fix duplicate required-field asterisk in form labels
 Status: Complete
-Version: 0.26.0
+Version: 0.26.1
+
+### Fix: duplicate / non-red asterisk in required-field labels (v0.26.1)
+
+Some form labels rendered `Name **` (two asterisks, the first non-red) or a
+single non-red asterisk. Cause: a literal `' *'` was concatenated onto
+`:label` while Nuxt UI v4 `UFormField required` already renders its own red
+asterisk. Removed all literal `' *'` (16 occurrences across 7 files) and moved
+`required` onto the `UFormField` where it had been on the inner `UInput`
+(`IpAddressForm.vue`, `NetworkAllocationForm.vue`, `subnets/[id].vue`). Now a
+single red asterisk renders consistently. No i18n change (locale strings never
+contained asterisks).
 
 ### NetBox Import in Quick-Create Modal + Auto-Fill Manufacturer/Model
 

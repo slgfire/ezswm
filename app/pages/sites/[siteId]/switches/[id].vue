@@ -235,7 +235,7 @@
 
       <template #body>
         <UForm ref="editFormRef" :state="editForm" :validate="validateEdit" :validate-on="['blur', 'change']" novalidate class="space-y-4" @submit="onSave">
-          <UFormField :label="$t('switches.fields.name') + ' *'" name="name" required>
+          <UFormField :label="$t('switches.fields.name')" name="name" required>
             <UInput v-model="editForm.name" required class="w-full" />
           </UFormField>
 

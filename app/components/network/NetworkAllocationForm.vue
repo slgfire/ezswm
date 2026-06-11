@@ -41,7 +41,7 @@
 
       <!-- IP Address form -->
       <form v-if="modeModel === 'ip'" class="space-y-4" @submit.prevent="emit('submit-allocation')">
-        <UFormField :label="$t('networks.allocations.fields.ipAddress') + ' *'">
+        <UFormField :label="$t('networks.allocations.fields.ipAddress')" required>
           <UInput v-model="allocForm.ip_address" placeholder="10.0.1.10" required :color="error ? 'error' : undefined" class="w-full" />
         </UFormField>
         <UFormField :label="$t('networks.allocations.fields.hostname')">
@@ -66,14 +66,14 @@
       <!-- IP Range form -->
       <form v-if="modeModel === 'range'" class="space-y-4" @submit.prevent="emit('submit-range')">
         <div class="grid grid-cols-2 gap-3">
-          <UFormField :label="$t('networks.ranges.fields.startIp') + ' *'">
+          <UFormField :label="$t('networks.ranges.fields.startIp')" required>
             <UInput v-model="rangeForm.start_ip" placeholder="10.0.1.100" required :color="error ? 'error' : undefined" class="w-full" />
           </UFormField>
-          <UFormField :label="$t('networks.ranges.fields.endIp') + ' *'">
+          <UFormField :label="$t('networks.ranges.fields.endIp')" required>
             <UInput v-model="rangeForm.end_ip" placeholder="10.0.1.200" required :color="error ? 'error' : undefined" class="w-full" />
           </UFormField>
         </div>
-        <UFormField :label="$t('networks.ranges.fields.type') + ' *'">
+        <UFormField :label="$t('networks.ranges.fields.type')" required>
           <USelect v-model="rangeForm.type" :items="rangeTypeOptions" class="w-full" />
         </UFormField>
         <UFormField :label="$t('common.description')">

@@ -20,12 +20,12 @@
       </div>
 
       <form class="space-y-4" @submit.prevent="onSubmit">
-        <UFormField :label="$t('ipAddresses.fields.ipAddress') + ' *'">
+        <UFormField :label="$t('ipAddresses.fields.ipAddress')" required>
           <UInput v-model="form.ip_address" placeholder="10.0.1.10" required :color="error ? 'error' : undefined" class="w-full" />
         </UFormField>
 
         <!-- Network: editable + auto-preselected (add); read-only (edit) -->
-        <UFormField :label="$t('ipAddresses.fields.network') + ' *'">
+        <UFormField :label="$t('ipAddresses.fields.network')" required>
           <div v-if="editTarget" class="flex items-center gap-2 text-sm">
             <span class="font-medium text-gray-900 dark:text-white">{{ editTarget.network_name }}</span>
             <code class="rounded bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">{{ editTarget.network_subnet }}</code>
