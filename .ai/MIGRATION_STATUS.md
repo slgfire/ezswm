@@ -2,10 +2,26 @@
 
 ## Latest Stage
 
-Date: 2026-05-25
-Stage: Setup Wizard — Operator-Named First Site
+Date: 2026-06-11
+Stage: NetBox Import in Quick-Create + Auto-Fill from Template
 Status: Complete
-Version: 0.18.2
+Version: 0.26.0
+
+### NetBox Import in Quick-Create Modal + Auto-Fill Manufacturer/Model
+
+- **Quick-Create Template Modal** (`app/components/template/QuickCreateModal.vue`) extended
+  with a Manuell / Aus Bibliothek tab switcher using `UTabs`. The Library tab embeds the
+  existing `TemplateLibraryImport` component — search, port preview, skipped-interface
+  warning — and calls `create()` directly with the schema-valid template object emitted
+  by `LibraryImport`. No duplicate import logic.
+- **Auto-fill in switch create form** (`app/pages/sites/[siteId]/switches/create.vue`):
+  a `watch` on `layout_template_id` copies `manufacturer` + `model` from the selected
+  template into the switch form (if blank or previously auto-filled). Manual user edits
+  lock the field so template switches don't overwrite intentional values.
+- i18n: added `templates.quickCreate.tabManual` / `tabLibrary` keys (EN + DE).
+- Version bumped 0.25.6 → 0.26.0 (new feature, minor bump).
+
+### Previous: Changelog Assets Fix (v0.25.6)
 
 ### Setup Wizard Changes
 - **First-run flow now has two steps:** Step 1 = admin account (existing), Step 2 = first site naming. Operator chooses the name instead of getting an opaque "Default" site

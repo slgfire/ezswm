@@ -557,7 +557,9 @@
       "portCount": "Port Count",
       "portType": "Port Type",
       "openFullEditor": "Open full editor",
-      "portCountRange": "Port count must be between 1 and 96"
+      "portCountRange": "Port count must be between 1 and 96",
+      "tabManual": "Manual",
+      "tabLibrary": "Import from Library"
     },
     "emptyTitle": "No layout templates yet",
     "emptyDescription": "Create your first switch template to define port layouts for your switch models.",

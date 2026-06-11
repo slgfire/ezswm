@@ -119,7 +119,11 @@ Fields:
 - **Rack Position** -- position within the rack
 - **Management IP** -- must be a valid IPv4 address
 - **Firmware Version** -- currently running firmware
-- **Layout Template** -- select a previously created template; this generates the port grid. If no template fits, click **Create New** next to the dropdown to open a quick-create modal — fill in name, port count, and port type, and the new template is added to the list and pre-selected. Use **Open full editor** for advanced templates with multiple units, blocks, or PoE settings.
+- **Layout Template** -- select a previously created template; this generates the port grid. If no template fits, click **Create New** next to the dropdown to open a quick-create modal. The modal has two tabs:
+  - **Manual** -- fill in name, port count, and port type.
+  - **Import from Library** -- search the NetBox Device Type Library by manufacturer or model name, preview the port layout, and click **Import** to create the template automatically. Manufacturer and model are pulled from the device definition.
+
+  In both cases the new template is added to the list and pre-selected. When a template with manufacturer/model data is selected, those fields in the switch form are auto-filled (editable, and locking once manually overridden). Use **Open full editor** for advanced templates with multiple units, blocks, or PoE settings.
 - **Stack Size** -- number of stacking members (1-8). Only visible when a template is selected. When set to more than 1, the template's ports are duplicated for each stack member with automatically incremented port labels (e.g., GigabitEthernet1/0/1 for member 1, GigabitEthernet2/0/1 for member 2). The port grid shows a visual divider between stack members.
 - **Role** -- Core, Distribution, Access, or Management
 - **Tags** -- freeform tags; type and press Enter to add, click a tag to remove
