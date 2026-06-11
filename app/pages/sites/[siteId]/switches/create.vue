@@ -20,10 +20,10 @@
               <UInput v-model="form.name" :placeholder="$t('switches.fields.name')" class="w-full" />
             </UFormField>
             <UFormField :label="$t('switches.fields.manufacturer')" name="manufacturer">
-              <UInput v-model="form.manufacturer" :placeholder="$t('switches.fields.manufacturer')" class="w-full" />
+              <UInput v-model="form.manufacturer" :placeholder="$t('switches.fields.manufacturer')" class="w-full" @update:model-value="autoFilled.manufacturer = false" />
             </UFormField>
             <UFormField :label="$t('switches.fields.model')" name="model">
-              <UInput v-model="form.model" :placeholder="$t('switches.fields.model')" class="w-full" />
+              <UInput v-model="form.model" :placeholder="$t('switches.fields.model')" class="w-full" @update:model-value="autoFilled.model = false" />
             </UFormField>
             <UFormField :label="$t('switches.fields.serialNumber')" name="serial_number">
               <UInput v-model="form.serial_number" :placeholder="$t('switches.fields.serialNumber')" class="w-full" />
@@ -171,6 +171,24 @@ const stackSizeOptions = Array.from({ length: 8 }, (_, i) => ({
 }))
 
 const { clearDirty } = useUnsavedChanges(form)
+
+// Tracks whether manufacturer / model were auto-filled from a template.
+// Manual user input clears the flag so subsequent template changes don't
+// overwrite intentional edits.
+const autoFilled = reactive({ manufacturer: false, model: false })
+
+watch(() => form.layout_template_id, (id) => {
+  const tpl = templates.value.find(t => t.id === id)
+  if (!tpl) return
+  if (form.manufacturer === '' || autoFilled.manufacturer) {
+    form.manufacturer = tpl.manufacturer ?? ''
+    autoFilled.manufacturer = !!tpl.manufacturer
+  }
+  if (form.model === '' || autoFilled.model) {
+    form.model = tpl.model ?? ''
+    autoFilled.model = !!tpl.model
+  }
+})
 
 function onTemplateCreated(template: LayoutTemplate) {
   templates.value = [...templates.value, template]

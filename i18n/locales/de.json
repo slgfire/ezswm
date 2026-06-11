@@ -557,7 +557,9 @@
       "portCount": "Port-Anzahl",
       "portType": "Port-Typ",
       "openFullEditor": "Vollen Editor öffnen",
-      "portCountRange": "Port-Anzahl muss zwischen 1 und 96 liegen"
+      "portCountRange": "Port-Anzahl muss zwischen 1 und 96 liegen",
+      "tabManual": "Manuell",
+      "tabLibrary": "Aus Bibliothek importieren"
     },
     "emptyTitle": "Noch keine Layout-Vorlagen",
     "emptyDescription": "Erstellen Sie Ihre erste Switch-Vorlage, um Port-Layouts für Ihre Switch-Modelle zu definieren.",
