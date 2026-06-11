@@ -1,3 +1,10 @@
+## [0.25.6] — 2026-06-11
+
+### Behoben
+- Das Changelog-Modal funktioniert jetzt korrekt im produktiven Docker-Image. Die CHANGELOG-Dateien wurden zwar gebündelt (nach dem Pfad-Fix in v0.25.5), aber aus dem falschen Nitro-Storage-Namespace gelesen (`assets:server` statt `assets:changelog`), sodass die API weiterhin eine leere Liste zurückgab.
+
+---
+
 ## [0.25.5] — 2026-06-11
 
 ### Behoben
