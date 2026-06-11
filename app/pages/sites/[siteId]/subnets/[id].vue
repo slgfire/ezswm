@@ -166,14 +166,14 @@
         </div>
         <form class="space-y-4" @submit.prevent="onSaveRangeEdit">
           <div class="grid grid-cols-2 gap-3">
-            <UFormField :label="$t('networks.ranges.fields.startIp') + ' *'">
+            <UFormField :label="$t('networks.ranges.fields.startIp')" required>
               <UInput v-model="rangeEditForm.start_ip" required class="w-full" />
             </UFormField>
-            <UFormField :label="$t('networks.ranges.fields.endIp') + ' *'">
+            <UFormField :label="$t('networks.ranges.fields.endIp')" required>
               <UInput v-model="rangeEditForm.end_ip" required class="w-full" />
             </UFormField>
           </div>
-          <UFormField :label="$t('networks.ranges.fields.type') + ' *'">
+          <UFormField :label="$t('networks.ranges.fields.type')" required>
             <USelect v-model="rangeEditForm.type" :items="rangeTypeOptions" class="w-full" />
           </UFormField>
           <UFormField :label="$t('common.description')">

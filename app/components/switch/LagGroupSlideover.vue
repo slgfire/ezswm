@@ -6,7 +6,7 @@
   >
     <template #body>
       <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" class="space-y-4" @submit="onSubmit">
-        <UFormField :label="$t('lag.name') + ' *'" name="name" required>
+        <UFormField :label="$t('lag.name')" name="name" required>
           <UInput v-model="form.name" class="w-full" />
         </UFormField>
 

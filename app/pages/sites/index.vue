@@ -79,7 +79,7 @@
     <USlideover v-model:open="showEdit" :title="$t('sites.edit', 'Edit Site')" description="Edit site properties">
       <template #body>
         <div class="space-y-4">
-          <UFormField :label="$t('sites.fields.name', 'Name') + ' *'" name="name" required>
+          <UFormField :label="$t('sites.fields.name', 'Name')" name="name" required>
             <UInput v-model="editForm.name" class="w-full" />
           </UFormField>
           <UFormField :label="$t('common.description', 'Description')" name="description">

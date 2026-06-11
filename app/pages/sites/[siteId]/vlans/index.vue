@@ -190,10 +190,10 @@
 
         <!-- Edit form -->
         <UForm v-if="panelEditing" ref="editFormRef" :state="editForm" :validate="validate" :validate-on="['blur', 'change']" novalidate class="space-y-4" @submit="onSave">
-          <UFormField :label="$t('vlans.fields.vlanId') + ' *'" name="vlan_id" required>
+          <UFormField :label="$t('vlans.fields.vlanId')" name="vlan_id" required>
             <UInput v-model.number="editForm.vlan_id" type="number" :min="1" :max="4094" required class="w-full" />
           </UFormField>
-          <UFormField :label="$t('vlans.fields.name') + ' *'" name="name" required>
+          <UFormField :label="$t('vlans.fields.name')" name="name" required>
             <UInput v-model="editForm.name" required class="w-full" />
           </UFormField>
           <UFormField :label="$t('common.description')" name="description">
@@ -205,7 +205,7 @@
           <UFormField :label="$t('vlans.fields.routingDevice')" name="routing_device">
             <UInput v-model="editForm.routing_device" class="w-full" />
           </UFormField>
-          <UFormField :label="$t('vlans.fields.color') + ' *'" name="color" required>
+          <UFormField :label="$t('vlans.fields.color')" name="color" required>
             <div class="flex items-center gap-3">
               <input
                 v-model="editForm.color"

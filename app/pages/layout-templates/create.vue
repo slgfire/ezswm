@@ -18,7 +18,7 @@
           <div class="space-y-6">
             <!-- Basic Info -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormField :label="$t('templates.fields.name') + ' *'" name="name" :error="errors.name" required>
+              <UFormField :label="$t('templates.fields.name')" name="name" :error="errors.name" required>
                 <UInput v-model="form.name" :placeholder="$t('templates.fields.name')" class="w-full" />
               </UFormField>
               <UFormField :label="$t('templates.fields.manufacturer')">
