@@ -512,7 +512,13 @@ export const switchRepository = {
     return updated
   },
 
-  async updatePort(switchId: string, portId: string, data: Partial<Omit<Port, 'id' | 'unit' | 'index'>>): Promise<Port> {
+  async updatePort(idOrSlug: string, portId: string, data: Partial<Omit<Port, 'id' | 'unit' | 'index'>>): Promise<Port> {
+    // Accept either a UUID or a globally-unique slug; resolve to the real PK
+    // before the transaction so the `where: { id }` clauses below match.
+    const target = await this.getById(idOrSlug)
+    if (!target) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
+    const switchId = target.id
+
     const updated = await prisma.$transaction(async (tx) => {
       const oldPort = await tx.port.findUnique({ where: { id: portId } })
       if (!oldPort || oldPort.switch_id !== switchId) {
@@ -572,7 +578,13 @@ export const switchRepository = {
     return rowToPort(updated)
   },
 
-  async bulkUpdatePorts(switchId: string, portIds: string[], updates: Partial<Omit<Port, 'id' | 'unit' | 'index'>>): Promise<Port[]> {
+  async bulkUpdatePorts(idOrSlug: string, portIds: string[], updates: Partial<Omit<Port, 'id' | 'unit' | 'index'>>): Promise<Port[]> {
+    // Accept either a UUID or a globally-unique slug; resolve to the real PK
+    // before the transaction so the `where: { id }` clauses below match.
+    const target = await this.getById(idOrSlug)
+    if (!target) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
+    const switchId = target.id
+
     const updated = await prisma.$transaction(async (tx) => {
       const rows: PortRow[] = []
       for (const portId of portIds) {
@@ -588,11 +600,17 @@ export const switchRepository = {
   },
 
   async applyPortVlanUpdate(
-    switchId: string,
+    idOrSlug: string,
     portId: string,
     portData: Partial<Omit<Port, 'id' | 'unit' | 'index'>>,
     options: { expectedUpdatedAt?: string; siteVlanIds?: number[] } = {}
   ): Promise<{ port: Port; updatedAt: string; vlansAddedToSwitch: number[] }> {
+    // Accept either a UUID or a globally-unique slug; resolve to the real PK
+    // before the transaction so the `where: { id }` clauses below match.
+    const target = await this.getById(idOrSlug)
+    if (!target) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
+    const switchId = target.id
+
     return prisma.$transaction(async (tx) => {
       const sw = await tx.switch.findUnique({ where: { id: switchId } })
       if (!sw) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
@@ -648,7 +666,12 @@ export const switchRepository = {
     })
   },
 
-  async addVlansToSwitch(switchId: string, vlanIds: number[]): Promise<{ addedVlans: number[]; updatedAt: string }> {
+  async addVlansToSwitch(idOrSlug: string, vlanIds: number[]): Promise<{ addedVlans: number[]; updatedAt: string }> {
+    // Accept either a UUID or a globally-unique slug; resolve to the real PK.
+    const target = await this.getById(idOrSlug)
+    if (!target) throw createError({ statusCode: 404, statusMessage: 'Target switch not found' })
+    const switchId = target.id
+
     return prisma.$transaction(async (tx) => {
       const sw = await tx.switch.findUnique({ where: { id: switchId } })
       if (!sw) throw createError({ statusCode: 404, statusMessage: 'Target switch not found' })
@@ -673,7 +696,7 @@ export const switchRepository = {
   },
 
   async applyConfiguredVlansRemoval(
-    switchId: string,
+    idOrSlug: string,
     vlanId: number,
     options: {
       expectedUpdatedAt?: string
@@ -685,6 +708,12 @@ export const switchRepository = {
       }>
     } = {}
   ): Promise<{ updatedAt: string; portsUpdated: number }> {
+    // Accept either a UUID or a globally-unique slug; resolve to the real PK
+    // before the transaction so the `where: { id }` clauses below match.
+    const target = await this.getById(idOrSlug)
+    if (!target) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
+    const switchId = target.id
+
     return prisma.$transaction(async (tx) => {
       const sw = await tx.switch.findUnique({ where: { id: switchId }, include: includePorts })
       if (!sw) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
