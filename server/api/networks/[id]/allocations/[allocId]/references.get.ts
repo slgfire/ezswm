@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   // Validate allocation exists and belongs to this network
   const allocation = await ipAllocationRepository.getById(allocId)
   if (!allocation) throw createError({ statusCode: 404, message: 'Allocation not found' })
-  if (allocation.network_id !== networkId) {
+  if (allocation.network_id !== network.id) {
     throw createError({ statusCode: 404, message: 'Allocation does not belong to this network' })
   }
 

@@ -72,7 +72,7 @@ export default defineEventHandler(async (event) => {
   let vlansAddedToTargetSwitch: number[] = []
   const connectedDeviceId = (parsed as Record<string, unknown>).connected_device_id as string | undefined
   const connectedPortId = (parsed as Record<string, unknown>).connected_port_id as string | undefined
-  if (addVlansToTargetSwitch && connectedDeviceId && connectedDeviceId !== switchId) {
+  if (addVlansToTargetSwitch && connectedDeviceId && connectedDeviceId !== existing.id) {
     // Collect VLAN config from the saved port
     const portMode = (parsed as Record<string, unknown>).port_mode as string | undefined
     const accessVlan = (parsed as Record<string, unknown>).access_vlan as number | null | undefined
@@ -98,7 +98,7 @@ export default defineEventHandler(async (event) => {
           port_mode: portMode as Port['port_mode'],
           // Set bidirectional connection back to source
           connected_device: existing.name,
-          connected_device_id: switchId,
+          connected_device_id: existing.id,
           connected_port: oldPort?.label || portId,
           connected_port_id: portId
         }

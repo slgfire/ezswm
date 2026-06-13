@@ -50,14 +50,24 @@ export const lagGroupRepository = {
     return row ? rowToLag(row) : null
   },
 
-  async create(switchId: string, data: Omit<LAGGroup, 'id' | 'switch_id' | 'created_at' | 'updated_at'>): Promise<LAGGroup> {
-    const sw = await prisma.switch.findUnique({
-      where: { id: switchId },
+  async create(idOrSlug: string, data: Omit<LAGGroup, 'id' | 'switch_id' | 'created_at' | 'updated_at'>): Promise<LAGGroup> {
+    // Accept either a UUID or a globally-unique slug (the detail page passes the
+    // route slug). Resolve to the real PK before any `where: { id }` use.
+    let sw = await prisma.switch.findUnique({
+      where: { id: idOrSlug },
       include: { ports: { select: { id: true, lag_group_id: true } } }
     })
     if (!sw) {
+      const matches = await prisma.switch.findMany({
+        where: { slug: idOrSlug },
+        include: { ports: { select: { id: true, lag_group_id: true } } }
+      })
+      if (matches.length === 1) sw = matches[0]!
+    }
+    if (!sw) {
       throw createError({ statusCode: 404, message: 'Switch not found' })
     }
+    const switchId = sw.id
 
     const portIdSet = new Set(sw.ports.map(p => p.id))
     for (const portId of data.port_ids) {

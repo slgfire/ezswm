@@ -2,10 +2,48 @@
 
 ## Latest Stage
 
-Date: 2026-06-12
-Stage: Switch filter bar — site-scoped options, reset, icons
+Date: 2026-06-13
+Stage: Fix port/LAG operations failing when switch addressed by slug
 Status: Complete
-Version: 0.27.0
+Version: 0.27.1
+
+### Fix: port & LAG mutations 500/404 when switch addressed by slug (v0.27.1)
+
+The switch detail page addresses the switch by its slug (`/sites/<site>/switches/<slug>`),
+so all port/LAG mutation endpoints receive the slug as `[id]`. Several repository
+methods used that value directly in `prisma.…update({ where: { id } })` /
+`findUnique({ where: { id } })`, which only matches the UUID primary key — so the
+operations failed:
+
+- **Bulk port edit** → HTTP 500 (`prisma.switch.update()` — record not found).
+- **LAG create** → HTTP 404 "Switch not found".
+- **Port reset/clear** (port DELETE → `updatePort`) → HTTP 404 "Port not found"
+  (`oldPort.switch_id !== switchId`, UUID vs slug).
+- **Clear configured VLANs** → HTTP 404 "Switch not found".
+
+Fix: the affected repository methods now resolve the identifier (UUID **or**
+globally-unique slug) to the real PK before any `where: { id }` use, matching the
+existing pattern in `update()` / `getById()`:
+`bulkUpdatePorts`, `applyPortVlanUpdate`, `updatePort`, `addVlansToSwitch`,
+`applyConfiguredVlansRemoval` (switchRepository) and `create` (lagGroupRepository).
+The single-port handler also now stores the resolved UUID (`existing.id`) as the
+back-link `connected_device_id` on the connected target port instead of the slug.
+
+A follow-up codebase audit found the same bug class in switch sub-resources that
+query/write by `switch_id` foreign key (handlers validated the switch with a
+slug-aware lookup but then passed the raw slug to the FK query):
+
+- **Public access token** (`public-token` POST/GET/DELETE) — create stored
+  `switch_id = <slug>` (orphaned token); GET/DELETE looked up by slug → 404 even
+  when a token existed. Handlers now resolve `sw.id` first.
+- **LAG group list** (`lag-groups` GET) — `list(<slug>)` filtered by `switch_id`
+  → always returned `[]`. Handler now resolves `sw.id`.
+- **Allocation references** (`networks/[id]/allocations/[allocId]/references`) —
+  compared `allocation.network_id` (UUID) against the raw network slug → wrong
+  404. Now compares against the resolved `network.id`.
+
+Site, network, VLAN, IP-allocation and IP-range CRUD were audited and found
+already safe (slug-aware repos / UUID-only params).
 
 ### Switch filter bar: site-scoped options, per-filter reset, icons (v0.27.0)
 

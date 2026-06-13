@@ -12,7 +12,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Switch not found' })
   }
 
-  const token = await publicTokenRepository.create(switchId)
+  // Use the resolved UUID — the route param may be a slug.
+  const token = await publicTokenRepository.create(sw.id)
   setResponseStatus(event, 201)
   return token
 })
