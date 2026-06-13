@@ -111,6 +111,7 @@ import QRCode from 'qrcode'
 
 const props = defineProps<{
   switchId: string
+  siteId?: string
   switchName: string
   switchLocation?: string
 }>()
@@ -122,7 +123,7 @@ const drawerOpen = ref(false)
 const showRevokeConfirm = ref(false)
 const qrCanvas = ref<HTMLCanvasElement | null>(null)
 
-const { token, loading, fetchToken, createToken, revokeToken } = usePublicToken(props.switchId)
+const { token, loading, fetchToken, createToken, revokeToken } = usePublicToken(props.switchId, toRef(() => props.siteId ?? ''))
 
 const publicUrl = computed(() => {
   if (!token.value) return ''

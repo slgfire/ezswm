@@ -3,9 +3,36 @@
 ## Latest Stage
 
 Date: 2026-06-13
-Stage: Fix port/LAG operations failing when switch addressed by slug
+Stage: Disambiguate per-site switch slugs in sub-resource endpoints + LAG mirror feedback
 Status: Complete
-Version: 0.27.1
+Version: 0.27.2
+
+### Fix: per-site-ambiguous switch slug in port/LAG/token endpoints (v0.27.2)
+
+v0.27.1 made the switch sub-resource repositories resolve a slug to the PK via
+`getById`, but `getById` returns `null` for a slug that exists on more than one
+site (slugs are unique per-site, not globally). So a switch whose slug is shared
+across sites (e.g. two "sw-core") still failed — port reset returned
+**"Switch not found"**, etc.
+
+Mirroring the canonical pattern from `/api/switches/[id]` GET/PUT, all switch
+sub-resource handlers now resolve the switch via a shared
+`resolveSwitchParam(event)` helper (`server/utils/resolveSwitchParam.ts`) that
+honours a `?siteId=<uuid-or-slug>` query to disambiguate, then passes the real
+PK to the repositories: `ports/[portId]` PUT+DELETE, `ports/bulk` PUT,
+`configured-vlans` PUT, `lag-groups` GET+POST, `public-token` GET/POST/DELETE.
+The frontend now sends `siteId` on these calls (`useSwitch` port methods,
+`useLagGroups`, `usePublicToken`, the LAG slideover's local-switch calls, and the
+bulk-reset DELETE), since the detail page addresses switches by slug.
+
+### LAG mirror: surface why the mirror group is missing
+
+When creating a LAG with a remote switch, the mirror LAG group is only created if
+at least two member ports are mapped to concrete remote ports. Previously the
+mirror step returned silently when ports were unmapped, so the user saw the
+remote ports/VLANs configured (those are written by the port-connection sync) but
+no LAG group, with no explanation. The slideover now shows a warning toast
+(`lag.mirrorNotCreated` / `lag.mirrorNeedsPortMapping`) in that case.
 
 ### Fix: port & LAG mutations 500/404 when switch addressed by slug (v0.27.1)
 

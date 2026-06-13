@@ -1,8 +1,11 @@
 import { switchRepository } from '../../../../repositories/switchRepository'
+import { resolveSwitchParam } from '../../../../utils/resolveSwitchParam'
 
 export default defineEventHandler(async (event) => {
-  const switchId = getRouterParam(event, 'id')!
   const portId = getRouterParam(event, 'portId')!
+
+  // Resolve the switch (UUID or per-site slug + ?siteId) to its real PK.
+  const sw = await resolveSwitchParam(event)
 
   // Reset port to defaults — clears all user-set fields, removes bidirectional links
   const resetData = {
@@ -21,6 +24,6 @@ export default defineEventHandler(async (event) => {
     mac_address: undefined
   }
 
-  const port = await switchRepository.updatePort(switchId, portId, resetData)
+  const port = await switchRepository.updatePort(sw.id, portId, resetData)
   return port
 })

@@ -809,6 +809,8 @@
     "vlanApplied": "VLAN config applied to {count} LAG port(s)",
     "vlanAppliedRemote": "VLAN config applied to {count} port(s) on {switch}",
     "vlanApplyFailed": "Failed to apply VLAN config to LAG ports",
+    "mirrorNotCreated": "Mirror LAG not created on remote switch",
+    "mirrorNeedsPortMapping": "Map at least two member ports to remote ports to create the mirror LAG group.",
     "showAllSwitchesOverride": "Show {count} more switch(es) without these VLANs",
     "remoteSwitchMissing": "VLANs {vlans} not configured on remote switch",
     "remoteSwitchWillAdd": "VLANs {vlans} will be added to remote switch on save"

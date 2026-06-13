@@ -194,10 +194,14 @@ import { resolvePortLabel } from '~/utils/ports'
 
 const props = defineProps<{
   switchId: string
+  siteId?: string
   ports: Port[]
   existingLags: LAGGroup[]
   configuredVlans?: number[]
 }>()
+
+// Site context disambiguates per-site-unique switch slugs on local-switch calls.
+const localQuery = computed(() => (props.siteId ? { siteId: props.siteId } : undefined))
 
 const emit = defineEmits<{
   saved: []
@@ -295,7 +299,7 @@ function validate(state: { name?: string; port_ids: string[] }) {
   return errors
 }
 
-const { create, update } = useLagGroups(props.switchId)
+const { create, update } = useLagGroups(props.switchId, toRef(() => props.siteId ?? ''))
 
 // --- onSubmit stage functions ---
 
@@ -325,7 +329,7 @@ async function updateLocalPortConnections(): Promise<void> {
         connected_port: mapping?.remotePortLabel || null,
       }
       try {
-        await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, { method: 'PUT', body: portBody })
+        await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, { method: 'PUT', body: portBody, query: localQuery.value })
       } catch { /* best-effort */ }
     }
   } else if (remoteMode.value === 'none') {
@@ -333,7 +337,8 @@ async function updateLocalPortConnections(): Promise<void> {
       try {
         await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, {
           method: 'PUT',
-          body: { connected_device: null, connected_device_id: null, connected_port_id: null, connected_port: null }
+          body: { connected_device: null, connected_device_id: null, connected_port_id: null, connected_port: null },
+          query: localQuery.value
         })
       } catch { /* best-effort */ }
     }
@@ -357,7 +362,8 @@ async function applyVlanConfig(): Promise<void> {
   try {
     await $fetch(`/api/switches/${props.switchId}/ports/bulk`, {
       method: 'PUT',
-      body: { port_ids: [...form.port_ids], updates: vlanUpdates }
+      body: { port_ids: [...form.port_ids], updates: vlanUpdates },
+      query: localQuery.value
     })
     toast.add({ title: t('lag.vlanApplied', { count: form.port_ids.length }), color: 'success' })
   } catch (e: unknown) {
@@ -397,7 +403,18 @@ async function syncRemoteLag() {
     .map(pid => portMapping[pid]?.remotePortId)
     .filter(Boolean) as string[]
 
-  if (remotePortIds.length < 2) return
+  // A mirror LAG can only be created when at least two member ports are mapped
+  // to concrete remote ports. Warn instead of silently skipping it, otherwise
+  // the user sees the remote ports/VLANs configured but no LAG group and has no
+  // idea why.
+  if (remotePortIds.length < 2) {
+    toast.add({
+      title: t('lag.mirrorNotCreated'),
+      description: t('lag.mirrorNeedsPortMapping'),
+      color: 'warning'
+    })
+    return
+  }
 
   const localSw = allSwitches.value.find(s => s.id === props.switchId)
   const localSwName = localSw?.name || props.switchId
