@@ -2,19 +2,13 @@ import { switchRepository } from '../../../../repositories/switchRepository'
 import { vlanRepository } from '../../../../repositories/vlanRepository'
 import { bulkUpdatePortsSchema } from '../../../../validators/switchSchemas'
 import { activityRepository } from '../../../../repositories/activityRepository'
+import { resolveSwitchParam } from '../../../../utils/resolveSwitchParam'
 import type { Port } from '../../../../../types/port'
 
 export default defineEventHandler(async (event) => {
-  const switchId = event.context.params?.id
-
-  if (!switchId) {
-    throw createError({ statusCode: 400, statusMessage: 'Missing switch ID' })
-  }
-
-  const sw = await switchRepository.getById(switchId)
-  if (!sw) {
-    throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
-  }
+  // Resolve the switch (UUID or per-site slug + ?siteId) to its real PK.
+  const sw = await resolveSwitchParam(event)
+  const switchId = sw.id
 
   const body = await readBody(event)
   const parsed = bulkUpdatePortsSchema.parse(body)

@@ -40,6 +40,7 @@
         <!-- Group B: Actions -->
         <SwitchPublicAccess
           :switch-id="id"
+          :site-id="siteId"
           :switch-name="item.name"
           :switch-location="item.location"
         />
@@ -371,6 +372,7 @@ v-model="editForm.role"
     <SwitchLagGroupSlideover
       ref="lagSlideoverRef"
       :switch-id="id"
+      :site-id="siteId"
       :ports="item?.ports || []"
       :existing-lags="lagGroups"
       :configured-vlans="item?.configured_vlans || []"
@@ -410,7 +412,7 @@ useHead({ title: computed(() => item.value?.name || t('switches.title')) })
 const { duplicate } = useSwitches()
 const { items: templates, fetch: fetchTemplates } = useLayoutTemplates()
 const { items: vlans, fetch: fetchVlans } = useVlans()
-const { items: lagGroups, fetch: fetchLags, lagById, lagByPortId, update: updateLag, remove: removeLag } = useLagGroups(id)
+const { items: lagGroups, fetch: fetchLags, lagById, lagByPortId, update: updateLag, remove: removeLag } = useLagGroups(id, siteId)
 
 const lagSlideoverRef = ref<{ openEdit: (lag: LAGGroup) => void; openCreate: (ports: string[]) => void } | null>(null)
 const showLagDeleteDialog = ref(false)
@@ -490,7 +492,7 @@ async function bulkReset() {
   if (!window.confirm(t('switches.ports.confirmBulkReset', { count: selectedPorts.value.length }))) return
   try {
     for (const portId of selectedPorts.value) {
-      await ($fetch as typeof globalThis.fetch)(`/api/switches/${id}/ports/${portId}`, { method: 'DELETE' })
+      await ($fetch as typeof globalThis.fetch)(`/api/switches/${id}/ports/${portId}?siteId=${encodeURIComponent(siteId.value)}`, { method: 'DELETE' })
     }
     toast.add({ title: t('switches.ports.bulkResetDone', { count: selectedPorts.value.length }), color: 'success' })
     selectedPorts.value = []

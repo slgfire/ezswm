@@ -809,6 +809,8 @@
     "vlanApplied": "VLAN-Konfiguration auf {count} LAG-Port(s) angewendet",
     "vlanAppliedRemote": "VLAN-Konfiguration auf {count} Port(s) auf {switch} angewendet",
     "vlanApplyFailed": "VLAN-Konfiguration konnte nicht auf LAG-Ports angewendet werden",
+    "mirrorNotCreated": "Mirror-LAG auf Gegenstelle nicht erstellt",
+    "mirrorNeedsPortMapping": "Mindestens zwei Mitglieds-Ports müssen auf Remote-Ports gemappt werden, um die Mirror-LAG-Gruppe zu erstellen.",
     "showAllSwitchesOverride": "{count} weitere Switches ohne diese VLANs anzeigen",
     "remoteSwitchMissing": "VLANs {vlans} nicht auf dem Remote-Switch konfiguriert",
     "remoteSwitchWillAdd": "VLANs {vlans} werden beim Speichern auf dem Remote-Switch angelegt"

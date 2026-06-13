@@ -1,35 +1,40 @@
 import type { LAGGroup } from '~~/types/lagGroup'
 
-export function useLagGroups(switchId: Ref<string> | string) {
+export function useLagGroups(switchId: Ref<string> | string, siteId?: Ref<string> | string) {
   const items = ref<LAGGroup[]>([])
   const loading = ref(false)
   const { apiFetch } = useApiFetch()
 
   const resolvedId = computed(() => typeof switchId === 'string' ? switchId : switchId.value)
+  // Site context disambiguates per-site-unique switch slugs.
+  const params = computed(() => {
+    const sid = typeof siteId === 'string' ? siteId : siteId?.value
+    return sid ? { siteId: sid } : undefined
+  })
 
   async function fetch() {
     loading.value = true
     try {
-      items.value = await apiFetch(`/api/switches/${resolvedId.value}/lag-groups`)
+      items.value = await apiFetch(`/api/switches/${resolvedId.value}/lag-groups`, { params: params.value })
     } finally {
       loading.value = false
     }
   }
 
   async function create(body: { name: string; port_ids: string[]; description?: string; remote_device?: string; remote_device_id?: string }) {
-    const result = await apiFetch<LAGGroup>(`/api/switches/${resolvedId.value}/lag-groups`, { method: 'POST', body })
+    const result = await apiFetch<LAGGroup>(`/api/switches/${resolvedId.value}/lag-groups`, { method: 'POST', body, params: params.value })
     await fetch()
     return result
   }
 
   async function update(lagId: string, body: Partial<Pick<LAGGroup, 'name' | 'port_ids' | 'description' | 'remote_device' | 'remote_device_id'>>) {
-    const result = await apiFetch<LAGGroup>(`/api/switches/${resolvedId.value}/lag-groups/${lagId}`, { method: 'PUT', body })
+    const result = await apiFetch<LAGGroup>(`/api/switches/${resolvedId.value}/lag-groups/${lagId}`, { method: 'PUT', body, params: params.value })
     await fetch()
     return result
   }
 
   async function remove(lagId: string) {
-    await apiFetch(`/api/switches/${resolvedId.value}/lag-groups/${lagId}`, { method: 'DELETE' })
+    await apiFetch(`/api/switches/${resolvedId.value}/lag-groups/${lagId}`, { method: 'DELETE', params: params.value })
     await fetch()
   }
 

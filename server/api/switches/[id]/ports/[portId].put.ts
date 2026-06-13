@@ -2,25 +2,19 @@ import { switchRepository } from '../../../../repositories/switchRepository'
 import { vlanRepository } from '../../../../repositories/vlanRepository'
 import { updatePortSchema } from '../../../../validators/switchSchemas'
 import { activityRepository } from '../../../../repositories/activityRepository'
+import { resolveSwitchParam } from '../../../../utils/resolveSwitchParam'
 import type { Port } from '../../../../../types/port'
 
 export default defineEventHandler(async (event) => {
-  const switchId = event.context.params?.id
   const portId = event.context.params?.portId
-
-  if (!switchId) {
-    throw createError({ statusCode: 400, statusMessage: 'Missing switch ID' })
-  }
 
   if (!portId) {
     throw createError({ statusCode: 400, statusMessage: 'Missing port ID' })
   }
 
-  const existing = await switchRepository.getById(switchId)
-
-  if (!existing) {
-    throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
-  }
+  // Resolve the switch (UUID or per-site slug + ?siteId) to its real PK.
+  const existing = await resolveSwitchParam(event)
+  const switchId = existing.id
 
   // Get old port state before update
   const oldPort = existing.ports.find(p => p.id === portId)

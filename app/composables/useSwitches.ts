@@ -61,11 +61,11 @@ export function useSwitch(id: string, siteId?: string) {
   }
 
   async function updatePort(portId: string, body: Partial<Port>) {
-    return await apiFetch<Port>(`/api/switches/${id}/ports/${portId}`, { method: 'PUT', body })
+    return await apiFetch<Port>(`/api/switches/${id}/ports/${portId}`, { method: 'PUT', body, params })
   }
 
   async function bulkUpdatePorts(portIds: string[], updates: Partial<Port>) {
-    return await apiFetch<{ updated: number }>(`/api/switches/${id}/ports/bulk`, { method: 'PUT', body: { port_ids: portIds, updates } })
+    return await apiFetch<{ updated: number }>(`/api/switches/${id}/ports/bulk`, { method: 'PUT', body: { port_ids: portIds, updates }, params })
   }
 
   return { item, loading, fetch, update, updatePort, bulkUpdatePorts }
