@@ -16,32 +16,29 @@
         size="sm"
         class="w-64"
       />
-      <USelectMenu
-        v-if="locationOptions.length > 0"
+      <USelect
+        v-if="locationOptions.length > 1"
         v-model="locationFilter"
-        :search-input="false"
         :items="locationOptions"
         value-key="value"
-        :placeholder="$t('switches.allLocations')"
+        icon="i-heroicons-map-pin"
         size="sm"
         class="w-48"
       />
-      <USelectMenu
+      <USelect
         v-model="roleFilter"
-        :search-input="false"
         :items="roleOptions"
         value-key="value"
-        :placeholder="$t('switches.allRoles')"
+        icon="i-heroicons-rectangle-stack"
         size="sm"
         class="w-44"
       />
-      <USelectMenu
-        v-if="tagOptions.length > 0"
+      <USelect
+        v-if="tagOptions.length > 1"
         v-model="tagFilter"
-        :search-input="false"
         :items="tagOptions"
         value-key="value"
-        :placeholder="$t('switches.allTags')"
+        icon="i-heroicons-tag"
         size="sm"
         class="w-44"
       />
@@ -310,6 +307,7 @@
 <script setup lang="ts">
 import type { Switch } from '~~/types/switch'
 import draggable from 'vuedraggable'
+import { FILTER_ALL } from '~~/app/composables/useSwitchListFilters'
 
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
@@ -330,26 +328,33 @@ const viewMode = ref<'grid' | 'list'>('grid')
 const showDeleteDialog = ref(false)
 const deleteTarget = ref<Switch | null>(null)
 const deleting = ref(false)
-const availableLocations = ref<string[]>([])
-const availableTags = ref<string[]>([])
 
 const sortedItems = ref<Switch[]>([])
 const allItems = computed(() => items.value)
 
 const roleOptions = computed(() => [
+  { value: FILTER_ALL, label: t('switches.allRoles') },
   { value: 'core', label: t('switches.roles.core') },
   { value: 'distribution', label: t('switches.roles.distribution') },
   { value: 'access', label: t('switches.roles.access') },
   { value: 'management', label: t('switches.roles.management') }
 ])
 
-const locationOptions = computed(() =>
-  availableLocations.value.map(l => ({ value: l, label: l }))
-)
+const locationOptions = computed(() => {
+  const locs = [...new Set(allItems.value.map(s => s.location).filter((l): l is string => !!l))].sort()
+  return [
+    { value: FILTER_ALL, label: t('switches.allLocations') },
+    ...locs.map(l => ({ value: l, label: l }))
+  ]
+})
 
-const tagOptions = computed(() =>
-  availableTags.value.map(tg => ({ value: tg, label: tg }))
-)
+const tagOptions = computed(() => {
+  const tags = [...new Set(allItems.value.flatMap(s => s.tags || []))].sort()
+  return [
+    { value: FILTER_ALL, label: t('switches.allTags') },
+    ...tags.map(tg => ({ value: tg, label: tg }))
+  ]
+})
 
 const { search, locationFilter, roleFilter, tagFilter, filteredItems, groupedItems } = useSwitchListFilters(allItems, siteId, siteMap)
 
@@ -424,16 +429,10 @@ function openQrPrintPage() {
   window.open(`/sites/${siteId.value}/switches/qr-print?ids=${ids}`, '_blank')
 }
 
-const { apiFetch } = useApiFetch()
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 
 async function loadData() {
   await fetchSwitches(siteParams.value)
-  try {
-    const response = await apiFetch<{ filters?: { locations?: string[]; tags?: string[] } }>('/api/switches', { params: { ...siteParams.value } })
-    availableLocations.value = response?.filters?.locations || []
-    availableTags.value = response?.filters?.tags || []
-  } catch { /* silent */ }
 }
 
 onMounted(async () => {

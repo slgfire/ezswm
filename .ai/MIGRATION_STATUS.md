@@ -2,10 +2,26 @@
 
 ## Latest Stage
 
-Date: 2026-06-11
-Stage: Fix duplicate required-field asterisk in form labels
+Date: 2026-06-12
+Stage: Switch filter bar — site-scoped options, reset, icons
 Status: Complete
-Version: 0.26.1
+Version: 0.27.0
+
+### Switch filter bar: site-scoped options, per-filter reset, icons (v0.27.0)
+
+Three improvements to the switch list filter bar (`switches/index.vue`):
+
+- **Site-scoped options** — location and tag dropdown options now derived from
+  the already-loaded (site-scoped) switch list via computed sets, instead of a
+  second API fetch that returned global values. Removed `availableLocations` /
+  `availableTags` refs and the redundant `apiFetch` call from `loadData()`.
+- **Resettable filters** — each dropdown now starts with a sentinel "All …" entry
+  (`FILTER_ALL = '_all'`). Selecting it clears that filter. Composable
+  `useSwitchListFilters.ts` treats `'_all'` as no-filter, defaulting all refs to
+  `'_all'` instead of `undefined`.
+- **Icons** — `USelectMenu` controls replaced with `USelect` (icon-capable,
+  functionally identical without search). Leading icons: map-pin (location),
+  rectangle-stack (roles), tag (tags) — matching the IP-addresses page pattern.
 
 ### Fix: duplicate / non-red asterisk in required-field labels (v0.26.1)
 
