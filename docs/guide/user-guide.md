@@ -169,6 +169,10 @@ Each port can track what is connected to it. Two modes are available:
 - **Freetext** -- type a device name manually (e.g., "AP-Floor2-West")
 - **Switch Reference** -- link to another switch and port in ezSWM; this creates a bidirectional connection that stays in sync when either end is updated
 
+### Filtering Switches
+
+The switch list toolbar provides three filter dropdowns (location, role, tags). Each dropdown shows only values present in the currently visible switches (site-scoped when viewing a specific site, global when viewing **All Sites**). Select **All …** at the top of any dropdown to clear that filter. Each dropdown displays a leading icon for quick visual identification.
+
 ### Drag & Drop Sort Order
 
 On the switch list page, you can drag switches to reorder them. The sort order is persisted and reflected across all views.

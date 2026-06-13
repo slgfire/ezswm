@@ -1,14 +1,16 @@
 import type { Switch } from '~~/types/switch'
 
+export const FILTER_ALL = '_all'
+
 export function useSwitchListFilters(
   allItems: Ref<Switch[]>,
   siteId: Ref<string>,
   siteMap: Ref<Record<string, string>>
 ) {
   const search = ref('')
-  const locationFilter = ref<string | undefined>(undefined)
-  const roleFilter = ref<string | undefined>(undefined)
-  const tagFilter = ref<string | undefined>(undefined)
+  const locationFilter = ref<string>(FILTER_ALL)
+  const roleFilter = ref<string>(FILTER_ALL)
+  const tagFilter = ref<string>(FILTER_ALL)
 
   const filteredItems = computed(() => {
     let result = [...allItems.value]
@@ -22,16 +24,16 @@ export function useSwitchListFilters(
       )
     }
 
-    if (locationFilter.value) {
+    if (locationFilter.value && locationFilter.value !== FILTER_ALL) {
       result = result.filter((s) => s.location === locationFilter.value)
     }
 
-    if (roleFilter.value) {
+    if (roleFilter.value && roleFilter.value !== FILTER_ALL) {
       result = result.filter((s) => s.role === roleFilter.value)
     }
 
-    if (tagFilter.value) {
-      result = result.filter((s) => s.tags?.includes(tagFilter.value!))
+    if (tagFilter.value && tagFilter.value !== FILTER_ALL) {
+      result = result.filter((s) => s.tags?.includes(tagFilter.value))
     }
 
     // Sort favorites first
