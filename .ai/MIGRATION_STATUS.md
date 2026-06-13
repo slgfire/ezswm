@@ -2,10 +2,38 @@
 
 ## Latest Stage
 
-Date: 2026-06-13
-Stage: Disambiguate per-site switch slugs in sub-resource endpoints + LAG mirror feedback
+Date: 2026-06-14
+Stage: Port-reset clears both ends + in-app confirmation dialogs replace native popups
 Status: Complete
-Version: 0.27.2
+Version: 0.28.0
+
+### Fix: port reset now actually clears the port and severs the link (v0.28.0)
+
+`DELETE /api/switches/[id]/ports/[portId]` reset a port by calling
+`updatePort()` with every field set to `undefined`. But `portUpdateInput()`
+skips `undefined` fields (correct PATCH semantics), so on reset the local port's
+connection (`connected_*`) and config (`speed`, `port_mode`, `access_vlan`,
+`native_vlan`, `description`, `mac_address`) were **never written** — only
+`status:'down'` and `tagged_vlans:[]` took effect. The peer's reciprocal link
+was cleared, so the source switch lost its back-link while the reset port still
+showed the cross-connection.
+
+New dedicated `switchRepository.resetPort(idOrSlug, portId)` writes explicit
+`null`s (type-safe at the Prisma column layer, unlike the optional `Port` type)
+and severs the bidirectional link on both ends. The peer's own config is kept —
+only the link is removed (NetBox cable-removal semantics). The single-port reset
+in `SwitchPortSidePanel.vue` now also sends `?siteId` so per-site-ambiguous
+slugs resolve. Covered by `tests/portReset.test.ts`.
+
+### Feature: in-app confirmation dialogs replace native browser popups (v0.28.0)
+
+All `window.confirm()` / `window.prompt()` calls are gone. A promise-based
+`useConfirm()` composable backed by a single global `SharedConfirmHost` (mounted
+in `app.vue`, rendering the existing `SharedConfirmDialog`) provides
+`await confirm({ title, message, confirmLabel? })`. Migrated: port bulk-reset
+(`switches/[id].vue`), the two LAG-slideover confirms, and the unsaved-changes
+navigation guard (now an async `onBeforeRouteLeave`). The public-access copy
+fallback (`window.prompt`) became an error toast since the link is already shown.
 
 ### Fix: per-site-ambiguous switch slug in port/LAG/token endpoints (v0.27.2)
 

@@ -402,6 +402,7 @@ const { t } = useI18n()
 const formatActivity = (entry: ActivityEntry) => _formatActivitySummary(entry, t, true)
 const relTime = (ts: string) => _relativeTime(ts, t)
 const toast = useToast()
+const { confirm } = useConfirm()
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 
@@ -489,7 +490,12 @@ function onSelectPort(portId: string) {
 }
 
 async function bulkReset() {
-  if (!window.confirm(t('switches.ports.confirmBulkReset', { count: selectedPorts.value.length }))) return
+  const ok = await confirm({
+    title: t('switches.ports.confirmBulkResetTitle'),
+    message: t('switches.ports.confirmBulkReset', { count: selectedPorts.value.length }),
+    confirmLabel: t('switches.ports.reset')
+  })
+  if (!ok) return
   try {
     for (const portId of selectedPorts.value) {
       await ($fetch as typeof globalThis.fetch)(`/api/switches/${id}/ports/${portId}?siteId=${encodeURIComponent(siteId.value)}`, { method: 'DELETE' })

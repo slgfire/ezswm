@@ -209,6 +209,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const toast = useToast()
+const { confirm } = useConfirm()
 
 const isOpen = ref(false)
 const saving = ref(false)
@@ -465,11 +466,11 @@ async function onSubmit() {
   if (errors.length > 0) return
 
   if (hasConnectionConflicts.value) {
-    if (!window.confirm(t('lag.conflictConfirm'))) return
+    if (!(await confirm({ title: t('lag.conflictConfirmTitle'), message: t('lag.conflictConfirm') }))) return
   }
 
   if (existingRemoteLag.value && !isEdit.value) {
-    if (!window.confirm(t('lag.replaceRemoteLag', { name: existingRemoteLag.value.name, switch: form.remote_device }))) return
+    if (!(await confirm({ title: t('lag.replaceRemoteLagTitle'), message: t('lag.replaceRemoteLag', { name: existingRemoteLag.value.name, switch: form.remote_device }) }))) return
   }
 
   saving.value = true

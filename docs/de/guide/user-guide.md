@@ -169,6 +169,10 @@ Jeder Port kann erfassen, was an ihm angeschlossen ist. Zwei Modi sind verfügba
 - **Freitext** -- gib einen Gerätenamen manuell ein (z.B. "AP-Floor2-West")
 - **Switch-Referenz** -- verknüpfe mit einem anderen Switch und Port in ezSWM; dies erstellt eine bidirektionale Verbindung, die synchron bleibt, wenn eine Seite aktualisiert wird
 
+Das Zurücksetzen eines Ports (einzeln oder mehrere) löscht seine Einstellungen und entfernt die Verbindung auf **beiden** Seiten. Der verknüpfte Port behält seine eigene Konfiguration -- nur die Verbindung wird entfernt.
+
+> Bestätigungen (Ports zurücksetzen, LAG-Verbindungen überschreiben, Seite mit ungespeicherten Änderungen verlassen) nutzen In-App-Dialoge statt nativer Browser-Popups.
+
 ### Switches filtern
 
 Die Toolbar der Switch-Liste bietet drei Filter-Dropdowns (Standort, Rolle, Tags). Jedes Dropdown zeigt nur Werte, die in den aktuell sichtbaren Switches vorhanden sind (site-gescopt bei einer einzelnen Site, global bei **Alle Standorte**). Wähle **Alle …** am Anfang eines Dropdowns, um diesen Filter zurückzusetzen. Jedes Dropdown hat ein führendes Icon zur schnellen visuellen Orientierung.

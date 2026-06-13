@@ -1,6 +1,6 @@
 {
   "name": "ezswm",
-  "version": "0.27.2",
+  "version": "0.28.0",
   "type": "module",
   "private": true,
   "packageManager": "pnpm@11.0.9",

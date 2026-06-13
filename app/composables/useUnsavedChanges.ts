@@ -4,6 +4,7 @@ type FormSource = object | Ref<unknown>
 
 export function useUnsavedChanges(form: FormSource) {
   const { t } = useI18n()
+  const { confirm } = useConfirm()
   const snapshot = ref<string | null>(null)
 
   const read = () => (isRef(form) ? form.value : form)
@@ -40,9 +41,13 @@ export function useUnsavedChanges(form: FormSource) {
     })
   }
 
-  onBeforeRouteLeave(() => {
+  onBeforeRouteLeave(async () => {
     if (!isDirty.value) return true
-    return window.confirm(t('common.unsavedChangesWarning'))
+    return await confirm({
+      title: t('common.unsavedChangesTitle'),
+      message: t('common.unsavedChangesWarning'),
+      confirmLabel: t('common.leave')
+    })
   })
 
   return { isDirty, takeSnapshot, clearDirty }

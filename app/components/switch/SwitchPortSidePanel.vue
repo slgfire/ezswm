@@ -720,7 +720,9 @@ function onRemoveFromLag() {
 
 async function resetPort() {
   try {
-    await ($fetch as typeof globalThis.fetch)(`/api/switches/${props.switchId}/ports/${props.port!.id}`, { method: 'DELETE' })
+    const siteId = useRoute().params.siteId as string
+    const query = siteId && siteId !== 'all' ? `?siteId=${encodeURIComponent(siteId)}` : ''
+    await ($fetch as typeof globalThis.fetch)(`/api/switches/${props.switchId}/ports/${props.port!.id}${query}`, { method: 'DELETE' })
     toast.add({ title: t('switches.ports.portReset'), color: 'success' }); emit('saved'); isOpen.value = false
   } catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.add({ title: err.data?.message || 'Reset failed', color: 'error' }) }
 }

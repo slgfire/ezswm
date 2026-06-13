@@ -169,6 +169,10 @@ Each port can track what is connected to it. Two modes are available:
 - **Freetext** -- type a device name manually (e.g., "AP-Floor2-West")
 - **Switch Reference** -- link to another switch and port in ezSWM; this creates a bidirectional connection that stays in sync when either end is updated
 
+Resetting a port (single or bulk) clears its settings and removes the connection on **both** ends. The linked port keeps its own configuration -- only the link is removed.
+
+> Confirmations (resetting ports, overwriting LAG connections, leaving a page with unsaved changes) use in-app dialogs rather than native browser popups.
+
 ### Filtering Switches
 
 The switch list toolbar provides three filter dropdowns (location, role, tags). Each dropdown shows only values present in the currently visible switches (site-scoped when viewing a specific site, global when viewing **All Sites**). Select **All …** at the top of any dropdown to clear that filter. Each dropdown displays a leading icon for quick visual identification.
