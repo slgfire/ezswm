@@ -29,6 +29,22 @@ existing pattern in `update()` / `getById()`:
 The single-port handler also now stores the resolved UUID (`existing.id`) as the
 back-link `connected_device_id` on the connected target port instead of the slug.
 
+A follow-up codebase audit found the same bug class in switch sub-resources that
+query/write by `switch_id` foreign key (handlers validated the switch with a
+slug-aware lookup but then passed the raw slug to the FK query):
+
+- **Public access token** (`public-token` POST/GET/DELETE) — create stored
+  `switch_id = <slug>` (orphaned token); GET/DELETE looked up by slug → 404 even
+  when a token existed. Handlers now resolve `sw.id` first.
+- **LAG group list** (`lag-groups` GET) — `list(<slug>)` filtered by `switch_id`
+  → always returned `[]`. Handler now resolves `sw.id`.
+- **Allocation references** (`networks/[id]/allocations/[allocId]/references`) —
+  compared `allocation.network_id` (UUID) against the raw network slug → wrong
+  404. Now compares against the resolved `network.id`.
+
+Site, network, VLAN, IP-allocation and IP-range CRUD were audited and found
+already safe (slug-aware repos / UUID-only params).
+
 ### Switch filter bar: site-scoped options, per-filter reset, icons (v0.27.0)
 
 Three improvements to the switch list filter bar (`switches/index.vue`):
