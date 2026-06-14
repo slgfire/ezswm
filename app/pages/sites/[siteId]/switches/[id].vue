@@ -90,10 +90,10 @@
     <div v-if="item && !loading" class="space-y-4">
       <!-- Info bar with inline expand toggle -->
       <SwitchInfoBar
+        v-model:show-details="showDetails"
         :item="item"
         :port-stats="portStats"
         :current-template-name="currentTemplateName"
-        v-model:show-details="showDetails"
       />
 
       <!-- Selection bar (shown when ports are selected) -->

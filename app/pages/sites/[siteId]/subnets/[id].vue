@@ -18,6 +18,7 @@
 
     <div v-else-if="network" class="space-y-5">
       <NetworkInfoBar
+        v-model:show-details="showDetails"
         :network="network"
         :subnet-info="subnetInfo"
         :is-point-to-point="isPointToPoint"
@@ -25,7 +26,6 @@
         :associated-vlan="associatedVlan"
         :allocations-count="allocations.length"
         :utilization-percent="utilizationPercent"
-        v-model:show-details="showDetails"
         :format-dns="formatDns"
       />
 
@@ -198,11 +198,11 @@
     <NetworkAllocationForm
       v-model:open="showAddPanel"
       v-model:mode="addPanelMode"
+      v-model:alloc-form="allocForm"
+      v-model:range-form="rangeForm"
       :edit-target="editAllocTarget"
       :error="addPanelError"
       :saving="addPanelMode === 'ip' ? creatingAlloc : creatingRange"
-      v-model:alloc-form="allocForm"
-      v-model:range-form="rangeForm"
       :is-special-net="isSpecialNet"
       :device-type-options="deviceTypeOptions"
       :alloc-status-options="allocStatusOptions"
