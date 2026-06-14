@@ -341,6 +341,7 @@
     "configuredTitle": "Konfigurierte VLANs",
     "manageAction": "VLANs verwalten",
     "addToSwitchAction": "VLAN auf Switch hinzufuegen",
+    "addedToSwitch": "VLAN {id} zum Switch hinzugefügt",
     "targetSwitchOverride": "{count} weitere Switches ohne diese VLANs anzeigen",
     "targetSwitchMissing": "VLANs {vlans} nicht auf dem Ziel-Switch konfiguriert",
     "targetSwitchWillAdd": "VLANs {vlans} werden beim Speichern auf dem Ziel-Switch angelegt",
