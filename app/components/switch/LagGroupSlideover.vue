@@ -243,6 +243,7 @@ const {
   remoteSwitchMissingVlans,
   remoteConfiguredVlansList,
   showPortMapping,
+  resolveSwitchUuid,
   onRemoteModeChange,
   onSwitchSelect,
   fetchSwitches,
@@ -417,7 +418,10 @@ async function syncRemoteLag() {
     return
   }
 
-  const localSw = allSwitches.value.find(s => s.id === props.switchId)
+  // props.switchId is a slug; store the local switch UUID in the mirror so the
+  // remote side reconstructs correctly (everything else compares by UUID).
+  const localSw = allSwitches.value.find(s => s.id === props.switchId || s.slug === props.switchId)
+  const localSwId = localSw?.id || props.switchId
   const localSwName = localSw?.name || props.switchId
 
   const mirrorBody = {
@@ -425,7 +429,7 @@ async function syncRemoteLag() {
     port_ids: remotePortIds,
     description: form.description.trim() || undefined,
     remote_device: localSwName,
-    remote_device_id: props.switchId,
+    remote_device_id: localSwId,
   }
 
   if (existingRemoteLag.value) {
@@ -452,7 +456,7 @@ async function syncRemoteLag() {
         method: 'PUT',
         body: {
           connected_device: localSwName,
-          connected_device_id: props.switchId,
+          connected_device_id: localSwId,
           connected_port_id: localPortId,
           connected_port: localPortLabel || null,
         }
@@ -552,7 +556,10 @@ async function openEdit(lag: LAGGroup) {
   await fetchSwitches()
   fetchVlans()
   if (lag.remote_device_id) {
-    await fetchRemoteLags(lag.remote_device_id)
+    // Normalize to UUID now that the switch list is loaded — stored data may be a
+    // slug (older mirror LAGs) which wouldn't match the UUID-keyed options.
+    selectedRemoteSwitchId.value = resolveSwitchUuid(lag.remote_device_id)
+    await fetchRemoteLags(selectedRemoteSwitchId.value)
   }
 }
 

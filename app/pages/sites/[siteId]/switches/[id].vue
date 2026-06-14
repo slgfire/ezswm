@@ -580,7 +580,8 @@ async function onDeleteLag() {
     if (lag.remote_device_id) {
       try {
         const remoteLags = await $fetch<LAGGroup[]>(`/api/switches/${lag.remote_device_id}/lag-groups`)
-        const mirrorLag = remoteLags?.find((rl) => rl.remote_device_id === id)
+        // The mirror points back to this switch by UUID (new) or slug (older data).
+        const mirrorLag = remoteLags?.find((rl) => rl.remote_device_id === item.value?.id || rl.remote_device_id === id)
         if (mirrorLag) {
           await $fetch(`/api/switches/${lag.remote_device_id}/lag-groups/${mirrorLag.id}`, { method: 'DELETE' })
         }

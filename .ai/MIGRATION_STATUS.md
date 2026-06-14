@@ -35,6 +35,25 @@ in `app.vue`, rendering the existing `SharedConfirmDialog`) provides
 navigation guard (now an async `onBeforeRouteLeave`). The public-access copy
 fallback (`window.prompt`) became an error toast since the link is already shown.
 
+### LAG mirror: correct edit reconstruction + symmetric delete cleanup (v0.28.0)
+
+- `syncRemoteLag` stored the local switch **slug** (`props.switchId`, the route
+  param) into the mirror LAG's `remote_device_id` and the remote ports'
+  `connected_device_id`, while the primary side (and all comparisons) used the
+  switch **UUID**. Editing the mirror LAG on the target switch therefore failed
+  to reconstruct: Remote Device showed "— None —" and the port mapping was empty.
+  Now the mirror stores the local UUID; `useRemoteConnection` resolves any switch
+  ref (slug or UUID) to the UUID (`resolveSwitchUuid`) and `existingRemoteLag` /
+  `remotePortOptions` / `switchOptions` compare tolerantly, so both new and older
+  (slug) data reconstruct. `openEdit` normalizes `selectedRemoteSwitchId` to the
+  UUID after the switch list loads.
+- Deleting a LAG only removed the group row; the member ports' and their peers'
+  connection fields were never cleared, so the cross-connection survived (and the
+  mirror match in the page used the route slug, missing the UUID-keyed source).
+  `lagGroupRepository.delete` now severs the links on both ends in a transaction,
+  and the page matches the mirror by UUID or slug. Covered by
+  `tests/lagDelete.test.ts`.
+
 ### LAG remote-port selector: searchable + correct conflict label (v0.28.0)
 
 - The "port already in LAG X on the remote switch" warning showed a raw port

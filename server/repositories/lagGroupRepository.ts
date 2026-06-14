@@ -166,8 +166,29 @@ export const lagGroupRepository = {
 
   async delete(id: string): Promise<boolean> {
     try {
-      // Schema sets Port.lag_group_id to NULL on delete (onDelete: SetNull).
-      await prisma.lagGroup.delete({ where: { id } })
+      await prisma.$transaction(async (tx) => {
+        // Sever the inter-switch links of the member ports on BOTH ends, then
+        // delete the group. Without this the cross-connections survive a LAG
+        // delete (the peer keeps pointing back). Port.lag_group_id is cleared by
+        // the schema's onDelete: SetNull.
+        const members = await tx.port.findMany({
+          where: { lag_group_id: id },
+          select: { id: true, connected_port_id: true }
+        })
+        for (const m of members) {
+          if (m.connected_port_id) {
+            await tx.port.update({
+              where: { id: m.connected_port_id },
+              data: { connected_device: null, connected_device_id: null, connected_port_id: null, connected_port: null }
+            }).catch(() => { /* peer port may not exist anymore */ })
+          }
+        }
+        await tx.port.updateMany({
+          where: { lag_group_id: id },
+          data: { connected_device: null, connected_device_id: null, connected_port_id: null, connected_port: null }
+        })
+        await tx.lagGroup.delete({ where: { id } })
+      })
       return true
     } catch {
       return false

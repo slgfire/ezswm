@@ -19,6 +19,18 @@ export function useRemoteConnection(
   const remoteLags = ref<LAGGroup[]>([])
   const portMapping = reactive<Record<string, { remotePortId: string; remotePortLabel: string }>>({})
 
+  // Switch references in stored data (remote_device_id, connected_device_id) are
+  // UUIDs, but the detail page addresses switches by slug, so `switchId` here is a
+  // slug. Resolve any ref (slug or UUID) to the UUID via the loaded switch list.
+  // Older mirror LAGs were written with a slug, so comparisons tolerate both.
+  const resolveSwitchUuid = (ref: string): string => {
+    if (!ref) return ''
+    return allSwitches.value.find(s => s.id === ref || s.slug === ref)?.id || ref
+  }
+  const localSwitchUuid = computed(() => resolveSwitchUuid(switchId.value))
+  const isLocalSwitch = (deviceId: string | null | undefined): boolean =>
+    !!deviceId && (deviceId === localSwitchUuid.value || deviceId === switchId.value)
+
   // VLANs from the VLAN form state
   const formVlanNumbers = computed(() => {
     const vlans: number[] = []
@@ -34,7 +46,7 @@ export function useRemoteConnection(
   const switchOptions = computed(() => [
     { label: '— None —', value: '' },
     ...allSwitches.value
-      .filter(s => s.id !== switchId.value)
+      .filter(s => s.id !== localSwitchUuid.value)
       .map(s => ({ label: s.name, value: s.id }))
   ])
 
@@ -44,9 +56,7 @@ export function useRemoteConnection(
 
   const existingRemoteLag = computed(() => {
     if (!selectedRemoteSwitchId.value) return null
-    return remoteLags.value.find(lag =>
-      lag.remote_device_id === switchId.value
-    ) || null
+    return remoteLags.value.find(lag => isLocalSwitch(lag.remote_device_id)) || null
   })
 
   // Remote port options for selected switch (with connection conflict info)
@@ -59,9 +69,9 @@ export function useRemoteConnection(
       ...sw.ports.map((p: Port) => {
         const label = p.label || `${p.unit}/${p.index}`
         let conflict = ''
-        if (p.connected_device_id && p.connected_device_id !== switchId.value) {
+        if (p.connected_device_id && !isLocalSwitch(p.connected_device_id)) {
           conflict = `→ ${p.connected_device || 'Unknown'}`
-        } else if (p.connected_device_id === switchId.value && p.connected_port_id) {
+        } else if (isLocalSwitch(p.connected_device_id) && p.connected_port_id) {
           const isOurLagPort = formPortIds.value.includes(p.connected_port_id)
           if (!isOurLagPort) {
             const ourPort = ports.value.find((lp: Port) => lp.id === p.connected_port_id)
@@ -237,6 +247,7 @@ export function useRemoteConnection(
     remoteConfiguredVlansList,
     showPortMapping,
     formVlanNumbers,
+    resolveSwitchUuid,
     onRemoteModeChange,
     onSwitchSelect,
     fetchSwitches,
