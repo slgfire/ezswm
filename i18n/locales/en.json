@@ -801,6 +801,7 @@
       "portRemoved": "Port removed from LAG"
     },
     "portMapping": "Port Mapping",
+    "searchPortPlaceholder": "Search port (e.g. 45)",
     "portAlreadyConnected": "Port {port} is already connected to {device}. Existing connection will be overwritten.",
     "conflictWarning": "Some remote ports are already connected. Existing connections will be overwritten on save.",
     "conflictConfirm": "Some remote ports have existing connections that will be overwritten. Continue?",

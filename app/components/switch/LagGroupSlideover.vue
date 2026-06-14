@@ -113,7 +113,7 @@
 
                 <USelectMenu
                   v-if="remoteMode === 'switch' && selectedRemoteSwitchId"
-                  :search-input="false"
+                  :search-input="{ placeholder: $t('lag.searchPortPlaceholder') }"
                   :model-value="getRemotePortOption(portId)"
                   :items="remotePortOptions"
                   by="value"

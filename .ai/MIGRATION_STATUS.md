@@ -35,6 +35,17 @@ in `app.vue`, rendering the existing `SharedConfirmDialog`) provides
 navigation guard (now an async `onBeforeRouteLeave`). The public-access copy
 fallback (`window.prompt`) became an error toast since the link is already shown.
 
+### LAG remote-port selector: searchable + correct conflict label (v0.28.0)
+
+- The "port already in LAG X on the remote switch" warning showed a raw port
+  UUID. `remotePortLagConflicts` (`useRemoteConnection.ts`) resolved the label by
+  re-looking-up the remote switch's ports and fell back to the UUID; it now uses
+  `mapping.remotePortLabel` (the value already chosen for that mapping, same
+  source as `getPortConflict`).
+- The remote-port `USelectMenu` in `LagGroupSlideover` had `:search-input="false"`;
+  re-enabled with a localized placeholder so users can filter the target port by
+  typing (e.g. "45"), like the VLAN selectors.
+
 ### Fix: per-site-ambiguous switch slug in port/LAG/token endpoints (v0.27.2)
 
 v0.27.1 made the switch sub-resource repositories resolve a slug to the PK via

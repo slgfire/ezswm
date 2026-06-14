@@ -90,11 +90,9 @@ export function useRemoteConnection(
       for (const rlag of remoteLags.value) {
         if (rlag.id === allowedRemoteLagId) continue
         if (rlag.port_ids.includes(mapping.remotePortId)) {
-          const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
-          const port = sw?.ports?.find((p: Port) => p.id === mapping.remotePortId)
           conflicts.push({
             portId: mapping.remotePortId,
-            portLabel: port?.label || mapping.remotePortId,
+            portLabel: mapping.remotePortLabel || mapping.remotePortId,
             lagName: rlag.name
           })
         }

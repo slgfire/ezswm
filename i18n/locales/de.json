@@ -801,6 +801,7 @@
       "portRemoved": "Port aus LAG entfernt"
     },
     "portMapping": "Port-Zuordnung",
+    "searchPortPlaceholder": "Port suchen (z.B. 45)",
     "portAlreadyConnected": "Port {port} ist bereits verbunden mit {device}. Bestehende Verbindung wird überschrieben.",
     "conflictWarning": "Einige Remote-Ports sind bereits verbunden. Bestehende Verbindungen werden beim Speichern überschrieben.",
     "conflictConfirm": "Einige Remote-Ports haben bestehende Verbindungen, die überschrieben werden. Fortfahren?",
