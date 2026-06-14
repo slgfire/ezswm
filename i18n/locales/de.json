@@ -225,6 +225,7 @@
       "bulkReset": "Ports zurücksetzen",
       "confirmBulkReset": "{count} Port(s) auf Standard zurücksetzen? Alle Einstellungen und Verbindungen werden gelöscht.",
       "confirmBulkResetTitle": "Ports zurücksetzen",
+      "confirmReset": "Diesen Port auf Standard zurücksetzen? Alle Einstellungen und Verbindungen werden gelöscht.",
       "reset": "Zurücksetzen",
       "bulkResetDone": "{count} Port(s) zurückgesetzt",
       "selected": "{count} Port(s) ausgewählt",
