@@ -578,6 +578,66 @@ export const switchRepository = {
     return rowToPort(updated)
   },
 
+  // Reset a port to defaults: clear all user-set config and sever the
+  // bidirectional connection link on both ends. Unlike updatePort (PATCH
+  // semantics, where `undefined` means "leave unchanged"), this writes explicit
+  // `null`s so the fields are actually cleared. The peer's own config is kept —
+  // only the link is removed (NetBox cable-removal semantics).
+  async resetPort(idOrSlug: string, portId: string): Promise<Port> {
+    const target = await this.getById(idOrSlug)
+    if (!target) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
+    const switchId = target.id
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const oldPort = await tx.port.findUnique({ where: { id: portId } })
+      if (!oldPort || oldPort.switch_id !== switchId) {
+        throw createError({ statusCode: 404, message: 'Port not found' })
+      }
+
+      // Sever the reciprocal link on the peer port (config there is kept).
+      if (oldPort.connected_device_id && oldPort.connected_port_id) {
+        await tx.port.update({
+          where: { id: oldPort.connected_port_id },
+          data: {
+            connected_device: null,
+            connected_device_id: null,
+            connected_port_id: null,
+            connected_port: null
+          }
+        }).catch(() => { /* remote port may not exist anymore */ })
+      }
+
+      // Clear the local port explicitly.
+      const row = await tx.port.update({
+        where: { id: portId },
+        data: {
+          status: 'down',
+          speed: null,
+          port_mode: null,
+          access_vlan: null,
+          native_vlan: null,
+          tagged_vlans: '[]',
+          connected_device: null,
+          connected_device_id: null,
+          connected_port_id: null,
+          connected_port: null,
+          connected_allocation_id: null,
+          description: null,
+          mac_address: null
+        }
+      })
+
+      await tx.switch.update({
+        where: { id: switchId },
+        data: { updated_at: new Date().toISOString() }
+      })
+
+      return row
+    })
+
+    return rowToPort(updated)
+  },
+
   async bulkUpdatePorts(idOrSlug: string, portIds: string[], updates: Partial<Omit<Port, 'id' | 'unit' | 'index'>>): Promise<Port[]> {
     // Accept either a UUID or a globally-unique slug; resolve to the real PK
     // before the transaction so the `where: { id }` clauses below match.

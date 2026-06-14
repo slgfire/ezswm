@@ -90,10 +90,10 @@
     <div v-if="item && !loading" class="space-y-4">
       <!-- Info bar with inline expand toggle -->
       <SwitchInfoBar
+        v-model:show-details="showDetails"
         :item="item"
         :port-stats="portStats"
         :current-template-name="currentTemplateName"
-        v-model:show-details="showDetails"
       />
 
       <!-- Selection bar (shown when ports are selected) -->
@@ -232,7 +232,7 @@
     />
 
     <!-- Edit Side Panel -->
-    <USlideover v-model:open="editMode" :title="$t('switches.edit')" description="Modify switch properties">
+    <USlideover :open="editMode" :title="$t('switches.edit')" description="Modify switch properties" @update:open="onEditOpenChange">
 
       <template #body>
         <UForm ref="editFormRef" :state="editForm" :validate="validateEdit" :validate-on="['blur', 'change']" novalidate class="space-y-4" @submit="onSave">
@@ -320,7 +320,7 @@ v-model="editForm.role"
 
       <template #footer>
         <div class="flex justify-end gap-2">
-          <UButton color="neutral" variant="ghost" @click="editMode = false">
+          <UButton color="neutral" variant="ghost" @click="requestCloseEdit">
             {{ $t('common.cancel') }}
           </UButton>
           <UButton :loading="saving" icon="i-heroicons-check" @click="editFormRef?.submit()">
@@ -402,6 +402,7 @@ const { t } = useI18n()
 const formatActivity = (entry: ActivityEntry) => _formatActivitySummary(entry, t, true)
 const relTime = (ts: string) => _relativeTime(ts, t)
 const toast = useToast()
+const { confirm } = useConfirm()
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 
@@ -432,7 +433,7 @@ function getPortLabel(portId: string): string {
   return port.label || `${port.unit}/${port.index}`
 }
 
-const { editMode, saving, editFormRef, editTagInput, editForm, stackSizeOptions, editRoleOptions, templateOptions, openEditPanel, validateEdit, onSave, addEditTag, removeEditTag } = useSwitchEditForm(item, templates, update)
+const { editMode, saving, editFormRef, editTagInput, editForm, stackSizeOptions, editRoleOptions, templateOptions, openEditPanel, validateEdit, onSave, addEditTag, removeEditTag, requestCloseEdit, onEditOpenChange } = useSwitchEditForm(item, templates, update)
 
 const showDeleteDialog = ref(false)
 const deleting = ref(false)
@@ -489,7 +490,12 @@ function onSelectPort(portId: string) {
 }
 
 async function bulkReset() {
-  if (!window.confirm(t('switches.ports.confirmBulkReset', { count: selectedPorts.value.length }))) return
+  const ok = await confirm({
+    title: t('switches.ports.confirmBulkResetTitle'),
+    message: t('switches.ports.confirmBulkReset', { count: selectedPorts.value.length }),
+    confirmLabel: t('switches.ports.reset')
+  })
+  if (!ok) return
   try {
     for (const portId of selectedPorts.value) {
       await ($fetch as typeof globalThis.fetch)(`/api/switches/${id}/ports/${portId}?siteId=${encodeURIComponent(siteId.value)}`, { method: 'DELETE' })
@@ -574,7 +580,8 @@ async function onDeleteLag() {
     if (lag.remote_device_id) {
       try {
         const remoteLags = await $fetch<LAGGroup[]>(`/api/switches/${lag.remote_device_id}/lag-groups`)
-        const mirrorLag = remoteLags?.find((rl) => rl.remote_device_id === id)
+        // The mirror points back to this switch by UUID (new) or slug (older data).
+        const mirrorLag = remoteLags?.find((rl) => rl.remote_device_id === item.value?.id || rl.remote_device_id === id)
         if (mirrorLag) {
           await $fetch(`/api/switches/${lag.remote_device_id}/lag-groups/${mirrorLag.id}`, { method: 'DELETE' })
         }

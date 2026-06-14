@@ -1,10 +1,10 @@
 <template>
-  <UModal :open="model" :title="title" :description="message" @close="model = false">
-    <template #header>
-      <div class="flex items-center gap-2">
+  <UModal :open="model" :title="title" @close="model = false">
+    <template #title>
+      <span class="flex items-center gap-2">
         <UIcon name="i-heroicons-exclamation-triangle" class="h-5 w-5 text-red-500" />
-        <h3 class="text-lg font-semibold">{{ title }}</h3>
-      </div>
+        <span class="text-lg font-semibold">{{ title }}</span>
+      </span>
     </template>
 
     <template #body>

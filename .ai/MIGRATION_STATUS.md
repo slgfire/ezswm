@@ -2,10 +2,68 @@
 
 ## Latest Stage
 
-Date: 2026-06-13
-Stage: Disambiguate per-site switch slugs in sub-resource endpoints + LAG mirror feedback
+Date: 2026-06-14
+Stage: Port-reset clears both ends + in-app confirmation dialogs replace native popups
 Status: Complete
-Version: 0.27.2
+Version: 0.28.0
+
+### Fix: port reset now actually clears the port and severs the link (v0.28.0)
+
+`DELETE /api/switches/[id]/ports/[portId]` reset a port by calling
+`updatePort()` with every field set to `undefined`. But `portUpdateInput()`
+skips `undefined` fields (correct PATCH semantics), so on reset the local port's
+connection (`connected_*`) and config (`speed`, `port_mode`, `access_vlan`,
+`native_vlan`, `description`, `mac_address`) were **never written** — only
+`status:'down'` and `tagged_vlans:[]` took effect. The peer's reciprocal link
+was cleared, so the source switch lost its back-link while the reset port still
+showed the cross-connection.
+
+New dedicated `switchRepository.resetPort(idOrSlug, portId)` writes explicit
+`null`s (type-safe at the Prisma column layer, unlike the optional `Port` type)
+and severs the bidirectional link on both ends. The peer's own config is kept —
+only the link is removed (NetBox cable-removal semantics). The single-port reset
+in `SwitchPortSidePanel.vue` now also sends `?siteId` so per-site-ambiguous
+slugs resolve. Covered by `tests/portReset.test.ts`.
+
+### Feature: in-app confirmation dialogs replace native browser popups (v0.28.0)
+
+All `window.confirm()` / `window.prompt()` calls are gone. A promise-based
+`useConfirm()` composable backed by a single global `SharedConfirmHost` (mounted
+in `app.vue`, rendering the existing `SharedConfirmDialog`) provides
+`await confirm({ title, message, confirmLabel? })`. Migrated: port bulk-reset
+(`switches/[id].vue`), the two LAG-slideover confirms, and the unsaved-changes
+navigation guard (now an async `onBeforeRouteLeave`). The public-access copy
+fallback (`window.prompt`) became an error toast since the link is already shown.
+
+### LAG mirror: correct edit reconstruction + symmetric delete cleanup (v0.28.0)
+
+- `syncRemoteLag` stored the local switch **slug** (`props.switchId`, the route
+  param) into the mirror LAG's `remote_device_id` and the remote ports'
+  `connected_device_id`, while the primary side (and all comparisons) used the
+  switch **UUID**. Editing the mirror LAG on the target switch therefore failed
+  to reconstruct: Remote Device showed "— None —" and the port mapping was empty.
+  Now the mirror stores the local UUID; `useRemoteConnection` resolves any switch
+  ref (slug or UUID) to the UUID (`resolveSwitchUuid`) and `existingRemoteLag` /
+  `remotePortOptions` / `switchOptions` compare tolerantly, so both new and older
+  (slug) data reconstruct. `openEdit` normalizes `selectedRemoteSwitchId` to the
+  UUID after the switch list loads.
+- Deleting a LAG only removed the group row; the member ports' and their peers'
+  connection fields were never cleared, so the cross-connection survived (and the
+  mirror match in the page used the route slug, missing the UUID-keyed source).
+  `lagGroupRepository.delete` now severs the links on both ends in a transaction,
+  and the page matches the mirror by UUID or slug. Covered by
+  `tests/lagDelete.test.ts`.
+
+### LAG remote-port selector: searchable + correct conflict label (v0.28.0)
+
+- The "port already in LAG X on the remote switch" warning showed a raw port
+  UUID. `remotePortLagConflicts` (`useRemoteConnection.ts`) resolved the label by
+  re-looking-up the remote switch's ports and fell back to the UUID; it now uses
+  `mapping.remotePortLabel` (the value already chosen for that mapping, same
+  source as `getPortConflict`).
+- The remote-port `USelectMenu` in `LagGroupSlideover` had `:search-input="false"`;
+  re-enabled with a localized placeholder so users can filter the target port by
+  typing (e.g. "45"), like the VLAN selectors.
 
 ### Fix: per-site-ambiguous switch slug in port/LAG/token endpoints (v0.27.2)
 

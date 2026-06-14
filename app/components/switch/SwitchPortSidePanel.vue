@@ -223,6 +223,7 @@ const emit = defineEmits<{
 const isOpen = defineModel<boolean>()
 const { t } = useI18n()
 const toast = useToast()
+const { confirm } = useConfirm()
 const { apiFetch } = useApiFetch()
 const speeds = ['100M', '1G', '2.5G', '10G', '100G']
 
@@ -719,8 +720,16 @@ function onRemoveFromLag() {
 }
 
 async function resetPort() {
+  const ok = await confirm({
+    title: t('switches.ports.confirmBulkResetTitle'),
+    message: t('switches.ports.confirmReset'),
+    confirmLabel: t('switches.ports.reset')
+  })
+  if (!ok) return
   try {
-    await ($fetch as typeof globalThis.fetch)(`/api/switches/${props.switchId}/ports/${props.port!.id}`, { method: 'DELETE' })
+    const siteId = useRoute().params.siteId as string
+    const query = siteId && siteId !== 'all' ? `?siteId=${encodeURIComponent(siteId)}` : ''
+    await ($fetch as typeof globalThis.fetch)(`/api/switches/${props.switchId}/ports/${props.port!.id}${query}`, { method: 'DELETE' })
     toast.add({ title: t('switches.ports.portReset'), color: 'success' }); emit('saved'); isOpen.value = false
   } catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.add({ title: err.data?.message || 'Reset failed', color: 'error' }) }
 }

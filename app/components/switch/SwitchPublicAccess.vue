@@ -205,9 +205,9 @@ async function handleCopy() {
     } catch { /* fall through */ }
   }
 
-  // Last resort: prompt user to copy manually
+  // Last resort: the link is shown in the panel, so just flag the failure.
   if (!copied) {
-    window.prompt(t('public.admin.copyFailed'), text)
+    toast.add({ title: t('public.admin.copyFailed'), color: 'error' })
     return
   }
 
