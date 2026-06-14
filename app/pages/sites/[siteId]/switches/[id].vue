@@ -232,7 +232,7 @@
     />
 
     <!-- Edit Side Panel -->
-    <USlideover v-model:open="editMode" :title="$t('switches.edit')" description="Modify switch properties">
+    <USlideover :open="editMode" :title="$t('switches.edit')" description="Modify switch properties" @update:open="onEditOpenChange">
 
       <template #body>
         <UForm ref="editFormRef" :state="editForm" :validate="validateEdit" :validate-on="['blur', 'change']" novalidate class="space-y-4" @submit="onSave">
@@ -320,7 +320,7 @@ v-model="editForm.role"
 
       <template #footer>
         <div class="flex justify-end gap-2">
-          <UButton color="neutral" variant="ghost" @click="editMode = false">
+          <UButton color="neutral" variant="ghost" @click="requestCloseEdit">
             {{ $t('common.cancel') }}
           </UButton>
           <UButton :loading="saving" icon="i-heroicons-check" @click="editFormRef?.submit()">
@@ -433,7 +433,7 @@ function getPortLabel(portId: string): string {
   return port.label || `${port.unit}/${port.index}`
 }
 
-const { editMode, saving, editFormRef, editTagInput, editForm, stackSizeOptions, editRoleOptions, templateOptions, openEditPanel, validateEdit, onSave, addEditTag, removeEditTag } = useSwitchEditForm(item, templates, update)
+const { editMode, saving, editFormRef, editTagInput, editForm, stackSizeOptions, editRoleOptions, templateOptions, openEditPanel, validateEdit, onSave, addEditTag, removeEditTag, requestCloseEdit, onEditOpenChange } = useSwitchEditForm(item, templates, update)
 
 const showDeleteDialog = ref(false)
 const deleting = ref(false)

@@ -8,11 +8,13 @@ export function useSwitchEditForm(
 ) {
   const { t } = useI18n()
   const toast = useToast()
+  const { confirm } = useConfirm()
 
   const editMode = ref(false)
   const saving = ref(false)
   const editFormRef = ref<{ submit: () => void } | null>(null)
   const editTagInput = ref('')
+  const editSnapshot = ref('')
 
   const editForm = reactive({
     name: '', model: '', manufacturer: '', serial_number: '',
@@ -55,7 +57,31 @@ export function useSwitchEditForm(
     editForm.notes = item.value.notes || ''
     editForm.stack_size = item.value.stack_size ?? 1
     editTagInput.value = ''
+    editSnapshot.value = JSON.stringify(editForm)
     editMode.value = true
+  }
+
+  const isEditDirty = computed(() =>
+    editSnapshot.value !== '' && JSON.stringify(editForm) !== editSnapshot.value
+  )
+
+  // Guarded close: confirm before discarding unsaved edits. The slideover binds
+  // :open (one-way) + @update:open to this, so it stays open until confirmed.
+  async function requestCloseEdit() {
+    if (isEditDirty.value) {
+      const ok = await confirm({
+        title: t('common.unsavedChangesTitle'),
+        message: t('common.unsavedChangesWarning'),
+        confirmLabel: t('common.leave')
+      })
+      if (!ok) return
+    }
+    editMode.value = false
+  }
+
+  function onEditOpenChange(val: boolean) {
+    if (val) editMode.value = true
+    else requestCloseEdit()
   }
 
   function validateEdit(state: typeof editForm) {
@@ -105,6 +131,7 @@ export function useSwitchEditForm(
   return {
     editMode, saving, editFormRef, editTagInput, editForm,
     stackSizeOptions, editRoleOptions, templateOptions,
-    openEditPanel, validateEdit, onSave, addEditTag, removeEditTag
+    openEditPanel, validateEdit, onSave, addEditTag, removeEditTag,
+    isEditDirty, requestCloseEdit, onEditOpenChange
   }
 }
