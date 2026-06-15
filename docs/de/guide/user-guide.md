@@ -27,7 +27,11 @@ Nach der Anmeldung bietet das Dashboard eine Zusammenfassung deiner Infrastruktu
 
 ### Schutz vor nicht gespeicherten Änderungen
 
-Wenn ein Erstellen- oder Bearbeiten-Formular ungespeicherte Änderungen enthält, warnt ezSWM vor dem Verlassen — sowohl beim Klick auf einen Link innerhalb der App als auch beim Schließen des Browser-Tabs. Speichere die Änderungen oder bestätige das Verlassen, um sie zu verwerfen.
+Wenn ein Erstellen- oder Bearbeiten-Formular ungespeicherte Änderungen enthält, warnt ezSWM vor dem Verlassen — sowohl beim Klick auf einen Link innerhalb der App als auch beim Schließen des Browser-Tabs. Derselbe Schutz gilt einheitlich für jedes Bearbeitungs-Seitenpanel (Switch- und Port-Bearbeitung, Massen-Port-Bearbeitung, LAG-Gruppen, IP-Zuweisungen und -Bereiche, Netzwerke, VLANs, Standorte): Schließt du ein Panel mit ungespeicherten Änderungen — durch Klick daneben, Escape oder Abbrechen —, wirst du zuerst gefragt. Speichere die Änderungen oder bestätige das Verlassen, um sie zu verwerfen.
+
+### Sprache wechseln
+
+Über die Sprachauswahl in der Kopfleiste (oben rechts, Globus-Symbol) kannst du jederzeit zwischen Englisch und Deutsch umschalten. Deine Auswahl wird in deinem Profil gespeichert und bleibt so über Reloads und Geräte hinweg erhalten. Du kannst sie auch unter Einstellungen → Konto ändern.
 
 ## Layout-Templates
 

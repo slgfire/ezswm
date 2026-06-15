@@ -1,5 +1,5 @@
 <template>
-  <USlideover v-model:open="isOpen" :title="port?.label || `Port ${port?.unit}/${port?.index}`" description="Edit port configuration">
+  <USlideover :open="isOpen" :title="port?.label || `Port ${port?.unit}/${port?.index}`" description="Edit port configuration" @update:open="onOpenChange">
 
     <template #body>
       <div v-if="port" class="space-y-4">
@@ -189,7 +189,7 @@
       <div class="flex items-center justify-between">
         <UButton color="error" variant="soft" icon="i-heroicons-arrow-path" @click="resetPort">{{ $t('switches.ports.resetPort') }}</UButton>
         <div class="flex gap-2">
-          <UButton variant="ghost" color="neutral" @click="isOpen = false">{{ $t('common.cancel') }}</UButton>
+          <UButton variant="ghost" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
           <UButton @click="onSaveClick">{{ $t('common.save') }}</UButton>
         </div>
       </div>
@@ -302,6 +302,21 @@ const helperUsageOptions = computed(() => [
 ])
 
 const taggedVlansStr = ref('')
+
+// Unsaved-changes guard. The editable surface spans more than `form` (VLAN and
+// connection state live in separate refs), so snapshot a composite of all of it.
+const { takeSnapshot, requestClose, onOpenChange } = useSlideoverGuard(
+  () => ({
+    ...form,
+    selectedTaggedVlans: selectedTaggedVlans.value,
+    taggedVlansStr: taggedVlansStr.value,
+    connectionMode: connectionMode.value,
+    selectedAllocationId: selectedAllocationId.value,
+    selectedSwitchId: selectedSwitchId.value,
+    selectedPortId: selectedPortId.value
+  }),
+  () => { isOpen.value = false }
+)
 const helperExpanded = ref(false)
 
 async function fetchSwitches() {
@@ -622,6 +637,8 @@ watch(isOpen, async (open) => {
     }
     await Promise.all([fetchSwitches(), fetchVlans(), fetchAllocations()])
     if (pendingSwitchId.value) { selectedSwitchId.value = pendingSwitchId.value; selectedPortId.value = pendingPortId.value }
+    // Snapshot once the editable state has fully settled (after async rehydrate).
+    nextTick(takeSnapshot)
   }
 })
 

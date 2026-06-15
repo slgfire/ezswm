@@ -129,7 +129,7 @@
     </template>
 
     <!-- VLAN Side Panel -->
-    <USlideover v-model:open="showPanel">
+    <USlideover :open="showPanel" @update:open="onPanelOpenChange">
         <template #title>
           <div v-if="selectedVlan" class="flex items-center gap-2.5">
             <VlanColorSwatch :color="panelEditing ? editForm.color : selectedVlan.color" size="lg" />
@@ -221,7 +221,7 @@
 
         <template #footer>
           <div v-if="panelEditing" class="flex justify-end gap-2">
-            <UButton variant="ghost" color="neutral" @click="panelEditing = false">{{ $t('common.cancel') }}</UButton>
+            <UButton variant="ghost" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
             <UButton :loading="saving" @click="editFormRef?.submit()">{{ $t('common.save') }}</UButton>
           </div>
         </template>
@@ -359,6 +359,13 @@ const panelNetworks = computed(() => {
   return allNetworks.value.filter((n) => n.vlan_id === selectedVlan.value!.id)
 })
 
+// Unsaved-changes guard for the in-panel edit form. Only dirty while editing
+// (snapshot is taken in startEdit); closing in view mode never prompts.
+const { takeSnapshot, requestClose, onOpenChange: onPanelOpenChange } = useSlideoverGuard(
+  editForm,
+  () => { showPanel.value = false; panelEditing.value = false }
+)
+
 function openPanel(vlan: VLAN, edit: boolean) {
   selectedVlan.value = vlan
   panelEditing.value = edit
@@ -377,6 +384,7 @@ function startEdit() {
     color: selectedVlan.value.color
   }
   panelEditing.value = true
+  takeSnapshot()
 }
 
 function validate(state: typeof editForm.value) {

@@ -1,5 +1,5 @@
 <template>
-  <USlideover v-model:open="openModel">
+  <USlideover :open="open" @update:open="onOpenChange">
     <template #title>
       <div v-if="editTarget" class="flex items-center gap-2">
         <code class="font-mono text-sm">{{ editTarget.ip_address }}</code>
@@ -68,7 +68,7 @@
 
     <template #footer>
       <div class="flex justify-end gap-2">
-        <UButton variant="ghost" color="neutral" @click="emit('close')">{{ $t('common.cancel') }}</UButton>
+        <UButton variant="ghost" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
         <UButton :loading="saving" :disabled="!effectiveNetworkId" @click="onSubmit">
           {{ editTarget ? $t('common.save') : $t('common.add') }}
         </UButton>
@@ -109,17 +109,18 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const openModel = computed({
-  get: () => props.open,
-  set: (v) => emit('update:open', v)
-})
-
 function blankForm(): FormState {
   return { ip_address: '', hostname: '', mac_address: '', device_type: '', status: 'active', description: '' }
 }
 
 const form = ref<FormState>(blankForm())
 const manualNetworkId = ref('')
+
+// Unsaved-changes guard. Closing routes through @close (parent owns open state).
+const { takeSnapshot, requestClose, onOpenChange } = useSlideoverGuard(
+  () => ({ ...form.value, manualNetworkId: manualNetworkId.value }),
+  () => emit('close')
+)
 
 const networkOptions = computed(() =>
   props.networks.map(n => ({ label: `${n.name} (${n.subnet})`, value: n.id }))
@@ -170,6 +171,9 @@ watch(() => props.open, (open) => {
     form.value = blankForm()
     manualNetworkId.value = ''
   }
+  // derivedNetwork watch may still set manualNetworkId from a typed IP; snapshot
+  // next tick so that auto-fill is part of the baseline, not a phantom edit.
+  nextTick(takeSnapshot)
 })
 
 function onSubmit() {

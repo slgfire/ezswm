@@ -8,13 +8,11 @@ export function useSwitchEditForm(
 ) {
   const { t } = useI18n()
   const toast = useToast()
-  const { confirm } = useConfirm()
 
   const editMode = ref(false)
   const saving = ref(false)
   const editFormRef = ref<{ submit: () => void } | null>(null)
   const editTagInput = ref('')
-  const editSnapshot = ref('')
 
   const editForm = reactive({
     name: '', model: '', manufacturer: '', serial_number: '',
@@ -41,6 +39,17 @@ export function useSwitchEditForm(
     return options
   })
 
+  // Guarded close: confirm before discarding unsaved edits. The slideover binds
+  // :open (one-way) + @update:open to this, so it stays open until confirmed.
+  const {
+    isDirty: isEditDirty, takeSnapshot, requestClose: requestCloseEdit, onOpenChange
+  } = useSlideoverGuard(editForm, () => { editMode.value = false })
+
+  function onEditOpenChange(val: boolean) {
+    if (val) editMode.value = true
+    else onOpenChange(false)
+  }
+
   function openEditPanel() {
     if (!item.value) return
     editForm.name = item.value.name || ''
@@ -57,31 +66,8 @@ export function useSwitchEditForm(
     editForm.notes = item.value.notes || ''
     editForm.stack_size = item.value.stack_size ?? 1
     editTagInput.value = ''
-    editSnapshot.value = JSON.stringify(editForm)
     editMode.value = true
-  }
-
-  const isEditDirty = computed(() =>
-    editSnapshot.value !== '' && JSON.stringify(editForm) !== editSnapshot.value
-  )
-
-  // Guarded close: confirm before discarding unsaved edits. The slideover binds
-  // :open (one-way) + @update:open to this, so it stays open until confirmed.
-  async function requestCloseEdit() {
-    if (isEditDirty.value) {
-      const ok = await confirm({
-        title: t('common.unsavedChangesTitle'),
-        message: t('common.unsavedChangesWarning'),
-        confirmLabel: t('common.leave')
-      })
-      if (!ok) return
-    }
-    editMode.value = false
-  }
-
-  function onEditOpenChange(val: boolean) {
-    if (val) editMode.value = true
-    else requestCloseEdit()
+    takeSnapshot()
   }
 
   function validateEdit(state: typeof editForm) {
