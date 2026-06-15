@@ -1,5 +1,5 @@
 <template>
-  <USlideover v-model:open="isOpen" :title="$t('switches.ports.bulkEditTitle', { count: selectedPorts.length })" description="Edit multiple ports at once">
+  <USlideover :open="isOpen" :title="$t('switches.ports.bulkEditTitle', { count: selectedPorts.length })" description="Edit multiple ports at once" @update:open="onOpenChange">
 
     <template #body>
       <div class="space-y-4">
@@ -56,7 +56,7 @@
 
     <template #footer>
       <div class="flex items-center justify-between">
-        <UButton variant="ghost" color="neutral" @click="close">{{ $t('common.cancel') }}</UButton>
+        <UButton variant="ghost" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
         <UButton @click="apply">{{ $t('switches.ports.applyToPorts', { count: selectedPorts.length }) }}</UButton>
       </div>
     </template>
@@ -135,8 +135,14 @@ const form = reactive({
   helper_usage: '_no_change'
 })
 
+const { takeSnapshot, requestClose, onOpenChange } = useSlideoverGuard(
+  () => ({ ...form, selectedTaggedVlans: selectedTaggedVlans.value }),
+  () => close()
+)
+
 function open() {
   isOpen.value = true
+  takeSnapshot()
   fetchVlans()
 }
 

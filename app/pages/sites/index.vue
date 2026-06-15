@@ -76,7 +76,7 @@
     </SharedEmptyState>
 
     <!-- Edit Slideover -->
-    <USlideover v-model:open="showEdit" :title="$t('sites.edit', 'Edit Site')" description="Edit site properties">
+    <USlideover :open="showEdit" :title="$t('sites.edit', 'Edit Site')" description="Edit site properties" @update:open="onOpenChange">
       <template #body>
         <div class="space-y-4">
           <UFormField :label="$t('sites.fields.name', 'Name')" name="name" required>
@@ -89,7 +89,7 @@
       </template>
       <template #footer>
         <div class="flex justify-end gap-2">
-          <UButton variant="ghost" color="neutral" @click="showEdit = false">{{ $t('common.cancel', 'Cancel') }}</UButton>
+          <UButton variant="ghost" color="neutral" @click="requestClose">{{ $t('common.cancel', 'Cancel') }}</UButton>
           <UButton :loading="saving" icon="i-heroicons-check" @click="onSave">{{ $t('common.save', 'Save') }}</UButton>
         </div>
       </template>
@@ -144,11 +144,17 @@ async function loadSites() {
   }
 }
 
+const { takeSnapshot, requestClose, onOpenChange } = useSlideoverGuard(
+  editForm,
+  () => { showEdit.value = false }
+)
+
 function editSite(site: SiteWithCounts) {
   editTarget.value = site
   editForm.name = site.name
   editForm.description = site.description || ''
   showEdit.value = true
+  takeSnapshot()
 }
 
 async function onSave() {

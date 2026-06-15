@@ -1,8 +1,9 @@
 <template>
   <USlideover
-    v-model:open="isOpen"
+    :open="isOpen"
     :title="isEdit ? $t('lag.edit') : $t('lag.create')"
     :description="isEdit ? $t('lag.editDescription') : $t('lag.createDescription')"
+    @update:open="onOpenChange"
   >
     <template #body>
       <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" class="space-y-4" @submit="onSubmit">
@@ -176,7 +177,7 @@
 
     <template #footer>
       <div class="flex justify-end gap-2">
-        <UButton color="neutral" variant="ghost" @click="isOpen = false">
+        <UButton color="neutral" variant="ghost" @click="requestClose">
           {{ $t('common.cancel') }}
         </UButton>
         <UButton :loading="saving" :disabled="remotePortLagConflicts.length > 0" icon="i-heroicons-check" @click="onSubmit">
@@ -261,6 +262,18 @@ const {
   toRef(form, 'remote_device'),
   toRef(form, 'remote_device_id'),
   vlanForm
+)
+
+// Unsaved-changes guard. Editable state spans form + VLAN + remote-connection refs.
+const { takeSnapshot, requestClose, onOpenChange } = useSlideoverGuard(
+  () => ({
+    ...form,
+    vlanForm: { ...vlanForm },
+    portMapping: { ...portMapping },
+    remoteMode: remoteMode.value,
+    selectedRemoteSwitchId: selectedRemoteSwitchId.value
+  }),
+  () => { isOpen.value = false }
 )
 
 const remoteConnectionModes = computed(() => [
@@ -517,6 +530,7 @@ function openCreate(portIds: string[]) {
   isOpen.value = true
   fetchSwitches()
   fetchVlans()
+  takeSnapshot()
 }
 
 async function openEdit(lag: LAGGroup) {
@@ -561,6 +575,8 @@ async function openEdit(lag: LAGGroup) {
     selectedRemoteSwitchId.value = resolveSwitchUuid(lag.remote_device_id)
     await fetchRemoteLags(selectedRemoteSwitchId.value)
   }
+  // Snapshot after async UUID normalization has settled.
+  takeSnapshot()
 }
 
 defineExpose({ openCreate, openEdit })

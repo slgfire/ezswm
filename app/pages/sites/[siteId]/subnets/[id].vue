@@ -115,7 +115,7 @@
     </div>
 
     <!-- Network edit slideover -->
-    <USlideover v-model:open="editing">
+    <USlideover :open="editing" @update:open="onEditOpenChange">
       <template #title>
         <span>{{ $t('networks.edit') }}</span>
       </template>
@@ -145,14 +145,14 @@
 
       <template #footer>
         <div class="flex justify-end gap-2">
-          <UButton variant="ghost" color="neutral" @click="editing = false">{{ $t('common.cancel') }}</UButton>
+          <UButton variant="ghost" color="neutral" @click="requestCloseEdit">{{ $t('common.cancel') }}</UButton>
           <UButton :loading="saving" @click="editFormRef?.submit()">{{ $t('common.save') }}</UButton>
         </div>
       </template>
     </USlideover>
 
     <!-- Range edit slideover -->
-    <USlideover v-model:open="showRangeEdit">
+    <USlideover :open="showRangeEdit" @update:open="onRangeEditOpenChange">
       <template #title>
         <div class="flex items-center gap-2">
           <UBadge :color="rangeTypeBadgeColor(rangeEditForm.type)" variant="subtle" size="sm">{{ $t(`networks.ranges.types.${rangeEditForm.type}`) }}</UBadge>
@@ -188,7 +188,7 @@
             {{ $t('common.delete') }}
           </UButton>
           <div class="flex gap-2">
-            <UButton variant="ghost" color="neutral" @click="showRangeEdit = false">{{ $t('common.cancel') }}</UButton>
+            <UButton variant="ghost" color="neutral" @click="requestCloseRangeEdit">{{ $t('common.cancel') }}</UButton>
             <UButton :loading="savingRangeEdit" @click="onSaveRangeEdit">{{ $t('common.save') }}</UButton>
           </div>
         </div>
@@ -196,10 +196,10 @@
     </USlideover>
 
     <NetworkAllocationForm
-      v-model:open="showAddPanel"
       v-model:mode="addPanelMode"
       v-model:alloc-form="allocForm"
       v-model:range-form="rangeForm"
+      :open="showAddPanel"
       :edit-target="editAllocTarget"
       :error="addPanelError"
       :saving="addPanelMode === 'ip' ? creatingAlloc : creatingRange"
@@ -207,10 +207,11 @@
       :device-type-options="deviceTypeOptions"
       :alloc-status-options="allocStatusOptions"
       :range-type-options="rangeTypeOptions"
+      @update:open="onAddOpenChange"
       @submit-allocation="onCreateAllocation"
       @submit-range="onCreateRange"
       @delete-alloc="openDeleteAllocDialog(editAllocTarget!)"
-      @close="showAddPanel = false; editAllocTarget = null"
+      @close="requestCloseAdd"
     />
 
     <SharedConfirmDialog v-model="showDeleteDialog" :title="$t('networks.delete')" :message="network ? `${$t('networks.delete')}: ${network.name} (${network.subnet})?` : ''" :loading="deleting" @confirm="confirmDeleteNetwork" />
@@ -289,6 +290,27 @@ const editForm = ref({ name: '', subnet: '', gateway: '', vlan_id: '', descripti
 const editDnsInput = ref('')
 const allocForm = ref({ ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' as AllocationStatus })
 const rangeForm = ref({ start_ip: '', end_ip: '', type: 'static' as RangeType, description: '' })
+
+// Unsaved-changes guards for the three edit slideovers on this page.
+const {
+  takeSnapshot: snapshotEdit, requestClose: requestCloseEdit, onOpenChange: onEditOpenChange
+} = useSlideoverGuard(
+  () => ({ ...editForm.value, dns: editDnsInput.value }),
+  () => { editing.value = false }
+)
+const {
+  takeSnapshot: snapshotRangeEdit, requestClose: requestCloseRangeEdit, onOpenChange: onRangeEditOpenChange
+} = useSlideoverGuard(
+  rangeEditForm,
+  () => { showRangeEdit.value = false }
+)
+// Add panel hosts either the IP allocation form or the range form, by mode.
+const {
+  takeSnapshot: snapshotAdd, requestClose: requestCloseAdd, onOpenChange: onAddOpenChange
+} = useSlideoverGuard(
+  () => (addPanelMode.value === 'ip' ? allocForm.value : rangeForm.value),
+  () => { showAddPanel.value = false; editAllocTarget.value = null }
+)
 
 const utilizationPercent = computed(() => {
   if (!subnetInfo.value.usableHosts || subnetInfo.value.usableHosts <= 0) return 0
@@ -455,6 +477,7 @@ function openAddPanel() {
   allocForm.value = { ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' }
   rangeForm.value = { start_ip: '', end_ip: '', type: 'static' as RangeType, description: '' }
   showAddPanel.value = true
+  snapshotAdd()
 }
 
 function countAllocsInRange(range: IPRange): number {
@@ -476,6 +499,7 @@ function openRangeEdit(range: IPRange) {
   }
   rangeEditError.value = ''
   showRangeEdit.value = true
+  snapshotRangeEdit()
 }
 
 function startEdit() {
@@ -483,6 +507,7 @@ function startEdit() {
   editForm.value = { name: network.value.name, subnet: network.value.subnet, gateway: network.value.gateway || '', vlan_id: network.value.vlan_id || '', description: network.value.description || '' }
   editDnsInput.value = network.value.dns_servers?.join(', ') || ''
   editing.value = true
+  snapshotEdit()
 }
 
 function validate(state: typeof editForm.value) {
@@ -563,6 +588,7 @@ function openEditAlloc(a: IPAllocation) {
   addPanelMode.value = 'ip'
   addPanelError.value = ''
   showAddPanel.value = true
+  snapshotAdd()
 }
 
 function openDeleteRange(r: IPRange) {

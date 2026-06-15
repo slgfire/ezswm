@@ -2,10 +2,51 @@
 
 ## Latest Stage
 
-Date: 2026-06-14
-Stage: Port-reset clears both ends + in-app confirmation dialogs replace native popups
+Date: 2026-06-15
+Stage: Consistent unsaved-changes guard across all slideovers + header language switcher
 Status: Complete
-Version: 0.28.0
+Version: 0.29.0
+
+### Feature: unsaved-changes guard made consistent across every slideover (v0.29.0)
+
+Previously only the switch-detail edit slideover prompted before discarding
+unsaved edits (bespoke logic in `useSwitchEditForm`). Full-page forms were
+already covered by `useUnsavedChanges` (route-leave + `beforeunload`), but
+**slideovers close without a route change**, so every other edit panel discarded
+silently.
+
+New `useSlideoverGuard(form, close)` composable (`app/composables/`) snapshots
+the editable surface on open and confirms via the existing global `useConfirm()`
+before closing a dirty panel — same copy/keys as the full-page guard
+(`common.unsavedChangesTitle/Warning/leave`). `form` accepts a getter so panels
+whose editable state spans multiple refs (port panel's VLAN/connection state,
+LAG slideover's vlan/portMapping/remote refs) snapshot their **whole** surface,
+not just the main `form`. Snapshots are taken after async rehydrate settles to
+avoid phantom-dirty on open.
+
+Wired into: `SwitchPortSidePanel`, `SwitchPortBulkEditor`, `LagGroupSlideover`,
+`IpAddressForm`, the three slideovers on `subnets/[id].vue` (network edit, range
+edit, allocation/range add via `NetworkAllocationForm`), the `sites/index.vue`
+edit panel, and the `vlans/index.vue` in-panel edit. `useSwitchEditForm` was
+refactored onto the shared composable so the whole app shares one implementation.
+Pattern per slideover: `:open` + `@update:open="onOpenChange"`, cancel buttons →
+`requestClose`, `takeSnapshot()` once the form is populated.
+
+**Z-index fix (global):** Nuxt UI v4 gives both modals and slideovers `z-[100]`
+content with an un-z-indexed overlay, so any modal opened over an open slideover
+could render *behind* it (stacking fell back to DOM order — intermittent, cleared
+by reload). This hit the unsaved-changes confirm and also `VlanRemoveConfirmDialog`
+(rendered inside the configured-VLANs slideover). Fixed once in `app/app.config.ts`
+by pinning `ui.modal.slots.overlay`/`content` to `z-[200]`, so every modal sits
+above any slideover app-wide.
+
+### Feature: header language switcher (v0.29.0)
+
+DE/EN switcher (`UDropdownMenu`, `i-heroicons-language`) added top-right in
+`AppHeader.vue` between the theme toggle and user menu. Mirrors the Settings →
+Account flow: `setLocale(code)` + `updateUser({ language })` so the choice
+persists to the user profile and survives reload (`auth.global.ts` re-applies
+`user.language`). New i18n key `common.language` (EN/DE).
 
 ### Fix: port reset now actually clears the port and severs the link (v0.28.0)
 

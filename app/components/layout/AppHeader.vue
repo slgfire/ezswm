@@ -209,6 +209,14 @@
         </template>
       </ClientOnly>
 
+      <!-- Language switcher -->
+      <UDropdownMenu :items="languageItems" :content="{ align: 'end' }">
+        <UButton variant="ghost" color="neutral" class="gap-1.5" :aria-label="$t('common.language')">
+          <UIcon name="i-heroicons-language" class="h-5 w-5" />
+          <span class="hidden text-sm font-medium uppercase sm:inline">{{ locale }}</span>
+        </UButton>
+      </UDropdownMenu>
+
       <!-- User menu -->
       <UDropdownMenu :items="userMenuItems" :content="{ align: 'end' }">
         <UButton variant="ghost" color="neutral" class="gap-2">
@@ -265,7 +273,26 @@ function toggleWithTransition(event: MouseEvent) {
 const { currentSiteId: headerSiteId } = useCurrentSite()
 const searchSitePrefix = computed(() => `/sites/${headerSiteId.value}`)
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale, setLocale } = useI18n()
+const { update: updateUser } = useUsers()
+
+// Language switcher — mirrors settings.vue: switch locale and persist to profile
+// so it survives reload (auth.global.ts re-applies user.language on load).
+async function changeLanguage(code: 'en' | 'de') {
+  if (locale.value === code) return
+  await setLocale(code)
+  if (user.value) {
+    try {
+      await updateUser(user.value.id, { language: code })
+      Object.assign(user.value, { language: code })
+    } catch { /* locale already switched client-side; persistence is best-effort */ }
+  }
+}
+
+const languageItems = computed(() => [
+  { label: 'English', onSelect: () => changeLanguage('en') },
+  { label: 'Deutsch', onSelect: () => changeLanguage('de') }
+])
 
 // Search
 const searchQuery = ref('')
