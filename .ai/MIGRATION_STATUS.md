@@ -32,11 +32,13 @@ refactored onto the shared composable so the whole app shares one implementation
 Pattern per slideover: `:open` + `@update:open="onOpenChange"`, cancel buttons →
 `requestClose`, `takeSnapshot()` once the form is populated.
 
-**Z-index fix:** Nuxt UI v4 gives both modals and slideovers `z-[100]` content
-with an un-z-indexed overlay, so the confirm dialog could render *behind* an open
-slideover (stacking fell back to DOM order — intermittent, cleared by reload).
-`SharedConfirmDialog`'s `UModal` now pins `overlay`/`content` to `z-[200]` so the
-confirm always sits above any slideover and stays clickable.
+**Z-index fix (global):** Nuxt UI v4 gives both modals and slideovers `z-[100]`
+content with an un-z-indexed overlay, so any modal opened over an open slideover
+could render *behind* it (stacking fell back to DOM order — intermittent, cleared
+by reload). This hit the unsaved-changes confirm and also `VlanRemoveConfirmDialog`
+(rendered inside the configured-VLANs slideover). Fixed once in `app/app.config.ts`
+by pinning `ui.modal.slots.overlay`/`content` to `z-[200]`, so every modal sits
+above any slideover app-wide.
 
 ### Feature: header language switcher (v0.29.0)
 
