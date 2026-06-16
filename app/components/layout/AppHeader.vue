@@ -226,8 +226,6 @@
 </template>
 
 <script setup lang="ts">
-defineEmits<{ toggleSidebar: [] }>()
-
 const { user, logout } = useAuth()
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
@@ -431,11 +429,6 @@ onMounted(() => {
       dismissSearch()
     }
   })
-})
-
-defineExpose({
-  dismissSearch,
-  isSearchOpen: computed(() => showResults.value && searchQuery.value.length >= 2),
 })
 
 const userMenuItems = computed(() => [
