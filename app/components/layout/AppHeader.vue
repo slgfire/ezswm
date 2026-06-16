@@ -1,17 +1,15 @@
 <template>
-  <UDashboardNavbar :ui="{ root: 'gap-2', center: 'flex min-w-0', right: 'gap-2' }">
+  <UDashboardNavbar :ui="{ root: 'gap-2', left: 'flex-1 min-w-0', right: 'gap-2' }">
     <template #toggle>
       <UDashboardSidebarToggle data-testid="mobile-menu-button" />
     </template>
 
-    <!-- Suppress the navbar's default empty <h1> title (we set no page title here):
-         keeps one <h1> per page and avoids an empty heading. Must provide non-empty
-         slot content — an empty #left makes Vue fall back to the default (the <h1>). -->
-    <template #left><span class="sr-only" /></template>
-
-    <template #default>
+    <!-- Search lives in #left (left-aligned). Putting it here also replaces the
+         navbar's default leading/title, suppressing the otherwise-empty <h1>
+         (keeps one <h1> per page; an empty #left would fall back to that <h1>). -->
+    <template #left>
       <!-- Search -->
-      <div class="relative hidden w-full sm:block">
+      <div class="relative hidden sm:block">
         <div class="flex items-center rounded-md border border-default bg-elevated px-3" @click="searchInputRef?.focus()">
           <span class="font-mono text-xs font-semibold text-primary-500 select-none">&gt;_</span>
           <input
