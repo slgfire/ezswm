@@ -1,3 +1,65 @@
+## [0.29.1] — 2026-06-16
+
+### Fixed
+- Marking a switch as a favourite from the switch list no longer fails silently. The request used the per-site slug without a site context and returned 404; it now uses the switch's unique ID.
+
+---
+
+## [0.29.0] — 2026-06-15
+
+### Added
+- Language switcher in the header (top right) to toggle between English and German at any time. Your choice is saved to your profile and persists across reloads and devices.
+
+### Changed
+- The unsaved-changes confirmation now applies consistently to every editing side panel — switch and port editing, bulk port edits, LAG groups, IP allocations and ranges, networks, VLANs and sites. Closing a panel with unsaved changes (clicking outside, Escape, or Cancel) prompts you first.
+
+---
+
+## [0.28.0] — 2026-06-15
+
+### Added
+- Confirmations (resetting a port, overwriting a LAG connection, leaving a page with unsaved changes) now use in-app dialogs instead of native browser pop-ups.
+
+### Fixed
+- Resetting a port now fully clears its configuration and connection and severs the link on both ends, instead of leaving a stale back-link on the peer switch.
+
+---
+
+## [0.27.2] — 2026-06-13
+
+### Fixed
+- Port and LAG actions on a switch reached via a slug URL no longer hit the wrong switch or return 404. Per-site slugs (unique per site, not globally) are now disambiguated using the site context.
+
+---
+
+## [0.27.1] — 2026-06-13
+
+### Fixed
+- Editing ports and LAG groups on a switch opened via its slug-based URL now works. The endpoints resolve the slug to the switch's ID before applying changes.
+
+---
+
+## [0.27.0] — 2026-06-13
+
+### Added
+- Switch-list filters (location, role, tags) are now scoped to the current site, each filter has its own reset button, and the filter controls show icons.
+
+---
+
+## [0.26.1] — 2026-06-11
+
+### Fixed
+- Removed the duplicate "required" asterisk that appeared on some form-field labels.
+
+---
+
+## [0.26.0] — 2026-06-11
+
+### Added
+- Import devices from the NetBox device library directly in the switch quick-create modal. Selecting a template auto-fills the manufacturer and model (editable; manual changes lock the field).
+
+---
+
 ## [0.25.6] — 2026-06-11
 
 ### Fixed
