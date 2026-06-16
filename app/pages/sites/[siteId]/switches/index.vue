@@ -382,7 +382,10 @@ function confirmDelete(row: Switch) { deleteTarget.value = row; showDeleteDialog
 
 async function toggleFavorite(sw: Switch) {
   try {
-    await $fetch(`/api/switches/${sw.slug || sw.id}`, {
+    // Use the PK, not the slug: per-site slugs are not globally unique, so
+    // PUT /api/switches/<slug> can't resolve without a siteId and 404s. The
+    // UUID resolves directly. (List can be cross-site via siteId="all".)
+    await $fetch(`/api/switches/${sw.id}`, {
       method: 'PUT',
       body: { is_favorite: !sw.is_favorite }
     })

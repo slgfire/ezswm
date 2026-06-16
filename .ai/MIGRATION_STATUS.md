@@ -2,6 +2,24 @@
 
 ## Latest Stage
 
+Date: 2026-06-16
+Stage: Fix favorite toggle 404 (per-site slug not resolvable)
+Status: Complete
+Version: 0.29.1
+
+### Fix: favorite toggle hit 404 on per-site slugs (v0.29.1)
+
+`toggleFavorite` in `switches/index.vue` sent `PUT /api/switches/<slug>` without a
+`siteId`. Since switch slugs are unique per-site (not globally), the handler's
+`getByIdOrSlug` falls back to a PK lookup which can't match a slug → 404, and the
+star never toggled (the failure was swallowed silently). Fixed by sending the
+switch **PK** (`sw.id`), which resolves directly regardless of site. Same class as
+the earlier per-site-slug sub-resource fixes (#195/#196); this call was missed.
+
+---
+
+## Previous Stage
+
 Date: 2026-06-15
 Stage: Consistent unsaved-changes guard across all slideovers + header language switcher
 Status: Complete
