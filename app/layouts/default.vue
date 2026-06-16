@@ -14,5 +14,11 @@
         <slot />
       </main>
     </div>
+
+    <LayoutChangelogModal v-model:open="changelogOpen" />
   </UDashboardGroup>
 </template>
+
+<script setup lang="ts">
+const changelogOpen = useState('changelog-open', () => false)
+</script>

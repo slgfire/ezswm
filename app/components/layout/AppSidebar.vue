@@ -39,7 +39,6 @@
           </template>
         </ul>
       </nav>
-      <LayoutChangelogModal v-model:open="changelogOpen" />
     </template>
 
     <!-- Footer: version/github (hidden when collapsed) + collapse toggle (always) -->
@@ -70,7 +69,7 @@
 const config = useRuntimeConfig()
 const version = config.public.appVersion
 
-const changelogOpen = ref(false)
+const changelogOpen = useState('changelog-open', () => false)
 const { updateAvailable, load } = useVersionCheck()
 onMounted(() => load())
 
