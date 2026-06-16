@@ -1,18 +1,12 @@
 <template>
-  <header class="flex h-16 items-center justify-between border-b border-default bg-default px-4">
-    <div class="flex items-center gap-4">
-      <!-- Mobile menu toggle -->
-      <UButton
-        class="lg:hidden"
-        variant="ghost"
-        color="neutral"
-        icon="i-heroicons-bars-3"
-        data-testid="mobile-menu-button"
-        @click="$emit('toggleSidebar')"
-      />
+  <UDashboardNavbar :ui="{ root: 'gap-2', center: 'flex min-w-0', right: 'gap-2' }">
+    <template #toggle>
+      <UDashboardSidebarToggle data-testid="mobile-menu-button" />
+    </template>
 
+    <template #default>
       <!-- Search -->
-      <div class="relative hidden sm:block">
+      <div class="relative hidden w-full sm:block">
         <div class="flex items-center rounded-md border border-default bg-elevated px-3" @click="searchInputRef?.focus()">
           <span class="font-mono text-xs font-semibold text-primary-500 select-none">&gt;_</span>
           <input
@@ -191,9 +185,9 @@
           </div>
         </div>
       </div>
-    </div>
+    </template>
 
-    <div class="flex items-center gap-2">
+    <template #right>
       <!-- Theme toggle with view transition -->
       <ClientOnly>
         <UButton
@@ -224,8 +218,8 @@
           <span class="hidden sm:inline text-sm">{{ user?.display_name }}</span>
         </UButton>
       </UDropdownMenu>
-    </div>
-  </header>
+    </template>
+  </UDashboardNavbar>
 
   <!-- Click outside to close -->
   <div v-if="showResults && searchQuery.length >= 2" class="fixed inset-0 z-40" @click="dismissSearch" />
@@ -433,6 +427,8 @@ onMounted(() => {
     if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
       e.preventDefault()
       searchInputRef.value?.focus()
+    } else if (e.key === 'Escape' && showResults.value) {
+      dismissSearch()
     }
   })
 })
