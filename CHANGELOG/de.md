@@ -1,3 +1,10 @@
+## [0.30.0] — 2026-06-16
+
+### Geändert
+- Das App-Layout nutzt jetzt die Standard-Nuxt-UI-Dashboard-Komponenten. Es sieht gleich aus, aber der eingeklappte Zustand der Seitenleiste bleibt über Reloads erhalten, das mobile Menü öffnet als Slide-over und die Header-Suche ist linksbündig.
+
+---
+
 ## [0.29.2] — 2026-06-18
 
 ### Behoben

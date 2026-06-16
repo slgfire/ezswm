@@ -1,3 +1,10 @@
+## [0.30.0] — 2026-06-16
+
+### Changed
+- The app layout now uses the standard Nuxt UI dashboard components. It looks the same, but the sidebar's collapsed state is remembered across reloads, the mobile menu opens as a slide-over, and the header search is left-aligned.
+
+---
+
 ## [0.29.2] — 2026-06-18
 
 ### Fixed
