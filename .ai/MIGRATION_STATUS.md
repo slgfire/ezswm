@@ -44,9 +44,26 @@ the earlier per-site-slug sub-resource fixes (#195/#196); this call was missed.
 ## Previous Stage
 
 Date: 2026-06-15
-Stage: Consistent unsaved-changes guard across all slideovers + header language switcher
+Stage: Layout shell migrated to Nuxt UI v4 dashboard components
 Status: Complete
-Version: 0.29.0
+Version: 0.30.0
+
+### Refactor: hand-rolled shell → UDashboardGroup/Sidebar/Navbar (v0.30.0)
+
+The custom flexbox layout (`default.vue` + bespoke `AppSidebar`/`AppHeader`, mobile
+overlay, global Esc handler) is replaced by official Nuxt UI v4 dashboard components,
+bringing the project into line with its own CLAUDE.md rule ("do not create a custom
+dashboard shell"). `UDashboardGroup` (unit="rem") wraps `UDashboardSidebar` (collapse
+persists via cookie, mobile slideover + route-close + Esc handled by the component) and
+a content column whose top is `UDashboardNavbar`. Search stays inline in the navbar
+center slot; breadcrumbs stay a separate bar. Sidebar width pinned to 16rem (=256px) with
+a 64px icon rail via `min-w-16`. All pages untouched. e2e selectors updated
+(`mobile-sidebar-overlay` → slideover `role="dialog"`; `aside a` → `nav a`).
+
+### Stage: unsaved-changes guard across all slideovers + header language switcher (v0.29.0)
+
+Date: 2026-06-15
+Status: Complete
 
 ### Feature: unsaved-changes guard made consistent across every slideover (v0.29.0)
 

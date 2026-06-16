@@ -39,6 +39,7 @@
           </template>
         </ul>
       </nav>
+      <LayoutChangelogModal v-model:open="changelogOpen" />
     </template>
 
     <!-- Footer: version/github (hidden when collapsed) + collapse toggle (always) -->
@@ -62,8 +63,6 @@
       </div>
       <UDashboardSidebarCollapse class="ml-auto" />
     </template>
-
-    <LayoutChangelogModal v-model:open="changelogOpen" />
   </UDashboardSidebar>
 </template>
 
