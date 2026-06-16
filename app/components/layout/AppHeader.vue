@@ -4,9 +4,10 @@
       <UDashboardSidebarToggle data-testid="mobile-menu-button" />
     </template>
 
-    <!-- Suppress the navbar's default empty <h1> title (we set no page title here);
-         keeps the DOM to a single <h1> per page and avoids an empty heading. -->
-    <template #left />
+    <!-- Suppress the navbar's default empty <h1> title (we set no page title here):
+         keeps one <h1> per page and avoids an empty heading. Must provide non-empty
+         slot content — an empty #left makes Vue fall back to the default (the <h1>). -->
+    <template #left><span class="sr-only" /></template>
 
     <template #default>
       <!-- Search -->
