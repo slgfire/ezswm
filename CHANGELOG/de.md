@@ -1,3 +1,65 @@
+## [0.29.1] — 2026-06-16
+
+### Behoben
+- Das Markieren eines Switches als Favorit aus der Switch-Liste schlägt nicht mehr still fehl. Die Anfrage nutzte den per-Site-Slug ohne Site-Kontext und lieferte 404; jetzt wird die eindeutige Switch-ID verwendet.
+
+---
+
+## [0.29.0] — 2026-06-15
+
+### Hinzugefügt
+- Sprachumschalter in der Kopfleiste (oben rechts), um jederzeit zwischen Englisch und Deutsch zu wechseln. Die Auswahl wird im Profil gespeichert und bleibt über Reloads und Geräte hinweg erhalten.
+
+### Geändert
+- Der Schutz vor nicht gespeicherten Änderungen gilt jetzt einheitlich für jedes Bearbeitungs-Seitenpanel — Switch- und Port-Bearbeitung, Massen-Port-Bearbeitung, LAG-Gruppen, IP-Belegungen und -Bereiche, Netzwerke, VLANs und Standorte. Beim Schließen mit ungespeicherten Änderungen (Klick daneben, Escape oder Abbrechen) wird zuerst nachgefragt.
+
+---
+
+## [0.28.0] — 2026-06-15
+
+### Hinzugefügt
+- Bestätigungen (Port zurücksetzen, LAG-Verbindung überschreiben, Seite mit ungespeicherten Änderungen verlassen) nutzen jetzt In-App-Dialoge statt nativer Browser-Popups.
+
+### Behoben
+- Das Zurücksetzen eines Ports löscht jetzt Konfiguration und Verbindung vollständig und trennt die Verbindung auf beiden Seiten, statt einen veralteten Rück-Link auf dem Gegenstellen-Switch zu hinterlassen.
+
+---
+
+## [0.27.2] — 2026-06-13
+
+### Behoben
+- Port- und LAG-Aktionen auf einem über eine Slug-URL aufgerufenen Switch treffen nicht mehr den falschen Switch oder liefern 404. Per-Site-Slugs (pro Standort eindeutig, nicht global) werden jetzt über den Site-Kontext eindeutig aufgelöst.
+
+---
+
+## [0.27.1] — 2026-06-13
+
+### Behoben
+- Das Bearbeiten von Ports und LAG-Gruppen auf einem über die Slug-URL geöffneten Switch funktioniert jetzt. Die Endpunkte lösen den Slug vor dem Anwenden der Änderungen in die Switch-ID auf.
+
+---
+
+## [0.27.0] — 2026-06-13
+
+### Hinzugefügt
+- Switch-Listen-Filter (Standort, Rolle, Tags) sind jetzt auf den aktuellen Standort beschränkt, jeder Filter hat einen eigenen Reset-Button, und die Filter-Steuerelemente zeigen Icons.
+
+---
+
+## [0.26.1] — 2026-06-11
+
+### Behoben
+- Das doppelte „Pflichtfeld"-Sternchen, das bei einigen Formularfeld-Labels erschien, wurde entfernt.
+
+---
+
+## [0.26.0] — 2026-06-11
+
+### Hinzugefügt
+- Geräte aus der NetBox-Gerätebibliothek direkt im Switch-Quick-Create-Modal importieren. Bei Auswahl eines Templates werden Hersteller und Modell automatisch ausgefüllt (editierbar; manuelle Änderungen sperren das Feld).
+
+---
+
 ## [0.25.6] — 2026-06-11
 
 ### Behoben
