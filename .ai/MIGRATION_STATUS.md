@@ -26,6 +26,28 @@ Three issues in the LAG group slideover (`useRemoteConnection` + `LagGroupSlideo
 ## Previous Stage
 
 Date: 2026-06-16
+Stage: Layout shell migrated to Nuxt UI v4 dashboard components
+Status: Complete
+Version: 0.30.0
+
+### Refactor: hand-rolled shell → UDashboardGroup/Sidebar/Navbar (v0.30.0)
+
+The custom flexbox layout (`default.vue` + bespoke `AppSidebar`/`AppHeader`, mobile
+overlay, global Esc handler) is replaced by official Nuxt UI v4 dashboard components,
+bringing the project into line with its own CLAUDE.md rule ("do not create a custom
+dashboard shell"). `UDashboardGroup` (unit="rem") wraps `UDashboardSidebar` (collapse
+persists via cookie, mobile slideover + route-close + Esc handled by the component) and
+a content column whose top is `UDashboardNavbar`. Search stays inline and left-aligned
+in the navbar (`#left` slot); breadcrumbs stay a separate bar. Sidebar width pinned to
+16rem (=256px) with a 64px icon rail via `min-w-16`. All pages untouched. e2e selectors
+updated (`mobile-sidebar-overlay` → slideover `role="dialog"`; `aside a` → `nav a`),
+plus a route-smoke test covering every main page in the new shell.
+
+---
+
+## Previous Stage
+
+Date: 2026-06-16
 Stage: Fix favorite toggle 404 (per-site slug not resolvable)
 Status: Complete
 Version: 0.29.1
@@ -38,27 +60,6 @@ Version: 0.29.1
 star never toggled (the failure was swallowed silently). Fixed by sending the
 switch **PK** (`sw.id`), which resolves directly regardless of site. Same class as
 the earlier per-site-slug sub-resource fixes (#195/#196); this call was missed.
-
----
-
-## Previous Stage
-
-Date: 2026-06-15
-Stage: Layout shell migrated to Nuxt UI v4 dashboard components
-Status: Complete
-Version: 0.30.0
-
-### Refactor: hand-rolled shell → UDashboardGroup/Sidebar/Navbar (v0.30.0)
-
-The custom flexbox layout (`default.vue` + bespoke `AppSidebar`/`AppHeader`, mobile
-overlay, global Esc handler) is replaced by official Nuxt UI v4 dashboard components,
-bringing the project into line with its own CLAUDE.md rule ("do not create a custom
-dashboard shell"). `UDashboardGroup` (unit="rem") wraps `UDashboardSidebar` (collapse
-persists via cookie, mobile slideover + route-close + Esc handled by the component) and
-a content column whose top is `UDashboardNavbar`. Search stays inline in the navbar
-center slot; breadcrumbs stay a separate bar. Sidebar width pinned to 16rem (=256px) with
-a 64px icon rail via `min-w-16`. All pages untouched. e2e selectors updated
-(`mobile-sidebar-overlay` → slideover `role="dialog"`; `aside a` → `nav a`).
 
 ### Stage: unsaved-changes guard across all slideovers + header language switcher (v0.29.0)
 
