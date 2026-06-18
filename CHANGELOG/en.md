@@ -1,3 +1,11 @@
+## [0.29.2] — 2026-06-18
+
+### Fixed
+- LAG groups: the remote-port target dropdown no longer lets you pick the same remote port for two local ports, and the ports are now listed in natural order (by unit/index).
+- LAG groups: clicking Save with an empty name now shows the required-field error instead of silently doing nothing.
+
+---
+
 ## [0.29.1] — 2026-06-16
 
 ### Fixed

@@ -2,6 +2,29 @@
 
 ## Latest Stage
 
+Date: 2026-06-18
+Stage: Fix LAG remote-port mapping (duplicate target, sort) + empty-name save feedback
+Status: Complete
+Version: 0.29.2
+
+### Fix: LAG slideover bugs (v0.29.2)
+
+Three issues in the LAG group slideover (`useRemoteConnection` + `LagGroupSlideover.vue`):
+- The remote-port target dropdown shared one option list across all local ports with
+  no dedup, so the same remote port could be mapped to two local ports. Added
+  `availableRemotePortOptions(localPortId)`, which hides remote ports already taken by
+  other local ports (keeping "None" and the row's own current selection).
+- The remote-port options were unsorted; they are now ordered by `unit`/`index`.
+- The Save button (in the footer, outside the `UForm`) called `onSubmit` directly,
+  which `validate()`d and `return`ed silently on error — so saving with an empty name
+  did nothing with no feedback. The button now calls `lagFormRef.submit()`, so the
+  `UForm` runs validation and surfaces the required-field error (matching the
+  switch-edit pattern).
+
+---
+
+## Previous Stage
+
 Date: 2026-06-16
 Stage: Fix favorite toggle 404 (per-site slug not resolvable)
 Status: Complete
