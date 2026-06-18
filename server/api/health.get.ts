@@ -2,7 +2,7 @@ import { prisma } from '../db/client'
 
 export default defineEventHandler(async () => {
   const config = useRuntimeConfig()
-  let dbOk = false
+  let dbOk: boolean
   try {
     await prisma.$queryRaw`SELECT 1`
     dbOk = true
