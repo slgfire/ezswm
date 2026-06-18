@@ -116,7 +116,7 @@ jobs:
           exit 1
 
       - name: Run Playwright smoke tests
-        run: pnpm exec playwright test tests/e2e/settings.spec.ts tests/e2e/keyboard-shortcuts.spec.ts tests/e2e/subnet-calculator.spec.ts
+        run: pnpm exec playwright test tests/e2e/settings.spec.ts tests/e2e/keyboard-shortcuts.spec.ts tests/e2e/subnet-calculator.spec.ts tests/e2e/route-smoke.spec.ts
 
       - name: Upload Playwright artifacts
         if: failure()

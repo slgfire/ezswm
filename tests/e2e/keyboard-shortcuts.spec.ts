@@ -56,10 +56,10 @@ test.describe('Keyboard Shortcuts', () => {
     await page.getByTestId('mobile-menu-button').click()
 
     // Sidebar overlay should be visible
-    await expect(page.getByTestId('mobile-sidebar-overlay')).toBeVisible()
+    await expect(page.getByRole('dialog')).toBeVisible()
 
     // Press Esc — should close sidebar
     await page.keyboard.press('Escape')
-    await expect(page.getByTestId('mobile-sidebar-overlay')).toBeHidden()
+    await expect(page.getByRole('dialog')).toBeHidden()
   })
 })

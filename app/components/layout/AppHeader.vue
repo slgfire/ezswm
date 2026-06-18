@@ -1,16 +1,13 @@
 <template>
-  <header class="flex h-16 items-center justify-between border-b border-default bg-default px-4">
-    <div class="flex items-center gap-4">
-      <!-- Mobile menu toggle -->
-      <UButton
-        class="lg:hidden"
-        variant="ghost"
-        color="neutral"
-        icon="i-heroicons-bars-3"
-        data-testid="mobile-menu-button"
-        @click="$emit('toggleSidebar')"
-      />
+  <UDashboardNavbar :ui="{ root: 'gap-2', left: 'flex-1 min-w-0', right: 'gap-2' }">
+    <template #toggle>
+      <UDashboardSidebarToggle data-testid="mobile-menu-button" />
+    </template>
 
+    <!-- Search lives in #left (left-aligned). Putting it here also replaces the
+         navbar's default leading/title, suppressing the otherwise-empty <h1>
+         (keeps one <h1> per page; an empty #left would fall back to that <h1>). -->
+    <template #left>
       <!-- Search -->
       <div class="relative hidden sm:block">
         <div class="flex items-center rounded-md border border-default bg-elevated px-3" @click="searchInputRef?.focus()">
@@ -191,9 +188,9 @@
           </div>
         </div>
       </div>
-    </div>
+    </template>
 
-    <div class="flex items-center gap-2">
+    <template #right>
       <!-- Theme toggle with view transition -->
       <ClientOnly>
         <UButton
@@ -224,16 +221,14 @@
           <span class="hidden sm:inline text-sm">{{ user?.display_name }}</span>
         </UButton>
       </UDropdownMenu>
-    </div>
-  </header>
+    </template>
+  </UDashboardNavbar>
 
   <!-- Click outside to close -->
   <div v-if="showResults && searchQuery.length >= 2" class="fixed inset-0 z-40" @click="dismissSearch" />
 </template>
 
 <script setup lang="ts">
-defineEmits<{ toggleSidebar: [] }>()
-
 const { user, logout } = useAuth()
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
@@ -433,13 +428,10 @@ onMounted(() => {
     if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
       e.preventDefault()
       searchInputRef.value?.focus()
+    } else if (e.key === 'Escape' && showResults.value) {
+      dismissSearch()
     }
   })
-})
-
-defineExpose({
-  dismissSearch,
-  isSearchOpen: computed(() => showResults.value && searchQuery.value.length >= 2),
 })
 
 const userMenuItems = computed(() => [
