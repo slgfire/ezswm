@@ -64,9 +64,10 @@ export function useRemoteConnection(
     if (!selectedRemoteSwitchId.value) return []
     const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
     if (!sw?.ports) return []
+    const sortedPorts = [...sw.ports].sort((a: Port, b: Port) => a.unit - b.unit || a.index - b.index)
     return [
       { label: '— None —', value: '', conflict: '' },
-      ...sw.ports.map((p: Port) => {
+      ...sortedPorts.map((p: Port) => {
         const label = p.label || `${p.unit}/${p.index}`
         let conflict = ''
         if (p.connected_device_id && !isLocalSwitch(p.connected_device_id)) {
@@ -214,6 +215,20 @@ export function useRemoteConnection(
     return remotePortOptions.value.find(o => o.value === mapping.remotePortId) || remotePortOptions.value[0]
   }
 
+  // Options for one local port's target dropdown: hide remote ports already
+  // assigned to OTHER local ports so the same target can't be picked twice.
+  // "None" and this port's own current selection always stay available.
+  function availableRemotePortOptions(localPortId: string) {
+    const taken = new Set<string>()
+    for (const pid of formPortIds.value) {
+      if (pid === localPortId) continue
+      const rid = portMapping[pid]?.remotePortId
+      if (rid) taken.add(rid)
+    }
+    const current = portMapping[localPortId]?.remotePortId
+    return remotePortOptions.value.filter(o => o.value === '' || o.value === current || !taken.has(o.value))
+  }
+
   function setRemotePort(localPortId: string, option: { label: string; value: string; conflict: string } | undefined) {
     const portId = option?.value || ''
     const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
@@ -254,6 +269,7 @@ export function useRemoteConnection(
     fetchRemoteLags,
     initPortMapping,
     getRemotePortOption,
+    availableRemotePortOptions,
     setRemotePort,
     setRemotePortFreetext,
     getPortConflict,

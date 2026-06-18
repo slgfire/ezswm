@@ -1,3 +1,11 @@
+## [0.29.2] — 2026-06-18
+
+### Behoben
+- LAG-Gruppen: Im Ziel-Port-Dropdown kann derselbe Remote-Port nicht mehr für zwei lokale Ports gewählt werden, und die Ports sind jetzt in natürlicher Reihenfolge (nach Unit/Index) sortiert.
+- LAG-Gruppen: Speichern mit leerem Namen zeigt jetzt den Pflichtfeld-Fehler an, statt still nichts zu tun.
+
+---
+
 ## [0.29.1] — 2026-06-16
 
 ### Behoben

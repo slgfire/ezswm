@@ -6,7 +6,7 @@
     @update:open="onOpenChange"
   >
     <template #body>
-      <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" class="space-y-4" @submit="onSubmit">
+      <UForm ref="lagFormRef" :state="form" :validate="validate" :validate-on="['blur', 'change']" class="space-y-4" @submit="onSubmit">
         <UFormField :label="$t('lag.name')" name="name" required>
           <UInput v-model="form.name" class="w-full" />
         </UFormField>
@@ -116,7 +116,7 @@
                   v-if="remoteMode === 'switch' && selectedRemoteSwitchId"
                   :search-input="{ placeholder: $t('lag.searchPortPlaceholder') }"
                   :model-value="getRemotePortOption(portId)"
-                  :items="remotePortOptions"
+                  :items="availableRemotePortOptions(portId)"
                   by="value"
                   placeholder="Select port..."
                   class="w-full"
@@ -180,7 +180,7 @@
         <UButton color="neutral" variant="ghost" @click="requestClose">
           {{ $t('common.cancel') }}
         </UButton>
-        <UButton :loading="saving" :disabled="remotePortLagConflicts.length > 0" icon="i-heroicons-check" @click="onSubmit">
+        <UButton :loading="saving" :disabled="remotePortLagConflicts.length > 0" icon="i-heroicons-check" @click="lagFormRef?.submit()">
           {{ isEdit ? $t('common.save') : $t('lag.create') }}
         </UButton>
       </div>
@@ -214,6 +214,7 @@ const { confirm } = useConfirm()
 
 const isOpen = ref(false)
 const saving = ref(false)
+const lagFormRef = ref<{ submit: () => void } | null>(null)
 const editingLag = ref<LAGGroup | null>(null)
 const isEdit = computed(() => !!editingLag.value)
 
@@ -238,7 +239,6 @@ const {
   switchOptions,
   selectedSwitchOption,
   existingRemoteLag,
-  remotePortOptions,
   remotePortLagConflicts,
   hasConnectionConflicts,
   remoteSwitchMissingVlans,
@@ -251,6 +251,7 @@ const {
   fetchRemoteLags,
   initPortMapping,
   getRemotePortOption,
+  availableRemotePortOptions,
   setRemotePort,
   setRemotePortFreetext,
   getPortConflict,
