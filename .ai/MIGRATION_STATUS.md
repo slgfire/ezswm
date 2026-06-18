@@ -2,6 +2,24 @@
 
 ## Latest Stage
 
+Date: 2026-06-19
+Stage: LAG remote-port dropdown — group by type for a natural order
+Status: Complete
+Version: 0.30.1
+
+### Fix: LAG remote-port dropdown grouped by type (v0.30.1)
+
+`remotePortOptions` (`useRemoteConnection`) sorted only by `unit`/`index`. When a
+switch's layout has several blocks that each restart their index at 1 (e.g. rj45,
+sfp, qsfp, console all starting at 1), every block's "1/1" port clustered at the
+top and the types interleaved. The sort now adds a type-rank tiebreaker
+(rj45 → sfp → sfp+ → qsfp → console → management) between unit and index, so each
+block's ports stay together and read in physical-panel order.
+
+---
+
+## Previous Stage
+
 Date: 2026-06-16
 Stage: Layout shell migrated to Nuxt UI v4 dashboard components
 Status: Complete
