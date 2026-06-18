@@ -2,6 +2,28 @@
 
 ## Latest Stage
 
+Date: 2026-06-16
+Stage: Layout shell migrated to Nuxt UI v4 dashboard components
+Status: Complete
+Version: 0.30.0
+
+### Refactor: hand-rolled shell → UDashboardGroup/Sidebar/Navbar (v0.30.0)
+
+The custom flexbox layout (`default.vue` + bespoke `AppSidebar`/`AppHeader`, mobile
+overlay, global Esc handler) is replaced by official Nuxt UI v4 dashboard components,
+bringing the project into line with its own CLAUDE.md rule ("do not create a custom
+dashboard shell"). `UDashboardGroup` (unit="rem") wraps `UDashboardSidebar` (collapse
+persists via cookie, mobile slideover + route-close + Esc handled by the component) and
+a content column whose top is `UDashboardNavbar`. Search stays inline and left-aligned
+in the navbar (`#left` slot); breadcrumbs stay a separate bar. Sidebar width pinned to
+16rem (=256px) with a 64px icon rail via `min-w-16`. All pages untouched. e2e selectors
+updated (`mobile-sidebar-overlay` → slideover `role="dialog"`; `aside a` → `nav a`),
+plus a route-smoke test covering every main page in the new shell.
+
+---
+
+## Previous Stage
+
 Date: 2026-06-18
 Stage: Fix LAG remote-port mapping (duplicate target, sort) + empty-name save feedback
 Status: Complete
@@ -20,28 +42,6 @@ Three issues in the LAG group slideover (`useRemoteConnection` + `LagGroupSlideo
   did nothing with no feedback. The button now calls `lagFormRef.submit()`, so the
   `UForm` runs validation and surfaces the required-field error (matching the
   switch-edit pattern).
-
----
-
-## Previous Stage
-
-Date: 2026-06-16
-Stage: Layout shell migrated to Nuxt UI v4 dashboard components
-Status: Complete
-Version: 0.30.0
-
-### Refactor: hand-rolled shell → UDashboardGroup/Sidebar/Navbar (v0.30.0)
-
-The custom flexbox layout (`default.vue` + bespoke `AppSidebar`/`AppHeader`, mobile
-overlay, global Esc handler) is replaced by official Nuxt UI v4 dashboard components,
-bringing the project into line with its own CLAUDE.md rule ("do not create a custom
-dashboard shell"). `UDashboardGroup` (unit="rem") wraps `UDashboardSidebar` (collapse
-persists via cookie, mobile slideover + route-close + Esc handled by the component) and
-a content column whose top is `UDashboardNavbar`. Search stays inline and left-aligned
-in the navbar (`#left` slot); breadcrumbs stay a separate bar. Sidebar width pinned to
-16rem (=256px) with a 64px icon rail via `min-w-16`. All pages untouched. e2e selectors
-updated (`mobile-sidebar-overlay` → slideover `role="dialog"`; `aside a` → `nav a`),
-plus a route-smoke test covering every main page in the new shell.
 
 ---
 
