@@ -1,3 +1,10 @@
+## [0.30.1] — 2026-06-19
+
+### Fixed
+- LAG groups: the remote-port target dropdown now groups ports by type (copper, then fibre/uplink, then console/management) instead of interleaving each block's first port, so the list reads in physical-panel order.
+
+---
+
 ## [0.30.0] — 2026-06-16
 
 ### Changed

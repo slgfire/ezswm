@@ -64,7 +64,18 @@ export function useRemoteConnection(
     if (!selectedRemoteSwitchId.value) return []
     const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
     if (!sw?.ports) return []
-    const sortedPorts = [...sw.ports].sort((a: Port, b: Port) => a.unit - b.unit || a.index - b.index)
+    // Group by unit, then by physical type (copper → fibre → uplink → console/mgmt),
+    // then by index. Without this, blocks that each restart their index at 1 (e.g.
+    // rj45, sfp, qsfp, console all starting at 1) interleave so every "1/1" clusters
+    // at the top; grouping by type keeps each block's ports together and in order.
+    const typeRank: Record<Port['type'], number> = {
+      rj45: 0, sfp: 1, 'sfp+': 2, qsfp: 3, console: 4, management: 5
+    }
+    const sortedPorts = [...sw.ports].sort((a: Port, b: Port) =>
+      a.unit - b.unit
+      || (typeRank[a.type] ?? 9) - (typeRank[b.type] ?? 9)
+      || a.index - b.index
+    )
     return [
       { label: '— None —', value: '', conflict: '' },
       ...sortedPorts.map((p: Port) => {
