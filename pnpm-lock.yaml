@@ -51,8 +51,8 @@ importers:
         specifier: 4.3.1
         version: 4.3.1
       v-network-graph:
-        specifier: 0.9.22
-        version: 0.9.22(d3-force@3.0.0)(vue@3.5.38(typescript@6.0.3))
+        specifier: 0.9.23
+        version: 0.9.23(d3-force@3.0.0)(vue@3.5.38(typescript@6.0.3))
       vuedraggable:
         specifier: 4.1.0
         version: 4.1.0(vue@3.5.38(typescript@6.0.3))
@@ -7439,8 +7439,8 @@ packages:
     resolution: {integrity: sha512-Qo+uWgilfSmAhXCMav1uYFynlQO7fMFiMVZsQqZRMIXp0O7rR7qjkj+cPvBHLgBqi960QCoo/PH2/6ZtVqKvrg==}
     hasBin: true
 
-  v-network-graph@0.9.22:
-    resolution: {integrity: sha512-kgG3uiGF6DSA9DrjNEWmD6yy4/AP0jf/uhkq2yVkfub3mJavxcXU0ow2y5z5jFyFlA9L+uzzIZVTSY2iJLMv1w==}
+  v-network-graph@0.9.23:
+    resolution: {integrity: sha512-DByEHnwjTxgOjpyxEW48PyWTLTYcAxGtzMg6EW1dL5Jntx1OxP07NUzFjPB8IN1Qjerd6mqRrLphJCWubXnHPw==}
     peerDependencies:
       d3-force: ^3.0.0
       vue: ^3.5.13
@@ -15499,7 +15499,7 @@ snapshots:
 
   uuid@14.0.0: {}
 
-  v-network-graph@0.9.22(d3-force@3.0.0)(vue@3.5.38(typescript@6.0.3)):
+  v-network-graph@0.9.23(d3-force@3.0.0)(vue@3.5.38(typescript@6.0.3)):
     dependencies:
       '@dash14/svg-pan-zoom': 3.6.9
       lodash-es: 4.18.1
