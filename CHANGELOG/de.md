@@ -1,3 +1,10 @@
+## [0.30.2] — 2026-06-26
+
+### Behoben
+- Device-Library-Import: Ports mit `poe_mode: pd` (Powered Device / PoE-Eingang) werden nicht mehr fälschlicherweise als PoE-PSE-Ports markiert. Betraf das MikroTik CRS326-24G-2S+RM, bei dem `ether1` der eigene Stromanschluss des Switches ist und alle 24 Ports als „PoE Passive 24V" angezeigt wurden.
+
+---
+
 ## [0.30.1] — 2026-06-19
 
 ### Behoben
