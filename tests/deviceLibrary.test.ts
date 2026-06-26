@@ -339,6 +339,27 @@ describe('groupInterfacesToBlocks — basic grouping', () => {
     expect(blocks[0].poe).toBeTruthy()
     expect(blocks[0].poe!.type).toBe('802.3at')
   })
+
+  it('does not assign poe when poe_mode is pd (powered device / PoE input)', () => {
+    // MikroTik CRS326-24G-2S+RM: ether1 has poe_mode:pd (receives power), not a PSE port
+    const interfaces = [
+      { name: 'ether1', type: '1000base-t', poe_mode: 'pd', poe_type: 'passive-24v-2pair' },
+      ...Array.from({ length: 23 }, (_, i) => ({ name: `ether${i + 2}`, type: '1000base-t' }))
+    ]
+    const blocks = groupInterfacesToBlocks(interfaces, [])
+    expect(blocks.length).toBe(1)
+    expect(blocks[0].count).toBe(24)
+    expect(blocks[0].poe).toBeUndefined()
+  })
+
+  it('assigns poe when poe_mode is pse (power sourcing equipment)', () => {
+    const interfaces = [
+      { name: 'GigabitEthernet0/1', type: '1000base-t', poe_mode: 'pse', poe_type: 'type2-ieee802.3at' }
+    ]
+    const blocks = groupInterfacesToBlocks(interfaces, [])
+    expect(blocks[0].poe).toBeTruthy()
+    expect(blocks[0].poe!.type).toBe('802.3at')
+  })
 })
 
 describe('groupInterfacesToBlocks — start_index', () => {

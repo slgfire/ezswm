@@ -386,8 +386,9 @@ export function groupInterfacesToBlocks(
     if (last && lastKey === key) {
       last.members.push(item)
     } else {
-      // Determine PoE from first interface in this group
-      const poe = item.iface.poe_type
+      // Determine PoE from first interface in this group.
+      // poe_mode 'pd' means the port *receives* power (Powered Device) — skip.
+      const poe = (item.iface.poe_type && item.iface.poe_mode !== 'pd')
         ? mapNetboxPoe(item.iface.poe_type)
         : undefined
 
