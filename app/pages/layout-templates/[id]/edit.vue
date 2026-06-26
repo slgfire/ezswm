@@ -79,26 +79,50 @@
                   </UButton>
                 </div>
 
-                <div class="space-y-3">
+                <draggable
+                  :list="unit.blocks"
+                  item-key="_uid"
+                  handle=".drag-handle"
+                  :animation="150"
+                  class="space-y-3"
+                >
+                  <template #item="{ element: block, index: blockIndex }">
                   <div
-                    v-for="(block, blockIndex) in unit.blocks"
-                    :key="blockIndex"
                     class="rounded-md border border-default/50 bg-elevated/50 p-4"
                   >
                     <div class="mb-3 flex items-center justify-between">
                       <div class="flex items-center gap-2">
+                        <UIcon name="i-heroicons-bars-3" class="drag-handle h-4 w-4 cursor-grab text-gray-400 active:cursor-grabbing" />
                         <UBadge :color="block.type === 'rj45' ? 'primary' : block.type === 'sfp+' ? 'info' : block.type === 'qsfp' ? 'warning' : 'neutral'" variant="subtle" size="sm">
                           {{ (block.type || 'N/A').toUpperCase() }}
                         </UBadge>
                         <span class="text-xs text-gray-500">#{{ Number(blockIndex) + 1 }}</span>
                       </div>
-                      <UButton
-                        icon="i-heroicons-x-mark"
-                        size="xs"
-                        color="error"
-                        variant="ghost"
-                        @click="removeBlock(unitIndex, blockIndex)"
-                      />
+                      <div class="flex items-center gap-1">
+                        <UButton
+                          icon="i-heroicons-chevron-up"
+                          size="xs"
+                          color="neutral"
+                          variant="ghost"
+                          :disabled="blockIndex === 0"
+                          @click="moveBlock(unitIndex, blockIndex, -1)"
+                        />
+                        <UButton
+                          icon="i-heroicons-chevron-down"
+                          size="xs"
+                          color="neutral"
+                          variant="ghost"
+                          :disabled="blockIndex === unit.blocks.length - 1"
+                          @click="moveBlock(unitIndex, blockIndex, 1)"
+                        />
+                        <UButton
+                          icon="i-heroicons-x-mark"
+                          size="xs"
+                          color="error"
+                          variant="ghost"
+                          @click="removeBlock(unitIndex, blockIndex)"
+                        />
+                      </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
                       <UFormField :label="$t('templates.blocks.type')" :name="`units[${unitIndex}].blocks[${blockIndex}].type`" :error="errors[`units[${unitIndex}].blocks[${blockIndex}].type`]">
@@ -132,7 +156,8 @@
                       </UFormField>
                     </div>
                   </div>
-                </div>
+                  </template>
+                </draggable>
 
                 <div v-if="unit.blocks.length === 0" class="rounded-md border border-dashed border-default py-6 text-center text-sm text-gray-500">
                   {{ $t('common.noData') }}
@@ -184,10 +209,12 @@
 </template>
 
 <script setup lang="ts">
+import draggable from 'vuedraggable'
 import type { LayoutTemplate, LayoutUnit, LayoutBlock, AirflowDirection } from '~~/types/layoutTemplate'
 import { buildLayoutTemplatePoeOptions, layoutTemplatePoeSelection, normalizeLayoutTemplatePoeSelection, poeNoneValue } from '~~/app/utils/layoutTemplatePoe'
 
 interface FormBlock {
+  _uid: number
   type: string
   count: number
   start_index: number
@@ -328,6 +355,8 @@ function removeUnit(index: string | number) {
   form.value.units.splice(Number(index), 1)
 }
 
+let _uidCounter = 0
+
 function addBlock(unitIndex: string | number) {
   if (!form.value) return
   const unit = form.value.units[Number(unitIndex)]
@@ -337,6 +366,7 @@ function addBlock(unitIndex: string | number) {
     ? lastBlock.start_index + lastBlock.count
     : 1
   unit.blocks.push({
+    _uid: ++_uidCounter,
     type: 'rj45',
     count: 1,
     start_index: nextStartIndex,
@@ -352,6 +382,15 @@ function addBlock(unitIndex: string | number) {
 function removeBlock(unitIndex: string | number, blockIndex: string | number) {
   if (!form.value) return
   form.value!.units[Number(unitIndex)]!.blocks.splice(Number(blockIndex), 1)
+}
+
+function moveBlock(unitIndex: string | number, blockIndex: number, direction: -1 | 1) {
+  if (!form.value) return
+  const blocks = form.value.units[Number(unitIndex)]!.blocks
+  const target = blockIndex + direction
+  if (target < 0 || target >= blocks.length) return
+  const [removed] = blocks.splice(blockIndex, 1)
+  blocks.splice(target, 0, removed!)
 }
 
 function validate(): boolean {
@@ -437,6 +476,7 @@ onMounted(async () => {
         unit_number: u.unit_number,
         label: u.label || '',
         blocks: (u.blocks || []).map((b: LayoutBlock) => ({
+          _uid: ++_uidCounter,
           type: b.type,
           count: b.count,
           start_index: b.start_index,

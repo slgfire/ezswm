@@ -1,3 +1,10 @@
+## [0.31.0] — 2026-06-26
+
+### Hinzugefügt
+- Layout-Template-Editor: Port-Blöcke können jetzt per Drag-and-Drop (Griffpunkt links) oder über die Pfeil-Buttons im Block-Header umsortiert werden. Die neue Reihenfolge wird mit dem Template gespeichert und überall dort übernommen, wo das Template verwendet wird.
+
+---
+
 ## [0.30.2] — 2026-06-26
 
 ### Behoben
