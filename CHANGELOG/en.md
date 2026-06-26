@@ -1,3 +1,10 @@
+## [0.31.0] — 2026-06-26
+
+### Added
+- Layout template editor: port blocks can now be reordered by dragging (grab the handle on the left) or using the up/down buttons in the block header. The new order is saved as part of the template and reflected everywhere the template is used.
+
+---
+
 ## [0.30.2] — 2026-06-26
 
 ### Fixed

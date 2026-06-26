@@ -2,6 +2,28 @@
 
 ## Latest Stage
 
+Date: 2026-06-26
+Stage: Layout template block reordering (drag-and-drop + up/down buttons)
+Status: Complete
+Version: 0.31.0
+
+### Feature: Port Block Reordering in Layout Template Editor (v0.31.0)
+
+Added drag-and-drop reordering of port blocks within each unit in the layout template
+editor (`app/pages/layout-templates/[id]/edit.vue`). Uses the already-present
+`vuedraggable` dependency.
+
+- **Drag handle** (bars icon, left of each block header) — grab to drag block to new position
+- **Up / Down buttons** (chevron icons, right of block header) — keyboard-/touch-friendly alternative; disabled at list boundaries
+- **`_uid` field** added to `FormBlock` (module-level counter, never serialised) — stable `item-key` for draggable reconciliation
+- **`moveBlock(unitIndex, blockIndex, direction)`** — splice/insert helper shared by both buttons; draggable mutates the array directly via `:list`
+
+Closes #216.
+
+---
+
+## Previous Stage
+
 Date: 2026-06-19
 Stage: LAG remote-port dropdown — group by type for a natural order
 Status: Complete
