@@ -2,6 +2,7 @@
 
 ### Fixed
 - LAG groups: the remote-port target dropdown now groups ports by type (copper, then fibre/uplink, then console/management) instead of interleaving each block's first port, so the list reads in physical-panel order.
+- Layout templates: the PoE dropdown no longer fails to open when a block has no PoE type set (caused by an empty-string value incompatible with Nuxt UI v4 USelect); a "None" option is now shown and selected by default.
 
 ---
 

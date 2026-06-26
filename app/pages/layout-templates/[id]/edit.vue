@@ -185,6 +185,7 @@
 
 <script setup lang="ts">
 import type { LayoutTemplate, LayoutUnit, LayoutBlock, AirflowDirection } from '~~/types/layoutTemplate'
+import { buildLayoutTemplatePoeOptions, layoutTemplatePoeSelection, normalizeLayoutTemplatePoeSelection, poeNoneValue } from '~~/app/utils/layoutTemplatePoe'
 
 interface FormBlock {
   type: string
@@ -269,14 +270,7 @@ const airflowOptions = computed(() => [
   { label: t('airflowOptions.mixed'), value: 'mixed' },
 ])
 
-const poeOptions = computed(() => [
-  { label: '802.3af (15.4W)', value: '802.3af' },
-  { label: '802.3at (30W)', value: '802.3at' },
-  { label: '802.3bt Type 3 (60W)', value: '802.3bt-type3' },
-  { label: '802.3bt Type 4 (100W)', value: '802.3bt-type4' },
-  { label: 'Passive 24V', value: 'passive-24v' },
-  { label: 'Passive 48V', value: 'passive-48v' },
-])
+const poeOptions = computed(() => buildLayoutTemplatePoeOptions(t))
 
 const POE_WATTS: Record<string, number> = {
   '802.3af': 15.4, '802.3at': 30, '802.3bt-type3': 60,
@@ -350,7 +344,7 @@ function addBlock(unitIndex: string | number) {
     row_layout: 'sequential',
     default_speed: '',
     label: '',
-    poe_selection: '',
+    poe_selection: poeNoneValue,
     physical_type: '',
   })
 }
@@ -408,7 +402,10 @@ async function handleSubmit() {
           row_layout: b.row_layout || undefined,
           default_speed: b.default_speed || undefined,
           label: b.label || undefined,
-          poe: b.poe_selection ? { type: b.poe_selection, max_watts: POE_WATTS[b.poe_selection] || 0 } : undefined,
+          poe: (() => {
+            const poeType = normalizeLayoutTemplatePoeSelection(b.poe_selection)
+            return poeType ? { type: poeType, max_watts: POE_WATTS[poeType] || 0 } : undefined
+          })(),
           physical_type: b.type === 'management' && b.physical_type ? b.physical_type : undefined,
         }))
       })) as LayoutUnit[]
@@ -447,7 +444,7 @@ onMounted(async () => {
           row_layout: b.row_layout || 'sequential',
           default_speed: b.default_speed || '',
           label: b.label || '',
-          poe_selection: b.poe?.type || '',
+          poe_selection: layoutTemplatePoeSelection(b.poe),
           physical_type: b.physical_type || '',
         }))
       }))

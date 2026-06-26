@@ -2,6 +2,7 @@
 
 ### Behoben
 - LAG-Gruppen: Das Ziel-Port-Dropdown gruppiert die Ports jetzt nach Typ (Kupfer, dann Glasfaser/Uplink, dann Console/Management), statt den ersten Port jedes Blocks zu vermischen — die Liste folgt so der physischen Panel-Reihenfolge.
+- Layout-Templates: Das PoE-Dropdown öffnet sich jetzt auch dann korrekt, wenn ein Block keinen PoE-Typ hat (ein Leerstring war mit Nuxt UI v4 USelect nicht kompatibel); als Standard wird nun „Keine" angezeigt und ausgewählt.
 
 ---
 
