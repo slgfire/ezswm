@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
   }
 
   await activityRepository.log({
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     action: 'update',
     entity_type: 'lag_group',
     entity_id: updated.id,

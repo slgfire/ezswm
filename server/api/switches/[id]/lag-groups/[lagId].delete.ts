@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   if (!deleted) throw createError({ statusCode: 404, message: 'LAG group not found' })
 
   await activityRepository.log({
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     action: 'delete',
     entity_type: 'lag_group',
     entity_id: group.id,

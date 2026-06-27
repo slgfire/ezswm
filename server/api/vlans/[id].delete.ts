@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   await vlanRepository.delete(id)
 
   await activityRepository.log({
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     action: 'delete',
     entity_type: 'vlan',
     entity_id: id,

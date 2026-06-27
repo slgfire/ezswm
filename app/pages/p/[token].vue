@@ -34,7 +34,7 @@
       <div class="hidden lg:block overflow-x-auto">
         <SwitchPortGrid
           :ports="data.ports"
-          :units="(data.units as unknown as import('~~/types/layoutTemplate').LayoutUnit[])"
+        :units="data.units"
           :vlans="data.vlans"
           :selected-ports="[]"
           :public-mode="true"
@@ -66,12 +66,32 @@
 </template>
 
 <script setup lang="ts">
+import type { LayoutUnit } from '~~/types/layoutTemplate'
+import type { Port } from '~~/types/port'
+
 definePageMeta({ layout: 'public' })
+
+interface PublicVlan {
+  vlan_id: number
+  name: string
+  color: string
+}
+
+interface PublicSwitchPayload {
+  name: string
+  model: string | null
+  location: string | null
+  site_name: string | null
+  updated_at: string
+  ports: Port[]
+  vlans: PublicVlan[]
+  units: LayoutUnit[]
+}
 
 const route = useRoute()
 const tokenStr = route.params.token as string
 
 useHead({ title: 'Switch Port Map' })
 
-const { data, pending, error } = useFetch(`/api/p/${tokenStr}`, { server: false })
+const { data, pending, error } = useFetch<PublicSwitchPayload>(`/api/p/${tokenStr}`, { server: false })
 </script>

@@ -2,6 +2,27 @@
 
 ## Latest Stage
 
+Date: 2026-06-27
+Stage: Typecheck cleanup for public pages and authenticated API routes
+Status: Complete
+Version: 0.31.1
+
+### Fix: restore green Nuxt typecheck (v0.31.1)
+
+Fixed TypeScript-only issues that left `pnpm typecheck` failing while runtime behavior
+continued to work:
+
+- Added explicit payload typing for the public switch map page and subnet calculator fetches.
+- Added the H3 auth context declaration used by authenticated API handlers.
+- Replaced optional auth access in protected API routes with the typed auth context.
+- Added a typed import request body for data imports.
+
+No user-facing behavior changed.
+
+---
+
+## Previous Stage
+
 Date: 2026-06-26
 Stage: Layout template block reordering (drag-and-drop + up/down buttons)
 Status: Complete

@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   const updated = await ipRangeRepository.update(rangeId, parsed as Partial<Omit<IPRange, 'id' | 'created_at' | 'network_id'>>)
 
   await activityRepository.log({
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     action: 'update',
     entity_type: 'ip_range',
     entity_id: rangeId,

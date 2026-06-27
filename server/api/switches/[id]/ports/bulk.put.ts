@@ -78,7 +78,7 @@ export default defineEventHandler(async (event) => {
   const updatedSw = (await switchRepository.getById(switchId))!
 
   await activityRepository.log({
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     action: 'bulk_update_ports',
     entity_type: 'switch',
     entity_id: switchId,

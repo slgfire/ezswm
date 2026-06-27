@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   const duplicated = await switchRepository.duplicate(id)
 
   await activityRepository.log({
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     action: 'duplicate',
     entity_type: 'switch',
     entity_id: duplicated.id,

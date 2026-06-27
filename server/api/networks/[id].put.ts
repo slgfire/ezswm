@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
   const updated = await networkRepository.update(existing.id, parsed as Partial<Omit<Network, 'id' | 'created_at'>>)
 
   await activityRepository.log({
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     action: 'update',
     entity_type: 'network',
     entity_id: existing.id,

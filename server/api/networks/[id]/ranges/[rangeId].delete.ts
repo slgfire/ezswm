@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   await ipRangeRepository.delete(rangeId)
 
   await activityRepository.log({
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     action: 'delete',
     entity_type: 'ip_range',
     entity_id: rangeId,

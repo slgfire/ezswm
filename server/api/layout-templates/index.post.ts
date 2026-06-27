@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     entity_type: 'layout_template',
     entity_id: template.id,
     action: 'create',
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     entity_name: template.name,
   })
 

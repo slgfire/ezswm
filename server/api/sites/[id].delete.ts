@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
   await topologyLayoutRepository.deleteBySiteId(id)
 
   await activityRepository.log({
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     action: 'delete',
     entity_type: 'site',
     entity_id: id,

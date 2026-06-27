@@ -93,7 +93,7 @@ watch(cidr, (val) => {
   debounceTimer = setTimeout(async () => {
     const currentId = ++requestId
     try {
-      const data = await $fetch('/api/subnet-calculator', { params: { cidr: val } })
+      const data = await $fetch<SubnetResult>('/api/subnet-calculator', { params: { cidr: val } })
       if (currentId === requestId) {
         result.value = data
       }

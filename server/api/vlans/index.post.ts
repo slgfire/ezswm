@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   const created = await vlanRepository.create(parsed as Required<Pick<typeof parsed, 'color'>> & typeof parsed)
 
   await activityRepository.log({
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     action: 'create',
     entity_type: 'vlan',
     entity_id: created.id,
