@@ -84,6 +84,7 @@ A template has one or more units (rack units). Each unit contains one or more po
 
 Each block defines a group of ports within a unit:
 
+- Blocks can be reordered within the unit by dragging the handle or using the up/down buttons.
 - **Type** -- RJ45, SFP, SFP+, QSFP, Console, or Management
 - **Count** -- number of ports in this block
 - **Start Index** -- the first port number (default 1)
