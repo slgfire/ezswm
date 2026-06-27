@@ -84,6 +84,7 @@ Ein Template hat eine oder mehrere Einheiten (Höheneinheiten). Jede Einheit ent
 
 Jeder Block definiert eine Gruppe von Ports innerhalb einer Einheit:
 
+- Blöcke können innerhalb der Einheit per Drag-Handle oder mit den Hoch-/Runter-Buttons umsortiert werden.
 - **Typ** -- RJ45, SFP, SFP+, QSFP, Console oder Management
 - **Anzahl** -- Anzahl der Ports in diesem Block
 - **Startindex** -- die erste Portnummer (Standard 1)
