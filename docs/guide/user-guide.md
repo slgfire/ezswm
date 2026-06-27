@@ -571,6 +571,8 @@ Sites represent physical locations or logical groupings for your infrastructure.
 
 Navigate to **Sites** in the sidebar to see all sites. Click **Create Site** to add a new one. Each site has a name and optional description.
 
+Deleting a site also deletes its scoped switches, VLANs, subnets, IP allocations, IP ranges, topology layout, and related activity log entries. Global data such as users and layout templates is kept.
+
 When you select a site from the dropdown in the sidebar, all views (switches, VLANs, subnets, topology) are scoped to that site. Select "All Sites" to see everything across all locations.
 
 ### First Site

@@ -3,6 +3,27 @@
 ## Latest Stage
 
 Date: 2026-06-27
+Stage: Cascade site deletion
+Status: Complete
+Version: 0.31.2
+
+### Fix: delete sites together with their scoped data (v0.31.2)
+
+Deleting a site now removes the site and all scoped data in one action instead of
+blocking with “Cannot delete site with existing entities”:
+
+- Switches and their ports, LAG groups, and public tokens.
+- VLANs, networks, IP allocations, IP ranges, and topology layout.
+- Activity log entries for the deleted site and its scoped child entities.
+
+No new delete activity entry is written for the removed site because the site-scoped
+activity history is intentionally removed with the site.
+
+---
+
+## Previous Stage
+
+Date: 2026-06-27
 Stage: Typecheck cleanup for public pages and authenticated API routes
 Status: Complete
 Version: 0.31.1
