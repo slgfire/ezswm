@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   const created = await ipRangeRepository.create(network.id, parsed)
 
   await activityRepository.log({
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     action: 'create',
     entity_type: 'ip_range',
     entity_id: created.id,

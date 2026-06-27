@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   await settingsRepository.update({ sites_initialized: true })
 
   await activityRepository.log({
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     action: 'create',
     entity_type: 'site',
     entity_id: site.id,

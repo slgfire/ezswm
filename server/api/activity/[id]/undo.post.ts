@@ -193,7 +193,7 @@ export default defineEventHandler(async (event) => {
 
     // Log the undo itself so it shows up in the audit trail.
     await activityRepository.log({
-      user_id: event.context.auth?.userId,
+      user_id: event.context.auth.userId,
       action: 'update',
       entity_type,
       entity_id: entry.entity_id,

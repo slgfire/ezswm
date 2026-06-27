@@ -571,6 +571,8 @@ Standorte repräsentieren physische Orte oder logische Gruppierungen für deine 
 
 Navigiere zu **Standorte** in der Seitenleiste, um alle Standorte zu sehen. Klicke auf **Standort erstellen**, um einen neuen hinzuzufügen. Jeder Standort hat einen Namen und eine optionale Beschreibung.
 
+Beim Löschen eines Standorts werden auch seine zugehörigen Switches, VLANs, Subnetze, IP-Zuweisungen, IP-Bereiche, Topologie-Layouts und passenden Activity-Log-Einträge gelöscht. Globale Daten wie Benutzer und Layout-Templates bleiben erhalten.
+
 Wenn du einen Standort im Dropdown der Seitenleiste auswählst, werden alle Ansichten (Switches, VLANs, Subnetze, Topologie) auf diesen Standort eingeschränkt. Wähle "Alle Standorte", um alles standortübergreifend zu sehen.
 
 ### Erste Site

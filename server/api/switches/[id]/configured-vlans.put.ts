@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
     const updated = (await switchRepository.getById(switchId))!
 
     await activityRepository.log({
-      user_id: event.context.auth?.userId,
+      user_id: event.context.auth.userId,
       action: 'add_configured_vlans',
       entity_type: 'switch',
       entity_id: switchId,
@@ -103,7 +103,7 @@ export default defineEventHandler(async (event) => {
     })
 
     await activityRepository.log({
-      user_id: event.context.auth?.userId,
+      user_id: event.context.auth.userId,
       action: 'remove_configured_vlans',
       entity_type: 'switch',
       entity_id: switchId,
@@ -163,7 +163,7 @@ export default defineEventHandler(async (event) => {
     })
 
     await activityRepository.log({
-      user_id: event.context.auth?.userId,
+      user_id: event.context.auth.userId,
       action: 'remove_configured_vlans',
       entity_type: 'switch',
       entity_id: switchId,

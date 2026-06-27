@@ -126,7 +126,7 @@ export default defineEventHandler(async (event) => {
   }
 
   await activityRepository.log({
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     action: 'update_port',
     entity_type: 'switch',
     entity_id: switchId,

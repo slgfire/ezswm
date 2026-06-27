@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
     .slice(0, 10)
 
   await activityRepository.log({
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     action: 'create',
     entity_type: 'lag_group',
     entity_id: group.id,

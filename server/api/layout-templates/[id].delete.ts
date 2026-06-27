@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     entity_type: 'layout_template',
     entity_id: id,
     action: 'delete',
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     entity_name: existing.name,
     previous_state: existing as unknown as Record<string, unknown>,
   })

@@ -5,7 +5,7 @@ import { IMPORTERS, isEntityType } from '../../utils/entityImport'
 // implementation routes through the same per-entity importer as
 // /api/import/{entity}.
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
+  const body = await readBody<{ type?: string; data?: unknown }>(event)
 
   if (!body || !body.type || !Array.isArray(body.data)) {
     throw createError({ statusCode: 400, message: 'Request body must include "type" and "data" array.' })

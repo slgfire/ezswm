@@ -112,12 +112,56 @@ export const siteRepository = {
     const existing = (await prisma.site.findUnique({ where: { id: idOrSlug } }))
       ?? (await prisma.site.findUnique({ where: { slug: idOrSlug } }))
     if (!existing) return false
-    try {
-      await prisma.site.delete({ where: { id: existing.id } })
-      return true
-    } catch {
-      return false
-    }
+    const [switches, vlans, networks] = await Promise.all([
+      prisma.switch.findMany({ where: { site_id: existing.id }, select: { id: true } }),
+      prisma.vlan.findMany({ where: { site_id: existing.id }, select: { id: true } }),
+      prisma.network.findMany({ where: { site_id: existing.id }, select: { id: true } })
+    ])
+    const switchIds = switches.map(s => s.id)
+    const networkIds = networks.map(n => n.id)
+    const [ports, publicTokens, lags, ranges, allocations] = await Promise.all([
+      prisma.port.findMany({ where: { switch_id: { in: switchIds } }, select: { id: true } }),
+      prisma.publicToken.findMany({ where: { switch_id: { in: switchIds } }, select: { id: true } }),
+      prisma.lagGroup.findMany({ where: { switch_id: { in: switchIds } }, select: { id: true } }),
+      prisma.ipRange.findMany({ where: { network_id: { in: networkIds } }, select: { id: true } }),
+      prisma.ipAllocation.findMany({ where: { network_id: { in: networkIds } }, select: { id: true } })
+    ])
+    const portIds = ports.map(p => p.id)
+
+    await prisma.$transaction([
+      prisma.port.updateMany({
+        where: {
+          OR: [
+            { connected_device_id: { in: switchIds } },
+            { connected_port_id: { in: portIds } }
+          ]
+        },
+        data: {
+          connected_device: null,
+          connected_device_id: null,
+          connected_port: null,
+          connected_port_id: null
+        }
+      }),
+      prisma.activityEntry.deleteMany({
+        where: {
+          OR: [
+            { entity_type: 'site', entity_id: existing.id },
+            { entity_type: 'switch', entity_id: { in: switchIds } },
+            { entity_type: 'port', entity_id: { in: portIds } },
+            { entity_type: 'public_token', entity_id: { in: publicTokens.map(t => t.id) } },
+            { entity_type: 'topology_layout', entity_id: existing.id },
+            { entity_type: 'vlan', entity_id: { in: vlans.map(v => v.id) } },
+            { entity_type: 'network', entity_id: { in: networkIds } },
+            { entity_type: 'lag_group', entity_id: { in: lags.map(l => l.id) } },
+            { entity_type: 'ip_range', entity_id: { in: ranges.map(r => r.id) } },
+            { entity_type: 'ip_allocation', entity_id: { in: allocations.map(a => a.id) } }
+          ]
+        }
+      }),
+      prisma.site.delete({ where: { id: existing.id } })
+    ])
+    return true
   },
 
   async getEntityCounts(siteId: string): Promise<{ switches: number; vlans: number; networks: number }> {
@@ -129,8 +173,4 @@ export const siteRepository = {
     return { switches, vlans, networks }
   },
 
-  async hasEntities(siteId: string): Promise<boolean> {
-    const counts = await this.getEntityCounts(siteId)
-    return counts.switches > 0 || counts.vlans > 0 || counts.networks > 0
-  }
 }

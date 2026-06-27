@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   const created = await switchRepository.create(parsed)
 
   await activityRepository.log({
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     action: 'create',
     entity_type: 'switch',
     entity_id: created.id,

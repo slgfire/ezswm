@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   await switchRepository.delete(existing.id)
 
   await activityRepository.log({
-    user_id: event.context.auth?.userId,
+    user_id: event.context.auth.userId,
     action: 'delete',
     entity_type: 'switch',
     entity_id: existing.id,
