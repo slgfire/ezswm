@@ -2,6 +2,26 @@
 
 ## Latest Stage
 
+Date: 2026-06-28
+Stage: IP allocation network move confirmation
+Status: Complete
+Version: 0.31.3
+
+### Fix: confirm IP allocation moves between subnets (v0.31.3)
+
+Editing an IP allocation now keeps normal saves strict, but guides intentional moves:
+
+- If the new IP belongs to another subnet in the same site, the backend returns a
+  structured move suggestion instead of only the old subnet range error.
+- The IP address form shows a confirmation dialog with old/new IP, subnet, and VLAN
+  preview; when several subnets match, the target subnet must be selected.
+- Confirming the dialog sends the target `network_id` explicitly and records the
+  allocation update in the activity log.
+
+---
+
+## Previous Stage
+
 Date: 2026-06-27
 Stage: Cascade site deletion
 Status: Complete

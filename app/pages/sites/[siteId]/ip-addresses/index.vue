@@ -93,7 +93,7 @@
       :saving="saving"
       @submit="onSubmit"
       @delete="onFormDelete"
-      @close="formOpen = false"
+      @close="onFormClose"
     />
 
     <SharedConfirmDialog
@@ -103,12 +103,113 @@
       :loading="deleting"
       @confirm="confirmDelete"
     />
+
+    <UModal :open="showNetworkMoveDialog" @update:open="onNetworkMoveOpenChange">
+      <template #title>
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+            <UIcon name="i-heroicons-arrow-right-circle" class="h-5 w-5" />
+          </div>
+          <div>
+            <div class="font-semibold text-highlighted">{{ $t('ipAddresses.networkMove.title') }}</div>
+            <p class="mt-1 text-sm text-toned">{{ $t('ipAddresses.networkMove.description') }}</p>
+          </div>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-5">
+          <div v-if="networkMoveError" class="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+            {{ networkMoveError }}
+          </div>
+
+          <div class="rounded-2xl border border-default/70 bg-muted/30 p-4">
+            <div class="grid gap-3 sm:grid-cols-[9rem_1fr] sm:items-start">
+              <div class="text-xs font-medium uppercase tracking-[0.18em] text-toned">{{ $t('ipAddresses.networkMove.preview.ip') }}</div>
+              <div class="flex items-center gap-3 text-sm">
+                <code class="rounded-lg bg-default px-2 py-1 font-mono text-xs text-muted">{{ editTarget?.ip_address }}</code>
+                <UIcon name="i-heroicons-arrow-long-right" class="h-4 w-4 text-primary" />
+                <code class="rounded-lg bg-primary/10 px-2 py-1 font-mono text-xs text-primary">{{ pendingMovePayload?.body.ip_address }}</code>
+              </div>
+            </div>
+
+            <div class="mt-4 grid gap-3 sm:grid-cols-[9rem_1fr] sm:items-start">
+              <div class="text-xs font-medium uppercase tracking-[0.18em] text-toned">{{ $t('ipAddresses.networkMove.preview.network') }}</div>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-3">
+                  <div class="min-w-0 rounded-xl border border-default bg-default px-3 py-2">
+                    <div class="truncate font-medium text-highlighted">{{ editTarget?.network_name }}</div>
+                    <code class="mt-1 inline-block font-mono text-xs text-muted">{{ editTarget?.network_subnet }}</code>
+                  </div>
+                  <UIcon name="i-heroicons-arrow-long-right" class="hidden h-4 w-4 shrink-0 text-primary sm:block" />
+                  <div class="min-w-0 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2">
+                    <div class="truncate font-medium text-highlighted">{{ selectedMoveCandidate?.name }}</div>
+                    <code class="mt-1 inline-block font-mono text-xs text-primary">{{ selectedMoveCandidate?.subnet }}</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 grid gap-3 sm:grid-cols-[9rem_1fr] sm:items-start">
+              <div class="text-xs font-medium uppercase tracking-[0.18em] text-toned">{{ $t('ipAddresses.networkMove.preview.vlan') }}</div>
+              <div class="flex items-center gap-3 text-sm">
+                <span>{{ currentMoveVlanLabel }}</span>
+                <UIcon name="i-heroicons-arrow-long-right" class="h-4 w-4 text-primary" />
+                <span class="font-medium text-highlighted">{{ selectedMoveVlanLabel }}</span>
+              </div>
+            </div>
+          </div>
+
+          <UFormField
+            v-if="moveCandidateOptions.length > 1"
+            :label="$t('ipAddresses.networkMove.selectLabel')"
+            required
+          >
+            <USelect v-model="selectedMoveCandidateId" :items="moveCandidateOptions" class="w-full" />
+          </UFormField>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UButton variant="ghost" color="neutral" @click="closeNetworkMoveDialog">{{ $t('common.cancel') }}</UButton>
+          <UButton :loading="saving" :disabled="!selectedMoveCandidateId" @click="confirmNetworkMove">
+            {{ $t('ipAddresses.networkMove.confirm') }}
+          </UButton>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { TableColumn, TableRow } from '@nuxt/ui'
 import type { IPAllocation, IpAllocationEnriched } from '~~/types/ipAllocation'
+import type { Network } from '~~/types/network'
+import type { VLAN } from '~~/types/vlan'
+
+interface NetworkMoveCandidate {
+  id: string
+  name: string
+  subnet: string
+}
+
+interface IpAllocationSubmitPayload {
+  networkId: string
+  body: Partial<IPAllocation>
+}
+
+interface ApiError {
+  data?: {
+    code?: string
+    message?: string
+    data?: {
+      code?: string
+      candidates?: NetworkMoveCandidate[]
+    }
+    candidates?: NetworkMoveCandidate[]
+  }
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -260,22 +361,90 @@ const formOpen = ref(false)
 const editTarget = ref<IpAllocationEnriched | null>(null)
 const formError = ref('')
 const saving = ref(false)
+const showNetworkMoveDialog = ref(false)
+const pendingMovePayload = ref<IpAllocationSubmitPayload | null>(null)
+const moveCandidates = ref<NetworkMoveCandidate[]>([])
+const selectedMoveCandidateId = ref('')
+const networkMoveError = ref('')
+
+const selectedMoveCandidate = computed(() =>
+  moveCandidates.value.find(candidate => candidate.id === selectedMoveCandidateId.value) ?? null
+)
+
+const moveCandidateOptions = computed(() =>
+  moveCandidates.value.map(candidate => ({
+    label: `${candidate.name} (${candidate.subnet})`,
+    value: candidate.id
+  }))
+)
+
+function findNetworkById(networkId?: string | null): Network | null {
+  if (!networkId) return null
+  return networks.value.find(network => network.id === networkId) ?? null
+}
+
+function findVlanByNetwork(network: Network | null): VLAN | null {
+  const vlanId = network?.vlan_id
+  return vlanId ? vlans.value.find(vlan => vlan.id === vlanId) ?? null : null
+}
+
+function formatVlanLabel(vlan: VLAN | null) {
+  return vlan ? `VLAN ${vlan.vlan_id} · ${vlan.name}` : '—'
+}
+
+const currentMoveVlanLabel = computed(() => {
+  if (!editTarget.value || editTarget.value.vlan_tag === null) return '—'
+  return editTarget.value.vlan_name
+    ? `VLAN ${editTarget.value.vlan_tag} · ${editTarget.value.vlan_name}`
+    : `VLAN ${editTarget.value.vlan_tag}`
+})
+
+const selectedMoveVlanLabel = computed(() =>
+  formatVlanLabel(findVlanByNetwork(findNetworkById(selectedMoveCandidateId.value)))
+)
+
+function openNetworkMoveDialog(payload: IpAllocationSubmitPayload, candidates: NetworkMoveCandidate[]) {
+  pendingMovePayload.value = payload
+  moveCandidates.value = candidates
+  selectedMoveCandidateId.value = candidates.length === 1 ? candidates[0]!.id : ''
+  networkMoveError.value = ''
+  showNetworkMoveDialog.value = true
+}
+
+function closeNetworkMoveDialog() {
+  showNetworkMoveDialog.value = false
+  pendingMovePayload.value = null
+  moveCandidates.value = []
+  selectedMoveCandidateId.value = ''
+  networkMoveError.value = ''
+}
+
+function onNetworkMoveOpenChange(open: boolean) {
+  if (open) showNetworkMoveDialog.value = true
+  else closeNetworkMoveDialog()
+}
 
 function openAdd() {
+  closeNetworkMoveDialog()
   editTarget.value = null
   formError.value = ''
   formOpen.value = true
 }
 function openEdit(row: IpAllocationEnriched) {
+  closeNetworkMoveDialog()
   editTarget.value = row
   formError.value = ''
   formOpen.value = true
+}
+function onFormClose() {
+  formOpen.value = false
+  closeNetworkMoveDialog()
 }
 function onRowSelect(_e: Event, row: TableRow<IpAllocationEnriched>) {
   openEdit(row.original)
 }
 
-async function onSubmit(payload: { networkId: string; body: Partial<IPAllocation> }) {
+async function onSubmit(payload: IpAllocationSubmitPayload) {
   saving.value = true
   formError.value = ''
   try {
@@ -290,8 +459,37 @@ async function onSubmit(payload: { networkId: string; body: Partial<IPAllocation
     editTarget.value = null
     await fetchAllocations(siteId.value)
   } catch (err: unknown) {
-    const error = err as { data?: { message?: string } }
+    const error = err as ApiError
+    const moveError = error.data?.data ?? error.data
+    if (editTarget.value && moveError?.code === 'IP_NETWORK_MOVE_REQUIRED' && moveError.candidates?.length) {
+      openNetworkMoveDialog(payload, moveError.candidates)
+      return
+    }
     formError.value = error?.data?.message || t('errors.serverError')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function confirmNetworkMove() {
+  if (!editTarget.value || !pendingMovePayload.value || !selectedMoveCandidateId.value) return
+
+  saving.value = true
+  formError.value = ''
+
+  try {
+    await update(editTarget.value.network_id, editTarget.value.id, {
+      ...pendingMovePayload.value.body,
+      network_id: selectedMoveCandidateId.value
+    })
+    closeNetworkMoveDialog()
+    formOpen.value = false
+    editTarget.value = null
+    toast.add({ title: t('ipAddresses.messages.updated'), color: 'success' })
+    await fetchAllocations(siteId.value)
+  } catch (err: unknown) {
+    const error = err as ApiError
+    networkMoveError.value = error?.data?.message || t('errors.serverError')
   } finally {
     saving.value = false
   }

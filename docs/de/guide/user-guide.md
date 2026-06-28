@@ -486,6 +486,8 @@ Die Seite **IP-Adressen** in der Seitenleiste zeigt eine flache, tabellarische �
 
 **Zeilen-Klick → Bearbeiten:** ein Klick auf eine Zeile öffnet das Bearbeiten-Sidepanel. Löschen sitzt im Header des Sidepanels — so muss die Tabelle nicht mit Action-Buttons pro Zeile vollgestopft werden.
 
+**IP in ein anderes Subnetz verschieben:** Bearbeite die IP-Adresse und speichere. Wenn die neue Adresse zu einem anderen Subnetz derselben Site gehört, fragt ezSWM nach Bestätigung und zeigt alte/neue IP, Subnetz und VLAN vor dem Speichern an. Wenn mehrere Subnetze passen, wählst du das Ziel-Subnetz explizit aus.
+
 **IP anlegen:** Klick auf **IP-Adresse hinzufügen**. Sobald du eine gültige IP eintippst, wählt das **Subnetz**-Dropdown automatisch das Subnetz, dessen CIDR sie enthält — kein manuelles Picken nötig. Du kannst die Auswahl jederzeit überschreiben (sinnvoll im „Alle Standorte"-Modus, wenn sich Bereiche über mehrere Sites überlappen). Das zum Subnetz gehörende VLAN wird daneben read-only angezeigt.
 
 **DHCP-Range-Schutz:** Wenn die IP, die du anlegen oder per Bearbeiten dorthin verschieben willst, in eine bestehende DHCP-Range fällt, lehnt das Formular sie mit einer klaren Meldung ab: *IP x.x.x.x is inside a DHCP dynamic range (start – end). Static IPs cannot be assigned within dynamic DHCP ranges.* Das gilt sowohl beim **Anlegen** als auch beim **Bearbeiten**, sodass du eine statische Zuweisung nicht versehentlich durch eine IP-Änderung in den DHCP-Bereich rutschen lassen kannst.
