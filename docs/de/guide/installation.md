@@ -20,13 +20,25 @@ Das Repository liefert zwei Compose-Dateien:
 
 ### Schnelles Deployment (ohne Source-Checkout)
 
-Einfach die Compose-Datei und ein `JWT_SECRET`:
+Einfach die Compose-Datei holen und ein Secret bereitstellen:
 
 ```bash
 curl -O https://raw.githubusercontent.com/slgfire/ezswm/main/compose.yaml
 mkdir -p data && sudo chown -R 1000:1000 data
 export JWT_SECRET=$(openssl rand -hex 32)
 docker compose pull && docker compose up -d
+```
+
+Die offizielle `compose.yaml` liest die Shell-Variable `JWT_SECRET` und gibt sie im Container als `NUXT_JWT_SECRET` weiter. Wenn du eine eigene Compose-Datei schreibst, setze `NUXT_JWT_SECRET` direkt:
+
+```yaml
+services:
+  ezswm:
+    image: ghcr.io/slgfire/ezswm:latest
+    environment:
+      NUXT_JWT_SECRET: change-me-to-a-long-random-secret
+    volumes:
+      - ./data:/app/data
 ```
 
 Daten landen in `./data` neben der Compose-Datei (Bind-Mount — direkt inspizier- und backup-bar mit normalen File-Tools). Wenn dein Host-User nicht uid 1000 ist, siehe [Benutzerdefinierte UID / GID](#benutzerdefinierte-uid--gid).
@@ -52,7 +64,7 @@ docker compose -f compose.dev.yaml up --build -d
 | `DATABASE_URL` | Nein | `file:/app/data/db.sqlite` | SQLite-Pfad. Nur überschreiben, wenn du die DB außerhalb von `DATA_DIR` ablegen willst. |
 | `PUID` / `PGID` | Nein | `1000` / `1000` | UID/GID unter der der Container-Prozess läuft. Setze `PUID=0 PGID=0` um als root zu laufen. |
 
-In Docker müssen Umgebungsvariablen, die die Nuxt-Laufzeit konfigurieren, das Präfix `NUXT_` verwenden (z.B. `NUXT_JWT_SECRET` statt `JWT_SECRET`).
+In Docker müssen Umgebungsvariablen, die die Nuxt-Laufzeit konfigurieren, das Präfix `NUXT_` verwenden. Nutze im Container/Compose-`environment:`-Block `NUXT_JWT_SECRET`, nicht nur `JWT_SECRET`. Die offizielle Compose-Datei nutzt host-seitig `JWT_SECRET` nur als Komfortvariable und mapped sie auf `NUXT_JWT_SECRET`.
 
 Der ENTRYPOINT des Containers ruft beim Start `prisma migrate deploy` auf, bevor der Server hochfährt. Schema-Upgrades werden also automatisch beim Container-Start angewandt — kein separater Migrations-Schritt nötig.
 
