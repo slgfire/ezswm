@@ -20,13 +20,25 @@ The repository ships two compose files:
 
 ### Quick deploy (no source checkout needed)
 
-Just grab the compose file and a `JWT_SECRET`:
+Just grab the compose file and provide a secret:
 
 ```bash
 curl -O https://raw.githubusercontent.com/slgfire/ezswm/main/compose.yaml
 mkdir -p data && sudo chown -R 1000:1000 data
 export JWT_SECRET=$(openssl rand -hex 32)
 docker compose pull && docker compose up -d
+```
+
+The official `compose.yaml` reads the shell variable `JWT_SECRET` and passes it into the container as `NUXT_JWT_SECRET`. If you write your own compose file, set `NUXT_JWT_SECRET` directly:
+
+```yaml
+services:
+  ezswm:
+    image: ghcr.io/slgfire/ezswm:latest
+    environment:
+      NUXT_JWT_SECRET: change-me-to-a-long-random-secret
+    volumes:
+      - ./data:/app/data
 ```
 
 Data persists in `./data` next to the compose file (bind mount — inspect and back up directly with normal file tools). If your host user isn't uid 1000, see [Custom UID / GID](#custom-uid--gid).
@@ -52,7 +64,7 @@ docker compose -f compose.dev.yaml up --build -d
 | `DATABASE_URL` | No | `file:/app/data/db.sqlite` | SQLite location. Override only if you want the DB somewhere other than next to the data directory. |
 | `PUID` / `PGID` | No | `1000` / `1000` | UID/GID the container process runs as. Set `PUID=0 PGID=0` to run as root. |
 
-In Docker, environment variables that configure Nuxt runtime must use the `NUXT_` prefix (e.g., `NUXT_JWT_SECRET` instead of `JWT_SECRET`).
+In Docker, environment variables that configure Nuxt runtime must use the `NUXT_` prefix. Use `NUXT_JWT_SECRET` inside the container/compose `environment:` block, not plain `JWT_SECRET`. The official compose file only uses host-side `JWT_SECRET` as a convenience and maps it to `NUXT_JWT_SECRET`.
 
 The container's `ENTRYPOINT` runs `prisma migrate deploy` before starting the server, so schema upgrades apply themselves on each container start — no separate migration step.
 

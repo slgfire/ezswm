@@ -33,7 +33,7 @@ Just `docker run`:
 
 ```bash
 docker run -d -p 3000:3000 \
-  -e JWT_SECRET=$(openssl rand -hex 32) \
+  -e NUXT_JWT_SECRET=$(openssl rand -hex 32) \
   -v ezswm-data:/app/data \
   ghcr.io/slgfire/ezswm:latest
 ```
@@ -45,6 +45,8 @@ curl -O https://raw.githubusercontent.com/slgfire/ezswm/main/compose.yaml
 export JWT_SECRET=$(openssl rand -hex 32)
 docker compose pull && docker compose up -d
 ```
+
+When writing your own compose file, set `NUXT_JWT_SECRET` in the service `environment:` block. The official `compose.yaml` maps the host-side `JWT_SECRET` variable to `NUXT_JWT_SECRET` for convenience.
 
 Open http://localhost:3000 — follow the setup wizard to create your admin account.
 

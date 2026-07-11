@@ -26,14 +26,14 @@ Stop the app, delete the `data/` directory, and restart. The setup wizard will a
 There is no password recovery. Delete `data/users.json` and restart — the setup wizard will create a new admin account. All other data is preserved.
 
 **How do I change the JWT secret?**
-Set the `JWT_SECRET` environment variable. After changing it, all existing sessions are invalidated and users must log in again.
+For Docker Compose, set `NUXT_JWT_SECRET` in the service `environment:` block. The official compose file also accepts a host-side `JWT_SECRET` shell variable and maps it to `NUXT_JWT_SECRET`. After changing the secret, all existing sessions are invalidated and users must log in again.
 
 ---
 
 ## Docker
 
 **The container fails to start**
-Check that `JWT_SECRET` is set. Without it, the app will use an insecure default.
+Check that `NUXT_JWT_SECRET` is set in the container environment. If you use the official compose file, export `JWT_SECRET` on the host; the compose file maps it to `NUXT_JWT_SECRET`.
 
 **Data is lost after container restart**
 Make sure you mount a volume for `/app/data`:
