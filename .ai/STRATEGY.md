@@ -1,148 +1,109 @@
 # Strategic Roadmap: ezSWM
 
-## Project Vision
-A lightweight, database-free infrastructure documentation tool for switch and IP management.
+## Product Vision
 
-Main scope:
-- Switch inventory
-- Port documentation
-- Switch front port visualization
-- VLAN-based network documentation (VLAN as separate entity)
-- IP allocation management
-- IP range management (static, DHCP, reserved)
-- Network topology visualization
-- Multi-user authentication
+ezSWM is a lightweight infrastructure documentation tool for switches, VLANs,
+IP allocations, and topology. It should stay simple to operate: one application
+container, embedded SQLite storage, no external database service, and a UI that
+supports real network documentation work without NetBox-level overhead.
 
-## Core Architecture Principles
-- Repository Pattern: only `server/repositories` interact with JSON files
-- Atomic Writes: prevent corrupted JSON data
-- Nuxt 3.x with `compatibilityVersion: 4` + TypeScript: strict typing for all domain models
-- UI First: use the official Nuxt UI v2 Dashboard template structure
-- Container First: development and runtime must work through Docker
-- Auth: Multi-user with bcrypt password hashing and JWT sessions
+Primary scope:
 
-Reference UI template:
-- https://github.com/nuxt-ui-templates/dashboard
+- switch inventory and port documentation
+- switch front-panel visualization
+- VLAN-based network documentation
+- IPv4 allocation and range management
+- site-scoped network topology visualization
+- import/export and operational documentation workflows
 
-Full specifications:
-- .ai/specs/SPEC_DATA_MODEL.md
-- .ai/specs/SPEC_BACKEND.md
-- .ai/specs/SPEC_FRONTEND.md
-- .ai/specs/SPEC_INFRASTRUCTURE.md
+## Current Architecture Principles
 
----
+- Nuxt 4.x, TypeScript strict mode, Nuxt UI v4.
+- SQLite via Prisma in `/app/data` for persistent storage.
+- API routes live in `server/api`.
+- Repositories in `server/repositories` own persistence access.
+- Domain types live in `types/`.
+- Validators live in `server/validators`.
+- UI logic stays in `app/`.
+- Docker is the primary runtime.
+- Documentation must stay in sync with user-facing features.
 
-## Phased Implementation Plan
+Detailed architecture and implementation rules live in:
 
-### Phase 1: Project Bootstrap
-- [ ] Initialize Nuxt 3.x project with `compatibilityVersion: 4`
-- [ ] Install and configure all dependencies (pinned versions)
-- [ ] Configure `nuxt.config.ts` (Nuxt UI v2, i18n, color mode)
-- [ ] Set up project structure (directories)
-- [ ] Set up `i18n/locales/en.json` and `i18n/locales/de.json`
-- [ ] Verify `pnpm dev`
-- [ ] Verify `pnpm build`
-- [ ] Verify Docker build and runtime
+- `.ai/ARCHITECTURE.md`
+- `.ai/specs/SPEC_DATA_MODEL.md`
+- `.ai/specs/SPEC_BACKEND.md`
+- `.ai/specs/SPEC_FRONTEND.md`
+- `.ai/specs/SPEC_INFRASTRUCTURE.md`
 
-### Phase 2: Storage & Data Foundation
-- [ ] Define TypeScript interfaces for all entities:
-  - `User`
-  - `Switch`
-  - `Port`
-  - `VLAN`
-  - `Network`
-  - `IPAllocation`
-  - `IPRange`
-  - `LayoutTemplate`, `LayoutUnit`, `LayoutBlock`
-  - `LAGGroup`
-  - `ActivityEntry`
-  - `AppSettings`
-- [ ] Implement `jsonStorage.ts` (atomic read/write)
-- [ ] Implement all repositories
-- [ ] Implement Zod validation schemas
-- [ ] Initialize data directory on startup
+Implementation history and release-stage status live in `.ai/MIGRATION_STATUS.md`.
 
-### Phase 3: Authentication
-- [ ] Implement User entity and repository
-- [ ] Implement JWT utilities (sign, verify, middleware)
-- [ ] Implement bcrypt password hashing
-- [ ] Create setup wizard (first admin creation)
-- [ ] Create login page
-- [ ] Implement auth middleware (client + server)
+## Current Roadmap
 
-### Phase 4: Dashboard Shell
-- [ ] Implement default layout (sidebar, header, breadcrumbs, footer)
-- [ ] Implement auth layout (login, setup)
-- [ ] Implement sidebar navigation
-- [ ] Implement global search
-- [ ] Implement dark mode (default: dark)
-- [ ] Implement responsive behavior
+### 1. Discovery Agent
 
-### Phase 5: Core CRUD Pages
-- [ ] Switches: list, create, detail, edit, delete, duplicate
-- [ ] VLANs: list, create, detail, edit, delete (with color picker)
-- [ ] Networks: list, create, detail, edit, delete
-- [ ] IP Allocations: CRUD within network detail
-- [ ] IP Ranges: CRUD within network detail
-- [ ] Layout Templates: list, create, detail, edit, delete
-- [ ] Toast notifications, filters, pagination, empty states
-- [ ] Full i18n for all pages
+Optional companion agent deployed inside a target management network. The agent
+should collect network facts and send them to ezSWM for reviewed import, not
+blindly overwrite documentation.
 
-### Phase 6: Switch Port Visualization
-- [ ] Render switch front panel from LayoutTemplate
-- [ ] Color-code ports by VLAN color
-- [ ] Distinguish trunk vs access ports visually
-- [ ] Unit separation for stacked switches
-- [ ] Port side panel for editing
-- [ ] Bulk port editing
-- [ ] Bidirectional switch connections
-- [ ] LAG group management
+Initial direction:
 
-### Phase 7: Advanced Features
-- [ ] Topology view (tree layout, drag & drop, VLAN on links, PDF/PNG export)
-- [ ] Subnet calculator
-- [ ] Subnet utilization bar on network detail
-- [ ] Dashboard KPIs and customizable widgets
-- [ ] Favorites/pinning
-- [ ] Activity feed with undo support
+- SNMP/API polling from inside the target network
+- switch discovery and inventory facts
+- port/link status
+- VLAN information
+- LLDP/CDP neighbors for topology hints
+- outbound agent → ezSWM communication with token-based auth
+- review/import UI before applying discovered data
 
-### Phase 8: Import/Export & Backup
-- [ ] CSV/JSON import with templates and validation
-- [ ] CSV/JSON export per entity
-- [ ] Full backup export/restore (ZIP)
-- [ ] Layout template export/import (sharing)
-- [ ] Print view for switch details
+Keep credentials local to the agent where possible. ezSWM should receive
+discovered facts and import decisions, not become a credential vault for every
+network segment by default.
 
-### Phase 9: Polish & Validation
-- [ ] Form validation (real-time, all forms)
-- [ ] Duplicate IP detection
-- [ ] VLAN color uniqueness
-- [ ] IP range overlap detection
-- [ ] Confirmation dialogs for destructive actions
-- [ ] Responsive testing on all screen sizes
-- [ ] Full i18n review (EN + DE)
-- [ ] Settings page, user profile management
+### 2. Rack Planning
 
-### Phase 10: Docker & Production
-- [ ] Finalize multi-stage Dockerfile
-- [ ] Finalize compose.yaml
-- [ ] Health check validation
-- [ ] Production runtime test
-- [ ] GPL LICENSE file
-- [ ] README.md
+Add a visual 19-inch rack view for documenting device placement, rack units,
+and site-level physical layout. This is UI-heavy and should reuse existing
+switch/device data instead of introducing a separate inventory model unless the
+need is proven.
 
-### Phase 11 (Post-MVP): Testing & Future
-- [ ] Set up vitest, write unit + integration tests
-- [ ] IPv6 support
-- [ ] SNMP/API port status polling
-- [ ] Admin/Viewer roles
-- [ ] Structured logging (pino)
-- [ ] Copy-to-clipboard for IPs/MACs
+### 3. IPv6 Support
 
----
+Add IPv6 subnet and allocation tracking. This affects data model, validation,
+UI filtering, search, import/export, and documentation, so it should be planned
+as a broad feature rather than a small field addition.
 
-## Deployment and Production
-- Persistent path: `/app/data`
-- Environment file: `.env.example`
-- Runtime command: `node .output/server/index.mjs`
-- License: GPL (project must remain open source)
+### 4. Roles and Permissions
+
+Add Admin/Viewer or similar low-complexity roles once multi-user deployments
+need read-only users. Avoid fine-grained RBAC until there is real demand.
+
+### 5. Export and Backup Improvements
+
+Improve operational backup/export workflows where needed:
+
+- per-entity CSV/JSON export
+- full backup export/restore
+- layout template sharing
+
+Prefer simple file-based flows over custom sync systems.
+
+## Recently Completed Direction
+
+These are no longer roadmap items; see `.ai/MIGRATION_STATUS.md` for details:
+
+- Nuxt UI v4 dashboard shell
+- switch front-panel visualization
+- VLAN/network/IP CRUD
+- topology view
+- LAG groups
+- print view
+- layout template block reordering
+- cascade site deletion
+- IP allocation subnet move confirmation
+
+## Roadmap Hygiene
+
+This file is the current product direction, not a historical task checklist.
+When a feature ships, update `.ai/MIGRATION_STATUS.md` with the completed stage
+and keep this roadmap focused on what is still ahead.

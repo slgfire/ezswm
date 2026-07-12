@@ -16,6 +16,8 @@ interface AllocationRow {
   updated_at: string
 }
 
+type IPAllocationUpdateInput = Partial<Omit<IPAllocation, 'id' | 'created_at'>>
+
 function rowToAllocation(row: AllocationRow): IPAllocation {
   return {
     id: row.id,
@@ -108,36 +110,70 @@ export const ipAllocationRepository = {
     return rowToAllocation(row)
   },
 
-  async update(id: string, data: Partial<Omit<IPAllocation, 'id' | 'network_id' | 'created_at'>>): Promise<IPAllocation> {
+  async update(id: string, data: IPAllocationUpdateInput): Promise<IPAllocation> {
     const current = await prisma.ipAllocation.findUnique({ where: { id } })
     if (!current) {
       throw createError({ statusCode: 404, message: 'IP allocation not found' })
     }
 
-    if (data.ip_address && data.ip_address !== current.ip_address) {
-      if (!isValidIPv4(data.ip_address)) {
+    const currentNetwork = await prisma.network.findUnique({ where: { id: current.network_id } })
+    const targetNetworkId = data.network_id ?? current.network_id
+    const targetNetwork = await prisma.network.findUnique({ where: { id: targetNetworkId } })
+
+    if (!currentNetwork || !targetNetwork) {
+      throw createError({ statusCode: 404, message: 'Network not found' })
+    }
+
+    if (data.network_id && targetNetwork.site_id !== currentNetwork.site_id) {
+      throw createError({ statusCode: 400, message: 'Cross-site network moves are not allowed' })
+    }
+
+    const nextIp = data.ip_address ?? current.ip_address
+    const shouldValidateIp = data.network_id !== undefined || data.ip_address !== undefined
+
+    if (shouldValidateIp) {
+      if (!isValidIPv4(nextIp)) {
         throw createError({ statusCode: 400, message: 'Invalid IP address' })
       }
 
-      const network = await prisma.network.findUnique({ where: { id: current.network_id } })
-      if (network && !isUsableHostIP(data.ip_address, network.subnet)) {
-        const info = parseSubnet(network.subnet)
-        if (!isIPInSubnet(data.ip_address, network.subnet)) {
-          throw createError({ statusCode: 400, message: subnetRangeError(data.ip_address, network.subnet) })
+      if (!isUsableHostIP(nextIp, targetNetwork.subnet)) {
+        const info = parseSubnet(targetNetwork.subnet)
+        if (!isIPInSubnet(nextIp, targetNetwork.subnet)) {
+          if (!data.network_id) {
+            const candidates = await prisma.network.findMany({
+              where: { site_id: currentNetwork.site_id }
+            })
+            const matchingCandidates = candidates
+              .filter(network => network.id !== currentNetwork.id && isUsableHostIP(nextIp, network.subnet))
+              .map(network => ({ id: network.id, name: network.name, subnet: network.subnet }))
+
+            if (matchingCandidates.length > 0) {
+              throw createError({
+                statusCode: 409,
+                statusMessage: 'IP belongs to another network',
+                data: {
+                  code: 'IP_NETWORK_MOVE_REQUIRED',
+                  candidates: matchingCandidates
+                }
+              })
+            }
+          }
+
+          throw createError({ statusCode: 400, message: subnetRangeError(nextIp, targetNetwork.subnet) })
         }
         throw createError({
           statusCode: 400,
-          message: `IP ${data.ip_address} is the ${data.ip_address === info.network_address ? 'network' : 'broadcast'} address of ${network.subnet}. Valid range: ${info.first_usable} - ${info.last_usable}`
+          message: `IP ${nextIp} is the ${nextIp === info.network_address ? 'network' : 'broadcast'} address of ${targetNetwork.subnet}. Valid range: ${info.first_usable} - ${info.last_usable}`
         })
       }
 
-      await assertDhcpRangeFree(current.network_id, data.ip_address)
+      await assertDhcpRangeFree(targetNetwork.id, nextIp)
 
       const clash = await prisma.ipAllocation.findFirst({
-        where: { ip_address: data.ip_address, NOT: { id } }
+        where: { ip_address: nextIp, NOT: { id } }
       })
       if (clash) {
-        throw createError({ statusCode: 409, message: `IP address ${data.ip_address} is already allocated` })
+        throw createError({ statusCode: 409, message: `IP address ${nextIp} is already allocated` })
       }
     }
 
@@ -148,6 +184,7 @@ export const ipAllocationRepository = {
     const row = await prisma.ipAllocation.update({
       where: { id },
       data: {
+        ...(data.network_id !== undefined ? { network_id: data.network_id } : {}),
         ...(data.ip_address !== undefined ? { ip_address: data.ip_address } : {}),
         ...(data.hostname !== undefined ? { hostname: data.hostname ?? null } : {}),
         ...(data.mac_address !== undefined ? { mac_address: data.mac_address ?? null } : {}),
