@@ -486,6 +486,8 @@ The **IP Addresses** page in the sidebar gives you a flat, table-style view of e
 
 **Row click → edit:** clicking any row opens an edit slideover. Delete lives in the slideover header, so no per-row action buttons clutter the table.
 
+**Moving an IP to another subnet:** edit the IP address and save. If the new address belongs to another subnet in the same site, ezSWM asks you to confirm the move and shows the old/new IP, subnet, and VLAN before saving. If more than one subnet matches, pick the target subnet explicitly.
+
 **Adding an IP:** click **Add IP Address**. As soon as you type a valid IP, the **Subnet** dropdown auto-selects the subnet whose CIDR contains it — no need to pick the subnet manually. You can always override the dropdown (useful in "All Sites" mode where ranges from different sites can overlap). The VLAN of the chosen subnet is shown read-only next to it.
 
 **DHCP-range protection:** if the IP you try to create — or to move to via editing — falls inside a DHCP range, the form rejects it with a clear message: *IP x.x.x.x is inside a DHCP dynamic range (start – end). Static IPs cannot be assigned within dynamic DHCP ranges.* This applies symmetrically on **create** and on **edit**, so you can't accidentally move a static allocation into a DHCP scope by editing its IP.

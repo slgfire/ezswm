@@ -6,7 +6,7 @@
   [![Node](https://img.shields.io/badge/Node-22_LTS-green.svg)](https://nodejs.org)
   [![Nuxt](https://img.shields.io/badge/Nuxt-4.x-00DC82.svg)](https://nuxt.com)
   [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](compose.yaml)
-  [![Built with Claude Code](https://img.shields.io/badge/Built_with-Claude_Code-6B5CE7.svg)](https://claude.ai/claude-code)
+  [![AI Assisted](https://img.shields.io/badge/AI_Assisted-6B5CE7.svg)](#about)
   [![Dependabot](https://img.shields.io/badge/Dependabot-enabled-0366d6.svg?logo=dependabot)](https://github.com/slgfire/ezswm/security/dependabot)
 
   **Document your switches, VLANs, and IPs — visually. SQLite, zero setup.**
@@ -23,7 +23,7 @@ ezSWM (easy Switch Management) is an open-source, web-based infrastructure docum
 
 All data lives in a single embedded SQLite file inside the volume you mount — no external database server to run, no migrations to wire up manually. Schema upgrades apply themselves on container start.
 
-> This project was built with significant assistance from [Claude Code](https://claude.ai/claude-code) (Anthropic's AI coding assistant). Architecture decisions, code implementation, and iterative refinement were done collaboratively between human and AI.
+> This project is developed with AI-assisted workflows. Architecture decisions, implementation, review, and iterative refinement remain human-directed.
 
 ---
 
@@ -33,7 +33,7 @@ Just `docker run`:
 
 ```bash
 docker run -d -p 3000:3000 \
-  -e JWT_SECRET=$(openssl rand -hex 32) \
+  -e NUXT_JWT_SECRET=$(openssl rand -hex 32) \
   -v ezswm-data:/app/data \
   ghcr.io/slgfire/ezswm:latest
 ```
@@ -45,6 +45,8 @@ curl -O https://raw.githubusercontent.com/slgfire/ezswm/main/compose.yaml
 export JWT_SECRET=$(openssl rand -hex 32)
 docker compose pull && docker compose up -d
 ```
+
+When writing your own compose file, set `NUXT_JWT_SECRET` in the service `environment:` block. The official `compose.yaml` maps the host-side `JWT_SECRET` variable to `NUXT_JWT_SECRET` for convenience.
 
 Open http://localhost:3000 — follow the setup wizard to create your admin account.
 
@@ -101,6 +103,7 @@ pnpm dev
 - [x] **Topology** — Interactive site-scoped network topology with v-network-graph (v0.12.0)
 - [x] **LAG Groups** — Link Aggregation Group management (v0.7.0)
 - [x] **Print View** — Printable switch front panel layouts with QR codes (v0.6.0)
+- [ ] **Discovery Agent** — Optional agent deployed inside a target network for SNMP/API polling, switch discovery, ports, VLANs, and LLDP/CDP neighbors with reviewed import into ezSWM
 - [ ] **Rack Planning** — Visual 19" rack view with height-unit positioning
 - [ ] **IPv6 Support** — IPv6 subnet and allocation tracking
 
