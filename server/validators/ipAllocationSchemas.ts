@@ -10,6 +10,7 @@ export const createIpAllocationSchema = z.object({
 })
 
 export const updateIpAllocationSchema = z.object({
+  network_id: z.string().uuid().optional(),
   ip_address: z.string().optional(),
   hostname: z.string().max(200).optional().nullable(),
   mac_address: z.string().optional().nullable(),

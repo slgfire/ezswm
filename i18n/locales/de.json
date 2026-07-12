@@ -39,6 +39,17 @@
       "allStatuses": "Alle Status",
       "allDeviceTypes": "Alle Typen"
     },
+    "networkMove": {
+      "title": "In Subnetz verschieben?",
+      "description": "Diese IP gehört zu einem anderen Subnetz in derselben Site. Bitte Verschiebung vor dem Speichern bestätigen.",
+      "confirm": "IP-Adresse verschieben",
+      "selectLabel": "Ziel-Subnetz",
+      "preview": {
+        "ip": "IP-Adresse",
+        "network": "Subnetz",
+        "vlan": "VLAN"
+      }
+    },
     "messages": {
       "created": "IP-Adresse erfolgreich erstellt",
       "updated": "IP-Adresse erfolgreich aktualisiert",
