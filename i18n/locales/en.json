@@ -39,6 +39,17 @@
       "allStatuses": "All statuses",
       "allDeviceTypes": "All types"
     },
+    "networkMove": {
+      "title": "Move to subnet?",
+      "description": "This IP belongs to another subnet in the same site. Confirm the move before saving.",
+      "confirm": "Move IP address",
+      "selectLabel": "Target subnet",
+      "preview": {
+        "ip": "IP Address",
+        "network": "Subnet",
+        "vlan": "VLAN"
+      }
+    },
     "messages": {
       "created": "IP address created successfully",
       "updated": "IP address updated successfully",
