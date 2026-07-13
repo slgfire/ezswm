@@ -89,7 +89,7 @@
             <UButton block size="sm" color="neutral" variant="soft" icon="i-heroicons-printer" @click="handlePrintSticker">
               {{ $t('public.admin.printSticker') }}
             </UButton>
-            <UButton block size="sm" color="error" variant="soft" icon="i-heroicons-x-mark" @click="showRevokeConfirm = true">
+            <UButton block size="sm" color="error" variant="soft" icon="i-heroicons-x-mark" @click="void (showRevokeConfirm = true)">
               {{ $t('public.admin.revoke') }}
             </UButton>
           </div>

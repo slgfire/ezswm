@@ -38,7 +38,7 @@
                 variant="ghost"
                 color="error"
                 size="sm"
-                @click="showDeleteDialog = true"
+                @click="void (showDeleteDialog = true)"
               >
                 {{ $t('common.delete') }}
               </UButton>
@@ -120,7 +120,7 @@
             <UButton type="submit" :loading="saving" icon="i-heroicons-check">
               {{ $t('common.save') }}
             </UButton>
-            <UButton variant="ghost" color="neutral" @click="editing = false">
+            <UButton variant="ghost" color="neutral" @click="void (editing = false)">
               {{ $t('common.cancel') }}
             </UButton>
           </div>

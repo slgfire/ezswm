@@ -7,7 +7,7 @@
         variant="soft"
         icon="i-heroicons-plus"
         :label="$t('vlans.addToSwitchAction')"
-        @click="showAddDialog = !showAddDialog"
+        @click="void (showAddDialog = !showAddDialog)"
       />
     </div>
 

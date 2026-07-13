@@ -62,7 +62,7 @@
                   variant="soft"
                   color="primary"
                   :title="$t('templates.quickCreate.title')"
-                  @click="showTemplateModal = true"
+                  @click="void (showTemplateModal = true)"
                 >
                   {{ $t('templates.quickCreate.trigger') }}
                 </UButton>

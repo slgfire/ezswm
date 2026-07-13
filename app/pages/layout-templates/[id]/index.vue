@@ -19,7 +19,7 @@
             <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click="onDuplicate" />
           </UTooltip>
           <UTooltip :text="$t('common.delete')">
-            <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="showDeleteDialog = true" />
+            <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="void (showDeleteDialog = true)" />
           </UTooltip>
         </div>
       </div>

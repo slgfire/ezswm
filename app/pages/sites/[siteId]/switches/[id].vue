@@ -22,7 +22,7 @@
           color="primary"
           size="sm"
           label="VLANs"
-          @click="showVlanSlideover = true"
+          @click="void (showVlanSlideover = true)"
         />
         <UButton
           icon="i-heroicons-table-cells"
@@ -31,7 +31,7 @@
           size="sm"
           :label="$t('switches.detailsAction')"
           class="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
-          @click="showSecondaryDetails = true"
+          @click="void (showSecondaryDetails = true)"
         />
 
         <!-- Divider -->
@@ -73,7 +73,7 @@
             variant="ghost"
             color="error"
             size="sm"
-            @click="showDeleteDialog = true"
+            @click="void (showDeleteDialog = true)"
           />
         </UTooltip>
       </div>
@@ -362,8 +362,8 @@ v-model="editForm.role"
       </template>
       <template #footer>
         <div class="flex justify-end gap-2">
-          <UButton variant="ghost" color="neutral" @click="showLagDetail = false">{{ $t('common.close') }}</UButton>
-          <UButton @click="showLagDetail = false; lagSlideoverRef?.openEdit(viewingLag!)">{{ $t('lag.edit') }}</UButton>
+          <UButton variant="ghost" color="neutral" @click="void (showLagDetail = false)">{{ $t('common.close') }}</UButton>
+          <UButton @click="showLagDetail = false; void lagSlideoverRef?.openEdit(viewingLag!)">{{ $t('lag.edit') }}</UButton>
         </div>
       </template>
     </UModal>

@@ -176,7 +176,7 @@
             icon="i-heroicons-squares-2x2"
             size="xs"
             :variant="viewMode === 'grid' ? 'solid' : 'ghost'"
-            @click="viewMode = 'grid'"
+            @click="void (viewMode = 'grid')"
           />
         </UTooltip>
         <UTooltip :text="$t('switches.viewList')">
@@ -184,7 +184,7 @@
             icon="i-heroicons-bars-3"
             size="xs"
             :variant="viewMode === 'list' ? 'solid' : 'ghost'"
-            @click="viewMode = 'list'"
+            @click="void (viewMode = 'list')"
           />
         </UTooltip>
       </div>
