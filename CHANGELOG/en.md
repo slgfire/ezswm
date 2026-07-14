@@ -1,3 +1,11 @@
+## [0.31.4] — 2026-07-14
+
+### Changed
+- Dependency maintenance release: updated Nuxt i18n, marked, and development tooling after CI validation. The nanoid major update remains separate for explicit review.
+- Publishing this version refreshes the Docker release tags `latest`, `0.31.4`, and `0.31`.
+
+---
+
 ## [0.31.0] — 2026-06-26
 
 ### Added
