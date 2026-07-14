@@ -2,6 +2,24 @@
 
 ## Latest Stage
 
+Date: 2026-07-14
+Stage: Dependency maintenance release
+Status: Complete
+Version: 0.31.4
+
+### Maintenance: refresh dependency updates and release image (v0.31.4)
+
+Merged safe dependency maintenance updates and bumped the application version so
+the release workflow publishes fresh `latest`, `0.31.4`, and `0.31` Docker image
+tags.
+
+- Updated Nuxt i18n, marked, and development tooling updates after CI validation.
+- Kept the nanoid major update separate for explicit review.
+
+---
+
+## Previous Stage
+
 Date: 2026-06-28
 Stage: IP allocation network move confirmation
 Status: Complete
