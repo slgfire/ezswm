@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@nuxt/ui": "4.9.0",
-    "@nuxtjs/i18n": "10.4.0",
+    "@nuxtjs/i18n": "10.4.1",
     "@prisma/adapter-better-sqlite3": "7.8.0",
     "@prisma/client": "7.8.0",
     "@types/qrcode": "1.5.6",
