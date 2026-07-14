@@ -22,7 +22,7 @@
               <div
                 class="cursor-pointer rounded-lg border-2 border-dashed border-default p-6 text-center transition-colors hover:border-primary-500/50"
                 :class="{ 'border-primary-500 bg-primary-500/10': isBackupDragOver }"
-                @click="($refs.backupFileInput as HTMLInputElement)?.click()"
+                @click="void ($refs.backupFileInput as HTMLInputElement)?.click()"
                 @dragover.prevent="isBackupDragOver = true"
                 @dragleave="isBackupDragOver = false"
                 @drop.prevent="onBackupFileDrop"
@@ -44,7 +44,7 @@
                 size="sm"
                 icon="i-heroicons-arrow-up-tray"
                 :disabled="!backupFile"
-                @click="showRestoreDialog = true"
+                @click="void (showRestoreDialog = true)"
               >
                 {{ $t('backup.restore') }}
               </UButton>
@@ -127,7 +127,7 @@
             <div
               class="cursor-pointer rounded-lg border-2 border-dashed border-default p-5 text-center transition-colors hover:border-primary-500/50"
               :class="{ 'border-primary-500 bg-primary-500/10': isDragOver }"
-              @click="($refs.importFileInput as HTMLInputElement)?.click()"
+              @click="void ($refs.importFileInput as HTMLInputElement)?.click()"
               @dragover.prevent="isDragOver = true"
               @dragleave="isDragOver = false"
               @drop.prevent="onImportFileDrop"
@@ -159,7 +159,7 @@
               size="sm"
               icon="i-heroicons-arrow-up-tray"
               :disabled="!importFile || !importType || importPreview === null"
-              @click="showImportDialog = true"
+              @click="void (showImportDialog = true)"
             >
               {{ $t('dataManagement.import.importButton') }}
             </UButton>

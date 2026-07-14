@@ -14,7 +14,7 @@
 
     <template #footer>
       <div class="flex justify-end gap-2">
-        <UButton color="neutral" variant="ghost" @click="model = false">
+        <UButton color="neutral" variant="ghost" @click="void (model = false)">
           {{ $t('common.cancel') }}
         </UButton>
         <UButton color="error" :loading="loading" @click="$emit('confirm')">
