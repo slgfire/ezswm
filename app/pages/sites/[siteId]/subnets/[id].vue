@@ -8,7 +8,7 @@
       </div>
       <div v-if="network" class="flex items-center gap-1">
         <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="sm" :title="$t('common.edit')" @click="startEdit()" />
-        <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="showDeleteDialog = true" />
+        <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="void (showDeleteDialog = true)" />
       </div>
     </div>
 

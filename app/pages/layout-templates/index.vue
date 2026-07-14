@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="mb-4 flex items-center justify-between">
       <h1 class="text-xl font-bold">{{ $t('templates.title') }}</h1>
-      <UButton icon="i-heroicons-plus" size="sm" @click="showCreateModal = true">
+      <UButton icon="i-heroicons-plus" size="sm" @click="void (showCreateModal = true)">
         {{ $t('templates.create') }}
       </UButton>
     </div>
@@ -47,7 +47,7 @@ v-model="selectedPortType"
             icon="i-heroicons-squares-2x2"
             size="xs"
             :variant="viewMode === 'grid' ? 'solid' : 'ghost'"
-            @click="viewMode = 'grid'"
+            @click="void (viewMode = 'grid')"
           />
         </UTooltip>
         <UTooltip :text="$t('templates.viewList')">
@@ -55,7 +55,7 @@ v-model="selectedPortType"
             icon="i-heroicons-bars-3"
             size="xs"
             :variant="viewMode === 'table' ? 'solid' : 'ghost'"
-            @click="viewMode = 'table'"
+            @click="void (viewMode = 'table')"
           />
         </UTooltip>
       </div>
@@ -73,7 +73,7 @@ v-model="selectedPortType"
           v-for="tpl in filteredItems"
           :key="tpl.id"
           class="stagger-item card-glow group relative cursor-pointer overflow-hidden rounded-lg bg-default"
-          @click="navigateTo(`/layout-templates/${tpl.id}`)"
+          @click="void navigateTo(`/layout-templates/${tpl.id}`)"
         >
           <!-- Port Preview -->
           <div class="border-b border-default bg-elevated px-4 py-3">
@@ -82,7 +82,7 @@ v-model="selectedPortType"
 
           <!-- Hover actions -->
           <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
-            <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.stop="navigateTo(`/layout-templates/${tpl.id}/edit`)" />
+            <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.stop="void navigateTo(`/layout-templates/${tpl.id}/edit`)" />
             <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.stop="onDuplicate(tpl)" />
             <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.stop="confirmDelete(tpl)" />
           </div>
@@ -132,7 +132,7 @@ v-model="selectedPortType"
           v-for="tpl in filteredItems"
           :key="tpl.id"
           class="card-glow group flex cursor-pointer items-center gap-4 rounded-lg bg-default px-4 py-3"
-          @click="navigateTo(`/layout-templates/${tpl.id}`)"
+          @click="void navigateTo(`/layout-templates/${tpl.id}`)"
         >
           <!-- Mini Preview -->
           <div class="hidden w-40 shrink-0 sm:block">
@@ -200,7 +200,7 @@ v-model="selectedPortType"
       :description="$t('templates.emptyDescription')"
     >
       <template #action>
-        <UButton icon="i-heroicons-plus" @click="showCreateModal = true">
+        <UButton icon="i-heroicons-plus" @click="void (showCreateModal = true)">
           {{ $t('templates.create') }}
         </UButton>
       </template>
@@ -221,7 +221,7 @@ v-model="selectedPortType"
             <!-- Manual -->
             <button
               class="group flex flex-col items-center gap-3 p-6 rounded-xl border border-default hover:border-primary/50 hover:bg-primary/5 transition-all"
-              @click="navigateTo('/layout-templates/create')"
+              @click="void navigateTo('/layout-templates/create')"
             >
               <UIcon name="i-heroicons-pencil-square" class="text-3xl text-primary" />
               <span class="font-medium">{{ $t('templates.manual') }}</span>
