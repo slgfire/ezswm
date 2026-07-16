@@ -68,6 +68,7 @@ export const updatePortSchema = z.object({
 
 export const bulkUpdatePortsSchema = z.object({
   port_ids: z.array(z.string()).min(1),
+  lag_group_id: z.string().min(1).optional(),
   updates: z.object({
     status: z.enum(['up', 'down', 'disabled']).optional(),
     port_mode: z.preprocess(v => v === '' ? null : v, z.enum(['access', 'trunk']).optional().nullable()),

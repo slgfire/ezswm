@@ -461,6 +461,14 @@ describe('bulkUpdatePortsSchema', () => {
     expect(result.success).toBe(true)
   })
 
+  it('accepts an optional validated LAG group id', () => {
+    const result = bulkUpdatePortsSchema.safeParse({
+      port_ids: ['p1'], updates: { status: 'up' }, lag_group_id: 'lag-1'
+    })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.lag_group_id).toBe('lag-1')
+  })
+
   it('rejects empty port_ids array', () => {
     const result = bulkUpdatePortsSchema.safeParse({
       port_ids: [],

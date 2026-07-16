@@ -2,6 +2,7 @@ import { lagGroupRepository } from '../../../../repositories/lagGroupRepository'
 import { switchRepository } from '../../../../repositories/switchRepository'
 import { activityRepository } from '../../../../repositories/activityRepository'
 import { updateLagGroupSchema } from '../../../../validators/lagGroupSchemas'
+import { resolveSwitchParam } from '../../../../utils/resolveSwitchParam'
 import type { LAGGroup } from '../../../../../types/lagGroup'
 
 export default defineEventHandler(async (event) => {
@@ -14,14 +15,15 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const validated = updateLagGroupSchema.parse(body)
 
-  // Get current state before update for diff
-  const before = await lagGroupRepository.getById(lagId)
-  if (!before) throw createError({ statusCode: 404, message: 'LAG group not found' })
+  const sw = await resolveSwitchParam(event)
 
-  const updated = await lagGroupRepository.update(lagId, validated as Partial<Omit<LAGGroup, 'id' | 'switch_id' | 'created_at'>>)
+  // Validate ownership before the first mutation (and again inside update's transaction).
+  const before = await lagGroupRepository.getById(lagId)
+  if (!before || before.switch_id !== sw.id) throw createError({ statusCode: 404, message: 'LAG group not found' })
+
+  const updated = await lagGroupRepository.update(lagId, validated as Partial<Omit<LAGGroup, 'id' | 'switch_id' | 'created_at'>>, sw.id)
 
   // Compute diff for metadata (server-side, don't trust client)
-  const sw = await switchRepository.getById(switchId)
   const resolveLabel = (pid: string) => sw?.ports.find(p => p.id === pid)?.label || pid
 
   const metadata: Record<string, unknown> = {}

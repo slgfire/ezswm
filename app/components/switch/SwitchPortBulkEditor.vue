@@ -4,6 +4,10 @@
     <template #body>
       <div class="space-y-4">
         <p class="text-xs text-gray-400">{{ $t('switches.ports.bulkEditHint', { count: selectedPorts.length }) }}</p>
+        <UFormField :label="$t('switches.ports.copySource')">
+          <USelect v-model="copySourceId" :items="sourceOptions" :placeholder="$t('switches.ports.copySourcePlaceholder')" class="w-full" />
+          <p class="mt-1 text-xs text-amber-400">{{ $t('switches.ports.copyWarning') }}</p>
+        </UFormField>
 
         <UFormField :label="$t('common.status')">
           <USelect v-model="form.status" :items="statusOptions" :placeholder="$t('common.noChange')" class="w-full" />
@@ -57,7 +61,7 @@
     <template #footer>
       <div class="flex items-center justify-between">
         <UButton variant="ghost" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
-        <UButton @click="apply">{{ $t('switches.ports.applyToPorts', { count: selectedPorts.length }) }}</UButton>
+        <UButton @click="apply">{{ copySourceId ? $t('switches.ports.copyToPorts', { count: targetPortIds.length }) : $t('switches.ports.applyToPorts', { count: selectedPorts.length }) }}</UButton>
       </div>
     </template>
   </USlideover>
@@ -65,10 +69,14 @@
 
 <script setup lang="ts">
 import type { VLAN } from '~~/types/vlan'
+import type { Port } from '~~/types/port'
+import { buildCopyUpdates, completeLagId } from '~/utils/lagBulk'
+import { safeCopyTargetIds } from '~/utils/lagCopyTargets'
 
 const props = defineProps<{
   switchId: string
   selectedPorts: string[]
+  ports: Port[]
   configuredVlans?: number[]
   switchUpdatedAt?: string
 }>()
@@ -76,11 +84,17 @@ const props = defineProps<{
 const emit = defineEmits<{ saved: [], 'clear-selection': [] }>()
 const { t } = useI18n()
 const toast = useToast()
+const { confirm } = useConfirm()
 const { apiFetch } = useApiFetch()
+const route = useRoute()
+const siteParams = computed(() => route.params.siteId && route.params.siteId !== 'all' ? { siteId: route.params.siteId as string } : undefined)
 
 const isOpen = ref(false)
 const allVlans = ref<VLAN[]>([])
 const selectedTaggedVlans = ref<number[]>([])
+const copySourceId = ref('')
+const sourceOptions = computed(() => props.ports.filter(p => props.selectedPorts.includes(p.id)).map(p => ({ label: p.label || p.id, value: p.id })))
+const targetPortIds = computed(() => props.selectedPorts.filter(id => id !== copySourceId.value))
 
 
 async function fetchVlans() {
@@ -144,6 +158,7 @@ function open() {
   isOpen.value = true
   takeSnapshot()
   fetchVlans()
+  copySourceId.value = ''
 }
 
 defineExpose({ open })
@@ -154,6 +169,30 @@ function close() {
 }
 
 async function apply() {
+  if (copySourceId.value) {
+    const source = props.ports.find(p => p.id === copySourceId.value)
+     const safeTargets = source ? safeCopyTargetIds(source.id, props.selectedPorts, props.ports) : null
+     if (!source || !safeTargets?.length) {
+       toast.add({ title: t('switches.ports.copyLagBlocked'), color: 'error' })
+       return
+     }
+     if (!(await confirm({
+       title: t('switches.ports.copyConfirmTitle'),
+       message: t('switches.ports.copyWarning')
+     }))) return
+    const requestPortIds = safeTargets
+    try {
+      await $fetch(`/api/switches/${props.switchId}/ports/bulk`, { method: 'PUT', query: siteParams.value, body: {
+          port_ids: requestPortIds,
+          ...(completeLagId(requestPortIds, props.ports) ? { lag_group_id: completeLagId(requestPortIds, props.ports) } : {}),
+         expected_updated_at: props.switchUpdatedAt || undefined,
+          updates: buildCopyUpdates(source)
+       } })
+      toast.add({ title: t('switches.ports.updatedPorts', { count: targetPortIds.value.length }), color: 'success' })
+      emit('saved'); close()
+     } catch (e: unknown) { toast.add({ title: (e as { data?: { message?: string } }).data?.message || t('switches.ports.updateFailed'), color: 'error' }) }
+    return
+  }
   const updates: Record<string, string | number | number[] | null> = {}
   if (form.status) updates.status = form.status
   if (form.speed) updates.speed = form.speed
@@ -190,8 +229,10 @@ async function apply() {
   try {
     await $fetch(`/api/switches/${props.switchId}/ports/bulk`, {
       method: 'PUT',
+      query: siteParams.value,
       body: {
         port_ids: props.selectedPorts,
+        ...(completeLagId(props.selectedPorts, props.ports) ? { lag_group_id: completeLagId(props.selectedPorts, props.ports) } : {}),
         updates,
         expected_updated_at: props.switchUpdatedAt || undefined
       }
@@ -211,7 +252,7 @@ async function apply() {
     close()
   } catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    toast.add({ title: err.data?.message || 'Failed', color: 'error' })
+     toast.add({ title: err.data?.message || t('switches.ports.updateFailed'), color: 'error' })
   }
 }
 </script>

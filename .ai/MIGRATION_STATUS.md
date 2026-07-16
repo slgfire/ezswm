@@ -2,19 +2,27 @@
 
 ## Latest Stage
 
-Date: 2026-07-14
-Stage: Dependency maintenance release
+Date: 2026-07-15
+Stage: LAG and port copy/edit release
 Status: Complete
-Version: 0.31.4
+Version: 0.32.0
 
-### Maintenance: refresh dependency updates and release image (v0.31.4)
+### Feature: safe LAG and port configuration copy/edit (v0.32.0)
 
-Merged safe dependency maintenance updates and bumped the application version so
-the release workflow publishes fresh `latest`, `0.31.4`, and `0.31` Docker image
-tags.
+Added safe local-only duplication and configuration-copy workflows:
 
-- Updated Nuxt i18n, marked, and development tooling updates after CI validation.
-- Kept the nanoid major update separate for explicit review.
+- LAGs can be duplicated as memberless, local-only groups without copying remote
+  devices, mappings, or links.
+- Port configuration can be copied on the same switch without copying physical
+  links or LAG membership; LAG targets are restricted to prevent conflicts.
+- LAG member and name integrity is preserved during editing and duplication.
+- One delete dialog supports retaining the remote LAG by default or explicitly
+  deleting it.
+- Remote deletion is server-side transactional, and remote mirror edits stay
+  synchronized with strict ownership and reciprocity checks. Conflicts return
+  HTTP 409 without partial mutation.
+
+Documentation and verification will be finalized by the orchestrator.
 
 ---
 

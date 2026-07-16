@@ -281,13 +281,22 @@ For freetext remote devices, text inputs replace the dropdowns.
 
 ### Editing a LAG
 
-Click a LAG chip in the legend below the port grid to open the edit slideover. Changes to ports, remote device, or port mapping are applied to both the local and mirror LAG on save.
+Click a LAG chip in the legend below the port grid to open the edit slideover. You can edit its members, name, description, remote device, port mapping, and VLAN configuration. Changes to ports, remote device, or port mapping are applied to both the local and mirror LAG on save.
+
+### Duplicating a LAG
+
+Use **Duplicate** on a LAG to create a memberless, local-only copy. The copy does not include the remote device, remote mappings, or physical links. Add members and configure any remote connection explicitly after creating it.
+
+### Copying Port Configuration
+
+Use **Copy configuration** on a port to copy its settings to another port on the same switch. Physical links and LAG membership are never copied. When the target is a LAG, the operation is restricted to prevent LAG member conflicts.
 
 ### Deleting a LAG
 
 Click the **X** button on a LAG chip in the legend. The confirmation dialog shows:
 - Which local ports will be released
-- Whether a mirror LAG on the remote switch will also be deleted
+- The default choice to retain the remote LAG
+- An optional choice to explicitly delete the remote mirror LAG as well
 
 ### LAG Legend
 

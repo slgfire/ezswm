@@ -8,10 +8,10 @@
     <template #body>
       <UForm ref="lagFormRef" :state="form" :validate="validate" :validate-on="['blur', 'change']" class="space-y-4" @submit="onSubmit">
         <UFormField :label="$t('lag.name')" name="name" required>
-          <UInput v-model="form.name" class="w-full" />
+          <UInput v-model="form.name" maxlength="100" class="w-full" />
         </UFormField>
 
-        <UFormField :label="$t('lag.description')" name="description">
+         <UFormField v-if="!isDuplicate" :label="$t('lag.description')" name="description">
           <UTextarea v-model="form.description" :rows="2" class="w-full" />
         </UFormField>
 
@@ -33,12 +33,20 @@
               {{ $t('lag.noPortsSelected') }}
             </span>
           </div>
+          <USelectMenu
+            :search-input="{ placeholder: $t('switches.ports.selectPort') }"
+            :items="availableLocalPortOptions"
+            :placeholder="$t('switches.ports.selectPort')"
+            by="value"
+            class="mt-2 w-full"
+            @update:model-value="addPort"
+          />
         </UFormField>
 
         <USeparator />
 
-        <!-- Remote connection type -->
-        <UFormField :label="$t('lag.remoteDevice')">
+         <!-- Remote connection type -->
+         <UFormField v-if="!isDuplicate" :label="$t('lag.remoteDevice')">
           <div class="mb-2 flex items-center gap-1">
             <button
               v-for="mode in remoteConnectionModes"
@@ -82,13 +90,13 @@
         </UFormField>
 
         <!-- Existing remote LAG warning -->
-        <div v-if="existingRemoteLag" class="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+         <div v-if="!isDuplicate && existingRemoteLag" class="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
           <span class="font-semibold">{{ $t('common.warning') }}:</span>
           {{ $t('lag.existingRemoteLag', { name: existingRemoteLag.name, switch: form.remote_device }) }}
         </div>
 
         <!-- Remote port LAG conflict (ports in a different LAG on remote switch) -->
-        <div v-if="remotePortLagConflicts.length" class="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+         <div v-if="!isDuplicate && remotePortLagConflicts.length" class="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
           <span class="font-semibold">{{ $t('common.warning') }}:</span>
           <div v-for="c in remotePortLagConflicts" :key="c.portId" class="mt-1">
             {{ c.portLabel }} → {{ $t('lag.portInRemoteLag', { lag: c.lagName }) }}
@@ -96,7 +104,7 @@
         </div>
 
         <!-- Port mapping table -->
-        <div v-if="showPortMapping && form.port_ids.length > 0" class="rounded-lg border border-default bg-default/50 p-3">
+         <div v-if="!isDuplicate && showPortMapping && form.port_ids.length > 0" class="rounded-lg border border-default bg-default/50 p-3">
           <div class="mb-2 text-xs font-semibold text-gray-600 dark:text-gray-300">
             {{ $t('lag.portMapping') }}
           </div>
@@ -139,7 +147,7 @@
         </div>
 
         <!-- Global conflict warning -->
-        <div v-if="hasConnectionConflicts" class="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+         <div v-if="!isDuplicate && hasConnectionConflicts" class="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
           <span class="font-semibold">{{ $t('common.warning') }}:</span>
           {{ $t('lag.conflictWarning') }}
         </div>
@@ -180,7 +188,10 @@
         <UButton color="neutral" variant="ghost" @click="requestClose">
           {{ $t('common.cancel') }}
         </UButton>
-        <UButton :loading="saving" :disabled="remotePortLagConflicts.length > 0" icon="i-heroicons-check" @click="lagFormRef?.submit()">
+        <UButton v-if="isEdit" color="neutral" variant="outline" icon="i-heroicons-document-duplicate" @click="duplicateLag">
+          {{ $t('lag.duplicate') }}
+        </UButton>
+         <UButton :loading="saving" :disabled="!isDuplicate && remotePortLagConflicts.length > 0" icon="i-heroicons-check" @click="lagFormRef?.submit()">
           {{ isEdit ? $t('common.save') : $t('lag.create') }}
         </UButton>
       </div>
@@ -191,6 +202,8 @@
 <script setup lang="ts">
 import type { LAGGroup } from '~~/types/lagGroup'
 import type { Port } from '~~/types/port'
+import { suggestLagCopyName } from '~/utils/lagCopyName'
+import { buildLagSaveRequest, executeLagSaveRequest, saveLagLocally, submitLagSequence } from '~/utils/lagSubmit'
 import { resolvePortLabel } from '~/utils/ports'
 
 const props = defineProps<{
@@ -216,6 +229,7 @@ const isOpen = ref(false)
 const saving = ref(false)
 const lagFormRef = ref<{ submit: () => void } | null>(null)
 const editingLag = ref<LAGGroup | null>(null)
+const isDuplicate = ref(false)
 const isEdit = computed(() => !!editingLag.value)
 
 const form = reactive({
@@ -287,6 +301,15 @@ function getPortLabel(portId: string): string {
   return resolvePortLabel(props.ports, portId)
 }
 
+const availableLocalPortOptions = computed(() => props.ports
+  .filter(port => !form.port_ids.includes(port.id) && !props.existingLags.some(lag => lag.id !== editingLag.value?.id && lag.port_ids.includes(port.id)))
+  .map(port => ({ label: resolvePortLabel(props.ports, port.id), value: port.id })))
+
+function addPort(option: { value: string } | undefined) {
+  if (!option || form.port_ids.includes(option.value)) return
+  form.port_ids.push(option.value)
+}
+
 function removePort(portId: string) {
   form.port_ids = form.port_ids.filter(id => id !== portId)
   delete portMapping[portId]
@@ -296,6 +319,8 @@ function validate(state: { name?: string; port_ids: string[] }) {
   const errors: { name: string; message: string }[] = []
   if (!state.name?.trim()) {
     errors.push({ name: 'name', message: t('lag.validation.nameRequired') })
+  } else if (state.name.length > 100) {
+    errors.push({ name: 'name', message: t('lag.validation.nameTooLong') })
   }
   if (state.port_ids.length < 2) {
     errors.push({ name: 'ports', message: t('lag.validation.minPorts') })
@@ -315,7 +340,10 @@ function validate(state: { name?: string; port_ids: string[] }) {
   return errors
 }
 
-const { create, update } = useLagGroups(props.switchId, toRef(() => props.siteId ?? ''))
+const { fetch: refreshLags } = useLagGroups(props.switchId, toRef(() => props.siteId ?? ''))
+const submittedLocalLagId = ref<string | null>(null)
+const submittedRemoteLagId = ref<string | null>(null)
+const submittedRemoteLagPortIds = ref<string[] | null>(null)
 
 // --- onSubmit stage functions ---
 
@@ -323,24 +351,37 @@ async function createOrUpdateLocalLag(): Promise<void> {
   const body = {
     name: form.name.trim(),
     port_ids: [...form.port_ids],
-    description: form.description.trim() || undefined,
-    remote_device: remoteMode.value !== 'none' ? (form.remote_device.trim() || undefined) : undefined,
-    remote_device_id: remoteMode.value === 'switch' ? (selectedRemoteSwitchId.value || undefined) : undefined,
+    ...(isDuplicate.value ? {} : { description: form.description.trim() || undefined }),
+    ...(!isDuplicate.value ? {
+      remote_device: remoteMode.value !== 'none' ? (form.remote_device.trim() || undefined) : undefined,
+      remote_device_id: remoteMode.value === 'switch' ? (selectedRemoteSwitchId.value || undefined) : undefined
+    } : {}),
   }
-  if (isEdit.value && editingLag.value) {
-    await update(editingLag.value.id, body)
-  } else {
-    await create(body)
+  if (!isDuplicate.value && remoteMode.value === 'switch' && selectedRemoteSwitchId.value) {
+    Object.assign(body, { sync: {
+      remote_switch_id: selectedRemoteSwitchId.value,
+      mappings: form.port_ids.map(local_port_id => ({ local_port_id, remote_port_id: portMapping[local_port_id]?.remotePortId })).filter(m => m.remote_port_id),
+      port_mode: vlanForm.port_mode,
+      access_vlan: vlanForm.port_mode === 'access' ? vlanForm.access_vlan : null,
+      native_vlan: vlanForm.port_mode === 'trunk' ? vlanForm.native_vlan : null,
+      tagged_vlans: vlanForm.port_mode === 'trunk' ? [...vlanForm.tagged_vlans] : []
+    } })
   }
+  let result: LAGGroup | undefined
+  const request = buildLagSaveRequest({ switchId: props.switchId, lagId: editingLag.value?.id, siteId: props.siteId, isEdit: isEdit.value, isDuplicate: isDuplicate.value, body })
+  await saveLagLocally({ isEdit: isEdit.value, duplicate: isDuplicate.value, remoteSwitch: remoteMode.value === 'switch', update: async () => { result = await executeLagSaveRequest(request, (url, options) => $fetch<LAGGroup>(url, options)) }, create: async () => { result = await executeLagSaveRequest(request, (url, options) => $fetch<LAGGroup>(url, options)) } })
+  await refreshLags()
+  if (result) submittedLocalLagId.value = result.id
 }
 
 async function updateLocalPortConnections(): Promise<void> {
+  if (remoteMode.value === 'switch') return
   if (remoteMode.value !== 'none' && form.remote_device.trim()) {
     for (const portId of form.port_ids) {
       const mapping = portMapping[portId]
       const portBody: Record<string, string | null> = {
         connected_device: form.remote_device.trim(),
-        connected_device_id: remoteMode.value === 'switch' ? (selectedRemoteSwitchId.value || null) : null,
+        connected_device_id: null,
         connected_port_id: mapping?.remotePortId || null,
         connected_port: mapping?.remotePortLabel || null,
       }
@@ -362,120 +403,31 @@ async function updateLocalPortConnections(): Promise<void> {
 }
 
 async function applyVlanConfig(): Promise<void> {
+  if (!isDuplicate.value && remoteMode.value === 'switch') return
   const vlanUpdates: Record<string, unknown> = {
     port_mode: vlanForm.port_mode
   }
   if (vlanForm.port_mode === 'access') {
-    if (vlanForm.access_vlan) vlanUpdates.access_vlan = vlanForm.access_vlan
+    vlanUpdates.access_vlan = vlanForm.access_vlan
     vlanUpdates.native_vlan = null
     vlanUpdates.tagged_vlans = []
   } else {
     vlanUpdates.access_vlan = null
-    if (vlanForm.native_vlan) vlanUpdates.native_vlan = vlanForm.native_vlan
-    if (vlanForm.tagged_vlans.length) vlanUpdates.tagged_vlans = [...vlanForm.tagged_vlans]
+    vlanUpdates.native_vlan = vlanForm.native_vlan
+    vlanUpdates.tagged_vlans = [...vlanForm.tagged_vlans]
   }
   // Apply to local LAG ports
   try {
     await $fetch(`/api/switches/${props.switchId}/ports/bulk`, {
       method: 'PUT',
-      body: { port_ids: [...form.port_ids], updates: vlanUpdates },
+        body: { port_ids: [...form.port_ids], lag_group_id: submittedLocalLagId.value || editingLag.value?.id, updates: vlanUpdates },
       query: localQuery.value
     })
     toast.add({ title: t('lag.vlanApplied', { count: form.port_ids.length }), color: 'success' })
-  } catch (e: unknown) {
-    const err = e as { data?: { message?: string } }
-    toast.add({ title: err?.data?.message || t('lag.vlanApplyFailed'), color: 'error' })
-  }
-  // Apply same VLAN config to remote LAG member ports
-  if (remoteMode.value === 'switch' && selectedRemoteSwitchId.value) {
-    let remotePortIds = form.port_ids
-      .map(pid => portMapping[pid]?.remotePortId)
-      .filter(Boolean) as string[]
-    // Fallback: if no port mapping, use mirror LAG's port_ids directly
-    if (remotePortIds.length === 0 && existingRemoteLag.value) {
-      remotePortIds = [...existingRemoteLag.value.port_ids]
-    }
-    if (remotePortIds.length > 0) {
-      try {
-        await $fetch(`/api/switches/${selectedRemoteSwitchId.value}/ports/bulk`, {
-          method: 'PUT',
-          body: { port_ids: remotePortIds, updates: vlanUpdates }
-        })
-        const remoteSw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
-        toast.add({ title: t('lag.vlanAppliedRemote', { count: remotePortIds.length, switch: remoteSw?.name || '' }), color: 'success' })
-      } catch (e: unknown) {
-        const err = e as { data?: { message?: string } }
-        toast.add({ title: err?.data?.message || t('lag.vlanApplyFailed'), color: 'error' })
-      }
-    }
-  }
-}
-
-async function syncRemoteLag() {
-  const remoteSwId = selectedRemoteSwitchId.value
-  if (!remoteSwId) return
-
-  const remotePortIds = form.port_ids
-    .map(pid => portMapping[pid]?.remotePortId)
-    .filter(Boolean) as string[]
-
-  // A mirror LAG can only be created when at least two member ports are mapped
-  // to concrete remote ports. Warn instead of silently skipping it, otherwise
-  // the user sees the remote ports/VLANs configured but no LAG group and has no
-  // idea why.
-  if (remotePortIds.length < 2) {
-    toast.add({
-      title: t('lag.mirrorNotCreated'),
-      description: t('lag.mirrorNeedsPortMapping'),
-      color: 'warning'
-    })
-    return
-  }
-
-  // props.switchId is a slug; store the local switch UUID in the mirror so the
-  // remote side reconstructs correctly (everything else compares by UUID).
-  const localSw = allSwitches.value.find(s => s.id === props.switchId || s.slug === props.switchId)
-  const localSwId = localSw?.id || props.switchId
-  const localSwName = localSw?.name || props.switchId
-
-  const mirrorBody = {
-    name: form.name.trim(),
-    port_ids: remotePortIds,
-    description: form.description.trim() || undefined,
-    remote_device: localSwName,
-    remote_device_id: localSwId,
-  }
-
-  if (existingRemoteLag.value) {
-    try {
-      await $fetch(`/api/switches/${remoteSwId}/lag-groups/${existingRemoteLag.value.id}`, { method: 'DELETE' })
-    } catch { /* best-effort */ }
-  }
-
-  try {
-    await $fetch(`/api/switches/${remoteSwId}/lag-groups`, { method: 'POST', body: mirrorBody })
-  } catch (e: unknown) {
-    const err = e as { data?: { message?: string } }
-    toast.add({ title: `Mirror LAG: ${err?.data?.message || 'Failed'}`, color: 'warning' })
-    return
-  }
-
-  for (const localPortId of form.port_ids) {
-    const mapping = portMapping[localPortId]
-    if (!mapping?.remotePortId) continue
-    const localPort = props.ports.find(p => p.id === localPortId)
-    const localPortLabel = localPort ? resolvePortLabel(props.ports, localPortId) : ''
-    try {
-      await $fetch(`/api/switches/${remoteSwId}/ports/${mapping.remotePortId}`, {
-        method: 'PUT',
-        body: {
-          connected_device: localSwName,
-          connected_device_id: localSwId,
-          connected_port_id: localPortId,
-          connected_port: localPortLabel || null,
-        }
-      })
-    } catch { /* best-effort */ }
+   } catch (e: unknown) {
+     const err = e as { data?: { message?: string } }
+     toast.add({ title: err?.data?.message || t('lag.vlanApplyFailed'), color: 'error' })
+     throw e
   }
 }
 
@@ -483,28 +435,31 @@ async function onSubmit() {
   const errors = validate(form)
   if (errors.length > 0) return
 
-  if (hasConnectionConflicts.value) {
+  if (!isDuplicate.value && hasConnectionConflicts.value) {
     if (!(await confirm({ title: t('lag.conflictConfirmTitle'), message: t('lag.conflictConfirm') }))) return
   }
 
-  if (existingRemoteLag.value && !isEdit.value) {
+  if (!isDuplicate.value && existingRemoteLag.value && !isEdit.value) {
     if (!(await confirm({ title: t('lag.replaceRemoteLagTitle'), message: t('lag.replaceRemoteLag', { name: existingRemoteLag.value.name, switch: form.remote_device }) }))) return
   }
 
   saving.value = true
   try {
-    await createOrUpdateLocalLag()
-    await updateLocalPortConnections()
-    if (remoteMode.value === 'switch' && selectedRemoteSwitchId.value) {
-      await syncRemoteLag()
-    }
-    toast.add({
-      title: isEdit.value ? t('lag.messages.updated') : t('lag.messages.created'),
-      color: 'success'
+    await submitLagSequence({
+      remoteLagId: submittedRemoteLagId,
+      remoteLagPortIds: submittedRemoteLagPortIds,
+      createOrUpdateLocalLag,
+       updateLocalPortConnections: !isDuplicate.value ? updateLocalPortConnections : undefined,
+      applyVlanConfig,
+      onSuccess: () => {
+      toast.add({
+        title: isEdit.value ? t('lag.messages.updated') : t('lag.messages.created'),
+        color: 'success'
+      })
+      isOpen.value = false
+      emit('saved')
+      }
     })
-    await applyVlanConfig()
-    isOpen.value = false
-    emit('saved')
   } catch (e: unknown) {
     const err = e as { data?: { message?: string } }
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
@@ -514,6 +469,7 @@ async function onSubmit() {
 }
 
 function openCreate(portIds: string[]) {
+  isDuplicate.value = false
   editingLag.value = null
   form.name = ''
   form.description = ''
@@ -534,7 +490,33 @@ function openCreate(portIds: string[]) {
   takeSnapshot()
 }
 
-async function openEdit(lag: LAGGroup) {
+function duplicateLag() {
+  if (!editingLag.value) return
+  const source = editingLag.value
+  const name = suggestLagCopyName(source.name, props.existingLags.map(lag => lag.name))
+
+  editingLag.value = null
+  isDuplicate.value = true
+  form.name = name
+  form.description = ''
+  form.port_ids = []
+  form.remote_device = ''
+  form.remote_device_id = undefined
+  remoteMode.value = 'none'
+  selectedRemoteSwitchId.value = ''
+  remoteLags.value = []
+  for (const key of Object.keys(portMapping)) delete portMapping[key]
+  const firstPort = props.ports.find(port => source.port_ids.includes(port.id))
+  vlanForm.port_mode = firstPort?.port_mode || 'access'
+  vlanForm.access_vlan = firstPort?.access_vlan || null
+  vlanForm.native_vlan = firstPort?.native_vlan || null
+  vlanForm.tagged_vlans = [...(firstPort?.tagged_vlans || [])]
+  isOpen.value = true
+  takeSnapshot()
+}
+
+async function openEdit(lag: LAGGroup, removePortId?: string) {
+  isDuplicate.value = false
   editingLag.value = lag
   form.name = lag.name
   form.description = lag.description || ''
@@ -576,9 +558,10 @@ async function openEdit(lag: LAGGroup) {
     selectedRemoteSwitchId.value = resolveSwitchUuid(lag.remote_device_id)
     await fetchRemoteLags(selectedRemoteSwitchId.value)
   }
+  if (removePortId) removePort(removePortId)
   // Snapshot after async UUID normalization has settled.
   takeSnapshot()
 }
 
-defineExpose({ openCreate, openEdit })
+defineExpose({ openCreate, openEdit, duplicateLag })
 </script>
