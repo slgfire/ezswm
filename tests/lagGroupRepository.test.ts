@@ -52,7 +52,7 @@ describe('lagGroupRepository integrity', () => {
   it('normalizes mirror names as well as local names', async () => {
     const local = await seedSwitch(prisma); const remote = await seedSwitch(prisma)
     const lp = [await port(local.id), await port(local.id)]; const rp = [await port(remote.id), await port(remote.id)]
-    await lagGroupRepository.create(local.id, { name: '  mirrored  ', remote_device_id: remote.id, port_ids: lp.map(p => p.id), sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'access', access_vlan: null, native_vlan: null, tagged_vlans: [] } } as any)
+    await lagGroupRepository.create(local.id, { name: '  mirrored  ', remote_device_id: remote.id, port_ids: lp.map(p => p.id), sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'access', access_vlan: null, native_vlan: null, tagged_vlans: [] } } as unknown as never)
     expect((await prisma.lagGroup.findMany({ where: { switch_id: remote.id } }))[0]?.name).toBe('mirrored')
   })
 
@@ -163,7 +163,7 @@ describe('lagGroupRepository integrity', () => {
       name: 'renamed', port_ids: localPorts.map(p => p.id),
       sync: { remote_switch_id: remoteSwitch.id, mappings: localPorts.map((p, i) => ({ local_port_id: p.id, remote_port_id: remotePorts[i]!.id })), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [20]
       }
-    } as any)
+    } as unknown as never)
     expect((await prisma.lagGroup.findUnique({ where: { id: localLag.id } }))?.name).toBe('renamed')
     expect((await prisma.lagGroup.findUnique({ where: { id: remoteLag.id } }))?.name).toBe('renamed')
     expect((await prisma.port.findUnique({ where: { id: remotePorts[0]!.id } }))?.native_vlan).toBe(10)
@@ -176,7 +176,7 @@ describe('lagGroupRepository integrity', () => {
     const lag = await lagGroupRepository.create(localSwitch.id, { name: 'local', port_ids: lp.map(p => p.id), remote_device_id: remoteSwitch.id })
     await lagGroupRepository.create(remoteSwitch.id, { name: 'remote', port_ids: rp.map(p => p.id), remote_device_id: localSwitch.id })
     const before = await Promise.all([prisma.lagGroup.findMany({ orderBy: { id: 'asc' } }), prisma.port.findMany({ orderBy: { id: 'asc' } })])
-    await expect(lagGroupRepository.update(lag.id, { sync: { remote_switch_id: remoteSwitch.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'access', access_vlan: 1, native_vlan: null, tagged_vlans: [] } } as any)).rejects.toMatchObject({ statusCode: 409 })
+    await expect(lagGroupRepository.update(lag.id, { sync: { remote_switch_id: remoteSwitch.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'access', access_vlan: 1, native_vlan: null, tagged_vlans: [] } } as unknown as never)).rejects.toMatchObject({ statusCode: 409 })
     expect(await Promise.all([prisma.lagGroup.findMany({ orderBy: { id: 'asc' } }), prisma.port.findMany({ orderBy: { id: 'asc' } })])).toEqual(before)
   })
 
@@ -201,7 +201,7 @@ describe('lagGroupRepository integrity', () => {
     await prisma.switch.update({ where: { id: local.id }, data: { configured_vlans: '[30]' } })
     await prisma.switch.update({ where: { id: remote.id }, data: { configured_vlans: '[20]' } })
     const lag = await lagGroupRepository.create(local.id, { name: 'local', port_ids: lp.map(p => p.id), remote_device_id: remote.id })
-    await lagGroupRepository.update(lag.id, { sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [20] } } as any)
+    await lagGroupRepository.update(lag.id, { sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [20] } } as unknown as never)
     const mirrors = await prisma.lagGroup.findMany({ where: { switch_id: remote.id } }); expect(mirrors).toHaveLength(1)
     const remoteLag = mirrors[0]!
     expect(await prisma.port.findMany({ where: { id: { in: lp.map(p => p.id) } }, select: { lag_group_id: true, port_mode: true, native_vlan: true, tagged_vlans: true } })).toEqual(expect.arrayContaining(lp.map(() => ({ lag_group_id: lag.id, port_mode: 'trunk', native_vlan: 10, tagged_vlans: '[20]' }))))
@@ -225,7 +225,7 @@ describe('lagGroupRepository integrity', () => {
     await prisma.port.update({ where: { id: rp[1]!.id }, data: { connected_port_id: lp[1]!.id, connected_device_id: local.id } })
     await lagGroupRepository.create(remote.id, { name: 'damaged', port_ids: [await port(remote.id).then(p => p.id), await port(remote.id).then(p => p.id)], remote_device_id: local.id })
     const before = await snapshot()
-    await expect(lagGroupRepository.update(lag.id, { sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [20] } } as any)).rejects.toMatchObject({ statusCode: 409 })
+    await expect(lagGroupRepository.update(lag.id, { sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [20] } } as unknown as never)).rejects.toMatchObject({ statusCode: 409 })
     expect(await snapshot()).toEqual(before); expect(good.id).toBeTruthy()
   })
 
@@ -235,7 +235,7 @@ describe('lagGroupRepository integrity', () => {
     const lag = await lagGroupRepository.create(local.id, { name: 'local', port_ids: lp.map(p => p.id), remote_device_id: remote.id })
     await prisma.port.update({ where: { id: rp[0]!.id }, data: { connected_port_id: external.id, connected_device_id: (await prisma.port.findUnique({ where: { id: external.id }, select: { switch_id: true } }))!.switch_id } })
     const before = await snapshot()
-    await expect(lagGroupRepository.update(lag.id, { sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [20] } } as any)).rejects.toMatchObject({ statusCode: 409 })
+    await expect(lagGroupRepository.update(lag.id, { sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [20] } } as unknown as never)).rejects.toMatchObject({ statusCode: 409 })
     expect(await snapshot()).toEqual(before)
   })
 
@@ -244,9 +244,9 @@ describe('lagGroupRepository integrity', () => {
     const lp = [await port(local.id), await port(local.id), await port(local.id)]; const rp = [await port(remote.id), await port(remote.id), await port(remote.id)]
     const lag = await lagGroupRepository.create(local.id, { name: 'local', port_ids: lp.map(p => p.id), remote_device_id: remote.id })
     const pairs = (left: typeof lp, right: typeof rp) => left.map((p, i) => ({ local_port_id: p.id, remote_port_id: right[i]!.id }))
-    await lagGroupRepository.update(lag.id, { sync: { remote_switch_id: remote.id, mappings: pairs(lp, rp), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [20] } } as any)
+    await lagGroupRepository.update(lag.id, { sync: { remote_switch_id: remote.id, mappings: pairs(lp, rp), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [20] } } as unknown as never)
     const newLp = [lp[0]!, lp[2]!]; const newRp = [rp[1]!, rp[2]!]
-    await lagGroupRepository.update(lag.id, { port_ids: newLp.map(p => p.id), sync: { remote_switch_id: remote.id, mappings: pairs(newLp, newRp), port_mode: 'access', access_vlan: 30, native_vlan: null, tagged_vlans: [] } } as any)
+    await lagGroupRepository.update(lag.id, { port_ids: newLp.map(p => p.id), sync: { remote_switch_id: remote.id, mappings: pairs(newLp, newRp), port_mode: 'access', access_vlan: 30, native_vlan: null, tagged_vlans: [] } } as unknown as never)
     expect(await prisma.port.findUnique({ where: { id: rp[0]!.id }, select: { lag_group_id: true, connected_port_id: true, connected_device_id: true } })).toEqual({ lag_group_id: null, connected_port_id: null, connected_device_id: null })
     expect(await prisma.port.findUnique({ where: { id: lp[1]!.id }, select: { lag_group_id: true, connected_port_id: true, connected_device_id: true } })).toEqual({ lag_group_id: null, connected_port_id: null, connected_device_id: null })
     const remoteLag = (await prisma.lagGroup.findMany({ where: { switch_id: remote.id } }))[0]!
@@ -262,7 +262,7 @@ describe('lagGroupRepository integrity', () => {
   it('creates a remote mirror atomically from a create sync payload', async () => {
     const local = await seedSwitch(prisma); const remote = await seedSwitch(prisma); await vlanSites(local, remote)
     const lp = [await port(local.id), await port(local.id)]; const rp = [await port(remote.id), await port(remote.id)]
-    const lag = await lagGroupRepository.create(local.id, { name: 'created', port_ids: lp.map(p => p.id), remote_device_id: remote.id, sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [20] } } as any)
+    const lag = await lagGroupRepository.create(local.id, { name: 'created', port_ids: lp.map(p => p.id), remote_device_id: remote.id, sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [20] } } as unknown as never)
     const mirror = (await prisma.lagGroup.findMany({ where: { switch_id: remote.id } }))[0]!
     expect(mirror).toBeTruthy()
     expect((await prisma.port.findMany({ where: { lag_group_id: mirror.id } })).map(p => p.id).sort()).toEqual(rp.map(p => p.id).sort())
@@ -275,7 +275,7 @@ describe('lagGroupRepository integrity', () => {
     const lp = [await port(local.id), await port(local.id)]; const rp = [await port(remote.id), await port(remote.id)]; const ep = await port(external.id)
     await prisma.port.update({ where: { id: rp[0]!.id }, data: { connected_port_id: ep.id, connected_device_id: external.id } })
     const before = await snapshot()
-    await expect(lagGroupRepository.create(local.id, { name: 'local', port_ids: lp.map(p => p.id), remote_device_id: remote.id, sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [] } } as any)).rejects.toMatchObject({ statusCode: 409 })
+    await expect(lagGroupRepository.create(local.id, { name: 'local', port_ids: lp.map(p => p.id), remote_device_id: remote.id, sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [] } } as unknown as never)).rejects.toMatchObject({ statusCode: 409 })
     expect(await snapshot()).toEqual(before)
   })
 
@@ -283,9 +283,9 @@ describe('lagGroupRepository integrity', () => {
     const local = await seedSwitch(prisma); const remote = await seedSwitch(prisma); const other = await seedSwitch(prisma)
     const lp = [await port(local.id), await port(local.id)]; const rp = [await port(remote.id), await port(remote.id)]; const op = [await port(other.id), await port(other.id)]
     const lag = await lagGroupRepository.create(local.id, { name: 'local', port_ids: lp.map(p => p.id), remote_device_id: remote.id })
-    await lagGroupRepository.update(lag.id, { sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'access', access_vlan: null, native_vlan: null, tagged_vlans: [] } } as any)
+    await lagGroupRepository.update(lag.id, { sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'access', access_vlan: null, native_vlan: null, tagged_vlans: [] } } as unknown as never)
     const before = await snapshot()
-    await expect(lagGroupRepository.update(lag.id, { sync: { remote_switch_id: other.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: op[i]!.id })), port_mode: 'access', access_vlan: null, native_vlan: null, tagged_vlans: [] } } as any)).rejects.toMatchObject({ statusCode: 409 })
+    await expect(lagGroupRepository.update(lag.id, { sync: { remote_switch_id: other.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: op[i]!.id })), port_mode: 'access', access_vlan: null, native_vlan: null, tagged_vlans: [] } } as unknown as never)).rejects.toMatchObject({ statusCode: 409 })
     expect(await snapshot()).toEqual(before)
   })
 
@@ -297,7 +297,7 @@ describe('lagGroupRepository integrity', () => {
     const lp = [await port(local.id), await port(local.id)]; const rp = [await port(remote.id), await port(remote.id)]
     const lag = await lagGroupRepository.create(local.id, { name: 'local', port_ids: lp.map(p => p.id), remote_device_id: remote.id })
     const before = await snapshot()
-    await expect(lagGroupRepository.update(lag.id, { sync: { remote_switch_id: remote.id, mappings: mapping(lp, rp), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [] } } as any)).rejects.toMatchObject({ statusCode: 409 })
+    await expect(lagGroupRepository.update(lag.id, { sync: { remote_switch_id: remote.id, mappings: mapping(lp, rp), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [] } } as unknown as never)).rejects.toMatchObject({ statusCode: 409 })
     expect(await snapshot()).toEqual(before)
   })
 
@@ -306,9 +306,9 @@ describe('lagGroupRepository integrity', () => {
     const lp = [await port(local.id), await port(local.id)]; const rp = [await port(remote.id), await port(remote.id)]
     const lag = await lagGroupRepository.create(local.id, { name: 'local', port_ids: lp.map(p => p.id) })
     const sync = { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [20] }
-    await lagGroupRepository.update(lag.id, { sync } as any)
+    await lagGroupRepository.update(lag.id, { sync } as unknown as never)
     const before = await snapshot()
-    await expect(lagGroupRepository.update(lag.id, { remote_device_id: third.id, sync } as any)).rejects.toMatchObject({ statusCode: 409 })
+    await expect(lagGroupRepository.update(lag.id, { remote_device_id: third.id, sync } as unknown as never)).rejects.toMatchObject({ statusCode: 409 })
     expect(await snapshot()).toEqual(before)
     expect((await prisma.lagGroup.findUnique({ where: { id: lag.id } }))?.remote_device_id).toBe(remote.id)
   })

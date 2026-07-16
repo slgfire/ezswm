@@ -246,7 +246,6 @@ const { allVlans, vlanForm, vlanPortModeOptions, fetchVlans } = useLagVlanConfig
 // Remote connection composable
 const {
   remoteMode,
-  allSwitches,
   selectedRemoteSwitchId,
   remoteLags,
   portMapping,

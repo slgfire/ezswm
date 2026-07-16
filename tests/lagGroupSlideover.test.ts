@@ -5,7 +5,7 @@ import { routeLagMemberRemoval } from '../app/utils/lagMemberRemoval'
 describe('LagGroupSlideover quality regressions', () => {
   it('routes remote member removal through the edit sync flow', () => {
     const calls: string[] = []
-    const lag = { id: 'lag', name: 'LAG', switch_id: 'local', port_ids: ['a', 'b'], remote_device_id: 'remote' } as any
+    const lag = { id: 'lag', name: 'LAG', switch_id: 'local', port_ids: ['a', 'b'], remote_device_id: 'remote' }
     routeLagMemberRemoval(lag, 'a', (value, portId) => calls.push(`${value.id}:${portId}`), () => calls.push('direct'))
     expect(calls).toEqual(['lag:a'])
   })
@@ -23,7 +23,7 @@ describe('LagGroupSlideover quality regressions', () => {
       await saveLagLocally({ isEdit: false, duplicate, remoteSwitch: !duplicate, update: async () => calls.push('update'), create: async () => calls.push(await executeLagSaveRequest(request, async (url, options) => ({ url, options }))) })
     }
     expect(calls[0]).toMatchObject({ url: '/api/switches/local/lag-groups', options: { method: 'POST', body: { sync: { remote_switch_id: 'remote' } } } })
-    expect(calls[1]).toMatchObject({ options: { method: 'POST', body: { name: 'copy' } } }); expect((calls[1] as any).options.body.sync).toBeUndefined()
+     expect(calls[1]).toMatchObject({ options: { method: 'POST', body: { name: 'copy' } } }); expect((calls[1] as { options: { body: { sync?: unknown } } }).options.body.sync).toBeUndefined()
   })
 
   it('keeps duplicate flow free of sync and remote calls', async () => {
@@ -92,7 +92,7 @@ describe('LagGroupSlideover quality regressions', () => {
       remoteLagId,
       remoteLagPortIds,
       createOrUpdateLocalLag: async () => {},
-      syncRemoteLag: async () => { try { throw new Error('remote sync failed') } catch {} },
+       syncRemoteLag: async () => { try { throw new Error('remote sync failed') } catch (error: unknown) { void error } },
       applyVlanConfig: async () => { applied = { id: remoteLagId.value, ports: remoteLagPortIds.value } },
       onSuccess: () => {}
     })

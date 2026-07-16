@@ -7,7 +7,7 @@ describe('bulk LAG request selection', () => {
     { id: 'a', lag_group_id: 'lag-1' },
     { id: 'b', lag_group_id: 'lag-1' },
     { id: 'c', lag_group_id: null }
-  ] as any[]
+  ] as { id: string; lag_group_id: string | null }[]
 
   it('sends the LAG ID only for the complete member set', () => {
     expect(completeLagId(['a', 'b'], ports)).toBe('lag-1')
@@ -31,7 +31,7 @@ describe('bulk LAG request selection', () => {
        connected_port_id: 'port-id',
        connected_allocation_id: 'allocation-id',
        lag_group_id: 'lag-id'
-    } as any
+    }
 
     expect(buildCopyUpdates(source)).toEqual({
       status: 'up',

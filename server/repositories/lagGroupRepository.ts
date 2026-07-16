@@ -126,8 +126,8 @@ export const lagGroupRepository = {
       return created
     })
       return rowToLag(row)
-    } catch (error: any) {
-      if (error?.code === 'P2002') throw createError({ statusCode: 409, message: `LAG group name '${normalizedName}' already exists on this switch` })
+    } catch (error: unknown) {
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') throw createError({ statusCode: 409, message: `LAG group name '${normalizedName}' already exists on this switch` })
       throw error
     }
   },
@@ -255,8 +255,8 @@ export const lagGroupRepository = {
       })
       })
     return rowToLag(row)
-    } catch (error: any) {
-      if (error?.code === 'P2002') {
+    } catch (error: unknown) {
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
         throw createError({ statusCode: 409, message: `LAG group name '${normalizedName ?? current.name}' already exists on this switch` })
       }
       throw error

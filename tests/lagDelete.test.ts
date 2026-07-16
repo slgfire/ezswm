@@ -144,7 +144,7 @@ describe('lagGroupRepository.delete', () => {
   it('deletes both coupled mirrors with delete_remote', async () => {
     const s1 = await seedSwitch(prisma, { name: 'S1' }); const s2 = await seedSwitch(prisma, { name: 'S2' })
     const ports = await Promise.all([1, 2, 3, 4].map((index) => prisma.port.create({ data: { id: randomUUID(), switch_id: index < 3 ? s1.id : s2.id, unit: 1, index, type: 'rj45', status: 'up', tagged_vlans: '[]' } })))
-    const remote = await lagGroupRepository.create(s2.id, { name: 'r', port_ids: [ports[2]!.id, ports[3]!.id], remote_device_id: s1.id })
+    await lagGroupRepository.create(s2.id, { name: 'r', port_ids: [ports[2]!.id, ports[3]!.id], remote_device_id: s1.id })
     const local = await lagGroupRepository.create(s1.id, { name: 'l', port_ids: [ports[0]!.id, ports[1]!.id], remote_device_id: s2.id })
     await prisma.port.update({ where: { id: ports[0]!.id }, data: { connected_port_id: ports[2]!.id, connected_device_id: s2.id } }); await prisma.port.update({ where: { id: ports[2]!.id }, data: { connected_port_id: ports[0]!.id, connected_device_id: s1.id } })
     await prisma.port.update({ where: { id: ports[1]!.id }, data: { connected_port_id: ports[3]!.id, connected_device_id: s2.id } }); await prisma.port.update({ where: { id: ports[3]!.id }, data: { connected_port_id: ports[1]!.id, connected_device_id: s1.id } })
@@ -187,7 +187,7 @@ describe('lagGroupRepository.delete', () => {
     const a = await prisma.port.create({ data: { id: randomUUID(), switch_id: s1.id, unit: 1, index: 1, type: 'rj45', status: 'up', tagged_vlans: '[1]' } })
     const a2 = await prisma.port.create({ data: { id: randomUUID(), switch_id: s1.id, unit: 1, index: 2, type: 'rj45', status: 'up', tagged_vlans: '[2]' } })
     const b = await prisma.port.create({ data: { id: randomUUID(), switch_id: other.id, unit: 1, index: 1, type: 'rj45', status: 'up', tagged_vlans: '[3]' } })
-    const remote = await lagGroupRepository.create(s2.id, { name: 'remote', port_ids: [(await prisma.port.create({ data: { id: randomUUID(), switch_id: s2.id, unit: 1, index: 1, type: 'rj45', status: 'up', tagged_vlans: '[]' } })).id, (await prisma.port.create({ data: { id: randomUUID(), switch_id: s2.id, unit: 1, index: 2, type: 'rj45', status: 'up', tagged_vlans: '[]' } })).id], remote_device_id: s1.id })
+    await lagGroupRepository.create(s2.id, { name: 'remote', port_ids: [(await prisma.port.create({ data: { id: randomUUID(), switch_id: s2.id, unit: 1, index: 1, type: 'rj45', status: 'up', tagged_vlans: '[]' } })).id, (await prisma.port.create({ data: { id: randomUUID(), switch_id: s2.id, unit: 1, index: 2, type: 'rj45', status: 'up', tagged_vlans: '[]' } })).id], remote_device_id: s1.id })
     const local = await lagGroupRepository.create(s1.id, { name: 'local', port_ids: [a.id, a2.id], remote_device_id: s2.id })
     await prisma.port.update({ where: { id: a.id }, data: { connected_port_id: b.id, connected_device_id: s2.id } })
     await prisma.port.update({ where: { id: b.id }, data: { connected_port_id: a.id, connected_device_id: s1.id } })

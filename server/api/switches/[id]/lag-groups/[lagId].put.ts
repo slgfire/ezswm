@@ -1,5 +1,4 @@
 import { lagGroupRepository } from '../../../../repositories/lagGroupRepository'
-import { switchRepository } from '../../../../repositories/switchRepository'
 import { activityRepository } from '../../../../repositories/activityRepository'
 import { updateLagGroupSchema } from '../../../../validators/lagGroupSchemas'
 import { resolveSwitchParam } from '../../../../utils/resolveSwitchParam'
