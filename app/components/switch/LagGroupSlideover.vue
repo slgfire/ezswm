@@ -23,23 +23,28 @@
               color="info"
               variant="soft"
               size="sm"
-              class="cursor-pointer"
-              @click="removePort(portId)"
+              class="gap-1"
             >
               {{ getPortLabel(portId) }}
-              <UIcon name="i-heroicons-x-mark" class="ml-0.5 h-3 w-3" />
+              <button type="button" :aria-label="$t('lag.removePort', { port: getPortLabel(portId) })" @click="removePortFromSelection(portId)">
+                <UIcon name="i-heroicons-x-mark" class="ml-0.5 h-3 w-3" />
+              </button>
             </UBadge>
             <span v-if="form.port_ids.length === 0" class="text-sm text-gray-400">
               {{ $t('lag.noPortsSelected') }}
             </span>
           </div>
           <USelectMenu
-            :search-input="{ placeholder: $t('switches.ports.selectPort') }"
+            v-model:open="localPortMenuOpen"
+            v-model="form.port_ids"
+            multiple
+            :search-input="{ placeholder: $t('lag.searchPorts') }"
             :items="availableLocalPortOptions"
             :placeholder="$t('switches.ports.selectPort')"
             by="value"
+            value-key="value"
             class="mt-2 w-full"
-            @update:model-value="addPort"
+            @update:model-value="onLocalPortsChange"
           />
         </UFormField>
 
@@ -205,6 +210,8 @@ import type { Port } from '~~/types/port'
 import { suggestLagCopyName } from '~/utils/lagCopyName'
 import { buildLagSaveRequest, executeLagSaveRequest, saveLagLocally, submitLagSequence } from '~/utils/lagSubmit'
 import { resolvePortLabel } from '~/utils/ports'
+import { buildLagPortOptions, removeLagPort } from '~/utils/lagPortOptions'
+import { onLocalPortsChange as updateLocalPorts, removePortFromSelection as removeSelectedPort } from '~/utils/lagPortSelection'
 
 const props = defineProps<{
   switchId: string
@@ -231,6 +238,7 @@ const lagFormRef = ref<{ submit: () => void } | null>(null)
 const editingLag = ref<LAGGroup | null>(null)
 const isDuplicate = ref(false)
 const isEdit = computed(() => !!editingLag.value)
+const localPortMenuOpen = ref(false)
 
 const form = reactive({
   name: '',
@@ -300,18 +308,22 @@ function getPortLabel(portId: string): string {
   return resolvePortLabel(props.ports, portId)
 }
 
-const availableLocalPortOptions = computed(() => props.ports
-  .filter(port => !form.port_ids.includes(port.id) && !props.existingLags.some(lag => lag.id !== editingLag.value?.id && lag.port_ids.includes(port.id)))
-  .map(port => ({ label: resolvePortLabel(props.ports, port.id), value: port.id })))
+const availableLocalPortOptions = computed(() => buildLagPortOptions(
+  props.ports.filter(port => form.port_ids.includes(port.id)),
+  props.ports.filter(port => !props.existingLags.some(lag => lag.id !== editingLag.value?.id && lag.port_ids.includes(port.id)))
+))
 
-function addPort(option: { value: string } | undefined) {
-  if (!option || form.port_ids.includes(option.value)) return
-  form.port_ids.push(option.value)
+function onLocalPortsChange(portIds: string[]) {
+  updateLocalPorts(form, localPortMenuOpen, portIds)
 }
 
 function removePort(portId: string) {
-  form.port_ids = form.port_ids.filter(id => id !== portId)
+  form.port_ids = removeLagPort(form.port_ids, portId)
   delete portMapping[portId]
+}
+
+function removePortFromSelection(portId: string) {
+  removeSelectedPort(form, portMapping, localPortMenuOpen, portId)
 }
 
 function validate(state: { name?: string; port_ids: string[] }) {

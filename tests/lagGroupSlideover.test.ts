@@ -1,8 +1,32 @@
 import { describe, expect, it } from 'vitest'
 import { applyVlanBeforeSuccess, buildLagSaveRequest, executeLagSaveRequest, saveLagLocally, submitLagSequence } from '../app/utils/lagSubmit'
 import { routeLagMemberRemoval } from '../app/utils/lagMemberRemoval'
+import { buildLagPortOptions } from '../app/utils/lagPortOptions'
+import { onLocalPortsChange, removePortFromSelection } from '../app/utils/lagPortSelection'
 
 describe('LagGroupSlideover quality regressions', () => {
+  const port = (id: string, lag_group_id?: string) => ({ id, unit: 1, index: 1, type: 'rj45' as const, status: 'down' as const, tagged_vlans: [], label: id, lag_group_id })
+
+  it('builds local port options with current members first and excludes other LAGs', () => {
+    expect(buildLagPortOptions([port('member')], [port('member'), port('free'), port('other', 'other-lag')])).toEqual([
+      { label: 'member', value: 'member' }, { label: 'free', value: 'free' }
+    ])
+  })
+
+  it('keeps the controlled menu open after selection and removal', () => {
+    const form = { port_ids: ['a', 'b'] }
+    const menu = { value: false }
+    const mapping: Record<string, unknown> = { a: 'remote-a' }
+    onLocalPortsChange(form, menu, ['a', 'b', 'c'])
+    expect(form.port_ids).toEqual(['a', 'b', 'c'])
+    expect(menu.value).toBe(true)
+    menu.value = false
+    removePortFromSelection(form, mapping, menu, 'a')
+    expect(form.port_ids).toEqual(['b', 'c'])
+    expect(mapping).toEqual({})
+    expect(menu.value).toBe(true)
+    expect('Remove port b').toContain('port b')
+  })
   it('routes remote member removal through the edit sync flow', () => {
     const calls: string[] = []
     const lag = { id: 'lag', name: 'LAG', switch_id: 'local', port_ids: ['a', 'b'], remote_device_id: 'remote' }

@@ -808,6 +808,8 @@
     "editDescription": "Modify LAG group properties",
     "deleteConfirm": "Delete LAG \"{name}\"?",
     "portsWillBeReleased": "The following ports will be released",
+    "searchPorts": "Search ports...",
+    "removePort": "Remove port {port}",
     "showAll": "Show all ({n})",
     "portCount": "{n} port | {n} ports",
     "validation": {
