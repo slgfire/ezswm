@@ -40,12 +40,16 @@
             multiple
             :search-input="{ placeholder: $t('lag.searchPorts') }"
             :items="availableLocalPortOptions"
-            :placeholder="$t('switches.ports.selectPort')"
+             :placeholder="form.port_ids.length ? undefined : $t('switches.ports.selectPort')"
             by="value"
             value-key="value"
             class="mt-2 w-full"
-            @update:model-value="onLocalPortsChange"
-          />
+             @update:model-value="onLocalPortsChange"
+           >
+              <template v-if="form.port_ids.length" #default>
+                 <span v-if="form.port_ids.length">{{ selectedPortsTrigger(form.port_ids, $t, value => value) }}</span>
+              </template>
+           </USelectMenu>
         </UFormField>
 
         <USeparator />
@@ -211,6 +215,7 @@ import { suggestLagCopyName } from '~/utils/lagCopyName'
 import { buildLagSaveRequest, executeLagSaveRequest, saveLagLocally, submitLagSequence } from '~/utils/lagSubmit'
 import { resolvePortLabel } from '~/utils/ports'
 import { buildLagPortOptions, removeLagPort } from '~/utils/lagPortOptions'
+import { selectedPortsTrigger } from '~/utils/lagSelectedPortsLabel'
 import { onLocalPortsChange as updateLocalPorts, removePortFromSelection as removeSelectedPort } from '~/utils/lagPortSelection'
 
 const props = defineProps<{
@@ -309,8 +314,9 @@ function getPortLabel(portId: string): string {
 }
 
 const availableLocalPortOptions = computed(() => buildLagPortOptions(
-  props.ports.filter(port => form.port_ids.includes(port.id)),
-  props.ports.filter(port => !props.existingLags.some(lag => lag.id !== editingLag.value?.id && lag.port_ids.includes(port.id)))
+  form.port_ids,
+  props.ports.filter(port => !props.existingLags.some(lag => lag.id !== editingLag.value?.id && lag.port_ids.includes(port.id))),
+  editingLag.value?.id
 ))
 
 function onLocalPortsChange(portIds: string[]) {

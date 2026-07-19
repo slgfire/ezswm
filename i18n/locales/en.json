@@ -804,6 +804,7 @@
     "remoteDevicePlaceholder": "e.g. sw-core-01",
     "removeFromLag": "Remove from LAG",
     "noPortsSelected": "No ports selected",
+    "selectedPorts": "{count} selected",
     "createDescription": "Group selected ports into a Link Aggregation",
     "editDescription": "Modify LAG group properties",
     "deleteConfirm": "Delete LAG \"{name}\"?",

@@ -3,13 +3,36 @@ import { applyVlanBeforeSuccess, buildLagSaveRequest, executeLagSaveRequest, sav
 import { routeLagMemberRemoval } from '../app/utils/lagMemberRemoval'
 import { buildLagPortOptions } from '../app/utils/lagPortOptions'
 import { onLocalPortsChange, removePortFromSelection } from '../app/utils/lagPortSelection'
+import { selectedPortsLabel, selectedPortsTrigger } from '../app/utils/lagSelectedPortsLabel'
 
 describe('LagGroupSlideover quality regressions', () => {
   const port = (id: string, lag_group_id?: string) => ({ id, unit: 1, index: 1, type: 'rj45' as const, status: 'down' as const, tagged_vlans: [], label: id, lag_group_id })
 
-  it('builds local port options with current members first and excludes other LAGs', () => {
-    expect(buildLagPortOptions([port('member')], [port('member'), port('free'), port('other', 'other-lag')])).toEqual([
-      { label: 'member', value: 'member' }, { label: 'free', value: 'free' }
+  it('renders the localized selected-port count in the select trigger', () => {
+    expect(selectedPortsLabel(2, (key, params) => `${key}:${params.count}`)).toBe('lag.selectedPorts:2')
+  })
+
+  it('renders the localized count through the USelectMenu default-slot trigger wiring', () => {
+    const rendered = selectedPortsTrigger(['port-a', 'port-b'], (key, params) => `${key}:${params.count}`, value => `<button data-slot="default">${value}</button>`)
+    expect(rendered).toBe('<button data-slot="default">lag.selectedPorts:2</button>')
+    expect(rendered).not.toBe('<button data-slot="default"></button>')
+  })
+
+  it('leaves the default slot empty when no ports are selected', () => {
+    expect(selectedPortsTrigger([], (key, params) => `${key}:${params.count}`, value => `<button data-slot="default">${value}</button>`)).toBe('')
+    expect(selectedPortsTrigger(['port-a'], (key, params) => `${key}:${params.count}`, value => `<button data-slot="default">${value}</button>`)).toBe('<button data-slot="default">lag.selectedPorts:1</button>')
+  })
+
+  it('shows only free local ports and hides selected and other-LAG ports', () => {
+    expect(buildLagPortOptions(['member'], [port('member'), port('free'), port('other', 'other-lag')])).toEqual([
+      { label: 'free', value: 'free' }
+    ])
+  })
+
+  it('shows a removed original member again while excluding a foreign LAG member', () => {
+    expect(buildLagPortOptions([], [port('removed', 'current-lag'), port('foreign', 'other-lag'), port('free')], 'current-lag')).toEqual([
+      { label: 'removed', value: 'removed' },
+      { label: 'free', value: 'free' }
     ])
   })
 
@@ -25,6 +48,7 @@ describe('LagGroupSlideover quality regressions', () => {
     expect(form.port_ids).toEqual(['b', 'c'])
     expect(mapping).toEqual({})
     expect(menu.value).toBe(true)
+    expect(buildLagPortOptions(form.port_ids, [port('a'), port('b'), port('c')])).toEqual([{ label: 'a', value: 'a' }])
     expect('Remove port b').toContain('port b')
   })
   it('routes remote member removal through the edit sync flow', () => {
