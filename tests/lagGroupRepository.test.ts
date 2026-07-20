@@ -25,9 +25,9 @@ describe('lagGroupRepository integrity', () => {
 
   beforeEach(() => resetDb())
 
-  async function port(switchId: string) {
+  async function port(switchId: string, type: 'rj45' | 'console' | 'management' = 'rj45') {
     return prisma.port.create({
-      data: { id: randomUUID(), switch_id: switchId, unit: 1, index: 1, type: 'rj45', status: 'up', tagged_vlans: '[]' }
+      data: { id: randomUUID(), switch_id: switchId, unit: 1, index: 1, type, status: 'up', tagged_vlans: '[]' }
     })
   }
 
@@ -92,6 +92,38 @@ describe('lagGroupRepository integrity', () => {
   it.each([[[]], [['p1']], [['p1', 'p1']]])('rejects invalid member sets', async (port_ids) => {
     const sw = await seedSwitch(prisma)
     await expect(lagGroupRepository.create(sw.id, { name: 'lag', port_ids })).rejects.toMatchObject({ statusCode: 400 })
+  })
+
+  it.each(['console', 'management'] as const)('rejects ineligible %s ports on create without mutation', async (type) => {
+    const sw = await seedSwitch(prisma); const data = [await port(sw.id, type), await port(sw.id)]
+    const before = await snapshot()
+    await expect(lagGroupRepository.create(sw.id, { name: 'lag', port_ids: data.map(p => p.id) })).rejects.toMatchObject({ statusCode: 400 })
+    expect(await snapshot()).toEqual(before)
+  })
+
+  it.each(['console', 'management'] as const)('rejects ineligible %s ports on update without mutation', async (type) => {
+    const sw = await seedSwitch(prisma); const members = [await port(sw.id), await port(sw.id)]; const ineligible = await port(sw.id, type)
+    const lag = await lagGroupRepository.create(sw.id, { name: 'lag', port_ids: members.map(p => p.id) })
+    const before = await snapshot()
+    await expect(lagGroupRepository.update(lag.id, { port_ids: [members[0]!.id, ineligible.id] })).rejects.toMatchObject({ statusCode: 400 })
+    expect(await snapshot()).toEqual(before)
+  })
+
+  it.each(['console', 'management'] as const)('rejects ineligible remote %s ports atomically', async (type) => {
+    const local = await seedSwitch(prisma); const remote = await seedSwitch(prisma)
+    const lp = [await port(local.id), await port(local.id)]; const rp = [await port(remote.id, type), await port(remote.id)]
+    const before = await snapshot()
+    await expect(lagGroupRepository.create(local.id, { name: 'lag', port_ids: lp.map(p => p.id), remote_device_id: remote.id, sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'access', access_vlan: null, native_vlan: null, tagged_vlans: [] } } as unknown as never)).rejects.toMatchObject({ statusCode: 400 })
+    expect(await snapshot()).toEqual(before)
+  })
+
+  it.each(['console', 'management'] as const)('rejects ineligible remote %s ports on update atomically', async (type) => {
+    const local = await seedSwitch(prisma); const remote = await seedSwitch(prisma)
+    const lp = [await port(local.id), await port(local.id)]; const rp = [await port(remote.id), await port(remote.id, type)]
+    const lag = await lagGroupRepository.create(local.id, { name: 'lag', port_ids: lp.map(p => p.id), remote_device_id: remote.id })
+    const before = await snapshot()
+    await expect(lagGroupRepository.update(lag.id, { sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'access', access_vlan: null, native_vlan: null, tagged_vlans: [] } } as unknown as never)).rejects.toMatchObject({ statusCode: 400 })
+    expect(await snapshot()).toEqual(before)
   })
 
   it('rejects whitespace-only names', async () => {

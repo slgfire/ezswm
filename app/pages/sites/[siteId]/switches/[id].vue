@@ -107,7 +107,7 @@
             variant="soft"
             color="info"
             :disabled="!canCreateLag.allowed"
-            @click="lagSlideoverRef?.openCreate(selectedPorts)"
+            @click="lagSlideoverRef?.openCreate(selectedLagPortIds)"
           >
             {{ $t('lag.create') }}
           </UButton>
@@ -401,6 +401,7 @@ v-model="editForm.role"
 
 <script setup lang="ts">
 import type { Port } from '~~/types/port'
+import { getLagEligibleSelectedPortIds } from '~/utils/lagPortOptions'
 import type { LAGGroup } from '~~/types/lagGroup'
 import { routeLagMemberRemoval } from '~/utils/lagMemberRemoval'
 import type { ActivityEntry } from '~~/types/activity'
@@ -457,6 +458,7 @@ const secondaryTabs = computed(() => [
 ])
 
 const selectedPorts = ref<string[]>([])
+const selectedLagPortIds = computed(() => getLagEligibleSelectedPortIds(selectedPorts.value, item.value?.ports || []))
 const bulkEditorRef = ref<{ submit: () => void; open: () => void } | null>(null)
 const showPortPanel = ref(false)
 const selectedPort = ref<Port | null>(null)
@@ -472,8 +474,8 @@ const portStats = computed(() => {
 })
 
 const canCreateLag = computed(() => {
-  if (selectedPorts.value.length < 2) return { allowed: false, reason: t('lag.validation.minPorts') }
-  for (const portId of selectedPorts.value) {
+  if (selectedLagPortIds.value.length < 2) return { allowed: false, reason: t('lag.validation.minPorts') }
+  for (const portId of selectedLagPortIds.value) {
     const existingLag = lagByPortId.value.get(portId)
     if (existingLag) {
       const port = item.value?.ports?.find((p) => p.id === portId)

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { prisma } from '../db/client'
 import type { LAGGroup } from '../../types/lagGroup'
+import { LAG_ELIGIBLE_PORT_TYPES } from '../../types/port'
 
 interface LagRow {
   id: string
@@ -54,13 +55,13 @@ export const lagGroupRepository = {
     // Accept either a UUID or a globally-unique slug (the detail page passes the
     // route slug). Resolve to the real PK before any `where: { id }` use.
     let sw = await prisma.switch.findUnique({
-      where: { id: idOrSlug },
-      include: { ports: { select: { id: true, lag_group_id: true } } }
+       where: { id: idOrSlug },
+       include: { ports: { select: { id: true, lag_group_id: true, type: true } } }
     })
     if (!sw) {
       const matches = await prisma.switch.findMany({
         where: { slug: idOrSlug },
-        include: { ports: { select: { id: true, lag_group_id: true } } }
+         include: { ports: { select: { id: true, lag_group_id: true, type: true } } }
       })
       if (matches.length === 1) sw = matches[0]!
     }
@@ -87,15 +88,17 @@ export const lagGroupRepository = {
       if (duplicate) {
         throw createError({ statusCode: 409, message: `LAG group name '${normalizedName}' already exists on this switch` })
       }
-       const selected = await tx.port.findMany({ where: { id: { in: data.port_ids } }, select: { id: true, switch_id: true, lag_group_id: true, connected_port_id: true } })
-      if (selected.length !== data.port_ids.length || selected.some(p => p.switch_id !== switchId)) throw createError({ statusCode: 400, message: `Port does not belong to switch ${sw.name}` })
+        const selected = await tx.port.findMany({ where: { id: { in: data.port_ids } }, select: { id: true, switch_id: true, lag_group_id: true, connected_port_id: true, type: true } })
+       if (selected.length !== data.port_ids.length || selected.some(p => p.switch_id !== switchId)) throw createError({ statusCode: 400, message: `Port does not belong to switch ${sw.name}` })
+       if (selected.some(p => !LAG_ELIGIBLE_PORT_TYPES.includes(p.type as typeof LAG_ELIGIBLE_PORT_TYPES[number]))) throw createError({ statusCode: 400, message: 'Console and management ports cannot be LAG members' })
        if (selected.some(p => p.lag_group_id)) throw createError({ statusCode: 409, message: 'Port is already in another LAG group' })
        if (sync) {
          const localIds = new Set(sync.mappings.map(m => m.local_port_id))
          if (localIds.size !== data.port_ids.length || data.port_ids.some(id => !localIds.has(id))) throw createError({ statusCode: 409, message: 'Sync mappings must cover all local LAG members' })
        }
-       const remote = sync ? await tx.port.findMany({ where: { id: { in: sync.mappings.map(m => m.remote_port_id) } } }) : []
-       if (sync && (remote.length !== sync.mappings.length || remote.some(p => p.switch_id !== sync.remote_switch_id || p.lag_group_id || p.connected_port_id))) throw createError({ statusCode: 409, message: 'Remote ports are invalid, connected, or already in a LAG' })
+        const remote = sync ? await tx.port.findMany({ where: { id: { in: sync.mappings.map(m => m.remote_port_id) } } }) : []
+        if (sync && remote.some(p => !LAG_ELIGIBLE_PORT_TYPES.includes(p.type as typeof LAG_ELIGIBLE_PORT_TYPES[number]))) throw createError({ statusCode: 400, message: 'Console and management ports cannot be LAG members' })
+        if (sync && (remote.length !== sync.mappings.length || remote.some(p => p.switch_id !== sync.remote_switch_id || p.lag_group_id || p.connected_port_id))) throw createError({ statusCode: 409, message: 'Remote ports are invalid, connected, or already in a LAG' })
        if (selected.some(p => p.lag_group_id || false)) throw createError({ statusCode: 409, message: 'Port is already in another LAG group' })
        if (sync && selected.some(p => (p as typeof p & { connected_port_id?: string | null }).connected_port_id)) throw createError({ statusCode: 409, message: 'Local ports are already connected' })
        const created = await tx.lagGroup.create({ data: { id: newId, switch_id: switchId, name: normalizedName, remote_device: data.remote_device ?? null, remote_device_id: data.remote_device_id ?? null, description: data.description ?? null, created_at: now, updated_at: now } })
@@ -153,8 +156,9 @@ export const lagGroupRepository = {
         const mappings = sync.mappings
         if (new Set(mappings.map(m => m.local_port_id)).size !== mappings.length || new Set(mappings.map(m => m.remote_port_id)).size !== mappings.length) throw createError({ statusCode: 409, message: 'LAG port mappings must be unique' })
         if (new Set(mappings.map(m => m.local_port_id)).size !== mappings.length || new Set(mappings.map(m => m.remote_port_id)).size !== mappings.length) throw createError({ statusCode: 409, message: 'LAG port mappings must be unique' })
-        const localPorts = await tx.port.findMany({ where: { id: { in: mappings.map(m => m.local_port_id) } } })
-        const remotePorts = await tx.port.findMany({ where: { id: { in: mappings.map(m => m.remote_port_id) } } })
+         const localPorts = await tx.port.findMany({ where: { id: { in: mappings.map(m => m.local_port_id) } } })
+         const remotePorts = await tx.port.findMany({ where: { id: { in: mappings.map(m => m.remote_port_id) } } })
+         if ([...localPorts, ...remotePorts].some(p => !LAG_ELIGIBLE_PORT_TYPES.includes(p.type as typeof LAG_ELIGIBLE_PORT_TYPES[number]))) throw createError({ statusCode: 400, message: 'Console and management ports cannot be LAG members' })
         if (localPorts.length !== mappings.length || localPorts.some(p => p.switch_id !== current.switch_id) || remotePorts.length !== mappings.length || remotePorts.some(p => p.switch_id !== sync.remote_switch_id)) throw createError({ statusCode: 409, message: 'LAG ports do not belong to the expected switches' })
         if (localPorts.some(p => p.lag_group_id && p.lag_group_id !== id)) throw createError({ statusCode: 409, message: 'A mapped port belongs to another LAG group' })
         const candidates = await tx.lagGroup.findMany({ where: { switch_id: sync.remote_switch_id, remote_device_id: current.switch_id } })
@@ -225,11 +229,12 @@ export const lagGroupRepository = {
       if (data.port_ids) {
         const selectedPorts = await tx.port.findMany({
           where: { id: { in: data.port_ids } },
-          select: { id: true, switch_id: true, lag_group_id: true }
+           select: { id: true, switch_id: true, lag_group_id: true, type: true }
         })
         if (selectedPorts.length !== new Set(data.port_ids).size || selectedPorts.some(port => port.switch_id !== current.switch_id)) {
           throw createError({ statusCode: 400, message: 'Port does not belong to switch' })
         }
+        if (selectedPorts.some(port => !LAG_ELIGIBLE_PORT_TYPES.includes(port.type as typeof LAG_ELIGIBLE_PORT_TYPES[number]))) throw createError({ statusCode: 400, message: 'Console and management ports cannot be LAG members' })
         const conflictingPort = selectedPorts.find(port => port.lag_group_id && port.lag_group_id !== id)
         if (conflictingPort) {
           const lag = await tx.lagGroup.findUnique({ where: { id: conflictingPort.lag_group_id! }, select: { name: true } })

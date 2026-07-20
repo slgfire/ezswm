@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { applyVlanBeforeSuccess, buildLagSaveRequest, executeLagSaveRequest, saveLagLocally, submitLagSequence } from '../app/utils/lagSubmit'
 import { routeLagMemberRemoval } from '../app/utils/lagMemberRemoval'
-import { buildLagPortOptions } from '../app/utils/lagPortOptions'
+import { buildLagPortOptions, filterLagEligiblePorts, getLagEligibleSelectedPortIds } from '../app/utils/lagPortOptions'
 import { onLocalPortsChange, removePortFromSelection } from '../app/utils/lagPortSelection'
 import { selectedPortsLabel, selectedPortsTrigger } from '../app/utils/lagSelectedPortsLabel'
+import { buildRemoteMappingPortOptions } from '../app/composables/useRemoteConnection'
 
 describe('LagGroupSlideover quality regressions', () => {
-  const port = (id: string, lag_group_id?: string) => ({ id, unit: 1, index: 1, type: 'rj45' as const, status: 'down' as const, tagged_vlans: [], label: id, lag_group_id })
+  const port = (id: string, lag_group_id?: string, type: 'rj45' | 'console' | 'management' = 'rj45') => ({ id, unit: 1, index: 1, type, status: 'down' as const, tagged_vlans: [], label: id, lag_group_id })
 
   it('renders the localized selected-port count in the select trigger', () => {
     expect(selectedPortsLabel(2, (key, params) => `${key}:${params.count}`)).toBe('lag.selectedPorts:2')
@@ -24,9 +25,32 @@ describe('LagGroupSlideover quality regressions', () => {
   })
 
   it('shows only free local ports and hides selected and other-LAG ports', () => {
-    expect(buildLagPortOptions(['member'], [port('member'), port('free'), port('other', 'other-lag')])).toEqual([
+    expect(buildLagPortOptions(['member'], [port('member'), port('free'), port('other', 'other-lag'), port('console', undefined, 'console'), port('management', undefined, 'management')])).toEqual([
       { label: 'free', value: 'free' }
     ])
+  })
+
+  it('filters remote mapping targets to eligible ports', () => {
+    expect(filterLagEligiblePorts([port('data'), port('console', undefined, 'console'), port('management', undefined, 'management')]).map(p => p.id)).toEqual(['data'])
+  })
+
+  it('builds production remote mapping options without console or management targets', () => {
+    const options = buildRemoteMappingPortOptions([
+      port('rj45'),
+      port('console', undefined, 'console'),
+      port('management', undefined, 'management')
+    ], () => false)
+    expect(options.map(option => option.value)).toEqual(['', 'rj45'])
+  })
+
+  it('filters grid preselection without dropping normal Ethernet ports', () => {
+    expect(filterLagEligiblePorts([port('rj45'), port('console', undefined, 'console'), port('management', undefined, 'management')]).map(p => p.id)).toEqual(['rj45'])
+  })
+
+  it('requires two eligible selected ports for Create LAG', () => {
+    expect(getLagEligibleSelectedPortIds(['console', 'management'], [port('console', undefined, 'console'), port('management', undefined, 'management')])).toEqual([])
+    expect(getLagEligibleSelectedPortIds(['data', 'console'], [port('data'), port('console', undefined, 'console')])).toEqual(['data'])
+    expect(getLagEligibleSelectedPortIds(['a', 'b'], [port('a'), port('b')])).toEqual(['a', 'b'])
   })
 
   it('shows a removed original member again while excluding a foreign LAG member', () => {
