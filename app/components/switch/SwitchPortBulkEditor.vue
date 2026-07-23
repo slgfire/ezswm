@@ -5,8 +5,8 @@
       <div class="space-y-4">
         <p class="text-xs text-gray-400">{{ $t('switches.ports.bulkEditHint', { count: selectedPorts.length }) }}</p>
         <UFormField :label="$t('switches.ports.copySource')">
-          <USelect v-model="copySourceId" :items="sourceOptions" :placeholder="$t('switches.ports.copySourcePlaceholder')" class="w-full" />
-          <p class="mt-1 text-xs text-amber-400">{{ $t('switches.ports.copyWarning') }}</p>
+          <USelect v-model="copySourceId" :items="sourceOptionsWithClear" :placeholder="$t('switches.ports.copySourcePlaceholder')" class="w-full" />
+          <p class="mt-1 text-xs text-amber-400">{{ $t('switches.ports.copyPrefillHint') }}</p>
         </UFormField>
 
         <UFormField :label="$t('common.status')">
@@ -17,12 +17,10 @@
           <USelect v-model="form.speed" :items="speedOptions" :placeholder="$t('common.noChange')" class="w-full" />
         </UFormField>
 
-        <!-- Port Mode -->
         <UFormField :label="$t('switches.ports.portMode')">
           <USelect v-model="form.port_mode" :items="portModeOptions" :placeholder="$t('common.noChange')" class="w-full" />
         </UFormField>
 
-        <!-- Access VLAN -->
         <template v-if="form.port_mode === 'access' || form.port_mode === ''">
           <UFormField :label="$t('switches.ports.accessVlan')">
             <VlanDropdown v-if="allVlans.length" v-model="form.access_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" />
@@ -30,7 +28,6 @@
           </UFormField>
         </template>
 
-        <!-- Trunk: Native + Tagged -->
         <template v-if="form.port_mode === 'trunk' || form.port_mode === ''">
           <UFormField :label="$t('switches.ports.nativeVlan')">
             <VlanDropdown v-if="allVlans.length" v-model="form.native_vlan" :vlans="allVlans" :configured-vlans="configuredVlans" />
@@ -52,8 +49,20 @@
           <UInput v-model="form.description" :placeholder="$t('common.noChange')" class="w-full" />
         </UFormField>
 
+        <UFormField :label="$t('templates.poe')">
+          <USelect v-model="form.poe_selection" :items="bulkPoeOptions" class="w-full" />
+        </UFormField>
+
         <UFormField :label="$t('helperUsage.label')">
           <USelect v-model="form.helper_usage" :items="bulkHelperUsageOptions" class="w-full" />
+        </UFormField>
+
+        <UFormField :label="$t('helperUsage.helperLabel')">
+          <UInput v-model="form.helper_label" :placeholder="$t('common.noChange')" class="w-full" />
+        </UFormField>
+
+        <UFormField :label="$t('helperUsage.showInHelperList')">
+          <USelect v-model="form.show_in_helper_list" :items="bulkShowInHelperOptions" class="w-full" />
         </UFormField>
       </div>
     </template>
@@ -61,7 +70,7 @@
     <template #footer>
       <div class="flex items-center justify-between">
         <UButton variant="ghost" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
-        <UButton @click="apply">{{ copySourceId ? $t('switches.ports.copyToPorts', { count: targetPortIds.length }) : $t('switches.ports.applyToPorts', { count: selectedPorts.length }) }}</UButton>
+        <UButton @click="apply">{{ $t('switches.ports.applyToPorts', { count: selectedPorts.length }) }}</UButton>
       </div>
     </template>
   </USlideover>
@@ -70,8 +79,8 @@
 <script setup lang="ts">
 import type { VLAN } from '~~/types/vlan'
 import type { Port } from '~~/types/port'
-import { buildCopyUpdates, completeLagId } from '~/utils/lagBulk'
-import { safeCopyTargetIds } from '~/utils/lagCopyTargets'
+import { buildBulkSourceOptions, buildBulkUpdates, buildCopyPrefill, completeLagId } from '~/utils/lagBulk'
+import { hasLagTargets } from '~/utils/lagCopyTargets'
 
 const props = defineProps<{
   switchId: string
@@ -92,10 +101,16 @@ const siteParams = computed(() => route.params.siteId && route.params.siteId !==
 const isOpen = ref(false)
 const allVlans = ref<VLAN[]>([])
 const selectedTaggedVlans = ref<number[]>([])
-const copySourceId = ref('')
-const sourceOptions = computed(() => props.ports.filter(p => props.selectedPorts.includes(p.id)).map(p => ({ label: p.label || p.id, value: p.id })))
-const targetPortIds = computed(() => props.selectedPorts.filter(id => id !== copySourceId.value))
-
+const CLEAR_COPY_SOURCE = '_no_source' as const
+const copySourceId = ref(CLEAR_COPY_SOURCE)
+const sourceOptions = computed(() => buildBulkSourceOptions(props.ports))
+const sourceOptionsWithClear = computed(() => [
+  { label: '—', value: CLEAR_COPY_SOURCE },
+  ...sourceOptions.value
+])
+const hasSourcePrefill = ref(false)
+const explicitPrefillFields = ref(new Set<string>())
+const resetSourceSelectionSilently = ref(false)
 
 async function fetchVlans() {
   try {
@@ -138,6 +153,24 @@ const bulkHelperUsageOptions = computed(() => [
   { value: 'uplink', label: t('helperUsage.uplink') },
 ])
 
+const bulkPoeOptions = computed(() => [
+  { value: '_no_change', label: '—' },
+  { value: '_clear', label: t('templates.poeNone') },
+  { value: 'disabled', label: t('templates.poeDisabled') },
+  { value: '802.3af', label: '802.3af (15.4W)' },
+  { value: '802.3at', label: '802.3at (30W)' },
+  { value: '802.3bt-type3', label: '802.3bt Type 3 (60W)' },
+  { value: '802.3bt-type4', label: '802.3bt Type 4 (100W)' },
+  { value: 'passive-24v', label: 'Passive 24V' },
+  { value: 'passive-48v', label: 'Passive 48V' }
+])
+
+const bulkShowInHelperOptions = computed(() => [
+  { value: '_no_change', label: '—' },
+  { value: 'true', label: t('common.yes') },
+  { value: 'false', label: t('common.no') }
+])
+
 const form = reactive({
   status: '',
   speed: '',
@@ -146,7 +179,10 @@ const form = reactive({
   native_vlan: null as number | null,
   tagged_vlans_str: '',
   description: '',
-  helper_usage: '_no_change'
+  helper_usage: '_no_change',
+  helper_label: '',
+  show_in_helper_list: '_no_change',
+  poe_selection: '_no_change'
 })
 
 const { takeSnapshot, requestClose, onOpenChange } = useSlideoverGuard(
@@ -158,7 +194,9 @@ function open() {
   isOpen.value = true
   takeSnapshot()
   fetchVlans()
-  copySourceId.value = ''
+  copySourceId.value = CLEAR_COPY_SOURCE
+  hasSourcePrefill.value = false
+  explicitPrefillFields.value = new Set()
 }
 
 defineExpose({ open })
@@ -169,62 +207,29 @@ function close() {
 }
 
 async function apply() {
-  if (copySourceId.value) {
-    const source = props.ports.find(p => p.id === copySourceId.value)
-     const safeTargets = source ? safeCopyTargetIds(source.id, props.selectedPorts, props.ports) : null
-     if (!source || !safeTargets?.length) {
-       toast.add({ title: t('switches.ports.copyLagBlocked'), color: 'error' })
-       return
-     }
-     if (!(await confirm({
-       title: t('switches.ports.copyConfirmTitle'),
-       message: t('switches.ports.copyWarning')
-     }))) return
-    const requestPortIds = safeTargets
-    try {
-      await $fetch(`/api/switches/${props.switchId}/ports/bulk`, { method: 'PUT', query: siteParams.value, body: {
-          port_ids: requestPortIds,
-          ...(completeLagId(requestPortIds, props.ports) ? { lag_group_id: completeLagId(requestPortIds, props.ports) } : {}),
-         expected_updated_at: props.switchUpdatedAt || undefined,
-          updates: buildCopyUpdates(source)
-       } })
-      toast.add({ title: t('switches.ports.updatedPorts', { count: targetPortIds.value.length }), color: 'success' })
-      emit('saved'); close()
-     } catch (e: unknown) { toast.add({ title: (e as { data?: { message?: string } }).data?.message || t('switches.ports.updateFailed'), color: 'error' }) }
+  if (hasSourcePrefill.value && hasLagTargets(props.selectedPorts, props.ports)) {
+    toast.add({ title: t('switches.ports.copyLagBlocked'), color: 'error' })
     return
   }
-  const updates: Record<string, string | number | number[] | null> = {}
-  if (form.status) updates.status = form.status
-  if (form.speed) updates.speed = form.speed
-  if (form.port_mode) {
-    updates.port_mode = form.port_mode
-    if (form.port_mode === 'access') {
-      if (form.access_vlan) updates.access_vlan = form.access_vlan
-      updates.native_vlan = null
-      updates.tagged_vlans = []
-    } else {
-      updates.access_vlan = null
-      if (form.native_vlan) updates.native_vlan = form.native_vlan
-      if (selectedTaggedVlans.value.length) {
-        updates.tagged_vlans = [...selectedTaggedVlans.value]
-      } else if (form.tagged_vlans_str) {
-        updates.tagged_vlans = form.tagged_vlans_str.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v))
-      }
-    }
-  } else {
-    // No port_mode change — still allow individual VLAN updates
-    if (form.access_vlan) updates.access_vlan = form.access_vlan
-    if (form.native_vlan) updates.native_vlan = form.native_vlan
-    if (selectedTaggedVlans.value.length) {
-      updates.tagged_vlans = [...selectedTaggedVlans.value]
-    } else if (form.tagged_vlans_str) {
-      updates.tagged_vlans = form.tagged_vlans_str.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v))
-    }
+
+  if (hasSourcePrefill.value && !(await confirm({
+    title: t('switches.ports.copyConfirmTitle'),
+    message: t('switches.ports.copyWarning')
+  }))) {
+    return
   }
-  if (form.description) updates.description = form.description
-  if (form.helper_usage !== '_no_change') {
-    updates.helper_usage = form.helper_usage === '_automatic' ? null : form.helper_usage
-  }
+
+  const taggedFromInput = form.tagged_vlans_str
+    ? form.tagged_vlans_str.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v))
+    : []
+
+  const updates = buildBulkUpdates({
+    form,
+    selectedTaggedVlans: selectedTaggedVlans.value,
+    explicitPrefillFields: explicitPrefillFields.value,
+    taggedFromInput,
+    poeWatts: POE_WATTS
+  })
 
   try {
     await $fetch(`/api/switches/${props.switchId}/ports/bulk`, {
@@ -233,12 +238,12 @@ async function apply() {
       body: {
         port_ids: props.selectedPorts,
         ...(completeLagId(props.selectedPorts, props.ports) ? { lag_group_id: completeLagId(props.selectedPorts, props.ports) } : {}),
+        apply_after_copy_prefill: hasSourcePrefill.value,
         updates,
         expected_updated_at: props.switchUpdatedAt || undefined
       }
     })
     toast.add({ title: t('switches.ports.updatedPorts', { count: props.selectedPorts.length }), color: 'success' })
-    // Reset form
     form.status = ''
     form.speed = ''
     form.port_mode = ''
@@ -247,12 +252,71 @@ async function apply() {
     form.tagged_vlans_str = ''
     form.description = ''
     form.helper_usage = '_no_change'
+    form.helper_label = ''
+    form.show_in_helper_list = '_no_change'
+    form.poe_selection = '_no_change'
     selectedTaggedVlans.value = []
+    hasSourcePrefill.value = false
+    explicitPrefillFields.value = new Set()
     emit('saved')
     close()
   } catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-     toast.add({ title: err.data?.message || t('switches.ports.updateFailed'), color: 'error' })
+    toast.add({ title: err.data?.message || t('switches.ports.updateFailed'), color: 'error' })
   }
 }
+
+const POE_WATTS: Record<string, number> = {
+  disabled: 0,
+  '802.3af': 15.4,
+  '802.3at': 30,
+  '802.3bt-type3': 60,
+  '802.3bt-type4': 100,
+  'passive-24v': 24,
+  'passive-48v': 48
+}
+
+watch(copySourceId, (value) => {
+  if (!value || value === CLEAR_COPY_SOURCE) {
+    if (resetSourceSelectionSilently.value) {
+      resetSourceSelectionSilently.value = false
+      return
+    }
+    hasSourcePrefill.value = false
+    explicitPrefillFields.value = new Set()
+    return
+  }
+  const source = props.ports.find(port => port.id === value)
+  if (!source) {
+    copySourceId.value = CLEAR_COPY_SOURCE
+    return
+  }
+  const prefill = buildCopyPrefill(source)
+  form.status = prefill.status
+  form.speed = prefill.speed ?? ''
+  form.port_mode = prefill.port_mode ?? ''
+  form.access_vlan = prefill.access_vlan
+  form.native_vlan = prefill.native_vlan
+  selectedTaggedVlans.value = [...prefill.tagged_vlans]
+  form.tagged_vlans_str = prefill.tagged_vlans.join(',')
+  form.helper_usage = prefill.helper_usage ?? '_automatic'
+  form.helper_label = prefill.helper_label ?? ''
+  form.show_in_helper_list = prefill.show_in_helper_list ? 'true' : 'false'
+  form.poe_selection = prefill.poe_selection ?? '_clear'
+  hasSourcePrefill.value = true
+  explicitPrefillFields.value = new Set([
+    'status',
+    'speed',
+    'port_mode',
+    'access_vlan',
+    'native_vlan',
+    'tagged_vlans',
+    'helper_usage',
+    'helper_label',
+    'show_in_helper_list',
+    'poe'
+  ])
+  resetSourceSelectionSilently.value = true
+  copySourceId.value = CLEAR_COPY_SOURCE
+})
 </script>

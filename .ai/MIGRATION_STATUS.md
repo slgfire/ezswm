@@ -2,10 +2,23 @@
 
 ## Latest Stage
 
-Date: 2026-07-15
-Stage: LAG and port copy/edit release
+Date: 2026-07-23
+Stage: Port configuration copy prefill flow (single + bulk)
 Status: Complete
-Version: 0.32.0
+Version: 0.33.0
+
+### Feature: source-based port configuration prefill with normal save/apply (v0.33.0)
+
+Port configuration copy now follows a prefill-first workflow:
+
+- Single-port edit adds an optional source picker in the sidepanel footer next to
+  Save. Selecting a source port on the same switch prefills the form only.
+- Bulk edit source selection now supports all switch ports (including currently
+  selected targets), prefills the bulk form, and still requires normal Apply.
+- Source selection never performs direct persistence; users review/edit first,
+  then use existing Save/Apply actions.
+- Copy contract excludes description, physical connections/allocation data, and
+  LAG membership.
 
 ### Feature: safe LAG and port configuration copy/edit (v0.32.0)
 

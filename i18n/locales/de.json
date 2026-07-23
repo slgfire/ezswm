@@ -277,6 +277,7 @@
       "selectDevice": "Gerät auswählen...",
       "copySource": "Konfiguration von Quellport kopieren",
       "copySourcePlaceholder": "Quellport auswählen",
+      "copyPrefillHint": "Die Quellauswahl füllt nur das Formular vor. Prüfen und mit Anwenden speichern.",
       "copyWarning": "Warnung: Zielkonfiguration und VLANs werden vollständig überschrieben.",
       "copyLagBlocked": "Kopieren auf LAG-Mitglieder ist nicht möglich. Wähle nur Ziele außerhalb eines LAGs.",
       "copyConfirmTitle": "Portkonfiguration kopieren",

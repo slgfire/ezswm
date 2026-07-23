@@ -277,6 +277,7 @@
       "selectDevice": "Select device...",
       "copySource": "Copy configuration from source port",
       "copySourcePlaceholder": "Select source port",
+      "copyPrefillHint": "Selecting a source pre-fills the form only. Review and click Apply to persist.",
       "copyWarning": "Warning: target configuration and VLANs will be completely overwritten.",
       "copyLagBlocked": "Copying to LAG members is not supported. Select only non-LAG targets.",
       "copyConfirmTitle": "Copy port configuration",

@@ -163,9 +163,15 @@ Click any port in the grid to open a slideover panel. From there you can configu
 - **PoE** -- override or disable PoE for this specific port (inherited from the template block by default)
 - **Description** -- port-level notes
 
+Optional source prefill is available in the port side panel footer next to **Save**. Select another port on the same switch to prefill editable configuration fields, review or adjust them, then click **Save**. Selecting a source never saves directly.
+
 ### Bulk Port Editing
 
 Select multiple ports by holding **Ctrl** (or **Cmd** on Mac) and clicking, then use the bulk edit action to apply the same VLAN, speed, or status to all selected ports at once.
+
+Bulk edit also supports source-based prefill: choose any port on the same switch (including ports that are currently selected as targets) in the source dropdown. The selection only prefills the bulk form. You can review and edit values, and changes are persisted only when you click **Apply**.
+
+Copy prefill includes status, speed, port mode, VLAN fields, PoE selection, and helper fields. It never copies descriptions, physical connections/allocation data, or LAG membership.
 
 ### Connected Device Linking
 

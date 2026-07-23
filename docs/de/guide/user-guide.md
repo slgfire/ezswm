@@ -163,9 +163,15 @@ Klicke auf einen beliebigen Port im Raster, um ein Seitenpanel zu öffnen. Dort 
 - **PoE** -- PoE für diesen spezifischen Port überschreiben oder deaktivieren (standardmäßig vom Template-Block geerbt)
 - **Beschreibung** -- Port-spezifische Notizen
 
+Optional ist im Footer des Port-Seitenpanels neben **Speichern** eine Quellport-Auswahl verfügbar. Wähle einen anderen Port desselben Switches, um editierbare Konfigurationsfelder vorzufüllen, prüfe oder passe die Werte an und speichere dann normal. Die Quellauswahl speichert niemals direkt.
+
 ### Massen-Port-Bearbeitung
 
 Wähle mehrere Ports aus, indem du **Strg** (oder **Cmd** auf Mac) gedrückt hältst und klickst, dann verwende die Massenbearbeitungsaktion, um dasselbe VLAN, dieselbe Geschwindigkeit oder denselben Status auf alle ausgewählten Ports gleichzeitig anzuwenden.
+
+Die Massenbearbeitung unterstützt ebenfalls Quell-Prefill: Im Quell-Dropdown kann jeder Port desselben Switches gewählt werden (auch Ports, die aktuell als Ziel ausgewählt sind). Die Auswahl füllt nur das Bulk-Formular vor. Du kannst die Werte prüfen und ändern; gespeichert wird erst mit **Anwenden**.
+
+Beim Prefill werden Status, Geschwindigkeit, Port-Modus, VLAN-Felder, PoE-Auswahl und Helfer-Felder übernommen. Nicht übernommen werden Beschreibung, physische Verbindungen/Zuweisungen und LAG-Mitgliedschaft.
 
 ### Verbundene Geräte verknüpfen
 

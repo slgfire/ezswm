@@ -223,6 +223,7 @@
     <SwitchPortSidePanel
       v-model="showPortPanel"
       :port="selectedPort!"
+      :ports="item?.ports || []"
       :switch-id="id"
       :configured-vlans="item?.configured_vlans || []"
       :switch-updated-at="item?.updated_at"

@@ -48,9 +48,10 @@ describe('PUT /api/switches/:id/ports/bulk LAG protection', () => {
   }
 
   async function call(switchId: string, portIds: string[], body: Record<string, unknown>) {
+    const { updates, ...rest } = body as { updates?: Record<string, unknown> }
     return bulkUpdatePorts({
       context: { params: { id: switchId }, auth: { userId: 'test-user' } },
-      query: {}, body: { port_ids: portIds, updates: { description: 'changed' }, ...body }
+      query: {}, body: { port_ids: portIds, updates: updates ?? { description: 'changed' }, ...rest }
     } as never)
   }
 
@@ -91,6 +92,47 @@ describe('PUT /api/switches/:id/ports/bulk LAG protection', () => {
     const rows = await prisma.port.findMany({ where: { switch_id: sw.id } })
     expect(rows).toHaveLength(2)
     expect(rows.every(row => row.description === 'changed' && row.lag_group_id === lagId)).toBe(true)
+  })
+
+  it('rejects apply_after_copy_prefill for LAG targets even with valid lag_group_id', async () => {
+    const { sw, lagId, ports } = await fixture([lagIdPlaceholder(), lagIdPlaceholder()])
+    await expect(call(sw.id, ports.map(port => port.id), {
+      lag_group_id: lagId,
+      apply_after_copy_prefill: true
+    })).rejects.toMatchObject({ statusCode: 409 })
+  })
+
+  it('keeps manual LAG apply behavior unchanged when apply_after_copy_prefill is false', async () => {
+    const { sw, lagId, ports } = await fixture([lagIdPlaceholder(), lagIdPlaceholder()])
+    await call(sw.id, ports.map(port => port.id), {
+      lag_group_id: lagId,
+      apply_after_copy_prefill: false
+    })
+    const rows = await prisma.port.findMany({ where: { switch_id: sw.id } })
+    expect(rows.every(row => row.description === 'changed' && row.lag_group_id === lagId)).toBe(true)
+  })
+
+  it('applies explicit VLAN clears (null and empty array) without truthiness loss', async () => {
+    const { sw, ports } = await fixture(['none'])
+    await prisma.port.update({
+      where: { id: ports[0].id },
+      data: {
+        port_mode: 'trunk',
+        native_vlan: 100,
+        tagged_vlans: JSON.stringify([100, 200])
+      }
+    })
+
+    await call(sw.id, [ports[0].id], {
+      updates: {
+        native_vlan: null,
+        tagged_vlans: []
+      }
+    })
+
+    const port = await prisma.port.findUniqueOrThrow({ where: { id: ports[0].id } })
+    expect(port.native_vlan).toBeNull()
+    expect(port.tagged_vlans).toBe('[]')
   })
 
   function lagIdPlaceholder(): string {

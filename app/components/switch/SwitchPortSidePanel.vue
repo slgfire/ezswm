@@ -188,7 +188,19 @@
     <template #footer>
       <div class="flex items-center justify-between">
         <UButton color="error" variant="soft" icon="i-heroicons-arrow-path" @click="resetPort">{{ $t('switches.ports.resetPort') }}</UButton>
-        <div class="flex gap-2">
+        <div class="flex items-center gap-2">
+          <USelectMenu
+            v-if="sourcePortOptions.length"
+            :model-value="undefined"
+            :items="sourcePortOptions"
+            by="value"
+            icon="i-heroicons-document-duplicate"
+            :search-input="false"
+            :placeholder="$t('switches.ports.copySourcePlaceholder')"
+            :aria-label="$t('switches.ports.copySource')"
+            class="w-40"
+            @update:model-value="onCopySourceSelect"
+          />
           <UButton variant="ghost" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
           <UButton @click="onSaveClick">{{ $t('common.save') }}</UButton>
         </div>
@@ -206,14 +218,18 @@ import type { IPAllocation } from '~~/types/ipAllocation'
 import type { LAGGroup } from '~~/types/lagGroup'
 import type { LayoutUnit } from '~~/types/layoutTemplate'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   port: Port | null
   switchId: string
   lagGroup?: LAGGroup
   configuredVlans?: number[]
   switchUpdatedAt?: string
   templateUnits?: LayoutUnit[]
-}>()
+  /** All ports on the current switch, used to offer a same-switch source port for the copy-config picker. */
+  ports?: Port[]
+}>(), {
+  ports: () => []
+})
 
 const emit = defineEmits<{
   saved: []
@@ -734,6 +750,35 @@ async function save() {
 function onRemoveFromLag() {
   if (!props.lagGroup || !props.port) return
   emit('remove-from-lag', props.lagGroup.id, props.port!.id)
+}
+
+// Compact footer picker: prefill the form from another same-switch port.
+// Never touches description, identity/label/position, MAC, connections/allocation or LAG.
+const sourcePortOptions = computed(() =>
+  props.ports
+    .filter(p => p.id !== props.port?.id)
+    .map(p => ({ label: p.label || `${p.unit}/${p.index}`, value: p.id }))
+)
+
+function applyCopyFromPort(sourceId: string) {
+  const source = props.ports.find(p => p.id === sourceId)
+  if (!source) return
+  form.status = source.status
+  form.speed = source.speed || ''
+  form.port_mode = source.port_mode || (source.tagged_vlans?.length ? 'trunk' : 'access')
+  form.access_vlan = source.access_vlan ?? null
+  form.native_vlan = source.native_vlan ?? null
+  form.poe_selection = source.poe?.type || ''
+  form.helper_usage = source.helper_usage || '_automatic'
+  form.helper_label = source.helper_label || ''
+  form.show_in_helper_list = source.show_in_helper_list ?? true
+  selectedTaggedVlans.value = [...(source.tagged_vlans || [])]
+  taggedVlansStr.value = (source.tagged_vlans || []).join(',')
+}
+
+function onCopySourceSelect(option: { label: string; value: string } | undefined) {
+  if (!option?.value) return
+  applyCopyFromPort(option.value)
 }
 
 async function resetPort() {

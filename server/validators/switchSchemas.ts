@@ -69,6 +69,7 @@ export const updatePortSchema = z.object({
 export const bulkUpdatePortsSchema = z.object({
   port_ids: z.array(z.string()).min(1),
   lag_group_id: z.string().min(1).optional(),
+  apply_after_copy_prefill: z.boolean().optional(),
   updates: z.object({
     status: z.enum(['up', 'down', 'disabled']).optional(),
     port_mode: z.preprocess(v => v === '' ? null : v, z.enum(['access', 'trunk']).optional().nullable()),
@@ -77,7 +78,16 @@ export const bulkUpdatePortsSchema = z.object({
     tagged_vlans: z.array(z.number().int().min(1).max(4094)).optional(),
     speed: z.preprocess(v => v === '' ? null : v, z.enum(['100M', '1G', '2.5G', '10G', '100G']).optional().nullable()),
     description: z.string().max(500).optional().nullable(),
-    helper_usage: z.enum(['participant', 'phone_passthrough', 'ap', 'printer', 'orga', 'uplink']).nullable().optional()
+    helper_usage: z.enum(['participant', 'phone_passthrough', 'ap', 'printer', 'orga', 'uplink']).nullable().optional(),
+    helper_label: z.string().max(100).nullable().optional(),
+    show_in_helper_list: z.boolean().optional(),
+    poe: z.union([
+      z.object({
+        type: z.enum(['disabled', '802.3af', '802.3at', '802.3bt-type3', '802.3bt-type4', 'passive-24v', 'passive-48v']),
+        max_watts: z.number().min(0)
+      }),
+      z.null()
+    ]).optional()
   }),
   expected_updated_at: z.string().optional()
 })
