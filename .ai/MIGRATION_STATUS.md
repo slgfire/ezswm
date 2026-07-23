@@ -5,9 +5,9 @@
 Date: 2026-07-23
 Stage: Port configuration copy prefill flow (single + bulk)
 Status: Complete
-Version: 0.33.0
+Version: 0.32.0
 
-### Feature: source-based port configuration prefill with normal save/apply (v0.33.0)
+### Feature: source-based port configuration prefill with normal save/apply (v0.32.0)
 
 Port configuration copy now follows a prefill-first workflow:
 
