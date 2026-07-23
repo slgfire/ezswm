@@ -189,18 +189,16 @@
       <div class="flex items-center justify-between">
         <UButton color="error" variant="soft" icon="i-heroicons-arrow-path" @click="resetPort">{{ $t('switches.ports.resetPort') }}</UButton>
         <div class="flex items-center gap-2">
-          <USelectMenu
-            v-if="sourcePortOptions.length"
-            :model-value="undefined"
-            :items="sourcePortOptions"
-            by="value"
-            icon="i-heroicons-document-duplicate"
-            :search-input="false"
-            :placeholder="$t('switches.ports.copySourcePlaceholder')"
-            :aria-label="$t('switches.ports.copySource')"
-            class="w-40"
-            @update:model-value="onCopySourceSelect"
-          />
+          <UDropdownMenu v-if="sourcePortOptions.length" :items="sourceMenuItems" :content="{ side: 'top', align: 'end' }">
+            <UTooltip :text="$t('switches.ports.copySource')">
+              <UButton
+                icon="i-heroicons-document-duplicate"
+                variant="ghost"
+                color="neutral"
+                :aria-label="$t('switches.ports.copySource')"
+              />
+            </UTooltip>
+          </UDropdownMenu>
           <UButton variant="ghost" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
           <UButton @click="onSaveClick">{{ $t('common.save') }}</UButton>
         </div>
@@ -217,6 +215,7 @@ import type { Network } from '~~/types/network'
 import type { IPAllocation } from '~~/types/ipAllocation'
 import type { LAGGroup } from '~~/types/lagGroup'
 import type { LayoutUnit } from '~~/types/layoutTemplate'
+import { buildSidePanelPortPutOptions } from '~/utils/sidePanelPortRequests'
 
 const props = withDefaults(defineProps<{
   port: Port | null
@@ -241,7 +240,9 @@ const { t } = useI18n()
 const toast = useToast()
 const { confirm } = useConfirm()
 const { apiFetch } = useApiFetch()
+const route = useRoute()
 const speeds = ['100M', '1G', '2.5G', '10G', '100G']
+const siteParams = computed(() => route.params.siteId && route.params.siteId !== 'all' ? { siteId: route.params.siteId as string } : undefined)
 
 const portModeOptions = computed(() => [
   { label: t('switches.ports.modeAccess'), value: 'access' },
@@ -703,7 +704,10 @@ async function save() {
     body.connected_device = null; body.connected_device_id = null; body.connected_port_id = null; body.connected_port = null
   } else { body.connected_device_id = null; body.connected_port_id = null }
   try {
-    const response = await $fetch<Record<string, unknown>>(`/api/switches/${props.switchId}/ports/${props.port!.id}`, { method: 'PUT', body })
+    const response = await $fetch<Record<string, unknown>>(
+      `/api/switches/${props.switchId}/ports/${props.port!.id}`,
+      buildSidePanelPortPutOptions(body, siteParams.value?.siteId)
+    )
 
     const vlansAdded = (response as Record<string, unknown>)?.vlans_added_to_target_switch as number[] | undefined
     if (vlansAdded?.length) {
@@ -735,7 +739,10 @@ async function save() {
       const otherPortIds = props.lagGroup!.port_ids!.filter((pid: string) => pid !== props.port!.id)
       for (const portId of otherPortIds) {
         try {
-          await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, { method: 'PUT', body: syncFields })
+          await $fetch(
+            `/api/switches/${props.switchId}/ports/${portId}`,
+            buildSidePanelPortPutOptions(syncFields, siteParams.value?.siteId)
+          )
         } catch { /* best-effort sync */ }
       }
       toast.add({ title: t('switches.ports.portUpdated') + ` (${otherPortIds.length + 1} LAG ports)`, color: 'success' })
@@ -776,10 +783,10 @@ function applyCopyFromPort(sourceId: string) {
   taggedVlansStr.value = (source.tagged_vlans || []).join(',')
 }
 
-function onCopySourceSelect(option: { label: string; value: string } | undefined) {
-  if (!option?.value) return
-  applyCopyFromPort(option.value)
-}
+// One-shot dropdown items for the icon-only copy trigger; each selection prefills via applyCopyFromPort.
+const sourceMenuItems = computed(() =>
+  sourcePortOptions.value.map(o => ({ label: o.label, onSelect: () => applyCopyFromPort(o.value) }))
+)
 
 async function resetPort() {
   const ok = await confirm({
