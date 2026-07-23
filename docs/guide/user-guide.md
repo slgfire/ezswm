@@ -163,9 +163,15 @@ Click any port in the grid to open a slideover panel. From there you can configu
 - **PoE** -- override or disable PoE for this specific port (inherited from the template block by default)
 - **Description** -- port-level notes
 
+Optional source prefill is available in the port side panel footer next to **Save**. Select another port on the same switch to prefill editable configuration fields, review or adjust them, then click **Save**. Selecting a source never saves directly.
+
 ### Bulk Port Editing
 
 Select multiple ports by holding **Ctrl** (or **Cmd** on Mac) and clicking, then use the bulk edit action to apply the same VLAN, speed, or status to all selected ports at once.
+
+Bulk edit also supports source-based prefill: choose any port on the same switch (including ports that are currently selected as targets) in the source dropdown. The selection only prefills the bulk form. You can review and edit values, and changes are persisted only when you click **Apply**.
+
+Copy prefill includes status, speed, port mode, VLAN fields, PoE selection, and helper fields. It never copies descriptions, physical connections/allocation data, or LAG membership.
 
 ### Connected Device Linking
 
@@ -281,13 +287,22 @@ For freetext remote devices, text inputs replace the dropdowns.
 
 ### Editing a LAG
 
-Click a LAG chip in the legend below the port grid to open the edit slideover. Changes to ports, remote device, or port mapping are applied to both the local and mirror LAG on save.
+Click a LAG chip in the legend below the port grid to open the edit slideover. You can edit its members, name, description, remote device, port mapping, and VLAN configuration. Changes to ports, remote device, or port mapping are applied to both the local and mirror LAG on save.
+
+### Duplicating a LAG
+
+Use **Duplicate** on a LAG to create a memberless, local-only copy. The copy does not include the remote device, remote mappings, or physical links. Add members and configure any remote connection explicitly after creating it.
+
+### Copying Port Configuration
+
+Use **Copy configuration** on a port to copy its settings to another port on the same switch. Physical links and LAG membership are never copied. When the target is a LAG, the operation is restricted to prevent LAG member conflicts.
 
 ### Deleting a LAG
 
 Click the **X** button on a LAG chip in the legend. The confirmation dialog shows:
 - Which local ports will be released
-- Whether a mirror LAG on the remote switch will also be deleted
+- The default choice to retain the remote LAG
+- An optional choice to explicitly delete the remote mirror LAG as well
 
 ### LAG Legend
 

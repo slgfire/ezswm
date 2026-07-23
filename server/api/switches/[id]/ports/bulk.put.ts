@@ -31,10 +31,24 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // A normal bulk edit must not split an existing LAG. LAG VLAN applies must
+  // explicitly identify the one LAG all targets belong to.
+  const targetPorts = sw.ports.filter(p => parsed.port_ids.includes(p.id))
+  const lagMembers = parsed.lag_group_id ? sw.ports.filter(p => p.lag_group_id === parsed.lag_group_id) : []
+  const shouldEnforceCopyLagGuard = parsed.apply_after_copy_prefill === true
+  if (shouldEnforceCopyLagGuard && targetPorts.some(p => p.lag_group_id != null)) {
+    throw createError({ statusCode: 409, statusMessage: 'All target ports must belong to the specified LAG' })
+  }
+  if (parsed.lag_group_id
+    ? targetPorts.length !== lagMembers.length || targetPorts.some(p => p.lag_group_id !== parsed.lag_group_id) || lagMembers.some(p => !parsed.port_ids.includes(p.id))
+    : targetPorts.some(p => p.lag_group_id != null)) {
+    throw createError({ statusCode: 409, statusMessage: 'All target ports must belong to the specified LAG' })
+  }
+
   // Collect all VLAN IDs from the request
   const requestedVlans: number[] = []
-  if (parsed.updates.access_vlan) requestedVlans.push(parsed.updates.access_vlan)
-  if (parsed.updates.native_vlan) requestedVlans.push(parsed.updates.native_vlan)
+  if (parsed.updates.access_vlan !== undefined && parsed.updates.access_vlan !== null) requestedVlans.push(parsed.updates.access_vlan)
+  if (parsed.updates.native_vlan !== undefined && parsed.updates.native_vlan !== null) requestedVlans.push(parsed.updates.native_vlan)
   if (parsed.updates.tagged_vlans) requestedVlans.push(...parsed.updates.tagged_vlans)
 
   // Verify all VLANs exist as site entities

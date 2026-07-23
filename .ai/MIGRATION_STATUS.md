@@ -2,19 +2,40 @@
 
 ## Latest Stage
 
-Date: 2026-07-14
-Stage: Dependency maintenance release
+Date: 2026-07-23
+Stage: Port configuration copy prefill flow (single + bulk)
 Status: Complete
-Version: 0.31.4
+Version: 0.32.0
 
-### Maintenance: refresh dependency updates and release image (v0.31.4)
+### Feature: source-based port configuration prefill with normal save/apply (v0.32.0)
 
-Merged safe dependency maintenance updates and bumped the application version so
-the release workflow publishes fresh `latest`, `0.31.4`, and `0.31` Docker image
-tags.
+Port configuration copy now follows a prefill-first workflow:
 
-- Updated Nuxt i18n, marked, and development tooling updates after CI validation.
-- Kept the nanoid major update separate for explicit review.
+- Single-port edit adds an optional source picker in the sidepanel footer next to
+  Save. Selecting a source port on the same switch prefills the form only.
+- Bulk edit source selection now supports all switch ports (including currently
+  selected targets), prefills the bulk form, and still requires normal Apply.
+- Source selection never performs direct persistence; users review/edit first,
+  then use existing Save/Apply actions.
+- Copy contract excludes description, physical connections/allocation data, and
+  LAG membership.
+
+### Feature: safe LAG and port configuration copy/edit (v0.32.0)
+
+Added safe local-only duplication and configuration-copy workflows:
+
+- LAGs can be duplicated as memberless, local-only groups without copying remote
+  devices, mappings, or links.
+- Port configuration can be copied on the same switch without copying physical
+  links or LAG membership; LAG targets are restricted to prevent conflicts.
+- LAG member and name integrity is preserved during editing and duplication.
+- One delete dialog supports retaining the remote LAG by default or explicitly
+  deleting it.
+- Remote deletion is server-side transactional, and remote mirror edits stay
+  synchronized with strict ownership and reciprocity checks. Conflicts return
+  HTTP 409 without partial mutation.
+
+Documentation and verification will be finalized by the orchestrator.
 
 ---
 

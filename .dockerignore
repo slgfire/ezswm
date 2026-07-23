@@ -1,0 +1,6 @@
+node_modules
+docs/node_modules
+.nuxt
+.output
+data
+.git

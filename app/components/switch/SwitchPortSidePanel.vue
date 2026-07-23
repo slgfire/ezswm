@@ -188,7 +188,17 @@
     <template #footer>
       <div class="flex items-center justify-between">
         <UButton color="error" variant="soft" icon="i-heroicons-arrow-path" @click="resetPort">{{ $t('switches.ports.resetPort') }}</UButton>
-        <div class="flex gap-2">
+        <div class="flex items-center gap-2">
+          <UDropdownMenu v-if="sourcePortOptions.length" :items="sourceMenuItems" :content="{ side: 'top', align: 'end' }">
+            <UTooltip :text="$t('switches.ports.copySource')">
+              <UButton
+                icon="i-heroicons-document-duplicate"
+                variant="ghost"
+                color="neutral"
+                :aria-label="$t('switches.ports.copySource')"
+              />
+            </UTooltip>
+          </UDropdownMenu>
           <UButton variant="ghost" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
           <UButton @click="onSaveClick">{{ $t('common.save') }}</UButton>
         </div>
@@ -205,15 +215,20 @@ import type { Network } from '~~/types/network'
 import type { IPAllocation } from '~~/types/ipAllocation'
 import type { LAGGroup } from '~~/types/lagGroup'
 import type { LayoutUnit } from '~~/types/layoutTemplate'
+import { buildSidePanelPortPutOptions } from '~/utils/sidePanelPortRequests'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   port: Port | null
   switchId: string
   lagGroup?: LAGGroup
   configuredVlans?: number[]
   switchUpdatedAt?: string
   templateUnits?: LayoutUnit[]
-}>()
+  /** All ports on the current switch, used to offer a same-switch source port for the copy-config picker. */
+  ports?: Port[]
+}>(), {
+  ports: () => []
+})
 
 const emit = defineEmits<{
   saved: []
@@ -225,7 +240,9 @@ const { t } = useI18n()
 const toast = useToast()
 const { confirm } = useConfirm()
 const { apiFetch } = useApiFetch()
+const route = useRoute()
 const speeds = ['100M', '1G', '2.5G', '10G', '100G']
+const siteParams = computed(() => route.params.siteId && route.params.siteId !== 'all' ? { siteId: route.params.siteId as string } : undefined)
 
 const portModeOptions = computed(() => [
   { label: t('switches.ports.modeAccess'), value: 'access' },
@@ -687,7 +704,10 @@ async function save() {
     body.connected_device = null; body.connected_device_id = null; body.connected_port_id = null; body.connected_port = null
   } else { body.connected_device_id = null; body.connected_port_id = null }
   try {
-    const response = await $fetch<Record<string, unknown>>(`/api/switches/${props.switchId}/ports/${props.port!.id}`, { method: 'PUT', body })
+    const response = await $fetch<Record<string, unknown>>(
+      `/api/switches/${props.switchId}/ports/${props.port!.id}`,
+      buildSidePanelPortPutOptions(body, siteParams.value?.siteId)
+    )
 
     const vlansAdded = (response as Record<string, unknown>)?.vlans_added_to_target_switch as number[] | undefined
     if (vlansAdded?.length) {
@@ -719,7 +739,10 @@ async function save() {
       const otherPortIds = props.lagGroup!.port_ids!.filter((pid: string) => pid !== props.port!.id)
       for (const portId of otherPortIds) {
         try {
-          await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, { method: 'PUT', body: syncFields })
+          await $fetch(
+            `/api/switches/${props.switchId}/ports/${portId}`,
+            buildSidePanelPortPutOptions(syncFields, siteParams.value?.siteId)
+          )
         } catch { /* best-effort sync */ }
       }
       toast.add({ title: t('switches.ports.portUpdated') + ` (${otherPortIds.length + 1} LAG ports)`, color: 'success' })
@@ -735,6 +758,35 @@ function onRemoveFromLag() {
   if (!props.lagGroup || !props.port) return
   emit('remove-from-lag', props.lagGroup.id, props.port!.id)
 }
+
+// Compact footer picker: prefill the form from another same-switch port.
+// Never touches description, identity/label/position, MAC, connections/allocation or LAG.
+const sourcePortOptions = computed(() =>
+  props.ports
+    .filter(p => p.id !== props.port?.id)
+    .map(p => ({ label: p.label || `${p.unit}/${p.index}`, value: p.id }))
+)
+
+function applyCopyFromPort(sourceId: string) {
+  const source = props.ports.find(p => p.id === sourceId)
+  if (!source) return
+  form.status = source.status
+  form.speed = source.speed || ''
+  form.port_mode = source.port_mode || (source.tagged_vlans?.length ? 'trunk' : 'access')
+  form.access_vlan = source.access_vlan ?? null
+  form.native_vlan = source.native_vlan ?? null
+  form.poe_selection = source.poe?.type || ''
+  form.helper_usage = source.helper_usage || '_automatic'
+  form.helper_label = source.helper_label || ''
+  form.show_in_helper_list = source.show_in_helper_list ?? true
+  selectedTaggedVlans.value = [...(source.tagged_vlans || [])]
+  taggedVlansStr.value = (source.tagged_vlans || []).join(',')
+}
+
+// One-shot dropdown items for the icon-only copy trigger; each selection prefills via applyCopyFromPort.
+const sourceMenuItems = computed(() =>
+  sourcePortOptions.value.map(o => ({ label: o.label, onSelect: () => applyCopyFromPort(o.value) }))
+)
 
 async function resetPort() {
   const ok = await confirm({

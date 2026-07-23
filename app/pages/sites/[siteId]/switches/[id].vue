@@ -107,7 +107,7 @@
             variant="soft"
             color="info"
             :disabled="!canCreateLag.allowed"
-            @click="lagSlideoverRef?.openCreate(selectedPorts)"
+            @click="lagSlideoverRef?.openCreate(selectedLagPortIds)"
           >
             {{ $t('lag.create') }}
           </UButton>
@@ -131,6 +131,7 @@
         ref="bulkEditorRef"
         :switch-id="id"
         :selected-ports="selectedPorts"
+        :ports="item?.ports || []"
         :configured-vlans="item?.configured_vlans || []"
         :switch-updated-at="item?.updated_at"
         @saved="fetchSwitch"
@@ -222,6 +223,7 @@
     <SwitchPortSidePanel
       v-model="showPortPanel"
       :port="selectedPort!"
+      :ports="item?.ports || []"
       :switch-id="id"
       :configured-vlans="item?.configured_vlans || []"
       :switch-updated-at="item?.updated_at"
@@ -387,13 +389,22 @@ v-model="editForm.role"
       :confirm-label="$t('common.delete')"
       :loading="deletingLag"
       @confirm="onDeleteLag"
-    />
+    >
+      <UCheckbox
+        v-if="lagToDelete?.remote_device_id && lagToDelete.remote_device"
+        v-model="deleteRemoteLag"
+        :label="$t('lag.deleteRemoteLag', { switch: lagToDelete.remote_device })"
+        class="mt-4"
+      />
+    </SharedConfirmDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { Port } from '~~/types/port'
+import { getLagEligibleSelectedPortIds } from '~/utils/lagPortOptions'
 import type { LAGGroup } from '~~/types/lagGroup'
+import { routeLagMemberRemoval } from '~/utils/lagMemberRemoval'
 import type { ActivityEntry } from '~~/types/activity'
 import { formatActivitySummary as _formatActivitySummary } from '~/utils/activityFormat'
 import { relativeTime as _relativeTime } from '~/utils/timeFormat'
@@ -415,9 +426,10 @@ const { items: templates, fetch: fetchTemplates } = useLayoutTemplates()
 const { items: vlans, fetch: fetchVlans } = useVlans()
 const { items: lagGroups, fetch: fetchLags, lagById, lagByPortId, update: updateLag, remove: removeLag } = useLagGroups(id, siteId)
 
-const lagSlideoverRef = ref<{ openEdit: (lag: LAGGroup) => void; openCreate: (ports: string[]) => void } | null>(null)
+const lagSlideoverRef = ref<{ openEdit: (lag: LAGGroup, removePortId?: string) => void; openCreate: (ports: string[]) => void } | null>(null)
 const showLagDeleteDialog = ref(false)
 const lagToDelete = ref<LAGGroup | null>(null)
+const deleteRemoteLag = ref(false)
 const deletingLag = ref(false)
 const showLagDetail = ref(false)
 const viewingLag = ref<LAGGroup | null>(null)
@@ -447,6 +459,7 @@ const secondaryTabs = computed(() => [
 ])
 
 const selectedPorts = ref<string[]>([])
+const selectedLagPortIds = computed(() => getLagEligibleSelectedPortIds(selectedPorts.value, item.value?.ports || []))
 const bulkEditorRef = ref<{ submit: () => void; open: () => void } | null>(null)
 const showPortPanel = ref(false)
 const selectedPort = ref<Port | null>(null)
@@ -462,8 +475,8 @@ const portStats = computed(() => {
 })
 
 const canCreateLag = computed(() => {
-  if (selectedPorts.value.length < 2) return { allowed: false, reason: t('lag.validation.minPorts') }
-  for (const portId of selectedPorts.value) {
+  if (selectedLagPortIds.value.length < 2) return { allowed: false, reason: t('lag.validation.minPorts') }
+  for (const portId of selectedLagPortIds.value) {
     const existingLag = lagByPortId.value.get(portId)
     if (existingLag) {
       const port = item.value?.ports?.find((p) => p.id === portId)
@@ -554,6 +567,7 @@ const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { sit
 // LAG event handlers
 function onDeleteLagClick(lag: LAGGroup) {
   lagToDelete.value = lag
+  deleteRemoteLag.value = false
   showLagDeleteDialog.value = true
 }
 
@@ -563,9 +577,8 @@ const lagDeleteMessage = computed(() => {
     .map((pid: string) => item.value?.ports?.find((p) => p.id === pid)?.label || pid)
     .join(', ')
   let msg = `${t('lag.deleteConfirm', { name: lagToDelete.value.name })}\n\n${t('lag.portsWillBeReleased')}: ${portLabels}`
-  // If there's a mirror LAG on the remote switch, mention it
   if (lagToDelete.value.remote_device_id && lagToDelete.value.remote_device) {
-    msg += `\n\n${t('lag.deleteRemoteLagToo', { switch: lagToDelete.value.remote_device })}`
+    msg += `\n\n${t('lag.remoteLagKept', { switch: lagToDelete.value.remote_device })}`
   }
   return msg
 })
@@ -576,19 +589,7 @@ async function onDeleteLag() {
   try {
     const lag = lagToDelete.value
 
-    // Delete mirror LAG on remote switch if it exists
-    if (lag.remote_device_id) {
-      try {
-        const remoteLags = await $fetch<LAGGroup[]>(`/api/switches/${lag.remote_device_id}/lag-groups`)
-        // The mirror points back to this switch by UUID (new) or slug (older data).
-        const mirrorLag = remoteLags?.find((rl) => rl.remote_device_id === item.value?.id || rl.remote_device_id === id)
-        if (mirrorLag) {
-          await $fetch(`/api/switches/${lag.remote_device_id}/lag-groups/${mirrorLag.id}`, { method: 'DELETE' })
-        }
-      } catch { /* best-effort */ }
-    }
-
-    await removeLag(lag.id)
+    await removeLag(lag.id, lag.remote_device_id ? { delete_remote: deleteRemoteLag.value } : undefined)
     toast.add({ title: t('lag.messages.deleted'), color: 'success' })
     showLagDeleteDialog.value = false
     lagToDelete.value = null
@@ -614,46 +615,18 @@ async function onRemovePortFromLag(lagId: string, portId: string) {
   try {
     const newPortIds = lag.port_ids.filter(pid => pid !== portId)
 
+    if (lag.remote_device_id) {
+      routeLagMemberRemoval(lag, portId, (value, removePortId) => { void lagSlideoverRef.value?.openEdit(value, removePortId) }, () => {})
+      return
+    }
     if (newPortIds.length < 2) {
-      // LAG would have < 2 ports — delete it and mirror LAG
-      if (lag.remote_device_id) {
-        try {
-          const remoteLags = await $fetch<LAGGroup[]>(`/api/switches/${lag.remote_device_id}/lag-groups`)
-          const mirrorLag = remoteLags?.find((rl) => rl.remote_device_id === id)
-          if (mirrorLag) {
-            await $fetch(`/api/switches/${lag.remote_device_id}/lag-groups/${mirrorLag.id}`, { method: 'DELETE' })
-          }
-        } catch { /* best-effort */ }
-      }
-      await removeLag(lagId)
-      toast.add({ title: t('lag.messages.deleted'), color: 'success' })
+      onDeleteLagClick(lag)
+      return
     } else {
       // Remove port from local LAG
       await updateLag(lagId, { port_ids: newPortIds })
 
-      // Sync mirror LAG: remove the corresponding remote port
-      if (lag.remote_device_id) {
-        try {
-          const remoteLags = await $fetch<LAGGroup[]>(`/api/switches/${lag.remote_device_id}/lag-groups`)
-          const mirrorLag = remoteLags?.find((rl) => rl.remote_device_id === id)
-          if (mirrorLag) {
-            // Find which remote port was mapped to this local port
-            const localPort = item.value?.ports?.find((p) => p.id === portId)
-            const remotePortId = localPort?.connected_port_id
-            if (remotePortId) {
-              const newRemotePortIds = mirrorLag.port_ids.filter((pid) => pid !== remotePortId)
-              if (newRemotePortIds.length < 2) {
-                await $fetch(`/api/switches/${lag.remote_device_id}/lag-groups/${mirrorLag.id}`, { method: 'DELETE' })
-              } else {
-                await $fetch(`/api/switches/${lag.remote_device_id}/lag-groups/${mirrorLag.id}`, {
-                  method: 'PUT', body: { port_ids: newRemotePortIds }
-                })
-              }
-            }
-          }
-        } catch { /* best-effort */ }
-      }
-      toast.add({ title: t('lag.messages.portRemoved'), color: 'success' })
+       toast.add({ title: t('lag.messages.portRemoved'), color: 'success' })
     }
     await fetchSwitch()
     await fetchLags()

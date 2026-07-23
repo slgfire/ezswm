@@ -190,6 +190,7 @@ model LagGroup {
   ports  Port[]
 
   @@index([switch_id])
+  @@unique([switch_id, name])
 }
 
 // ---------------------------------------------------------------------------

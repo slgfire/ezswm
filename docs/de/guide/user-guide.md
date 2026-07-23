@@ -163,9 +163,15 @@ Klicke auf einen beliebigen Port im Raster, um ein Seitenpanel zu öffnen. Dort 
 - **PoE** -- PoE für diesen spezifischen Port überschreiben oder deaktivieren (standardmäßig vom Template-Block geerbt)
 - **Beschreibung** -- Port-spezifische Notizen
 
+Optional ist im Footer des Port-Seitenpanels neben **Speichern** eine Quellport-Auswahl verfügbar. Wähle einen anderen Port desselben Switches, um editierbare Konfigurationsfelder vorzufüllen, prüfe oder passe die Werte an und speichere dann normal. Die Quellauswahl speichert niemals direkt.
+
 ### Massen-Port-Bearbeitung
 
 Wähle mehrere Ports aus, indem du **Strg** (oder **Cmd** auf Mac) gedrückt hältst und klickst, dann verwende die Massenbearbeitungsaktion, um dasselbe VLAN, dieselbe Geschwindigkeit oder denselben Status auf alle ausgewählten Ports gleichzeitig anzuwenden.
+
+Die Massenbearbeitung unterstützt ebenfalls Quell-Prefill: Im Quell-Dropdown kann jeder Port desselben Switches gewählt werden (auch Ports, die aktuell als Ziel ausgewählt sind). Die Auswahl füllt nur das Bulk-Formular vor. Du kannst die Werte prüfen und ändern; gespeichert wird erst mit **Anwenden**.
+
+Beim Prefill werden Status, Geschwindigkeit, Port-Modus, VLAN-Felder, PoE-Auswahl und Helfer-Felder übernommen. Nicht übernommen werden Beschreibung, physische Verbindungen/Zuweisungen und LAG-Mitgliedschaft.
 
 ### Verbundene Geräte verknüpfen
 
@@ -281,13 +287,22 @@ Bei Freitext-Remote-Geräten ersetzen Texteingabefelder die Dropdowns.
 
 ### LAG bearbeiten
 
-Klicke auf einen LAG-Chip in der Legende unterhalb des Port-Rasters, um das Bearbeitungs-Seitenpanel zu öffnen. Änderungen an Ports, Remote-Gerät oder Port-Zuordnung werden beim Speichern sowohl auf die lokale als auch auf die Spiegel-LAG angewendet.
+Klicke auf einen LAG-Chip in der Legende unterhalb des Port-Rasters, um das Bearbeitungs-Seitenpanel zu öffnen. Du kannst Mitglieder, Namen, Beschreibung, Remote-Gerät, Port-Zuordnung und VLAN-Konfiguration bearbeiten. Änderungen an Ports, Remote-Gerät oder Port-Zuordnung werden beim Speichern sowohl auf die lokale als auch auf die Spiegel-LAG angewendet.
+
+### LAG duplizieren
+
+Mit **Duplizieren** erstellst du eine mitgliedslose, rein lokale Kopie einer LAG. Remote-Gerät, Remote-Zuordnungen und physische Verbindungen werden nicht übernommen. Füge Mitglieder hinzu und konfiguriere eine Remote-Verbindung anschließend ausdrücklich.
+
+### Port-Konfiguration kopieren
+
+Mit **Konfiguration kopieren** überträgst du die Einstellungen eines Ports auf einen anderen Port desselben Switches. Physische Verbindungen und LAG-Mitgliedschaften werden niemals kopiert. Ist das Ziel eine LAG, ist der Vorgang eingeschränkt, um Konflikte zwischen LAG-Mitgliedern zu verhindern.
 
 ### LAG löschen
 
 Klicke auf den **X**-Button auf einem LAG-Chip in der Legende. Der Bestätigungsdialog zeigt:
 - Welche lokalen Ports freigegeben werden
-- Ob eine Spiegel-LAG auf dem Remote-Switch ebenfalls gelöscht wird
+- Standardmäßig, dass die Remote-LAG erhalten bleibt
+- Eine optionale Auswahl, um die entfernte Spiegel-LAG ebenfalls ausdrücklich zu löschen
 
 ### LAG-Legende
 
