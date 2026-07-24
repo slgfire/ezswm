@@ -231,6 +231,10 @@ const props = withDefaults(defineProps<{
   /** All ports on the current switch, used to offer a same-switch source port for the copy-config picker. */
   ports?: Port[]
 }>(), {
+  lagGroup: undefined,
+  configuredVlans: () => [],
+  switchUpdatedAt: undefined,
+  templateUnits: () => [],
   ports: () => []
 })
 
