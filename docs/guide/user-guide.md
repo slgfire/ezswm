@@ -163,7 +163,7 @@ Click any port in the grid to open a slideover panel. From there you can configu
 - **PoE** -- override or disable PoE for this specific port (inherited from the template block by default)
 - **Description** -- port-level notes
 
-Optional source prefill is available in the port side panel footer next to **Save**. Select another port on the same switch to prefill editable configuration fields, review or adjust them, then click **Save**. Selecting a source never saves directly.
+Optional source prefill is available in the port side panel footer. Open a port, click the **Copy/Duplicate** icon, then select another port on the same switch as the source. Use the source list search field to filter ports quickly. The selected source prefills editable configuration fields; review or adjust them, then click **Save**. Selecting a source never saves directly, and **Reset** remains a separate action.
 
 ### Bulk Port Editing
 
@@ -295,7 +295,7 @@ Use **Duplicate** on a LAG to create a memberless, local-only copy. The copy doe
 
 ### Copying Port Configuration
 
-Use **Copy configuration** on a port to copy its settings to another port on the same switch. Physical links and LAG membership are never copied. When the target is a LAG, the operation is restricted to prevent LAG member conflicts.
+Use **Copy configuration** on a port to prefill from another port on the same switch (via the **Copy/Duplicate** icon and source selector). You can filter the source list with search, then review and **Save**. Physical links and LAG membership are never copied. **Reset** is separate and not triggered by copy prefill. When the target is a LAG, the operation is restricted to prevent LAG member conflicts.
 
 ### Deleting a LAG
 

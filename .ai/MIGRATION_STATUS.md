@@ -2,10 +2,19 @@
 
 ## Latest Stage
 
-Date: 2026-07-23
-Stage: Port configuration copy prefill flow (single + bulk)
+Date: 2026-07-25
+Stage: Port configuration copy UX + site-scoped persistence hardening
 Status: Complete
 Version: 0.32.0
+
+### Feature: refined port configuration copy flow and save consistency (v0.32.0)
+
+Completed the follow-up polish for port configuration copy and related editing flow:
+
+- Source port selection is restricted to same-switch ports in single-port edit.
+- Source picker uses a searchable menu with a capped option list for large switches.
+- Save/apply persistence remains correctly site-scoped across port edits, including LAG-related updates.
+- Slideover cancel actions now use standardized cancel styling for consistent UX.
 
 ### Feature: source-based port configuration prefill with normal save/apply (v0.32.0)
 

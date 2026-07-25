@@ -163,7 +163,7 @@ Klicke auf einen beliebigen Port im Raster, um ein Seitenpanel zu öffnen. Dort 
 - **PoE** -- PoE für diesen spezifischen Port überschreiben oder deaktivieren (standardmäßig vom Template-Block geerbt)
 - **Beschreibung** -- Port-spezifische Notizen
 
-Optional ist im Footer des Port-Seitenpanels neben **Speichern** eine Quellport-Auswahl verfügbar. Wähle einen anderen Port desselben Switches, um editierbare Konfigurationsfelder vorzufüllen, prüfe oder passe die Werte an und speichere dann normal. Die Quellauswahl speichert niemals direkt.
+Optional ist im Footer des Port-Seitenpanels eine Quellport-Auswahl verfügbar. Öffne einen Port, klicke auf das **Kopieren/Duplizieren**-Symbol und wähle dann einen anderen Port desselben Switches als Quelle. Über das Suchfeld in der Quellliste kannst du die Ports filtern. Die gewählte Quelle füllt editierbare Konfigurationsfelder vor; prüfe oder passe die Werte an und speichere dann normal. Die Quellauswahl speichert niemals direkt, und **Zurücksetzen** bleibt eine separate Aktion.
 
 ### Massen-Port-Bearbeitung
 
@@ -295,7 +295,7 @@ Mit **Duplizieren** erstellst du eine mitgliedslose, rein lokale Kopie einer LAG
 
 ### Port-Konfiguration kopieren
 
-Mit **Konfiguration kopieren** überträgst du die Einstellungen eines Ports auf einen anderen Port desselben Switches. Physische Verbindungen und LAG-Mitgliedschaften werden niemals kopiert. Ist das Ziel eine LAG, ist der Vorgang eingeschränkt, um Konflikte zwischen LAG-Mitgliedern zu verhindern.
+Mit **Konfiguration kopieren** füllst du Felder aus einem anderen Port desselben Switches vor (über das **Kopieren/Duplizieren**-Symbol und die Quell-Auswahl). Du kannst die Quellliste per Suche filtern, die Werte prüfen und dann mit **Speichern** übernehmen. Physische Verbindungen und LAG-Mitgliedschaften werden niemals kopiert. **Zurücksetzen** ist separat und wird durch das Prefill nicht ausgelöst. Ist das Ziel eine LAG, ist der Vorgang eingeschränkt, um Konflikte zwischen LAG-Mitgliedern zu verhindern.
 
 ### LAG löschen
 

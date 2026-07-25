@@ -189,7 +189,6 @@
       <div class="flex w-full items-center justify-between">
         <div class="flex items-center gap-2">
           <UButton variant="subtle" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
-          <UButton @click="onSaveClick">{{ $t('common.save') }}</UButton>
           <UDropdownMenu
             v-if="sourcePortOptions.length"
             :items="sourceMenuItems"
@@ -207,6 +206,7 @@
               />
             </UTooltip>
           </UDropdownMenu>
+          <UButton @click="onSaveClick">{{ $t('common.save') }}</UButton>
         </div>
         <UButton color="error" variant="soft" icon="i-heroicons-arrow-path" @click="resetPort">{{ $t('switches.ports.resetPort') }}</UButton>
       </div>
