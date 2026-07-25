@@ -190,10 +190,13 @@
         <div class="flex items-center gap-2">
           <UButton variant="ghost" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
           <UButton @click="onSaveClick">{{ $t('common.save') }}</UButton>
-        </div>
-        <div class="flex items-center gap-2">
-          <UButton color="error" variant="soft" icon="i-heroicons-arrow-path" @click="resetPort">{{ $t('switches.ports.resetPort') }}</UButton>
-          <UDropdownMenu v-if="sourcePortOptions.length" :items="sourceMenuItems" :content="{ side: 'top', align: 'end' }" :ui="{ content: 'max-h-60 overflow-y-auto' }">
+          <UDropdownMenu
+            v-if="sourcePortOptions.length"
+            :items="sourceMenuItems"
+            :content="{ side: 'top', align: 'end' }"
+            :ui="{ content: 'max-h-60 overflow-y-auto' }"
+            :filter="{ placeholder: $t('switches.ports.searchPort') }"
+          >
             <UTooltip :text="$t('switches.ports.copySource')">
               <UButton
                 icon="i-heroicons-document-duplicate"
@@ -205,6 +208,7 @@
             </UTooltip>
           </UDropdownMenu>
         </div>
+        <UButton color="error" variant="soft" icon="i-heroicons-arrow-path" @click="resetPort">{{ $t('switches.ports.resetPort') }}</UButton>
       </div>
     </template>
   </USlideover>
