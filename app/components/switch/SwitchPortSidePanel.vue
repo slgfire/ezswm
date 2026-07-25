@@ -186,7 +186,7 @@
     </template>
 
     <template #footer>
-      <div class="flex items-center justify-between">
+      <div class="flex w-full items-center justify-between">
         <div class="flex items-center gap-2">
           <UButton variant="ghost" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
           <UButton @click="onSaveClick">{{ $t('common.save') }}</UButton>
