@@ -84,7 +84,7 @@
 
     <template #footer>
       <div class="flex justify-end gap-2">
-        <UButton variant="ghost" color="neutral" @click="emit('close')">{{ $t('common.cancel') }}</UButton>
+        <UButton variant="subtle" color="neutral" @click="emit('close')">{{ $t('common.cancel') }}</UButton>
         <UButton :loading="saving" @click="modeModel === 'ip' ? emit('submit-allocation') : emit('submit-range')">{{ editTarget ? $t('common.save') : $t('common.add') }}</UButton>
       </div>
     </template>

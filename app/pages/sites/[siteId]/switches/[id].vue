@@ -322,7 +322,7 @@ v-model="editForm.role"
 
       <template #footer>
         <div class="flex justify-end gap-2">
-          <UButton color="neutral" variant="ghost" @click="requestCloseEdit">
+          <UButton color="neutral" variant="subtle" @click="requestCloseEdit">
             {{ $t('common.cancel') }}
           </UButton>
           <UButton :loading="saving" icon="i-heroicons-check" @click="editFormRef?.submit()">

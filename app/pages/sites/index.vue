@@ -89,7 +89,7 @@
       </template>
       <template #footer>
         <div class="flex justify-end gap-2">
-          <UButton variant="ghost" color="neutral" @click="requestClose">{{ $t('common.cancel', 'Cancel') }}</UButton>
+          <UButton variant="subtle" color="neutral" @click="requestClose">{{ $t('common.cancel', 'Cancel') }}</UButton>
           <UButton :loading="saving" icon="i-heroicons-check" @click="onSave">{{ $t('common.save', 'Save') }}</UButton>
         </div>
       </template>

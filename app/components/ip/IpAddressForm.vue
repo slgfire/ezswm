@@ -68,7 +68,7 @@
 
     <template #footer>
       <div class="flex justify-end gap-2">
-        <UButton variant="ghost" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
+        <UButton variant="subtle" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
         <UButton :loading="saving" :disabled="!effectiveNetworkId" @click="onSubmit">
           {{ editTarget ? $t('common.save') : $t('common.add') }}
         </UButton>

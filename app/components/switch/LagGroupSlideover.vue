@@ -194,7 +194,7 @@
 
     <template #footer>
       <div class="flex justify-end gap-2">
-        <UButton color="neutral" variant="ghost" @click="requestClose">
+        <UButton color="neutral" variant="subtle" @click="requestClose">
           {{ $t('common.cancel') }}
         </UButton>
         <UButton v-if="isEdit" color="neutral" variant="outline" icon="i-heroicons-document-duplicate" @click="duplicateLag">
