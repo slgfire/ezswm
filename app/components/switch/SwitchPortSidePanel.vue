@@ -222,7 +222,7 @@ import type { Network } from '~~/types/network'
 import type { IPAllocation } from '~~/types/ipAllocation'
 import type { LAGGroup } from '~~/types/lagGroup'
 import type { LayoutUnit } from '~~/types/layoutTemplate'
-import { buildSidePanelPortPutOptions } from '~/utils/sidePanelPortRequests'
+import { buildCopyConnectionState, buildLagSyncFields, buildSidePanelPortPutOptions } from '~/utils/sidePanelPortRequests'
 
 const props = withDefaults(defineProps<{
   port: Port | null
@@ -729,24 +729,7 @@ async function save() {
 
     // LAG sync: update VLAN/speed/status/connected_device on all other LAG member ports
     if ((props.lagGroup?.port_ids?.length ?? 0) > 1) {
-      const syncFields: Record<string, unknown> = {
-        status: body.status,
-        speed: body.speed,
-        port_mode: body.port_mode,
-        access_vlan: body.access_vlan,
-        native_vlan: body.native_vlan,
-        tagged_vlans: body.tagged_vlans,
-        connected_device: body.connected_device,
-        connected_device_id: body.connected_device_id,
-        connected_allocation_id: body.connected_allocation_id,
-      }
-      // Propagate target switch override to LAG member ports
-      if (body.add_vlans_to_target_switch) {
-        syncFields.add_vlans_to_target_switch = true
-      }
-      if (body.connected_allocation_id) {
-        syncFields.connected_port = null
-      }
+      const syncFields = buildLagSyncFields(body)
       const otherPortIds = props.lagGroup!.port_ids!.filter((pid: string) => pid !== props.port!.id)
       for (const portId of otherPortIds) {
         try {
@@ -770,8 +753,8 @@ function onRemoveFromLag() {
   emit('remove-from-lag', props.lagGroup.id, props.port!.id)
 }
 
-// Compact footer picker: prefill the form from another same-switch port.
-// Never touches description, identity/label/position, MAC, connections/allocation or LAG.
+// Compact footer picker: prefill selected config from another same-switch port.
+// Keeps identity/label/position, description, MAC and LAG; connection links are never copied.
 const sourcePortOptions = computed(() =>
   props.ports
     .filter(p => p.id !== props.port?.id)
@@ -792,6 +775,14 @@ function applyCopyFromPort(sourceId: string) {
   form.show_in_helper_list = source.show_in_helper_list ?? true
   selectedTaggedVlans.value = [...(source.tagged_vlans || [])]
   taggedVlansStr.value = (source.tagged_vlans || []).join(',')
+
+  const connectionState = buildCopyConnectionState(source)
+  connectionMode.value = connectionState.connectionMode
+  selectedSwitchId.value = connectionState.selectedSwitchId
+  selectedPortId.value = connectionState.selectedPortId
+  selectedAllocationId.value = connectionState.selectedAllocationId
+  form.connected_device = connectionState.connected_device
+  form.connected_port = connectionState.connected_port
 }
 
 // One-shot dropdown items for the icon-only copy trigger; each selection prefills via applyCopyFromPort.

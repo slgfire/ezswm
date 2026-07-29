@@ -2,17 +2,19 @@
 
 ## Latest Stage
 
-Date: 2026-07-25
+Date: 2026-07-29
 Stage: Port configuration copy UX + site-scoped persistence hardening
 Status: Complete
-Version: 0.32.0
+Version: 0.32.1
 
-### Feature: refined port configuration copy flow and save consistency (v0.32.0)
+### Feature: refined port configuration copy flow and save consistency (v0.32.1)
 
 Completed the follow-up polish for port configuration copy and related editing flow:
 
 - Source port selection is restricted to same-switch ports in single-port edit.
 - Source picker uses a searchable menu with a capped option list for large switches.
+- Copy prefill includes custom/helper field values in both single-port and bulk edit flows.
+- Saving a LAG member applies the synced values consistently across that LAG's member ports.
 - Save/apply persistence remains correctly site-scoped across port edits, including LAG-related updates.
 - Slideover cancel actions now use standardized cancel styling for consistent UX.
 
@@ -26,8 +28,9 @@ Port configuration copy now follows a prefill-first workflow:
   selected targets), prefills the bulk form, and still requires normal Apply.
 - Source selection never performs direct persistence; users review/edit first,
   then use existing Save/Apply actions.
-- Copy contract excludes description, physical connections/allocation data, and
-  LAG membership.
+- Copy contract excludes description and LAG membership; for connections it copies
+  only manual/freetext peer values (custom device name + peer port), while real
+  switch links and IP/allocation links are never copied.
 
 ### Feature: safe LAG and port configuration copy/edit (v0.32.0)
 
@@ -35,8 +38,12 @@ Added safe local-only duplication and configuration-copy workflows:
 
 - LAGs can be duplicated as memberless, local-only groups without copying remote
   devices, mappings, or links.
-- Port configuration can be copied on the same switch without copying physical
-  links or LAG membership; LAG targets are restricted to prevent conflicts.
+- Port configuration can be copied on the same switch with only manual/freetext
+  peer values copied for connections (custom device name + peer port); real switch
+  links, IP/allocation links, and LAG membership are not copied. LAG targets are
+  restricted to prevent conflicts.
+- For LAG members, manual device + peer-port values are synchronized identically
+  across the whole LAG, and users can edit the shared manual device name afterward.
 - LAG member and name integrity is preserved during editing and duplication.
 - One delete dialog supports retaining the remote LAG by default or explicitly
   deleting it.

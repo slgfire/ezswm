@@ -171,7 +171,7 @@ Wähle mehrere Ports aus, indem du **Strg** (oder **Cmd** auf Mac) gedrückt hä
 
 Die Massenbearbeitung unterstützt ebenfalls Quell-Prefill: Im Quell-Dropdown kann jeder Port desselben Switches gewählt werden (auch Ports, die aktuell als Ziel ausgewählt sind). Die Auswahl füllt nur das Bulk-Formular vor. Du kannst die Werte prüfen und ändern; gespeichert wird erst mit **Anwenden**.
 
-Beim Prefill werden Status, Geschwindigkeit, Port-Modus, VLAN-Felder, PoE-Auswahl und Helfer-Felder übernommen. Nicht übernommen werden Beschreibung, physische Verbindungen/Zuweisungen und LAG-Mitgliedschaft.
+Beim Prefill werden Status, Geschwindigkeit, Port-Modus, VLAN-Felder, PoE-Auswahl und eigene/Helfer-Felder übernommen. Bei Verbindungen werden nur manuelle/Freitext-Peer-Werte übernommen (eigener Gerätename und Peer-Port). Echte Switch-zu-Switch-Links sowie IP-/Allocation-Links werden nie kopiert. Beschreibung und LAG-Mitgliedschaft werden ebenfalls nicht übernommen.
 
 ### Verbundene Geräte verknüpfen
 
@@ -295,7 +295,7 @@ Mit **Duplizieren** erstellst du eine mitgliedslose, rein lokale Kopie einer LAG
 
 ### Port-Konfiguration kopieren
 
-Mit **Konfiguration kopieren** füllst du Felder aus einem anderen Port desselben Switches vor (über das **Kopieren/Duplizieren**-Symbol und die Quell-Auswahl). Du kannst die Quellliste per Suche filtern, die Werte prüfen und dann mit **Speichern** übernehmen. Physische Verbindungen und LAG-Mitgliedschaften werden niemals kopiert. **Zurücksetzen** ist separat und wird durch das Prefill nicht ausgelöst. Ist das Ziel eine LAG, ist der Vorgang eingeschränkt, um Konflikte zwischen LAG-Mitgliedern zu verhindern.
+Mit **Konfiguration kopieren** füllst du Felder aus einem anderen Port desselben Switches vor (über das **Kopieren/Duplizieren**-Symbol und die Quell-Auswahl). Du kannst die Quellliste per Suche filtern, die Werte prüfen und dann mit **Speichern** übernehmen. Das Prefill enthält auch Werte aus eigenen/Helfer-Feldern sowie manuelle/Freitext-Peer-Werte (eigener Gerätename und Peer-Port). Echte Switch-Links, IP-/Allocation-Links und LAG-Mitgliedschaften werden niemals kopiert. **Zurücksetzen** ist separat und wird durch das Prefill nicht ausgelöst. Ist das Ziel eine LAG, ist der Vorgang eingeschränkt, um Konflikte zwischen LAG-Mitgliedern zu verhindern.
 
 ### LAG löschen
 
@@ -324,7 +324,10 @@ Beim Bearbeiten eines Ports, der zu einer LAG gehört, werden folgende Einstellu
 | VLAN-Konfiguration (Native, Tagged, Access, Port-Modus) | Beschreibung |
 | Geschwindigkeit | MAC-Adresse |
 | Status | Verbundener Port (anderer physischer Port am selben Gerät) |
+| Eigene/Helfer-Felder | |
 | Verbundenes Gerät | |
+
+Bei manuellen/Freitext-Verbindungen wird das Paar aus Gerätename + Peer-Port identisch auf alle LAG-Mitgliedsports synchronisiert. Danach kannst du den gemeinsamen Gerätenamen bearbeiten; die Änderung wird auf die gesamte LAG übertragen.
 
 ### LAG im Port-Seitenpanel
 

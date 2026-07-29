@@ -171,7 +171,7 @@ Select multiple ports by holding **Ctrl** (or **Cmd** on Mac) and clicking, then
 
 Bulk edit also supports source-based prefill: choose any port on the same switch (including ports that are currently selected as targets) in the source dropdown. The selection only prefills the bulk form. You can review and edit values, and changes are persisted only when you click **Apply**.
 
-Copy prefill includes status, speed, port mode, VLAN fields, PoE selection, and helper fields. It never copies descriptions, physical connections/allocation data, or LAG membership.
+Copy prefill includes status, speed, port mode, VLAN fields, PoE selection, and custom/helper fields. For connections, it copies only manual/freetext peer values (custom device name and peer port). Real switch-to-switch links and IP/allocation links are never copied. Descriptions and LAG membership are also not copied.
 
 ### Connected Device Linking
 
@@ -295,7 +295,7 @@ Use **Duplicate** on a LAG to create a memberless, local-only copy. The copy doe
 
 ### Copying Port Configuration
 
-Use **Copy configuration** on a port to prefill from another port on the same switch (via the **Copy/Duplicate** icon and source selector). You can filter the source list with search, then review and **Save**. Physical links and LAG membership are never copied. **Reset** is separate and not triggered by copy prefill. When the target is a LAG, the operation is restricted to prevent LAG member conflicts.
+Use **Copy configuration** on a port to prefill from another port on the same switch (via the **Copy/Duplicate** icon and source selector). You can filter the source list with search, then review and **Save**. Prefill includes custom/helper field values and manual/freetext peer values (custom device name and peer port). Real switch links, IP/allocation links, and LAG membership are never copied. **Reset** is separate and not triggered by copy prefill. When the target is a LAG, the operation is restricted to prevent LAG member conflicts.
 
 ### Deleting a LAG
 
@@ -324,7 +324,10 @@ When editing a port that belongs to a LAG, the following settings are automatica
 | VLAN config (native, tagged, access, port mode) | Description |
 | Speed | MAC address |
 | Status | Connected port (different physical port on same device) |
+| Custom/helper fields | |
 | Connected device | |
+
+For manual/freetext connections, the device name + peer port pair is synchronized identically across all LAG members. You can then edit the shared device name and it propagates to the full LAG.
 
 ### LAG in Port Side Panel
 
