@@ -18,6 +18,7 @@ export function shouldUpdateLocalPortConnectionsForSubmit(isDuplicate: boolean, 
 }
 
 type PortLike = { id: string, connected_port?: string | null }
+type PortMappingLike = { remotePortId?: string | null, remotePortLabel?: string | null }
 
 export function buildDuplicateManualConnectedPorts(options: {
   isDuplicate: boolean
@@ -38,4 +39,40 @@ export function buildDuplicateManualConnectedPorts(options: {
     result[targetPortId] = sourcePort?.connected_port ?? null
   }
   return result
+}
+
+export function buildLocalPortConnectionUpdateBody(options: {
+  isDuplicate: boolean
+  remoteMode: 'none' | 'switch' | 'freetext'
+  remoteDevice: string
+  sourceLag: LAGGroup | null
+  ports: PortLike[]
+  targetPortIds: string[]
+  portMapping: Record<string, PortMappingLike | undefined>
+  targetPortId: string
+}) {
+  if (options.remoteMode === 'none') {
+    return {
+      connected_device: null,
+      connected_device_id: null,
+      connected_port_id: null,
+      connected_port: null,
+    }
+  }
+
+  const mapping = options.portMapping[options.targetPortId]
+  const duplicateManualConnectedPorts = buildDuplicateManualConnectedPorts({
+    isDuplicate: options.isDuplicate,
+    remoteMode: options.remoteMode,
+    sourceLag: options.sourceLag,
+    ports: options.ports,
+    targetPortIds: options.targetPortIds
+  })
+
+  return {
+    connected_device: options.remoteDevice,
+    connected_device_id: null,
+    connected_port_id: mapping?.remotePortId || null,
+    connected_port: mapping?.remotePortLabel ?? duplicateManualConnectedPorts[options.targetPortId] ?? null,
+  }
 }

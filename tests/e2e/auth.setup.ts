@@ -10,26 +10,36 @@ setup('authenticate', async ({ page }) => {
   console.log('Initial URL:', url)
 
   if (url.includes('/setup')) {
-    console.log('Performing first-time setup — step 1 (admin account)...')
-    // Fill setup form - find inputs by placeholder or position
-    const inputs = page.locator('input[type="text"], input:not([type])')
-    const passwordInputs = page.locator('input[type="password"]')
+    console.log('Performing first-time setup via API...')
 
-    await inputs.nth(0).fill('admin')        // username
-    await inputs.nth(1).fill('Test Admin')   // display_name
-    await passwordInputs.nth(0).fill('password123')  // password
-    await passwordInputs.nth(1).fill('password123')  // confirm password
+    const setupResponse = await page.request.post('/api/auth/setup', {
+      data: {
+        username: 'admin',
+        display_name: 'Test Admin',
+        password: 'password123',
+        language: 'en'
+      }
+    })
+    expect(setupResponse.ok()).toBe(true)
+    const setupJson = await setupResponse.json() as { token?: string }
+    expect(setupJson.token).toBeTruthy()
+    await page.context().addCookies([{
+      name: 'ezswm_token',
+      value: setupJson.token!,
+      domain: 'localhost',
+      path: '/',
+      httpOnly: true,
+      sameSite: 'Lax'
+    }])
 
-    await page.getByRole('button', { name: /setup|complete|einrichtung/i }).click()
+    const initialSiteResponse = await page.request.post('/api/setup/initial-site', {
+      data: {
+        name: 'E2E Site'
+      }
+    })
+    expect(initialSiteResponse.ok()).toBe(true)
 
-    // Two-step wizard: after step 1 we stay on /setup and step 2 (site name)
-    // appears. Wait for the site-name input to be present, then submit it.
-    console.log('Performing first-time setup — step 2 (first site)...')
-    const siteNameInput = page.getByPlaceholder(/HQ|Datacenter|Rechenzentrum|LAN-Party/i)
-    await siteNameInput.waitFor({ state: 'visible', timeout: 15000 })
-    await siteNameInput.fill('E2E Site')
-
-    await page.getByRole('button', { name: /create site|site anlegen/i }).click()
+    await page.goto('/')
     await page.waitForURL('/', { timeout: 15000 })
   } else if (url.includes('/login')) {
     console.log('Performing login...')

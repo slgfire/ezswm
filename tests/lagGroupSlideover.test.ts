@@ -5,7 +5,7 @@ import { buildLagPortOptions, filterLagEligiblePorts, getLagEligibleSelectedPort
 import { onLocalPortsChange, removePortFromSelection } from '../app/utils/lagPortSelection'
 import { selectedPortsLabel, selectedPortsTrigger } from '../app/utils/lagSelectedPortsLabel'
 import { buildRemoteMappingPortOptions } from '../app/composables/useRemoteConnection'
-import { buildDuplicateManualConnectedPorts, getLagDuplicatePrefill, shouldUpdateLocalPortConnectionsForSubmit } from '../app/utils/lagDuplicatePrefill'
+import { buildDuplicateManualConnectedPorts, buildLocalPortConnectionUpdateBody, getLagDuplicatePrefill, shouldUpdateLocalPortConnectionsForSubmit } from '../app/utils/lagDuplicatePrefill'
 
 describe('LagGroupSlideover quality regressions', () => {
   const port = (id: string, lag_group_id?: string, type: 'rj45' | 'console' | 'management' = 'rj45') => ({ id, unit: 1, index: 1, type, status: 'down' as const, tagged_vlans: [], label: id, lag_group_id })
@@ -231,6 +231,136 @@ describe('LagGroupSlideover quality regressions', () => {
       ports: [{ id: 'src-a', connected_port: 'Peer-A' }],
       targetPortIds: ['dst-1']
     })).toEqual({})
+  })
+
+  it('builds duplicate freetext PUT body with manual device + positional connected_port and null linked ids', () => {
+    const sourceLag = {
+      id: 'lag-1',
+      switch_id: 'sw-1',
+      name: 'LAG 1',
+      port_ids: ['src-b', 'src-a'],
+      remote_device: 'Custom Peer',
+      remote_device_id: undefined,
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z'
+    }
+
+    const body1 = buildLocalPortConnectionUpdateBody({
+      isDuplicate: true,
+      remoteMode: 'freetext',
+      remoteDevice: 'Custom Peer',
+      sourceLag,
+      ports: [
+        { id: 'src-a', connected_port: 'Peer-A' },
+        { id: 'src-b', connected_port: 'Peer-B' }
+      ],
+      targetPortIds: ['dst-1', 'dst-2', 'dst-3'],
+      portMapping: {},
+      targetPortId: 'dst-1'
+    })
+
+    const body3 = buildLocalPortConnectionUpdateBody({
+      isDuplicate: true,
+      remoteMode: 'freetext',
+      remoteDevice: 'Custom Peer',
+      sourceLag,
+      ports: [
+        { id: 'src-a', connected_port: 'Peer-A' },
+        { id: 'src-b', connected_port: 'Peer-B' }
+      ],
+      targetPortIds: ['dst-1', 'dst-2', 'dst-3'],
+      portMapping: {},
+      targetPortId: 'dst-3'
+    })
+
+    expect(body1).toEqual({
+      connected_device: 'Custom Peer',
+      connected_device_id: null,
+      connected_port_id: null,
+      connected_port: 'Peer-B'
+    })
+    expect(body3).toEqual({
+      connected_device: 'Custom Peer',
+      connected_device_id: null,
+      connected_port_id: null,
+      connected_port: null
+    })
+  })
+
+  it('keeps mapping override for connected_port/connected_port_id in PUT body', () => {
+    const sourceLag = {
+      id: 'lag-1',
+      switch_id: 'sw-1',
+      name: 'LAG 1',
+      port_ids: ['src-a'],
+      remote_device: 'Custom Peer',
+      remote_device_id: undefined,
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z'
+    }
+
+    expect(buildLocalPortConnectionUpdateBody({
+      isDuplicate: true,
+      remoteMode: 'freetext',
+      remoteDevice: 'Custom Peer',
+      sourceLag,
+      ports: [{ id: 'src-a', connected_port: 'Peer-A' }],
+      targetPortIds: ['dst-1'],
+      portMapping: { 'dst-1': { remotePortId: 'remote-1', remotePortLabel: 'Gi1/0/1' } },
+      targetPortId: 'dst-1'
+    })).toEqual({
+      connected_device: 'Custom Peer',
+      connected_device_id: null,
+      connected_port_id: 'remote-1',
+      connected_port: 'Gi1/0/1'
+    })
+  })
+
+  it('builds none-mode PUT body that clears all connection fields', () => {
+    expect(buildLocalPortConnectionUpdateBody({
+      isDuplicate: true,
+      remoteMode: 'none',
+      remoteDevice: '',
+      sourceLag: null,
+      ports: [],
+      targetPortIds: ['dst-1'],
+      portMapping: { 'dst-1': { remotePortId: 'remote-1', remotePortLabel: 'Gi1/0/1' } },
+      targetPortId: 'dst-1'
+    })).toEqual({
+      connected_device: null,
+      connected_device_id: null,
+      connected_port_id: null,
+      connected_port: null
+    })
+  })
+
+  it('keeps non-duplicate freetext behavior unchanged (mapping-based, no positional fallback)', () => {
+    const sourceLag = {
+      id: 'lag-1',
+      switch_id: 'sw-1',
+      name: 'LAG 1',
+      port_ids: ['src-a'],
+      remote_device: 'Custom Peer',
+      remote_device_id: undefined,
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z'
+    }
+
+    expect(buildLocalPortConnectionUpdateBody({
+      isDuplicate: false,
+      remoteMode: 'freetext',
+      remoteDevice: 'Custom Peer',
+      sourceLag,
+      ports: [{ id: 'src-a', connected_port: 'Peer-A' }],
+      targetPortIds: ['dst-1'],
+      portMapping: {},
+      targetPortId: 'dst-1'
+    })).toEqual({
+      connected_device: 'Custom Peer',
+      connected_device_id: null,
+      connected_port_id: null,
+      connected_port: null
+    })
   })
 
   it('keeps duplicate flow free of sync and remote calls', async () => {

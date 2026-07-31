@@ -11,7 +11,7 @@ const PUBLIC_PATHS = [
 ]
 
 export default defineEventHandler((event) => {
-  const path = getRequestURL(event).pathname
+  const path = getRequestPath(event)
   const method = getMethod(event)
 
   // Only apply to API routes

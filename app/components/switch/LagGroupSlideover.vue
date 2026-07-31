@@ -217,7 +217,7 @@ import { resolvePortLabel } from '~/utils/ports'
 import { buildLagPortOptions, removeLagPort } from '~/utils/lagPortOptions'
 import { selectedPortsTrigger } from '~/utils/lagSelectedPortsLabel'
 import { onLocalPortsChange as updateLocalPorts, removePortFromSelection as removeSelectedPort } from '~/utils/lagPortSelection'
-import { buildDuplicateManualConnectedPorts, getLagDuplicatePrefill, shouldUpdateLocalPortConnectionsForSubmit } from '~/utils/lagDuplicatePrefill'
+import { buildLocalPortConnectionUpdateBody, getLagDuplicatePrefill, shouldUpdateLocalPortConnectionsForSubmit } from '~/utils/lagDuplicatePrefill'
 
 const props = defineProps<{
   switchId: string
@@ -394,21 +394,17 @@ async function createOrUpdateLocalLag(): Promise<void> {
 async function updateLocalPortConnections(): Promise<void> {
   if (remoteMode.value === 'switch') return
   if (remoteMode.value !== 'none' && form.remote_device.trim()) {
-    const duplicateManualConnectedPorts = buildDuplicateManualConnectedPorts({
-      isDuplicate: isDuplicate.value,
-      remoteMode: remoteMode.value,
-      sourceLag: duplicateSourceLag.value,
-      ports: props.ports,
-      targetPortIds: form.port_ids
-    })
     for (const portId of form.port_ids) {
-      const mapping = portMapping[portId]
-      const portBody: Record<string, string | null> = {
-        connected_device: form.remote_device.trim(),
-        connected_device_id: null,
-        connected_port_id: mapping?.remotePortId || null,
-        connected_port: mapping?.remotePortLabel ?? duplicateManualConnectedPorts[portId] ?? null,
-      }
+      const portBody = buildLocalPortConnectionUpdateBody({
+        isDuplicate: isDuplicate.value,
+        remoteMode: remoteMode.value,
+        remoteDevice: form.remote_device.trim(),
+        sourceLag: duplicateSourceLag.value,
+        ports: props.ports,
+        targetPortIds: form.port_ids,
+        portMapping,
+        targetPortId: portId
+      })
       try {
         await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, { method: 'PUT', body: portBody, query: localQuery.value })
       } catch { /* best-effort */ }
@@ -416,9 +412,19 @@ async function updateLocalPortConnections(): Promise<void> {
   } else if (remoteMode.value === 'none') {
     for (const portId of form.port_ids) {
       try {
+        const portBody = buildLocalPortConnectionUpdateBody({
+          isDuplicate: isDuplicate.value,
+          remoteMode: remoteMode.value,
+          remoteDevice: '',
+          sourceLag: duplicateSourceLag.value,
+          ports: props.ports,
+          targetPortIds: form.port_ids,
+          portMapping,
+          targetPortId: portId
+        })
         await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, {
           method: 'PUT',
-          body: { connected_device: null, connected_device_id: null, connected_port_id: null, connected_port: null },
+          body: portBody,
           query: localQuery.value
         })
       } catch { /* best-effort */ }
