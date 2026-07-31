@@ -16,3 +16,26 @@ export function shouldUpdateLocalPortConnectionsForSubmit(isDuplicate: boolean, 
   if (!isDuplicate) return true
   return remoteMode === 'freetext'
 }
+
+type PortLike = { id: string, connected_port?: string | null }
+
+export function buildDuplicateManualConnectedPorts(options: {
+  isDuplicate: boolean
+  remoteMode: 'none' | 'switch' | 'freetext'
+  sourceLag: LAGGroup | null
+  ports: PortLike[]
+  targetPortIds: string[]
+}) {
+  if (!options.isDuplicate || options.remoteMode !== 'freetext' || !options.sourceLag) {
+    return {} as Record<string, string | null>
+  }
+
+  const result: Record<string, string | null> = {}
+  for (const [index, targetPortId] of options.targetPortIds.entries()) {
+    const sourcePortId = options.sourceLag.port_ids[index]
+    if (!sourcePortId) continue
+    const sourcePort = options.ports.find(port => port.id === sourcePortId)
+    result[targetPortId] = sourcePort?.connected_port ?? null
+  }
+  return result
+}

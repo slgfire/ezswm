@@ -40,7 +40,7 @@
             multiple
             :search-input="{ placeholder: $t('lag.searchPorts') }"
             :items="availableLocalPortOptions"
-             :placeholder="form.port_ids.length ? undefined : $t('switches.ports.selectPort')"
+             :placeholder="form.port_ids.length ? undefined : $t('lag.selectPorts')"
             by="value"
             value-key="value"
             class="mt-2 w-full"
@@ -217,7 +217,7 @@ import { resolvePortLabel } from '~/utils/ports'
 import { buildLagPortOptions, removeLagPort } from '~/utils/lagPortOptions'
 import { selectedPortsTrigger } from '~/utils/lagSelectedPortsLabel'
 import { onLocalPortsChange as updateLocalPorts, removePortFromSelection as removeSelectedPort } from '~/utils/lagPortSelection'
-import { getLagDuplicatePrefill, shouldUpdateLocalPortConnectionsForSubmit } from '~/utils/lagDuplicatePrefill'
+import { buildDuplicateManualConnectedPorts, getLagDuplicatePrefill, shouldUpdateLocalPortConnectionsForSubmit } from '~/utils/lagDuplicatePrefill'
 
 const props = defineProps<{
   switchId: string
@@ -362,6 +362,7 @@ const { fetch: refreshLags } = useLagGroups(props.switchId, toRef(() => props.si
 const submittedLocalLagId = ref<string | null>(null)
 const submittedRemoteLagId = ref<string | null>(null)
 const submittedRemoteLagPortIds = ref<string[] | null>(null)
+const duplicateSourceLag = ref<LAGGroup | null>(null)
 
 // --- onSubmit stage functions ---
 
@@ -393,13 +394,20 @@ async function createOrUpdateLocalLag(): Promise<void> {
 async function updateLocalPortConnections(): Promise<void> {
   if (remoteMode.value === 'switch') return
   if (remoteMode.value !== 'none' && form.remote_device.trim()) {
+    const duplicateManualConnectedPorts = buildDuplicateManualConnectedPorts({
+      isDuplicate: isDuplicate.value,
+      remoteMode: remoteMode.value,
+      sourceLag: duplicateSourceLag.value,
+      ports: props.ports,
+      targetPortIds: form.port_ids
+    })
     for (const portId of form.port_ids) {
       const mapping = portMapping[portId]
       const portBody: Record<string, string | null> = {
         connected_device: form.remote_device.trim(),
         connected_device_id: null,
         connected_port_id: mapping?.remotePortId || null,
-        connected_port: mapping?.remotePortLabel || null,
+        connected_port: mapping?.remotePortLabel ?? duplicateManualConnectedPorts[portId] ?? null,
       }
       try {
         await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, { method: 'PUT', body: portBody, query: localQuery.value })
@@ -473,6 +481,7 @@ async function onSubmit() {
         color: 'success'
       })
       isOpen.value = false
+      duplicateSourceLag.value = null
       emit('saved')
       }
     })
@@ -486,6 +495,7 @@ async function onSubmit() {
 
 function openCreate(portIds: string[]) {
   isDuplicate.value = false
+  duplicateSourceLag.value = null
   editingLag.value = null
   form.name = ''
   form.description = ''
@@ -513,6 +523,7 @@ function duplicateLag() {
   const prefill = getLagDuplicatePrefill(source)
 
   editingLag.value = null
+  duplicateSourceLag.value = source
   isDuplicate.value = true
   form.name = name
   form.description = prefill.description
@@ -534,6 +545,7 @@ function duplicateLag() {
 
 async function openEdit(lag: LAGGroup, removePortId?: string) {
   isDuplicate.value = false
+  duplicateSourceLag.value = null
   editingLag.value = lag
   form.name = lag.name
   form.description = lag.description || ''
@@ -581,4 +593,8 @@ async function openEdit(lag: LAGGroup, removePortId?: string) {
 }
 
 defineExpose({ openCreate, openEdit, duplicateLag })
+
+watch(isOpen, (open) => {
+  if (!open) duplicateSourceLag.value = null
+})
 </script>
