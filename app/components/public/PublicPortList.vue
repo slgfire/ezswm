@@ -40,10 +40,9 @@
           <div class="mt-1 text-[11px] text-amber-500/70">
             {{ $t('public.helper.doNotUse') }}
           </div>
-          <div v-if="port.lag_group_name" class="mt-1.5">
-            <span class="inline-block rounded-full bg-violet-500/20 px-2 py-0.5 text-[10px] font-semibold text-violet-400">LAG</span>
-            <div class="mt-0.5 text-sm text-gray-300 break-words">{{ port.lag_group_name }}</div>
-          </div>
+          <span v-if="port.lag_group_name" class="mt-1.5 inline-block max-w-full rounded-full bg-violet-500/20 px-2 py-0.5 text-[11px] font-semibold text-violet-400 break-words">
+            LAG · {{ port.lag_group_name }}
+          </span>
         </div>
 
         <!-- Normal or special-device port -->
@@ -76,11 +75,10 @@
             {{ getSecondaryInfo(port) }}
           </div>
 
-          <!-- Row 4: LAG membership (compact badge + full name) -->
-          <div v-if="port.lag_group_name" class="mt-1.5">
-            <span class="inline-block rounded-full bg-violet-500/20 px-2 py-0.5 text-[10px] font-semibold text-violet-400">LAG</span>
-            <div class="mt-0.5 text-sm text-gray-300 break-words">{{ port.lag_group_name }}</div>
-          </div>
+          <!-- Row 4: LAG membership (single wrapping pill: label + full name) -->
+          <span v-if="port.lag_group_name" class="mt-1.5 inline-block max-w-full rounded-full bg-violet-500/20 px-2 py-0.5 text-[11px] font-semibold text-violet-400 break-words">
+            LAG · {{ port.lag_group_name }}
+          </span>
         </div>
       </template>
     </div>
