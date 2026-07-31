@@ -224,11 +224,12 @@ Generate a QR code for any switch that links to a public, read-only mobile view 
 **Public mobile view:** When someone scans the QR code, they see a mobile-friendly page showing:
 - Switch name, model, and location
 - All ports with their VLAN assignment and purpose
+- For ports that are LAG members: a LAG pill and the full LAG group name on the shared/public port cards
 - Filter chips to show only specific VLANs (e.g. Gaming, Server, Sleeping)
 - Clear "Tech only — do not use" warnings for infrastructure ports
 - On desktop: the full port grid visualization is also shown
 
-The public view does not require login, does not show sensitive data (no management IPs, serial numbers, or internal IDs), and is marked with `noindex` to prevent search engine indexing.
+The public view does not require login, does not show sensitive data (no management IPs, serial numbers, or internal IDs), and is marked with `noindex` to prevent search engine indexing. LAG internals (members, mappings, and remote-link details) are not exposed there.
 
 **Helper Usage (Port Classification):** Each port can be explicitly classified for the public helper view. Open a port's side panel and scroll to the "Public Helper View" section:
 - **Helper view role** — choose from Automatic, Participant, Phone + PC, Access Point, Printer, Orga, or Uplink (Tech only)

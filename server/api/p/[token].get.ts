@@ -3,6 +3,7 @@ import { switchRepository } from '../../repositories/switchRepository'
 import { vlanRepository } from '../../repositories/vlanRepository'
 import { layoutTemplateRepository } from '../../repositories/layoutTemplateRepository'
 import { siteRepository } from '../../repositories/siteRepository'
+import { lagGroupRepository } from '../../repositories/lagGroupRepository'
 import type { Port } from '~~/types/port'
 import type { LayoutUnit } from '~~/types/layoutTemplate'
 
@@ -48,6 +49,9 @@ export default defineEventHandler(async (event) => {
     .filter(v => usedVlanIds.has(v.vlan_id))
     .map(v => ({ vlan_id: v.vlan_id, name: v.name, color: v.color }))
 
+  const lagGroups = await lagGroupRepository.list(sw.id)
+  const lagGroupNameById = new Map(lagGroups.map(group => [group.id, group.name]))
+
   // Build public ports (strip sensitive fields, synthetic IDs)
   const publicPorts = sw.ports.map((port: Port, i: number) => ({
     id: `p-${i}`,
@@ -67,7 +71,8 @@ export default defineEventHandler(async (event) => {
     is_uplink: !!port.connected_device_id,
     helper_usage: port.helper_usage,
     helper_label: port.helper_label,
-    show_in_helper_list: port.show_in_helper_list
+    show_in_helper_list: port.show_in_helper_list,
+    ...(port.lag_group_id ? { lag_group_name: lagGroupNameById.get(port.lag_group_id) ?? null } : {})
   }))
 
   // Build public layout units (synthetic block IDs)

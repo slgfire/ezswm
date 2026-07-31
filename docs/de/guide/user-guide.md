@@ -224,11 +224,12 @@ Erzeuge einen QR-Code für jeden Switch, der zu einer öffentlichen, schreibgesc
 **Öffentliche Mobilansicht:** Beim Scannen des QR-Codes erscheint eine mobilfreundliche Seite mit:
 - Switch-Name, Modell und Standort
 - Alle Ports mit ihrer VLAN-Zuordnung und Zweck
+- Für Ports, die zu einer LAG gehören: ein LAG-Badge und der vollständige LAG-Gruppenname auf den öffentlichen/shared Port-Karten
 - Filter-Chips zur Anzeige bestimmter VLANs (z.B. Gaming, Server, Sleeping)
 - Klare "Nur Technik — nicht benutzen" Warnungen für Infrastruktur-Ports
 - Auf Desktop: zusätzlich die visuelle Port-Grid-Darstellung
 
-Die öffentliche Ansicht erfordert keinen Login, zeigt keine sensiblen Daten (keine Management-IPs, Seriennummern oder interne IDs) und ist mit `noindex` markiert, um Suchmaschinen-Indexierung zu verhindern.
+Die öffentliche Ansicht erfordert keinen Login, zeigt keine sensiblen Daten (keine Management-IPs, Seriennummern oder interne IDs) und ist mit `noindex` markiert, um Suchmaschinen-Indexierung zu verhindern. LAG-Interna (Mitglieder, Zuordnungen und Remote-Link-Details) werden dort nicht offengelegt.
 
 **Helfer-Nutzung (Port-Klassifikation):** Jeder Port kann explizit für die öffentliche Helfer-Ansicht klassifiziert werden. Öffne das Seitenpanel eines Ports und scrolle zum Abschnitt "Öffentliche Helfer-Ansicht":
 - **Helfer-Ansicht Rolle** — wähle zwischen Automatisch, Teilnehmer, Telefon + PC, Access Point, Drucker, Orga oder Uplink (Nur Technik)

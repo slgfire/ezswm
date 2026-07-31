@@ -2,10 +2,19 @@
 
 ## Latest Stage
 
-Date: 2026-07-29
-Stage: Port configuration copy UX + site-scoped persistence hardening
+Date: 2026-07-31
+Stage: Public QR port-list LAG name visibility
 Status: Complete
-Version: 0.32.1
+Version: 0.33.0
+
+### Feature: public/shared QR cards show LAG badge + full group name (v0.33.0)
+
+The public helper/shared QR port list now shows LAG membership context without
+revealing technical internals:
+
+- Ports that are members of a LAG display a LAG pill on the public/shared card.
+- The full LAG group name is shown on that card for clear identification.
+- LAG internals (member composition, mappings, remote-link details) remain hidden.
 
 ### Feature: refined port configuration copy flow and save consistency (v0.32.1)
 

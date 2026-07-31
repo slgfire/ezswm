@@ -777,12 +777,14 @@ function applyCopyFromPort(sourceId: string) {
   taggedVlansStr.value = (source.tagged_vlans || []).join(',')
 
   const connectionState = buildCopyConnectionState(source)
+  isRehydrating = true
   connectionMode.value = connectionState.connectionMode
   selectedSwitchId.value = connectionState.selectedSwitchId
   selectedPortId.value = connectionState.selectedPortId
   selectedAllocationId.value = connectionState.selectedAllocationId
   form.connected_device = connectionState.connected_device
   form.connected_port = connectionState.connected_port
+  nextTick(() => { isRehydrating = false })
 }
 
 // One-shot dropdown items for the icon-only copy trigger; each selection prefills via applyCopyFromPort.

@@ -40,6 +40,10 @@
           <div class="mt-1 text-[11px] text-amber-500/70">
             {{ $t('public.helper.doNotUse') }}
           </div>
+          <div v-if="port.lag_group_name" class="mt-1.5">
+            <span class="inline-block rounded-full bg-violet-500/20 px-2 py-0.5 text-[10px] font-semibold text-violet-400">LAG</span>
+            <div class="mt-0.5 text-sm text-gray-300 break-words">{{ port.lag_group_name }}</div>
+          </div>
         </div>
 
         <!-- Normal or special-device port -->
@@ -70,6 +74,12 @@
           <!-- Row 3: secondary info (description, device, tagged VLANs) -->
           <div v-if="getSecondaryInfo(port)" class="mt-1 text-[11px] text-gray-500">
             {{ getSecondaryInfo(port) }}
+          </div>
+
+          <!-- Row 4: LAG membership (compact badge + full name) -->
+          <div v-if="port.lag_group_name" class="mt-1.5">
+            <span class="inline-block rounded-full bg-violet-500/20 px-2 py-0.5 text-[10px] font-semibold text-violet-400">LAG</span>
+            <div class="mt-0.5 text-sm text-gray-300 break-words">{{ port.lag_group_name }}</div>
           </div>
         </div>
       </template>
@@ -105,6 +115,7 @@ interface PublicPort {
   helper_usage?: PortHelperUsage
   helper_label?: string
   show_in_helper_list?: boolean
+  lag_group_name?: string | null
 }
 
 // Helper-facing usage classification
