@@ -217,6 +217,7 @@ import { resolvePortLabel } from '~/utils/ports'
 import { buildLagPortOptions, removeLagPort } from '~/utils/lagPortOptions'
 import { selectedPortsTrigger } from '~/utils/lagSelectedPortsLabel'
 import { onLocalPortsChange as updateLocalPorts, removePortFromSelection as removeSelectedPort } from '~/utils/lagPortSelection'
+import { getLagDuplicatePrefill, shouldUpdateLocalPortConnectionsForSubmit } from '~/utils/lagDuplicatePrefill'
 
 const props = defineProps<{
   switchId: string
@@ -368,11 +369,9 @@ async function createOrUpdateLocalLag(): Promise<void> {
   const body = {
     name: form.name.trim(),
     port_ids: [...form.port_ids],
-    ...(isDuplicate.value ? {} : { description: form.description.trim() || undefined }),
-    ...(!isDuplicate.value ? {
-      remote_device: remoteMode.value !== 'none' ? (form.remote_device.trim() || undefined) : undefined,
-      remote_device_id: remoteMode.value === 'switch' ? (selectedRemoteSwitchId.value || undefined) : undefined
-    } : {}),
+    description: form.description.trim() || undefined,
+    remote_device: remoteMode.value === 'freetext' ? (form.remote_device.trim() || undefined) : undefined,
+    remote_device_id: remoteMode.value === 'switch' ? (selectedRemoteSwitchId.value || undefined) : undefined
   }
   if (!isDuplicate.value && remoteMode.value === 'switch' && selectedRemoteSwitchId.value) {
     Object.assign(body, { sync: {
@@ -466,7 +465,7 @@ async function onSubmit() {
       remoteLagId: submittedRemoteLagId,
       remoteLagPortIds: submittedRemoteLagPortIds,
       createOrUpdateLocalLag,
-       updateLocalPortConnections: !isDuplicate.value ? updateLocalPortConnections : undefined,
+      updateLocalPortConnections: shouldUpdateLocalPortConnectionsForSubmit(isDuplicate.value, remoteMode.value) ? updateLocalPortConnections : undefined,
       applyVlanConfig,
       onSuccess: () => {
       toast.add({
@@ -511,16 +510,17 @@ function duplicateLag() {
   if (!editingLag.value) return
   const source = editingLag.value
   const name = suggestLagCopyName(source.name, props.existingLags.map(lag => lag.name))
+  const prefill = getLagDuplicatePrefill(source)
 
   editingLag.value = null
   isDuplicate.value = true
   form.name = name
-  form.description = ''
+  form.description = prefill.description
   form.port_ids = []
-  form.remote_device = ''
-  form.remote_device_id = undefined
-  remoteMode.value = 'none'
-  selectedRemoteSwitchId.value = ''
+  form.remote_device = prefill.remote_device
+  form.remote_device_id = prefill.remote_device_id
+  remoteMode.value = prefill.remoteMode
+  selectedRemoteSwitchId.value = prefill.selectedRemoteSwitchId
   remoteLags.value = []
   for (const key of Object.keys(portMapping)) delete portMapping[key]
   const firstPort = props.ports.find(port => source.port_ids.includes(port.id))

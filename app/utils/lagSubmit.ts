@@ -10,7 +10,7 @@ type Ref<T> = { value: T }
 export type SubmittedRemoteLag = { id: string; portIds: string[] }
 
 export function buildLagSaveRequest(options: { switchId: string; lagId?: string; siteId?: string; isEdit: boolean; isDuplicate: boolean; body: Record<string, unknown> }) {
-  const body = options.isDuplicate ? { ...options.body, remote_device: undefined, remote_device_id: undefined, sync: undefined } : options.body
+  const body = options.isDuplicate ? { ...options.body, remote_device_id: undefined, sync: undefined } : options.body
   return { url: `/api/switches/${options.switchId}/lag-groups${options.isEdit && options.lagId ? `/${options.lagId}` : ''}`, method: options.isEdit && !options.isDuplicate ? 'PUT' as const : 'POST' as const, body, query: options.siteId ? { siteId: options.siteId } : undefined }
 }
 

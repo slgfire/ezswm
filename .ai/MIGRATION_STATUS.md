@@ -5,9 +5,9 @@
 Date: 2026-07-31
 Stage: Public QR port-list LAG name visibility
 Status: Complete
-Version: 0.33.0
+Version: 0.32.0
 
-### Feature: public/shared QR cards show LAG badge + full group name (v0.33.0)
+### Feature: public/shared QR cards show LAG badge + full group name (v0.32.0)
 
 The public helper/shared QR port list now shows LAG membership context without
 revealing technical internals:

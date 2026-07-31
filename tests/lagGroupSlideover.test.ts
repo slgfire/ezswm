@@ -5,6 +5,7 @@ import { buildLagPortOptions, filterLagEligiblePorts, getLagEligibleSelectedPort
 import { onLocalPortsChange, removePortFromSelection } from '../app/utils/lagPortSelection'
 import { selectedPortsLabel, selectedPortsTrigger } from '../app/utils/lagSelectedPortsLabel'
 import { buildRemoteMappingPortOptions } from '../app/composables/useRemoteConnection'
+import { getLagDuplicatePrefill, shouldUpdateLocalPortConnectionsForSubmit } from '../app/utils/lagDuplicatePrefill'
 
 describe('LagGroupSlideover quality regressions', () => {
   const port = (id: string, lag_group_id?: string, type: 'rj45' | 'console' | 'management' = 'rj45') => ({ id, unit: 1, index: 1, type, status: 'down' as const, tagged_vlans: [], label: id, lag_group_id })
@@ -96,6 +97,75 @@ describe('LagGroupSlideover quality regressions', () => {
     }
     expect(calls[0]).toMatchObject({ url: '/api/switches/local/lag-groups', options: { method: 'POST', body: { sync: { remote_switch_id: 'remote' } } } })
      expect(calls[1]).toMatchObject({ options: { method: 'POST', body: { name: 'copy' } } }); expect((calls[1] as { options: { body: { sync?: unknown } } }).options.body.sync).toBeUndefined()
+  })
+
+  it('keeps duplicate manual remote_device but still strips linked remote_device_id and sync', () => {
+    const request = buildLagSaveRequest({
+      switchId: 'local',
+      isEdit: false,
+      isDuplicate: true,
+      body: {
+        name: 'copy',
+        remote_device: 'Printer Stack',
+        remote_device_id: 'sw-remote',
+        sync: { remote_switch_id: 'sw-remote' }
+      }
+    })
+
+    expect(request.body).toEqual({
+      name: 'copy',
+      remote_device: 'Printer Stack',
+      remote_device_id: undefined,
+      sync: undefined
+    })
+  })
+
+  it('prefills duplicate remote state only for manual freetext remote', () => {
+    expect(getLagDuplicatePrefill({
+      id: 'lag-1',
+      switch_id: 'sw-1',
+      name: 'LAG 1',
+      description: 'Uplink description',
+      port_ids: ['p1', 'p2'],
+      remote_device: 'Custom Peer',
+      remote_device_id: undefined,
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z'
+    })).toEqual({
+      description: 'Uplink description',
+      remoteMode: 'freetext',
+      remote_device: 'Custom Peer',
+      remote_device_id: undefined,
+      selectedRemoteSwitchId: ''
+    })
+
+    expect(getLagDuplicatePrefill({
+      id: 'lag-2',
+      switch_id: 'sw-1',
+      name: 'LAG 2',
+      description: 'Linked peer',
+      port_ids: ['p3', 'p4'],
+      remote_device: 'Switch B',
+      remote_device_id: 'sw-2',
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z'
+    })).toEqual({
+      description: 'Linked peer',
+      remoteMode: 'none',
+      remote_device: '',
+      remote_device_id: undefined,
+      selectedRemoteSwitchId: ''
+    })
+  })
+
+  it('runs local port connection updates for duplicate freetext only', () => {
+    expect(shouldUpdateLocalPortConnectionsForSubmit(false, 'none')).toBe(true)
+    expect(shouldUpdateLocalPortConnectionsForSubmit(false, 'switch')).toBe(true)
+    expect(shouldUpdateLocalPortConnectionsForSubmit(false, 'freetext')).toBe(true)
+
+    expect(shouldUpdateLocalPortConnectionsForSubmit(true, 'freetext')).toBe(true)
+    expect(shouldUpdateLocalPortConnectionsForSubmit(true, 'none')).toBe(false)
+    expect(shouldUpdateLocalPortConnectionsForSubmit(true, 'switch')).toBe(false)
   })
 
   it('keeps duplicate flow free of sync and remote calls', async () => {
