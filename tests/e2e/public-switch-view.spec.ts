@@ -5,27 +5,79 @@ const BASE = 'http://localhost:3000'
 test.describe('Public Switch View', () => {
   let validToken: string
   let authCookie: string
+  let lagLabelForAssertion: string | null = null
 
   test.beforeAll(async ({ request }) => {
     // Login to get auth cookie
     const loginRes = await request.post(`${BASE}/api/auth/login`, {
-      data: { username: 'admin', password: 'admin123!' }
+      data: { username: 'admin', password: 'password123' }
     })
     const cookies = loginRes.headers()['set-cookie']
     authCookie = cookies?.split(';')[0] || ''
 
-    // Find an existing switch
-    const switchesRes = await request.get(`${BASE}/api/switches`, {
-      headers: { Cookie: authCookie }
-    })
-    const switchesData = await switchesRes.json()
-    const switches = switchesData.data || switchesData
-
-    if (!Array.isArray(switches) || switches.length === 0) {
-      return
+    // Find an existing switch; if none exists, provision a minimal site+template+switch.
+    const listSwitches = async () => {
+      const res = await request.get(`${BASE}/api/switches`, { headers: { Cookie: authCookie } })
+      const json = await res.json()
+      const items = json.data || json
+      return Array.isArray(items) ? items : []
     }
 
-    const switchId = switches[0].id
+    let switches = await listSwitches()
+    if (switches.length === 0) {
+      const suffix = `${Date.now()}`
+
+      const siteRes = await request.post(`${BASE}/api/sites`, {
+        headers: { Cookie: authCookie },
+        data: { name: `E2E Public Site ${suffix}` }
+      })
+      const site = await siteRes.json()
+
+      const templateRes = await request.post(`${BASE}/api/layout-templates`, {
+        headers: { Cookie: authCookie },
+        data: {
+          name: `E2E Public Template ${suffix}`,
+          manufacturer: 'E2E',
+          model: 'Public-24',
+          units: [{ unit_number: 1, label: 'Unit 1', blocks: [{ type: 'rj45', count: 24, start_index: 1, rows: 2, label: 'Gi' }] }]
+        }
+      })
+      const template = await templateRes.json()
+
+      await request.post(`${BASE}/api/switches`, {
+        headers: { Cookie: authCookie },
+        data: {
+          site_id: site.id,
+          name: `E2E Public Switch ${suffix}`,
+          model: 'Public-24',
+          manufacturer: 'E2E',
+          layout_template_id: template.id
+        }
+      })
+
+      switches = await listSwitches()
+    }
+
+    if (switches.length === 0) return
+
+    const sw = switches[0]
+    const switchId = sw.id
+
+    // Create one LAG for label rendering assertion (only when feasible).
+    const switchPorts = Array.isArray(sw.ports) ? sw.ports : []
+    if (switchPorts.length >= 2) {
+      const lagName = 'Public E2E LAG Label'
+      const lagRes = await request.post(`${BASE}/api/switches/${switchId}/lag-groups`, {
+        headers: { Cookie: authCookie },
+        data: {
+          name: lagName,
+          port_ids: [switchPorts[0].id, switchPorts[1].id]
+        }
+      })
+      if (lagRes.ok()) {
+        lagLabelForAssertion = `LAG · ${lagName}`
+      }
+    }
 
     // Create public token
     const tokenRes = await request.post(`${BASE}/api/switches/${switchId}/public-token`, {
@@ -34,6 +86,16 @@ test.describe('Public Switch View', () => {
 
     if (tokenRes.ok()) {
       const tokenData = await tokenRes.json()
+      validToken = tokenData.token
+      return
+    }
+
+    // If a token already exists, reuse it so tests still run on pre-seeded DBs.
+    const existingTokenRes = await request.get(`${BASE}/api/switches/${switchId}/public-token`, {
+      headers: { Cookie: authCookie }
+    })
+    if (existingTokenRes.ok()) {
+      const tokenData = await existingTokenRes.json()
       validToken = tokenData.token
     }
   })
@@ -84,6 +146,14 @@ test.describe('Public Switch View', () => {
     await page.waitForTimeout(2000)
     expect(page.url()).not.toContain('/login')
     expect(page.url()).toContain(`/p/${validToken}`)
+  })
+
+  test('public page shows LAG label with full name for LAG member', async ({ page }) => {
+    test.skip(!validToken, 'No valid token available')
+    test.skip(!lagLabelForAssertion, 'No LAG prepared for assertion')
+
+    await page.goto(`${BASE}/p/${validToken}`)
+    await expect(page.getByText(lagLabelForAssertion!, { exact: true }).first()).toBeVisible()
   })
 
   test('server auth middleware does not block /api/p/', async ({ request }) => {

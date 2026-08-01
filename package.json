@@ -1,6 +1,6 @@
 {
   "name": "ezswm",
-  "version": "0.31.4",
+  "version": "0.32.0",
   "type": "module",
   "private": true,
   "packageManager": "pnpm@11.0.9",
@@ -10,7 +10,7 @@
     "preview": "nuxt preview",
     "generate": "nuxt generate",
     "typecheck": "nuxt typecheck",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "docs:dev": "pnpm --filter ezswm-docs dev",
     "docs:build": "pnpm --filter ezswm-docs build",

@@ -2,19 +2,65 @@
 
 ## Latest Stage
 
-Date: 2026-07-14
-Stage: Dependency maintenance release
+Date: 2026-07-31
+Stage: Public QR port-list LAG name visibility
 Status: Complete
-Version: 0.31.4
+Version: 0.32.0
 
-### Maintenance: refresh dependency updates and release image (v0.31.4)
+### Feature: public/shared QR cards show LAG badge + full group name (v0.32.0)
 
-Merged safe dependency maintenance updates and bumped the application version so
-the release workflow publishes fresh `latest`, `0.31.4`, and `0.31` Docker image
-tags.
+The public helper/shared QR port list now shows LAG membership context without
+revealing technical internals:
 
-- Updated Nuxt i18n, marked, and development tooling updates after CI validation.
-- Kept the nanoid major update separate for explicit review.
+- Ports that are members of a LAG display a LAG pill on the public/shared card.
+- The full LAG group name is shown on that card for clear identification.
+- LAG internals (member composition, mappings, remote-link details) remain hidden.
+
+### Feature: refined port configuration copy flow and save consistency (v0.32.1)
+
+Completed the follow-up polish for port configuration copy and related editing flow:
+
+- Source port selection is restricted to same-switch ports in single-port edit.
+- Source picker uses a searchable menu with a capped option list for large switches.
+- Copy prefill includes custom/helper field values in both single-port and bulk edit flows.
+- Saving a LAG member applies the synced values consistently across that LAG's member ports.
+- Save/apply persistence remains correctly site-scoped across port edits, including LAG-related updates.
+- Slideover cancel actions now use standardized cancel styling for consistent UX.
+
+### Feature: source-based port configuration prefill with normal save/apply (v0.32.0)
+
+Port configuration copy now follows a prefill-first workflow:
+
+- Single-port edit adds an optional source picker in the sidepanel footer next to
+  Save. Selecting a source port on the same switch prefills the form only.
+- Bulk edit source selection now supports all switch ports (including currently
+  selected targets), prefills the bulk form, and still requires normal Apply.
+- Source selection never performs direct persistence; users review/edit first,
+  then use existing Save/Apply actions.
+- Copy contract excludes description and LAG membership; for connections it copies
+  only manual/freetext peer values (custom device name + peer port), while real
+  switch links and IP/allocation links are never copied.
+
+### Feature: safe LAG and port configuration copy/edit (v0.32.0)
+
+Added safe local-only duplication and configuration-copy workflows:
+
+- LAGs can be duplicated as memberless, local-only groups without copying remote
+  devices, mappings, or links.
+- Port configuration can be copied on the same switch with only manual/freetext
+  peer values copied for connections (custom device name + peer port); real switch
+  links, IP/allocation links, and LAG membership are not copied. LAG targets are
+  restricted to prevent conflicts.
+- For LAG members, manual device + peer-port values are synchronized identically
+  across the whole LAG, and users can edit the shared manual device name afterward.
+- LAG member and name integrity is preserved during editing and duplication.
+- One delete dialog supports retaining the remote LAG by default or explicitly
+  deleting it.
+- Remote deletion is server-side transactional, and remote mirror edits stay
+  synchronized with strict ownership and reciprocity checks. Conflicts return
+  HTTP 409 without partial mutation.
+
+Documentation and verification will be finalized by the orchestrator.
 
 ---
 

@@ -221,7 +221,7 @@
 
         <template #footer>
           <div v-if="panelEditing" class="flex justify-end gap-2">
-            <UButton variant="ghost" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
+            <UButton variant="subtle" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
             <UButton :loading="saving" @click="editFormRef?.submit()">{{ $t('common.save') }}</UButton>
           </div>
         </template>

@@ -145,7 +145,7 @@
 
       <template #footer>
         <div class="flex justify-end gap-2">
-          <UButton variant="ghost" color="neutral" @click="requestCloseEdit">{{ $t('common.cancel') }}</UButton>
+          <UButton variant="subtle" color="neutral" @click="requestCloseEdit">{{ $t('common.cancel') }}</UButton>
           <UButton :loading="saving" @click="editFormRef?.submit()">{{ $t('common.save') }}</UButton>
         </div>
       </template>
@@ -188,7 +188,7 @@
             {{ $t('common.delete') }}
           </UButton>
           <div class="flex gap-2">
-            <UButton variant="ghost" color="neutral" @click="requestCloseRangeEdit">{{ $t('common.cancel') }}</UButton>
+            <UButton variant="subtle" color="neutral" @click="requestCloseRangeEdit">{{ $t('common.cancel') }}</UButton>
             <UButton :loading="savingRangeEdit" @click="onSaveRangeEdit">{{ $t('common.save') }}</UButton>
           </div>
         </div>

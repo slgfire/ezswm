@@ -1,6 +1,7 @@
 import type { PoeConfig } from './layoutTemplate'
 
 export type PortType = 'rj45' | 'sfp' | 'sfp+' | 'qsfp' | 'console' | 'management'
+export const LAG_ELIGIBLE_PORT_TYPES = ['rj45', 'sfp', 'sfp+', 'qsfp'] as const satisfies readonly PortType[]
 export type PortSpeed = '100M' | '1G' | '2.5G' | '10G' | '100G'
 export type PortStatus = 'up' | 'down' | 'disabled'
 export type PortMode = 'access' | 'trunk'

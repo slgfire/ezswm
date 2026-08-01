@@ -33,8 +33,8 @@ export function useLagGroups(switchId: Ref<string> | string, siteId?: Ref<string
     return result
   }
 
-  async function remove(lagId: string) {
-    await apiFetch(`/api/switches/${resolvedId.value}/lag-groups/${lagId}`, { method: 'DELETE', params: params.value })
+  async function remove(lagId: string, options: { delete_remote?: boolean } = {}) {
+    await apiFetch(`/api/switches/${resolvedId.value}/lag-groups/${lagId}`, { method: 'DELETE', body: options, params: params.value })
     await fetch()
   }
 

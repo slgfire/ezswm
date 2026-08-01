@@ -1,6 +1,18 @@
-import type { LAGGroup } from '~~/types/lagGroup'
-import type { Port } from '~~/types/port'
-import type { Switch } from '~~/types/switch'
+import type { LAGGroup } from '../../types/lagGroup'
+import { LAG_ELIGIBLE_PORT_TYPES, type Port } from '../../types/port'
+import type { Switch } from '../../types/switch'
+
+export function buildRemoteMappingPortOptions(remotePorts: Port[], isLocalSwitch: (deviceId: string | null | undefined) => boolean, localPortIds: string[] = [], localPorts: Port[] = []) {
+  const typeRank: Record<Port['type'], number> = { rj45: 0, sfp: 1, 'sfp+': 2, qsfp: 3, console: 4, management: 5 }
+  const sortedPorts = remotePorts.filter(p => LAG_ELIGIBLE_PORT_TYPES.includes(p.type as typeof LAG_ELIGIBLE_PORT_TYPES[number])).sort((a, b) => a.unit - b.unit || (typeRank[a.type] ?? 9) - (typeRank[b.type] ?? 9) || a.index - b.index)
+  return [{ label: '— None —', value: '', conflict: '' }, ...sortedPorts.map(p => {
+    const label = p.label || `${p.unit}/${p.index}`
+    let conflict = ''
+    if (p.connected_device_id && !isLocalSwitch(p.connected_device_id)) conflict = `→ ${p.connected_device || 'Unknown'}`
+    else if (isLocalSwitch(p.connected_device_id) && p.connected_port_id && !localPortIds.includes(p.connected_port_id)) conflict = `→ ${localPorts.find(lp => lp.id === p.connected_port_id)?.label || 'this switch'}`
+    return { label: conflict ? `${label}  ⚠ ${conflict}` : label, value: p.id, conflict }
+  })]
+}
 
 export function useRemoteConnection(
   switchId: Ref<string>,
@@ -64,39 +76,7 @@ export function useRemoteConnection(
     if (!selectedRemoteSwitchId.value) return []
     const sw = allSwitches.value.find(s => s.id === selectedRemoteSwitchId.value)
     if (!sw?.ports) return []
-    // Group by unit, then by physical type (copper → fibre → uplink → console/mgmt),
-    // then by index. Without this, blocks that each restart their index at 1 (e.g.
-    // rj45, sfp, qsfp, console all starting at 1) interleave so every "1/1" clusters
-    // at the top; grouping by type keeps each block's ports together and in order.
-    const typeRank: Record<Port['type'], number> = {
-      rj45: 0, sfp: 1, 'sfp+': 2, qsfp: 3, console: 4, management: 5
-    }
-    const sortedPorts = [...sw.ports].sort((a: Port, b: Port) =>
-      a.unit - b.unit
-      || (typeRank[a.type] ?? 9) - (typeRank[b.type] ?? 9)
-      || a.index - b.index
-    )
-    return [
-      { label: '— None —', value: '', conflict: '' },
-      ...sortedPorts.map((p: Port) => {
-        const label = p.label || `${p.unit}/${p.index}`
-        let conflict = ''
-        if (p.connected_device_id && !isLocalSwitch(p.connected_device_id)) {
-          conflict = `→ ${p.connected_device || 'Unknown'}`
-        } else if (isLocalSwitch(p.connected_device_id) && p.connected_port_id) {
-          const isOurLagPort = formPortIds.value.includes(p.connected_port_id)
-          if (!isOurLagPort) {
-            const ourPort = ports.value.find((lp: Port) => lp.id === p.connected_port_id)
-            conflict = `→ ${ourPort?.label || 'this switch'}`
-          }
-        }
-        return {
-          label: conflict ? `${label}  ⚠ ${conflict}` : label,
-          value: p.id,
-          conflict
-        }
-      })
-    ]
+    return buildRemoteMappingPortOptions(sw.ports, isLocalSwitch, formPortIds.value, ports.value)
   })
 
   // Check if selected remote ports are in a DIFFERENT LAG on the remote switch

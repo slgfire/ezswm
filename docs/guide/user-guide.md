@@ -163,9 +163,15 @@ Click any port in the grid to open a slideover panel. From there you can configu
 - **PoE** -- override or disable PoE for this specific port (inherited from the template block by default)
 - **Description** -- port-level notes
 
+Optional source prefill is available in the port side panel footer. Open a port, click the **Copy/Duplicate** icon, then select another port on the same switch as the source. Use the source list search field to filter ports quickly. The selected source prefills editable configuration fields; review or adjust them, then click **Save**. Selecting a source never saves directly, and **Reset** remains a separate action.
+
 ### Bulk Port Editing
 
 Select multiple ports by holding **Ctrl** (or **Cmd** on Mac) and clicking, then use the bulk edit action to apply the same VLAN, speed, or status to all selected ports at once.
+
+Bulk edit also supports source-based prefill: choose any port on the same switch (including ports that are currently selected as targets) in the source dropdown. The selection only prefills the bulk form. You can review and edit values, and changes are persisted only when you click **Apply**.
+
+Copy prefill includes status, speed, port mode, VLAN fields, PoE selection, and custom/helper fields. For connections, it copies only manual/freetext peer values (custom device name and peer port). Real switch-to-switch links and IP/allocation links are never copied. Descriptions and LAG membership are also not copied.
 
 ### Connected Device Linking
 
@@ -218,11 +224,12 @@ Generate a QR code for any switch that links to a public, read-only mobile view 
 **Public mobile view:** When someone scans the QR code, they see a mobile-friendly page showing:
 - Switch name, model, and location
 - All ports with their VLAN assignment and purpose
+- For ports that are LAG members: a LAG pill and the full LAG group name on the shared/public port cards
 - Filter chips to show only specific VLANs (e.g. Gaming, Server, Sleeping)
 - Clear "Tech only — do not use" warnings for infrastructure ports
 - On desktop: the full port grid visualization is also shown
 
-The public view does not require login, does not show sensitive data (no management IPs, serial numbers, or internal IDs), and is marked with `noindex` to prevent search engine indexing.
+The public view does not require login, does not show sensitive data (no management IPs, serial numbers, or internal IDs), and is marked with `noindex` to prevent search engine indexing. LAG internals (members, mappings, and remote-link details) are not exposed there.
 
 **Helper Usage (Port Classification):** Each port can be explicitly classified for the public helper view. Open a port's side panel and scroll to the "Public Helper View" section:
 - **Helper view role** — choose from Automatic, Participant, Phone + PC, Access Point, Printer, Orga, or Uplink (Tech only)
@@ -281,13 +288,22 @@ For freetext remote devices, text inputs replace the dropdowns.
 
 ### Editing a LAG
 
-Click a LAG chip in the legend below the port grid to open the edit slideover. Changes to ports, remote device, or port mapping are applied to both the local and mirror LAG on save.
+Click a LAG chip in the legend below the port grid to open the edit slideover. You can edit its members, name, description, remote device, port mapping, and VLAN configuration. Changes to ports, remote device, or port mapping are applied to both the local and mirror LAG on save.
+
+### Duplicating a LAG
+
+Use **Duplicate** on a LAG to create a memberless, local-only copy. The copy does not include the remote device, remote mappings, or physical links. Add members and configure any remote connection explicitly after creating it.
+
+### Copying Port Configuration
+
+Use **Copy configuration** on a port to prefill from another port on the same switch (via the **Copy/Duplicate** icon and source selector). You can filter the source list with search, then review and **Save**. Prefill includes custom/helper field values and manual/freetext peer values (custom device name and peer port). Real switch links, IP/allocation links, and LAG membership are never copied. **Reset** is separate and not triggered by copy prefill. When the target is a LAG, the operation is restricted to prevent LAG member conflicts.
 
 ### Deleting a LAG
 
 Click the **X** button on a LAG chip in the legend. The confirmation dialog shows:
 - Which local ports will be released
-- Whether a mirror LAG on the remote switch will also be deleted
+- The default choice to retain the remote LAG
+- An optional choice to explicitly delete the remote mirror LAG as well
 
 ### LAG Legend
 
@@ -309,7 +325,10 @@ When editing a port that belongs to a LAG, the following settings are automatica
 | VLAN config (native, tagged, access, port mode) | Description |
 | Speed | MAC address |
 | Status | Connected port (different physical port on same device) |
+| Custom/helper fields | |
 | Connected device | |
+
+For manual/freetext connections, the device name + peer port pair is synchronized identically across all LAG members. You can then edit the shared device name and it propagates to the full LAG.
 
 ### LAG in Port Side Panel
 
