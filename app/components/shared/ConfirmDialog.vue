@@ -1,5 +1,5 @@
 <template>
-  <UModal :open="model" :title="title" @close="model = false">
+  <UModal v-model:open="model" :title="title">
     <template #title>
       <span class="flex items-center gap-2">
         <UIcon name="i-heroicons-exclamation-triangle" class="h-5 w-5 text-red-500" />

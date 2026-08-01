@@ -3,9 +3,16 @@
 ## Latest Stage
 
 Date: 2026-08-01
-Stage: LAG sync display names restored
+Stage: ConfirmDialog close-button dismiss behavior fix
 Status: Complete
-Version: 0.32.1
+Version: 0.32.2
+
+### Fix: confirmation dialogs now dismiss consistently across close actions (v0.32.2)
+
+Fixed inconsistent close handling in confirmation dialogs:
+
+- Dialogs can now be dismissed consistently via Cancel, close button, Escape, or backdrop click (where enabled).
+- Close-button behavior now matches the existing Cancel/Escape/backdrop dismiss flow.
 
 ### Fix: synchronized LAG display keeps target/peer switch names readable (v0.32.1)
 

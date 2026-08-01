@@ -29,6 +29,8 @@ After logging in, the dashboard provides a summary of your infrastructure: total
 
 When you have unsaved changes in a create or edit form, ezSWM warns you before navigating away — whether you click another link inside the app or try to close the browser tab. The same protection applies consistently to every editing side panel (switch and port editing, bulk port edits, LAG groups, IP allocations and ranges, networks, VLANs, sites): closing a panel with unsaved changes — by clicking outside it, pressing Escape, or hitting Cancel — prompts you first. Save or explicitly confirm "leave" to discard the changes.
 
+Confirmation dialogs can be dismissed consistently using **Cancel**, the **close button**, **Escape**, or by clicking the **backdrop** (where backdrop closing is enabled).
+
 ### Switching Language
 
 Use the language selector in the header bar (top-right, globe icon) to switch between English and German at any time. Your choice is saved to your profile, so it persists across reloads and devices. You can also change it under Settings → Account.
