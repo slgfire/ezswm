@@ -286,6 +286,8 @@ For freetext remote devices, text inputs replace the dropdowns.
 - Remote ports already in another LAG on the remote switch are **blocked** (red warning)
 - Remote ports with existing connections show an **amber warning** with the current connection; you can still save after confirmation
 
+Member-port conflict details keep readable peer switch names after sync updates (no `Unknown` labels caused by synchronization).
+
 ### Editing a LAG
 
 Click a LAG chip in the legend below the port grid to open the edit slideover. You can edit its members, name, description, remote device, port mapping, and VLAN configuration. Changes to ports, remote device, or port mapping are applied to both the local and mirror LAG on save.
@@ -310,6 +312,8 @@ Click the **X** button on a LAG chip in the legend. The confirmation dialog show
 ![LAG hover highlight](/images/screenshot-lag-highlight.png)
 
 The LAG legend is part of the legend card below the port grid. Each LAG group is shown as an interactive chip with the LAG name, port count, and remote device.
+
+When LAG members are synchronized, the legend keeps showing the target switch name on the LAG chip.
 
 - **Hover** a LAG chip to highlight its member ports (non-members dim)
 - **Click** a chip to edit the LAG

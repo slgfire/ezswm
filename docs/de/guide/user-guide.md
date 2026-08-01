@@ -286,6 +286,8 @@ Bei Freitext-Remote-Geräten ersetzen Texteingabefelder die Dropdowns.
 - Remote-Ports, die bereits in einer anderen LAG auf dem Remote-Switch sind, werden **blockiert** (rote Warnung)
 - Remote-Ports mit bestehenden Verbindungen zeigen eine **gelbe Warnung** mit der aktuellen Verbindung; nach Bestätigung kann trotzdem gespeichert werden
 
+Konfliktinfos für Mitgliedsports behalten nach Synchronisierung lesbare Peer-Switch-Namen (kein durch Sync verursachtes `Unknown`).
+
 ### LAG bearbeiten
 
 Klicke auf einen LAG-Chip in der Legende unterhalb des Port-Rasters, um das Bearbeitungs-Seitenpanel zu öffnen. Du kannst Mitglieder, Namen, Beschreibung, Remote-Gerät, Port-Zuordnung und VLAN-Konfiguration bearbeiten. Änderungen an Ports, Remote-Gerät oder Port-Zuordnung werden beim Speichern sowohl auf die lokale als auch auf die Spiegel-LAG angewendet.
@@ -310,6 +312,8 @@ Klicke auf den **X**-Button auf einem LAG-Chip in der Legende. Der Bestätigungs
 ![LAG-Hover-Hervorhebung](/images/screenshot-lag-highlight.png)
 
 Die LAG-Legende ist Teil der Legenden-Card unterhalb des Port-Rasters. Jede LAG-Gruppe wird als interaktiver Chip mit LAG-Name, Port-Anzahl und Remote-Gerät angezeigt.
+
+Bei synchronisierten LAGs bleibt der Ziel-Switch-Name auf dem LAG-Chip in der Legende sichtbar.
 
 - **Hover** über einen LAG-Chip hebt dessen Mitgliedsports hervor (Nicht-Mitglieder werden abgedunkelt)
 - **Klick** auf einen Chip zum Bearbeiten der LAG

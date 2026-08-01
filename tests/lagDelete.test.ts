@@ -161,6 +161,21 @@ describe('lagGroupRepository.delete', () => {
      }
   })
 
+  it('deletes synced unwired mirrors with delete_remote using metadata fallback', async () => {
+    const s1 = await seedSwitch(prisma, { name: 'S1' })
+    const s2 = await seedSwitch(prisma, { name: 'S2' })
+    const localPorts = await Promise.all([1, 2].map(index => prisma.port.create({ data: { id: randomUUID(), switch_id: s1.id, unit: 1, index, type: 'rj45', status: 'up', tagged_vlans: '[]' } })))
+    const remotePorts = await Promise.all([1, 2].map(index => prisma.port.create({ data: { id: randomUUID(), switch_id: s2.id, unit: 1, index, type: 'rj45', status: 'up', tagged_vlans: '[]' } })))
+    await lagGroupRepository.create(s2.id, { name: 'sync-lag', port_ids: remotePorts.map(p => p.id), remote_device_id: s1.id })
+    const local = await lagGroupRepository.create(s1.id, { name: 'sync-lag', port_ids: localPorts.map(p => p.id), remote_device_id: s2.id })
+
+    expect(await lagGroupRepository.delete(local.id, { delete_remote: true })).toBe(true)
+    expect(await prisma.lagGroup.findMany()).toHaveLength(0)
+    for (const port of [...localPorts, ...remotePorts]) {
+      expect(await prisma.port.findUnique({ where: { id: port.id } })).toMatchObject({ lag_group_id: null })
+    }
+  })
+
   it('rejects remote deletion when no coupled mirror exists', async () => {
     const s1 = await seedSwitch(prisma, { name: 'S1' }); const s2 = await seedSwitch(prisma, { name: 'S2' })
     const ports = await Promise.all([1, 2].map(index => prisma.port.create({ data: { id: randomUUID(), switch_id: s1.id, unit: 1, index, type: 'rj45', status: 'up', tagged_vlans: '[]' } })))

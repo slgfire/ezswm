@@ -179,6 +179,8 @@ describe('lagGroupRepository integrity', () => {
   it('atomically updates a strictly coupled mirror, links, and VLANs', async () => {
     const localSwitch = await seedSwitch(prisma)
     const remoteSwitch = await seedSwitch(prisma)
+    const localSwitchName = (await prisma.switch.findUnique({ where: { id: localSwitch.id }, select: { name: true } }))!.name
+    const remoteSwitchName = (await prisma.switch.findUnique({ where: { id: remoteSwitch.id }, select: { name: true } }))!.name
     const sites = await prisma.switch.findMany({ where: { id: { in: [localSwitch.id, remoteSwitch.id] } }, select: { site_id: true } })
     for (const { site_id } of sites) {
       for (const vlan_id of [10, 20]) await prisma.vlan.create({ data: { id: randomUUID(), site_id, vlan_id, name: `VLAN ${vlan_id}`, status: 'active', color: '#000000', created_at: new Date().toISOString(), updated_at: new Date().toISOString() } })
@@ -191,14 +193,18 @@ describe('lagGroupRepository integrity', () => {
       await prisma.port.update({ where: { id: localPorts[i]!.id }, data: { connected_port_id: remotePorts[i]!.id, connected_device_id: remoteSwitch.id } })
       await prisma.port.update({ where: { id: remotePorts[i]!.id }, data: { connected_port_id: localPorts[i]!.id, connected_device_id: localSwitch.id } })
     }
-    await lagGroupRepository.update(localLag.id, {
+    const updated = await lagGroupRepository.update(localLag.id, {
       name: 'renamed', port_ids: localPorts.map(p => p.id),
       sync: { remote_switch_id: remoteSwitch.id, mappings: localPorts.map((p, i) => ({ local_port_id: p.id, remote_port_id: remotePorts[i]!.id })), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [20]
       }
     } as unknown as never)
+    expect(updated.remote_device).toBe(remoteSwitchName)
     expect((await prisma.lagGroup.findUnique({ where: { id: localLag.id } }))?.name).toBe('renamed')
     expect((await prisma.lagGroup.findUnique({ where: { id: remoteLag.id } }))?.name).toBe('renamed')
+    expect((await prisma.lagGroup.findUnique({ where: { id: remoteLag.id } }))?.remote_device).toBe(localSwitchName)
     expect((await prisma.port.findUnique({ where: { id: remotePorts[0]!.id } }))?.native_vlan).toBe(10)
+    expect((await prisma.port.findUnique({ where: { id: localPorts[0]!.id } }))?.connected_device).toBe(remoteSwitchName)
+    expect((await prisma.port.findUnique({ where: { id: remotePorts[0]!.id } }))?.connected_device).toBe(localSwitchName)
     expect((await prisma.switch.findUnique({ where: { id: remoteSwitch.id } }))?.configured_vlans).toBe('[10,20]')
   })
 
@@ -293,12 +299,18 @@ describe('lagGroupRepository integrity', () => {
 
   it('creates a remote mirror atomically from a create sync payload', async () => {
     const local = await seedSwitch(prisma); const remote = await seedSwitch(prisma); await vlanSites(local, remote)
+    const localName = (await prisma.switch.findUnique({ where: { id: local.id }, select: { name: true } }))!.name
+    const remoteName = (await prisma.switch.findUnique({ where: { id: remote.id }, select: { name: true } }))!.name
     const lp = [await port(local.id), await port(local.id)]; const rp = [await port(remote.id), await port(remote.id)]
     const lag = await lagGroupRepository.create(local.id, { name: 'created', port_ids: lp.map(p => p.id), remote_device_id: remote.id, sync: { remote_switch_id: remote.id, mappings: lp.map((p, i) => ({ local_port_id: p.id, remote_port_id: rp[i]!.id })), port_mode: 'trunk', access_vlan: null, native_vlan: 10, tagged_vlans: [20] } } as unknown as never)
+    expect(lag.remote_device).toBe(remoteName)
+    expect(lag.remote_device).not.toBe('Unknown')
     const mirror = (await prisma.lagGroup.findMany({ where: { switch_id: remote.id } }))[0]!
     expect(mirror).toBeTruthy()
+    expect(mirror.remote_device).toBe(localName)
     expect((await prisma.port.findMany({ where: { lag_group_id: mirror.id } })).map(p => p.id).sort()).toEqual(rp.map(p => p.id).sort())
-    expect(await prisma.port.findUnique({ where: { id: rp[0]!.id }, select: { connected_port_id: true, connected_device_id: true, port_mode: true, native_vlan: true, tagged_vlans: true } })).toEqual({ connected_port_id: lp[0]!.id, connected_device_id: local.id, port_mode: 'trunk', native_vlan: 10, tagged_vlans: '[20]' })
+    expect(await prisma.port.findUnique({ where: { id: rp[0]!.id }, select: { connected_port_id: true, connected_device: true, connected_device_id: true, port_mode: true, native_vlan: true, tagged_vlans: true } })).toEqual({ connected_port_id: lp[0]!.id, connected_device: localName, connected_device_id: local.id, port_mode: 'trunk', native_vlan: 10, tagged_vlans: '[20]' })
+    expect(await prisma.port.findUnique({ where: { id: lp[0]!.id }, select: { connected_port_id: true, connected_device: true, connected_device_id: true } })).toEqual({ connected_port_id: rp[0]!.id, connected_device: remoteName, connected_device_id: remote.id })
     expect(lag.id).toBeTruthy()
   })
 

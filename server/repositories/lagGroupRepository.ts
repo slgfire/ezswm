@@ -14,18 +14,30 @@ interface LagRow {
   updated_at: string
 }
 
-async function rowToLag(row: LagRow): Promise<LAGGroup> {
+async function resolveRemoteDeviceNames(rows: LagRow[]): Promise<Map<string, string>> {
+  const remoteIds = [...new Set(rows.map(row => row.remote_device_id).filter((id): id is string => !!id))]
+  if (!remoteIds.length) return new Map()
+  const switches = await prisma.switch.findMany({
+    where: { id: { in: remoteIds } },
+    select: { id: true, name: true }
+  })
+  return new Map(switches.map(sw => [sw.id, sw.name]))
+}
+
+async function rowToLag(row: LagRow, remoteDeviceNames?: Map<string, string>): Promise<LAGGroup> {
   const portRows = await prisma.port.findMany({
     where: { lag_group_id: row.id },
     select: { id: true },
     orderBy: [{ unit: 'asc' }, { index: 'asc' }]
   })
+  const resolvedRemoteDevice = row.remote_device
+    ?? (row.remote_device_id ? remoteDeviceNames?.get(row.remote_device_id) : undefined)
   return {
     id: row.id,
     switch_id: row.switch_id,
     name: row.name,
     port_ids: portRows.map(p => p.id),
-    remote_device: row.remote_device ?? undefined,
+    remote_device: resolvedRemoteDevice ?? undefined,
     remote_device_id: row.remote_device_id ?? undefined,
     description: row.description ?? undefined,
     created_at: row.created_at,
@@ -34,7 +46,8 @@ async function rowToLag(row: LagRow): Promise<LAGGroup> {
 }
 
 async function rowsToLags(rows: LagRow[]): Promise<LAGGroup[]> {
-  return Promise.all(rows.map(rowToLag))
+  const remoteDeviceNames = await resolveRemoteDeviceNames(rows)
+  return Promise.all(rows.map(row => rowToLag(row, remoteDeviceNames)))
 }
 
 export const lagGroupRepository = {
@@ -48,7 +61,9 @@ export const lagGroupRepository = {
 
   async getById(id: string): Promise<LAGGroup | null> {
     const row = await prisma.lagGroup.findUnique({ where: { id } })
-    return row ? rowToLag(row) : null
+    if (!row) return null
+    const remoteDeviceNames = await resolveRemoteDeviceNames([row])
+    return rowToLag(row, remoteDeviceNames)
   },
 
   async create(idOrSlug: string, data: Omit<LAGGroup, 'id' | 'switch_id' | 'created_at' | 'updated_at'>): Promise<LAGGroup> {
@@ -84,6 +99,7 @@ export const lagGroupRepository = {
       if (!normalizedName) {
         throw createError({ statusCode: 400, message: 'LAG group name must not be empty' })
       }
+      const localSwitchName = sw.name
       const duplicate = await tx.lagGroup.findFirst({ where: { switch_id: switchId, name: normalizedName } })
       if (duplicate) {
         throw createError({ statusCode: 409, message: `LAG group name '${normalizedName}' already exists on this switch` })
@@ -110,14 +126,15 @@ export const lagGroupRepository = {
         if (sync.port_mode === 'trunk' && sync.access_vlan !== null) throw createError({ statusCode: 409, message: 'Trunk ports cannot have an access VLAN' })
          const localIds = new Set(sync.mappings.map(m => m.local_port_id))
          if (sync.mappings.some(m => !localIds.has(m.local_port_id) || !data.port_ids.includes(m.local_port_id))) throw createError({ statusCode: 409, message: 'Sync mappings must use local LAG members' })
-        const remoteLag = await tx.lagGroup.create({ data: { id: randomUUID(), switch_id: sync.remote_switch_id, name: normalizedName, remote_device: null, remote_device_id: switchId, description: data.description ?? null, created_at: now, updated_at: now } })
+        const remoteSwitch = await tx.switch.findUnique({ where: { id: sync.remote_switch_id }, select: { name: true } })
+        const remoteLag = await tx.lagGroup.create({ data: { id: randomUUID(), switch_id: sync.remote_switch_id, name: normalizedName, remote_device: localSwitchName, remote_device_id: switchId, description: data.description ?? null, created_at: now, updated_at: now } })
         const vlanData = { port_mode: sync.port_mode, access_vlan: sync.access_vlan, native_vlan: sync.native_vlan, tagged_vlans: JSON.stringify(sync.tagged_vlans) }
         await tx.port.updateMany({ where: { id: { in: remote.map(p => p.id) } }, data: { lag_group_id: remoteLag.id, ...vlanData } })
         await tx.port.updateMany({ where: { id: { in: data.port_ids } }, data: vlanData })
         for (const m of sync.mappings) {
           const l = await tx.port.findUnique({ where: { id: m.local_port_id } }); const r = remote.find(p => p.id === m.remote_port_id)!
-          await tx.port.update({ where: { id: l!.id }, data: { connected_device_id: sync.remote_switch_id, connected_port_id: r.id, connected_port: r.label } })
-          await tx.port.update({ where: { id: r.id }, data: { connected_device_id: switchId, connected_port_id: l!.id, connected_port: l!.label } })
+          await tx.port.update({ where: { id: l!.id }, data: { connected_device: remoteSwitch?.name ?? null, connected_device_id: sync.remote_switch_id, connected_port_id: r.id, connected_port: r.label } })
+          await tx.port.update({ where: { id: r.id }, data: { connected_device: localSwitchName, connected_device_id: switchId, connected_port_id: l!.id, connected_port: l!.label } })
         }
         const vlanIds = [...new Set(sync.tagged_vlans.concat(sync.access_vlan ?? [], sync.native_vlan ?? []))]
         const switches = await tx.switch.findMany({ where: { id: { in: [switchId, sync.remote_switch_id] } }, select: { id: true, site_id: true, configured_vlans: true } })
@@ -126,9 +143,14 @@ export const lagGroupRepository = {
         if (existing.length < sites.length * vlanIds.length) throw createError({ statusCode: 409, message: 'Configured VLAN does not exist on both switch sites' })
         for (const s of switches) await tx.switch.update({ where: { id: s.id }, data: { configured_vlans: JSON.stringify([...new Set<number>((JSON.parse(s.configured_vlans) as number[]).concat(vlanIds))].sort((a, b) => a - b)) } })
       }
+      if (!created.remote_device && created.remote_device_id) {
+        const resolved = await tx.switch.findUnique({ where: { id: created.remote_device_id }, select: { name: true } })
+        if (resolved?.name) return { ...created, remote_device: resolved.name }
+      }
       return created
     })
-      return rowToLag(row)
+      const remoteDeviceNames = await resolveRemoteDeviceNames([row])
+      return rowToLag(row, remoteDeviceNames)
     } catch (error: unknown) {
       if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') throw createError({ statusCode: 409, message: `LAG group name '${normalizedName}' already exists on this switch` })
       throw error
@@ -154,6 +176,10 @@ export const lagGroupRepository = {
       if (!lockedCurrent || (expectedSwitchId && lockedCurrent.switch_id !== expectedSwitchId)) throw createError({ statusCode: 404, message: 'LAG group not found' })
       if (sync) {
         const mappings = sync.mappings
+        const [localSwitch, remoteSwitch] = await Promise.all([
+          tx.switch.findUnique({ where: { id: current.switch_id }, select: { name: true } }),
+          tx.switch.findUnique({ where: { id: sync.remote_switch_id }, select: { name: true } })
+        ])
         if (new Set(mappings.map(m => m.local_port_id)).size !== mappings.length || new Set(mappings.map(m => m.remote_port_id)).size !== mappings.length) throw createError({ statusCode: 409, message: 'LAG port mappings must be unique' })
         if (new Set(mappings.map(m => m.local_port_id)).size !== mappings.length || new Set(mappings.map(m => m.remote_port_id)).size !== mappings.length) throw createError({ statusCode: 409, message: 'LAG port mappings must be unique' })
          const localPorts = await tx.port.findMany({ where: { id: { in: mappings.map(m => m.local_port_id) } } })
@@ -175,7 +201,7 @@ export const lagGroupRepository = {
           if (valid) coupled.push(candidate)
         }
         if (candidates.length > 0 && (candidates.length !== 1 || coupled.length !== 1)) throw createError({ statusCode: 409, message: 'Remote mirror cannot be uniquely and safely identified; nothing was updated' })
-        const remoteLag = coupled[0] ?? await tx.lagGroup.create({ data: { id: randomUUID(), switch_id: sync.remote_switch_id, name: normalizedName ?? current.name, remote_device: null, remote_device_id: current.switch_id, description: null, created_at: updatedAt, updated_at: updatedAt } })
+        const remoteLag = coupled[0] ?? await tx.lagGroup.create({ data: { id: randomUUID(), switch_id: sync.remote_switch_id, name: normalizedName ?? current.name, remote_device: localSwitch?.name ?? null, remote_device_id: current.switch_id, description: null, created_at: updatedAt, updated_at: updatedAt } })
         if (remotePorts.some(p => p.lag_group_id && p.lag_group_id !== remoteLag.id)) throw createError({ statusCode: 409, message: 'A mapped port belongs to another LAG group' })
         const oldRemotePorts = await tx.port.findMany({ where: { lag_group_id: remoteLag.id } })
         const oldPairs = new Map([...oldLocalPorts, ...oldRemotePorts].map(p => [p.id, p.connected_port_id]))
@@ -200,8 +226,8 @@ export const lagGroupRepository = {
         await tx.port.updateMany({ where: { id: { in: mappings.map(m => m.remote_port_id) } }, data: { lag_group_id: remoteLag.id, ...vlanData } })
         for (const m of mappings) {
           const local = localPorts.find(p => p.id === m.local_port_id)!; const remote = remotePorts.find(p => p.id === m.remote_port_id)!
-          await tx.port.update({ where: { id: local.id }, data: { connected_device_id: sync.remote_switch_id, connected_port_id: remote.id, connected_device: null, connected_port: remote.label } })
-          await tx.port.update({ where: { id: remote.id }, data: { connected_device_id: current.switch_id, connected_port_id: local.id, connected_device: null, connected_port: local.label } })
+          await tx.port.update({ where: { id: local.id }, data: { connected_device_id: sync.remote_switch_id, connected_port_id: remote.id, connected_device: remoteSwitch?.name ?? null, connected_port: remote.label } })
+          await tx.port.update({ where: { id: remote.id }, data: { connected_device_id: current.switch_id, connected_port_id: local.id, connected_device: localSwitch?.name ?? null, connected_port: local.label } })
         }
         if (sync.port_mode === 'access' && (sync.native_vlan !== null || sync.tagged_vlans.length)) throw createError({ statusCode: 409, message: 'Access ports cannot have native or tagged VLANs' })
         if (sync.port_mode === 'trunk' && sync.access_vlan !== null) throw createError({ statusCode: 409, message: 'Trunk ports cannot have an access VLAN' })
@@ -213,7 +239,7 @@ export const lagGroupRepository = {
           const configured = JSON.parse(sw.configured_vlans) as number[]
           await tx.switch.update({ where: { id: sw.id }, data: { configured_vlans: JSON.stringify([...new Set<number>(configured.concat(vlanIds))].sort((a, b) => a - b)) } })
         }
-        await tx.lagGroup.update({ where: { id: remoteLag.id }, data: { name: normalizedName ?? current.name, updated_at: updatedAt } })
+        await tx.lagGroup.update({ where: { id: remoteLag.id }, data: { name: normalizedName ?? current.name, remote_device: localSwitch?.name ?? null, updated_at: updatedAt } })
       }
       if (data.name !== undefined) {
         if (!normalizedName) {
@@ -248,7 +274,7 @@ export const lagGroupRepository = {
           data: { lag_group_id: null }
         })
       }
-      return tx.lagGroup.update({
+      const updated = await tx.lagGroup.update({
         where: { id },
         data: {
           ...(data.name !== undefined ? { name: normalizedName } : {}),
@@ -258,8 +284,14 @@ export const lagGroupRepository = {
           updated_at: updatedAt
         }
       })
+      if (!updated.remote_device && updated.remote_device_id) {
+        const resolved = await tx.switch.findUnique({ where: { id: updated.remote_device_id }, select: { name: true } })
+        if (resolved?.name) return { ...updated, remote_device: resolved.name }
+      }
+      return updated
       })
-    return rowToLag(row)
+    const remoteDeviceNames = await resolveRemoteDeviceNames([row])
+    return rowToLag(row, remoteDeviceNames)
     } catch (error: unknown) {
       if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
         throw createError({ statusCode: 409, message: `LAG group name '${normalizedName ?? current.name}' already exists on this switch` })
@@ -303,10 +335,18 @@ export const lagGroupRepository = {
               })
             if (valid) coupled.push(candidate)
           }
-            if (coupled.length !== 1) throw createError({ statusCode: 409, message: 'Remote mirror cannot be uniquely and safely identified; nothing was deleted' })
-          const remoteMembers = await tx.port.findMany({ where: { lag_group_id: coupled[0]!.id }, select: { id: true, switch_id: true, connected_port_id: true, connected_device_id: true } })
+          const nameFallback = coupled.length === 0
+            ? candidates.filter(candidate => candidate.name === local.name)
+            : []
+          const mirror = coupled.length === 1
+            ? coupled[0]!
+            : nameFallback.length === 1
+              ? nameFallback[0]!
+              : null
+          if (!mirror) throw createError({ statusCode: 409, message: 'Remote mirror cannot be uniquely and safely identified; nothing was deleted' })
+          const remoteMembers = await tx.port.findMany({ where: { lag_group_id: mirror.id }, select: { id: true, switch_id: true, connected_port_id: true, connected_device_id: true } })
           await clearLinks(remoteMembers)
-            await tx.lagGroup.delete({ where: { id: coupled[0]!.id } })
+            await tx.lagGroup.delete({ where: { id: mirror.id } })
           } else if (local.remote_device_id) {
             const candidates = await tx.lagGroup.findMany({ where: { switch_id: local.remote_device_id, remote_device_id: local.switch_id } })
             const coupled = []
