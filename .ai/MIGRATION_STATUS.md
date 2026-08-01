@@ -2,10 +2,18 @@
 
 ## Latest Stage
 
-Date: 2026-07-31
-Stage: Public QR port-list LAG name visibility
+Date: 2026-08-01
+Stage: LAG sync display names restored
 Status: Complete
-Version: 0.32.0
+Version: 0.32.1
+
+### Fix: synchronized LAG display keeps target/peer switch names readable (v0.32.1)
+
+Fixed a sync regression where display-only names could degrade after LAG member synchronization:
+
+- LAG legend chips again show the target switch name for synchronized LAGs.
+- Member-port conflict information retains readable peer switch names.
+- Synchronization no longer degrades those names to `Unknown`.
 
 ### Feature: public/shared QR cards show LAG badge + full group name (v0.32.0)
 
