@@ -40,7 +40,7 @@
           <div class="mt-1 text-[11px] text-amber-500/70">
             {{ $t('public.helper.doNotUse') }}
           </div>
-          <span v-if="port.lag_group_name" class="mt-1.5 inline-block max-w-full rounded-full bg-violet-500/20 px-2 py-0.5 text-[11px] font-semibold text-violet-400 break-words">
+          <span v-if="port.lag_group_name" class="mt-1.5 inline-block max-w-full rounded-full px-2 py-0.5 text-[11px] font-semibold break-words" :style="lagPillStyle(port.lag_group_name)">
             LAG · {{ port.lag_group_name }}
           </span>
         </div>
@@ -76,7 +76,7 @@
           </div>
 
           <!-- Row 4: LAG membership (single wrapping pill: label + full name) -->
-          <span v-if="port.lag_group_name" class="mt-1.5 inline-block max-w-full rounded-full bg-violet-500/20 px-2 py-0.5 text-[11px] font-semibold text-violet-400 break-words">
+          <span v-if="port.lag_group_name" class="mt-1.5 inline-block max-w-full rounded-full px-2 py-0.5 text-[11px] font-semibold break-words" :style="lagPillStyle(port.lag_group_name)">
             LAG · {{ port.lag_group_name }}
           </span>
         </div>
@@ -233,14 +233,23 @@ function isConnected(port: PublicPort): boolean {
   return !!(port.connected_device || port.connected_port_id || port.connected_port)
 }
 
+// ponytail: hash LAG name → stable color, same LAG always same pill color
+const LAG_COLORS = ['#8b5cf6', '#3b82f6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#f97316']
+function lagColor(name: string | null | undefined): string {
+  if (!name) return LAG_COLORS[0]
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
+  return LAG_COLORS[h % LAG_COLORS.length]
+}
+function lagPillStyle(name: string | null | undefined): Record<string, string> {
+  const c = lagColor(name)
+  return { backgroundColor: c + '20', color: c }
+}
+
 function portBorderStyle(port: PublicPort): Record<string, string> {
   const usage = getHelperUsage(port)
   if (usage === 'special') {
     return { borderLeftWidth: '3px', borderLeftColor: '#38bdf8', borderColor: 'rgba(55,65,81,0.5)' }
-  }
-  // Connected ports get a distinct emerald border to stand out
-  if (isConnected(port)) {
-    return { borderLeftWidth: '3px', borderLeftColor: '#10b981', borderColor: 'rgba(55,65,81,0.5)' }
   }
   const color = getPrimaryVlanColor(port)
   if (!color) return { borderColor: 'rgba(55,65,81,0.5)' }
