@@ -113,7 +113,7 @@
         </div>
 
         <!-- Port mapping table -->
-         <div v-if="showPortMapping && form.port_ids.length > 0" class="rounded-lg border border-default bg-default/50 p-3">
+         <div v-if="showPortMapping && form.port_ids.length > 0 && !(isDuplicate && remoteMode === 'freetext')" class="rounded-lg border border-default bg-default/50 p-3">
           <div class="mb-2 text-xs font-semibold text-gray-600 dark:text-gray-300">
             {{ $t('lag.portMapping') }}
           </div>

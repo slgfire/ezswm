@@ -391,9 +391,9 @@ v-model="editForm.role"
       @confirm="onDeleteLag"
     >
       <UCheckbox
-        v-if="lagToDelete?.remote_device_id && lagToDelete.remote_device"
+        v-if="lagToDelete?.remote_device_id"
         v-model="deleteRemoteLag"
-        :label="$t('lag.deleteRemoteLag', { switch: lagToDelete.remote_device })"
+        :label="$t('lag.deleteRemoteLag', { switch: lagToDelete.remote_device || $t('lag.remoteDevice') })"
         class="mt-4"
       />
     </SharedConfirmDialog>
@@ -577,8 +577,8 @@ const lagDeleteMessage = computed(() => {
     .map((pid: string) => item.value?.ports?.find((p) => p.id === pid)?.label || pid)
     .join(', ')
   let msg = `${t('lag.deleteConfirm', { name: lagToDelete.value.name })}\n\n${t('lag.portsWillBeReleased')}: ${portLabels}`
-  if (lagToDelete.value.remote_device_id && lagToDelete.value.remote_device) {
-    msg += `\n\n${t('lag.remoteLagKept', { switch: lagToDelete.value.remote_device })}`
+  if (lagToDelete.value.remote_device_id) {
+    msg += `\n\n${t('lag.remoteLagKept', { switch: lagToDelete.value.remote_device || t('lag.remoteDevice') })}`
   }
   return msg
 })
