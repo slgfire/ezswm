@@ -36,7 +36,6 @@
             <div class="sticker-name">{{ sticker.name }}</div>
             <div v-if="sticker.model" class="sticker-model">{{ sticker.model }}</div>
             <div v-if="sticker.location" class="sticker-location">{{ sticker.location }}</div>
-            <div class="sticker-brand">ezSWM</div>
           </div>
         </div>
       </div>
@@ -204,12 +203,6 @@ function onClose() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.sticker-brand {
-  font-size: 8px;
-  color: #bbb;
-  margin-top: 4px;
 }
 
 @media print {
