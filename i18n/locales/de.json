@@ -841,6 +841,8 @@
     "remoteLagKept": "Die Mirror-LAG auf {switch} bleibt erhalten, sofern sie nicht zusätzlich zum Löschen ausgewählt wird.",
     "deleteRemoteLag": "Mirror-LAG auf {switch} ebenfalls löschen",
     "vlanSection": "VLAN-Konfiguration fuer LAG-Ports",
+    "portStatus": "Port-Status",
+    "portStatusHint": "Gilt fuer alle lokalen und Remote-LAG-Ports gleichzeitig",
     "vlanOptOut": "Keine VLAN-Aenderung bei diesem Speichern",
     "vlanApplied": "VLAN-Konfiguration auf {count} LAG-Port(s) angewendet",
     "vlanAppliedRemote": "VLAN-Konfiguration auf {count} Port(s) auf {switch} angewendet",

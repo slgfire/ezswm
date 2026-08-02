@@ -1,3 +1,16 @@
+## [0.33.0] — 2026-08-02
+
+### Hinzugefügt
+- LAG duplizieren: Beim Duplizieren eines LAG kann jetzt ein Remote-Switch ausgewählt werden, sodass ein Ersatzswitch gewählt werden kann, anstatt die ursprüngliche Remote-Verbindung zu kopieren. Der Remote-Abschnitt, das Port-Mapping und die Konfliktwarnungen sind im Duplizieren-Modus sichtbar.
+- LAG erstellen/duplizieren: Der Port-Status (up/down/disabled) kann jetzt für alle Member-Ports gleichzeitig gesetzt werden — lokal und remote, wenn ein Remote-Switch ausgewählt ist.
+- Helferansicht (mobil): Verbundene Ports werden jetzt mit einer smaragdgrünen linken Border und grüner Verbindungstext hervorgehoben, sodass verknüpfte Ports auf einen Blick erkennbar sind.
+- Layout-Template-Erstellung: Port-Blöcke können jetzt während der Erstellung mit Auf/Ab-Buttons umsortiert werden, passend zum Verhalten, das bereits im Edit-View verfügbar ist.
+
+### Behoben
+- Helferansicht (mobil): Die Port-Sortierung mischt Typen nicht mehr zufällig. Ports werden jetzt nach Typ gruppiert (RJ45 → SFP → SFP+ → QSFP → Management → Console) innerhalb jeder Usage-Kategorie, sodass die Liste der physischen Panel-Reihenfolge folgt.
+
+---
+
 ## [0.31.4] — 2026-07-14
 
 ### Geändert

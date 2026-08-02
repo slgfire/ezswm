@@ -94,13 +94,31 @@
                   >
                     <div class="flex items-start justify-between mb-3">
                       <span class="text-sm text-gray-400">{{ $t('templates.blocks.title') }} #{{ blockIndex + 1 }}</span>
-                      <UButton
-                        icon="i-heroicons-x-mark"
-                        size="xs"
-                        color="error"
-                        variant="ghost"
-                        @click="removeBlock(unitIndex, blockIndex)"
-                      />
+                      <div class="flex items-center gap-1">
+                        <UButton
+                          icon="i-heroicons-chevron-up"
+                          size="xs"
+                          color="neutral"
+                          variant="ghost"
+                          :disabled="blockIndex === 0"
+                          @click="moveBlock(unitIndex, blockIndex, -1)"
+                        />
+                        <UButton
+                          icon="i-heroicons-chevron-down"
+                          size="xs"
+                          color="neutral"
+                          variant="ghost"
+                          :disabled="blockIndex === unit.blocks.length - 1"
+                          @click="moveBlock(unitIndex, blockIndex, 1)"
+                        />
+                        <UButton
+                          icon="i-heroicons-x-mark"
+                          size="xs"
+                          color="error"
+                          variant="ghost"
+                          @click="removeBlock(unitIndex, blockIndex)"
+                        />
+                      </div>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                       <UFormField :label="$t('templates.blocks.type')" :name="`units[${unitIndex}].blocks[${blockIndex}].type`" :error="errors[`units[${unitIndex}].blocks[${blockIndex}].type`]">
@@ -339,6 +357,14 @@ function addBlock(unitIndex: number) {
 
 function removeBlock(unitIndex: number, blockIndex: number) {
   form.units[unitIndex]!.blocks.splice(blockIndex, 1)
+}
+
+function moveBlock(unitIndex: number, blockIndex: number, direction: -1 | 1) {
+  const blocks = form.units[unitIndex]!.blocks
+  const target = blockIndex + direction
+  if (target < 0 || target >= blocks.length) return
+  const [removed] = blocks.splice(blockIndex, 1)
+  blocks.splice(target, 0, removed!)
 }
 
 function validate(): boolean {

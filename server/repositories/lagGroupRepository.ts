@@ -91,7 +91,7 @@ export const lagGroupRepository = {
     const newId = randomUUID()
     const normalizedName = data.name.trim()
 
-    const sync = (data as typeof data & { sync?: { remote_switch_id: string; mappings: { local_port_id: string; remote_port_id: string }[]; port_mode: string; access_vlan: number | null; native_vlan: number | null; tagged_vlans: number[] } }).sync
+    const sync = (data as typeof data & { sync?: { remote_switch_id: string; mappings: { local_port_id: string; remote_port_id: string }[]; port_mode: string; access_vlan: number | null; native_vlan: number | null; tagged_vlans: number[]; status?: string } }).sync
     if (sync && data.remote_device_id !== undefined && data.remote_device_id !== sync.remote_switch_id) throw createError({ statusCode: 409, message: 'remote_device_id must match sync.remote_switch_id' })
     if (sync && data.remote_device_id !== sync.remote_switch_id) throw createError({ statusCode: 409, message: 'remote_device_id must match sync.remote_switch_id' })
     try {
@@ -128,7 +128,7 @@ export const lagGroupRepository = {
          if (sync.mappings.some(m => !localIds.has(m.local_port_id) || !data.port_ids.includes(m.local_port_id))) throw createError({ statusCode: 409, message: 'Sync mappings must use local LAG members' })
         const remoteSwitch = await tx.switch.findUnique({ where: { id: sync.remote_switch_id }, select: { name: true } })
         const remoteLag = await tx.lagGroup.create({ data: { id: randomUUID(), switch_id: sync.remote_switch_id, name: normalizedName, remote_device: localSwitchName, remote_device_id: switchId, description: data.description ?? null, created_at: now, updated_at: now } })
-        const vlanData = { port_mode: sync.port_mode, access_vlan: sync.access_vlan, native_vlan: sync.native_vlan, tagged_vlans: JSON.stringify(sync.tagged_vlans) }
+        const vlanData = { port_mode: sync.port_mode, access_vlan: sync.access_vlan, native_vlan: sync.native_vlan, tagged_vlans: JSON.stringify(sync.tagged_vlans), ...(sync.status ? { status: sync.status } : {}) }
         await tx.port.updateMany({ where: { id: { in: remote.map(p => p.id) } }, data: { lag_group_id: remoteLag.id, ...vlanData } })
         await tx.port.updateMany({ where: { id: { in: data.port_ids } }, data: vlanData })
         for (const m of sync.mappings) {
@@ -165,7 +165,7 @@ export const lagGroupRepository = {
 
     if (data.port_ids && (data.port_ids.length < 2 || new Set(data.port_ids).size !== data.port_ids.length)) throw createError({ statusCode: 400, message: 'A LAG group requires at least two distinct ports' })
     const updatedAt = new Date().toISOString()
-    const sync = (data as typeof data & { sync?: { remote_switch_id: string; mappings: { local_port_id: string; remote_port_id: string }[]; port_mode: string; access_vlan: number | null; native_vlan: number | null; tagged_vlans: number[] } }).sync
+    const sync = (data as typeof data & { sync?: { remote_switch_id: string; mappings: { local_port_id: string; remote_port_id: string }[]; port_mode: string; access_vlan: number | null; native_vlan: number | null; tagged_vlans: number[]; status?: string } }).sync
     if (sync && current.remote_device_id && sync.remote_switch_id !== current.remote_device_id) throw createError({ statusCode: 409, message: 'Remote switch cannot be changed for an existing synced LAG' })
     if (current.remote_device_id && !sync && (data.port_ids || data.name !== undefined || data.remote_device !== undefined || data.remote_device_id !== undefined)) throw createError({ statusCode: 409, message: 'Remote LAG changes require a complete sync payload' })
     if (sync && data.remote_device_id !== undefined && data.remote_device_id !== sync.remote_switch_id) throw createError({ statusCode: 409, message: 'remote_device_id must match sync.remote_switch_id' })
@@ -221,7 +221,7 @@ export const lagGroupRepository = {
         }
         await tx.port.updateMany({ where: { lag_group_id: remoteLag.id, id: { notIn: remotePorts.map(p => p.id) } }, data: { lag_group_id: null } })
         await tx.port.updateMany({ where: { lag_group_id: id, id: { notIn: localPorts.map(p => p.id) } }, data: { lag_group_id: null } })
-        const vlanData = { port_mode: sync.port_mode, access_vlan: sync.access_vlan, native_vlan: sync.native_vlan, tagged_vlans: JSON.stringify(sync.tagged_vlans) }
+        const vlanData = { port_mode: sync.port_mode, access_vlan: sync.access_vlan, native_vlan: sync.native_vlan, tagged_vlans: JSON.stringify(sync.tagged_vlans), ...(sync.status ? { status: sync.status } : {}) }
         await tx.port.updateMany({ where: { id: { in: mappings.map(m => m.local_port_id) } }, data: { lag_group_id: id, ...vlanData } })
         await tx.port.updateMany({ where: { id: { in: mappings.map(m => m.remote_port_id) } }, data: { lag_group_id: remoteLag.id, ...vlanData } })
         for (const m of mappings) {

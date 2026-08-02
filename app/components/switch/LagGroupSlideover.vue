@@ -55,7 +55,7 @@
         <USeparator />
 
          <!-- Remote connection type -->
-         <UFormField v-if="!isDuplicate" :label="$t('lag.remoteDevice')">
+         <UFormField :label="$t('lag.remoteDevice')">
           <div class="mb-2 flex items-center gap-1">
             <button
               v-for="mode in remoteConnectionModes"
@@ -99,13 +99,13 @@
         </UFormField>
 
         <!-- Existing remote LAG warning -->
-         <div v-if="!isDuplicate && existingRemoteLag" class="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+         <div v-if="existingRemoteLag" class="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
           <span class="font-semibold">{{ $t('common.warning') }}:</span>
           {{ $t('lag.existingRemoteLag', { name: existingRemoteLag.name, switch: form.remote_device }) }}
         </div>
 
         <!-- Remote port LAG conflict (ports in a different LAG on remote switch) -->
-         <div v-if="!isDuplicate && remotePortLagConflicts.length" class="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+         <div v-if="remotePortLagConflicts.length" class="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
           <span class="font-semibold">{{ $t('common.warning') }}:</span>
           <div v-for="c in remotePortLagConflicts" :key="c.portId" class="mt-1">
             {{ c.portLabel }} → {{ $t('lag.portInRemoteLag', { lag: c.lagName }) }}
@@ -113,7 +113,7 @@
         </div>
 
         <!-- Port mapping table -->
-         <div v-if="!isDuplicate && showPortMapping && form.port_ids.length > 0" class="rounded-lg border border-default bg-default/50 p-3">
+         <div v-if="showPortMapping && form.port_ids.length > 0" class="rounded-lg border border-default bg-default/50 p-3">
           <div class="mb-2 text-xs font-semibold text-gray-600 dark:text-gray-300">
             {{ $t('lag.portMapping') }}
           </div>
@@ -156,7 +156,7 @@
         </div>
 
         <!-- Global conflict warning -->
-         <div v-if="!isDuplicate && hasConnectionConflicts" class="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+         <div v-if="hasConnectionConflicts" class="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
           <span class="font-semibold">{{ $t('common.warning') }}:</span>
           {{ $t('lag.conflictWarning') }}
         </div>
@@ -168,6 +168,22 @@
           <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-400">
             {{ $t('lag.vlanSection') }}
           </h4>
+
+          <UFormField :label="$t('lag.portStatus')">
+            <div class="flex items-center gap-2">
+              <button
+                v-for="opt in portStatusOptions"
+                :key="opt.value"
+                type="button"
+                class="rounded border px-2.5 py-1 text-xs font-medium transition-colors"
+                :class="portStatus === opt.value
+                  ? 'border-primary-500/50 bg-primary-500/20 text-primary-400'
+                  : 'border-neutral-300 bg-neutral-100 text-neutral-500 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-300'"
+                @click="portStatus = opt.value"
+              >{{ opt.label }}</button>
+            </div>
+            <p class="mt-1 text-xs text-gray-400">{{ $t('lag.portStatusHint') }}</p>
+          </UFormField>
 
           <UFormField :label="$t('switches.ports.portMode')">
             <USelect v-model="vlanForm.port_mode" :items="vlanPortModeOptions" class="w-full" />
@@ -200,7 +216,7 @@
         <UButton v-if="isEdit" color="neutral" variant="outline" icon="i-heroicons-document-duplicate" @click="duplicateLag">
           {{ $t('lag.duplicate') }}
         </UButton>
-         <UButton :loading="saving" :disabled="!isDuplicate && remotePortLagConflicts.length > 0" icon="i-heroicons-check" @click="lagFormRef?.submit()">
+         <UButton :loading="saving" :disabled="remotePortLagConflicts.length > 0" icon="i-heroicons-check" @click="lagFormRef?.submit()">
           {{ isEdit ? $t('common.save') : $t('lag.create') }}
         </UButton>
       </div>
@@ -254,6 +270,14 @@ const form = reactive({
   remote_device_id: '' as string | undefined,
 })
 
+const portStatus = ref<Port['status']>('down')
+
+const portStatusOptions = computed(() => [
+  { label: t('legend.up'), value: 'up' as const },
+  { label: t('legend.down'), value: 'down' as const },
+  { label: t('legend.disabled'), value: 'disabled' as const },
+])
+
 // VLAN configuration composable
 const { allVlans, vlanForm, vlanPortModeOptions, fetchVlans } = useLagVlanConfig()
 
@@ -297,6 +321,7 @@ const { takeSnapshot, requestClose, onOpenChange } = useSlideoverGuard(
   () => ({
     ...form,
     vlanForm: { ...vlanForm },
+    portStatus: portStatus.value,
     portMapping: { ...portMapping },
     remoteMode: remoteMode.value,
     selectedRemoteSwitchId: selectedRemoteSwitchId.value
@@ -374,14 +399,15 @@ async function createOrUpdateLocalLag(): Promise<void> {
     remote_device: remoteMode.value === 'freetext' ? (form.remote_device.trim() || undefined) : undefined,
     remote_device_id: remoteMode.value === 'switch' ? (selectedRemoteSwitchId.value || undefined) : undefined
   }
-  if (!isDuplicate.value && remoteMode.value === 'switch' && selectedRemoteSwitchId.value) {
+  if (remoteMode.value === 'switch' && selectedRemoteSwitchId.value) {
     Object.assign(body, { sync: {
       remote_switch_id: selectedRemoteSwitchId.value,
       mappings: form.port_ids.map(local_port_id => ({ local_port_id, remote_port_id: portMapping[local_port_id]?.remotePortId })).filter(m => m.remote_port_id),
       port_mode: vlanForm.port_mode,
       access_vlan: vlanForm.port_mode === 'access' ? vlanForm.access_vlan : null,
       native_vlan: vlanForm.port_mode === 'trunk' ? vlanForm.native_vlan : null,
-      tagged_vlans: vlanForm.port_mode === 'trunk' ? [...vlanForm.tagged_vlans] : []
+      tagged_vlans: vlanForm.port_mode === 'trunk' ? [...vlanForm.tagged_vlans] : [],
+      status: portStatus.value
     } })
   }
   let result: LAGGroup | undefined
@@ -433,9 +459,10 @@ async function updateLocalPortConnections(): Promise<void> {
 }
 
 async function applyVlanConfig(): Promise<void> {
-  if (!isDuplicate.value && remoteMode.value === 'switch') return
+  if (remoteMode.value === 'switch') return
   const vlanUpdates: Record<string, unknown> = {
-    port_mode: vlanForm.port_mode
+    port_mode: vlanForm.port_mode,
+    status: portStatus.value
   }
   if (vlanForm.port_mode === 'access') {
     vlanUpdates.access_vlan = vlanForm.access_vlan
@@ -465,11 +492,11 @@ async function onSubmit() {
   const errors = validate(form)
   if (errors.length > 0) return
 
-  if (!isDuplicate.value && hasConnectionConflicts.value) {
+  if (hasConnectionConflicts.value) {
     if (!(await confirm({ title: t('lag.conflictConfirmTitle'), message: t('lag.conflictConfirm') }))) return
   }
 
-  if (!isDuplicate.value && existingRemoteLag.value && !isEdit.value) {
+  if (existingRemoteLag.value && !isEdit.value) {
     if (!(await confirm({ title: t('lag.replaceRemoteLagTitle'), message: t('lag.replaceRemoteLag', { name: existingRemoteLag.value.name, switch: form.remote_device }) }))) return
   }
 
@@ -516,6 +543,7 @@ function openCreate(portIds: string[]) {
   vlanForm.access_vlan = null
   vlanForm.native_vlan = null
   vlanForm.tagged_vlans = []
+  portStatus.value = 'down'
   isOpen.value = true
   fetchSwitches()
   fetchVlans()
@@ -545,7 +573,10 @@ function duplicateLag() {
   vlanForm.access_vlan = firstPort?.access_vlan || null
   vlanForm.native_vlan = firstPort?.native_vlan || null
   vlanForm.tagged_vlans = [...(firstPort?.tagged_vlans || [])]
+  portStatus.value = firstPort?.status || 'down'
   isOpen.value = true
+  fetchSwitches()
+  fetchVlans()
   takeSnapshot()
 }
 
@@ -577,11 +608,13 @@ async function openEdit(lag: LAGGroup, removePortId?: string) {
     vlanForm.access_vlan = firstPort.access_vlan || null
     vlanForm.native_vlan = firstPort.native_vlan || null
     vlanForm.tagged_vlans = [...(firstPort.tagged_vlans || [])]
+    portStatus.value = firstPort.status || 'down'
   } else {
     vlanForm.port_mode = 'access'
     vlanForm.access_vlan = null
     vlanForm.native_vlan = null
     vlanForm.tagged_vlans = []
+    portStatus.value = 'down'
   }
 
   isOpen.value = true

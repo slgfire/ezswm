@@ -71,7 +71,7 @@
           </div>
 
           <!-- Row 3: secondary info (description, device, tagged VLANs) -->
-          <div v-if="getSecondaryInfo(port)" class="mt-1 text-[11px] text-gray-500">
+          <div v-if="getSecondaryInfo(port)" class="mt-1 text-[11px]" :class="isConnected(port) ? 'text-emerald-400' : 'text-gray-500'">
             {{ getSecondaryInfo(port) }}
           </div>
 
@@ -107,6 +107,8 @@ interface PublicPort {
   native_vlan?: number
   tagged_vlans: number[]
   connected_device?: string
+  connected_port_id?: string
+  connected_port?: string
   description?: string
   poe?: unknown
   is_uplink?: boolean
@@ -227,10 +229,18 @@ function getSecondaryInfo(port: PublicPort): string | null {
   return parts.length > 0 ? parts.join(' · ') : null
 }
 
+function isConnected(port: PublicPort): boolean {
+  return !!(port.connected_device || port.connected_port_id || port.connected_port)
+}
+
 function portBorderStyle(port: PublicPort): Record<string, string> {
   const usage = getHelperUsage(port)
   if (usage === 'special') {
     return { borderLeftWidth: '3px', borderLeftColor: '#38bdf8', borderColor: 'rgba(55,65,81,0.5)' }
+  }
+  // Connected ports get a distinct emerald border to stand out
+  if (isConnected(port)) {
+    return { borderLeftWidth: '3px', borderLeftColor: '#10b981', borderColor: 'rgba(55,65,81,0.5)' }
   }
   const color = getPrimaryVlanColor(port)
   if (!color) return { borderColor: 'rgba(55,65,81,0.5)' }
@@ -308,12 +318,16 @@ const filteredPorts = computed(() => {
     ports = [...visiblePorts.value]
   }
 
-  // Sort: normal first, then special, then forbidden — within each group by unit/index
+  // Sort: normal first, then special, then forbidden — within each group by type, then unit/index
   const usageOrder: Record<HelperUsage, number> = { normal: 0, special: 1, forbidden: 2 }
+  const typeOrder: Record<string, number> = { rj45: 0, sfp: 1, 'sfp+': 2, qsfp: 3, management: 4, console: 5 }
   return ports.sort((a, b) => {
     const ua = usageOrder[getHelperUsage(a)]
     const ub = usageOrder[getHelperUsage(b)]
     if (ua !== ub) return ua - ub
+    const ta = typeOrder[a.type] ?? 99
+    const tb = typeOrder[b.type] ?? 99
+    if (ta !== tb) return ta - tb
     return a.unit * 1000 + a.index - (b.unit * 1000 + b.index)
   })
 })
