@@ -113,7 +113,7 @@
         </div>
 
         <!-- Port mapping table -->
-         <div v-if="showPortMapping && form.port_ids.length > 0 && !(isDuplicate && remoteMode === 'freetext')" class="rounded-lg border border-default bg-default/50 p-3">
+         <div v-if="showPortMapping && form.port_ids.length > 0" class="rounded-lg border border-default bg-default/50 p-3">
           <div class="mb-2 text-xs font-semibold text-gray-600 dark:text-gray-300">
             {{ $t('lag.portMapping') }}
           </div>
@@ -233,7 +233,7 @@ import { resolvePortLabel } from '~/utils/ports'
 import { buildLagPortOptions, removeLagPort } from '~/utils/lagPortOptions'
 import { selectedPortsTrigger } from '~/utils/lagSelectedPortsLabel'
 import { onLocalPortsChange as updateLocalPorts, removePortFromSelection as removeSelectedPort } from '~/utils/lagPortSelection'
-import { buildLocalPortConnectionUpdateBody, getLagDuplicatePrefill, shouldUpdateLocalPortConnectionsForSubmit } from '~/utils/lagDuplicatePrefill'
+import { buildDuplicateManualConnectedPorts, buildLocalPortConnectionUpdateBody, getLagDuplicatePrefill, shouldUpdateLocalPortConnectionsForSubmit } from '~/utils/lagDuplicatePrefill'
 
 const props = defineProps<{
   switchId: string
@@ -347,6 +347,22 @@ const availableLocalPortOptions = computed(() => buildLagPortOptions(
 
 function onLocalPortsChange(portIds: string[]) {
   updateLocalPorts(form, localPortMenuOpen, portIds)
+  // For freetext duplicates, prefill port mapping inputs with source LAG's
+  // connected_port values so the user can see and edit them.
+  if (isDuplicate.value && remoteMode.value === 'freetext' && duplicateSourceLag.value) {
+    const connectedPorts = buildDuplicateManualConnectedPorts({
+      isDuplicate: true,
+      remoteMode: 'freetext',
+      sourceLag: duplicateSourceLag.value,
+      ports: props.ports,
+      targetPortIds: portIds
+    })
+    for (const portId of portIds) {
+      if (!portMapping[portId] && connectedPorts[portId] != null) {
+        setRemotePortFreetext(portId, connectedPorts[portId]!)
+      }
+    }
+  }
 }
 
 function removePort(portId: string) {
