@@ -18,6 +18,7 @@
       >
         <span v-if="f.color" class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: f.color }" />
         <span v-else-if="f.key === 'forbidden'" class="inline-block h-2.5 w-2.5 rounded-full bg-amber-500" />
+        <span v-else-if="f.key === 'lag'" class="inline-block h-2.5 w-2.5 rounded-full" style="background: conic-gradient(red, orange, yellow, green, cyan, blue, magenta, red)" />
         {{ f.label }}
         <span class="text-[10px] opacity-60">{{ f.count }}</span>
       </button>
@@ -241,8 +242,11 @@ function lagColor(name: string | null | undefined): string {
   return `hsl(${h % 360}, 70%, 60%)`
 }
 function lagPillStyle(name: string | null | undefined): Record<string, string> {
-  const c = lagColor(name)
-  return { backgroundColor: c + '20', color: c }
+  if (!name) return { backgroundColor: '#8b5cf626', color: '#8b5cf6' }
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
+  const hue = h % 360
+  return { backgroundColor: `hsla(${hue}, 70%, 60%, 0.15)`, color: `hsl(${hue}, 70%, 60%)` }
 }
 
 function portBorderStyle(port: PublicPort): Record<string, string> {
