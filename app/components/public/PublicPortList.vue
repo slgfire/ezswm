@@ -306,12 +306,6 @@ const filterChips = computed(() => {
     chips.push({ key: 'forbidden', label: t('public.helper.techOnly'), color: null, count: forbiddenCount })
   }
 
-  // LAG filter — show ports grouped by LAG
-  const lagCount = visiblePorts.value.filter(p => p.lag_group_name).length
-  if (lagCount > 0) {
-    chips.push({ key: 'lag', label: t('public.filter.lag'), color: null, count: lagCount })
-  }
-
   return chips
 })
 
@@ -322,8 +316,6 @@ const filteredPorts = computed(() => {
     ports = [...visiblePorts.value]
   } else if (activeFilter.value === 'forbidden') {
     ports = visiblePorts.value.filter(p => getHelperUsage(p) === 'forbidden')
-  } else if (activeFilter.value === 'lag') {
-    ports = visiblePorts.value.filter(p => p.lag_group_name)
   } else if (activeFilter.value.startsWith('role-')) {
     const role = activeFilter.value.replace('role-', '')
     ports = visiblePorts.value.filter(p => getHelperUsage(p) === 'special' && getEffectiveUsage(p) === role)
@@ -334,17 +326,16 @@ const filteredPorts = computed(() => {
     ports = [...visiblePorts.value]
   }
 
-  // Sort: normal first, then special, then forbidden — within each group by type, then unit/index
-  // When LAG filter active, group by LAG name first so connected ports stay together
+  // Sort: LAG ports grouped together first, then normal/special/forbidden — within each by type, then unit/index
   const usageOrder: Record<HelperUsage, number> = { normal: 0, special: 1, forbidden: 2 }
   const typeOrder: Record<string, number> = { rj45: 0, sfp: 1, 'sfp+': 2, qsfp: 3, management: 4, console: 5 }
-  const lagFirst = activeFilter.value === 'lag'
   return ports.sort((a, b) => {
-    if (lagFirst) {
-      const la = a.lag_group_name || ''
-      const lb = b.lag_group_name || ''
-      if (la !== lb) return la.localeCompare(lb)
-    }
+    // LAG ports first, grouped by LAG name so connected ports stay together
+    const la = a.lag_group_name || ''
+    const lb = b.lag_group_name || ''
+    if (la && lb) { if (la !== lb) return la.localeCompare(lb) }
+    else if (la) return -1
+    else if (lb) return 1
     const ua = usageOrder[getHelperUsage(a)]
     const ub = usageOrder[getHelperUsage(b)]
     if (ua !== ub) return ua - ub
