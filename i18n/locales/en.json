@@ -875,7 +875,8 @@
     "filter": {
       "all": "All",
       "occupied": "Occupied",
-      "unused": "Unused"
+      "unused": "Unused",
+      "lag": "LAG"
     },
     "port": {
       "trunk": "Trunk",
