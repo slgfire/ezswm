@@ -233,13 +233,12 @@ function isConnected(port: PublicPort): boolean {
   return !!(port.connected_device || port.connected_port_id || port.connected_port)
 }
 
-// ponytail: hash LAG name → stable color, same LAG always same pill color
-const LAG_COLORS = ['#8b5cf6', '#3b82f6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#f97316']
+// ponytail: hash LAG name → stable HSL hue, unlimited distinct colors for many LAGs
 function lagColor(name: string | null | undefined): string {
-  if (!name) return LAG_COLORS[0]
+  if (!name) return '#8b5cf6'
   let h = 0
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
-  return LAG_COLORS[h % LAG_COLORS.length]
+  return `hsl(${h % 360}, 70%, 60%)`
 }
 function lagPillStyle(name: string | null | undefined): Record<string, string> {
   const c = lagColor(name)
