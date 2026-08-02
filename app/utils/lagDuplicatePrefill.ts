@@ -31,8 +31,17 @@ export function buildDuplicateManualConnectedPorts(options: {
     return {} as Record<string, string | null>
   }
 
+  // Sort target ports by their position in the ports array (unit+index order)
+  // so the index-based mapping to sourceLag.port_ids is consistent regardless
+  // of the order the user selected them in the dropdown.
+  const sortedTargetIds = [...options.targetPortIds].sort((a, b) => {
+    const ai = options.ports.findIndex(p => p.id === a)
+    const bi = options.ports.findIndex(p => p.id === b)
+    return ai - bi
+  })
+
   const result: Record<string, string | null> = {}
-  for (const [index, targetPortId] of options.targetPortIds.entries()) {
+  for (const [index, targetPortId] of sortedTargetIds.entries()) {
     const sourcePortId = options.sourceLag.port_ids[index]
     if (!sourcePortId) continue
     const sourcePort = options.ports.find(port => port.id === sourcePortId)
