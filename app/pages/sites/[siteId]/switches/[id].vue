@@ -39,7 +39,7 @@
 
         <!-- Group B: Actions -->
         <SwitchPublicAccess
-          :switch-id="id"
+          :switch-id="item?.id || id"
           :site-id="siteId"
           :switch-name="item.name"
           :switch-location="item.location"
