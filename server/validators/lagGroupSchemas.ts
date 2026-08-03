@@ -38,4 +38,4 @@ export const updateLagGroupSchema = z.object({
   if (value.sync && value.port_ids && new Set(value.sync.mappings.map(m => m.local_port_id)).size !== value.port_ids.length) ctx.addIssue({ code: 'custom', path: ['sync', 'mappings'], message: 'mappings must cover all port_ids' })
 })
 
-export const deleteLagGroupSchema = z.object({ delete_remote: z.boolean().optional().default(false) }).strict()
+export const deleteLagGroupSchema = z.object({ delete_remote: z.boolean().optional().default(false), reset_ports: z.boolean().optional().default(false) }).strict()

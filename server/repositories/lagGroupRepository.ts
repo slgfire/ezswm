@@ -301,7 +301,7 @@ export const lagGroupRepository = {
 
   },
 
-  async delete(id: string, options: { delete_remote?: boolean } = {}): Promise<boolean> {
+  async delete(id: string, options: { delete_remote?: boolean; reset_ports?: boolean } = {}): Promise<boolean> {
     await prisma.$transaction(async (tx) => {
         const local = await tx.lagGroup.findUnique({ where: { id } })
         if (!local) throw createError({ statusCode: 404, message: 'LAG group not found' })
@@ -346,6 +346,10 @@ export const lagGroupRepository = {
           if (!mirror) throw createError({ statusCode: 409, message: 'Remote mirror cannot be uniquely and safely identified; nothing was deleted' })
           const remoteMembers = await tx.port.findMany({ where: { lag_group_id: mirror.id }, select: { id: true, switch_id: true, connected_port_id: true, connected_device_id: true } })
           await clearLinks(remoteMembers)
+          if (options.reset_ports) {
+            const resetData = { status: 'down', speed: null, port_mode: null, access_vlan: null, native_vlan: null, tagged_vlans: '[]', description: null, mac_address: null, connected_allocation_id: null }
+            for (const m of remoteMembers) { await tx.port.update({ where: { id: m.id }, data: resetData }) }
+          }
             await tx.lagGroup.delete({ where: { id: mirror.id } })
           } else if (local.remote_device_id) {
             const candidates = await tx.lagGroup.findMany({ where: { switch_id: local.remote_device_id, remote_device_id: local.switch_id } })
@@ -361,6 +365,10 @@ export const lagGroupRepository = {
             if (coupled.length === 1) await tx.lagGroup.update({ where: { id: coupled[0]!.id }, data: { remote_device: null, remote_device_id: null } })
           }
         await clearLinks(members)
+        if (options.reset_ports) {
+          const resetData = { status: 'down', speed: null, port_mode: null, access_vlan: null, native_vlan: null, tagged_vlans: '[]', description: null, mac_address: null, connected_allocation_id: null }
+          for (const m of members) { await tx.port.update({ where: { id: m.id }, data: resetData }) }
+        }
         await tx.lagGroup.delete({ where: { id } })
       })
     return true

@@ -840,6 +840,7 @@
     "deleteRemoteLagToo": "Die Mirror-LAG auf {switch} wird ebenfalls gelöscht.",
     "remoteLagKept": "Die Mirror-LAG auf {switch} bleibt erhalten, sofern sie nicht zusätzlich zum Löschen ausgewählt wird.",
     "deleteRemoteLag": "Mirror-LAG auf {switch} ebenfalls löschen",
+    "resetPorts": "Ports auf Standard zurücksetzen (löscht VLANs, Status und Konfiguration)",
     "vlanSection": "VLAN-Konfiguration fuer LAG-Ports",
     "portStatus": "Port-Status",
     "portStatusHint": "Gilt fuer alle lokalen und Remote-LAG-Ports gleichzeitig",

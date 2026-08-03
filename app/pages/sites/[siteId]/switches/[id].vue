@@ -396,6 +396,11 @@ v-model="editForm.role"
         :label="$t('lag.deleteRemoteLag', { switch: lagToDelete.remote_device || $t('lag.remoteDevice') })"
         class="mt-4"
       />
+      <UCheckbox
+        v-model="resetPorts"
+        :label="$t('lag.resetPorts')"
+        class="mt-2"
+      />
     </SharedConfirmDialog>
   </div>
 </template>
@@ -430,6 +435,7 @@ const lagSlideoverRef = ref<{ openEdit: (lag: LAGGroup, removePortId?: string) =
 const showLagDeleteDialog = ref(false)
 const lagToDelete = ref<LAGGroup | null>(null)
 const deleteRemoteLag = ref(false)
+const resetPorts = ref(false)
 const deletingLag = ref(false)
 const showLagDetail = ref(false)
 const viewingLag = ref<LAGGroup | null>(null)
@@ -568,6 +574,7 @@ const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { sit
 function onDeleteLagClick(lag: LAGGroup) {
   lagToDelete.value = lag
   deleteRemoteLag.value = false
+  resetPorts.value = false
   showLagDeleteDialog.value = true
 }
 
@@ -589,7 +596,9 @@ async function onDeleteLag() {
   try {
     const lag = lagToDelete.value
 
-    await removeLag(lag.id, lag.remote_device_id ? { delete_remote: deleteRemoteLag.value } : undefined)
+    const opts: { delete_remote?: boolean; reset_ports?: boolean } = { reset_ports: resetPorts.value }
+    if (lag.remote_device_id) opts.delete_remote = deleteRemoteLag.value
+    await removeLag(lag.id, opts)
     toast.add({ title: t('lag.messages.deleted'), color: 'success' })
     showLagDeleteDialog.value = false
     lagToDelete.value = null
