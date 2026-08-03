@@ -10,7 +10,8 @@ export const createLagGroupSchema = z.object({
     remote_switch_id: z.string().min(1),
     mappings: z.array(z.object({ local_port_id: z.string().min(1), remote_port_id: z.string().min(1) })).min(2).refine(items => new Set(items.map(item => item.local_port_id)).size === items.length && new Set(items.map(item => item.remote_port_id)).size === items.length, 'mappings must be unique'),
     port_mode: z.enum(['access', 'trunk']), access_vlan: z.number().int().min(1).max(4094).nullable(), native_vlan: z.number().int().min(1).max(4094).nullable(), tagged_vlans: z.array(z.number().int().min(1).max(4094)
-    )
+    ),
+    status: z.enum(['up', 'down', 'disabled']).optional()
   }).optional()
 }).superRefine((value, ctx) => {
   if (value.sync && new Set(value.sync.mappings.map(m => m.local_port_id)).size !== value.port_ids.length) ctx.addIssue({ code: 'custom', path: ['sync', 'mappings'], message: 'mappings must cover all port_ids' })
@@ -30,10 +31,11 @@ export const updateLagGroupSchema = z.object({
     port_mode: z.enum(['access', 'trunk']),
     access_vlan: z.number().int().min(1).max(4094).nullable(),
     native_vlan: z.number().int().min(1).max(4094).nullable(),
-    tagged_vlans: z.array(z.number().int().min(1).max(4094))
+    tagged_vlans: z.array(z.number().int().min(1).max(4094)),
+    status: z.enum(['up', 'down', 'disabled']).optional()
   }).optional()
 }).superRefine((value, ctx) => {
   if (value.sync && value.port_ids && new Set(value.sync.mappings.map(m => m.local_port_id)).size !== value.port_ids.length) ctx.addIssue({ code: 'custom', path: ['sync', 'mappings'], message: 'mappings must cover all port_ids' })
 })
 
-export const deleteLagGroupSchema = z.object({ delete_remote: z.boolean().optional().default(false) }).strict()
+export const deleteLagGroupSchema = z.object({ delete_remote: z.boolean().optional().default(false), reset_ports: z.boolean().optional().default(false) }).strict()

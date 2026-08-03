@@ -18,6 +18,7 @@
       >
         <span v-if="f.color" class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: f.color }" />
         <span v-else-if="f.key === 'forbidden'" class="inline-block h-2.5 w-2.5 rounded-full bg-amber-500" />
+        <span v-else-if="f.key === 'lag'" class="inline-block h-2.5 w-2.5 rounded-full" style="background: conic-gradient(red, orange, yellow, green, cyan, blue, magenta, red)" />
         {{ f.label }}
         <span class="text-[10px] opacity-60">{{ f.count }}</span>
       </button>
@@ -40,7 +41,7 @@
           <div class="mt-1 text-[11px] text-amber-500/70">
             {{ $t('public.helper.doNotUse') }}
           </div>
-          <span v-if="port.lag_group_name" class="mt-1.5 inline-block max-w-full rounded-full bg-violet-500/20 px-2 py-0.5 text-[11px] font-semibold text-violet-400 break-words">
+          <span v-if="port.lag_group_name" class="mt-1.5 inline-block max-w-full rounded-full px-2 py-0.5 text-[11px] font-semibold break-words" :style="lagPillStyle(port.lag_group_name)">
             LAG · {{ port.lag_group_name }}
           </span>
         </div>
@@ -71,12 +72,12 @@
           </div>
 
           <!-- Row 3: secondary info (description, device, tagged VLANs) -->
-          <div v-if="getSecondaryInfo(port)" class="mt-1 text-[11px] text-gray-500">
+          <div v-if="getSecondaryInfo(port)" class="mt-1 text-[11px]" :class="isConnected(port) ? 'text-emerald-400' : 'text-gray-500'">
             {{ getSecondaryInfo(port) }}
           </div>
 
           <!-- Row 4: LAG membership (single wrapping pill: label + full name) -->
-          <span v-if="port.lag_group_name" class="mt-1.5 inline-block max-w-full rounded-full bg-violet-500/20 px-2 py-0.5 text-[11px] font-semibold text-violet-400 break-words">
+          <span v-if="port.lag_group_name" class="mt-1.5 inline-block max-w-full rounded-full px-2 py-0.5 text-[11px] font-semibold break-words" :style="lagPillStyle(port.lag_group_name)">
             LAG · {{ port.lag_group_name }}
           </span>
         </div>
@@ -107,6 +108,8 @@ interface PublicPort {
   native_vlan?: number
   tagged_vlans: number[]
   connected_device?: string
+  connected_port_id?: string
+  connected_port?: string
   description?: string
   poe?: unknown
   is_uplink?: boolean
@@ -227,6 +230,25 @@ function getSecondaryInfo(port: PublicPort): string | null {
   return parts.length > 0 ? parts.join(' · ') : null
 }
 
+function isConnected(port: PublicPort): boolean {
+  return !!(port.connected_device || port.connected_port_id || port.connected_port)
+}
+
+// ponytail: hash LAG name → stable HSL hue, unlimited distinct colors for many LAGs
+function lagColor(name: string | null | undefined): string {
+  if (!name) return '#8b5cf6'
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
+  return `hsl(${h % 360}, 70%, 60%)`
+}
+function lagPillStyle(name: string | null | undefined): Record<string, string> {
+  if (!name) return { backgroundColor: '#8b5cf626', color: '#8b5cf6' }
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
+  const hue = h % 360
+  return { backgroundColor: `hsla(${hue}, 70%, 60%, 0.15)`, color: `hsl(${hue}, 70%, 60%)` }
+}
+
 function portBorderStyle(port: PublicPort): Record<string, string> {
   const usage = getHelperUsage(port)
   if (usage === 'special') {
@@ -288,6 +310,12 @@ const filterChips = computed(() => {
     chips.push({ key: 'forbidden', label: t('public.helper.techOnly'), color: null, count: forbiddenCount })
   }
 
+  // LAG filter
+  const lagCount = visiblePorts.value.filter(p => p.lag_group_name).length
+  if (lagCount > 0) {
+    chips.push({ key: 'lag', label: t('public.filter.lag'), color: null, count: lagCount })
+  }
+
   return chips
 })
 
@@ -298,6 +326,8 @@ const filteredPorts = computed(() => {
     ports = [...visiblePorts.value]
   } else if (activeFilter.value === 'forbidden') {
     ports = visiblePorts.value.filter(p => getHelperUsage(p) === 'forbidden')
+  } else if (activeFilter.value === 'lag') {
+    ports = visiblePorts.value.filter(p => p.lag_group_name)
   } else if (activeFilter.value.startsWith('role-')) {
     const role = activeFilter.value.replace('role-', '')
     ports = visiblePorts.value.filter(p => getHelperUsage(p) === 'special' && getEffectiveUsage(p) === role)
@@ -308,12 +338,23 @@ const filteredPorts = computed(() => {
     ports = [...visiblePorts.value]
   }
 
-  // Sort: normal first, then special, then forbidden — within each group by unit/index
+  // Sort: normal first, then special, then forbidden — within each group by type, then unit/index
+  // When LAG filter active, group by LAG name first so connected ports stay together
   const usageOrder: Record<HelperUsage, number> = { normal: 0, special: 1, forbidden: 2 }
+  const typeOrder: Record<string, number> = { rj45: 0, sfp: 1, 'sfp+': 2, qsfp: 3, management: 4, console: 5 }
+  const lagFirst = activeFilter.value === 'lag'
   return ports.sort((a, b) => {
+    if (lagFirst) {
+      const la = a.lag_group_name || ''
+      const lb = b.lag_group_name || ''
+      if (la !== lb) return la.localeCompare(lb)
+    }
     const ua = usageOrder[getHelperUsage(a)]
     const ub = usageOrder[getHelperUsage(b)]
     if (ua !== ub) return ua - ub
+    const ta = typeOrder[a.type] ?? 99
+    const tb = typeOrder[b.type] ?? 99
+    if (ta !== tb) return ta - tb
     return a.unit * 1000 + a.index - (b.unit * 1000 + b.index)
   })
 })

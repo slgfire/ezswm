@@ -1,3 +1,16 @@
+## [0.33.0] — 2026-08-02
+
+### Added
+- LAG duplicate: remote switch can now be selected when duplicating a LAG, so a replacement switch can be chosen instead of copying the original remote link. The remote section, port mapping, and conflict warnings are all visible in duplicate mode.
+- LAG create/duplicate: port status (up/down/disabled) can now be set for all member ports simultaneously — both local and remote when a remote switch is selected.
+- Helper view (mobile): connected ports are now visually highlighted with an emerald left border and emerald connection text, making linked ports easy to spot at a glance.
+- Layout template creation: port blocks can now be reordered using up/down buttons during template creation, matching the behavior already available in the edit view.
+
+### Fixed
+- Helper view (mobile): port sorting no longer interleaves types randomly. Ports are now grouped by type (RJ45 → SFP → SFP+ → QSFP → Management → Console) within each usage category, so the list reads in physical-panel order.
+
+---
+
 ## [0.31.4] — 2026-07-14
 
 ### Changed
