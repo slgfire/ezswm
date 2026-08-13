@@ -86,7 +86,7 @@ Ein Template hat eine oder mehrere Einheiten (Höheneinheiten). Jede Einheit ent
 
 Jeder Block definiert eine Gruppe von Ports innerhalb einer Einheit:
 
-- Blöcke können innerhalb der Einheit per Drag-Handle oder mit den Hoch-/Runter-Buttons umsortiert werden.
+- Blöcke können innerhalb der Einheit per Drag-Handle oder mit den Hoch-/Runter-Buttons umsortiert werden (verfügbar bei Template-Erstellung und -Bearbeitung).
 - **Typ** -- RJ45, SFP, SFP+, QSFP, Console oder Management
 - **Anzahl** -- Anzahl der Ports in diesem Block
 - **Startindex** -- die erste Portnummer (Standard 1)
@@ -218,16 +218,21 @@ Erzeuge einen QR-Code für jeden Switch, der zu einer öffentlichen, schreibgesc
 - **Öffentlichen Link erstellen** — erzeugt einen einzigartigen 32-Zeichen-Token
 - **Link kopieren** — kopiert die öffentliche URL in die Zwischenablage
 - **SVG / PNG herunterladen** — lädt den QR-Code als Bilddatei herunter
-- **Sticker drucken** — öffnet eine druckoptimierte Sticker-Seite
+- **Sticker drucken** — öffnet eine druckoptimierte Sticker-Seite (Einzel-Sticker-Druck unterstützt)
 - **Token widerrufen** — macht den QR-Code sofort ungültig
 
 **Sammel-QR-Druck:** Klicke in der Switches-Übersicht auf das **QR-Code-Symbol** in der Toolbar. Wähle Switches über Checkboxen aus und klicke "Sticker drucken". Tokens werden automatisch für Switches erstellt, die noch keinen haben. Die Druckseite zeigt ein 3-Spalten-Sticker-Raster mit QR-Code, Switch-Name, Modell und Standort.
+
+Die Sticker-Ausgabe ist clean/unbranded und für kleine Etikettendrucker optimiert (ca. 62×29 mm).
 
 **Öffentliche Mobilansicht:** Beim Scannen des QR-Codes erscheint eine mobilfreundliche Seite mit:
 - Switch-Name, Modell und Standort
 - Alle Ports mit ihrer VLAN-Zuordnung und Zweck
 - Für Ports, die zu einer LAG gehören: ein LAG-Badge und der vollständige LAG-Gruppenname auf den öffentlichen/shared Port-Karten
 - Filter-Chips zur Anzeige bestimmter VLANs (z.B. Gaming, Server, Sleeping)
+- Ein LAG-Filter-Chip, um nur Ports einer LAG-Gruppe zu zeigen
+- Stabile, konsistente Farben für LAG-Badges
+- Portlisten-Sortierung nach Helfer-Nutzung, dann physischem Typ (RJ45 → SFP → SFP+ → QSFP), dann Unit/Index; bei aktivem LAG-Filter gruppiert nach LAG-Name
 - Klare "Nur Technik — nicht benutzen" Warnungen für Infrastruktur-Ports
 - Auf Desktop: zusätzlich die visuelle Port-Grid-Darstellung
 
@@ -296,7 +301,7 @@ Klicke auf einen LAG-Chip in der Legende unterhalb des Port-Rasters, um das Bear
 
 ### LAG duplizieren
 
-Mit **Duplizieren** erstellst du eine mitgliedslose, rein lokale Kopie einer LAG. Remote-Gerät, Remote-Zuordnungen und physische Verbindungen werden nicht übernommen. Füge Mitglieder hinzu und konfiguriere eine Remote-Verbindung anschließend ausdrücklich.
+Mit **Duplizieren** erstellst du eine mitgliedslose Kopie einer LAG. Die Kopie startet ohne Mitgliedsports und übernimmt keine physischen Verbindungen. Während des Duplizierens kannst du einen Remote-Switch und Remote-Zuordnungen auswählen; Remote-Abschnitte, Mapping-Zeilen und Konfliktwarnungen bleiben beim Konfigurieren sichtbar. Der ausgewählte Mitgliedsstatus wird gemeinsam auf alle ausgewählten lokalen und Remote-Mitglieder angewendet.
 
 ### Port-Konfiguration kopieren
 
@@ -306,6 +311,7 @@ Mit **Konfiguration kopieren** füllst du Felder aus einem anderen Port desselbe
 
 Klicke auf den **X**-Button auf einem LAG-Chip in der Legende. Der Bestätigungsdialog zeigt:
 - Welche lokalen Ports freigegeben werden
+- Eine optionale Aktion zum Zurücksetzen freigegebener Mitgliedsports (löscht Mitgliedsport-Konfiguration und Verbindungen)
 - Standardmäßig, dass die Remote-LAG erhalten bleibt
 - Eine optionale Auswahl, um die entfernte Spiegel-LAG ebenfalls ausdrücklich zu löschen
 

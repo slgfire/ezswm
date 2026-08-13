@@ -2,6 +2,25 @@
 
 ## Latest Stage
 
+Date: 2026-08-13
+Stage: User guide and LAG/QR behavior completion
+Status: Complete
+Version: 0.33.0
+
+### Feature: shipped PR #257 behavior set finalized (v0.33.0)
+
+Delivered the documented behavior updates across LAG workflows, template creation, and QR output:
+
+- LAG remote-link handling now surfaces duplication/mapping/conflict visibility clearly, including common member status.
+- LAG deletion supports optional remote/reset behavior instead of forcing a single delete path.
+- Public helper LAG presentation now uses the shared filter/color/sort behavior.
+- Layout template creation flow keeps block reordering behavior during creation.
+- QR stickers are unbranded, and single-switch sticker printing now uses the correct switch identity.
+
+---
+
+## Previous Stage
+
 Date: 2026-08-01
 Stage: ConfirmDialog close-button dismiss behavior fix
 Status: Complete

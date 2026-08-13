@@ -86,7 +86,7 @@ A template has one or more units (rack units). Each unit contains one or more po
 
 Each block defines a group of ports within a unit:
 
-- Blocks can be reordered within the unit by dragging the handle or using the up/down buttons.
+- Blocks can be reordered within the unit by dragging the handle or using the up/down buttons (available in both template creation and template editing).
 - **Type** -- RJ45, SFP, SFP+, QSFP, Console, or Management
 - **Count** -- number of ports in this block
 - **Start Index** -- the first port number (default 1)
@@ -218,16 +218,21 @@ Generate a QR code for any switch that links to a public, read-only mobile view 
 - **Generate Public Link** — creates a unique 32-character token
 - **Copy Link** — copies the public URL to clipboard
 - **Download SVG / PNG** — downloads the QR code as an image file
-- **Print Sticker** — opens a print-optimized sticker page
+- **Print Sticker** — opens a print-optimized sticker page (single-sticker print supported)
 - **Revoke Token** — invalidates the QR code immediately
 
 **Bulk QR printing:** In the Switches overview, click the **QR code icon** in the toolbar. Select switches via checkboxes, then click "Print Sticker". Tokens are automatically created for switches that don't have one yet. The print page shows a 3-column sticker grid with QR code, switch name, model, and location.
+
+Sticker output is clean/unbranded and optimized for small label printers (about 62×29 mm).
 
 **Public mobile view:** When someone scans the QR code, they see a mobile-friendly page showing:
 - Switch name, model, and location
 - All ports with their VLAN assignment and purpose
 - For ports that are LAG members: a LAG pill and the full LAG group name on the shared/public port cards
 - Filter chips to show only specific VLANs (e.g. Gaming, Server, Sleeping)
+- A LAG filter chip to show only ports of one LAG group
+- Stable, consistent colors for LAG pills
+- Port list sorting by helper usage, then physical type (RJ45 → SFP → SFP+ → QSFP), then unit/index; with an active LAG filter, ports are grouped by LAG name
 - Clear "Tech only — do not use" warnings for infrastructure ports
 - On desktop: the full port grid visualization is also shown
 
@@ -296,7 +301,7 @@ Click a LAG chip in the legend below the port grid to open the edit slideover. Y
 
 ### Duplicating a LAG
 
-Use **Duplicate** on a LAG to create a memberless, local-only copy. The copy does not include the remote device, remote mappings, or physical links. Add members and configure any remote connection explicitly after creating it.
+Use **Duplicate** on a LAG to create a memberless copy. The copy starts without member ports and does not copy physical links. During duplication you can select a remote switch and remote mappings; remote sections, mapping rows, and conflict warnings stay visible while configuring the copy. Selected member status is applied together across all selected local and remote members.
 
 ### Copying Port Configuration
 
@@ -306,6 +311,7 @@ Use **Copy configuration** on a port to prefill from another port on the same sw
 
 Click the **X** button on a LAG chip in the legend. The confirmation dialog shows:
 - Which local ports will be released
+- An optional action to reset released member ports (clears member port configuration and connections)
 - The default choice to retain the remote LAG
 - An optional choice to explicitly delete the remote mirror LAG as well
 
