@@ -89,17 +89,17 @@ describe('LagGroupSlideover quality regressions', () => {
     expect(local).toEqual([{ url: '/api/switches/local/lag-groups/lag', options: { method: 'PUT', body: expect.objectContaining({ sync: expect.any(Object) }), query: undefined } }]); expect(remote).toEqual([])
   })
 
-  it('uses POST for normal create and duplicate, with duplicate local-only payload', async () => {
+  it('uses POST for normal create and duplicate, passing body through unchanged', async () => {
     const calls: unknown[] = []
     for (const duplicate of [false, true]) {
       const request = buildLagSaveRequest({ switchId: 'local', isEdit: false, isDuplicate: duplicate, body: { name: 'copy', sync: { remote_switch_id: 'remote' } } })
       await saveLagLocally({ isEdit: false, duplicate, remoteSwitch: !duplicate, update: async () => calls.push('update'), create: async () => calls.push(await executeLagSaveRequest(request, async (url, options) => ({ url, options }))) })
     }
     expect(calls[0]).toMatchObject({ url: '/api/switches/local/lag-groups', options: { method: 'POST', body: { sync: { remote_switch_id: 'remote' } } } })
-     expect(calls[1]).toMatchObject({ options: { method: 'POST', body: { name: 'copy' } } }); expect((calls[1] as { options: { body: { sync?: unknown } } }).options.body.sync).toBeUndefined()
+    expect(calls[1]).toMatchObject({ options: { method: 'POST', body: { name: 'copy', sync: { remote_switch_id: 'remote' } } } })
   })
 
-  it('keeps duplicate manual remote_device but still strips linked remote_device_id and sync', () => {
+  it('keeps duplicate manual remote_device and passes body through unchanged', () => {
     const request = buildLagSaveRequest({
       switchId: 'local',
       isEdit: false,
@@ -115,8 +115,8 @@ describe('LagGroupSlideover quality regressions', () => {
     expect(request.body).toEqual({
       name: 'copy',
       remote_device: 'Printer Stack',
-      remote_device_id: undefined,
-      sync: undefined
+      remote_device_id: 'sw-remote',
+      sync: { remote_switch_id: 'sw-remote' }
     })
   })
 
