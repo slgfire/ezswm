@@ -27,3 +27,13 @@ docs/docs/.vitepress/cache/
 tests/.test-data-*
 docs/superpowers/reviews/
 docs/superpowers/
+
+# Local agent and repository-analysis artifacts
+.mcp.json
+.opencode/
+.repowise/
+.serena/
+.slim/
+.vscode/
+graphify-out/
+session-*.md
