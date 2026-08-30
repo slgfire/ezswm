@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { PrismaClient } from '@prisma/client'
+import type { PrismaClient } from '@prisma/client'
 
 import { runJsonToPrismaMigration } from '../server/migrations/jsonToPrisma'
 import { createTestPrisma } from './testHelpers'
