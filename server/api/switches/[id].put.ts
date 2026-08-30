@@ -24,7 +24,11 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = updateSwitchSchema.parse(body)
 
-  const updated = await switchRepository.update(existing.id, parsed as Partial<Omit<Switch, 'id' | 'ports' | 'created_at'>>)
+  const updated = await switchRepository.update(
+    existing.id,
+    parsed as Partial<Omit<Switch, 'id' | 'ports' | 'created_at'>>,
+    siteUuid
+  )
 
   await activityRepository.log({
     user_id: event.context.auth.userId,

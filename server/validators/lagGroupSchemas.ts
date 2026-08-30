@@ -6,6 +6,7 @@ export const createLagGroupSchema = z.object({
   remote_device: z.string().max(200).optional(),
   remote_device_id: z.string().optional(),
   description: z.string().max(500).optional(),
+  expected_updated_at: z.string().optional(),
   sync: z.object({
     remote_switch_id: z.string().min(1),
     mappings: z.array(z.object({ local_port_id: z.string().min(1), remote_port_id: z.string().min(1) })).min(2).refine(items => new Set(items.map(item => item.local_port_id)).size === items.length && new Set(items.map(item => item.remote_port_id)).size === items.length, 'mappings must be unique'),
@@ -23,6 +24,7 @@ export const updateLagGroupSchema = z.object({
   remote_device: z.string().max(200).optional().nullable(),
   remote_device_id: z.string().optional().nullable(),
   description: z.string().max(500).optional().nullable(),
+  expected_updated_at: z.string().optional(),
   sync: z.object({
     remote_switch_id: z.string().min(1),
     mappings: z.array(z.object({ local_port_id: z.string().min(1), remote_port_id: z.string().min(1) }))

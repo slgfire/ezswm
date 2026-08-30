@@ -3,6 +3,7 @@ import { prisma } from '../db/client'
 import type { LayoutTemplate, LayoutUnit } from '../../types/layoutTemplate'
 import type { PortType } from '../../types/port'
 import { incrementMemberLabel } from '../utils/deviceLibrary'
+import { clearPeerLinksForDeletedPorts } from './portPeerCleanup'
 
 interface TemplateRow {
   id: string
@@ -122,6 +123,7 @@ async function syncPortsToTemplate(templateId: string, units: LayoutUnit[]): Pro
     await prisma.$transaction(async (tx) => {
       // Drop unmatched ports.
       if (toDelete.length > 0) {
+        await clearPeerLinksForDeletedPorts(tx, toDelete)
         await tx.port.deleteMany({ where: { id: { in: toDelete } } })
       }
 

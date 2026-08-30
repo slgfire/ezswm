@@ -33,7 +33,8 @@ export const updateSwitchSchema = z.object({
   role: z.enum(['core', 'distribution', 'access', 'management']).optional().nullable(),
   tags: z.array(z.string().max(50)).max(20).optional().nullable(),
   is_favorite: z.boolean().optional(),
-  notes: z.string().max(2000).optional().nullable()
+  notes: z.string().max(2000).optional().nullable(),
+  expected_updated_at: z.string().optional()
 })
 
 export const updatePortSchema = z.object({
@@ -81,6 +82,10 @@ export const bulkUpdatePortsSchema = z.object({
     helper_usage: z.enum(['participant', 'phone_passthrough', 'ap', 'printer', 'orga', 'uplink']).nullable().optional(),
     helper_label: z.string().max(100).nullable().optional(),
     show_in_helper_list: z.boolean().optional(),
+    connected_device: z.string().max(200).optional().nullable(),
+    connected_port: z.string().max(100).optional().nullable(),
+    connected_device_id: z.string().optional().nullable(),
+    connected_allocation_id: z.string().optional().nullable(),
     poe: z.union([
       z.object({
         type: z.enum(['disabled', '802.3af', '802.3at', '802.3bt-type3', '802.3bt-type4', 'passive-24v', 'passive-48v']),

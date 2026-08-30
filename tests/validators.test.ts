@@ -5,7 +5,7 @@ import { createNetworkSchema, updateNetworkSchema } from '../server/validators/n
 import { createSiteSchema, updateSiteSchema } from '../server/validators/siteSchemas'
 import { createIpAllocationSchema, updateIpAllocationSchema } from '../server/validators/ipAllocationSchemas'
 import { createIpRangeSchema, updateIpRangeSchema } from '../server/validators/ipRangeSchemas'
-import { createLagGroupSchema } from '../server/validators/lagGroupSchemas'
+import { createLagGroupSchema, updateLagGroupSchema } from '../server/validators/lagGroupSchemas'
 import { createLayoutTemplateSchema } from '../server/validators/layoutTemplateSchemas'
 import { updateSettingsSchema } from '../server/validators/settingsSchemas'
 
@@ -512,6 +512,19 @@ describe('bulkUpdatePortsSchema', () => {
       expect(result.data.updates.port_mode).toBe(null)
     }
   })
+
+  it('accepts connection sync fields used by LAG bulk sync', () => {
+    const result = bulkUpdatePortsSchema.safeParse({
+      port_ids: ['p1'],
+      updates: {
+        connected_device: 'SW-B',
+        connected_port: 'Et1',
+        connected_device_id: 'sw-b',
+        connected_allocation_id: null
+      }
+    })
+    expect(result.success).toBe(true)
+  })
 })
 
 // ─── createVlanSchema ────────────────────────────────────────────────────────
@@ -965,6 +978,15 @@ describe('createLagGroupSchema', () => {
     expect(result.success).toBe(true)
   })
 
+  it('accepts expected_updated_at for optimistic concurrency', () => {
+    const result = createLagGroupSchema.safeParse({
+      name: 'Po1',
+      port_ids: ['p1', 'p2'],
+      expected_updated_at: '2026-01-01T00:00:00.000Z'
+    })
+    expect(result.success).toBe(true)
+  })
+
   it('rejects missing name', () => {
     const result = createLagGroupSchema.safeParse({
       port_ids: ['p1', 'p2']
@@ -1009,6 +1031,16 @@ describe('createLagGroupSchema', () => {
       name: 'Po1'
     })
     expect(result.success).toBe(false)
+  })
+})
+
+describe('updateLagGroupSchema', () => {
+  it('accepts expected_updated_at for optimistic concurrency', () => {
+    const result = updateLagGroupSchema.safeParse({
+      name: 'Po2',
+      expected_updated_at: '2026-01-01T00:00:00.000Z'
+    })
+    expect(result.success).toBe(true)
   })
 })
 
@@ -1435,6 +1467,9 @@ describe('updateSwitchSchema', () => {
   })
   it('accepts nullable tags', () => {
     expect(updateSwitchSchema.safeParse({ tags: null }).success).toBe(true)
+  })
+  it('accepts expected_updated_at', () => {
+    expect(updateSwitchSchema.safeParse({ expected_updated_at: '2026-01-01T00:00:00.000Z' }).success).toBe(true)
   })
 })
 

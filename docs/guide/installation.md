@@ -68,6 +68,18 @@ In Docker, environment variables that configure Nuxt runtime must use the `NUXT_
 
 The container's `ENTRYPOINT` runs `prisma migrate deploy` before starting the server, so schema upgrades apply themselves on each container start — no separate migration step.
 
+### Automatic pre-upgrade database backup
+
+Before migrations run, the entrypoint compares the current app version from runtime `package.json` with `/app/data/.version`:
+
+- If `/app/data/db.sqlite` exists and the versions differ (including a missing marker), ezSWM creates a backup in `/app/data/backups/`.
+- Backup folder name includes UTC timestamp plus from/to version (`..._from-<old>_to-<new>`), and contains `db.sqlite` plus `db.sqlite-wal` / `db.sqlite-shm` when present.
+- Retention is automatic: only the newest **5** backups are kept.
+- If backup creation/copy/pruning fails, container startup stops before `prisma migrate deploy` (fail closed).
+- If migration succeeds, `/app/data/.version` is updated atomically to the new version.
+
+Same-version restarts do not create a backup.
+
 ### Custom UID / GID
 
 The image runs as uid `1000` by default. If your host user isn't uid 1000 (e.g. Synology, Unraid, custom server setup), either:
@@ -144,6 +156,8 @@ The application is available at `http://localhost:3000`.
 docker compose pull
 docker compose up -d
 ```
+
+If a migration causes issues, stop the container and restore from `/app/data/backups/<timestamp>_from-..._to-.../` by copying `db.sqlite` back into `/app/data/` (and matching `-wal` / `-shm` files when included), then start the container again.
 
 ### Rebuild from source
 

@@ -2,6 +2,59 @@
 
 ## Latest Stage
 
+Date: 2026-08-31
+Stage: Automated Docker pre-upgrade SQLite backup
+Status: Complete
+Version: 0.34.0
+
+### Feature: fail-closed pre-migration backup with version marker (v0.34.0)
+
+- Extended `docker-entrypoint.sh` to read runtime version from `package.json`, compare it to `/app/data/.version`, and create a pre-upgrade backup only when `db.sqlite` exists and versions differ (or marker is missing).
+- Backup path is `/app/data/backups/<UTC>_from-<old>_to-<new>/` and includes `db.sqlite` plus optional `db.sqlite-wal` and `db.sqlite-shm` files.
+- Backup flow is fail-closed: if backup create/copy/prune fails, startup exits before `prisma migrate deploy`.
+- Retention is automatic: keep only the newest five backup directories.
+- Version marker write is atomic and happens only after successful migrations.
+- Updated installation and user guides (EN/DE) with behavior, retention, and recovery location.
+
+---
+
+Date: 2026-08-26
+Stage: Switch/port/LAG integrity hardening
+Status: Complete
+Version: 0.33.1
+
+### Fix: transactional switch/port/LAG integrity and conflict handling (v0.33.1)
+
+- Added transactional optimistic-concurrency checks for switch update, bulk port updates, and LAG create/update using `expected_updated_at` with consistent 409 responses and `current_updated_at` payloads.
+- Fixed switch stack/template regeneration behavior so `null` and `1` are treated as equivalent only when `stack_size` is explicitly changed; true size changes still regenerate ports.
+- Added shared peer cleanup before port deletions and applied it to switch regeneration, template unmatched-port deletion, and switch deletion flows.
+- On switch deletion, remote mirror LAG rows that reference the deleted switch are decoupled (`remote_device`/`remote_device_id` set to `null`) without touching unrelated LAGs.
+- Hardened bulk port updates: validator now accepts required sync fields; repository now rejects missing/foreign targets atomically instead of skipping.
+- Sidepanel LAG member sync now uses one bulk request after primary save with a safe payload (no `connected_port` / `connected_port_id`) and conflict errors bubble to outer handling.
+
+---
+
+## Previous Stage
+
+Date: 2026-08-13
+Stage: User guide and LAG/QR behavior completion
+Status: Complete
+Version: 0.33.0
+
+### Feature: shipped PR #257 behavior set finalized (v0.33.0)
+
+Delivered the documented behavior updates across LAG workflows, template creation, and QR output:
+
+- LAG remote-link handling now surfaces duplication/mapping/conflict visibility clearly, including common member status.
+- LAG deletion supports optional remote/reset behavior instead of forcing a single delete path.
+- Public helper LAG presentation now uses the shared filter/color/sort behavior.
+- Layout template creation flow keeps block reordering behavior during creation.
+- QR stickers are unbranded, and single-switch sticker printing now uses the correct switch identity.
+
+---
+
+## Previous Stage
+
 Date: 2026-08-01
 Stage: ConfirmDialog close-button dismiss behavior fix
 Status: Complete

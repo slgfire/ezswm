@@ -241,6 +241,7 @@ const props = defineProps<{
   ports: Port[]
   existingLags: LAGGroup[]
   configuredVlans?: number[]
+  switchUpdatedAt?: string
 }>()
 
 // Site context disambiguates per-site-unique switch slugs on local-switch calls.
@@ -413,7 +414,8 @@ async function createOrUpdateLocalLag(): Promise<void> {
     port_ids: [...form.port_ids],
     description: form.description.trim() || undefined,
     remote_device: remoteMode.value === 'freetext' ? (form.remote_device.trim() || undefined) : undefined,
-    remote_device_id: remoteMode.value === 'switch' ? (selectedRemoteSwitchId.value || undefined) : undefined
+    remote_device_id: remoteMode.value === 'switch' ? (selectedRemoteSwitchId.value || undefined) : undefined,
+    expected_updated_at: props.switchUpdatedAt || undefined
   }
   if (remoteMode.value === 'switch' && selectedRemoteSwitchId.value) {
     Object.assign(body, { sync: {
@@ -535,7 +537,12 @@ async function onSubmit() {
       }
     })
   } catch (e: unknown) {
-    const err = e as { data?: { message?: string } }
+    const err = e as { statusCode?: number; data?: { message?: string } }
+    if (err.statusCode === 409) {
+      toast.add({ title: 'Switch was modified. Please try again.', color: 'warning' })
+      emit('saved')
+      return
+    }
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     saving.value = false

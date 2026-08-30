@@ -261,7 +261,12 @@ async function apply() {
     emit('saved')
     close()
   } catch (e: unknown) {
-    const err = e as { data?: { message?: string } }
+    const err = e as { statusCode?: number; data?: { message?: string } }
+    if (err.statusCode === 409) {
+      toast.add({ title: 'Switch was modified. Please try again.', color: 'warning' })
+      emit('saved')
+      return
+    }
     toast.add({ title: err.data?.message || t('switches.ports.updateFailed'), color: 'error' })
   }
 }
