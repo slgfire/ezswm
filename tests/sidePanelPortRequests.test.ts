@@ -39,7 +39,6 @@ describe('LAG sync field selection', () => {
       helper_label: 'Desk 12',
       show_in_helper_list: false
     })).toMatchObject({
-      connected_port: 'Gi1/0/1',
       helper_usage: 'participant',
       helper_label: 'Desk 12',
       show_in_helper_list: false
@@ -55,7 +54,6 @@ describe('LAG sync field selection', () => {
       native_vlan: 1,
       tagged_vlans: [10, 20],
       connected_device: 'Host 1',
-      connected_port: 'eth0',
       connected_device_id: null,
       connected_allocation_id: 'alloc-1',
       helper_usage: null,
@@ -70,7 +68,6 @@ describe('LAG sync field selection', () => {
       native_vlan: 1,
       tagged_vlans: [10, 20],
       connected_device: 'Host 1',
-      connected_port: null,
       connected_device_id: null,
       connected_allocation_id: 'alloc-1',
       helper_usage: null,
@@ -78,6 +75,28 @@ describe('LAG sync field selection', () => {
       show_in_helper_list: true,
       add_vlans_to_target_switch: true
     })
+  })
+
+  it('never includes connected_port or connected_port_id in LAG sync payload', () => {
+    const payload = buildLagSyncFields({
+      status: 'up',
+      speed: '1G',
+      port_mode: 'access',
+      access_vlan: 10,
+      native_vlan: null,
+      tagged_vlans: [],
+      connected_device: 'Switch B',
+      connected_port: 'Gi1/0/1',
+      connected_port_id: 'remote-port-1',
+      connected_device_id: 'switch-b',
+      connected_allocation_id: null,
+      helper_usage: null,
+      helper_label: null,
+      show_in_helper_list: true
+    }) as Record<string, unknown>
+
+    expect(payload.connected_port).toBeUndefined()
+    expect(payload.connected_port_id).toBeUndefined()
   })
 })
 

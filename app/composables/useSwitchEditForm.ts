@@ -4,7 +4,8 @@ import type { LayoutTemplate } from '~~/types/layoutTemplate'
 export function useSwitchEditForm(
   item: Ref<Switch | null>,
   templates: Ref<LayoutTemplate[]>,
-  updateFn: (body: Record<string, unknown>) => Promise<unknown>
+  updateFn: (body: Record<string, unknown>) => Promise<unknown>,
+  refreshFn?: () => Promise<void>
 ) {
   const { t } = useI18n()
   const toast = useToast()
@@ -93,12 +94,18 @@ export function useSwitchEditForm(
       }
       if (body.layout_template_id === '') delete body.layout_template_id
       body.stack_size = editForm.stack_size || 1
+      if (item.value?.updated_at) body.expected_updated_at = item.value.updated_at
       await updateFn(body)
       toast.add({ title: t('switches.messages.updated'), color: 'success' })
       editMode.value = false
     } catch (e: unknown) {
-      const err = e as { data?: { message?: string } }
-      toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
+      const err = e as { statusCode?: number; statusMessage?: string; data?: { message?: string } }
+      if (err.statusCode === 409) {
+        toast.add({ title: 'Switch was modified. Please try again.', color: 'warning' })
+        await refreshFn?.()
+      } else {
+        toast.add({ title: err?.data?.message || err.statusMessage || t('errors.serverError'), color: 'error' })
+      }
     } finally {
       saving.value = false
     }

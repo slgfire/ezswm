@@ -6,6 +6,7 @@ import type { Switch } from '../../types/switch'
 import type { Port, PortSpeed, PortType, PortStatus, PortMode, PortHelperUsage } from '../../types/port'
 import type { PoeConfig } from '../../types/layoutTemplate'
 import { layoutTemplateRepository } from './layoutTemplateRepository'
+import { clearPeerLinksForDeletedPorts } from './portPeerCleanup'
 import { isValidIPv4, isIPInSubnet } from '../utils/ipv4'
 import { incrementMemberLabel } from '../utils/deviceLibrary'
 import { slugify, resolveSlugCollision } from '../utils/slugify'
@@ -436,6 +437,7 @@ export const switchRepository = {
       throw createError({ statusCode: 404, message: 'Switch not found' })
     }
     const id = current.id
+    const expectedUpdatedAt = (data as Partial<{ expected_updated_at: string }>).expected_updated_at
 
     if (data.name && data.name !== current.name) {
       const clash = await prisma.switch.findFirst({
@@ -455,7 +457,9 @@ export const switchRepository = {
     }
 
     const templateChanged = data.layout_template_id !== undefined && data.layout_template_id !== current.layout_template_id
-    const stackChanged = data.stack_size !== undefined && data.stack_size !== current.stack_size
+    const stackChanged = data.stack_size !== undefined
+      ? ((data.stack_size ?? 1) !== ((current.stack_size ?? 1)))
+      : false
     const regeneratePorts = templateChanged || stackChanged
     const newTemplateId = data.layout_template_id ?? current.layout_template_id
     const newStackSize = data.stack_size ?? current.stack_size ?? 1
@@ -467,6 +471,16 @@ export const switchRepository = {
     const oldName = current.name
 
     const updated = await prisma.$transaction(async (tx) => {
+      const currentInTx = await tx.switch.findUnique({ where: { id }, select: { updated_at: true } })
+      if (!currentInTx) throw createError({ statusCode: 404, message: 'Switch not found' })
+      if (expectedUpdatedAt && currentInTx.updated_at !== expectedUpdatedAt) {
+        throw createError({
+          statusCode: 409,
+          statusMessage: 'Switch was modified since page load',
+          data: { current_updated_at: currentInTx.updated_at }
+        })
+      }
+
       await tx.switch.update({
         where: { id },
         data: {
@@ -493,6 +507,8 @@ export const switchRepository = {
       })
 
       if (newPorts) {
+        const deletingIds = (await tx.port.findMany({ where: { switch_id: id }, select: { id: true } })).map(port => port.id)
+        await clearPeerLinksForDeletedPorts(tx, deletingIds)
         await tx.port.deleteMany({ where: { switch_id: id } })
         await tx.port.createMany({
           data: newPorts.map(p => ({ switch_id: id, ...portCreateInput(p as Parameters<typeof portCreateInput>[0]) }))
@@ -638,7 +654,12 @@ export const switchRepository = {
     return rowToPort(updated)
   },
 
-  async bulkUpdatePorts(idOrSlug: string, portIds: string[], updates: Partial<Omit<Port, 'id' | 'unit' | 'index'>>): Promise<Port[]> {
+  async bulkUpdatePorts(
+    idOrSlug: string,
+    portIds: string[],
+    updates: Partial<Omit<Port, 'id' | 'unit' | 'index'>>,
+    options: { expectedUpdatedAt?: string } = {}
+  ): Promise<Port[]> {
     // Accept either a UUID or a globally-unique slug; resolve to the real PK
     // before the transaction so the `where: { id }` clauses below match.
     const target = await this.getById(idOrSlug)
@@ -646,10 +667,33 @@ export const switchRepository = {
     const switchId = target.id
 
     const updated = await prisma.$transaction(async (tx) => {
+      const sw = await tx.switch.findUnique({ where: { id: switchId }, select: { updated_at: true } })
+      if (!sw) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
+
+      if (options.expectedUpdatedAt && sw.updated_at !== options.expectedUpdatedAt) {
+        throw createError({
+          statusCode: 409,
+          statusMessage: 'Switch was modified since page load',
+          data: { current_updated_at: sw.updated_at }
+        })
+      }
+
+      const requested = await tx.port.findMany({
+        where: { id: { in: portIds } },
+        select: { id: true, switch_id: true }
+      })
+      if (requested.length !== portIds.length) {
+        const found = new Set(requested.map(port => port.id))
+        const missing = portIds.find(id => !found.has(id))
+        throw createError({ statusCode: 404, statusMessage: `Port ${missing} not found` })
+      }
+      const foreign = requested.find(port => port.switch_id !== switchId)
+      if (foreign) {
+        throw createError({ statusCode: 409, statusMessage: `Port ${foreign.id} does not belong to this switch` })
+      }
+
       const rows: PortRow[] = []
       for (const portId of portIds) {
-        const port = await tx.port.findUnique({ where: { id: portId } })
-        if (!port || port.switch_id !== switchId) continue
         const row = await tx.port.update({ where: { id: portId }, data: portUpdateInput(updates) })
         rows.push(row)
       }
@@ -922,20 +966,12 @@ export const switchRepository = {
     const id = sw.id
 
     await prisma.$transaction(async (tx) => {
-      // Clear bidirectional links on remote ports before cascade deletes our ports.
-      for (const port of sw.ports) {
-        if (port.connected_device_id && port.connected_port_id) {
-          await tx.port.update({
-            where: { id: port.connected_port_id },
-            data: {
-              connected_device: null,
-              connected_device_id: null,
-              connected_port_id: null,
-              connected_port: null
-            }
-          }).catch(() => { /* remote may not exist */ })
-        }
-      }
+      await clearPeerLinksForDeletedPorts(tx, sw.ports.map(port => port.id))
+
+      await tx.lagGroup.updateMany({
+        where: { remote_device_id: id },
+        data: { remote_device: null, remote_device_id: null }
+      })
 
       // Clean up management IP allocation if any.
       if (sw.management_ip) {

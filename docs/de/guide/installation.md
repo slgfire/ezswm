@@ -68,6 +68,18 @@ In Docker müssen Umgebungsvariablen, die die Nuxt-Laufzeit konfigurieren, das P
 
 Der ENTRYPOINT des Containers ruft beim Start `prisma migrate deploy` auf, bevor der Server hochfährt. Schema-Upgrades werden also automatisch beim Container-Start angewandt — kein separater Migrations-Schritt nötig.
 
+### Automatisches Pre-Upgrade-Backup der Datenbank
+
+Bevor Migrationen laufen, vergleicht der ENTRYPOINT die aktuelle App-Version aus der runtime-`package.json` mit `/app/data/.version`:
+
+- Wenn `/app/data/db.sqlite` existiert und die Versionen unterschiedlich sind (inklusive fehlendem Marker), erstellt ezSWM ein Backup unter `/app/data/backups/`.
+- Der Backup-Ordnername enthält UTC-Zeitstempel plus von/zu Version (`..._from-<alt>_to-<neu>`) und enthält `db.sqlite` sowie optional `db.sqlite-wal` / `db.sqlite-shm`.
+- Aufbewahrung ist automatisch: nur die neuesten **5** Backups bleiben erhalten.
+- Wenn Backup-Erstellung/Kopieren/Pruning fehlschlägt, stoppt der Containerstart vor `prisma migrate deploy` (fail closed).
+- Wenn die Migration erfolgreich ist, wird `/app/data/.version` atomar auf die neue Version gesetzt.
+
+Bei Restarts mit gleicher Version wird kein Backup erzeugt.
+
 ### Benutzerdefinierte UID / GID
 
 Das Image läuft standardmäßig unter uid `1000`. Wenn dein Host-User nicht uid 1000 ist (z.B. Synology, Unraid, custom Server-Setup), entweder:
@@ -144,6 +156,8 @@ Die Anwendung ist unter `http://localhost:3000` erreichbar.
 docker compose pull
 docker compose up -d
 ```
+
+Wenn eine Migration Probleme macht, Container stoppen und aus `/app/data/backups/<timestamp>_from-..._to-.../` wiederherstellen: `db.sqlite` zurück nach `/app/data/` kopieren (inklusive passender `-wal` / `-shm`-Dateien, falls vorhanden), danach Container erneut starten.
 
 ### Aus dem Quellcode neu bauen
 

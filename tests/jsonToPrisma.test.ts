@@ -2,11 +2,10 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { execSync } from 'node:child_process'
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import { PrismaClient } from '@prisma/client'
 
 import { runJsonToPrismaMigration } from '../server/migrations/jsonToPrisma'
+import { createTestPrisma } from './testHelpers'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -14,33 +13,24 @@ function writeJson(dir: string, name: string, data: unknown) {
   writeFileSync(join(dir, name), JSON.stringify(data, null, 2))
 }
 
-async function freshPrismaClient(dbFile: string): Promise<PrismaClient> {
-  // Apply the schema to a fresh SQLite file via prisma's migration runner.
-  // Spawning the CLI is slow (~1-2s) but keeps the test fully self-contained.
-  execSync('pnpm prisma migrate deploy', {
-    env: { ...process.env, DATABASE_URL: `file:${dbFile}` },
-    stdio: 'pipe',
-    cwd: process.cwd()
-  })
-  return new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: `file:${dbFile}` }) })
-}
-
 describe('jsonToPrisma migration', () => {
   let dataDir: string
-  let dbFile: string
   let prisma: PrismaClient
+  let cleanupPrisma: (() => Promise<void>) | null = null
 
   beforeEach(async () => {
     dataDir = mkdtempSync(join(tmpdir(), 'ezswm-mig-data-'))
-    const dbDir = mkdtempSync(join(tmpdir(), 'ezswm-mig-db-'))
-    dbFile = join(dbDir, 'test.sqlite')
-    prisma = await freshPrismaClient(dbFile)
+    const ctx = await createTestPrisma()
+    prisma = ctx.prisma
+    cleanupPrisma = ctx.cleanup
   })
 
   afterEach(async () => {
-    await prisma.$disconnect()
+    if (cleanupPrisma) {
+      await cleanupPrisma()
+      cleanupPrisma = null
+    }
     rmSync(dataDir, { recursive: true, force: true })
-    rmSync(dbFile, { force: true })
   })
 
   it('migrates a complete mini-dataset with cross-refs preserved', async () => {

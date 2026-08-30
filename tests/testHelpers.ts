@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { execSync } from 'node:child_process'
@@ -52,6 +52,54 @@ export interface TestPrismaContext {
   cleanup: () => Promise<void>
 }
 
+let migratedTemplateDbFile: string | null = null
+let migratedTemplateDbDir: string | null = null
+let migratedTemplateInit: Promise<string> | null = null
+
+function registerTemplateCleanup(): void {
+  if ((registerTemplateCleanup as { _registered?: boolean })._registered) {
+    return
+  }
+  ;(registerTemplateCleanup as { _registered?: boolean })._registered = true
+  process.on('exit', () => {
+    if (migratedTemplateDbDir) {
+      rmSync(migratedTemplateDbDir, { recursive: true, force: true })
+      migratedTemplateDbDir = null
+      migratedTemplateDbFile = null
+    }
+  })
+}
+
+async function getMigratedTemplateDbFile(): Promise<string> {
+  if (migratedTemplateDbFile) {
+    return migratedTemplateDbFile
+  }
+
+  if (!migratedTemplateInit) {
+    migratedTemplateInit = (async () => {
+      const templateDir = mkdtempSync(join(tmpdir(), 'ezswm-test-template-db-'))
+      const templateDbFile = join(templateDir, 'template.sqlite')
+
+      execSync('pnpm prisma migrate deploy', {
+        env: { ...process.env, DATABASE_URL: `file:${templateDbFile}` },
+        stdio: 'pipe',
+        cwd: process.cwd()
+      })
+
+      migratedTemplateDbDir = templateDir
+      migratedTemplateDbFile = templateDbFile
+      registerTemplateCleanup()
+      return templateDbFile
+    })()
+  }
+
+  try {
+    return await migratedTemplateInit
+  } finally {
+    migratedTemplateInit = null
+  }
+}
+
 /**
  * Create a temporary SQLite database with the schema applied, return a Prisma
  * client pointed at it, plus helpers to reset and dispose. Use in `beforeAll`;
@@ -63,16 +111,17 @@ export interface TestPrismaContext {
  * tests, which is orders of magnitude faster than provisioning per test.
  */
 export async function createTestPrisma(): Promise<TestPrismaContext> {
+  const templateDbFile = await getMigratedTemplateDbFile()
   const dbDir = mkdtempSync(join(tmpdir(), 'ezswm-test-db-'))
   const dbFile = join(dbDir, 'test.sqlite')
 
-  execSync('pnpm prisma migrate deploy', {
-    env: { ...process.env, DATABASE_URL: `file:${dbFile}` },
-    stdio: 'pipe',
-    cwd: process.cwd()
-  })
+  copyFileSync(templateDbFile, dbFile)
 
   const prisma = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: `file:${dbFile}` }) })
+
+  // ponytail: test-only durability tradeoff for faster local/CI suites.
+  await prisma.$executeRawUnsafe('PRAGMA journal_mode = WAL')
+  await prisma.$executeRawUnsafe('PRAGMA synchronous = OFF')
 
   async function resetDb(): Promise<void> {
     // FK-safe order — leaves with the most dependents first.

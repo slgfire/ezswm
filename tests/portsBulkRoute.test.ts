@@ -1,11 +1,12 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { PrismaClient } from '@prisma/client'
-import { randomUUID } from 'node:crypto'
 
 import { createTestPrisma, seedSwitch } from './testHelpers'
 import bulkUpdatePorts from '../server/api/switches/[id]/ports/bulk.put'
 
 describe('PUT /api/switches/:id/ports/bulk LAG protection', () => {
+  const id = () => globalThis.crypto.randomUUID()
+
   let prisma: PrismaClient
   let resetDb: () => Promise<void>
   let cleanup: () => Promise<void>
@@ -34,13 +35,13 @@ describe('PUT /api/switches/:id/ports/bulk LAG protection', () => {
 
   async function fixture(lagIds: Array<string | null>) {
     const sw = await seedSwitch(prisma)
-    const lagId = randomUUID()
+    const lagId = id()
     await prisma.lagGroup.create({
       data: { id: lagId, switch_id: sw.id, name: 'LAG 1', created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
     })
     const ports = await Promise.all(lagIds.map((lag_group_id, index) => prisma.port.create({
       data: {
-        id: randomUUID(), switch_id: sw.id, unit: 1, index: index + 1, type: 'rj45', status: 'down',
+        id: id(), switch_id: sw.id, unit: 1, index: index + 1, type: 'rj45', status: 'down',
         tagged_vlans: '[]', description: `original ${index}`, lag_group_id: lag_group_id === 'none' ? null : (lag_group_id || lagId)
       }
     })))
@@ -73,7 +74,7 @@ describe('PUT /api/switches/:id/ports/bulk LAG protection', () => {
 
   it('rejects a wrong lag_group_id without mutation', async () => {
     const { sw, lagId, ports } = await fixture([lagIdPlaceholder()])
-    await expect(call(sw.id, [ports[0].id], { lag_group_id: randomUUID() })).rejects.toMatchObject({ statusCode: 409 })
+    await expect(call(sw.id, [ports[0].id], { lag_group_id: id() })).rejects.toMatchObject({ statusCode: 409 })
     const port = await prisma.port.findUniqueOrThrow({ where: { id: ports[0].id } })
     expect(port.lag_group_id).toBe(lagId)
     expect(port.description).toBe('original 0')
@@ -92,6 +93,23 @@ describe('PUT /api/switches/:id/ports/bulk LAG protection', () => {
     const rows = await prisma.port.findMany({ where: { switch_id: sw.id } })
     expect(rows).toHaveLength(2)
     expect(rows.every(row => row.description === 'changed' && row.lag_group_id === lagId)).toBe(true)
+  })
+
+  it('accepts bulk sync-specific fields in payload and applies them', async () => {
+    const { sw, ports } = await fixture(['none'])
+    await call(sw.id, [ports[0].id], {
+      updates: {
+        connected_device: 'remote-switch',
+        connected_port: 'Et1',
+        connected_device_id: id(),
+        connected_allocation_id: null
+      }
+    })
+
+    const updated = await prisma.port.findUniqueOrThrow({ where: { id: ports[0].id } })
+    expect(updated.connected_device).toBe('remote-switch')
+    expect(updated.connected_port).toBe('Et1')
+    expect(updated.connected_device_id).toBeTruthy()
   })
 
   it('rejects apply_after_copy_prefill for LAG targets even with valid lag_group_id', async () => {

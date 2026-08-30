@@ -9,8 +9,13 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody(event)
   const validated = createLagGroupSchema.parse(body)
+  const expectedUpdatedAt = validated.expected_updated_at
+  delete (validated as Record<string, unknown>).expected_updated_at
 
-  const group = await lagGroupRepository.create(sw.id, validated)
+  const group = await lagGroupRepository.create(sw.id, {
+    ...validated,
+    ...(expectedUpdatedAt ? { expected_updated_at: expectedUpdatedAt } : {})
+  })
 
   // Resolve port labels for activity log metadata
   const portLabels = group.port_ids

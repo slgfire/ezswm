@@ -15,22 +15,6 @@ export default defineEventHandler(async (event) => {
 
   const expectedUpdatedAt = parsed.expected_updated_at
 
-  // Concurrency check once at the start
-  if (expectedUpdatedAt && sw.updated_at !== expectedUpdatedAt) {
-    throw createError({
-      statusCode: 409,
-      statusMessage: 'Switch was modified since page load',
-      data: { current_updated_at: sw.updated_at }
-    })
-  }
-
-  // Validate all port IDs exist
-  for (const portId of parsed.port_ids) {
-    if (!sw.ports.find(p => p.id === portId)) {
-      throw createError({ statusCode: 404, statusMessage: `Port ${portId} not found` })
-    }
-  }
-
   // A normal bulk edit must not split an existing LAG. LAG VLAN applies must
   // explicitly identify the one LAG all targets belong to.
   const targetPorts = sw.ports.filter(p => parsed.port_ids.includes(p.id))
@@ -78,7 +62,12 @@ export default defineEventHandler(async (event) => {
   if (parsed.updates.helper_usage === null) parsed.updates.helper_usage = undefined
 
   // All validation passed — single atomic write
-  const updatedPorts = await switchRepository.bulkUpdatePorts(switchId, parsed.port_ids, parsed.updates as Partial<Omit<Port, 'id' | 'unit' | 'index'>>)
+  const updatedPorts = await switchRepository.bulkUpdatePorts(
+    switchId,
+    parsed.port_ids,
+    parsed.updates as Partial<Omit<Port, 'id' | 'unit' | 'index'>>,
+    { expectedUpdatedAt }
+  )
 
   // If override, also update configured_vlans
   if (vlansToAdd.length > 0) {

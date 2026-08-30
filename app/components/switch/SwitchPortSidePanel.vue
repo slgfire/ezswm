@@ -450,6 +450,11 @@ const remotePortSearchOptions = computed(() => {
 const selectedPortOption = computed(() => remotePortSearchOptions.value.find(o => o.value === selectedPortId.value) || undefined)
 function onPortSelect(option: { label: string; value: string; connected: string } | undefined) { selectedPortId.value = option?.value || '' }
 
+function latestSwitchUpdatedAt(response: Record<string, unknown>): string | undefined {
+  const value = response.updated_at
+  return typeof value === 'string' ? value : props.switchUpdatedAt
+}
+
 
 const portConflict = computed(() => {
   if (!selectedSwitchId.value || !selectedPortId.value) return null
@@ -726,26 +731,34 @@ async function save() {
       toast.add({ title: t('vlans.addedToTargetSwitch', { vlans: vlansAdded.join(', '), switch: targetSw?.name || '' }) })
     }
 
-
-    // LAG sync: update VLAN/speed/status/connected_device on all other LAG member ports
     if ((props.lagGroup?.port_ids?.length ?? 0) > 1) {
       const syncFields = buildLagSyncFields(body)
-      const otherPortIds = props.lagGroup!.port_ids!.filter((pid: string) => pid !== props.port!.id)
-      for (const portId of otherPortIds) {
-        try {
-          await $fetch(
-            `/api/switches/${props.switchId}/ports/${portId}`,
-            buildSidePanelPortPutOptions(syncFields, siteParams.value?.siteId)
-          )
-        } catch { /* best-effort sync */ }
-      }
-      toast.add({ title: t('switches.ports.portUpdated') + ` (${otherPortIds.length + 1} LAG ports)`, color: 'success' })
+      const lagPortIds = [...props.lagGroup!.port_ids!]
+      await $fetch(`/api/switches/${props.switchId}/ports/bulk`, {
+        method: 'PUT',
+        query: siteParams.value,
+        body: {
+          port_ids: lagPortIds,
+          lag_group_id: props.lagGroup!.id,
+          updates: syncFields,
+          expected_updated_at: latestSwitchUpdatedAt(response)
+        }
+      })
+      toast.add({ title: t('switches.ports.portUpdated') + ` (${lagPortIds.length} LAG ports)`, color: 'success' })
     } else {
       toast.add({ title: t('switches.ports.portUpdated'), color: 'success' })
     }
 
     emit('saved'); isOpen.value = false
-  } catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.add({ title: err.data?.message || 'Failed', color: 'error' }) }
+  } catch (e: unknown) {
+    const err = e as { statusCode?: number; data?: { message?: string } }
+    if (err.statusCode === 409) {
+      toast.add({ title: 'Switch was modified. Please try again.', color: 'warning' })
+      emit('saved')
+      return
+    }
+    toast.add({ title: err.data?.message || 'Failed', color: 'error' })
+  }
 }
 
 function onRemoveFromLag() {

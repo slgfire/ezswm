@@ -186,6 +186,10 @@ Das Zurücksetzen eines Ports (einzeln oder mehrere) löscht seine Einstellungen
 
 > Bestätigungen (Ports zurücksetzen, LAG-Verbindungen überschreiben, Seite mit ungespeicherten Änderungen verlassen) nutzen In-App-Dialoge statt nativer Browser-Popups.
 
+### Nebenläufigkeit und Konflikt-Refresh
+
+Switch-Bearbeitung, einzelne Port-Bearbeitung, Massen-Port-Bearbeitung sowie LAG-Anlegen/-Bearbeiten verwenden jetzt konsequent optimistische Nebenläufigkeitsprüfungen. Wenn ein anderer Benutzer denselben Switch zuvor geändert hat, liefert ezSWM einen Konflikt und lädt die Switch-Daten neu, damit du mit dem aktuellen Stand erneut speichern kannst.
+
 ### Switches filtern
 
 Die Toolbar der Switch-Liste bietet drei Filter-Dropdowns (Standort, Rolle, Tags). Jedes Dropdown zeigt nur Werte, die in den aktuell sichtbaren Switches vorhanden sind (site-gescopt bei einer einzelnen Site, global bei **Alle Standorte**). Wähle **Alle …** am Anfang eines Dropdowns, um diesen Filter zurückzusetzen. Jedes Dropdown hat ein führendes Icon zur schnellen visuellen Orientierung.
@@ -628,3 +632,9 @@ flowchart LR
 ### Upgrade auf 0.21.x
 
 Mit 0.21.0 ist der Storage von flachen JSON-Files auf eingebettetes SQLite umgestellt. Beim ersten Start des neuen Images erkennt die App die alten `data/*.json` neben einer leeren Datenbank, führt die einmalige Migration in einer einzigen Transaktion aus (jeder Datensatz bekommt eine frische UUIDv4, alle Cross-References werden gemappt) und verschiebt die originalen JSON-Files nach `data/_archive_<ISO>/`. URLs ändern sich, weil die IDs neu generiert werden — Bookmarks auf einzelne Entities brechen einmalig, das UI selbst ist unverändert. Die exakte Abfolge und der Fehler-Pfad stehen im [Installations-Guide](/de/guide/installation#upgrade-von-0-20-x-auf-0-21-x).
+
+### Automatische Pre-Upgrade-Backups
+
+Beim Containerstart prüft ezSWM vor Schema-Migrationen den Marker `/app/data/.version` gegen die aktuelle App-Version. Wenn die vorhandene `/app/data/db.sqlite` zu einer anderen Version gehört (oder der Marker fehlt), erstellt ezSWM automatisch ein Backup unter `/app/data/backups/` und behält die neuesten 5 Backups.
+
+Jedes Backup enthält `db.sqlite` und – falls vorhanden – `db.sqlite-wal` / `db.sqlite-shm`. Wenn das Backup fehlschlägt, werden Migrationen nicht ausgeführt. Der Versionsmarker wird erst nach erfolgreich abgeschlossenen Migrationen aktualisiert.

@@ -15,7 +15,6 @@ export function buildLagSyncFields(body: Record<string, unknown>): Record<string
     native_vlan: body.native_vlan,
     tagged_vlans: body.tagged_vlans,
     connected_device: body.connected_device,
-    connected_port: body.connected_port,
     connected_device_id: body.connected_device_id,
     connected_allocation_id: body.connected_allocation_id,
     helper_usage: body.helper_usage,
@@ -25,10 +24,6 @@ export function buildLagSyncFields(body: Record<string, unknown>): Record<string
 
   if (body.add_vlans_to_target_switch) {
     syncFields.add_vlans_to_target_switch = true
-  }
-
-  if (body.connected_allocation_id) {
-    syncFields.connected_port = null
   }
 
   return syncFields

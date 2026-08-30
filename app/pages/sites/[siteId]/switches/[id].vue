@@ -378,6 +378,7 @@ v-model="editForm.role"
       :ports="item?.ports || []"
       :existing-lags="lagGroups"
       :configured-vlans="item?.configured_vlans || []"
+      :switch-updated-at="item?.updated_at"
       @saved="onLagSaved"
     />
 
@@ -451,7 +452,7 @@ function getPortLabel(portId: string): string {
   return port.label || `${port.unit}/${port.index}`
 }
 
-const { editMode, saving, editFormRef, editTagInput, editForm, stackSizeOptions, editRoleOptions, templateOptions, openEditPanel, validateEdit, onSave, addEditTag, removeEditTag, requestCloseEdit, onEditOpenChange } = useSwitchEditForm(item, templates, update)
+const { editMode, saving, editFormRef, editTagInput, editForm, stackSizeOptions, editRoleOptions, templateOptions, openEditPanel, validateEdit, onSave, addEditTag, removeEditTag, requestCloseEdit, onEditOpenChange } = useSwitchEditForm(item, templates, update, fetchSwitch)
 
 const showDeleteDialog = ref(false)
 const deleting = ref(false)
