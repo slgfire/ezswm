@@ -3,6 +3,39 @@ import type { LayoutTemplate } from '~~/types/layoutTemplate'
 
 type WarningPort = { id: string; unit: number; index: number; type: string; label?: string | null }
 
+const clearableOptionalTextFields = new Set([
+  'model',
+  'manufacturer',
+  'serial_number',
+  'location',
+  'rack_position',
+  'management_ip',
+  'firmware_version',
+  'notes'
+])
+
+export function buildSwitchEditSaveBody(editForm: {
+  layout_template_id: string
+  stack_size: number
+  tags: string[]
+  [key: string]: unknown
+}, expectedUpdatedAt?: string): Record<string, unknown> {
+  const body: Record<string, unknown> = { ...editForm, tags: [...editForm.tags] }
+  for (const key of Object.keys(body)) {
+    if (body[key] === '' && key !== 'layout_template_id') {
+      if (clearableOptionalTextFields.has(key)) body[key] = null
+      else delete body[key]
+    }
+    // Empty `tags` array means "remove all" — must reach the API. Other empty
+    // arrays (configured_vlans etc.) are managed via dedicated endpoints.
+    if (Array.isArray(body[key]) && (body[key] as unknown[]).length === 0 && key !== 'tags') delete body[key]
+  }
+  if (body.layout_template_id === '') delete body.layout_template_id
+  body.stack_size = editForm.stack_size || 1
+  if (expectedUpdatedAt) body.expected_updated_at = expectedUpdatedAt
+  return body
+}
+
 export function resolveEffectiveTemplateId(currentTemplateId?: string | null, requestedTemplateId?: string | null): string {
   return requestedTemplateId || currentTemplateId || ''
 }
@@ -162,17 +195,7 @@ export function useSwitchEditForm(
   }
 
   function buildSaveBody(): Record<string, unknown> {
-    const body: Record<string, unknown> = { ...editForm, tags: [...editForm.tags] }
-    for (const key of Object.keys(body)) {
-      if (body[key] === '' && key !== 'layout_template_id') delete body[key]
-      // Empty `tags` array means "remove all" — must reach the API. Other empty
-      // arrays (configured_vlans etc.) are managed via dedicated endpoints.
-      if (Array.isArray(body[key]) && (body[key] as unknown[]).length === 0 && key !== 'tags') delete body[key]
-    }
-    if (body.layout_template_id === '') delete body.layout_template_id
-    body.stack_size = editForm.stack_size || 1
-    if (item.value?.updated_at) body.expected_updated_at = item.value.updated_at
-    return body
+    return buildSwitchEditSaveBody(editForm, item.value?.updated_at)
   }
 
   async function onSave() {

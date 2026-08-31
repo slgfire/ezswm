@@ -136,6 +136,8 @@ Felder:
 - **Tags** -- frei definierbare Tags; tippe und drücke Enter zum Hinzufügen, klicke auf einen Tag zum Entfernen
 - **Notizen** -- Freitext
 
+Beim Bearbeiten eines Switches entfernt das Leeren optionaler Textfelder (z. B. Modell, Hersteller, Seriennummer, Standort, Rack-Position, Management-IP, Firmware-Version, Notizen) beim Speichern jetzt die zuvor gespeicherten Werte explizit.
+
 Wenn du einen Switch auf ein anderes Layout-Template umstellst, behält ezSWM jetzt passende Ports (gleiche Unit/Index/Typ) und deren komplette Konfiguration (VLANs, Verbindungen, LAG-Zuordnung, Helfer-Felder). Es werden nur neue, im Ziel-Template erwartete Ports ergänzt und nur nicht mehr passende Ports entfernt.
 
 Wenn ein Template- oder Stack-Größen-Wechsel bestehende Ports entfernen würde, zeigt ezSWM vor dem Speichern einen Bestätigungsdialog. Der Dialog listet die betroffenen Ports, die gelöscht würden. Mit **Abbrechen** behältst du deine aktuellen Änderungen und kehrst ins Formular zurück; nur mit Bestätigung wird die Änderung übernommen.

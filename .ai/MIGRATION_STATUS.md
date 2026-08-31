@@ -3,6 +3,20 @@
 ## Latest Stage
 
 Date: 2026-08-31
+Stage: Switch edit optional-text clear payload fix
+Status: Complete
+Version: 0.34.3
+
+### Fix: clearing optional switch text fields now persists as null (v0.34.3)
+
+- Fixed switch edit payload normalization so clearing optional text metadata sends `null` instead of dropping the key.
+- This now correctly persists explicit clears for fields like model/manufacturer/serial/location/rack position/management IP/firmware/notes.
+- Preserved existing semantics: blank `layout_template_id` is still omitted (keep current template), empty `tags` still reaches API as "clear all", `stack_size` remains numeric.
+- Added focused regression test coverage for `model: ''` -> `model: null` payload generation.
+
+---
+
+Date: 2026-08-31
 Stage: Template/stack-change destructive-port confirmation dialog docs
 Status: Complete
 Version: 0.34.2

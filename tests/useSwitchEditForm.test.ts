@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { computeTemplateWarningRemovedPorts, resolveEffectiveTemplateId } from '../app/composables/useSwitchEditForm'
+import { buildSwitchEditSaveBody, computeTemplateWarningRemovedPorts, resolveEffectiveTemplateId } from '../app/composables/useSwitchEditForm'
 import type { LayoutTemplate } from '../types/layoutTemplate'
 
 const templates: LayoutTemplate[] = [
@@ -36,6 +36,37 @@ const templates: LayoutTemplate[] = [
 ]
 
 describe('useSwitchEditForm destructive warning calculation', () => {
+  it('sends model clear as null in update payload', () => {
+    expect(buildSwitchEditSaveBody({
+      name: 'SW-1',
+      model: '',
+      manufacturer: 'Vendor',
+      serial_number: '',
+      location: '',
+      rack_position: '',
+      management_ip: '',
+      firmware_version: '',
+      layout_template_id: '',
+      role: '',
+      tags: [],
+      notes: '',
+      stack_size: 1
+    }, 'ts-1')).toEqual({
+      name: 'SW-1',
+      model: null,
+      manufacturer: 'Vendor',
+      serial_number: null,
+      location: null,
+      rack_position: null,
+      management_ip: null,
+      firmware_version: null,
+      tags: [],
+      notes: null,
+      stack_size: 1,
+      expected_updated_at: 'ts-1'
+    })
+  })
+
   it('uses current template when requested template is blank', () => {
     expect(resolveEffectiveTemplateId('tpl-a', '')).toBe('tpl-a')
   })
