@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, copyFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { execSync } from 'node:child_process'
@@ -55,6 +55,7 @@ export interface TestPrismaContext {
 let migratedTemplateDbFile: string | null = null
 let migratedTemplateDbDir: string | null = null
 let migratedTemplateInit: Promise<string> | null = null
+const TEMPLATE_ENV_KEY = 'EZSWM_TEST_PRISMA_TEMPLATE_DB_FILE'
 
 function registerTemplateCleanup(): void {
   if ((registerTemplateCleanup as { _registered?: boolean })._registered) {
@@ -73,6 +74,12 @@ function registerTemplateCleanup(): void {
 async function getMigratedTemplateDbFile(): Promise<string> {
   if (migratedTemplateDbFile) {
     return migratedTemplateDbFile
+  }
+
+  const globalTemplateDbFile = process.env[TEMPLATE_ENV_KEY]
+  if (globalTemplateDbFile && existsSync(globalTemplateDbFile)) {
+    migratedTemplateDbFile = globalTemplateDbFile
+    return globalTemplateDbFile
   }
 
   if (!migratedTemplateInit) {
