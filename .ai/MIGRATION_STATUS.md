@@ -3,6 +3,34 @@
 ## Latest Stage
 
 Date: 2026-08-31
+Stage: Template/stack-change destructive-port confirmation dialog docs
+Status: Complete
+Version: 0.34.2
+
+### Fix: documented confirmation before destructive template/stack changes (v0.34.2)
+
+- Documented new switch-edit behavior (EN/DE guides): before applying a template change or stack-size change that would remove existing ports, ezSWM shows a confirmation dialog.
+- Documented that the dialog lists affected ports scheduled for deletion.
+- Documented that choosing Cancel keeps the current unsaved edits intact and returns the user to the form.
+- Bumped app version from `0.34.1` to `0.34.2` in `package.json`.
+
+---
+
+Date: 2026-08-31
+Stage: Non-destructive switch template-change port reconciliation
+Status: Complete
+Version: 0.34.1
+
+### Hotfix: preserve matching port configuration on switch template change (v0.34.1)
+
+- Replaced switch template-change full port delete/recreate behavior with bounded reconciliation in `switchRepository.update`.
+- Matching generated ports are now preserved by `(unit, index, type)` so user configuration (VLAN fields, links, LAG membership, helper fields, PoE overrides, descriptions) remains intact.
+- Added expected new-template ports that are missing and deleted only unmatched old ports.
+- Unmatched-port deletion clears reciprocal peer links first via `clearPeerLinksForDeletedPorts`.
+- Added regression coverage proving a 2-port→4-port template switch keeps shared-port config/VLAN state, adds new ports, and removes only unmatched ports.
+- Updated user guides (EN/DE) to document non-destructive behavior and bumped version to `0.34.1`.
+
+Date: 2026-08-31
 Stage: Automated Docker pre-upgrade SQLite backup
 Status: Complete
 Version: 0.34.0

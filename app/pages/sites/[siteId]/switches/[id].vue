@@ -56,9 +56,10 @@
         <UTooltip :text="$t('common.duplicate')">
           <UButton
             icon="i-heroicons-document-duplicate"
-            variant="soft"
+            variant="ghost"
             color="neutral"
             size="sm"
+            class="cursor-pointer"
             @click="onDuplicate"
           />
         </UTooltip>
@@ -332,6 +333,31 @@ v-model="editForm.role"
       </template>
     </USlideover>
 
+    <!-- Layout template change confirmation (only when ports would be removed) -->
+    <SharedConfirmDialog
+      v-model="showTemplateConfirm"
+      :title="templateConfirmTitle"
+      :message="templateConfirmMessage"
+      :confirm-label="templateConfirmLabel"
+      :loading="saving"
+      @confirm="confirmTemplateChange"
+    >
+      <div class="mt-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs uppercase tracking-wider text-gray-400">{{ $t('switches.portsRemovedList') }}</span>
+          <UBadge color="error" variant="soft" size="sm">{{ removedPorts.length }}</UBadge>
+        </div>
+        <div class="mt-2 flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
+          <UBadge v-for="port in visibleRemovedPorts" :key="port.id" variant="subtle" size="sm">
+            {{ port.label }}
+          </UBadge>
+          <UBadge v-if="hiddenRemovedCount > 0" variant="subtle" size="sm" color="neutral">
+            {{ $t('switches.portsRemovedMore', { count: hiddenRemovedCount }) }}
+          </UBadge>
+        </div>
+      </div>
+    </SharedConfirmDialog>
+
     <!-- Delete confirmation dialog -->
     <SharedConfirmDialog
       v-model="showDeleteDialog"
@@ -452,7 +478,20 @@ function getPortLabel(portId: string): string {
   return port.label || `${port.unit}/${port.index}`
 }
 
-const { editMode, saving, editFormRef, editTagInput, editForm, stackSizeOptions, editRoleOptions, templateOptions, openEditPanel, validateEdit, onSave, addEditTag, removeEditTag, requestCloseEdit, onEditOpenChange } = useSwitchEditForm(item, templates, update, fetchSwitch)
+const { editMode, saving, editFormRef, editTagInput, editForm, stackSizeOptions, editRoleOptions, templateOptions, openEditPanel, validateEdit, onSave, addEditTag, removeEditTag, requestCloseEdit, onEditOpenChange, showTemplateConfirm, removedPorts, removesAllPorts, pendingTemplateName, pendingStackOnlyChange, confirmTemplateChange } = useSwitchEditForm(item, templates, update, fetchSwitch)
+
+const MAX_REMOVED_PORT_CHIPS = 24
+const templateConfirmTitle = computed(() => pendingStackOnlyChange.value
+  ? t('switches.confirmStackSizeChangeTitle')
+  : t('switches.confirmTemplateChangeTitle'))
+const templateConfirmMessage = computed(() => pendingStackOnlyChange.value
+  ? t('switches.confirmStackSizeChange', { count: removedPorts.value.length })
+  : removesAllPorts.value
+    ? t('switches.confirmTemplateChangeAll', { template: pendingTemplateName.value, count: removedPorts.value.length })
+    : t('switches.confirmTemplateChange', { template: pendingTemplateName.value, count: removedPorts.value.length }))
+const templateConfirmLabel = computed(() => t('switches.confirmTemplateChangeButton', { count: removedPorts.value.length }))
+const visibleRemovedPorts = computed(() => removedPorts.value.slice(0, MAX_REMOVED_PORT_CHIPS))
+const hiddenRemovedCount = computed(() => Math.max(0, removedPorts.value.length - MAX_REMOVED_PORT_CHIPS))
 
 const showDeleteDialog = ref(false)
 const deleting = ref(false)

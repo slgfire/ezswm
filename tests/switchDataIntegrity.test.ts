@@ -91,6 +91,161 @@ describe('switch/port/LAG integrity regressions', () => {
     expect(peerAfter.connected_device_id).toBeNull()
   })
 
+  it('preserves shared port config when switching templates and only removes unmatched ports', async () => {
+    const site = await seedSite(prisma)
+    const twoPort = await layoutTemplateRepository.create({
+      name: 'hotfix-old-2p',
+      units: [{
+        unit_number: 1,
+        blocks: [
+          { id: '', type: 'rj45', count: 1, start_index: 1, rows: 1, label: 'Gi1/0/' },
+          { id: '', type: 'sfp', count: 1, start_index: 1, rows: 1, label: 'SFP1/' }
+        ]
+      }]
+    })
+    const fourPort = await layoutTemplateRepository.create({
+      name: 'hotfix-new-4p',
+      units: [{
+        unit_number: 1,
+        blocks: [
+          { id: '', type: 'rj45', count: 4, start_index: 1, rows: 1, label: 'Eth1/' }
+        ]
+      }]
+    })
+
+    const sw = await switchRepository.create({
+      site_id: site.id,
+      name: 'sw-hotfix',
+      layout_template_id: twoPort.id,
+      configured_vlans: [],
+      tags: []
+    })
+
+    const sharedBefore = sw.ports.find(port => port.type === 'rj45' && port.unit === 1 && port.index === 1)
+    const unmatchedBefore = sw.ports.find(port => port.type === 'sfp' && port.unit === 1 && port.index === 1)
+    expect(sharedBefore).toBeDefined()
+    expect(unmatchedBefore).toBeDefined()
+
+    await switchRepository.updatePort(sw.id, sharedBefore!.id, {
+      label: 'Custom Label',
+      description: 'keep this description',
+      status: 'up',
+      speed: '1G',
+      port_mode: 'trunk',
+      native_vlan: 10,
+      access_vlan: 20,
+      tagged_vlans: [10, 20, 30],
+      connected_device: 'uplink-core',
+      connected_port: 'Eth9/1',
+      mac_address: 'AA:BB:CC:DD:EE:FF',
+      helper_usage: 'uplink',
+      helper_label: 'Backbone',
+      show_in_helper_list: false,
+      poe: { type: '802.3at', max_watts: 30 }
+    })
+
+    const updated = await switchRepository.update(sw.id, { layout_template_id: fourPort.id })
+
+    expect(updated.ports).toHaveLength(4)
+    const sharedAfter = updated.ports.find(port => port.unit === 1 && port.index === 1 && port.type === 'rj45')
+    expect(sharedAfter?.id).toBe(sharedBefore!.id)
+    expect(sharedAfter).toMatchObject({
+      label: 'Custom Label',
+      description: 'keep this description',
+      status: 'up',
+      speed: '1G',
+      port_mode: 'trunk',
+      native_vlan: 10,
+      access_vlan: 20,
+      tagged_vlans: [10, 20, 30],
+      connected_device: 'uplink-core',
+      connected_port: 'Eth9/1',
+      mac_address: 'AA:BB:CC:DD:EE:FF',
+      helper_usage: 'uplink',
+      helper_label: 'Backbone',
+      show_in_helper_list: false,
+      poe: { type: '802.3at', max_watts: 30 }
+    })
+
+    expect(updated.ports.some(port => port.id === unmatchedBefore!.id)).toBe(false)
+    expect(updated.ports.some(port => port.type === 'sfp')).toBe(false)
+    expect(updated.ports.filter(port => port.type === 'rj45').map(port => `${port.unit}/${port.index}`)).toEqual(['1/1', '1/2', '1/3', '1/4'])
+  })
+
+  it('cleans local LAG membership and decouples remote mirror when an unmatched template-switch port is deleted', async () => {
+    const site = await seedSite(prisma)
+    const oldTemplate = await layoutTemplateRepository.create({
+      name: 'lag-cleanup-old',
+      units: [{
+        unit_number: 1,
+        blocks: [
+          { id: '', type: 'rj45', count: 1, start_index: 1, rows: 1 },
+          { id: '', type: 'sfp', count: 1, start_index: 1, rows: 1 }
+        ]
+      }]
+    })
+    const newTemplate = await layoutTemplateRepository.create({
+      name: 'lag-cleanup-new',
+      units: [{ unit_number: 1, blocks: [{ id: '', type: 'rj45', count: 1, start_index: 1, rows: 1 }] }]
+    })
+
+    const sw = await switchRepository.create({
+      site_id: site.id,
+      name: 'sw-lag-cleanup',
+      layout_template_id: oldTemplate.id,
+      configured_vlans: [],
+      tags: []
+    })
+    const localRj45 = sw.ports.find(port => port.type === 'rj45')!
+    const localSfp = sw.ports.find(port => port.type === 'sfp')!
+
+    const remote = await seedSwitch(prisma, { site_id: site.id, name: 'remote-lag-cleanup' })
+    const remoteP1 = await prisma.port.create({ data: { id: id(), switch_id: remote.id, unit: 1, index: 1, type: 'rj45', status: 'up', tagged_vlans: '[]' } })
+    const remoteP2 = await prisma.port.create({ data: { id: id(), switch_id: remote.id, unit: 1, index: 2, type: 'sfp', status: 'up', tagged_vlans: '[]' } })
+
+    const remoteLag = await lagGroupRepository.create(remote.id, {
+      name: 'remote-lag',
+      port_ids: [remoteP1.id, remoteP2.id],
+      remote_device: 'sw-lag-cleanup',
+      remote_device_id: sw.id
+    })
+    const localLag = await lagGroupRepository.create(sw.id, {
+      name: 'local-lag',
+      port_ids: [localRj45.id, localSfp.id],
+      remote_device: 'remote-lag-cleanup',
+      remote_device_id: remote.id
+    })
+
+    await prisma.port.update({
+      where: { id: localSfp.id },
+      data: { connected_device: 'remote-lag-cleanup', connected_device_id: remote.id, connected_port_id: remoteP2.id, connected_port: remoteP2.label }
+    })
+    await prisma.port.update({
+      where: { id: remoteP2.id },
+      data: { connected_device: sw.name, connected_device_id: sw.id, connected_port_id: localSfp.id, connected_port: localSfp.label }
+    })
+
+    const updated = await switchRepository.update(sw.id, { layout_template_id: newTemplate.id })
+
+    expect(updated.ports.some(port => port.id === localSfp.id)).toBe(false)
+    expect(await prisma.lagGroup.findUnique({ where: { id: localLag.id } })).toBeNull()
+    const remoteLagAfter = await prisma.lagGroup.findUniqueOrThrow({ where: { id: remoteLag.id } })
+    expect(remoteLagAfter.remote_device_id).toBeNull()
+    expect(remoteLagAfter.remote_device).toBeNull()
+
+    const localRj45After = await prisma.port.findUniqueOrThrow({ where: { id: localRj45.id } })
+    const remoteP1After = await prisma.port.findUniqueOrThrow({ where: { id: remoteP1.id } })
+    const remoteP2After = await prisma.port.findUniqueOrThrow({ where: { id: remoteP2.id } })
+
+    expect(localRj45After.lag_group_id).toBeNull()
+    expect(remoteP1After.lag_group_id).toBe(remoteLag.id)
+    expect(remoteP2After.lag_group_id).toBe(remoteLag.id)
+    expect(remoteP2After.connected_port_id).toBeNull()
+    expect(remoteP2After.connected_device_id).toBeNull()
+    expect(remoteP2After.connected_device).toBeNull()
+    expect(remoteP2After.connected_port).toBeNull()
+  })
+
   it('decouples surviving remote mirror LAG rows on switch delete only for matching remote_device_id', async () => {
     const site = await seedSite(prisma)
     const doomed = await seedSwitch(prisma, { site_id: site.id, name: 'doomed' })

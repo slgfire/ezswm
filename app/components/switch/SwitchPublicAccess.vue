@@ -3,9 +3,10 @@
   <UTooltip :text="$t('public.admin.title')">
     <UButton
       icon="i-heroicons-qr-code"
-      variant="soft"
+      variant="ghost"
       color="neutral"
       size="sm"
+      class="cursor-pointer"
       @click="openDrawer"
     />
   </UTooltip>

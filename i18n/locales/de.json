@@ -222,6 +222,14 @@
       "deleted": "Switch erfolgreich gelöscht",
       "duplicated": "Switch erfolgreich dupliziert"
     },
+    "confirmTemplateChangeTitle": "Layout-Vorlage ändern?",
+    "confirmTemplateChange": "Beim Anwenden von \"{template}\" werden {count} Port(s) ohne entsprechende Position in der neuen Vorlage dauerhaft entfernt. Deren VLAN-, Verbindungs- und LAG-Einstellungen gehen verloren.",
+    "confirmTemplateChangeAll": "Beim Anwenden von \"{template}\" werden alle {count} vorhandenen Port(s) entfernt und aus der Vorlage neu erzeugt. Alle Port-Einstellungen, Verbindungen und LAG-Mitgliedschaften gehen verloren.",
+    "confirmTemplateChangeButton": "{count} Port(s) entfernen und anwenden",
+    "confirmStackSizeChangeTitle": "Stack-Größe ändern?",
+    "confirmStackSizeChange": "Beim Ändern der Stack-Größe werden alle {count} vorhandenen Port(s) entfernt und aus der aktuellen Vorlage neu erzeugt. Alle Port-Einstellungen, Verbindungen und LAG-Mitgliedschaften gehen verloren.",
+    "portsRemovedList": "Zu entfernende Ports",
+    "portsRemovedMore": "+{count} weitere",
     "ports": {
       "title": "Ports",
       "edit": "Port bearbeiten",

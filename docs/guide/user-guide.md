@@ -136,6 +136,10 @@ Fields:
 - **Tags** -- freeform tags; type and press Enter to add, click a tag to remove
 - **Notes** -- freetext
 
+When you change a switch to another layout template, ezSWM now keeps matching ports (same unit/index/type) and preserves their full configuration (VLANs, links, LAG assignment, helper fields). It only adds new ports required by the new template and removes ports that no longer exist in that layout.
+
+If a template or stack-size change would remove existing ports, ezSWM shows a confirmation dialog before saving. The dialog lists the affected ports that would be deleted. Choose **Cancel** to keep your current edits and return to the form, or confirm to apply the change.
+
 ### Port Visualization
 
 On a switch detail page, ports are rendered as a visual grid matching the layout template. Ports are color-coded by their assigned VLAN. Trunk ports (carrying multiple VLANs) display a circle indicator with ring. Access ports show a square indicator. Unassigned ports appear in a neutral color.

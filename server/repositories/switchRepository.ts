@@ -180,6 +180,67 @@ function generatePortLabel(blockLabel: string | undefined, unitNumber: number, p
   return blockLabel.match(/[/\-:.]$/) ? `${blockLabel}${portIndex}` : `${blockLabel} ${unitNumber}/${portIndex}`
 }
 
+function portLayoutKey(port: { unit: number; index: number; type: string }): string {
+  return `${port.unit}:${port.index}:${port.type}`
+}
+
+function hasTemplateOwnedLabel(
+  port: { unit: number; index: number; label: string | null },
+  oldTemplateLabel: string | undefined
+): boolean {
+  if (port.label === null) return true
+  if (port.label === `${port.unit}/${port.index}`) return true
+  return oldTemplateLabel !== undefined && port.label === oldTemplateLabel
+}
+
+async function cleanupLagMembershipForDeletedPorts(tx: TxClient, switchId: string, deletingPortIds: string[]): Promise<void> {
+  if (deletingPortIds.length === 0) return
+
+  const deletingPorts = await tx.port.findMany({
+    where: { id: { in: deletingPortIds } },
+    select: { lag_group_id: true }
+  })
+  const localLagIds = new Set(deletingPorts.map(port => port.lag_group_id).filter((id): id is string => Boolean(id)))
+
+  for (const lagId of localLagIds) {
+    const lag = await tx.lagGroup.findUnique({ where: { id: lagId }, select: { id: true, switch_id: true, remote_device_id: true } })
+    if (!lag) continue
+
+    const remaining = await tx.port.count({
+      where: {
+        lag_group_id: lagId,
+        id: { notIn: deletingPortIds }
+      }
+    })
+    if (remaining >= 2) continue
+
+    await tx.port.updateMany({
+      where: {
+        lag_group_id: lagId,
+        id: { notIn: deletingPortIds }
+      },
+      data: { lag_group_id: null }
+    })
+    await tx.lagGroup.delete({ where: { id: lagId } })
+
+    if (lag.remote_device_id) {
+      const mirrorCandidates = await tx.lagGroup.findMany({
+        where: {
+          switch_id: lag.remote_device_id,
+          remote_device_id: lag.switch_id
+        },
+        select: { id: true }
+      })
+      if (mirrorCandidates.length === 1) {
+        await tx.lagGroup.update({
+          where: { id: mirrorCandidates[0]!.id },
+          data: { remote_device: null, remote_device_id: null }
+        })
+      }
+    }
+  }
+}
+
 async function generatePortsFromTemplate(templateId: string, stackSize: number = 1): Promise<Port[]> {
   const template = await layoutTemplateRepository.getById(templateId)
   if (!template) return []
@@ -463,9 +524,14 @@ export const switchRepository = {
     const regeneratePorts = templateChanged || stackChanged
     const newTemplateId = data.layout_template_id ?? current.layout_template_id
     const newStackSize = data.stack_size ?? current.stack_size ?? 1
+    const shouldReconcileTemplateSwitch = templateChanged && !stackChanged && Boolean(newTemplateId)
     const newPorts = regeneratePorts && newTemplateId
       ? await generatePortsFromTemplate(newTemplateId, newStackSize)
       : null
+    const oldTemplatePorts = shouldReconcileTemplateSwitch && current.layout_template_id
+      ? await generatePortsFromTemplate(current.layout_template_id, current.stack_size ?? 1)
+      : []
+    const oldTemplateLabelByKey = new Map(oldTemplatePorts.map(port => [portLayoutKey(port), port.label]))
 
     const oldManagementIp = current.management_ip
     const oldName = current.name
@@ -507,12 +573,68 @@ export const switchRepository = {
       })
 
       if (newPorts) {
-        const deletingIds = (await tx.port.findMany({ where: { switch_id: id }, select: { id: true } })).map(port => port.id)
-        await clearPeerLinksForDeletedPorts(tx, deletingIds)
-        await tx.port.deleteMany({ where: { switch_id: id } })
-        await tx.port.createMany({
-          data: newPorts.map(p => ({ switch_id: id, ...portCreateInput(p as Parameters<typeof portCreateInput>[0]) }))
-        })
+        if (shouldReconcileTemplateSwitch) {
+          const currentPorts = await tx.port.findMany({
+            where: { switch_id: id },
+            orderBy: [{ unit: 'asc' }, { index: 'asc' }]
+          })
+          const consumed = new Set<string>()
+          const labelUpdates: Array<{ id: string; label: string }> = []
+          const inserts: Port[] = []
+
+          for (const expectedPort of newPorts) {
+            const existing = currentPorts.find(port =>
+              !consumed.has(port.id)
+              && port.unit === expectedPort.unit
+              && port.index === expectedPort.index
+              && port.type === expectedPort.type
+            )
+            if (!existing) {
+              inserts.push(expectedPort)
+              continue
+            }
+
+            consumed.add(existing.id)
+            const oldTemplateLabel = oldTemplateLabelByKey.get(portLayoutKey(existing))
+            if (
+              hasTemplateOwnedLabel(existing, oldTemplateLabel)
+              && existing.label !== expectedPort.label
+            ) {
+              labelUpdates.push({ id: existing.id, label: expectedPort.label ?? `${expectedPort.unit}/${expectedPort.index}` })
+            }
+          }
+
+          const deletingIds = currentPorts
+            .filter(port => !consumed.has(port.id))
+            .map(port => port.id)
+
+          if (deletingIds.length > 0) {
+            await cleanupLagMembershipForDeletedPorts(tx, id, deletingIds)
+            await clearPeerLinksForDeletedPorts(tx, deletingIds)
+            await tx.port.deleteMany({ where: { id: { in: deletingIds } } })
+          }
+
+          for (const update of labelUpdates) {
+            await tx.port.update({ where: { id: update.id }, data: { label: update.label } })
+            await tx.port.updateMany({
+              where: { connected_port_id: update.id, connected_device_id: id },
+              data: { connected_port: update.label }
+            })
+          }
+
+          if (inserts.length > 0) {
+            await tx.port.createMany({
+              data: inserts.map(port => ({ switch_id: id, ...portCreateInput(port as Parameters<typeof portCreateInput>[0]) }))
+            })
+          }
+        } else {
+          const deletingIds = (await tx.port.findMany({ where: { switch_id: id }, select: { id: true } })).map(port => port.id)
+          await clearPeerLinksForDeletedPorts(tx, deletingIds)
+          await tx.port.deleteMany({ where: { switch_id: id } })
+          await tx.port.createMany({
+            data: newPorts.map(p => ({ switch_id: id, ...portCreateInput(p as Parameters<typeof portCreateInput>[0]) }))
+          })
+        }
       }
 
       const newManagementIp = data.management_ip !== undefined ? (data.management_ip ?? undefined) : (oldManagementIp ?? undefined)
