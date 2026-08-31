@@ -1,6 +1,61 @@
 import type { Switch } from '~~/types/switch'
 import type { LayoutTemplate } from '~~/types/layoutTemplate'
 
+type WarningPort = { id: string; unit: number; index: number; type: string; label?: string | null }
+
+export function resolveEffectiveTemplateId(currentTemplateId?: string | null, requestedTemplateId?: string | null): string {
+  return requestedTemplateId || currentTemplateId || ''
+}
+
+export function computeTemplateWarningRemovedPorts(input: {
+  currentTemplateId?: string | null
+  nextTemplateId?: string | null
+  currentStackSize?: number | null
+  nextStackSize?: number | null
+  currentPorts: WarningPort[]
+  templates: LayoutTemplate[]
+}): { removed: { id: string; label: string }[]; removesAll: boolean } {
+  const currentTemplateId = input.currentTemplateId || ''
+  const requestedTemplateId = input.nextTemplateId || ''
+  // Mirrors buildSaveBody(): blank template gets stripped, so server keeps current.
+  const effectiveTemplateId = resolveEffectiveTemplateId(currentTemplateId, requestedTemplateId)
+  const currentStackSize = input.currentStackSize ?? 1
+  const nextStackSize = input.nextStackSize ?? 1
+  const templateChanged = effectiveTemplateId !== currentTemplateId
+  const stackChanged = nextStackSize !== currentStackSize
+
+  if (!templateChanged && !stackChanged) return { removed: [], removesAll: false }
+  if (!effectiveTemplateId) return { removed: [], removesAll: false }
+  if (stackChanged) {
+    return {
+      removed: input.currentPorts.map(p => ({ id: p.id, label: p.label || `${p.unit}/${p.index}` })),
+      removesAll: input.currentPorts.length > 0
+    }
+  }
+
+  const tpl = input.templates.find(tpl => tpl.id === effectiveTemplateId)
+  if (!tpl) return { removed: [], removesAll: false }
+
+  const keys = new Set<string>()
+  const baseCount = tpl.units.length
+  for (let member = 1; member <= currentStackSize; member++) {
+    const offset = (member - 1) * baseCount
+    for (const unit of tpl.units) {
+      for (const block of unit.blocks) {
+        for (let i = 0; i < block.count; i++) {
+          keys.add(`${unit.unit_number + offset}:${block.start_index + i}:${block.type}`)
+        }
+      }
+    }
+  }
+
+  const removed = input.currentPorts
+    .filter(p => !keys.has(`${p.unit}:${p.index}:${p.type}`))
+    .map(p => ({ id: p.id, label: p.label || `${p.unit}/${p.index}` }))
+
+  return { removed, removesAll: false }
+}
+
 export function useSwitchEditForm(
   item: Ref<Switch | null>,
   templates: Ref<LayoutTemplate[]>,
@@ -82,25 +137,80 @@ export function useSwitchEditForm(
     return errors
   }
 
+  const showTemplateConfirm = ref(false)
+  const removedPorts = ref<{ id: string; label: string }[]>([])
+  const pendingTemplateName = ref('')
+  const removesAllPorts = ref(false)
+  // True when the destructive save is a stack-size-only regeneration — the
+  // dialog copy must not blame a template change in that case.
+  const pendingStackOnlyChange = ref(false)
+  let pendingSaveBody: Record<string, unknown> | null = null
+
+  // Returns current ports the save would delete under the repository's update()
+  // behavior, or [] for a non-destructive save.
+  function computeRemovedPorts(): { removed: { id: string; label: string }[]; removesAll: boolean } {
+    const sw = item.value
+    if (!sw) return { removed: [], removesAll: false }
+    return computeTemplateWarningRemovedPorts({
+      currentTemplateId: sw.layout_template_id,
+      nextTemplateId: editForm.layout_template_id,
+      currentStackSize: sw.stack_size,
+      nextStackSize: editForm.stack_size,
+      currentPorts: sw.ports || [],
+      templates: templates.value
+    })
+  }
+
+  function buildSaveBody(): Record<string, unknown> {
+    const body: Record<string, unknown> = { ...editForm, tags: [...editForm.tags] }
+    for (const key of Object.keys(body)) {
+      if (body[key] === '' && key !== 'layout_template_id') delete body[key]
+      // Empty `tags` array means "remove all" — must reach the API. Other empty
+      // arrays (configured_vlans etc.) are managed via dedicated endpoints.
+      if (Array.isArray(body[key]) && (body[key] as unknown[]).length === 0 && key !== 'tags') delete body[key]
+    }
+    if (body.layout_template_id === '') delete body.layout_template_id
+    body.stack_size = editForm.stack_size || 1
+    if (item.value?.updated_at) body.expected_updated_at = item.value.updated_at
+    return body
+  }
+
   async function onSave() {
+    const body = buildSaveBody()
+    const { removed, removesAll } = computeRemovedPorts()
+    if (removed.length > 0) {
+      pendingSaveBody = body
+      removedPorts.value = removed
+      removesAllPorts.value = removesAll
+      const currentTemplateId = item.value?.layout_template_id || ''
+      const effectiveTemplateId = resolveEffectiveTemplateId(currentTemplateId, editForm.layout_template_id)
+      pendingStackOnlyChange.value = effectiveTemplateId === currentTemplateId
+      pendingTemplateName.value =
+        templates.value.find((tpl) => tpl.id === (editForm.layout_template_id || item.value?.layout_template_id))?.name || ''
+      showTemplateConfirm.value = true
+      return
+    }
+    await executeSave(body)
+  }
+
+  async function confirmTemplateChange() {
+    if (!pendingSaveBody) return
+    await executeSave(pendingSaveBody)
+  }
+
+  async function executeSave(body: Record<string, unknown>) {
     saving.value = true
     try {
-      const body: Record<string, unknown> = { ...editForm, tags: [...editForm.tags] }
-      for (const key of Object.keys(body)) {
-        if (body[key] === '' && key !== 'layout_template_id') delete body[key]
-        // Empty `tags` array means "remove all" — must reach the API. Other empty
-        // arrays (configured_vlans etc.) are managed via dedicated endpoints.
-        if (Array.isArray(body[key]) && (body[key] as unknown[]).length === 0 && key !== 'tags') delete body[key]
-      }
-      if (body.layout_template_id === '') delete body.layout_template_id
-      body.stack_size = editForm.stack_size || 1
-      if (item.value?.updated_at) body.expected_updated_at = item.value.updated_at
       await updateFn(body)
       toast.add({ title: t('switches.messages.updated'), color: 'success' })
+      showTemplateConfirm.value = false
+      pendingSaveBody = null
       editMode.value = false
     } catch (e: unknown) {
       const err = e as { statusCode?: number; statusMessage?: string; data?: { message?: string } }
       if (err.statusCode === 409) {
+        showTemplateConfirm.value = false
+        pendingSaveBody = null
         toast.add({ title: 'Switch was modified. Please try again.', color: 'warning' })
         await refreshFn?.()
       } else {
@@ -125,6 +235,7 @@ export function useSwitchEditForm(
     editMode, saving, editFormRef, editTagInput, editForm,
     stackSizeOptions, editRoleOptions, templateOptions,
     openEditPanel, validateEdit, onSave, addEditTag, removeEditTag,
-    isEditDirty, requestCloseEdit, onEditOpenChange
+    isEditDirty, requestCloseEdit, onEditOpenChange,
+    showTemplateConfirm, removedPorts, removesAllPorts, pendingTemplateName, pendingStackOnlyChange, confirmTemplateChange
   }
 }

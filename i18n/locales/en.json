@@ -222,6 +222,14 @@
       "deleted": "Switch deleted successfully",
       "duplicated": "Switch duplicated successfully"
     },
+    "confirmTemplateChangeTitle": "Change layout template?",
+    "confirmTemplateChange": "Applying \"{template}\" will permanently remove {count} port(s) that have no matching position in the new template. Their VLAN, connection and LAG settings will be lost.",
+    "confirmTemplateChangeAll": "Applying \"{template}\" will remove all {count} existing port(s) and regenerate them from the template. All port settings, connections and LAG memberships will be lost.",
+    "confirmTemplateChangeButton": "Remove {count} port(s) and apply",
+    "confirmStackSizeChangeTitle": "Change stack size?",
+    "confirmStackSizeChange": "Changing the stack size will remove all {count} existing port(s) and regenerate them from the current template. All port settings, connections and LAG memberships will be lost.",
+    "portsRemovedList": "Ports to be removed",
+    "portsRemovedMore": "+{count} more",
     "ports": {
       "title": "Ports",
       "edit": "Edit Port",

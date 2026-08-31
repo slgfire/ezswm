@@ -136,6 +136,10 @@ Felder:
 - **Tags** -- frei definierbare Tags; tippe und drücke Enter zum Hinzufügen, klicke auf einen Tag zum Entfernen
 - **Notizen** -- Freitext
 
+Wenn du einen Switch auf ein anderes Layout-Template umstellst, behält ezSWM jetzt passende Ports (gleiche Unit/Index/Typ) und deren komplette Konfiguration (VLANs, Verbindungen, LAG-Zuordnung, Helfer-Felder). Es werden nur neue, im Ziel-Template erwartete Ports ergänzt und nur nicht mehr passende Ports entfernt.
+
+Wenn ein Template- oder Stack-Größen-Wechsel bestehende Ports entfernen würde, zeigt ezSWM vor dem Speichern einen Bestätigungsdialog. Der Dialog listet die betroffenen Ports, die gelöscht würden. Mit **Abbrechen** behältst du deine aktuellen Änderungen und kehrst ins Formular zurück; nur mit Bestätigung wird die Änderung übernommen.
+
 ### Port-Visualisierung
 
 Auf der Switch-Detailseite werden Ports als visuelles Raster entsprechend dem Layout-Template dargestellt. Ports sind nach ihrem zugewiesenen VLAN farbcodiert. Trunk-Ports (mit mehreren VLANs) zeigen einen Kreis-Indikator mit Ring. Access-Ports zeigen einen quadratischen Indikator. Nicht zugewiesene Ports erscheinen in einer neutralen Farbe.
