@@ -9,7 +9,19 @@
         </div>
 
         <UFormField :label="$t('common.status')">
-          <USelect v-model="form.status" :items="['up', 'down', 'disabled']" class="w-full" />
+          <div class="flex items-center gap-1" role="radiogroup" :aria-label="$t('common.status')">
+            <button
+              v-for="option in statusOptions"
+              :key="option.value"
+              type="button"
+              role="radio"
+              :aria-checked="form.status === option.value"
+              class="cursor-pointer px-2.5 py-1 text-xs font-medium rounded border transition-colors focus-visible:outline-2 focus-visible:outline-primary-500"
+              :class="form.status === option.value ? option.activeClass : option.idleClass"
+              @click="form.status = option.value"
+              @keydown="onStatusKeydown($event, option.value)"
+            >{{ option.label }}</button>
+          </div>
         </UFormField>
 
         <UFormField :label="$t('switches.ports.speed')">
@@ -259,6 +271,42 @@ const portModeOptions = computed(() => [
   { label: t('switches.ports.modeAccess'), value: 'access' },
   { label: t('switches.ports.modeTrunk'), value: 'trunk' }
 ])
+
+// Status segmented button group: same affordance as the connection-type selector below.
+const statusOptions = computed(() => [
+  {
+    label: t('legend.up'), value: 'up',
+    activeClass: 'bg-green-500/20 border-green-500/50 text-green-400',
+    idleClass: 'bg-neutral-100 border-neutral-300 text-neutral-500 hover:text-neutral-700 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+  },
+  {
+    label: t('legend.down'), value: 'down',
+    activeClass: 'bg-red-500/20 border-red-500/50 text-red-400',
+    idleClass: 'bg-neutral-100 border-neutral-300 text-neutral-500 hover:text-neutral-700 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+  },
+  {
+    label: t('legend.disabled'), value: 'disabled',
+    activeClass: 'bg-neutral-500/20 border-neutral-400/50 text-neutral-600 dark:text-neutral-300',
+    idleClass: 'bg-neutral-100 border-neutral-300 text-neutral-500 hover:text-neutral-700 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+  }
+])
+
+// Conventional radiogroup arrow-key navigation: left/up previous, right/down next, wrapping.
+function onStatusKeydown(event: KeyboardEvent, value: string) {
+  const keys = ['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown']
+  if (!keys.includes(event.key)) return
+  event.preventDefault()
+  const options = statusOptions.value
+  const current = options.findIndex(o => o.value === value)
+  const delta = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1
+  const nextIndex = (current + delta + options.length) % options.length
+  const next = options[nextIndex]
+  if (!next) return
+  form.status = next.value
+  const group = (event.currentTarget as HTMLElement).closest('[role="radiogroup"]')
+  const buttons = group?.querySelectorAll<HTMLElement>('[role="radio"]')
+  buttons?.[nextIndex]?.focus()
+}
 
 const connectionMode = ref<'switch' | 'device' | 'freetext'>('freetext')
 const connectionModes = computed(() => [

@@ -166,7 +166,7 @@ Klicke auf einen beliebigen Port im Raster, um ein Seitenpanel zu öffnen. Dort 
 - **Native VLAN** -- das ungetaggte VLAN für diesen Port
 - **Getaggte VLANs** -- zusätzliche VLANs auf einem Trunk
 - **Geschwindigkeit** -- Standardgeschwindigkeit überschreiben
-- **Status** -- up, down oder disabled
+- **Status** -- up (grün), down (rot) oder disabled (grau), ausgewählt über eine Button-Gruppe statt eines Dropdowns
 - **Verbundenes Gerät** -- was an diesem Port angeschlossen ist (siehe unten)
 - **PoE** -- PoE für diesen spezifischen Port überschreiben oder deaktivieren (standardmäßig vom Template-Block geerbt)
 - **Beschreibung** -- Port-spezifische Notizen
