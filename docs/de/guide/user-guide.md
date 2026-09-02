@@ -177,6 +177,8 @@ Optional ist im Footer des Port-Seitenpanels eine Quellport-Auswahl verfügbar. 
 
 Wähle mehrere Ports aus, indem du **Strg** (oder **Cmd** auf Mac) gedrückt hältst und klickst, dann verwende die Massenbearbeitungsaktion, um dasselbe VLAN, dieselbe Geschwindigkeit oder denselben Status auf alle ausgewählten Ports gleichzeitig anzuwenden.
 
+Die Bulk-Statusauswahl nutzt jetzt explizite Buttons (**Up**, **Down**, **Disabled**) und behält zusätzlich den Zustand **No change**, damit du andere Felder ändern kannst, ohne bestehende Port-Status zu überschreiben.
+
 Die Massenbearbeitung unterstützt ebenfalls Quell-Prefill: Im Quell-Dropdown kann jeder Port desselben Switches gewählt werden (auch Ports, die aktuell als Ziel ausgewählt sind). Die Auswahl füllt nur das Bulk-Formular vor. Du kannst die Werte prüfen und ändern; gespeichert wird erst mit **Anwenden**.
 
 Beim Prefill werden Status, Geschwindigkeit, Port-Modus, VLAN-Felder, PoE-Auswahl und eigene/Helfer-Felder übernommen. Bei Verbindungen werden nur manuelle/Freitext-Peer-Werte übernommen (eigener Gerätename und Peer-Port). Echte Switch-zu-Switch-Links sowie IP-/Allocation-Links werden nie kopiert. Beschreibung und LAG-Mitgliedschaft werden ebenfalls nicht übernommen.

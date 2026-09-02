@@ -2,6 +2,19 @@
 
 ## Latest Stage
 
+Date: 2026-09-02
+Stage: Bulk port editor status control consistency
+Status: Complete
+Version: 0.35.1
+
+### Fix: bulk port edit status uses segmented buttons with No change option (v0.35.1)
+
+- Updated the bulk port editor status control to the same Up/Down/Disabled button style used in single-port editing.
+- Kept a distinct **No change** state so bulk updates can leave status untouched unless one of the explicit status buttons is selected.
+- This is a UI consistency bugfix only; backend behavior is unchanged.
+
+---
+
 Date: 2026-09-01
 Stage: Port status segmented button group
 Status: Complete

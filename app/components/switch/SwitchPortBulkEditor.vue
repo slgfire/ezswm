@@ -10,7 +10,22 @@
         </UFormField>
 
         <UFormField :label="$t('common.status')">
-          <USelect v-model="form.status" :items="statusOptions" :placeholder="$t('common.noChange')" class="w-full" />
+          <div class="flex items-center gap-1" role="radiogroup" :aria-label="$t('common.status')">
+            <button
+              v-for="option in statusOptions"
+              :key="option.value"
+              type="button"
+              role="radio"
+              :aria-checked="form.status === option.value"
+              class="cursor-pointer px-2.5 py-1 text-xs font-medium rounded border transition-colors focus-visible:outline-2 focus-visible:outline-primary-500"
+              :class="form.status === option.value ? option.activeClass : option.idleClass"
+              @click="onStatusClick(option.value)"
+              @keydown="onStatusKeydown($event, option.value)"
+            >{{ option.label }}</button>
+          </div>
+          <p v-if="form.status !== ''" class="mt-1 text-xs text-gray-400">
+            <button type="button" class="cursor-pointer underline hover:text-gray-300" @click="form.status = ''">{{ $t('common.noChange') }}</button>
+          </p>
         </UFormField>
 
         <UFormField :label="$t('switches.ports.speed')">
@@ -123,11 +138,47 @@ async function fetchVlans() {
   } catch { /* ignore */ }
 }
 
+// Status segmented button group: same affordance as the port side-panel selector.
+// Empty string = no change (bulk edits never force a status the user did not pick).
 const statusOptions = computed(() => [
-  { label: t('legend.up'), value: 'up' },
-  { label: t('legend.down'), value: 'down' },
-  { label: t('legend.disabled'), value: 'disabled' }
+  {
+    label: t('legend.up'), value: 'up',
+    activeClass: 'bg-green-500/20 border-green-500/50 text-green-400',
+    idleClass: 'bg-neutral-100 border-neutral-300 text-neutral-500 hover:text-neutral-700 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+  },
+  {
+    label: t('legend.down'), value: 'down',
+    activeClass: 'bg-red-500/20 border-red-500/50 text-red-400',
+    idleClass: 'bg-neutral-100 border-neutral-300 text-neutral-500 hover:text-neutral-700 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+  },
+  {
+    label: t('legend.disabled'), value: 'disabled',
+    activeClass: 'bg-neutral-500/20 border-neutral-400/50 text-neutral-600 dark:text-neutral-300',
+    idleClass: 'bg-neutral-100 border-neutral-300 text-neutral-500 hover:text-neutral-700 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+  }
 ])
+
+// Clicking the selected status clears back to "no change".
+function onStatusClick(value: string) {
+  form.status = form.status === value ? '' : value
+}
+
+// Conventional radiogroup arrow-key navigation: left/up previous, right/down next, wrapping.
+function onStatusKeydown(event: KeyboardEvent, value: string) {
+  const keys = ['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown']
+  if (!keys.includes(event.key)) return
+  event.preventDefault()
+  const options = statusOptions.value
+  const current = options.findIndex(o => o.value === value)
+  const delta = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1
+  const nextIndex = (current + delta + options.length) % options.length
+  const next = options[nextIndex]
+  if (!next) return
+  form.status = next.value
+  const group = (event.currentTarget as HTMLElement).closest('[role="radiogroup"]')
+  const buttons = group?.querySelectorAll<HTMLElement>('[role="radio"]')
+  buttons?.[nextIndex]?.focus()
+}
 
 const speedOptions = computed(() => [
   { label: '100M', value: '100M' },
