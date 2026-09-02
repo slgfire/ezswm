@@ -166,7 +166,7 @@ Click any port in the grid to open a slideover panel. From there you can configu
 - **Native VLAN** -- the untagged VLAN for this port
 - **Tagged VLANs** -- additional VLANs carried on a trunk
 - **Speed** -- override the default speed
-- **Status** -- up, down, or disabled
+- **Status** -- up (green), down (red), or disabled (gray), chosen from a button group instead of a dropdown
 - **Connected Device** -- what is plugged into this port (see below)
 - **PoE** -- override or disable PoE for this specific port (inherited from the template block by default)
 - **Description** -- port-level notes

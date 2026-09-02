@@ -2,6 +2,21 @@
 
 ## Latest Stage
 
+Date: 2026-09-01
+Stage: Port status segmented button group
+Status: Complete
+Version: 0.35.0
+
+### Feature: port status selector as accessible button group (v0.35.0)
+
+- Replaced the Up/Down/Disabled dropdown in the port edit slideover (`SwitchPortSidePanel.vue`) with an exclusive segmented button group matching the existing connection-type affordance.
+- Colors: Up green, Down red, Disabled neutral gray; the selected option keeps a tinted background, idle options share the neutral connection-type styling.
+- Accessibility: native `button` elements with `role="radiogroup"`/`role="radio"` + `aria-checked`, arrow-key navigation (left/up previous, right/down next, wrapping), full keyboard tab focus and visible focus ring, i18n labels via existing `legend.up/down/disabled` keys.
+- Underlying `form.status` field, validation, save semantics and LAG set-up prompt unchanged; no backend or validator changes.
+- User guides (EN/DE) updated; version bumped `0.34.3` → `0.35.0`.
+
+---
+
 Date: 2026-08-31
 Stage: Switch edit optional-text clear payload fix
 Status: Complete
