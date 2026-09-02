@@ -177,6 +177,8 @@ Optional source prefill is available in the port side panel footer. Open a port,
 
 Select multiple ports by holding **Ctrl** (or **Cmd** on Mac) and clicking, then use the bulk edit action to apply the same VLAN, speed, or status to all selected ports at once.
 
+The bulk status control uses explicit buttons (**Up**, **Down**, **Disabled**) and also keeps a **No change** state, so you can update other fields without modifying current port status.
+
 Bulk edit also supports source-based prefill: choose any port on the same switch (including ports that are currently selected as targets) in the source dropdown. The selection only prefills the bulk form. You can review and edit values, and changes are persisted only when you click **Apply**.
 
 Copy prefill includes status, speed, port mode, VLAN fields, PoE selection, and custom/helper fields. For connections, it copies only manual/freetext peer values (custom device name and peer port). Real switch-to-switch links and IP/allocation links are never copied. Descriptions and LAG membership are also not copied.
