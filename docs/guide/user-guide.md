@@ -235,7 +235,7 @@ Generate a QR code for any switch that links to a public, read-only mobile view 
 
 **Bulk QR printing:** In the Switches overview, click the **QR code icon** in the toolbar. Select switches via checkboxes, then click "Print Sticker". Tokens are automatically created for switches that don't have one yet. The print page shows a 3-column sticker grid with QR code, switch name, model, and location.
 
-Sticker output is clean/unbranded and optimized for small label printers (about 62×29 mm).
+Sticker output is clean/unbranded and uses a fixed **70 × 37 mm** layout in a **3 × 8 grid on A4**. Print preview reflects this fixed layout so preview and printed result stay aligned.
 
 **Public mobile view:** When someone scans the QR code, they see a mobile-friendly page showing:
 - Switch name, model, and location

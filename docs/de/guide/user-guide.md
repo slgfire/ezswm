@@ -235,7 +235,7 @@ Erzeuge einen QR-Code für jeden Switch, der zu einer öffentlichen, schreibgesc
 
 **Sammel-QR-Druck:** Klicke in der Switches-Übersicht auf das **QR-Code-Symbol** in der Toolbar. Wähle Switches über Checkboxen aus und klicke "Sticker drucken". Tokens werden automatisch für Switches erstellt, die noch keinen haben. Die Druckseite zeigt ein 3-Spalten-Sticker-Raster mit QR-Code, Switch-Name, Modell und Standort.
 
-Die Sticker-Ausgabe ist clean/unbranded und für kleine Etikettendrucker optimiert (ca. 62×29 mm).
+Die Sticker-Ausgabe ist clean/unbranded und nutzt ein festes Layout mit **70 × 37 mm** in einem **3 × 8 Raster auf A4**. Die Druckvorschau bildet dieses feste Layout ab, sodass Vorschau und Ausdruck konsistent sind.
 
 **Öffentliche Mobilansicht:** Beim Scannen des QR-Codes erscheint eine mobilfreundliche Seite mit:
 - Switch-Name, Modell und Standort
