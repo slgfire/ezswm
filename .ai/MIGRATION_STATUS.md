@@ -2,6 +2,19 @@
 
 ## Latest Stage
 
+Date: 2026-09-03
+Stage: Compact switch print layout
+Status: Complete
+Version: 0.35.3
+
+### Fix: switch-port print uses compact landscape layout for dense switches (v0.35.3)
+
+- Updated switch-port print output to a compact landscape layout so high port-count switches remain fully visible on the printed page.
+- Preserved existing visual cues: VLAN color tinting for access ports and trunk markers.
+- For consistent physical scaling, print with **Actual size** in the browser print dialog.
+
+---
+
 Date: 2026-09-02
 Stage: Fixed-size QR sticker print layout
 Status: Complete

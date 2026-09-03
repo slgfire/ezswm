@@ -18,7 +18,7 @@
     <span class="relative z-10 text-xs font-semibold leading-none">{{ port.index }}</span>
     <span
       v-if="typeLabel"
-      class="relative z-10 mt-0.5 text-[7px] font-medium leading-none"
+      class="port-type-label relative z-10 mt-0.5 text-[7px] font-medium leading-none"
       :class="port.poe && port.poe.type !== 'disabled' ? 'text-amber-400' : 'opacity-80'"
     >{{ typeLabel }}</span>
 

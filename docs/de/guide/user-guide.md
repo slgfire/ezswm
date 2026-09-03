@@ -222,6 +222,8 @@ Die Druckseite öffnet sich in einem neuen Tab und zeigt jeden Switch mit seinem
 
 Klicke **Drucken** um den Druckdialog des Browsers zu öffnen, oder nutze **Strg+P**. Die Ausgabe ist für A4-Querformat formatiert, jeder Switch auf einer eigenen Seite.
 
+Der Switch-Port-Druck nutzt jetzt ein kompaktes Querformat-Layout, sodass auch Switches mit hoher Portanzahl vollständig sichtbar bleiben. VLAN-Farben und Trunk-Markierungen bleiben erhalten. Für konsistente Skalierung wähle im Druckdialog **Tatsächliche Größe**.
+
 ### Öffentlicher QR-Zugang
 
 Erzeuge einen QR-Code für jeden Switch, der zu einer öffentlichen, schreibgeschützten Mobilansicht führt — kein Login nötig. Ideal für LAN-Partys oder Events, bei denen nicht-technische Helfer die Portbelegung sehen müssen.
