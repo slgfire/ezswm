@@ -222,7 +222,7 @@ The print page opens in a new tab showing each switch with its port grid on a wh
 
 Click **Print** to open the browser's print dialog, or use **Ctrl+P**. The output is formatted for A4 landscape with each switch on its own page.
 
-Switch-port print now uses a compact landscape layout so even high port-count switches remain fully visible. VLAN colors and trunk markers are preserved. For consistent scaling, select **Actual size** in the print dialog.
+Switch-port print now uses a dense single-line/compact landscape layout with physically ordered ports to reduce clipping on high port-count switches while keeping the full grid visible. In this compact print, access ports show VLAN ID + VLAN color and trunk ports use a **`T`** marker. The VLAN legend continues to show VLAN ID, name, and color. If your browser offers scaling options, print with **Actual size**.
 
 ### Public QR Access
 

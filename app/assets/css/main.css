@@ -355,6 +355,130 @@ a, button {
   display: none !important;
 }
 
+/* Dense port strip (issue #271). Hidden on interactive screens; visible in
+   the on-screen .print-preview page and in print. Visual geometry is shared
+   by both media so the preview matches the printed output 1:1. */
+.port-strip {
+  display: none;
+}
+
+.print-preview .port-strip {
+  display: block;
+}
+
+.port-strip-unit {
+  margin-bottom: 2mm;
+}
+
+.port-strip-unit-label {
+  font-size: 6pt;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5mm;
+}
+
+.port-strip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6mm;
+}
+
+/* Blocks keep the chassis grouping: side-by-side per unit, wrapping safely. */
+.port-strip-blocks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1.5mm;
+}
+
+.port-strip-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6mm;
+}
+
+.port-strip-block-label {
+  font-size: 5pt;
+  font-weight: 600;
+  color: #666;
+}
+
+/* ~10.5mm pitch → 52 ports fit within the 281mm printable width */
+.port-strip-port {
+  position: relative;
+  box-sizing: border-box;
+  width: 9.9mm;
+  height: 7.5mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4mm;
+  border: 0.2mm solid #999;
+  border-radius: 0.8mm;
+  background-color: #fff;
+  color: #000;
+  font-family: ui-monospace, monospace;
+}
+
+.port-strip-port.strip-up {
+  background-color: #f0fdf4;
+  border-color: #16a34a;
+}
+
+.port-strip-port.strip-disabled {
+  background-color: #fef2f2;
+  border-color: #dc2626;
+}
+
+.port-strip-port.strip-down {
+  background-color: #f5f5f5;
+  border-color: #aaa;
+  color: #555;
+}
+
+/* VLAN tint on access ports — after status rules so it wins */
+.port-strip-port.has-vlan-tint.has-vlan-tint {
+  background-color: var(--vlan-tint, #fff);
+}
+
+.port-strip-index {
+  font-size: 6.5pt;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.port-strip-type {
+  font-size: 4.5pt;
+  line-height: 1;
+  color: #666;
+}
+
+/* VLAN ID chip sits on the tinted cell background */
+.port-strip-type.strip-tag-vlan {
+  color: #000;
+  font-weight: 700;
+}
+
+/* Trunk "T" is bold black, matching the corner marker */
+.port-strip-type.strip-tag-trunk {
+  color: #000;
+  font-weight: 700;
+}
+
+/* Trunk marker: solid black tab, visible on tinted or status cells */
+.port-strip-trunk {
+  position: absolute;
+  top: -0.4mm;
+  right: -0.4mm;
+  width: 2.6mm;
+  height: 2.6mm;
+  border-radius: 50%;
+  background-color: #000;
+}
+
 /* Global page settings for print */
 @media print {
   @page {
@@ -475,67 +599,19 @@ body.print-mode {
       page-break-after: always;
     }
 
-    /* Compact port grid: neutralize screen scroll/w-max clipping and shrink
-       cells so 2x24/2x26 unit blocks fit A4 landscape without clipping. */
-    .port-grid-unit {
-      overflow: visible !important;
-      background-color: transparent !important;
-      border: none !important;
-      padding: 0 !important;
+    /* Dense port strip: visuals live in the shared base rules above; only
+       page-specific behavior is added here (shared rules already match the
+       print surface). */
+    .port-strip {
+      display: block !important;
+    }
+
+    .port-strip-unit {
       page-break-inside: avoid;
     }
 
-    /* Unit dividers/labels on white surface */
-    .port-grid-unit + *,
-    .port-grid-unit span,
-    .print-preview .text-gray-400,
-    .print-preview .text-emerald-400 {
-      color: #555 !important;
-    }
-
-    /* Inner block row: full width, blocks may wrap as safe fallback. */
-    .port-grid-unit > div {
-      width: 100% !important;
-      flex-wrap: wrap !important;
-      gap: 2mm !important;
-    }
-
-    /* Port cell block gaps */
-    .port-grid-unit .flex.gap-2,
-    .port-grid-unit .flex-col.gap-1 {
-      gap: 1mm !important;
-    }
-
-    /* Compact port cells: ~8mm square, legible index/type */
-    .port-glow {
-      min-width: 8mm !important;
-      width: 8mm !important;
-      height: 8mm !important;
-      font-size: 7pt !important;
-      transition: none !important;
-    }
-
-    .port-glow span {
-      font-size: 7pt !important;
-      line-height: 1 !important;
-      color: inherit !important;
-    }
-
-    .port-glow .port-type-label {
-      font-size: 5.5pt !important;
-      margin-top: 0 !important;
-    }
-
-    /* Black trunk marker scaled to compact cell */
-    .print-trunk-dot {
-      width: 2.8mm !important;
-      height: 2.8mm !important;
-      background-color: #000 !important;
-    }
-
-    /* VLAN tint on access ports — must come last to override all port status rules */
-    .port-glow.has-vlan-tint.has-vlan-tint {
-      background-color: var(--vlan-tint, #fff) !important;
+    .port-strip-port {
+      break-inside: avoid;
     }
   }
 }
