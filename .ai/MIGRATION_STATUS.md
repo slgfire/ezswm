@@ -3,6 +3,19 @@
 ## Latest Stage
 
 Date: 2026-09-02
+Stage: Fixed-size QR sticker print layout
+Status: Complete
+Version: 0.35.2
+
+### Fix: QR sticker print uses fixed 70 × 37 mm layout with stable preview (v0.35.2)
+
+- Updated QR sticker printing to a fixed-size layout: **70 × 37 mm** stickers in a **3 × 8 grid on A4**.
+- Print preview now reflects that fixed layout, so on-screen preview and printed output stay consistent.
+- Scope is print layout/preview consistency only; no backend behavior changes.
+
+---
+
+Date: 2026-09-02
 Stage: Bulk port editor status control consistency
 Status: Complete
 Version: 0.35.1
