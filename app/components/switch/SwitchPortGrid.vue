@@ -1,5 +1,53 @@
 <template>
   <div class="space-y-4">
+    <!-- Print-only: dense one-line port strip (issue #271). Screen layout below is unchanged.
+         Uses the same block/row pipeline as the interactive grid so the physical
+         port ordering (incl. odd-even faceplate rows and block grouping) is preserved. -->
+    <div v-if="printMode" class="port-strip" aria-hidden="false">
+      <template v-if="units && units.length">
+        <div v-for="unit in units" :key="unit.unit_number" class="port-strip-unit">
+          <div class="port-strip-unit-label">{{ unit.label || `Unit ${unit.unit_number}` }}</div>
+          <div class="port-strip-blocks">
+            <div v-for="block in unit.blocks" :key="block.id" class="port-strip-block">
+              <div v-if="block.label" class="port-strip-block-label">{{ block.label }}</div>
+              <div
+                v-for="(row, ri) in stripRowsForBlock(unit.unit_number, block)"
+                :key="ri"
+                class="port-strip-row"
+              >
+                <div
+                  v-for="port in row"
+                  :key="port.id"
+                  class="port-strip-port"
+                  :class="[stripStatusClass(port), stripTintClass(port)]"
+                  :style="stripTintStyle(port)"
+                >
+                  <span v-if="isStripTrunk(port)" class="port-strip-trunk" />
+                  <span class="port-strip-index">{{ port.index }}</span>
+                  <span class="port-strip-type" :class="stripTagClass(port)">{{ stripTagLabel(port) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+      <div v-else class="port-strip-row">
+        <div
+          v-for="port in ports"
+          :key="port.id"
+          class="port-strip-port"
+          :class="[stripStatusClass(port), stripTintClass(port)]"
+          :style="stripTintStyle(port)"
+        >
+          <span v-if="isStripTrunk(port)" class="port-strip-trunk" />
+          <span class="port-strip-index">{{ port.index }}</span>
+          <span class="port-strip-type" :class="stripTagClass(port)">{{ stripTagLabel(port) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen layout (unchanged) -->
+    <template v-if="!printMode">
     <!-- Block-based rendering -->
     <template v-if="units && units.length">
       <div v-for="(unit, ui) in units" :key="unit.unit_number">
@@ -72,9 +120,10 @@
         @click="onPortClick($event, port.id)"
       />
     </div>
+    </template>
 
     <!-- Legend + LAG Card -->
-    <template v-if="!publicMode">
+    <template v-if="!publicMode && !printMode">
     <div class="port-legend mt-4 px-1 text-[11px] text-gray-500 dark:text-gray-400">
       <!-- Row 1: Status / Type / Mode -->
       <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5">
@@ -295,4 +344,71 @@ const usedVlans = computed(() => {
     .filter(v => usedIds.has(v.vlan_id) && v.color)
     .sort((a, b) => a.vlan_id - b.vlan_id)
 })
+
+// --- Print strip helpers (issue #271): dense one-line label strip ---
+// Row order must mirror the interactive grid: blocks in template order,
+// ports in physical faceplate row order (odd-even interleave for 2-row blocks).
+function stripRowsForBlock(unitNumber: number, block: LayoutBlock): Port[][] {
+  // Identical to the interactive grid: blocks in template order, ports in
+  // physical faceplate row order (odd-even/even-odd interleave, or sequential split).
+  return getRowsForBlock(unitNumber, block)
+}
+
+function isStripTrunk(port: Port): boolean {
+  return !!port.tagged_vlans && port.tagged_vlans.length > 0
+}
+
+function stripStatusClass(port: Port): string {
+  if (port.status === 'up') return 'strip-up'
+  if (port.status === 'disabled') return 'strip-disabled'
+  return 'strip-down'
+}
+
+function stripTypeLabel(port: Port): string {
+  if (port.type === 'qsfp') return 'Q'
+  if (port.type === 'sfp+') return 'S+'
+  if (port.type === 'sfp') return 'S'
+  if (port.type === 'console') return 'CON'
+  if (port.type === 'management') return 'MGT'
+  if (port.poe) return 'PoE'
+  return ''
+}
+
+const stripVlanColorCache = computed(() => {
+  const map = new Map<number, string>()
+  for (const v of props.vlans || []) {
+    if (v.color) map.set(v.vlan_id, v.color)
+  }
+  return map
+})
+
+function stripVlanColor(port: Port): string | null {
+  const id = port.access_vlan || port.native_vlan
+  return id ? stripVlanColorCache.value.get(id) || null : null
+}
+
+// Compact indicator in the cell's bottom line:
+// trunk → explicit "T" (plus black corner dot); access with VLAN → VLAN ID
+// (cell background already carries the VLAN color); otherwise port type.
+function stripTagLabel(port: Port): string {
+  if (isStripTrunk(port)) return 'T'
+  const vlanId = port.access_vlan || port.native_vlan
+  if (vlanId && stripVlanColor(port)) return String(vlanId)
+  return stripTypeLabel(port) || '·'
+}
+
+function stripTagClass(port: Port): string {
+  if (isStripTrunk(port)) return 'strip-tag-trunk'
+  const vlanId = port.access_vlan || port.native_vlan
+  return vlanId && stripVlanColor(port) ? 'strip-tag-vlan' : ''
+}
+
+function stripTintClass(port: Port): string {
+  return stripVlanColor(port) && !isStripTrunk(port) ? 'has-vlan-tint' : ''
+}
+
+function stripTintStyle(port: Port) {
+  const c = stripVlanColor(port)
+  return c && !isStripTrunk(port) ? { '--vlan-tint': c + 'D9' } : {}
+}
 </script>

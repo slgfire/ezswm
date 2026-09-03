@@ -3,6 +3,19 @@
 ## Latest Stage
 
 Date: 2026-09-03
+Stage: Dense switch print layout + VLAN/trunk markers
+Status: Complete
+Version: 0.35.4
+
+### Fix: dense compact switch print keeps ports readable and unclipped (v0.35.4)
+
+- Updated switch-port printing to a dense single-line compact landscape layout with physically ordered ports, reducing clipping on high port-count switches.
+- In compact print, each access port shows VLAN ID + VLAN color, and each trunk port shows a **`T`** marker.
+- The VLAN legend remains available with VLAN ID, name, and color.
+
+---
+
+Date: 2026-09-03
 Stage: Compact switch print layout
 Status: Complete
 Version: 0.35.3

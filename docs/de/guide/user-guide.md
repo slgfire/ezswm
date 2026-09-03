@@ -222,7 +222,7 @@ Die Druckseite öffnet sich in einem neuen Tab und zeigt jeden Switch mit seinem
 
 Klicke **Drucken** um den Druckdialog des Browsers zu öffnen, oder nutze **Strg+P**. Die Ausgabe ist für A4-Querformat formatiert, jeder Switch auf einer eigenen Seite.
 
-Der Switch-Port-Druck nutzt jetzt ein kompaktes Querformat-Layout, sodass auch Switches mit hoher Portanzahl vollständig sichtbar bleiben. VLAN-Farben und Trunk-Markierungen bleiben erhalten. Für konsistente Skalierung wähle im Druckdialog **Tatsächliche Größe**.
+Der Switch-Port-Druck nutzt jetzt ein dichtes Single-Line-/kompaktes Querformat-Layout mit physisch geordneter Port-Reihenfolge, um Abschneiden bei Switches mit hoher Portanzahl zu vermeiden und das vollständige Grid sichtbar zu halten. Im kompakten Druck zeigen Access-Ports VLAN-ID + VLAN-Farbe, und Trunk-Ports nutzen einen **`T`**-Marker. Die VLAN-Legende zeigt weiterhin VLAN-ID, Name und Farbe. Falls der Browser Skalierungsoptionen anbietet, drucke mit **Tatsächliche Größe**.
 
 ### Öffentlicher QR-Zugang
 
