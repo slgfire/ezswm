@@ -261,6 +261,22 @@ If set to "Automatic", the port is classified using the legacy inference: uplink
 
 You can also set the helper usage role in bulk via the bulk editor.
 
+## Patch Panels (Optional)
+
+Patch Panels are optional and **disabled by default**. Enable them in **Settings**.
+
+When enabled, Patch Panels support both normal site-scoped views and **All Sites** listing.
+
+You can create standalone patch panels with **12**, **24**, or **48** ports. Ports are created as left/right socket entries (L/R), and each socket can store:
+
+- Outlet number
+- Location
+- Tested status
+
+V1 is standalone only: Patch Panels are not linked to switches or topology.
+
+If the feature is disabled again, Patch Panel data is retained but hidden until re-enabled.
+
 ## LAG Groups (Link Aggregation)
 
 ### What They Are
@@ -548,6 +564,7 @@ Press **/** or click the search bar in the header to open global search. It sear
 - IP ranges (by start/end IP, type, subnet name)
 - Layout templates (by name)
 - LAG groups (by name, description, remote device)
+- Patch panels (by panel name, socket location, and outlet number; only when Patch Panels are enabled)
 
 Use arrow keys to navigate results and Enter to jump to the selected item. LAG search results deep-link to the switch detail page with the LAG edit slideover open.
 
@@ -599,6 +616,8 @@ Backups are JSON dumps of the underlying SQLite tables, one array per entity, wi
 
 Access settings via the user menu in the header or the sidebar. General settings cover application-level configuration.
 
+Use General Settings to enable or disable the optional Patch Panels feature.
+
 ### Account Settings
 
 Change your display name and preferred language (English or German).
@@ -611,7 +630,7 @@ Change your password from the account settings page. You must provide your curre
 
 ### What They Are
 
-Sites represent physical locations or logical groupings for your infrastructure. Each site has its own switches, VLANs, subnets, and topology. Use sites to separate different locations (e.g., "Data Center", "Office", "LAN Party Hall A").
+Sites represent physical locations or logical groupings for your infrastructure. Each site has its own switches, VLANs, subnets, topology, and (when enabled) patch panels. Use sites to separate different locations (e.g., "Data Center", "Office", "LAN Party Hall A").
 
 ![Sites](/images/screenshot-sites.png)
 

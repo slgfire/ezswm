@@ -75,6 +75,9 @@ onMounted(() => load())
 
 const route = useRoute()
 const { currentSiteId } = useCurrentSite()
+const { settings, fetch: fetchSettings } = useSettings()
+onMounted(() => { if (!settings.value) fetchSettings() })
+const patchPanelsEnabled = computed(() => settings.value?.patch_panels_enabled ?? false)
 
 const sitePrefix = computed(() => `/sites/${currentSiteId.value}`)
 
@@ -90,7 +93,8 @@ const navSections = computed(() => [
       { to: `${sitePrefix.value}/switches`, icon: 'i-heroicons-server-stack', label: 'nav.switches' },
       { to: `${sitePrefix.value}/vlans`, icon: 'i-heroicons-tag', label: 'nav.vlans' },
       { to: `${sitePrefix.value}/subnets`, icon: 'i-heroicons-globe-alt', label: 'nav.networks' },
-      { to: `${sitePrefix.value}/ip-addresses`, icon: 'i-heroicons-map-pin', label: 'nav.ipAddresses' }
+      { to: `${sitePrefix.value}/ip-addresses`, icon: 'i-heroicons-map-pin', label: 'nav.ipAddresses' },
+      ...(patchPanelsEnabled.value ? [{ to: `${sitePrefix.value}/patch-panels`, icon: 'i-heroicons-squares-plus', label: 'nav.patchPanels' }] : [])
     ]
   },
   {

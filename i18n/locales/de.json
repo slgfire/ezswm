@@ -14,7 +14,8 @@
     "settings": "Einstellungen",
     "users": "Benutzer",
     "layoutTemplates": "Layout-Vorlagen",
-    "sites": "Standorte"
+    "sites": "Standorte",
+    "patchPanels": "Patchfelder"
   },
   "ipAddresses": {
     "title": "IP-Adressen",
@@ -648,6 +649,48 @@
       "results": "Ergebnisse"
     }
   },
+  "patchPanels": {
+    "title": "Patchfelder",
+    "create": "Patchfeld erstellen",
+    "edit": "Patchfeld bearbeiten",
+    "delete": "Patchfeld löschen",
+    "ports": "Ports",
+    "occupied": "belegt",
+    "emptyTitle": "Noch keine Patchfelder",
+    "emptyDescription": "Erstellen Sie Ihr erstes Patchfeld, um Anschlussdosen zu dokumentieren.",
+    "noResults": "Keine Patchfelder gefunden.",
+    "sockets": "Buchsen",
+    "tested": "Geprüft",
+    "untested": "Ungeprüft",
+    "socketTitle": "Port {port} — Buchse {side}",
+    "portCountHint": "Die Portanzahl kann nach der Erstellung nicht mehr geändert werden.",
+    "kpi": {
+      "occupied": "Belegt",
+      "free": "Frei",
+      "tested": "Geprüft",
+      "untested": "Ungeprüft"
+    },
+    "fields": {
+      "port": "Port",
+      "side": "Buchse",
+      "outletNumber": "Dosennummer",
+      "outletNumberPlaceholder": "z.B. A-101",
+      "location": "Standort",
+      "locationPlaceholder": "z.B. Büro 2.04",
+      "tested": "Geprüft",
+      "portCount": "Portanzahl",
+      "site": "Standort"
+    },
+    "validation": {
+      "siteRequired": "Standort ist erforderlich"
+    },
+    "messages": {
+      "created": "Patchfeld erfolgreich erstellt",
+      "updated": "Patchfeld erfolgreich aktualisiert",
+      "deleted": "Patchfeld erfolgreich gelöscht",
+      "socketUpdated": "Buchse erfolgreich aktualisiert"
+    }
+  },
   "settings": {
     "title": "Einstellungen",
     "general": {
@@ -655,7 +698,9 @@
       "appName": "Anwendungsname",
       "defaultVlan": "Standard-VLAN für neue Ports",
       "defaultPortStatus": "Standard-Port-Status",
-      "portSpeeds": "Verfügbare Port-Geschwindigkeiten"
+      "portSpeeds": "Verfügbare Port-Geschwindigkeiten",
+      "patchPanelsEnabled": "Patchfelder aktivieren",
+      "patchPanelsEnabledHint": "Patchfeld-Verwaltung in Navigation und Suche anzeigen."
     },
     "account": {
       "title": "Konto",
@@ -775,6 +820,7 @@
     "ipRanges": "IP-Bereiche",
     "templates": "Layout-Vorlagen",
     "lagGroups": "LAG-Gruppen",
+    "patchPanels": "Patchfelder",
     "noResults": "Keine Ergebnisse gefunden"
   },
   "legend": {

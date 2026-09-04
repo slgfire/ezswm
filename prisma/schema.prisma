@@ -26,7 +26,42 @@ model Site {
   switches Switch[]
   vlans    Vlan[]
   networks Network[]
+  patch_panels PatchPanel[]
   topology TopologyLayout?
+}
+
+model PatchPanel {
+  id          String @id
+  site_id     String
+  slug        String
+  name        String
+  description String?
+  port_count  Int
+  created_at  String
+  updated_at  String
+
+  site    Site               @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  sockets PatchPanelSocket[]
+
+  @@unique([site_id, slug])
+  @@index([site_id])
+}
+
+model PatchPanelSocket {
+  id             String  @id
+  patch_panel_id String
+  port_number    Int
+  side           String
+  outlet_number  String?
+  location       String?
+  tested         Boolean @default(false)
+  created_at     String
+  updated_at     String
+
+  patch_panel PatchPanel @relation(fields: [patch_panel_id], references: [id], onDelete: Cascade)
+
+  @@unique([patch_panel_id, port_number, side])
+  @@index([patch_panel_id])
 }
 
 model Switch {
@@ -279,4 +314,5 @@ model AppSettings {
   port_speeds         String  @default("[]") // JSON array of strings
   setup_completed     Boolean @default(false)
   sites_initialized   Boolean @default(false)
+  patch_panels_enabled Boolean @default(false)
 }

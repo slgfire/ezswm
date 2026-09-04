@@ -135,6 +135,8 @@ export async function createTestPrisma(): Promise<TestPrismaContext> {
     await prisma.$transaction([
       prisma.activityEntry.deleteMany(),
       prisma.topologyLayout.deleteMany(),
+      prisma.patchPanelSocket.deleteMany(),
+      prisma.patchPanel.deleteMany(),
       prisma.publicToken.deleteMany(),
       prisma.port.deleteMany(),
       prisma.lagGroup.deleteMany(),

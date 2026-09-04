@@ -221,7 +221,8 @@ export async function runJsonToPrismaMigration(opts: {
         default_port_status: pickString(settings, 'default_port_status', 'down'),
         port_speeds: stringifyOrDefault(settings.port_speeds, '[]'),
         setup_completed: pickBool(settings, 'setup_completed'),
-        sites_initialized: pickBool(settings, 'sites_initialized')
+        sites_initialized: pickBool(settings, 'sites_initialized'),
+        patch_panels_enabled: pickBool(settings, 'patch_panels_enabled')
       } })
       counts.settings = 1
     } else {
