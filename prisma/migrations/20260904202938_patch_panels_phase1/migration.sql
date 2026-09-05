@@ -16,7 +16,7 @@ CREATE TABLE "PatchPanelSocket" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "patch_panel_id" TEXT NOT NULL,
     "port_number" INTEGER NOT NULL,
-    "side" TEXT,
+    "side" TEXT NOT NULL,
     "outlet_number" TEXT,
     "location" TEXT,
     "tested" BOOLEAN NOT NULL DEFAULT false,
@@ -55,4 +55,4 @@ CREATE UNIQUE INDEX "PatchPanel_site_id_slug_key" ON "PatchPanel"("site_id", "sl
 CREATE INDEX "PatchPanelSocket_patch_panel_id_idx" ON "PatchPanelSocket"("patch_panel_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "PatchPanelSocket_patch_panel_id_port_number_key" ON "PatchPanelSocket"("patch_panel_id", "port_number");
+CREATE UNIQUE INDEX "PatchPanelSocket_patch_panel_id_port_number_side_key" ON "PatchPanelSocket"("patch_panel_id", "port_number", "side");
