@@ -2,6 +2,22 @@
 
 ## Latest Stage
 
+Date: 2026-09-04
+Stage: Optional standalone Patch Panels
+Status: Complete
+Version: 0.36.0
+
+### Feature: optional standalone Patch Panels with settings gate (v0.36.0)
+
+- Added Patch Panels as an optional feature that is **disabled by default** and enabled from **Settings**.
+- Added data model + migration for standalone patch panels and sockets, with data retained when the feature is later disabled.
+- Added API + UI feature gate behavior: when disabled, Patch Panels are hidden from navigation/views/search; when enabled, data is visible again.
+- Added site-scoped and all-sites listing for patch panels.
+- Added standalone 12/24/48-port panel creation with immutable numeric panel ports; each port represents one physical patch-panel port and can store optional L/R remote-side information plus outlet number/location/tested status.
+- V1 scope is standalone only: no relation to switches or topology.
+
+---
+
 Date: 2026-09-03
 Stage: Dense switch print layout + VLAN/trunk markers
 Status: Complete

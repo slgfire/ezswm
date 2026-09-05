@@ -5,6 +5,8 @@ import { ipAllocationRepository } from '../repositories/ipAllocationRepository'
 import { layoutTemplateRepository } from '../repositories/layoutTemplateRepository'
 import { lagGroupRepository } from '../repositories/lagGroupRepository'
 import { ipRangeRepository } from '../repositories/ipRangeRepository'
+import { patchPanelRepository } from '../repositories/patchPanelRepository'
+import { settingsRepository } from '../repositories/settingsRepository'
 import { resolveSiteIdQuery } from '../utils/resolveSiteParam'
 
 export default defineEventHandler(async (event) => {
@@ -14,7 +16,7 @@ export default defineEventHandler(async (event) => {
   const siteId = rawSiteId === null ? '__no-match__' : rawSiteId
 
   if (!q || q.length < 2) {
-    return { switches: [], vlans: [], networks: [], allocations: [], ranges: [], templates: [], lagGroups: [] }
+    return { switches: [], vlans: [], networks: [], allocations: [], ranges: [], templates: [], lagGroups: [], patchPanels: [] }
   }
 
   const MAX_PER_TYPE = 10
@@ -120,5 +122,36 @@ export default defineEventHandler(async (event) => {
       return { ...r, network_name: net?.name || '', network_id: r.network_id, site_id: net?.site_id || '' }
     })
 
-  return { switches, vlans, networks, allocations, ranges, templates, lagGroups }
+  const patchPanelsEnabled = (await settingsRepository.get()).patch_panels_enabled
+  const allPatchPanels = patchPanelsEnabled ? await patchPanelRepository.list() : []
+  const patchPanels = allPatchPanels
+    .filter(pp => {
+      if (siteId && pp.site_id !== siteId) return false
+      return (
+        pp.name.toLowerCase().includes(q)
+        || pp.sockets.some(socket =>
+          socket.location?.toLowerCase().includes(q)
+          || socket.outlet_number?.toLowerCase().includes(q)
+        )
+      )
+    })
+    .slice(0, MAX_PER_TYPE)
+    .map(pp => {
+      const matchingSocket = pp.sockets.find(socket =>
+        socket.location?.toLowerCase().includes(q)
+        || socket.outlet_number?.toLowerCase().includes(q)
+      )
+      return {
+        id: pp.id,
+        slug: pp.slug,
+        name: pp.name,
+        site_id: pp.site_id,
+        outlet_number: matchingSocket?.outlet_number,
+        location: matchingSocket?.location,
+        port_number: matchingSocket?.port_number,
+        side: matchingSocket?.side
+      }
+    })
+
+  return { switches, vlans, networks, allocations, ranges, templates, lagGroups, patchPanels }
 })

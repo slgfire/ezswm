@@ -8,6 +8,7 @@ import { createIpRangeSchema, updateIpRangeSchema } from '../server/validators/i
 import { createLagGroupSchema, updateLagGroupSchema } from '../server/validators/lagGroupSchemas'
 import { createLayoutTemplateSchema } from '../server/validators/layoutTemplateSchemas'
 import { updateSettingsSchema } from '../server/validators/settingsSchemas'
+import { createPatchPanelSchema, updatePatchPanelSchema, updatePatchPanelSocketSchema } from '../server/validators/patchPanelSchemas'
 
 // ─── createUserSchema ────────────────────────────────────────────────────────
 
@@ -1418,6 +1419,36 @@ describe('updateSettingsSchema', () => {
   it('accepts port_speeds array', () => {
     const result = updateSettingsSchema.safeParse({ port_speeds: ['1G', '10G'] })
     expect(result.success).toBe(true)
+  })
+
+  it('accepts patch_panels_enabled boolean', () => {
+    expect(updateSettingsSchema.safeParse({ patch_panels_enabled: true }).success).toBe(true)
+  })
+})
+
+describe('patch panel schemas', () => {
+  it('accepts valid create payload', () => {
+    const result = createPatchPanelSchema.safeParse({
+      site_id: 'site-1',
+      name: 'Main Panel',
+      port_count: 24
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects invalid port_count in create payload', () => {
+    expect(createPatchPanelSchema.safeParse({ site_id: 'site-1', name: 'Main Panel', port_count: 16 }).success).toBe(false)
+  })
+
+  it('rejects port_count in update payload', () => {
+    expect(updatePatchPanelSchema.safeParse({ port_count: 48 }).success).toBe(false)
+  })
+
+  it('accepts socket update fields and rejects extras', () => {
+    expect(updatePatchPanelSocketSchema.safeParse({ outlet_number: 'A-01', location: 'Rack', tested: true }).success).toBe(true)
+    expect(updatePatchPanelSocketSchema.safeParse({ side: 'L' }).success).toBe(true)
+    expect(updatePatchPanelSocketSchema.safeParse({ side: null }).success).toBe(true)
+    expect(updatePatchPanelSocketSchema.safeParse({ side: 'X' }).success).toBe(false)
   })
 })
 
