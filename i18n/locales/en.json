@@ -660,6 +660,7 @@
     "emptyDescription": "Create your first patch panel to start documenting outlets.",
     "noResults": "No patch panels match your search.",
     "sockets": "Sockets",
+    "portOverview": "Port Overview",
     "tested": "Tested",
     "untested": "Untested",
     "socketTitle": "Port {port} — Socket {side}",

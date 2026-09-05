@@ -660,6 +660,7 @@
     "emptyDescription": "Erstellen Sie Ihr erstes Patchfeld, um Anschlussdosen zu dokumentieren.",
     "noResults": "Keine Patchfelder gefunden.",
     "sockets": "Buchsen",
+    "portOverview": "Port-Übersicht",
     "tested": "Geprüft",
     "untested": "Ungeprüft",
     "socketTitle": "Port {port} — Buchse {side}",

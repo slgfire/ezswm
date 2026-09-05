@@ -68,6 +68,68 @@
       <!-- Description -->
       <p v-if="panel.description" class="text-sm text-gray-500 dark:text-gray-400">{{ panel.description }}</p>
 
+      <!-- Visual port overview -->
+      <div>
+        <h2 class="mb-3 text-base font-semibold text-gray-700 dark:text-gray-300">{{ $t('patchPanels.portOverview') }}</h2>
+        <div class="overflow-x-auto rounded-lg border border-default bg-default/30 p-2 lg:p-3">
+          <div class="flex flex-wrap items-start gap-1.5">
+            <div
+              v-for="portNum in panel.port_count"
+              :key="portNum"
+              class="flex flex-col items-center gap-0.5"
+            >
+              <span class="text-[9px] font-medium leading-none text-gray-400 dark:text-gray-500">{{ portNum }}</span>
+              <div class="flex gap-0.5">
+                <button
+                  v-for="side in (['L', 'R'] as const)"
+                  :key="side"
+                  type="button"
+                  class="flex h-8 w-8 cursor-pointer items-center justify-center rounded border font-mono text-[10px] font-semibold leading-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
+                  :class="socketCellClass(portNum, side)"
+                  :aria-label="socketAriaLabel(portNum, side)"
+                  @click="onSocketCellClick(portNum, side)"
+                  @mouseenter="onSocketHover(portNum, side, $event)"
+                  @mouseleave="hoveredSocket = null"
+                  @focus="onSocketHover(portNum, side, $event)"
+                  @blur="hoveredSocket = null"
+                >
+                  {{ side }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Socket tooltip (teleported, follows hover/focus) -->
+      <Teleport to="body">
+        <div
+          v-if="hoveredSocket"
+          class="pointer-events-none fixed z-[9999] min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg"
+          :style="tooltipStyle"
+        >
+          <div class="space-y-1 text-xs">
+            <div class="font-semibold text-gray-700 dark:text-gray-200">
+              {{ $t('patchPanels.fields.port') }} {{ hoveredSocket.portNumber }}{{ hoveredSocket.side }}
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-gray-400">{{ $t('patchPanels.fields.outletNumber') }}:</span>
+              <span class="font-mono font-medium text-gray-700 dark:text-gray-200">{{ hoveredSocket.socket?.outlet_number || '—' }}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-gray-400">{{ $t('patchPanels.fields.location') }}:</span>
+              <span class="font-medium text-gray-700 dark:text-gray-200">{{ hoveredSocket.socket?.location || '—' }}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-gray-400">{{ $t('patchPanels.fields.tested') }}:</span>
+              <UBadge :color="hoveredSocket.socket?.tested ? 'success' : 'neutral'" variant="subtle" size="xs">
+                {{ hoveredSocket.socket?.tested ? $t('patchPanels.tested') : $t('patchPanels.untested') }}
+              </UBadge>
+            </div>
+          </div>
+        </div>
+      </Teleport>
+
       <!-- Socket table -->
       <div>
         <h2 class="mb-3 text-base font-semibold text-gray-700 dark:text-gray-300">{{ $t('patchPanels.sockets') }}</h2>
@@ -260,6 +322,90 @@ async function onSaveEdit() {
   }
 }
 
+// Visual port overview
+interface HoveredSocketInfo {
+  portNumber: number
+  side: 'L' | 'R'
+  socket: PatchPanelSocket | undefined
+}
+const hoveredSocket = ref<HoveredSocketInfo | null>(null)
+const tooltipPos = reactive({ top: 0, left: 0 })
+const tooltipStyle = computed(() => ({
+  top: `${tooltipPos.top}px`,
+  left: `${tooltipPos.left}px`
+}))
+
+const socketMap = computed(() => {
+  const map = new Map<string, PatchPanelSocket>()
+  if (!panel.value) return map
+  for (const s of panel.value.sockets) {
+    map.set(`${s.port_number}-${s.side}`, s)
+  }
+  return map
+})
+
+function getSocket(portNum: number, side: 'L' | 'R'): PatchPanelSocket | undefined {
+  return socketMap.value.get(`${portNum}-${side}`)
+}
+
+function isSocketOccupied(socket: PatchPanelSocket | undefined): boolean {
+  return !!(socket?.outlet_number || socket?.location)
+}
+
+function socketCellClass(portNum: number, side: 'L' | 'R'): string {
+  const socket = getSocket(portNum, side)
+  if (!socket) return 'border-dashed border-gray-300 bg-gray-50 text-gray-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-600'
+  if (socket.tested && isSocketOccupied(socket)) {
+    return 'border-green-300 bg-green-50 text-green-700 hover:bg-green-100 dark:border-green-500/50 dark:bg-green-500/10 dark:text-green-400 dark:hover:bg-green-500/20'
+  }
+  if (isSocketOccupied(socket)) {
+    return 'border-primary-300 bg-primary-50 text-primary-700 hover:bg-primary-100 dark:border-primary-500/50 dark:bg-primary-500/10 dark:text-primary-400 dark:hover:bg-primary-500/20'
+  }
+  if (socket.tested) {
+    return 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20'
+  }
+  return 'border-dashed border-gray-300 bg-gray-50 text-gray-400 hover:bg-gray-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-600 dark:hover:bg-neutral-800'
+}
+
+function socketAriaLabel(portNum: number, side: 'L' | 'R'): string {
+  const socket = getSocket(portNum, side)
+  const parts = [`${t('patchPanels.fields.port')} ${portNum}${side}`]
+  if (socket?.outlet_number) parts.push(socket.outlet_number)
+  if (socket?.location) parts.push(socket.location)
+  parts.push(socket?.tested ? t('patchPanels.tested') : t('patchPanels.untested'))
+  return parts.join(', ')
+}
+
+function onSocketCellClick(portNum: number, side: 'L' | 'R') {
+  hoveredSocket.value = null
+  const socket = getSocket(portNum, side)
+  if (socket) openSocketEdit(socket)
+}
+
+function onSocketHover(portNum: number, side: 'L' | 'R', event: MouseEvent | FocusEvent) {
+  const el = event.currentTarget as HTMLElement
+  if (el) {
+    const rect = el.getBoundingClientRect()
+    // Estimated tooltip size: ~10rem wide, ~5.5rem tall (4 rows of text-xs + padding)
+    const tipW = 160
+    const tipH = 88
+    let top = rect.bottom + 4
+    let left = rect.left
+    // Flip above when not enough room below
+    if (top + tipH > window.innerHeight) {
+      top = rect.top - tipH - 4
+    }
+    // Clamp horizontal so tooltip stays in viewport
+    if (left + tipW > window.innerWidth) {
+      left = window.innerWidth - tipW - 8
+    }
+    if (left < 8) left = 8
+    tooltipPos.top = top
+    tooltipPos.left = left
+  }
+  hoveredSocket.value = { portNumber: portNum, side, socket: getSocket(portNum, side) }
+}
+
 // Socket edit
 const showSocketEdit = ref(false)
 const socketEditTarget = ref<PatchPanelSocket | null>(null)
@@ -326,7 +472,11 @@ async function confirmDelete() {
   }
 }
 
+// Dismiss tooltip on any scroll (captures nested scrollable ancestors)
+function onScrollDismiss() { hoveredSocket.value = null }
+
 onMounted(async () => {
+  document.addEventListener('scroll', onScrollDismiss, { passive: true, capture: true })
   try {
     await fetchPanel()
     if (!panel.value) {
@@ -339,5 +489,9 @@ onMounted(async () => {
   } finally {
     pageLoading.value = false
   }
+})
+
+onUnmounted(() => {
+  document.removeEventListener('scroll', onScrollDismiss, { capture: true })
 })
 </script>
