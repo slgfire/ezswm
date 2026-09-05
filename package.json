@@ -43,16 +43,16 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@iconify-json/tabler": "^1.2.35",
-    "@nuxt/eslint": "1.16.0",
-    "@playwright/test": "^1.61.1",
+    "@iconify-json/tabler": "^1.2.38",
+    "@nuxt/eslint": "1.17.0",
+    "@playwright/test": "^1.62.1",
     "@types/bcryptjs": "3.0.0",
     "@types/jsonwebtoken": "9.0.10",
-    "@types/node": "^26.1.1",
-    "eslint": "10.7.0",
-    "tsx": "4.23.1",
+    "@types/node": "^26.4.0",
+    "eslint": "10.9.1",
+    "tsx": "4.23.12",
     "typescript": "6.0.3",
-    "vitest": "4.1.10",
-    "vue-tsc": "3.3.7"
+    "vitest": "4.1.11",
+    "vue-tsc": "3.3.11"
   }
 }
