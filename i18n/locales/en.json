@@ -14,7 +14,8 @@
     "settings": "Settings",
     "users": "Users",
     "layoutTemplates": "Layout Templates",
-    "sites": "Sites"
+    "sites": "Sites",
+    "patchPanels": "Patch Panels"
   },
   "ipAddresses": {
     "title": "IP Addresses",
@@ -648,6 +649,50 @@
       "results": "Results"
     }
   },
+  "patchPanels": {
+    "title": "Patch Panels",
+    "create": "Create Patch Panel",
+    "edit": "Edit Patch Panel",
+    "delete": "Delete Patch Panel",
+    "ports": "ports",
+    "occupied": "occupied",
+    "emptyTitle": "No patch panels yet",
+    "emptyDescription": "Create your first patch panel to start documenting outlets.",
+    "noResults": "No patch panels match your search.",
+    "sockets": "Sockets",
+    "portOverview": "Port Overview",
+    "tested": "Tested",
+    "untested": "Untested",
+    "socketTitle": "Port {port}",
+    "sideNone": "Not set",
+    "portCountHint": "Port count cannot be changed after creation.",
+    "kpi": {
+      "occupied": "Occupied",
+      "free": "Free",
+      "tested": "Tested",
+      "untested": "Untested"
+    },
+    "fields": {
+      "port": "Port",
+      "side": "Socket",
+      "outletNumber": "Outlet Number",
+      "outletNumberPlaceholder": "e.g. A-101",
+      "location": "Location",
+      "locationPlaceholder": "e.g. Office 2.04",
+      "tested": "Tested",
+      "portCount": "Port Count",
+      "site": "Site"
+    },
+    "validation": {
+      "siteRequired": "Site is required"
+    },
+    "messages": {
+      "created": "Patch panel created successfully",
+      "updated": "Patch panel updated successfully",
+      "deleted": "Patch panel deleted successfully",
+      "socketUpdated": "Socket updated successfully"
+    }
+  },
   "settings": {
     "title": "Settings",
     "general": {
@@ -655,7 +700,9 @@
       "appName": "Application Name",
       "defaultVlan": "Default VLAN for new ports",
       "defaultPortStatus": "Default port status",
-      "portSpeeds": "Available port speeds"
+      "portSpeeds": "Available port speeds",
+      "patchPanelsEnabled": "Enable Patch Panels",
+      "patchPanelsEnabledHint": "Show patch panel management in navigation and search."
     },
     "account": {
       "title": "Account",
@@ -775,6 +822,7 @@
     "ipRanges": "IP Ranges",
     "templates": "Layout Templates",
     "lagGroups": "LAG Groups",
+    "patchPanels": "Patch Panels",
     "noResults": "No results found"
   },
   "legend": {

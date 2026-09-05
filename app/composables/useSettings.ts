@@ -1,7 +1,7 @@
 import type { AppSettings } from '~~/types/settings'
 
 export function useSettings() {
-  const settings = ref<AppSettings | null>(null)
+  const settings = useState<AppSettings | null>('app-settings', () => null)
   const loading = ref(false)
   const { apiFetch } = useApiFetch()
 

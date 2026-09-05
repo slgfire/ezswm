@@ -12,6 +12,7 @@ function rowToSettings(row: {
   port_speeds: string
   setup_completed: boolean
   sites_initialized: boolean
+  patch_panels_enabled?: boolean
 }): AppSettings {
   return {
     app_name: row.app_name,
@@ -20,7 +21,8 @@ function rowToSettings(row: {
     default_port_status: row.default_port_status as AppSettings['default_port_status'],
     port_speeds: JSON.parse(row.port_speeds) as string[],
     setup_completed: row.setup_completed,
-    sites_initialized: row.sites_initialized
+    sites_initialized: row.sites_initialized,
+    patch_panels_enabled: row.patch_panels_enabled ?? false
   }
 }
 
@@ -44,7 +46,8 @@ export const settingsRepository = {
         default_port_status: merged.default_port_status,
         port_speeds: JSON.stringify(merged.port_speeds),
         setup_completed: merged.setup_completed,
-        sites_initialized: merged.sites_initialized
+        sites_initialized: merged.sites_initialized,
+        patch_panels_enabled: merged.patch_panels_enabled
       },
       update: {
         app_name: merged.app_name,
@@ -53,7 +56,8 @@ export const settingsRepository = {
         default_port_status: merged.default_port_status,
         port_speeds: JSON.stringify(merged.port_speeds),
         setup_completed: merged.setup_completed,
-        sites_initialized: merged.sites_initialized
+        sites_initialized: merged.sites_initialized,
+        patch_panels_enabled: merged.patch_panels_enabled
       }
     })
     return rowToSettings(row)

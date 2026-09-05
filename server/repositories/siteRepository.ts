@@ -117,6 +117,11 @@ export const siteRepository = {
       prisma.vlan.findMany({ where: { site_id: existing.id }, select: { id: true } }),
       prisma.network.findMany({ where: { site_id: existing.id }, select: { id: true } })
     ])
+    const panels = await prisma.patchPanel.findMany({ where: { site_id: existing.id }, select: { id: true } })
+    const panelIds = panels.map(p => p.id)
+    const sockets = panelIds.length > 0
+      ? await prisma.patchPanelSocket.findMany({ where: { patch_panel_id: { in: panelIds } }, select: { id: true } })
+      : []
     const switchIds = switches.map(s => s.id)
     const networkIds = networks.map(n => n.id)
     const [ports, publicTokens, lags, ranges, allocations] = await Promise.all([
@@ -155,7 +160,9 @@ export const siteRepository = {
             { entity_type: 'network', entity_id: { in: networkIds } },
             { entity_type: 'lag_group', entity_id: { in: lags.map(l => l.id) } },
             { entity_type: 'ip_range', entity_id: { in: ranges.map(r => r.id) } },
-            { entity_type: 'ip_allocation', entity_id: { in: allocations.map(a => a.id) } }
+            { entity_type: 'ip_allocation', entity_id: { in: allocations.map(a => a.id) } },
+            { entity_type: 'patch_panel', entity_id: { in: panelIds } },
+            { entity_type: 'patch_panel_socket', entity_id: { in: sockets.map(s => s.id) } }
           ]
         }
       }),

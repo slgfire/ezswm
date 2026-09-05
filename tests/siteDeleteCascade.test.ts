@@ -37,6 +37,8 @@ describe('site delete cascade', () => {
     const allocationId = 'alloc-1'
     const lagId = 'lag-1'
     const vlanId = 'vlan-1'
+    const patchPanelId = 'pp-1'
+    const patchPanelSocketId = 'pp-socket-1'
     const deletedPortId = 'port-deleted'
     const survivorPortId = 'port-survivor'
 
@@ -117,6 +119,28 @@ describe('site delete cascade', () => {
         updated_at: new Date().toISOString(),
       }
     })
+    await prisma.patchPanel.create({
+      data: {
+        id: patchPanelId,
+        site_id: site.id,
+        slug: 'pp-main',
+        name: 'PP Main',
+        port_count: 12,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+    })
+    await prisma.patchPanelSocket.create({
+      data: {
+        id: patchPanelSocketId,
+        patch_panel_id: patchPanelId,
+        port_number: 1,
+        side: 'L',
+        tested: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+    })
     await prisma.activityEntry.createMany({
       data: [
         { id: 'act-site', user_id: null, action: 'update', entity_type: 'site', entity_id: site.id, entity_name: 'Branch', timestamp: new Date().toISOString() },
@@ -127,6 +151,8 @@ describe('site delete cascade', () => {
         { id: 'act-range', user_id: null, action: 'update', entity_type: 'ip_range', entity_id: rangeId, entity_name: 'Range', timestamp: new Date().toISOString() },
         { id: 'act-allocation', user_id: null, action: 'update', entity_type: 'ip_allocation', entity_id: allocationId, entity_name: 'Allocation', timestamp: new Date().toISOString() },
         { id: 'act-lag', user_id: null, action: 'update', entity_type: 'lag_group', entity_id: lagId, entity_name: 'LAG', timestamp: new Date().toISOString() },
+        { id: 'act-panel', user_id: null, action: 'update', entity_type: 'patch_panel', entity_id: patchPanelId, entity_name: 'Patch Panel', timestamp: new Date().toISOString() },
+        { id: 'act-panel-socket', user_id: null, action: 'update', entity_type: 'patch_panel_socket', entity_id: patchPanelSocketId, entity_name: 'Patch Panel Socket', timestamp: new Date().toISOString() },
         { id: 'act-token', user_id: null, action: 'update', entity_type: 'public_token', entity_id: 'token-1', entity_name: 'Token', timestamp: new Date().toISOString() },
         { id: 'act-topology', user_id: null, action: 'update', entity_type: 'topology_layout', entity_id: site.id, entity_name: 'Topology', timestamp: new Date().toISOString() },
         { id: 'act-global', user_id: null, action: 'update', entity_type: 'layout_template', entity_id: 'template-1', entity_name: 'Template', timestamp: new Date().toISOString() },
@@ -142,6 +168,8 @@ describe('site delete cascade', () => {
     expect(await prisma.ipRange.count()).toBe(0)
     expect(await prisma.ipAllocation.count()).toBe(0)
     expect(await prisma.lagGroup.count()).toBe(0)
+    expect(await prisma.patchPanel.count()).toBe(0)
+    expect(await prisma.patchPanelSocket.count()).toBe(0)
     expect(await prisma.publicToken.count()).toBe(0)
     expect(await prisma.topologyLayout.count()).toBe(0)
     expect(await prisma.layoutTemplate.count()).toBe(1)

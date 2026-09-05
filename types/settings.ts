@@ -6,6 +6,7 @@ export interface AppSettings {
   port_speeds: string[]
   setup_completed: boolean
   sites_initialized: boolean
+  patch_panels_enabled: boolean
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -15,5 +16,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   default_port_status: 'down',
   port_speeds: ['100M', '1G', '2.5G', '10G', '100G'],
   setup_completed: false,
-  sites_initialized: false
+  sites_initialized: false,
+  patch_panels_enabled: false
 }

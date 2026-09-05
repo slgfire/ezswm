@@ -181,6 +181,28 @@
                 </div>
               </NuxtLink>
             </template>
+
+            <!-- Patch Panels -->
+            <template v-if="results.patchPanels?.length">
+              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.patchPanels') }}</div>
+              <NuxtLink
+                v-for="(pp, i) in results.patchPanels"
+                :key="pp.id"
+                :to="`/sites/${pp.site_id}/patch-panels/${pp.slug || pp.id}`"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('patchPanels', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
+                @click="closeSearch"
+                @mouseenter="selectedIndex = flatIndex('patchPanels', i)"
+              >
+                <UIcon name="i-heroicons-squares-plus" class="h-4 w-4 flex-shrink-0 text-gray-400" />
+                <div class="min-w-0 flex-1">
+                  <div class="font-medium text-gray-900 dark:text-white" v-html="highlight(pp.name)" />
+                  <div class="flex items-center gap-2 truncate text-xs text-gray-400">
+                    <span v-if="pp.location" v-html="highlight(pp.location)" />
+                    <span v-if="pp.outlet_number" class="font-mono" v-html="highlight(pp.outlet_number)" />
+                  </div>
+                </div>
+              </NuxtLink>
+            </template>
           </div>
 
           <div v-else class="py-4 text-center text-sm text-gray-400">
@@ -304,10 +326,11 @@ interface SearchResults {
   ranges: Array<{ id: string; start_ip: string; end_ip: string; type: string; network_id: string; network_name: string; site_id: string }>
   templates: Array<{ id: string; name: string; manufacturer?: string; model?: string }>
   lagGroups: Array<{ id: string; name: string; switch_id: string; site_id: string; switch_name: string; port_count: number; remote_device?: string }>
+  patchPanels: Array<{ id: string; slug?: string; name: string; site_id: string; location?: string; outlet_number?: string }>
   [key: string]: unknown[]
 }
 
-const results = ref<SearchResults>({ switches: [], vlans: [], networks: [], allocations: [], ranges: [], templates: [], lagGroups: [] })
+const results = ref<SearchResults>({ switches: [], vlans: [], networks: [], allocations: [], ranges: [], templates: [], lagGroups: [], patchPanels: [] })
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -315,17 +338,17 @@ watch(searchQuery, (q) => {
   if (debounceTimer) clearTimeout(debounceTimer)
   selectedIndex.value = -1
   if (!q || q.length < 2) {
-    results.value = { switches: [], vlans: [], networks: [], allocations: [], ranges: [], templates: [], lagGroups: [] }
-    return
-  }
-  searching.value = true
-  debounceTimer = setTimeout(async () => {
-    try {
-      const params: Record<string, string> = { q }
-      if (headerSiteId.value && headerSiteId.value !== 'all') params.site_id = headerSiteId.value
-      results.value = await $fetch('/api/search', { params })
-    } catch {
-      results.value = { switches: [], vlans: [], networks: [], allocations: [], ranges: [], templates: [], lagGroups: [] }
+      results.value = { switches: [], vlans: [], networks: [], allocations: [], ranges: [], templates: [], lagGroups: [], patchPanels: [] }
+      return
+    }
+    searching.value = true
+    debounceTimer = setTimeout(async () => {
+      try {
+        const params: Record<string, string> = { q }
+        if (headerSiteId.value && headerSiteId.value !== 'all') params.site_id = headerSiteId.value
+        results.value = await $fetch('/api/search', { params })
+      } catch {
+        results.value = { switches: [], vlans: [], networks: [], allocations: [], ranges: [], templates: [], lagGroups: [], patchPanels: [] }
     } finally {
       searching.value = false
     }
@@ -339,7 +362,8 @@ const hasResults = computed(() =>
   results.value.allocations?.length ||
   results.value.ranges?.length ||
   results.value.templates?.length ||
-  results.value.lagGroups?.length
+  results.value.lagGroups?.length ||
+  results.value.patchPanels?.length
 )
 
 // Flat list of all results for keyboard navigation
@@ -368,12 +392,15 @@ const flatResults = computed(() => {
   for (const lg of results.value.lagGroups || []) {
     items.push({ type: 'lagGroups', index: items.length, url: `/sites/${lg.site_id}/switches/${lg.switch_id}?lag=${lg.id}` })
   }
+  for (const pp of results.value.patchPanels || []) {
+    items.push({ type: 'patchPanels', index: items.length, url: `/sites/${pp.site_id}/patch-panels/${pp.slug || pp.id}` })
+  }
   return items
 })
 
 function flatIndex(type: string, i: string | number): number {
   let offset = 0
-  const order = ['switches', 'vlans', 'networks', 'allocations', 'ranges', 'templates', 'lagGroups']
+  const order = ['switches', 'vlans', 'networks', 'allocations', 'ranges', 'templates', 'lagGroups', 'patchPanels']
   for (const t of order) {
     if (t === type) return offset + Number(i)
     offset += (results.value[t]?.length || 0)

@@ -15,6 +15,10 @@
                 <UFormField :label="$t('settings.general.defaultPortStatus')">
                   <USelect v-model="generalForm.default_port_status" :items="portStatusOptions" class="w-full" />
                 </UFormField>
+                <UFormField :label="$t('settings.general.patchPanelsEnabled')">
+                  <USwitch v-model="generalForm.patch_panels_enabled" />
+                  <p class="mt-1 text-xs text-gray-500">{{ $t('settings.general.patchPanelsEnabledHint') }}</p>
+                </UFormField>
                 <div class="pt-2">
                   <UButton type="submit" :loading="savingGeneral" icon="i-heroicons-check">{{ $t('common.save') }}</UButton>
                 </div>
@@ -104,7 +108,8 @@ const languageOptions = [
 
 const generalForm = reactive({
   app_name: '',
-  default_port_status: 'down'
+  default_port_status: 'down',
+  patch_panels_enabled: false
 })
 
 const accountForm = reactive({
@@ -126,7 +131,8 @@ async function saveGeneral() {
   try {
     await updateSettings({
       app_name: generalForm.app_name,
-      default_port_status: generalForm.default_port_status as 'disabled' | 'up' | 'down'
+      default_port_status: generalForm.default_port_status as 'disabled' | 'up' | 'down',
+      patch_panels_enabled: generalForm.patch_panels_enabled
     })
     clearDirty()
     toast.add({ title: t('settings.messages.updated'), color: 'success' })
@@ -198,6 +204,7 @@ onMounted(async () => {
   if (settings.value) {
     generalForm.app_name = settings.value.app_name || 'ezSWM'
     generalForm.default_port_status = settings.value.default_port_status || 'down'
+    generalForm.patch_panels_enabled = settings.value.patch_panels_enabled ?? false
   }
   if (user.value) {
     accountForm.display_name = user.value.display_name || ''

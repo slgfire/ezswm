@@ -261,6 +261,28 @@ Bei "Automatisch" wird der Port per Legacy-Inferenz klassifiziert: Uplinks → N
 
 Die Helfer-Rolle kann auch per Bulk-Editor auf mehrere Ports gleichzeitig gesetzt werden.
 
+## Patch Panels (Optional)
+
+Patch Panels sind optional und standardmäßig **deaktiviert**. Aktiviere sie in den **Einstellungen**.
+
+![Patch-Panels-Einstellungsschalter](/images/screenshot-patch-panels-settings-toggle.png)
+
+Wenn aktiviert, unterstützen Patch Panels sowohl standortbezogene Ansichten als auch eine Liste über **Alle Standorte**.
+
+![Patch-Panels-Liste](/images/screenshot-patch-panels-list.png)
+
+Du kannst eigenständige Patch Panels mit unveränderlichen numerischen Ports erstellen: **12**, **24** oder **48**. Jede Nummer ist genau ein physischer Patch-Panel-Port. Pro Port kannst du optional die Remote-/Enddosen-Seite (**L/R**) setzen und speichern:
+
+- Outlet-Nummer
+- Standort
+- Getestet-Status
+
+![Patch-Panel-Detail](/images/screenshot-patch-panels-detail.png)
+
+V1 ist nur standalone: Patch Panels sind nicht mit Switches oder Topologie verknüpft.
+
+Wenn du die Funktion später wieder deaktivierst, bleiben die Patch-Panel-Daten erhalten, werden aber ausgeblendet, bis die Funktion wieder aktiviert wird.
+
 ## LAG-Gruppen (Link Aggregation)
 
 ### Was sie sind
@@ -548,6 +570,7 @@ Drücke **/** oder klicke auf die Suchleiste in der Kopfleiste, um die globale S
 - IP-Bereiche (nach Start-/End-IP, Typ, Subnetz-Name)
 - Layout-Templates (nach Name)
 - LAG-Gruppen (nach Name, Beschreibung, Remote-Gerät)
+- Patch Panels (nach Panel-Name, Buchsen-Standort und Outlet-Nummer; nur wenn Patch Panels aktiviert sind)
 
 Verwende die Pfeiltasten zur Navigation der Ergebnisse und Enter zum Springen zum ausgewählten Element. LAG-Suchergebnisse verlinken direkt zur Switch-Detailseite mit geöffnetem LAG-Bearbeitungs-Seitenpanel.
 
@@ -599,6 +622,8 @@ Backups sind JSON-Dumps der zugrundeliegenden SQLite-Tabellen, ein Array pro Ent
 
 Öffne die Einstellungen über das Benutzermenü in der Kopfleiste oder die Seitenleiste. Allgemeine Einstellungen umfassen die anwendungsweite Konfiguration.
 
+In den allgemeinen Einstellungen kannst du die optionale Patch-Panel-Funktion aktivieren oder deaktivieren.
+
 ### Kontoeinstellungen
 
 Ändere deinen Anzeigenamen und deine bevorzugte Sprache (Englisch oder Deutsch).
@@ -611,7 +636,7 @@ Backups sind JSON-Dumps der zugrundeliegenden SQLite-Tabellen, ein Array pro Ent
 
 ### Was sie sind
 
-Standorte repräsentieren physische Orte oder logische Gruppierungen für deine Infrastruktur. Jeder Standort hat eigene Switches, VLANs, Subnetze und Topologie. Verwende Standorte, um verschiedene Orte zu trennen (z.B. "Rechenzentrum", "Büro", "LAN-Party Halle A").
+Standorte repräsentieren physische Orte oder logische Gruppierungen für deine Infrastruktur. Jeder Standort hat eigene Switches, VLANs, Subnetze, Topologie und (wenn aktiviert) Patch Panels. Verwende Standorte, um verschiedene Orte zu trennen (z.B. "Rechenzentrum", "Büro", "LAN-Party Halle A").
 
 ![Standorte](/images/screenshot-sites.png)
 
