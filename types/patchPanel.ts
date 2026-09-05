@@ -6,7 +6,7 @@ export interface PatchPanelSocket {
   id: string
   patch_panel_id: string
   port_number: number
-  side: PatchPanelSocketSide
+  side?: PatchPanelSocketSide
   outlet_number?: string
   location?: string
   tested: boolean

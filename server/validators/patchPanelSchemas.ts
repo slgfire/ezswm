@@ -20,6 +20,7 @@ export const updatePatchPanelSchema = z.object({
 }).strict()
 
 export const updatePatchPanelSocketSchema = z.object({
+  side: z.enum(['L', 'R']).optional().nullable(),
   outlet_number: z.string().max(120).optional().nullable(),
   location: z.string().max(200).optional().nullable(),
   tested: z.boolean().optional()

@@ -663,7 +663,8 @@
     "portOverview": "Port Overview",
     "tested": "Tested",
     "untested": "Untested",
-    "socketTitle": "Port {port} — Socket {side}",
+    "socketTitle": "Port {port}",
+    "sideNone": "Not set",
     "portCountHint": "Port count cannot be changed after creation.",
     "kpi": {
       "occupied": "Occupied",

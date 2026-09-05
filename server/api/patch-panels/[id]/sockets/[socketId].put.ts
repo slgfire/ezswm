@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
     action: 'update',
     entity_type: 'patch_panel_socket',
     entity_id: updated.id,
-    entity_name: `${panel.name} ${updated.port_number}${updated.side}`,
+    entity_name: `${panel.name} ${updated.port_number}${updated.side ? updated.side : ''}`,
     metadata: { patch_panel_id: panel.id }
   })
 

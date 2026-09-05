@@ -51,7 +51,7 @@ model PatchPanelSocket {
   id             String  @id
   patch_panel_id String
   port_number    Int
-  side           String
+  side           String?
   outlet_number  String?
   location       String?
   tested         Boolean @default(false)
@@ -60,7 +60,7 @@ model PatchPanelSocket {
 
   patch_panel PatchPanel @relation(fields: [patch_panel_id], references: [id], onDelete: Cascade)
 
-  @@unique([patch_panel_id, port_number, side])
+  @@unique([patch_panel_id, port_number])
   @@index([patch_panel_id])
 }
 

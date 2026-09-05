@@ -9,7 +9,7 @@ interface PatchPanelSocketRow {
   id: string
   patch_panel_id: string
   port_number: number
-  side: string
+  side: string | null
   outlet_number: string | null
   location: string | null
   tested: boolean
@@ -31,7 +31,7 @@ interface PatchPanelRow {
 
 const includeSockets = {
   sockets: {
-    orderBy: [{ port_number: 'asc' as const }, { side: 'asc' as const }]
+    orderBy: [{ port_number: 'asc' as const }]
   }
 }
 
@@ -40,7 +40,7 @@ function rowToSocket(row: PatchPanelSocketRow): PatchPanelSocket {
     id: row.id,
     patch_panel_id: row.patch_panel_id,
     port_number: row.port_number,
-    side: row.side as PatchPanelSocketSide,
+    side: row.side ? row.side as PatchPanelSocketSide : undefined,
     outlet_number: row.outlet_number ?? undefined,
     location: row.location ?? undefined,
     tested: row.tested,
@@ -124,7 +124,7 @@ export const patchPanelRepository = {
       id: string
       patch_panel_id: string
       port_number: number
-      side: PatchPanelSocketSide
+      side: null
       outlet_number: null
       location: null
       tested: false
@@ -136,18 +136,7 @@ export const patchPanelRepository = {
         id: randomUUID(),
         patch_panel_id: panelId,
         port_number: port,
-        side: 'L',
-        outlet_number: null,
-        location: null,
-        tested: false,
-        created_at: now,
-        updated_at: now
-      })
-      sockets.push({
-        id: randomUUID(),
-        patch_panel_id: panelId,
-        port_number: port,
-        side: 'R',
+        side: null,
         outlet_number: null,
         location: null,
         tested: false,
@@ -225,7 +214,7 @@ export const patchPanelRepository = {
     return true
   },
 
-  async updateSocket(panelId: string, socketId: string, data: { outlet_number?: string | null; location?: string | null; tested?: boolean }): Promise<PatchPanelSocket> {
+  async updateSocket(panelId: string, socketId: string, data: { side?: PatchPanelSocketSide | null; outlet_number?: string | null; location?: string | null; tested?: boolean }): Promise<PatchPanelSocket> {
     const current = await prisma.patchPanelSocket.findUnique({ where: { id: socketId } })
     if (!current || current.patch_panel_id !== panelId) {
       throw createError({ statusCode: 404, statusMessage: 'Patch panel socket not found' })
@@ -234,6 +223,7 @@ export const patchPanelRepository = {
     const row = await prisma.patchPanelSocket.update({
       where: { id: socketId },
       data: {
+        ...(data.side !== undefined ? { side: data.side ?? null } : {}),
         ...(data.outlet_number !== undefined ? { outlet_number: data.outlet_number ?? null } : {}),
         ...(data.location !== undefined ? { location: data.location ?? null } : {}),
         ...(data.tested !== undefined ? { tested: data.tested } : {}),

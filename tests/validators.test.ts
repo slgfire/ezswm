@@ -1446,7 +1446,9 @@ describe('patch panel schemas', () => {
 
   it('accepts socket update fields and rejects extras', () => {
     expect(updatePatchPanelSocketSchema.safeParse({ outlet_number: 'A-01', location: 'Rack', tested: true }).success).toBe(true)
-    expect(updatePatchPanelSocketSchema.safeParse({ side: 'L' }).success).toBe(false)
+    expect(updatePatchPanelSocketSchema.safeParse({ side: 'L' }).success).toBe(true)
+    expect(updatePatchPanelSocketSchema.safeParse({ side: null }).success).toBe(true)
+    expect(updatePatchPanelSocketSchema.safeParse({ side: 'X' }).success).toBe(false)
   })
 })
 

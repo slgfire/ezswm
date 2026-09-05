@@ -58,7 +58,7 @@ export function usePatchPanel(idOrSlug: string, siteId?: string) {
     }
   }
 
-  async function updateSocket(socketId: string, body: { outlet_number?: string | null; location?: string | null; tested?: boolean }) {
+  async function updateSocket(socketId: string, body: { side?: 'L' | 'R' | null; outlet_number?: string | null; location?: string | null; tested?: boolean }) {
     return await apiFetch<PatchPanelSocket>(`/api/patch-panels/${idOrSlug}/sockets/${socketId}`, {
       method: 'PUT',
       body,

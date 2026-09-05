@@ -78,24 +78,23 @@
               :key="portNum"
               class="flex flex-col items-center gap-0.5"
             >
-              <span class="text-[9px] font-medium leading-none text-gray-400 dark:text-gray-500">{{ portNum }}</span>
-              <div class="flex gap-0.5">
-                <button
-                  v-for="side in (['L', 'R'] as const)"
-                  :key="side"
-                  type="button"
-                  class="flex h-8 w-8 cursor-pointer items-center justify-center rounded border font-mono text-[10px] font-semibold leading-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
-                  :class="socketCellClass(portNum, side)"
-                  :aria-label="socketAriaLabel(portNum, side)"
-                  @click="onSocketCellClick(portNum, side)"
-                  @mouseenter="onSocketHover(portNum, side, $event)"
-                  @mouseleave="hoveredSocket = null"
-                  @focus="onSocketHover(portNum, side, $event)"
-                  @blur="hoveredSocket = null"
-                >
-                  {{ side }}
-                </button>
-              </div>
+              <button
+                type="button"
+                class="relative flex h-10 w-10 cursor-pointer flex-col items-center justify-center rounded border font-mono text-xs font-semibold leading-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary-500"
+                :class="portCellClass(portNum)"
+                :aria-label="portAriaLabel(portNum)"
+                @click="onPortCellClick(portNum)"
+                @mouseenter="onPortHover(portNum, $event)"
+                @mouseleave="hoveredSocket = null"
+                @focus="onPortHover(portNum, $event)"
+                @blur="hoveredSocket = null"
+              >
+                <span>{{ portNum }}</span>
+                <span
+                  v-if="getSocketForPort(portNum)?.side"
+                  class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary-500 text-[8px] font-bold text-white"
+                >{{ getSocketForPort(portNum)!.side }}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -110,7 +109,11 @@
         >
           <div class="space-y-1 text-xs">
             <div class="font-semibold text-gray-700 dark:text-gray-200">
-              {{ $t('patchPanels.fields.port') }} {{ hoveredSocket.portNumber }}{{ hoveredSocket.side }}
+              {{ $t('patchPanels.fields.port') }} {{ hoveredSocket.portNumber }}<template v-if="hoveredSocket.socket?.side"> ({{ hoveredSocket.socket.side }})</template>
+            </div>
+            <div v-if="hoveredSocket.socket?.side" class="flex items-center gap-1.5">
+              <span class="text-gray-400">{{ $t('patchPanels.fields.side') }}:</span>
+              <span class="font-medium text-gray-700 dark:text-gray-200">{{ hoveredSocket.socket.side }}</span>
             </div>
             <div class="flex items-center gap-1.5">
               <span class="text-gray-400">{{ $t('patchPanels.fields.outletNumber') }}:</span>
@@ -144,9 +147,10 @@
             <span class="font-mono font-medium text-gray-900 dark:text-white">{{ row.original.port_number }}</span>
           </template>
           <template #side-cell="{ row }">
-            <UBadge :color="row.original.side === 'L' ? 'primary' : 'info'" variant="subtle" size="sm">
+            <UBadge v-if="row.original.side" :color="row.original.side === 'L' ? 'primary' : 'info'" variant="subtle" size="sm">
               {{ row.original.side }}
             </UBadge>
+            <span v-else class="text-gray-400">—</span>
           </template>
           <template #outlet_number-cell="{ row }">
             <span v-if="row.original.outlet_number" class="font-mono text-sm">{{ row.original.outlet_number }}</span>
@@ -191,13 +195,16 @@
     <!-- Socket edit slideover -->
     <USlideover :open="showSocketEdit" @update:open="onSocketOpenChange">
       <template #title>
-        <span v-if="socketEditTarget">{{ $t('patchPanels.socketTitle', { port: socketEditTarget.port_number, side: socketEditTarget.side }) }}</span>
+        <span v-if="socketEditTarget">{{ $t('patchPanels.socketTitle', { port: socketEditTarget.port_number }) }}</span>
       </template>
       <template #body>
         <div v-if="socketEditError" class="mb-4 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
           {{ socketEditError }}
         </div>
         <form class="space-y-4" @submit.prevent="onSaveSocket">
+          <UFormField :label="$t('patchPanels.fields.side')">
+            <USelect v-model="socketForm.side" :items="sideOptions" class="w-full" />
+          </UFormField>
           <UFormField :label="$t('patchPanels.fields.outletNumber')">
             <UInput v-model="socketForm.outlet_number" class="w-full" :placeholder="$t('patchPanels.fields.outletNumberPlaceholder')" />
           </UFormField>
@@ -260,10 +267,10 @@ const kpi = computed(() => {
   }
 })
 
-// Table
+// Table — one row per physical port
 const tableRows = computed<PatchPanelSocket[]>(() => {
   if (!panel.value) return []
-  return [...panel.value.sockets].sort((a, b) => a.port_number - b.port_number || a.side.localeCompare(b.side))
+  return [...panel.value.sockets].sort((a, b) => a.port_number - b.port_number)
 })
 
 const columns = computed<TableColumn<PatchPanelSocket>[]>(() => [
@@ -322,10 +329,9 @@ async function onSaveEdit() {
   }
 }
 
-// Visual port overview
+// Visual port overview — one cell per numeric port
 interface HoveredSocketInfo {
   portNumber: number
-  side: 'L' | 'R'
   socket: PatchPanelSocket | undefined
 }
 const hoveredSocket = ref<HoveredSocketInfo | null>(null)
@@ -335,25 +341,26 @@ const tooltipStyle = computed(() => ({
   left: `${tooltipPos.left}px`
 }))
 
-const socketMap = computed(() => {
-  const map = new Map<string, PatchPanelSocket>()
+// One socket per port_number (side is optional metadata on that socket)
+const socketByPort = computed(() => {
+  const map = new Map<number, PatchPanelSocket>()
   if (!panel.value) return map
   for (const s of panel.value.sockets) {
-    map.set(`${s.port_number}-${s.side}`, s)
+    map.set(s.port_number, s)
   }
   return map
 })
 
-function getSocket(portNum: number, side: 'L' | 'R'): PatchPanelSocket | undefined {
-  return socketMap.value.get(`${portNum}-${side}`)
+function getSocketForPort(portNum: number): PatchPanelSocket | undefined {
+  return socketByPort.value.get(portNum)
 }
 
 function isSocketOccupied(socket: PatchPanelSocket | undefined): boolean {
   return !!(socket?.outlet_number || socket?.location)
 }
 
-function socketCellClass(portNum: number, side: 'L' | 'R'): string {
-  const socket = getSocket(portNum, side)
+function portCellClass(portNum: number): string {
+  const socket = getSocketForPort(portNum)
   if (!socket) return 'border-dashed border-gray-300 bg-gray-50 text-gray-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-600'
   if (socket.tested && isSocketOccupied(socket)) {
     return 'border-green-300 bg-green-50 text-green-700 hover:bg-green-100 dark:border-green-500/50 dark:bg-green-500/10 dark:text-green-400 dark:hover:bg-green-500/20'
@@ -367,22 +374,23 @@ function socketCellClass(portNum: number, side: 'L' | 'R'): string {
   return 'border-dashed border-gray-300 bg-gray-50 text-gray-400 hover:bg-gray-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-600 dark:hover:bg-neutral-800'
 }
 
-function socketAriaLabel(portNum: number, side: 'L' | 'R'): string {
-  const socket = getSocket(portNum, side)
-  const parts = [`${t('patchPanels.fields.port')} ${portNum}${side}`]
+function portAriaLabel(portNum: number): string {
+  const socket = getSocketForPort(portNum)
+  const parts = [`${t('patchPanels.fields.port')} ${portNum}`]
+  if (socket?.side) parts.push(socket.side)
   if (socket?.outlet_number) parts.push(socket.outlet_number)
   if (socket?.location) parts.push(socket.location)
   parts.push(socket?.tested ? t('patchPanels.tested') : t('patchPanels.untested'))
   return parts.join(', ')
 }
 
-function onSocketCellClick(portNum: number, side: 'L' | 'R') {
+function onPortCellClick(portNum: number) {
   hoveredSocket.value = null
-  const socket = getSocket(portNum, side)
+  const socket = getSocketForPort(portNum)
   if (socket) openSocketEdit(socket)
 }
 
-function onSocketHover(portNum: number, side: 'L' | 'R', event: MouseEvent | FocusEvent) {
+function onPortHover(portNum: number, event: MouseEvent | FocusEvent) {
   const el = event.currentTarget as HTMLElement
   if (el) {
     const rect = el.getBoundingClientRect()
@@ -403,13 +411,13 @@ function onSocketHover(portNum: number, side: 'L' | 'R', event: MouseEvent | Foc
     tooltipPos.top = top
     tooltipPos.left = left
   }
-  hoveredSocket.value = { portNumber: portNum, side, socket: getSocket(portNum, side) }
+  hoveredSocket.value = { portNumber: portNum, socket: getSocketForPort(portNum) }
 }
 
 // Socket edit
 const showSocketEdit = ref(false)
 const socketEditTarget = ref<PatchPanelSocket | null>(null)
-const socketForm = ref({ outlet_number: '', location: '', tested: false })
+const socketForm = ref({ side: '_none' as string, outlet_number: '', location: '', tested: false })
 const socketEditError = ref('')
 const savingSocket = ref(false)
 
@@ -418,9 +426,16 @@ const { takeSnapshot: snapshotSocket, requestClose: requestCloseSocket, onOpenCh
   () => { showSocketEdit.value = false; socketEditTarget.value = null }
 )
 
+const sideOptions = computed(() => [
+  { label: t('patchPanels.sideNone'), value: '_none' },
+  { label: 'L', value: 'L' },
+  { label: 'R', value: 'R' }
+])
+
 function openSocketEdit(socket: PatchPanelSocket) {
   socketEditTarget.value = socket
   socketForm.value = {
+    side: socket.side || '_none',
     outlet_number: socket.outlet_number || '',
     location: socket.location || '',
     tested: socket.tested
@@ -436,6 +451,7 @@ async function onSaveSocket() {
   savingSocket.value = true
   try {
     await updateSocket(socketEditTarget.value.id, {
+      side: socketForm.value.side === '_none' ? null : (socketForm.value.side as 'L' | 'R'),
       outlet_number: socketForm.value.outlet_number.trim() || null,
       location: socketForm.value.location.trim() || null,
       tested: socketForm.value.tested

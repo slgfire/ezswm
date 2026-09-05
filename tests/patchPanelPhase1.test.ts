@@ -32,7 +32,7 @@ describe('patch panel phase 1 foundation', () => {
     await resetDb()
   })
 
-  it('creates exactly two sockets per port with L/R defaults', async () => {
+  it('creates exactly one socket per port with no side metadata by default', async () => {
     const site = await seedSite(prisma)
     const panel = await patchPanelRepository.create({
       site_id: site.id,
@@ -40,10 +40,11 @@ describe('patch panel phase 1 foundation', () => {
       port_count: 24
     })
 
-    expect(panel.sockets).toHaveLength(48)
+    expect(panel.sockets).toHaveLength(24)
     for (let port = 1; port <= 24; port++) {
-      const sides = panel.sockets.filter(s => s.port_number === port).map(s => s.side).sort()
-      expect(sides).toEqual(['L', 'R'])
+      const sockets = panel.sockets.filter(s => s.port_number === port)
+      expect(sockets).toHaveLength(1)
+      expect(sockets[0]?.side).toBeUndefined()
     }
     expect(panel.sockets.every(s => s.tested === false && s.outlet_number === undefined && s.location === undefined)).toBe(true)
   })
@@ -111,7 +112,7 @@ describe('patch panel phase 1 foundation', () => {
     } as never)).rejects.toMatchObject({ statusCode: 404 })
   })
 
-  it('updates socket fields only within panel/site context', async () => {
+  it('updates socket side metadata and supports clearing within panel/site context', async () => {
     const site = await seedSite(prisma, { slug: 'hq' })
     await settingsRepository.update({ patch_panels_enabled: true })
     await createRouteUser(prisma)
@@ -122,10 +123,17 @@ describe('patch panel phase 1 foundation', () => {
     const updated = await updatePatchPanelSocket({
       context: { params: { id: panel.slug, socketId: socket.id }, auth: { userId: 'route-user' } },
       query: { siteId: 'hq' },
-      body: { outlet_number: 'A-01', location: 'Rack 7', tested: true }
-    } as never) as { outlet_number?: string; location?: string; tested: boolean }
+      body: { side: 'L', outlet_number: 'A-01', location: 'Rack 7', tested: true }
+    } as never) as { side?: string; outlet_number?: string; location?: string; tested: boolean }
 
-    expect(updated).toMatchObject({ outlet_number: 'A-01', location: 'Rack 7', tested: true })
+    expect(updated).toMatchObject({ side: 'L', outlet_number: 'A-01', location: 'Rack 7', tested: true })
+
+    const cleared = await updatePatchPanelSocket({
+      context: { params: { id: panel.slug, socketId: socket.id }, auth: { userId: 'route-user' } },
+      query: { siteId: 'hq' },
+      body: { side: null }
+    } as never) as { side?: string }
+    expect(cleared.side).toBeUndefined()
 
     await expect(updatePatchPanelSocket({
       context: { params: { id: panel.slug, socketId: socket.id }, auth: { userId: 'route-user' } },
@@ -179,8 +187,7 @@ describe('patch panel phase 1 foundation', () => {
       site_id: siteA.id,
       outlet_number: 'A-102',
       location: 'Row 9',
-      port_number: panelASocket.port_number,
-      side: panelASocket.side
+      port_number: panelASocket.port_number
     })
 
     const byNameScoped = await searchHandler({ query: { q: 'pp', site_id: 'branch' } } as never) as { patchPanels: Array<Record<string, unknown>> }

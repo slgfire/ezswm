@@ -663,7 +663,8 @@
     "portOverview": "Port-Übersicht",
     "tested": "Geprüft",
     "untested": "Ungeprüft",
-    "socketTitle": "Port {port} — Buchse {side}",
+    "socketTitle": "Port {port}",
+    "sideNone": "Nicht gesetzt",
     "portCountHint": "Die Portanzahl kann nach der Erstellung nicht mehr geändert werden.",
     "kpi": {
       "occupied": "Belegt",

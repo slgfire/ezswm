@@ -267,7 +267,7 @@ Patch Panels sind optional und standardmäßig **deaktiviert**. Aktiviere sie in
 
 Wenn aktiviert, unterstützen Patch Panels sowohl standortbezogene Ansichten als auch eine Liste über **Alle Standorte**.
 
-Du kannst eigenständige Patch Panels mit **12**, **24** oder **48** Ports erstellen. Die Ports werden als linke/rechte Buchsen (L/R) angelegt, und pro Buchse kannst du speichern:
+Du kannst eigenständige Patch Panels mit unveränderlichen numerischen Ports erstellen: **12**, **24** oder **48**. Jede Nummer ist genau ein physischer Patch-Panel-Port. Pro Port kannst du optional die Remote-/Enddosen-Seite (**L/R**) setzen und speichern:
 
 - Outlet-Nummer
 - Standort

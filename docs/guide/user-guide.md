@@ -267,7 +267,7 @@ Patch Panels are optional and **disabled by default**. Enable them in **Settings
 
 When enabled, Patch Panels support both normal site-scoped views and **All Sites** listing.
 
-You can create standalone patch panels with **12**, **24**, or **48** ports. Ports are created as left/right socket entries (L/R), and each socket can store:
+You can create standalone patch panels with immutable numeric ports: **12**, **24**, or **48**. Each number is one physical patch-panel port. For each port, you can optionally set the remote outlet/end side (**L/R**) and store:
 
 - Outlet number
 - Location
