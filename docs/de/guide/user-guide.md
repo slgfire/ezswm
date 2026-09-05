@@ -265,13 +265,19 @@ Die Helfer-Rolle kann auch per Bulk-Editor auf mehrere Ports gleichzeitig gesetz
 
 Patch Panels sind optional und standardmäßig **deaktiviert**. Aktiviere sie in den **Einstellungen**.
 
+![Patch-Panels-Einstellungsschalter](/images/screenshot-patch-panels-settings-toggle.png)
+
 Wenn aktiviert, unterstützen Patch Panels sowohl standortbezogene Ansichten als auch eine Liste über **Alle Standorte**.
+
+![Patch-Panels-Liste](/images/screenshot-patch-panels-list.png)
 
 Du kannst eigenständige Patch Panels mit unveränderlichen numerischen Ports erstellen: **12**, **24** oder **48**. Jede Nummer ist genau ein physischer Patch-Panel-Port. Pro Port kannst du optional die Remote-/Enddosen-Seite (**L/R**) setzen und speichern:
 
 - Outlet-Nummer
 - Standort
 - Getestet-Status
+
+![Patch-Panel-Detail](/images/screenshot-patch-panels-detail.png)
 
 V1 ist nur standalone: Patch Panels sind nicht mit Switches oder Topologie verknüpft.
 

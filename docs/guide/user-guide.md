@@ -265,13 +265,19 @@ You can also set the helper usage role in bulk via the bulk editor.
 
 Patch Panels are optional and **disabled by default**. Enable them in **Settings**.
 
+![Patch Panels setting toggle](/images/screenshot-patch-panels-settings-toggle.png)
+
 When enabled, Patch Panels support both normal site-scoped views and **All Sites** listing.
+
+![Patch Panels list](/images/screenshot-patch-panels-list.png)
 
 You can create standalone patch panels with immutable numeric ports: **12**, **24**, or **48**. Each number is one physical patch-panel port. For each port, you can optionally set the remote outlet/end side (**L/R**) and store:
 
 - Outlet number
 - Location
 - Tested status
+
+![Patch Panel detail](/images/screenshot-patch-panels-detail.png)
 
 V1 is standalone only: Patch Panels are not linked to switches or topology.
 
