@@ -1,11 +1,28 @@
 import type { PublicToken } from '~~/types/publicToken'
 
-export function usePublicToken(switchId: Ref<string> | string, siteId?: Ref<string> | string) {
-  const id = toValue(switchId)
+/**
+ * Fetch/create/revoke a public sharing token for an entity.
+ *
+ * `basePath` builds the API prefix, e.g.:
+ *   usePublicToken(() => `/api/switches/${id}/public-token`)
+ *   usePublicToken(() => `/api/patch-panels/${id}/public-token`)
+ *
+ * Legacy shorthand: pass a switchId string + optional siteId and it builds the
+ * switch path automatically (backwards-compatible with existing callers).
+ */
+export function usePublicToken(
+  switchIdOrPath: Ref<string> | string | (() => string),
+  siteId?: Ref<string> | string
+) {
+  // Resolve the base API path
+  const basePath = typeof switchIdOrPath === 'function'
+    ? switchIdOrPath
+    : () => `/api/switches/${toValue(switchIdOrPath as Ref<string> | string)}/public-token`
+
   const token = ref<PublicToken | null>(null)
   const loading = ref(false)
 
-  // Site context disambiguates per-site-unique switch slugs.
+  // Site context disambiguates per-site-unique slugs.
   const query = () => {
     const sid = toValue(siteId)
     return sid ? { siteId: sid } : undefined
@@ -14,7 +31,7 @@ export function usePublicToken(switchId: Ref<string> | string, siteId?: Ref<stri
   async function fetchToken() {
     loading.value = true
     try {
-      const data = await $fetch<PublicToken>(`/api/switches/${id}/public-token`, { query: query() })
+      const data = await $fetch<PublicToken>(basePath(), { query: query() })
       token.value = data
     } catch (e: unknown) {
       if ((e as { statusCode?: number })?.statusCode === 404) {
@@ -28,7 +45,7 @@ export function usePublicToken(switchId: Ref<string> | string, siteId?: Ref<stri
   async function createToken() {
     loading.value = true
     try {
-      const data = await $fetch<PublicToken>(`/api/switches/${id}/public-token`, {
+      const data = await $fetch<PublicToken>(basePath(), {
         method: 'POST',
         query: query()
       })
@@ -42,7 +59,7 @@ export function usePublicToken(switchId: Ref<string> | string, siteId?: Ref<stri
   async function revokeToken() {
     loading.value = true
     try {
-      await $fetch(`/api/switches/${id}/public-token`, {
+      await $fetch(basePath(), {
         method: 'DELETE',
         query: query()
       })

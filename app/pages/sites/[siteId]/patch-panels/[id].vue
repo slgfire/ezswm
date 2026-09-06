@@ -7,6 +7,11 @@
         <h1 class="text-xl font-bold">{{ panel?.name || $t('common.loading') }}</h1>
       </div>
       <div v-if="panel" class="flex items-center gap-1">
+        <PatchPanelPublicAccess
+          :panel-id="panel.id"
+          :site-id="siteId"
+          :panel-name="panel.name"
+        />
         <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="sm" :title="$t('common.edit')" @click="startEdit()" />
         <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="void (showDeleteDialog = true)" />
       </div>

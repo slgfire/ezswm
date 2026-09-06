@@ -950,6 +950,12 @@
       "specialDevice": "Spezialgerät",
       "noPortsForFilter": "Keine Ports für diesen Filter gefunden."
     },
+    "pp": {
+      "loading": "Lade Patchfeld-Daten...",
+      "linkLabel": "Öffentlicher Link für dieses Patchfeld",
+      "free": "Frei",
+      "revokeConfirm": "Möchten Sie diesen öffentlichen Link wirklich widerrufen? Der QR-Code-Sticker funktioniert dann nicht mehr."
+    },
     "admin": {
       "title": "Öffentlicher QR-Zugang",
       "generate": "Öffentlichen Link erstellen",

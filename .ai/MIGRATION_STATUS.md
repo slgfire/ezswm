@@ -3,6 +3,21 @@
 ## Latest Stage
 
 Date: 2026-09-04
+Stage: Public read-only Patch Panel links
+Status: Complete
+Version: 0.37.0
+
+### Feature: revocable public Patch Panel links (v0.37.0)
+
+- Added one signed/random, revocable public **read-only** link per Patch Panel.
+- Authenticated users can generate, copy, and revoke the link from Patch Panel detail.
+- Public view shows panel data plus per-port details: port number, outlet number, location, optional L/R remote-end marker, and tested state.
+- Public view is intentionally limited: no editing, no app navigation, and no search.
+- Patch Panels remain settings-gated: disabling Patch Panels makes public links unavailable while retaining stored Patch Panel data.
+
+---
+
+Date: 2026-09-04
 Stage: Optional standalone Patch Panels
 Status: Complete
 Version: 0.36.0

@@ -279,9 +279,13 @@ Du kannst eigenständige Patch Panels mit unveränderlichen numerischen Ports er
 
 ![Patch-Panel-Detail](/images/screenshot-patch-panels-detail.png)
 
+Jedes Patch Panel kann außerdem einen signierten/zufälligen öffentlichen **Read-only-Link** haben. In der Panel-Detailansicht können angemeldete Benutzer den Link **erstellen**, **kopieren** und **widerrufen**.
+
+Die öffentliche Seite zeigt nur Patch-Panel-Informationen: Panel-Daten sowie pro Port Portnummer, Outlet-Nummer, Standort, optionalen L/R-Remote-Endpunkt und Getestet-Status. Bearbeitung ist dort nicht möglich; außerdem gibt es keine App-Navigation und keine Suche.
+
 V1 ist nur standalone: Patch Panels sind nicht mit Switches oder Topologie verknüpft.
 
-Wenn du die Funktion später wieder deaktivierst, bleiben die Patch-Panel-Daten erhalten, werden aber ausgeblendet, bis die Funktion wieder aktiviert wird.
+Wenn du die Funktion später wieder deaktivierst, bleiben die Patch-Panel-Daten erhalten, werden aber ausgeblendet, bis die Funktion wieder aktiviert wird. Öffentliche Patch-Panel-Links sind während der Deaktivierung nicht verfügbar.
 
 ## LAG-Gruppen (Link Aggregation)
 

@@ -279,9 +279,13 @@ You can create standalone patch panels with immutable numeric ports: **12**, **2
 
 ![Patch Panel detail](/images/screenshot-patch-panels-detail.png)
 
+Each Patch Panel can also have one signed/random public **read-only** link. In the panel detail view, authenticated users can **Generate link**, **Copy link**, and **Revoke link**.
+
+The public page shows only Patch Panel information: panel details plus per-port number, outlet number, location, optional L/R remote-end marker, and tested state. It does not allow editing and has no app navigation or search.
+
 V1 is standalone only: Patch Panels are not linked to switches or topology.
 
-If the feature is disabled again, Patch Panel data is retained but hidden until re-enabled.
+If the feature is disabled again, Patch Panel data is retained but hidden until re-enabled, and Patch Panel public links are unavailable while disabled.
 
 ## LAG Groups (Link Aggregation)
 

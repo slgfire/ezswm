@@ -141,6 +141,14 @@ describe('site delete cascade', () => {
         updated_at: new Date().toISOString(),
       }
     })
+    await prisma.patchPanelToken.create({
+      data: {
+        id: 'pp-token-1',
+        patch_panel_id: patchPanelId,
+        token: 'patch-panel-public-token',
+        created_at: new Date().toISOString(),
+      }
+    })
     await prisma.activityEntry.createMany({
       data: [
         { id: 'act-site', user_id: null, action: 'update', entity_type: 'site', entity_id: site.id, entity_name: 'Branch', timestamp: new Date().toISOString() },
@@ -170,6 +178,7 @@ describe('site delete cascade', () => {
     expect(await prisma.lagGroup.count()).toBe(0)
     expect(await prisma.patchPanel.count()).toBe(0)
     expect(await prisma.patchPanelSocket.count()).toBe(0)
+    expect(await prisma.patchPanelToken.count()).toBe(0)
     expect(await prisma.publicToken.count()).toBe(0)
     expect(await prisma.topologyLayout.count()).toBe(0)
     expect(await prisma.layoutTemplate.count()).toBe(1)
