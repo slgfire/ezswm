@@ -950,6 +950,12 @@
       "specialDevice": "Special device",
       "noPortsForFilter": "No ports match this filter."
     },
+    "pp": {
+      "loading": "Loading patch panel data...",
+      "linkLabel": "Public link for this patch panel",
+      "free": "Free",
+      "revokeConfirm": "Are you sure you want to revoke this public link? The QR code sticker will stop working."
+    },
     "admin": {
       "title": "Public QR Access",
       "generate": "Generate Public Link",
