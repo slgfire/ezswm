@@ -59,7 +59,7 @@
                   <span>{{ occupiedCount(panel) }}/{{ panel.sockets.length }} {{ $t('patchPanels.occupied') }}</span>
                 </div>
               </NuxtLink>
-              <div class="flex items-center pr-3 opacity-0 transition-opacity group-hover:opacity-100">
+              <div class="flex items-center pr-3">
                 <PatchPanelPublicAccess
                   :panel-id="panel.id"
                   :site-id="panel.site_id"
