@@ -690,8 +690,10 @@
       "created": "Patch panel created successfully",
       "updated": "Patch panel updated successfully",
       "deleted": "Patch panel deleted successfully",
-      "socketUpdated": "Socket updated successfully"
-    }
+      "socketUpdated": "Socket updated successfully",
+      "socketReset": "Port reset successfully"
+    },
+    "resetConfirm": "Reset port {port}? This clears outlet number, location, side, and tested state."
   },
   "settings": {
     "title": "Settings",

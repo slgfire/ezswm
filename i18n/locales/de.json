@@ -690,8 +690,10 @@
       "created": "Patchfeld erfolgreich erstellt",
       "updated": "Patchfeld erfolgreich aktualisiert",
       "deleted": "Patchfeld erfolgreich gelöscht",
-      "socketUpdated": "Buchse erfolgreich aktualisiert"
-    }
+      "socketUpdated": "Buchse erfolgreich aktualisiert",
+      "socketReset": "Port erfolgreich zurückgesetzt"
+    },
+    "resetConfirm": "Port {port} zurücksetzen? Dosennummer, Standort, Seite und Prüfstatus werden gelöscht."
   },
   "settings": {
     "title": "Einstellungen",

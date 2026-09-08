@@ -77,7 +77,7 @@
       <div>
         <h2 class="mb-3 text-base font-semibold text-gray-700 dark:text-gray-300">{{ $t('patchPanels.portOverview') }}</h2>
         <div class="overflow-x-auto rounded-lg border border-default bg-default/30 p-2 lg:p-3">
-          <div class="flex flex-wrap items-start gap-1.5">
+          <div class="flex flex-wrap items-start justify-center gap-1.5">
             <div
               v-for="portNum in panel.port_count"
               :key="portNum"
@@ -130,9 +130,13 @@
             </div>
             <div class="flex items-center gap-1.5">
               <span class="text-gray-400">{{ $t('patchPanels.fields.tested') }}:</span>
-              <UBadge :color="hoveredSocket.socket?.tested ? 'success' : 'neutral'" variant="subtle" size="xs">
-                {{ hoveredSocket.socket?.tested ? $t('patchPanels.tested') : $t('patchPanels.untested') }}
-              </UBadge>
+              <span
+                class="inline-block h-2.5 w-2.5 rounded-full"
+                :class="hoveredSocket.socket?.tested ? 'bg-green-500' : 'bg-red-500'"
+                role="img"
+                :aria-label="hoveredSocket.socket?.tested ? $t('patchPanels.tested') : $t('patchPanels.untested')"
+              />
+              <span class="sr-only">{{ hoveredSocket.socket?.tested ? $t('patchPanels.tested') : $t('patchPanels.untested') }}</span>
             </div>
           </div>
         </div>
@@ -222,9 +226,21 @@
         </form>
       </template>
       <template #footer>
-        <div class="flex justify-end gap-2">
-          <UButton variant="subtle" color="neutral" @click="requestCloseSocket">{{ $t('common.cancel') }}</UButton>
-          <UButton :loading="savingSocket" @click="onSaveSocket">{{ $t('common.save') }}</UButton>
+        <div class="flex items-center justify-between">
+          <UButton
+            icon="i-heroicons-arrow-uturn-left"
+            variant="ghost"
+            color="warning"
+            size="sm"
+            :disabled="savingSocket"
+            @click="onResetSocket"
+          >
+            {{ $t('common.reset') }}
+          </UButton>
+          <div class="flex gap-2">
+            <UButton variant="subtle" color="neutral" @click="requestCloseSocket">{{ $t('common.cancel') }}</UButton>
+            <UButton :loading="savingSocket" @click="onSaveSocket">{{ $t('common.save') }}</UButton>
+          </div>
         </div>
       </template>
     </USlideover>
@@ -462,6 +478,37 @@ async function onSaveSocket() {
       tested: socketForm.value.tested
     })
     toast.add({ title: t('patchPanels.messages.socketUpdated'), color: 'success' })
+    showSocketEdit.value = false
+    socketEditTarget.value = null
+    await fetchPanel()
+  } catch (err: unknown) {
+    const error = err as { data?: { message?: string } }
+    socketEditError.value = error?.data?.message || t('errors.serverError')
+  } finally {
+    savingSocket.value = false
+  }
+}
+
+async function onResetSocket() {
+  if (!socketEditTarget.value) return
+  const { confirm } = useConfirm()
+  const ok = await confirm({
+    title: t('common.reset'),
+    message: t('patchPanels.resetConfirm', { port: socketEditTarget.value.port_number }),
+    confirmLabel: t('common.reset')
+  })
+  if (!ok) return
+
+  socketEditError.value = ''
+  savingSocket.value = true
+  try {
+    await updateSocket(socketEditTarget.value.id, {
+      side: null,
+      outlet_number: null,
+      location: null,
+      tested: false
+    })
+    toast.add({ title: t('patchPanels.messages.socketReset'), color: 'success' })
     showSocketEdit.value = false
     socketEditTarget.value = null
     await fetchPanel()
