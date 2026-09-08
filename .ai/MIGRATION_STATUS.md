@@ -3,6 +3,21 @@
 ## Latest Stage
 
 Date: 2026-09-04
+Stage: API reference parity and route/auth audit sync
+Status: Complete
+Version: 0.37.1
+
+### Docs: API reference fully aligned with current routes and auth gates (v0.37.1)
+
+- Rewrote EN/DE API reference pages to accurately enumerate current `server/api` routes and methods.
+- Corrected auth/public behavior to match `server/middleware/auth.ts` (including public exceptions and dynamic `/api/p/*` routes).
+- Added missing endpoint groups: Sites, Setup/System, Device Library, Admin allocation recovery, configured VLAN mutation route, switch/patch-panel public token lifecycle, patch-panel routes, and allocation references.
+- Updated data-model section and full-backup payload notes to include Patch Panel entities as part of the live model and explicitly note current backup payload coverage.
+- Scope is documentation-only; no runtime/API behavior changed.
+
+---
+
+Date: 2026-09-04
 Stage: Public read-only Patch Panel links
 Status: Complete
 Version: 0.37.0
