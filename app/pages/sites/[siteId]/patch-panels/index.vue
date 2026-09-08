@@ -33,29 +33,40 @@
             <div class="h-px flex-1 bg-default" />
           </div>
           <div class="list-container rounded-lg bg-default">
-            <NuxtLink
+            <div
               v-for="(panel, i) in group.items"
               :key="panel.id"
-              :to="`/sites/${panel.site_id}/patch-panels/${panel.slug || panel.id}`"
-              class="group flex items-center gap-4 px-5 py-3 transition-colors"
+              class="group flex items-center transition-colors"
               :class="[
                 i > 0 ? 'border-t border-default' : '',
                 'row-hover'
               ]"
             >
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2">
-                  <span class="text-base font-semibold text-gray-900 dark:text-white">{{ panel.name }}</span>
-                  <UBadge variant="subtle" color="neutral" size="sm">{{ panel.port_count }} {{ $t('patchPanels.ports') }}</UBadge>
+              <NuxtLink
+                :to="`/sites/${panel.site_id}/patch-panels/${panel.slug || panel.id}`"
+                class="flex min-w-0 flex-1 items-center gap-4 px-5 py-3"
+              >
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base font-semibold text-gray-900 dark:text-white">{{ panel.name }}</span>
+                    <UBadge variant="subtle" color="neutral" size="sm">{{ panel.port_count }} {{ $t('patchPanels.ports') }}</UBadge>
+                  </div>
+                  <div v-if="panel.description" class="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
+                    {{ panel.description }}
+                  </div>
                 </div>
-                <div v-if="panel.description" class="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
-                  {{ panel.description }}
+                <div class="flex items-center gap-3 text-xs text-gray-400">
+                  <span>{{ occupiedCount(panel) }}/{{ panel.sockets.length }} {{ $t('patchPanels.occupied') }}</span>
                 </div>
+              </NuxtLink>
+              <div class="flex items-center pr-3 opacity-0 transition-opacity group-hover:opacity-100">
+                <PatchPanelPublicAccess
+                  :panel-id="panel.id"
+                  :site-id="panel.site_id"
+                  :panel-name="panel.name"
+                />
               </div>
-              <div class="flex items-center gap-3 text-xs text-gray-400">
-                <span>{{ occupiedCount(panel) }}/{{ panel.sockets.length }} {{ $t('patchPanels.occupied') }}</span>
-              </div>
-            </NuxtLink>
+            </div>
           </div>
         </div>
       </div>
