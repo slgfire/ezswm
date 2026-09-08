@@ -14,6 +14,7 @@ Version: 0.37.0
 - Public view shows panel data plus per-port details: port number, outlet number, location, optional L/R remote-end marker, and tested state.
 - Public view is intentionally limited: no editing, no app navigation, and no search.
 - Patch Panels remain settings-gated: disabling Patch Panels makes public links unavailable while retaining stored Patch Panel data.
+- Added Patch Panel list-level **Print All** for the current filtered set; print output stays compact (one row per port number) and includes status/outlet/location/optional L-R metadata with preserved visual state colors.
 
 ---
 

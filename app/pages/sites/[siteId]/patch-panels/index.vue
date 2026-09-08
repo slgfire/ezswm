@@ -2,9 +2,20 @@
   <div class="p-6">
     <div class="mb-4 flex items-center justify-between">
       <h1 class="text-xl font-bold">{{ $t('patchPanels.title') }}</h1>
-      <UButton icon="i-heroicons-plus" size="sm" @click="openCreate">
-        {{ $t('patchPanels.create') }}
-      </UButton>
+      <div class="flex items-center gap-2">
+        <UButton
+          v-if="filteredItems.length > 0"
+          icon="i-heroicons-printer"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          :title="$t('common.print')"
+          @click="openPrintPage"
+        />
+        <UButton icon="i-heroicons-plus" size="sm" @click="openCreate">
+          {{ $t('patchPanels.create') }}
+        </UButton>
+      </div>
     </div>
 
     <!-- Loading -->
@@ -59,7 +70,7 @@
                   <span>{{ occupiedCount(panel) }}/{{ panel.sockets.length }} {{ $t('patchPanels.occupied') }}</span>
                 </div>
               </NuxtLink>
-              <div class="flex items-center pr-3">
+              <div class="flex items-center pr-3 opacity-0 transition-opacity group-hover:opacity-100">
                 <PatchPanelPublicAccess
                   :panel-id="panel.id"
                   :site-id="panel.site_id"
@@ -246,6 +257,11 @@ async function onSubmitCreate() {
   } finally {
     creating.value = false
   }
+}
+
+function openPrintPage() {
+  const ids = filteredItems.value.map(p => p.id).join(',')
+  window.open(`/sites/${siteId.value}/patch-panels/print?ids=${ids}`, '_blank')
 }
 
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})

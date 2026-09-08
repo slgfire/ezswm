@@ -271,6 +271,8 @@ Wenn aktiviert, unterstützen Patch Panels sowohl standortbezogene Ansichten als
 
 ![Patch-Panels-Liste](/images/screenshot-patch-panels-list.png)
 
+Die Patch-Panel-Liste bietet außerdem **Alle drucken** für die aktuell gefilterte Ergebnisliste.
+
 Du kannst eigenständige Patch Panels mit unveränderlichen numerischen Ports erstellen: **12**, **24** oder **48**. Jede Nummer ist genau ein physischer Patch-Panel-Port. Pro Port kannst du optional die Remote-/Enddosen-Seite (**L/R**) setzen und speichern:
 
 - Outlet-Nummer
@@ -282,6 +284,8 @@ Du kannst eigenständige Patch Panels mit unveränderlichen numerischen Ports er
 Jedes Patch Panel kann außerdem einen signierten/zufälligen öffentlichen **Read-only-Link** haben. In der Panel-Detailansicht können angemeldete Benutzer den Link **erstellen**, **kopieren** und **widerrufen**.
 
 Die öffentliche Seite zeigt nur Patch-Panel-Informationen: Panel-Daten sowie pro Port Portnummer, Outlet-Nummer, Standort, optionalen L/R-Remote-Endpunkt und Getestet-Status. Bearbeitung ist dort nicht möglich; außerdem gibt es keine App-Navigation und keine Suche.
+
+Der Patch-Panel-Druck nutzt ein kompaktes Layout mit genau einem Eintrag pro Portnummer und enthält Status, Outlet-Nummer, Standort sowie optionale L/R-Metadaten. Die visuellen Statusfarben bleiben erhalten.
 
 V1 ist nur standalone: Patch Panels sind nicht mit Switches oder Topologie verknüpft.
 
