@@ -690,8 +690,10 @@
       "created": "Patchfeld erfolgreich erstellt",
       "updated": "Patchfeld erfolgreich aktualisiert",
       "deleted": "Patchfeld erfolgreich gelöscht",
-      "socketUpdated": "Buchse erfolgreich aktualisiert"
-    }
+      "socketUpdated": "Buchse erfolgreich aktualisiert",
+      "socketReset": "Port erfolgreich zurückgesetzt"
+    },
+    "resetConfirm": "Port {port} zurücksetzen? Dosennummer, Standort, Seite und Prüfstatus werden gelöscht."
   },
   "settings": {
     "title": "Einstellungen",
@@ -949,6 +951,12 @@
       "noNetwork": "Kein Netz zugewiesen",
       "specialDevice": "Spezialgerät",
       "noPortsForFilter": "Keine Ports für diesen Filter gefunden."
+    },
+    "pp": {
+      "loading": "Lade Patchfeld-Daten...",
+      "linkLabel": "Öffentlicher Link für dieses Patchfeld",
+      "free": "Frei",
+      "revokeConfirm": "Möchten Sie diesen öffentlichen Link wirklich widerrufen? Der QR-Code-Sticker funktioniert dann nicht mehr."
     },
     "admin": {
       "title": "Öffentlicher QR-Zugang",

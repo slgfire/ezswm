@@ -690,8 +690,10 @@
       "created": "Patch panel created successfully",
       "updated": "Patch panel updated successfully",
       "deleted": "Patch panel deleted successfully",
-      "socketUpdated": "Socket updated successfully"
-    }
+      "socketUpdated": "Socket updated successfully",
+      "socketReset": "Port reset successfully"
+    },
+    "resetConfirm": "Reset port {port}? This clears outlet number, location, side, and tested state."
   },
   "settings": {
     "title": "Settings",
@@ -949,6 +951,12 @@
       "noNetwork": "No network assigned",
       "specialDevice": "Special device",
       "noPortsForFilter": "No ports match this filter."
+    },
+    "pp": {
+      "loading": "Loading patch panel data...",
+      "linkLabel": "Public link for this patch panel",
+      "free": "Free",
+      "revokeConfirm": "Are you sure you want to revoke this public link? The QR code sticker will stop working."
     },
     "admin": {
       "title": "Public QR Access",

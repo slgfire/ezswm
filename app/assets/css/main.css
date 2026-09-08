@@ -591,6 +591,32 @@ body.print-mode {
       border-color: #999 !important;
     }
 
+    /* Patch panel print cells: preserve state colors through global resets */
+    .pp-empty {
+      background-color: #fafafa !important;
+      border-color: #ddd !important;
+      color: #aaa !important;
+    }
+    .pp-occupied {
+      background-color: #eef2ff !important;
+      border-color: #6b8afd !important;
+      color: #3b5bdb !important;
+    }
+    .pp-tested {
+      background-color: #fff9db !important;
+      border-color: #fab005 !important;
+      color: #e67700 !important;
+    }
+    .pp-tested-occupied {
+      background-color: #ebfbee !important;
+      border-color: #40c057 !important;
+      color: #2b8a3e !important;
+    }
+    .pp-print-side {
+      background-color: #333 !important;
+      color: #fff !important;
+    }
+
     .card-glow:hover {
       box-shadow: none !important;
     }

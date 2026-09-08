@@ -271,6 +271,8 @@ When enabled, Patch Panels support both normal site-scoped views and **All Sites
 
 ![Patch Panels list](/images/screenshot-patch-panels-list.png)
 
+The Patch Panel list also provides **Print All** for the currently filtered result set.
+
 You can create standalone patch panels with immutable numeric ports: **12**, **24**, or **48**. Each number is one physical patch-panel port. For each port, you can optionally set the remote outlet/end side (**L/R**) and store:
 
 - Outlet number
@@ -279,9 +281,15 @@ You can create standalone patch panels with immutable numeric ports: **12**, **2
 
 ![Patch Panel detail](/images/screenshot-patch-panels-detail.png)
 
+Each Patch Panel can also have one signed/random public **read-only** link. In the panel detail view, authenticated users can **Generate link**, **Copy link**, and **Revoke link**.
+
+The public page shows only Patch Panel information: panel details plus per-port number, outlet number, location, optional L/R remote-end marker, and tested state. It does not allow editing and has no app navigation or search.
+
+Patch Panel print output uses a compact one-port-per-number layout and includes status, outlet number, location, and optional L/R metadata, while preserving visual state colors.
+
 V1 is standalone only: Patch Panels are not linked to switches or topology.
 
-If the feature is disabled again, Patch Panel data is retained but hidden until re-enabled.
+If the feature is disabled again, Patch Panel data is retained but hidden until re-enabled, and Patch Panel public links are unavailable while disabled.
 
 ## LAG Groups (Link Aggregation)
 

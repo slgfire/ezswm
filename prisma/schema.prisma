@@ -42,9 +42,23 @@ model PatchPanel {
 
   site    Site               @relation(fields: [site_id], references: [id], onDelete: Cascade)
   sockets PatchPanelSocket[]
+  patch_panel_tokens PatchPanelToken[]
 
   @@unique([site_id, slug])
   @@index([site_id])
+}
+
+model PatchPanelToken {
+  id             String  @id
+  patch_panel_id String
+  token          String  @unique
+  created_at     String
+  revoked_at     String?
+  last_access_at String?
+
+  patch_panel PatchPanel @relation(fields: [patch_panel_id], references: [id], onDelete: Cascade)
+
+  @@index([patch_panel_id])
 }
 
 model PatchPanelSocket {
