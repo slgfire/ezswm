@@ -2,6 +2,20 @@
 
 ## Latest Stage
 
+Date: 2026-09-10
+Stage: Switch rename route sync after slug change
+Status: Complete
+Version: 0.37.2
+
+### Fix: switch detail route now follows renamed slug (v0.37.2)
+
+- Fixed switch-detail save flow so a successful rename immediately replaces the current URL with the returned new switch slug (`/sites/<site>/switches/<new-slug>`).
+- This prevents stale-route follow-up edits from targeting the old slug and failing after rename.
+- Preserved existing site-scoped route behavior and normal save/optimistic-concurrency handling.
+- Added focused E2E regression coverage to verify URL transition to the new slug after rename.
+
+---
+
 Date: 2026-09-04
 Stage: API reference parity and route/auth audit sync
 Status: Complete

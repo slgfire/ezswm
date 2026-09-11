@@ -298,6 +298,65 @@ test.describe('Edit Behavior — Inline Edit', () => {
       await expect(page.locator('main')).not.toContainText('ShouldNotBeSaved')
     })
 
+    test('renaming a site-scoped switch updates browser URL to new slug', async ({ page, context }) => {
+      const renameSuffix = `${Date.now()}`
+      let renameSiteId = ''
+      let renameSwitchId = ''
+
+      try {
+        const createSiteRes = await context.request.post('http://localhost:3000/api/sites', {
+          data: { name: `EditTest Rename Site ${renameSuffix}` }
+        })
+        expect(createSiteRes.status()).toBe(201)
+        const siteBody = await createSiteRes.json()
+        const site = (siteBody.data || siteBody) as { id: string; slug?: string }
+        renameSiteId = site.id as string
+        const renameSiteRouteId = (site.slug || site.id) as string
+
+        const createSwitchRes = await context.request.post('http://localhost:3000/api/switches', {
+          data: {
+            site_id: renameSiteId,
+            name: `EditTest-Rename-${renameSuffix}-A`,
+            model: 'Rename-Test'
+          }
+        })
+        expect(createSwitchRes.status()).toBe(201)
+        const switchBody = await createSwitchRes.json()
+        const createdSwitch = (switchBody.data || switchBody) as { id: string; slug?: string }
+        renameSwitchId = createdSwitch.id as string
+        const renameSwitchSlug = (createdSwitch.slug || createdSwitch.id) as string
+
+        await page.goto(`/sites/${renameSiteRouteId}/switches/${renameSwitchSlug}`)
+        await page.waitForLoadState('networkidle')
+
+        await page.getByRole('button', { name: /edit|bearbeiten/i }).first().click()
+        await expect(page.locator('form')).toBeVisible()
+
+        const updateResponsePromise = page.waitForResponse((response) => {
+          return response.request().method() === 'PUT'
+            && response.url().includes('/api/switches/')
+            && response.status() === 200
+        })
+
+        await page.locator('form input').first().fill(`EditTest-Rename-${renameSuffix}-B`)
+        await page.getByRole('button', { name: /save|speichern/i }).last().click()
+
+        const updateResponse = await updateResponsePromise
+        const updatedSwitch = await updateResponse.json()
+        const updatedSlug = (updatedSwitch.slug || updatedSwitch?.data?.slug) as string
+        expect(updatedSlug).toBeTruthy()
+
+        await expect(page).toHaveURL(new RegExp(`/sites/${renameSiteRouteId}/switches/${updatedSlug}$`))
+      } finally {
+        if (renameSwitchId) {
+          await context.request.delete(`http://localhost:3000/api/switches/${renameSwitchId}`, { timeout: 5000 }).catch(() => {})
+        }
+        if (renameSiteId) {
+          await context.request.delete(`http://localhost:3000/api/sites/${renameSiteId}`, { timeout: 5000 }).catch(() => {})
+        }
+      }
+    })
+
     test('cleanup: delete test switch', async ({ context }) => {
       const list = await context.request.get('http://localhost:3000/api/switches')
       const switches = await list.json()
