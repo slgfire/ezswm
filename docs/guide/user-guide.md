@@ -138,6 +138,8 @@ Fields:
 
 When editing a switch, clearing optional text fields (for example Model, Manufacturer, Serial Number, Location, Rack Position, Management IP, Firmware Version, Notes) and saving now explicitly removes those stored values.
 
+When renaming a switch from its detail page, the browser URL now immediately updates to the switch's new slug. This keeps follow-up edits and switch sub-resource actions (ports, VLANs, LAGs, public token) on the correct route after a rename.
+
 When you change a switch to another layout template, ezSWM now keeps matching ports (same unit/index/type) and preserves their full configuration (VLANs, links, LAG assignment, helper fields). It only adds new ports required by the new template and removes ports that no longer exist in that layout.
 
 If a template or stack-size change would remove existing ports, ezSWM shows a confirmation dialog before saving. The dialog lists the affected ports that would be deleted. Choose **Cancel** to keep your current edits and return to the form, or confirm to apply the change.

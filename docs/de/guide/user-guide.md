@@ -138,6 +138,8 @@ Felder:
 
 Beim Bearbeiten eines Switches entfernt das Leeren optionaler Textfelder (z. B. Modell, Hersteller, Seriennummer, Standort, Rack-Position, Management-IP, Firmware-Version, Notizen) beim Speichern jetzt die zuvor gespeicherten Werte explizit.
 
+Beim Umbenennen eines Switches auf der Detailseite wird die Browser-URL jetzt sofort auf den neuen Slug aktualisiert. Dadurch bleiben Folge-Bearbeitungen und Switch-Teilaktionen (Ports, VLANs, LAGs, Public-Token) nach dem Umbenennen auf der korrekten Route.
+
 Wenn du einen Switch auf ein anderes Layout-Template umstellst, behält ezSWM jetzt passende Ports (gleiche Unit/Index/Typ) und deren komplette Konfiguration (VLANs, Verbindungen, LAG-Zuordnung, Helfer-Felder). Es werden nur neue, im Ziel-Template erwartete Ports ergänzt und nur nicht mehr passende Ports entfernt.
 
 Wenn ein Template- oder Stack-Größen-Wechsel bestehende Ports entfernen würde, zeigt ezSWM vor dem Speichern einen Bestätigungsdialog. Der Dialog listet die betroffenen Ports, die gelöscht würden. Mit **Abbrechen** behältst du deine aktuellen Änderungen und kehrst ins Formular zurück; nur mit Bestätigung wird die Änderung übernommen.

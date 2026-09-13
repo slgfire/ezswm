@@ -50,6 +50,7 @@
             variant="ghost"
             color="primary"
             size="sm"
+            :aria-label="$t('common.edit')"
             @click="openEditPanel"
           />
         </UTooltip>
@@ -434,6 +435,7 @@ v-model="editForm.role"
 
 <script setup lang="ts">
 import type { Port } from '~~/types/port'
+import type { Switch } from '~~/types/switch'
 import { getLagEligibleSelectedPortIds } from '~/utils/lagPortOptions'
 import type { LAGGroup } from '~~/types/lagGroup'
 import { routeLagMemberRemoval } from '~/utils/lagMemberRemoval'
@@ -451,6 +453,17 @@ const siteId = computed(() => route.params.siteId as string)
 
 const id = route.params.id as string
 const { item, loading, fetch: fetchSwitch, update } = useSwitch(id, siteId.value)
+
+async function updateAndSyncRoute(body: Record<string, unknown>) {
+  const response = await update(body) as Switch | { data?: Switch }
+  const updated = response && typeof response === 'object' && 'data' in response
+    ? (response.data || response) as Switch
+    : response as Switch
+  if (updated?.slug && updated.slug !== id) {
+    await navigateTo(`/sites/${siteId.value}/switches/${updated.slug}`, { replace: true })
+  }
+  return updated
+}
 
 useHead({ title: computed(() => item.value?.name || t('switches.title')) })
 const { duplicate } = useSwitches()
@@ -478,7 +491,7 @@ function getPortLabel(portId: string): string {
   return port.label || `${port.unit}/${port.index}`
 }
 
-const { editMode, saving, editFormRef, editTagInput, editForm, stackSizeOptions, editRoleOptions, templateOptions, openEditPanel, validateEdit, onSave, addEditTag, removeEditTag, requestCloseEdit, onEditOpenChange, showTemplateConfirm, removedPorts, removesAllPorts, pendingTemplateName, pendingStackOnlyChange, confirmTemplateChange } = useSwitchEditForm(item, templates, update, fetchSwitch)
+const { editMode, saving, editFormRef, editTagInput, editForm, stackSizeOptions, editRoleOptions, templateOptions, openEditPanel, validateEdit, onSave, addEditTag, removeEditTag, requestCloseEdit, onEditOpenChange, showTemplateConfirm, removedPorts, removesAllPorts, pendingTemplateName, pendingStackOnlyChange, confirmTemplateChange } = useSwitchEditForm(item, templates, updateAndSyncRoute, fetchSwitch)
 
 const MAX_REMOVED_PORT_CHIPS = 24
 const templateConfirmTitle = computed(() => pendingStackOnlyChange.value
