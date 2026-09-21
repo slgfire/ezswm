@@ -404,7 +404,8 @@
       "gateway": "Gateway",
       "dnsServers": "DNS Servers",
       "vlan": "VLAN",
-      "utilization": "Utilization"
+      "utilization": "Utilization",
+      "excludeFromUtilization": "Exclude from dashboard utilization"
     },
     "messages": {
       "created": "Subnet created successfully",

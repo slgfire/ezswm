@@ -38,7 +38,9 @@ export default defineEventHandler(async (event) => {
 
   // Network utilization
   const vlanMap = new Map(vlans.map(v => [v.id, v]))
-  const networkUtilization = networks.map(n => {
+  const networkUtilization = networks
+    .filter(n => !n.exclude_from_utilization)
+    .map(n => {
     const info = parseSubnet(n.subnet)
     const allocated = allocations.filter(a => a.network_id === n.id).length
     const networkRanges = ranges.filter(r => r.network_id === n.id)
@@ -69,7 +71,7 @@ export default defineEventHandler(async (event) => {
       vlan_name: vlan?.name || null,
       vlan_id: vlan?.vlan_id || null
     }
-  })
+    })
 
   // Orphan VLANs (no networks)
   const vlansWithNetworks = new Set(networks.filter(n => n.vlan_id).map(n => n.vlan_id))

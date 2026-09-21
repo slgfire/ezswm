@@ -404,7 +404,8 @@
       "gateway": "Gateway",
       "dnsServers": "DNS-Server",
       "vlan": "VLAN",
-      "utilization": "Auslastung"
+      "utilization": "Auslastung",
+      "excludeFromUtilization": "Von Dashboard-Auslastung ausschließen"
     },
     "messages": {
       "created": "Subnetz erfolgreich erstellt",

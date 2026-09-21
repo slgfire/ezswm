@@ -137,6 +137,9 @@
           <UFormField :label="$t('networks.fields.vlan')" name="vlan_id">
             <USelect v-model="editForm.vlan_id" :items="vlanOptions" placeholder="-" class="w-full" />
           </UFormField>
+          <UFormField :label="$t('networks.fields.excludeFromUtilization')" name="exclude_from_utilization">
+            <USwitch v-model="editForm.exclude_from_utilization" />
+          </UFormField>
           <UFormField :label="$t('common.description')" name="description">
             <UTextarea v-model="editForm.description" :rows="3" class="w-full" />
           </UFormField>
@@ -286,7 +289,7 @@ const savingRangeEdit = ref(false)
 
 const editAllocTarget = ref<IPAllocation | null>(null)
 
-const editForm = ref({ name: '', subnet: '', gateway: '', vlan_id: '', description: '' })
+const editForm = ref({ name: '', subnet: '', gateway: '', vlan_id: '', description: '', exclude_from_utilization: false })
 const editDnsInput = ref('')
 const allocForm = ref({ ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' as AllocationStatus })
 const rangeForm = ref({ start_ip: '', end_ip: '', type: 'static' as RangeType, description: '' })
@@ -504,7 +507,14 @@ function openRangeEdit(range: IPRange) {
 
 function startEdit() {
   if (!network.value) return
-  editForm.value = { name: network.value.name, subnet: network.value.subnet, gateway: network.value.gateway || '', vlan_id: network.value.vlan_id || '', description: network.value.description || '' }
+  editForm.value = {
+    name: network.value.name,
+    subnet: network.value.subnet,
+    gateway: network.value.gateway || '',
+    vlan_id: network.value.vlan_id || '',
+    description: network.value.description || '',
+    exclude_from_utilization: network.value.exclude_from_utilization
+  }
   editDnsInput.value = network.value.dns_servers?.join(', ') || ''
   editing.value = true
   snapshotEdit()
@@ -530,7 +540,15 @@ async function onSave() {
   saving.value = true
   try {
     const dnsServers = editDnsInput.value ? editDnsInput.value.split(',').map((s: string) => s.trim()).filter(Boolean) : []
-    await updateNetwork(networkId, { name: editForm.value.name.trim(), subnet: editForm.value.subnet.trim(), gateway: editForm.value.gateway.trim() || undefined, dns_servers: dnsServers, vlan_id: editForm.value.vlan_id || undefined, description: editForm.value.description.trim() || undefined }, siteId.value)
+    await updateNetwork(networkId, {
+      name: editForm.value.name.trim(),
+      subnet: editForm.value.subnet.trim(),
+      gateway: editForm.value.gateway.trim() || undefined,
+      dns_servers: dnsServers,
+      vlan_id: editForm.value.vlan_id || undefined,
+      description: editForm.value.description.trim() || undefined,
+      exclude_from_utilization: editForm.value.exclude_from_utilization
+    }, siteId.value)
     toast.add({ title: t('networks.messages.updated'), color: 'success' })
     editing.value = false
     await loadNetwork()

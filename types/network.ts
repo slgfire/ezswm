@@ -9,6 +9,7 @@ export interface Network {
   dns_servers: string[]
   description?: string
   is_favorite: boolean
+  exclude_from_utilization: boolean
   created_at: string
   updated_at: string
 }

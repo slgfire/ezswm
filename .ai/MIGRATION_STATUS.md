@@ -2,6 +2,22 @@
 
 ## Latest Stage
 
+Date: 2026-09-21
+Stage: Dashboard subnet utilization exclusions feature
+Status: Complete
+Version: 0.38.0
+
+### Feature: optional subnet exclusion from dashboard utilization widgets (v0.38.0)
+
+- Added `exclude_from_utilization` to the Network data model (Prisma schema + migration), defaulting to `false`.
+- Exposed the flag in domain typing, repository persistence, and network Zod schemas for create/update.
+- Added an edit-only toggle in the subnet detail slideover to control dashboard exclusion.
+- Updated dashboard stats so only `networkUtilization` and derived `highUsageNetworks` respect exclusion.
+- Kept network counts, favorites, and per-subnet detail utilization unchanged.
+- Added focused tests for schema/repository default + persistence and dashboard filtering behavior.
+
+---
+
 Date: 2026-09-10
 Stage: Switch rename route sync after slug change
 Status: Complete

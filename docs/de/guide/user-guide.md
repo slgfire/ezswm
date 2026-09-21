@@ -509,6 +509,8 @@ Felder:
 
 Die Subnetz-Detailseite zeigt Subnetz-Statistiken (Subnetz, Gateway, Maske, Hosts, Zugewiesene Anzahl, verknüpftes VLAN) in einer kompakten Info-Leiste oben. Klicke auf die Info-Leiste, um zusätzliche Details aufzuklappen (Netzwerkadresse, Broadcast, DNS-Server, Beschreibung) -- dasselbe Muster wie auf der Switch-Detailseite. Ein Auslastungsbalken darunter visualisiert zugewiesene, DHCP-, reservierte und freie Adressbereiche. Zum Bearbeiten des Subnetzes klicke auf das **Stift-Symbol** oben rechts -- dies öffnet ein Sidepanel.
 
+Feature (Minor-Release): Im Subnetz-Bearbeitungs-Sidepanel kannst du mit **Von Dashboard-Auslastung ausschließen** ein Subnetz in der Inventarisierung belassen, aber aus dem Dashboard-Widget zur IP-Auslastung und aus den High-Usage-Warnungen ausblenden. Subnetz-Anzahl, Favoriten und die Auslastung im Subnetz-Detail bleiben unverändert.
+
 ![Subnetz-Detail mit IP-Übersicht](/images/screenshot-network-detail.png)
 
 Unter der Info-Leiste zeigt die **IP-Übersicht** alle Einträge in einer einheitlichen, sortierten Liste:
