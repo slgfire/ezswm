@@ -180,6 +180,7 @@
     "networkCount": "Subnetze",
     "vlanCount": "VLANs",
     "ipUtilization": "IP-Auslastung",
+    "ipUtilizationEmpty": "Keine Subnetze zur Anzeige — alle Netze sind möglicherweise von der Auslastungsverfolgung ausgeschlossen.",
     "portStatus": "Port-Status",
     "recentActivity": "Letzte Aktivitäten",
     "favorites": "Favoriten",

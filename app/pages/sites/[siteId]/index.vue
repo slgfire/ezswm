@@ -147,14 +147,20 @@
 
       <!-- IP Utilization + Recent Activity side by side -->
       <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <UCard v-if="stats.networkUtilization.length" class="stagger-item">
+        <UCard class="stagger-item">
           <template #header>
             <div class="flex items-center justify-between">
               <h2 class="font-semibold">{{ $t('dashboard.ipUtilization') }}</h2>
-              <span class="text-xs text-gray-500">{{ stats.networkUtilization.length }} {{ $t('networks.title').toLowerCase() }}</span>
+              <span v-if="stats.networkUtilization.length" class="text-xs text-gray-500">{{ stats.networkUtilization.length }} {{ $t('networks.title').toLowerCase() }}</span>
             </div>
           </template>
-          <div class="space-y-1.5">
+          <SharedEmptyState
+            v-if="!stats.networkUtilization.length"
+            icon="i-heroicons-globe-alt"
+            :title="$t('dashboard.ipUtilization')"
+            :description="$t('dashboard.ipUtilizationEmpty')"
+          />
+          <div v-else class="space-y-1.5">
             <div v-for="net in visibleUtilization" :key="net.id">
               <div class="flex items-center gap-2">
                 <span v-if="net.vlan_color" class="h-2 w-2 shrink-0 rounded-full" :style="{ backgroundColor: net.vlan_color }" />
@@ -177,7 +183,7 @@
             <UIcon :name="showAllNetworks ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
             {{ showAllNetworks ? $t('common.showLess') : $t('common.showAll', { count: sortedUtilization.length }) }}
           </button>
-          <div v-if="stats.networkUtilization.length <= 1" class="mt-3 flex items-center gap-2 text-xs text-gray-500">
+          <div v-if="stats.networkUtilization.length > 0 && stats.networkUtilization.length <= 1" class="mt-3 flex items-center gap-2 text-xs text-gray-500">
             <UIcon name="i-heroicons-light-bulb" class="h-3.5 w-3.5 text-yellow-500" />
             <NuxtLink :to="`/sites/${siteId}/subnets/create`" class="hover:text-primary-400">Add more subnets to track utilization</NuxtLink>
           </div>

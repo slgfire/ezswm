@@ -180,6 +180,7 @@
     "networkCount": "Subnets",
     "vlanCount": "VLANs",
     "ipUtilization": "IP Utilization",
+    "ipUtilizationEmpty": "No subnets to show — all networks may be excluded from utilization tracking.",
     "portStatus": "Port Status",
     "recentActivity": "Recent Activity",
     "favorites": "Favorites",
