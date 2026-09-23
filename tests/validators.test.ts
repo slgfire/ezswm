@@ -694,6 +694,7 @@ describe('createNetworkSchema', () => {
     expect(result.success).toBe(true)
     if (result.success) {
       expect(result.data.dns_servers).toEqual([])
+      expect(result.data.exclude_from_utilization).toBe(false)
     }
   })
 
@@ -719,6 +720,19 @@ describe('createNetworkSchema', () => {
     expect(result.success).toBe(true)
     if (result.success) {
       expect(result.data.dns_servers).toEqual([])
+    }
+  })
+
+  it('accepts explicit exclude_from_utilization flag', () => {
+    const result = createNetworkSchema.safeParse({
+      site_id: 'site-1',
+      name: 'Net',
+      subnet: '192.168.0.0/24',
+      exclude_from_utilization: true
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.exclude_from_utilization).toBe(true)
     }
   })
 
@@ -1527,6 +1541,9 @@ describe('updateNetworkSchema', () => {
   })
   it('accepts is_favorite', () => {
     expect(updateNetworkSchema.safeParse({ is_favorite: true }).success).toBe(true)
+  })
+  it('accepts exclude_from_utilization', () => {
+    expect(updateNetworkSchema.safeParse({ exclude_from_utilization: true }).success).toBe(true)
   })
   it('rejects empty name', () => {
     expect(updateNetworkSchema.safeParse({ name: '' }).success).toBe(false)

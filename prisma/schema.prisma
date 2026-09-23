@@ -178,6 +178,7 @@ model Network {
   dns_servers String  @default("[]") // JSON array of strings
   description String?
   is_favorite Boolean @default(false)
+  exclude_from_utilization Boolean @default(false)
   created_at  String
   updated_at  String
 

@@ -16,6 +16,7 @@ interface NetworkRow {
   dns_servers: string
   description: string | null
   is_favorite: boolean
+  exclude_from_utilization?: boolean
   created_at: string
   updated_at: string
 }
@@ -32,6 +33,7 @@ function rowToNetwork(row: NetworkRow): Network {
     dns_servers: JSON.parse(row.dns_servers) as string[],
     description: row.description ?? undefined,
     is_favorite: row.is_favorite,
+    exclude_from_utilization: row.exclude_from_utilization ?? false,
     created_at: row.created_at,
     updated_at: row.updated_at
   }
@@ -112,7 +114,7 @@ export const networkRepository = {
     return this.getById(identifier)
   },
 
-  async create(data: Omit<Network, 'id' | 'slug' | 'created_at' | 'updated_at' | 'is_favorite'> & { slug?: string }): Promise<Network> {
+  async create(data: Omit<Network, 'id' | 'slug' | 'created_at' | 'updated_at' | 'is_favorite' | 'exclude_from_utilization'> & { slug?: string; exclude_from_utilization?: boolean }): Promise<Network> {
     validateNetworkInputs(data)
     // `site_id` from the request body may arrive as a UUID *or* a slug since
     // the URL-driven create forms use slug-shaped route params.
@@ -133,6 +135,7 @@ export const networkRepository = {
         dns_servers: JSON.stringify(data.dns_servers ?? []),
         description: data.description ?? null,
         is_favorite: false,
+        exclude_from_utilization: data.exclude_from_utilization ?? false,
         created_at: now,
         updated_at: now
       }
@@ -180,6 +183,7 @@ export const networkRepository = {
         ...(data.dns_servers !== undefined ? { dns_servers: JSON.stringify(data.dns_servers) } : {}),
         ...(data.description !== undefined ? { description: data.description ?? null } : {}),
         ...(data.is_favorite !== undefined ? { is_favorite: data.is_favorite } : {}),
+        ...(data.exclude_from_utilization !== undefined ? { exclude_from_utilization: data.exclude_from_utilization } : {}),
         ...(slug !== undefined ? { slug } : {}),
         updated_at: new Date().toISOString()
       }

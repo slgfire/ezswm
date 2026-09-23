@@ -44,6 +44,15 @@ describe('networkRepository', () => {
       expect(result.name).toBe('Test Network')
       expect(result.subnet).toBe('10.0.1.0/24')
       expect(result.created_at).toBeTruthy()
+      expect(result.exclude_from_utilization).toBe(false)
+    })
+
+    it('persists exclude_from_utilization when explicitly set', async () => {
+      const result = await networkRepository.create({ ...validNetwork(), exclude_from_utilization: true })
+      expect(result.exclude_from_utilization).toBe(true)
+
+      const stored = await networkRepository.getById(result.id)
+      expect(stored?.exclude_from_utilization).toBe(true)
     })
 
     it('rejects invalid CIDR', async () => {
@@ -99,6 +108,20 @@ describe('networkRepository', () => {
 
     it('returns false for unknown id', async () => {
       expect(await networkRepository.delete('00000000-0000-4000-8000-000000000000')).toBe(false)
+    })
+  })
+
+  describe('update', () => {
+    it('keeps exclude_from_utilization unchanged when omitted', async () => {
+      const created = await networkRepository.create({ ...validNetwork(), exclude_from_utilization: true })
+      const updated = await networkRepository.update(created.id, { name: 'Renamed' })
+      expect(updated.exclude_from_utilization).toBe(true)
+    })
+
+    it('updates exclude_from_utilization when provided', async () => {
+      const created = await networkRepository.create(validNetwork())
+      const updated = await networkRepository.update(created.id, { exclude_from_utilization: true })
+      expect(updated.exclude_from_utilization).toBe(true)
     })
   })
 })

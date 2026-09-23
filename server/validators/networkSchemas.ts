@@ -7,7 +7,8 @@ export const createNetworkSchema = z.object({
   subnet: z.string().min(1),
   gateway: z.string().optional(),
   dns_servers: z.array(z.string()).default([]),
-  description: z.string().max(500).optional()
+  description: z.string().max(500).optional(),
+  exclude_from_utilization: z.boolean().default(false)
 })
 
 export const updateNetworkSchema = z.object({
@@ -18,5 +19,6 @@ export const updateNetworkSchema = z.object({
   gateway: z.string().optional().nullable(),
   dns_servers: z.array(z.string()).optional(),
   description: z.string().max(500).optional().nullable(),
-  is_favorite: z.boolean().optional()
+  is_favorite: z.boolean().optional(),
+  exclude_from_utilization: z.boolean().optional()
 })

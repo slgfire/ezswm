@@ -22,10 +22,12 @@ function network(over: Partial<Network> = {}): Network {
   return {
     id: 'net-1',
     site_id: 'site-1',
+    slug: 'lan',
     name: 'LAN',
     subnet: '10.0.1.0/24',
     dns_servers: [],
     is_favorite: false,
+    exclude_from_utilization: false,
     created_at: TS,
     updated_at: TS,
     ...over
@@ -47,7 +49,7 @@ function vlan(over: Partial<VLAN> = {}): VLAN {
   }
 }
 
-const sites: Site[] = [{ id: 'site-1', name: 'HQ', created_at: TS, updated_at: TS }]
+const sites: Site[] = [{ id: 'site-1', slug: 'hq', name: 'HQ', created_at: TS, updated_at: TS }]
 
 describe('enrichAllocations', () => {
   it('joins allocation with network, VLAN and site', () => {
