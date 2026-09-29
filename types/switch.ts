@@ -23,6 +23,7 @@ export interface Switch {
   is_favorite: boolean
   sort_order?: number
   notes?: string
+  group_id?: string
   expected_updated_at?: string
   created_at: string
   updated_at: string

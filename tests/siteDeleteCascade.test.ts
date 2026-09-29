@@ -32,6 +32,7 @@ describe('site delete cascade', () => {
     const otherSite = await seedSite(prisma, { name: 'Other' })
     const sw = await seedSwitch(prisma, { site_id: site.id })
     const otherSw = await seedSwitch(prisma, { site_id: otherSite.id })
+    const switchGroupId = 'switch-group-1'
     const net = await seedNetwork(prisma, { site_id: site.id })
     const rangeId = 'range-1'
     const allocationId = 'alloc-1'
@@ -70,6 +71,18 @@ describe('site delete cascade', () => {
     await prisma.publicToken.create({
       data: { id: 'token-1', switch_id: sw.id, token: 'public-token', created_at: new Date().toISOString() }
     })
+    await prisma.switchGroup.create({
+      data: {
+        id: switchGroupId,
+        site_id: site.id,
+        slug: 'core',
+        name: 'Core',
+        sort_order: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+    })
+    await prisma.switch.update({ where: { id: sw.id }, data: { group_id: switchGroupId } })
     await prisma.port.createMany({
       data: [
         { id: deletedPortId, switch_id: sw.id, unit: 1, index: 1, type: 'rj45', status: 'up', tagged_vlans: '[]' },
@@ -153,6 +166,7 @@ describe('site delete cascade', () => {
       data: [
         { id: 'act-site', user_id: null, action: 'update', entity_type: 'site', entity_id: site.id, entity_name: 'Branch', timestamp: new Date().toISOString() },
         { id: 'act-switch', user_id: null, action: 'update', entity_type: 'switch', entity_id: sw.id, entity_name: 'Switch', timestamp: new Date().toISOString() },
+        { id: 'act-switch-group', user_id: null, action: 'update', entity_type: 'switch_group', entity_id: switchGroupId, entity_name: 'Core', timestamp: new Date().toISOString() },
         { id: 'act-port', user_id: null, action: 'update', entity_type: 'port', entity_id: deletedPortId, entity_name: 'Port', timestamp: new Date().toISOString() },
         { id: 'act-network', user_id: null, action: 'update', entity_type: 'network', entity_id: net.id, entity_name: 'Network', timestamp: new Date().toISOString() },
         { id: 'act-vlan', user_id: null, action: 'update', entity_type: 'vlan', entity_id: vlanId, entity_name: 'VLAN', timestamp: new Date().toISOString() },
@@ -171,6 +185,7 @@ describe('site delete cascade', () => {
 
     expect(await prisma.site.findMany({ select: { id: true } })).toEqual([{ id: otherSite.id }])
     expect(await prisma.switch.count()).toBe(1)
+    expect(await prisma.switchGroup.count()).toBe(0)
     expect(await prisma.network.count()).toBe(0)
     expect(await prisma.vlan.count()).toBe(0)
     expect(await prisma.ipRange.count()).toBe(0)

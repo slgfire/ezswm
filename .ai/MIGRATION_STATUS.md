@@ -2,6 +2,23 @@
 
 ## Latest Stage
 
+Date: 2026-09-25
+Stage: Per-site switch groups documentation update
+Status: Complete
+Version: 0.39.0
+
+### Feature docs: per-site switch groups behavior and ordering constraints (v0.39.0)
+
+- Documented per-site switch group assignment and clarified that each switch can be assigned to a site-local group.
+- Documented site-local display preference between grouped and flat list rendering.
+- Documented that group collapse/expand state is stored locally per site.
+- Documented ordering constraints: groups are reorderable, switches are reorderable only within their own group, and ungrouped switches stay fixed last.
+- Documented delete behavior: removing a group unassigns its switches and does not delete switch records.
+- Clarified that **All Sites** behavior remains unchanged.
+- Updated both user guides (EN/DE) with matching content and bumped release version to 0.39.0.
+
+---
+
 Date: 2026-09-21
 Stage: Dashboard subnet utilization exclusions feature
 Status: Complete

@@ -204,9 +204,22 @@ Switch edits, single-port edits, bulk port edits, and LAG create/update operatio
 
 The switch list toolbar provides three filter dropdowns (location, role, tags). Each dropdown shows only values present in the currently visible switches (site-scoped when viewing a specific site, global when viewing **All Sites**). Select **All …** at the top of any dropdown to clear that filter. Each dropdown displays a leading icon for quick visual identification.
 
+### Switch Groups (per site)
+
+Switch groups are managed per site. In a site-scoped switch list, you can create groups and assign switches to a group.
+
+- **Group assignment** -- each switch can be assigned to one group for that site.
+- **Display mode (local)** -- choose between grouped and flat display in that site. This preference is local to that site and does not change other sites.
+- **Collapse state (local)** -- each group's expanded/collapsed state is stored locally for that site.
+- **Ordering rules** -- you can reorder groups, and reorder switches only inside their current group.
+- **Ungrouped placement** -- ungrouped switches stay in a fixed **Ungrouped** section at the bottom.
+- **Delete behavior** -- deleting a group does not delete switches; it only unassigns those switches from the removed group.
+
+When viewing **All Sites**, switch-group behavior is unchanged from previous releases (no per-site group management controls in that global view).
+
 ### Drag & Drop Sort Order
 
-On the switch list page, you can drag switches to reorder them. The sort order is persisted and reflected across all views.
+On the switch list page, drag & drop now follows group boundaries in site-scoped views: groups can be reordered, and switches can be reordered only within their own group. The ungrouped section remains fixed at the end. In **All Sites**, sorting behavior remains unchanged.
 
 ### Favorite Switches
 

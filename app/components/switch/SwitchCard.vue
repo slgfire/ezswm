@@ -3,6 +3,7 @@
   <div
     v-if="variant === 'grid'"
     class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
+    :class="{ 'h-full': uniform }"
   >
     <!-- Favorite star (top-left, always visible) -->
     <button
@@ -17,36 +18,57 @@
     <!-- Hover actions -->
     <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
       <UButton v-if="draggable" icon="i-tabler-grip-horizontal" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="neutral" size="xs" @click.prevent />
+      <UDropdownMenu
+        v-if="groups"
+        :items="groupMenuItems"
+        :content="{ align: 'end' }"
+        :ui="{ content: 'max-h-60 min-w-44 overflow-y-auto' }"
+      >
+        <UTooltip :text="$t('switches.groups.assign')">
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="xs"
+            class="shrink-0"
+            :aria-label="$t('switches.groups.assign')"
+            @click.prevent
+          >
+            <UIcon name="i-heroicons-rectangle-group" class="h-4 w-4 shrink-0" />
+          </UButton>
+        </UTooltip>
+      </UDropdownMenu>
       <UButton icon="i-heroicons-printer" variant="ghost" color="warning" size="xs" @click.prevent="emit('print', sw.id)" />
       <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="emit('duplicate', sw)" />
       <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="emit('delete', sw)" />
     </div>
 
-    <!-- Header: Name + Subtitle + Role -->
-    <div class="px-5 pt-4 pb-2">
+    <!-- Header: fixed-height zone so grouped rows align (name, subtitle, role, tags) -->
+    <div class="h-[6.5rem] px-5 pt-4 pb-2">
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
           <h3 class="truncate font-semibold text-gray-900 group-hover:text-primary-500 dark:text-white" :title="sw.name">
             {{ sw.name }}
           </h3>
-          <p v-if="sw.manufacturer || sw.model" class="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
-            {{ [sw.manufacturer, sw.model].filter(Boolean).join(' · ') }}
+          <!-- Reserve the subtitle line even when empty -->
+          <p class="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
+            <template v-if="sw.manufacturer || sw.model">{{ [sw.manufacturer, sw.model].filter(Boolean).join(' · ') }}</template>
+            <template v-else>&nbsp;</template>
           </p>
         </div>
         <UBadge v-if="sw.role" :color="roleColor(sw.role)" variant="subtle" size="sm" class="shrink-0">
           {{ $t(`switches.roles.${sw.role}`) }}
         </UBadge>
       </div>
-      <!-- Tags -->
-      <div v-if="sw.tags?.length" class="mt-2 flex flex-wrap gap-1">
-        <UBadge v-for="tg in sw.tags" :key="tg" color="neutral" variant="soft" size="sm">
+      <!-- Tags: clamped to a single line so the header zone stays stable -->
+      <div class="mt-1.5 flex h-6 flex-wrap items-center gap-1 overflow-hidden">
+        <UBadge v-for="tg in (sw.tags || [])" :key="tg" color="neutral" variant="soft" size="sm">
           {{ tg }}
         </UBadge>
       </div>
     </div>
 
-    <!-- Info rows -->
-    <div class="min-h-[3rem] flex-1 space-y-1.5 px-5 pb-3 text-sm">
+    <!-- Info rows: fixed-height zone keeps the ports footer aligned across cards -->
+    <div class="h-[3rem] space-y-1.5 px-5 pb-3 text-sm">
       <div v-if="sw.location" class="flex items-center gap-2">
         <UIcon name="i-heroicons-map-pin" class="h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
         <span class="text-gray-500 dark:text-gray-400">{{ sw.location }}</span>
@@ -94,6 +116,25 @@
 
     <!-- Hover actions -->
     <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
+      <UDropdownMenu
+        v-if="groups"
+        :items="groupMenuItems"
+        :content="{ align: 'end' }"
+        :ui="{ content: 'max-h-60 min-w-44 overflow-y-auto' }"
+      >
+        <UTooltip :text="$t('switches.groups.assign')">
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="xs"
+            class="shrink-0"
+            :aria-label="$t('switches.groups.assign')"
+            @click.prevent
+          >
+            <UIcon name="i-heroicons-rectangle-group" class="h-4 w-4 shrink-0" />
+          </UButton>
+        </UTooltip>
+      </UDropdownMenu>
       <UButton icon="i-heroicons-printer" variant="ghost" color="warning" size="xs" @click.prevent="emit('print', sw.id)" />
       <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="emit('duplicate', sw)" />
       <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="emit('delete', sw)" />
@@ -148,20 +189,60 @@
 
 <script setup lang="ts">
 import type { Switch } from '~~/types/switch'
+import type { SwitchGroup } from '~~/types/switchGroup'
+import type { DropdownMenuItem } from '@nuxt/ui'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   sw: Switch
   siteId: string
   variant: 'grid' | 'list'
   draggable?: boolean
-}>()
+  /** Stretch to fill the grid cell so grouped rows align. */
+  uniform?: boolean
+  /** Current site's groups for the assign-to-group menu. When undefined the
+      action is hidden (all-sites overview and contexts without group data). */
+  groups?: SwitchGroup[]
+}>(), {
+  draggable: false,
+  uniform: false,
+  groups: undefined
+})
 
 const emit = defineEmits<{
   favorite: [sw: Switch]
   print: [swId: string]
   duplicate: [sw: Switch]
   delete: [sw: Switch]
+  assignGroup: [sw: Switch, groupId: string | null]
 }>()
+
+const { t } = useI18n()
+
+const groupMenuItems = computed<DropdownMenuItem[]>(() => {
+  if (!props.groups) return []
+  const items: DropdownMenuItem[] = props.groups.map(group => ({
+    label: group.name,
+    type: 'checkbox' as const,
+    checked: props.sw.group_id === group.id,
+    onSelect(e: Event) {
+      e.preventDefault()
+      emit('assignGroup', props.sw, group.id)
+    }
+  }))
+  items.push({
+    type: 'separator' as const
+  }, {
+    label: t('switches.groups.ungrouped'),
+    icon: 'i-heroicons-x-mark',
+    type: 'checkbox' as const,
+    checked: !props.sw.group_id,
+    onSelect(e: Event) {
+      e.preventDefault()
+      emit('assignGroup', props.sw, null)
+    }
+  })
+  return items
+})
 
 const portStats = computed(() => {
   const ports = props.sw.ports || []

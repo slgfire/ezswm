@@ -3,6 +3,7 @@ export type { User } from './user'
 export type { PortType, PortSpeed, PortStatus, PortHelperUsage, Port } from './port'
 
 export type { Switch } from './switch'
+export type { SwitchGroup } from './switchGroup'
 
 export type { VlanStatus, VlanDisplayInfo, VLAN } from './vlan'
 export { VLAN_COLOR_POOL } from './vlan'

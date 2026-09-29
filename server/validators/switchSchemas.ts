@@ -15,6 +15,7 @@ export const createSwitchSchema = z.object({
   role: z.enum(['core', 'distribution', 'access', 'management']).optional(),
   tags: z.array(z.string().max(50)).max(20).optional(),
   notes: z.string().max(2000).optional(),
+  group_id: z.string().optional().nullable(),
   configured_vlans: z.array(z.number().int().min(1).max(4094)).optional().default([])
 })
 
@@ -34,6 +35,7 @@ export const updateSwitchSchema = z.object({
   tags: z.array(z.string().max(50)).max(20).optional().nullable(),
   is_favorite: z.boolean().optional(),
   notes: z.string().max(2000).optional().nullable(),
+  group_id: z.string().optional().nullable(),
   expected_updated_at: z.string().optional()
 })
 

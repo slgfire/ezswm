@@ -204,9 +204,22 @@ Switch-Bearbeitung, einzelne Port-Bearbeitung, Massen-Port-Bearbeitung sowie LAG
 
 Die Toolbar der Switch-Liste bietet drei Filter-Dropdowns (Standort, Rolle, Tags). Jedes Dropdown zeigt nur Werte, die in den aktuell sichtbaren Switches vorhanden sind (site-gescopt bei einer einzelnen Site, global bei **Alle Standorte**). Wähle **Alle …** am Anfang eines Dropdowns, um diesen Filter zurückzusetzen. Jedes Dropdown hat ein führendes Icon zur schnellen visuellen Orientierung.
 
+### Switch-Gruppen (pro Site)
+
+Switch-Gruppen werden pro Site verwaltet. In einer site-spezifischen Switch-Liste kannst du Gruppen anlegen und Switches einer Gruppe zuweisen.
+
+- **Gruppenzuweisung** -- jeder Switch kann für diese Site genau einer Gruppe zugewiesen werden.
+- **Ansichtsmodus (lokal)** -- wähle zwischen gruppierter und flacher Anzeige in dieser Site. Diese Einstellung ist lokal für diese Site und beeinflusst andere Sites nicht.
+- **Einklappzustand (lokal)** -- der Expand/Collapse-Zustand jeder Gruppe wird lokal pro Site gespeichert.
+- **Sortierregeln** -- du kannst Gruppen umsortieren; Switches lassen sich nur innerhalb ihrer aktuellen Gruppe umsortieren.
+- **Position Ungruppiert** -- ungruppierte Switches bleiben in einem festen Abschnitt **Ungruppiert** am Ende.
+- **Löschen einer Gruppe** -- beim Löschen einer Gruppe werden keine Switches gelöscht; die Switches werden nur aus der Gruppe entfernt.
+
+In der Ansicht **Alle Standorte** bleibt das Verhalten unverändert zu vorherigen Releases (keine per-Site-Gruppenverwaltung in dieser globalen Ansicht).
+
 ### Drag & Drop Sortierung
 
-Auf der Switch-Listenseite kannst du Switches per Drag & Drop umsortieren. Die Sortierreihenfolge wird gespeichert und in allen Ansichten angezeigt.
+Auf der Switch-Listenseite folgt Drag & Drop in site-spezifischen Ansichten jetzt den Gruppengrenzen: Gruppen können umsortiert werden, und Switches können nur innerhalb ihrer eigenen Gruppe umsortiert werden. Der Abschnitt "Ungruppiert" bleibt fest am Ende. In **Alle Standorte** bleibt das Sortierverhalten unverändert.
 
 ### Favoriten-Switches
 
