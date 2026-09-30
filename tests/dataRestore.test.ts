@@ -160,6 +160,53 @@ describe('restoreAll', () => {
     expect((await prisma.switch.findFirst())?.site_id).toBe(siteId)
   })
 
+  it('restores switch groups and preserves switch group references', async () => {
+    const siteId = randomUUID()
+    const groupId = randomUUID()
+    const switchId = randomUUID()
+
+    const payload = {
+      schema: 'sqlite-v1',
+      data: {
+        sites: [{ id: siteId, slug: 'hq', name: 'HQ', description: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
+        switchGroups: [{
+          id: groupId,
+          site_id: siteId,
+          slug: 'core',
+          name: 'Core',
+          sort_order: 0,
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z'
+        }],
+        switches: [{
+          id: switchId,
+          site_id: siteId,
+          slug: 'sw-core',
+          name: 'core-01',
+          group_id: groupId,
+          layout_template_id: null,
+          notes: null,
+          tags: '[]',
+          configured_vlans: '[]',
+          is_favorite: false,
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z'
+        }]
+      }
+    }
+
+    const result = await restoreAll(prisma, payload)
+    expect(result.inserted.switchGroups).toBe(1)
+    expect(result.inserted.switches).toBe(1)
+
+    const sw = await prisma.switch.findUnique({ where: { id: switchId } })
+    expect(sw?.group_id).toBe(groupId)
+
+    await prisma.switchGroup.delete({ where: { id: groupId } })
+    const ungrouped = await prisma.switch.findUnique({ where: { id: switchId } })
+    expect(ungrouped?.group_id).toBeNull()
+  })
+
   it('rolls back atomically on insert failure', async () => {
     // FK violation: network references a non-existent site_id, but UUID format is OK
     // so the pre-validation pass lets it through.

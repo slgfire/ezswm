@@ -47,6 +47,7 @@ describe('useSwitchEditForm destructive warning calculation', () => {
       management_ip: '',
       firmware_version: '',
       layout_template_id: '',
+      group_id: '_ungrouped',
       role: '',
       tags: [],
       notes: '',
@@ -60,11 +61,37 @@ describe('useSwitchEditForm destructive warning calculation', () => {
       rack_position: null,
       management_ip: null,
       firmware_version: null,
+      group_id: null,
       tags: [],
       notes: null,
       stack_size: 1,
       expected_updated_at: 'ts-1'
     })
+  })
+
+  it('omits group_id when the switch-groups feature is disabled', () => {
+    const body = buildSwitchEditSaveBody({
+      name: 'SW-1',
+      layout_template_id: '',
+      group_id: 'grp-1',
+      role: '',
+      tags: [],
+      stack_size: 1
+    }, undefined, { groupsEnabled: false })
+    expect(body).not.toHaveProperty('group_id')
+    expect(body.name).toBe('SW-1')
+  })
+
+  it('keeps group_id conversion when the switch-groups feature is enabled', () => {
+    const body = buildSwitchEditSaveBody({
+      name: 'SW-1',
+      layout_template_id: '',
+      group_id: '_ungrouped',
+      role: '',
+      tags: [],
+      stack_size: 1
+    }, undefined, { groupsEnabled: true })
+    expect(body.group_id).toBeNull()
   })
 
   it('uses current template when requested template is blank', () => {

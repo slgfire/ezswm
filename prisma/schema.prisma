@@ -24,6 +24,7 @@ model Site {
   updated_at  String
 
   switches Switch[]
+  switch_groups SwitchGroup[]
   vlans    Vlan[]
   networks Network[]
   patch_panels PatchPanel[]
@@ -91,6 +92,7 @@ model Switch {
   management_ip      String?
   firmware_version   String?
   layout_template_id String?
+  group_id           String?
   stack_size         Int?
   role               String?
   tags               String  @default("[]") // JSON array of strings
@@ -103,6 +105,7 @@ model Switch {
 
   site            Site            @relation(fields: [site_id], references: [id], onDelete: Cascade)
   layout_template LayoutTemplate? @relation(fields: [layout_template_id], references: [id], onDelete: SetNull)
+  group           SwitchGroup?    @relation(fields: [group_id], references: [id], onDelete: SetNull)
   ports           Port[]
   lag_groups      LagGroup[]
   public_tokens   PublicToken[]
@@ -110,6 +113,24 @@ model Switch {
   @@unique([site_id, slug])
   @@index([site_id])
   @@index([layout_template_id])
+  @@index([group_id])
+}
+
+model SwitchGroup {
+  id         String @id
+  site_id    String
+  slug       String
+  name       String
+  sort_order Int?
+  created_at String
+  updated_at String
+
+  site     Site     @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  switches Switch[]
+
+  @@unique([site_id, slug])
+  @@unique([site_id, name])
+  @@index([site_id])
 }
 
 model Port {
@@ -330,4 +351,5 @@ model AppSettings {
   setup_completed     Boolean @default(false)
   sites_initialized   Boolean @default(false)
   patch_panels_enabled Boolean @default(false)
+  switch_groups_enabled Boolean @default(true)
 }

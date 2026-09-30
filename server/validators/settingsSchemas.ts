@@ -6,5 +6,6 @@ export const updateSettingsSchema = z.object({
   default_vlan: z.number().int().min(1).max(4094).optional().nullable(),
   default_port_status: z.enum(['up', 'down', 'disabled']).optional(),
   port_speeds: z.array(z.string()).optional(),
-  patch_panels_enabled: z.boolean().optional()
+  patch_panels_enabled: z.boolean().optional(),
+  switch_groups_enabled: z.boolean().optional()
 })

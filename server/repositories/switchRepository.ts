@@ -54,6 +54,7 @@ interface SwitchRow {
   management_ip: string | null
   firmware_version: string | null
   layout_template_id: string | null
+  group_id: string | null
   stack_size: number | null
   role: string | null
   tags: string
@@ -109,6 +110,7 @@ function rowToSwitch(row: SwitchRow): Switch {
     management_ip: row.management_ip ?? undefined,
     firmware_version: row.firmware_version ?? undefined,
     layout_template_id: row.layout_template_id ?? undefined,
+    group_id: row.group_id ?? undefined,
     stack_size: row.stack_size ?? undefined,
     role: (row.role as Switch['role']) ?? undefined,
     tags: JSON.parse(row.tags) as string[],
@@ -357,6 +359,15 @@ async function uniqueSwitchSlug(siteId: string, desired: string, excludeId?: str
   })
 }
 
+async function ensureGroupBelongsToSite(tx: TxClient, siteId: string, groupId: string | null | undefined): Promise<string | null> {
+  if (groupId === undefined || groupId === null) return groupId ?? null
+  const group = await tx.switchGroup.findUnique({ where: { id: groupId }, select: { site_id: true } })
+  if (!group || group.site_id !== siteId) {
+    throw createError({ statusCode: 422, message: 'Switch group does not belong to this site' })
+  }
+  return groupId
+}
+
 export const switchRepository = {
   async list(siteId?: string): Promise<Switch[]> {
     const rows = await prisma.switch.findMany({
@@ -413,7 +424,7 @@ export const switchRepository = {
     return this.getById(identifier)
   },
 
-  async create(data: Omit<Switch, 'id' | 'slug' | 'ports' | 'created_at' | 'updated_at' | 'is_favorite'> & { slug?: string }): Promise<Switch> {
+  async create(data: Omit<Switch, 'id' | 'slug' | 'ports' | 'created_at' | 'updated_at' | 'is_favorite' | 'group_id'> & { slug?: string; group_id?: string | null }): Promise<Switch> {
     // site_id may arrive as a UUID or a slug; resolve before any lookups.
     const siteUuid = await resolveSiteIdToUuid(data.site_id)
 
@@ -435,6 +446,8 @@ export const switchRepository = {
     const newId = randomUUID()
 
     const result = await prisma.$transaction(async (tx) => {
+      const groupId = await ensureGroupBelongsToSite(tx, siteUuid, data.group_id)
+
       await tx.switch.create({
         data: {
           id: newId,
@@ -449,6 +462,7 @@ export const switchRepository = {
           management_ip: data.management_ip ?? null,
           firmware_version: data.firmware_version ?? null,
           layout_template_id: data.layout_template_id ?? null,
+          group_id: groupId,
           stack_size: data.stack_size ?? null,
           role: data.role ?? null,
           tags: JSON.stringify(data.tags ?? []),
@@ -499,10 +513,13 @@ export const switchRepository = {
     }
     const id = current.id
     const expectedUpdatedAt = (data as Partial<{ expected_updated_at: string }>).expected_updated_at
+    const targetSiteId = data.site_id !== undefined
+      ? await resolveSiteIdToUuid(data.site_id)
+      : current.site_id
 
-    if (data.name && data.name !== current.name) {
+    if (data.name && (data.name !== current.name || targetSiteId !== current.site_id)) {
       const clash = await prisma.switch.findFirst({
-        where: { site_id: current.site_id, name: data.name, NOT: { id } }
+        where: { site_id: targetSiteId, name: data.name, NOT: { id } }
       })
       if (clash) {
         throw createError({ statusCode: 409, message: `Switch name '${data.name}' already exists in this site` })
@@ -512,9 +529,9 @@ export const switchRepository = {
     // Slug resolution: see siteRepository.update for the full rationale.
     let slug: string | undefined
     if (data.slug !== undefined && data.slug !== current.slug) {
-      slug = await uniqueSwitchSlug(current.site_id, slugify(data.slug), id)
-    } else if (data.name !== undefined && data.name !== current.name) {
-      slug = await uniqueSwitchSlug(current.site_id, slugify(data.name), id)
+      slug = await uniqueSwitchSlug(targetSiteId, slugify(data.slug), id)
+    } else if ((data.name !== undefined && data.name !== current.name) || (data.site_id !== undefined && targetSiteId !== current.site_id)) {
+      slug = await uniqueSwitchSlug(targetSiteId, slugify(data.name ?? current.name), id)
     }
 
     const templateChanged = data.layout_template_id !== undefined && data.layout_template_id !== current.layout_template_id
@@ -547,10 +564,16 @@ export const switchRepository = {
         })
       }
 
+      const groupId = await ensureGroupBelongsToSite(
+        tx,
+        targetSiteId,
+        data.group_id !== undefined ? data.group_id : (current.group_id ?? null)
+      )
+
       await tx.switch.update({
         where: { id },
         data: {
-          ...(data.site_id !== undefined ? { site_id: data.site_id } : {}),
+          ...(data.site_id !== undefined ? { site_id: targetSiteId } : {}),
           ...(data.name !== undefined ? { name: data.name } : {}),
           ...(data.model !== undefined ? { model: data.model ?? null } : {}),
           ...(data.manufacturer !== undefined ? { manufacturer: data.manufacturer ?? null } : {}),
@@ -560,6 +583,7 @@ export const switchRepository = {
           ...(data.management_ip !== undefined ? { management_ip: data.management_ip ?? null } : {}),
           ...(data.firmware_version !== undefined ? { firmware_version: data.firmware_version ?? null } : {}),
           ...(data.layout_template_id !== undefined ? { layout_template_id: data.layout_template_id ?? null } : {}),
+          ...(data.group_id !== undefined || (data.site_id !== undefined && targetSiteId !== current.site_id) ? { group_id: groupId } : {}),
           ...(data.stack_size !== undefined ? { stack_size: data.stack_size ?? null } : {}),
           ...(data.role !== undefined ? { role: data.role ?? null } : {}),
           ...(data.tags !== undefined ? { tags: JSON.stringify(data.tags) } : {}),
@@ -1035,6 +1059,7 @@ export const switchRepository = {
           management_ip: original.management_ip ?? null,
           firmware_version: original.firmware_version ?? null,
           layout_template_id: original.layout_template_id ?? null,
+          group_id: original.group_id ?? null,
           stack_size: original.stack_size ?? null,
           role: original.role ?? null,
           tags: JSON.stringify(original.tags ?? []),

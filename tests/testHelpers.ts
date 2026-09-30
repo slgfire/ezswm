@@ -145,6 +145,7 @@ export async function createTestPrisma(): Promise<TestPrismaContext> {
       prisma.network.deleteMany(),
       prisma.vlan.deleteMany(),
       prisma.switch.deleteMany(),
+      prisma.switchGroup.deleteMany(),
       prisma.layoutTemplate.deleteMany(),
       prisma.appSettings.deleteMany(),
       prisma.user.deleteMany(),
@@ -244,6 +245,7 @@ export async function seedSwitch(prisma: PrismaClient, overrides: {
   slug?: string
   name?: string
   layout_template_id?: string | null
+  group_id?: string | null
   stack_size?: number | null
 } = {}): Promise<{ id: string }> {
   const id = overrides.id ?? randomUUID()
@@ -259,6 +261,7 @@ export async function seedSwitch(prisma: PrismaClient, overrides: {
       configured_vlans: JSON.stringify([]),
       is_favorite: false,
       layout_template_id: overrides.layout_template_id ?? null,
+      group_id: overrides.group_id ?? null,
       stack_size: overrides.stack_size ?? null,
       created_at: nowIso(),
       updated_at: nowIso()

@@ -112,8 +112,9 @@ export const siteRepository = {
     const existing = (await prisma.site.findUnique({ where: { id: idOrSlug } }))
       ?? (await prisma.site.findUnique({ where: { slug: idOrSlug } }))
     if (!existing) return false
-    const [switches, vlans, networks] = await Promise.all([
+    const [switches, switchGroups, vlans, networks] = await Promise.all([
       prisma.switch.findMany({ where: { site_id: existing.id }, select: { id: true } }),
+      prisma.switchGroup.findMany({ where: { site_id: existing.id }, select: { id: true } }),
       prisma.vlan.findMany({ where: { site_id: existing.id }, select: { id: true } }),
       prisma.network.findMany({ where: { site_id: existing.id }, select: { id: true } })
     ])
@@ -153,6 +154,7 @@ export const siteRepository = {
           OR: [
             { entity_type: 'site', entity_id: existing.id },
             { entity_type: 'switch', entity_id: { in: switchIds } },
+            { entity_type: 'switch_group', entity_id: { in: switchGroups.map(group => group.id) } },
             { entity_type: 'port', entity_id: { in: portIds } },
             { entity_type: 'public_token', entity_id: { in: publicTokens.map(t => t.id) } },
             { entity_type: 'topology_layout', entity_id: existing.id },

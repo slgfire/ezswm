@@ -202,6 +202,32 @@
     "duplicate": "Switch duplizieren",
     "favorite": "Zu Favoriten hinzufügen",
     "unfavorite": "Aus Favoriten entfernen",
+    "groups": {
+      "manage": "Gruppen verwalten",
+      "manageDescription": "Switches für diesen Standort in Gruppen organisieren.",
+      "name": "Gruppenname",
+      "namePlaceholder": "z. B. Gebäude A",
+      "select": "Switch-Gruppe",
+      "assign": "Gruppe zuweisen",
+      "action": "Gruppe",
+      "assigned": "Gruppenzuordnung aktualisiert",
+      "assignConflict": "Der Switch wurde anderweitig geändert. Bitte erneut versuchen.",
+      "ungrouped": "Ohne Gruppe",
+      "groupedView": "Gruppiert",
+      "flatView": "Flach",
+      "empty": "Noch keine Gruppen. Erstellen Sie eine Gruppe, um Switches zu organisieren.",
+      "created": "Switch-Gruppe erstellt",
+      "updated": "Switch-Gruppe aktualisiert",
+      "deleted": "Switch-Gruppe gelöscht",
+      "deleteTitle": "Switch-Gruppe löschen?",
+      "deleteConfirm": "Gruppe \"{name}\" löschen?",
+      "deleteWithSwitches": "Gruppe \"{name}\" löschen? Die {count} Switch(es) werden keiner Gruppe zugeordnet.",
+      "collapse": "Gruppe einklappen",
+      "expand": "Gruppe ausklappen",
+      "moveUp": "Gruppe nach oben verschieben",
+      "moveDown": "Gruppe nach unten verschieben",
+      "dragGroup": "Ziehen, um Gruppen neu anzuordnen"
+    },
     "stackSize": "Stack-Größe",
     "stackMember": "Member {n}",
     "fields": {
@@ -706,7 +732,9 @@
       "defaultPortStatus": "Standard-Port-Status",
       "portSpeeds": "Verfügbare Port-Geschwindigkeiten",
       "patchPanelsEnabled": "Patchfelder aktivieren",
-      "patchPanelsEnabledHint": "Patchfeld-Verwaltung in Navigation und Suche anzeigen."
+      "patchPanelsEnabledHint": "Patchfeld-Verwaltung in Navigation und Suche anzeigen.",
+      "switchGroupsEnabled": "Switch-Gruppen aktivieren",
+      "switchGroupsEnabledHint": "Wenn deaktiviert, werden Switch-Gruppen-Verwaltung, Gruppierungsansichten und Zuweisungsmenüs ausgeblendet. Bestehende Gruppen und Zuweisungen bleiben erhalten und erscheinen wieder beim erneuten Aktivieren."
     },
     "account": {
       "title": "Konto",
