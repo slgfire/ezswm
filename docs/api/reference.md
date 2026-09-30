@@ -99,6 +99,25 @@ erDiagram
 | POST | `/api/switches/:id/duplicate` | Duplicate switch |
 | PUT | `/api/switches/sort` | Update switch sort order |
 
+Switch Groups toggle behavior for generic Switch write routes:
+
+- `POST /api/switches` and `PUT /api/switches/:id` stay available when Switch Groups are disabled.
+- If the validated request body explicitly carries `group_id` (including `null`) while disabled, the API returns `400`.
+- If `group_id` is not present in the body, normal switch create/update behavior is unchanged.
+
+## Switch Groups (settings-gated)
+
+All authenticated Switch Group routes return `404 Not found` while `switch_groups_enabled` is `false`.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/switch-groups` | List switch groups (`site_id` filter supported) |
+| POST | `/api/switch-groups` | Create switch group |
+| GET | `/api/switch-groups/:id` | Get switch group by UUID or slug (`siteId` query supported) |
+| PUT | `/api/switch-groups/:id` | Update switch group |
+| DELETE | `/api/switch-groups/:id` | Delete switch group |
+| PUT | `/api/switch-groups/sort` | Update switch-group sort order |
+
 ### Switch ports and configured VLANs
 
 | Method | Endpoint | Description |

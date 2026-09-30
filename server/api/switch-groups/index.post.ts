@@ -1,8 +1,11 @@
 import { switchGroupRepository } from '../../repositories/switchGroupRepository'
 import { createSwitchGroupSchema } from '../../validators/switchGroupSchemas'
 import { activityRepository } from '../../repositories/activityRepository'
+import { requireSwitchGroupsEnabled } from '../../utils/requireSwitchGroupsEnabled'
 
 export default defineEventHandler(async (event) => {
+  await requireSwitchGroupsEnabled()
+
   const body = await readBody(event)
   const parsed = createSwitchGroupSchema.parse(body)
 

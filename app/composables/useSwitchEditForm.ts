@@ -19,7 +19,7 @@ export function buildSwitchEditSaveBody(editForm: {
   stack_size: number
   tags: string[]
   [key: string]: unknown
-}, expectedUpdatedAt?: string): Record<string, unknown> {
+}, expectedUpdatedAt?: string, options?: { groupsEnabled?: boolean }): Record<string, unknown> {
   const body: Record<string, unknown> = { ...editForm, tags: [...editForm.tags] }
   for (const key of Object.keys(body)) {
     if (body[key] === '' && key !== 'layout_template_id') {
@@ -32,6 +32,9 @@ export function buildSwitchEditSaveBody(editForm: {
   }
   if (body.layout_template_id === '') delete body.layout_template_id
   if ('group_id' in body) body.group_id = body.group_id === '_ungrouped' ? null : body.group_id
+  // While the switch-groups feature is disabled the switch-groups API is
+  // gated (404) and plain metadata saves must not carry group_id at all.
+  if (options?.groupsEnabled === false) delete body.group_id
   body.stack_size = editForm.stack_size || 1
   if (expectedUpdatedAt) body.expected_updated_at = expectedUpdatedAt
   return body
@@ -94,7 +97,8 @@ export function useSwitchEditForm(
   item: Ref<Switch | null>,
   templates: Ref<LayoutTemplate[]>,
   updateFn: (body: Record<string, unknown>) => Promise<unknown>,
-  refreshFn?: () => Promise<void>
+  refreshFn?: () => Promise<void>,
+  options?: { groupsEnabled?: boolean }
 ) {
   const { t } = useI18n()
   const toast = useToast()
@@ -197,7 +201,7 @@ export function useSwitchEditForm(
   }
 
   function buildSaveBody(): Record<string, unknown> {
-    return buildSwitchEditSaveBody(editForm, item.value?.updated_at)
+    return buildSwitchEditSaveBody(editForm, item.value?.updated_at, { groupsEnabled: options?.groupsEnabled })
   }
 
   async function onSave() {

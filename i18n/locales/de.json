@@ -732,7 +732,9 @@
       "defaultPortStatus": "Standard-Port-Status",
       "portSpeeds": "Verfügbare Port-Geschwindigkeiten",
       "patchPanelsEnabled": "Patchfelder aktivieren",
-      "patchPanelsEnabledHint": "Patchfeld-Verwaltung in Navigation und Suche anzeigen."
+      "patchPanelsEnabledHint": "Patchfeld-Verwaltung in Navigation und Suche anzeigen.",
+      "switchGroupsEnabled": "Switch-Gruppen aktivieren",
+      "switchGroupsEnabledHint": "Wenn deaktiviert, werden Switch-Gruppen-Verwaltung, Gruppierungsansichten und Zuweisungsmenüs ausgeblendet. Bestehende Gruppen und Zuweisungen bleiben erhalten und erscheinen wieder beim erneuten Aktivieren."
     },
     "account": {
       "title": "Konto",

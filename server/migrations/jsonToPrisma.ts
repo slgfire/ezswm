@@ -222,7 +222,8 @@ export async function runJsonToPrismaMigration(opts: {
         port_speeds: stringifyOrDefault(settings.port_speeds, '[]'),
         setup_completed: pickBool(settings, 'setup_completed'),
         sites_initialized: pickBool(settings, 'sites_initialized'),
-        patch_panels_enabled: pickBool(settings, 'patch_panels_enabled')
+        patch_panels_enabled: pickBool(settings, 'patch_panels_enabled'),
+        switch_groups_enabled: pickBool(settings, 'switch_groups_enabled', true)
       } })
       counts.settings = 1
     } else {

@@ -351,4 +351,5 @@ model AppSettings {
   setup_completed     Boolean @default(false)
   sites_initialized   Boolean @default(false)
   patch_panels_enabled Boolean @default(false)
+  switch_groups_enabled Boolean @default(true)
 }

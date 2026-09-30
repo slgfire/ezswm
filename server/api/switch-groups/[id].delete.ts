@@ -1,8 +1,11 @@
 import { switchGroupRepository } from '../../repositories/switchGroupRepository'
 import { activityRepository } from '../../repositories/activityRepository'
 import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
+import { requireSwitchGroupsEnabled } from '../../utils/requireSwitchGroupsEnabled'
 
 export default defineEventHandler(async (event) => {
+  await requireSwitchGroupsEnabled()
+
   const id = event.context.params?.id
   if (!id) {
     throw createError({ statusCode: 400, statusMessage: 'Missing switch group ID' })

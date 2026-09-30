@@ -1438,6 +1438,10 @@ describe('updateSettingsSchema', () => {
   it('accepts patch_panels_enabled boolean', () => {
     expect(updateSettingsSchema.safeParse({ patch_panels_enabled: true }).success).toBe(true)
   })
+
+  it('accepts switch_groups_enabled boolean', () => {
+    expect(updateSettingsSchema.safeParse({ switch_groups_enabled: true }).success).toBe(true)
+  })
 })
 
 describe('patch panel schemas', () => {

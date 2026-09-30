@@ -78,7 +78,7 @@
         </div>
 
         <!-- Grouped/Flat segmented control (single-site only, icon-only) -->
-        <div v-if="siteId !== 'all'" class="flex items-center rounded-md border border-default p-0.5" role="group" :aria-label="`${$t('switches.groups.groupedView')} / ${$t('switches.groups.flatView')}`">
+        <div v-if="groupsUiEnabled" class="flex items-center rounded-md border border-default p-0.5" role="group" :aria-label="`${$t('switches.groups.groupedView')} / ${$t('switches.groups.flatView')}`">
           <UTooltip :text="$t('switches.groups.groupedView')">
             <UButton
               icon="i-heroicons-rectangle-group"
@@ -104,7 +104,7 @@
         <!-- Manage Groups (single-site only), wrapped in the same segmented
              container so height/padding/alignment match exactly. Keeps its
              text label: it is an action, not a toggle. -->
-        <div v-if="siteId !== 'all'" class="manage-groups-trigger flex items-center rounded-md border border-default p-0.5">
+        <div v-if="groupsUiEnabled" class="manage-groups-trigger flex items-center rounded-md border border-default p-0.5">
           <SwitchGroupManager
             :site-id="siteId"
             :groups="orderedGroups"
@@ -265,7 +265,7 @@
               :sw="sw"
               :site-id="siteId"
               variant="grid"
-              :groups="siteId !== 'all' ? orderedGroups : undefined"
+              :groups="cardGroups"
               @favorite="toggleFavorite"
               @print="printSingleSwitch"
               @duplicate="onDuplicate"
@@ -278,7 +278,7 @@
     </template>
 
     <!-- Grouped View: Single Site -->
-    <ClientOnly v-if="!loading && filteredItems.length > 0 && siteId !== 'all' && groupViewMode === 'grouped'">
+    <ClientOnly v-if="!loading && filteredItems.length > 0 && siteId !== 'all' && effectiveGroupViewMode === 'grouped'">
       <draggable
         v-model="visibleGroups"
         item-key="id"
@@ -336,7 +336,7 @@
                         variant="grid"
                         :draggable="true"
                         :uniform="true"
-                        :groups="siteId !== 'all' ? orderedGroups : undefined"
+                        :groups="cardGroups"
                         @favorite="toggleFavorite"
                         @print="printSingleSwitch"
                         @duplicate="onDuplicate"
@@ -358,7 +358,7 @@
                     :sw="sw"
                     :site-id="siteId"
                     variant="list"
-                    :groups="siteId !== 'all' ? orderedGroups : undefined"
+                    :groups="cardGroups"
                     @favorite="toggleFavorite"
                     @print="printSingleSwitch"
                     @duplicate="onDuplicate"
@@ -414,7 +414,7 @@
                     variant="grid"
                     :draggable="true"
                     :uniform="true"
-                    :groups="siteId !== 'all' ? orderedGroups : undefined"
+                    :groups="cardGroups"
                     @favorite="toggleFavorite"
                     @print="printSingleSwitch"
                     @duplicate="onDuplicate"
@@ -436,7 +436,7 @@
                 :sw="sw"
                 :site-id="siteId"
                 variant="list"
-                :groups="siteId !== 'all' ? orderedGroups : undefined"
+                :groups="cardGroups"
                 @favorite="toggleFavorite"
                 @print="printSingleSwitch"
                 @duplicate="onDuplicate"
@@ -455,7 +455,7 @@
     </ClientOnly>
 
     <!-- Grid View: Draggable (Single Site) -->
-    <ClientOnly v-if="!loading && filteredItems.length > 0 && viewMode === 'grid' && siteId !== 'all' && groupViewMode === 'flat'">
+    <ClientOnly v-if="!loading && filteredItems.length > 0 && viewMode === 'grid' && siteId !== 'all' && effectiveGroupViewMode === 'flat'">
       <draggable
         v-model="sortedItems"
         item-key="id"
@@ -472,7 +472,7 @@
               :site-id="siteId"
               variant="grid"
               :draggable="true"
-              :groups="siteId !== 'all' ? orderedGroups : undefined"
+              :groups="cardGroups"
               @favorite="toggleFavorite"
               @print="printSingleSwitch"
               @duplicate="onDuplicate"
@@ -490,7 +490,7 @@
     </ClientOnly>
 
     <!-- List View (all-sites or single-site flat; grouped list renders inside group sections above) -->
-    <div v-if="!loading && filteredItems.length > 0 && viewMode === 'list' && (siteId === 'all' || groupViewMode === 'flat')">
+    <div v-if="!loading && filteredItems.length > 0 && viewMode === 'list' && (siteId === 'all' || effectiveGroupViewMode === 'flat')">
       <div v-for="group in groupedItems" :key="group.siteId" class="mb-6">
         <div v-if="groupedItems.length > 1" class="mb-3 flex items-center gap-3">
           <UIcon name="i-heroicons-building-office-2" class="h-4 w-4 text-gray-500" />
@@ -503,7 +503,7 @@
               :sw="sw"
               :site-id="siteId"
               variant="list"
-              :groups="siteId !== 'all' ? orderedGroups : undefined"
+              :groups="cardGroups"
               @favorite="toggleFavorite"
               @print="printSingleSwitch"
               @duplicate="onDuplicate"
@@ -621,10 +621,20 @@ async function saveSortOrder() {
 
 // --- Switch groups (single-site only) ---
 
+// Global feature toggle (Settings > General). Default ON; when disabled the
+// switch-groups API is gated (404), so we skip fetching groups entirely and
+// hide all group UI. Groups and assignments stay intact server-side.
+const { settings: appSettings, fetch: fetchAppSettings } = useSettings()
+const switchGroupsEnabled = computed(() => appSettings.value?.switch_groups_enabled ?? true)
+const groupsUiEnabled = computed(() => switchGroupsEnabled.value && siteId.value !== 'all')
+
 const groups = ref<SwitchGroup[]>([])
 const orderedGroups = computed(() =>
   [...groups.value].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
 )
+// undefined hides the SwitchCard assignment menu; with the feature disabled
+// every card must behave like the all-sites overview.
+const cardGroups = computed(() => groupsUiEnabled.value ? orderedGroups.value : undefined)
 
 // Groups that currently have at least one visible (filtered) switch, in
 // persisted group order. Drives the draggable group-header list. The setter
@@ -688,6 +698,13 @@ function saveGroupUiState(sid: string, state: GroupUiState) {
 const groupViewMode = ref<'grouped' | 'flat'>('grouped')
 const expandedGroups = ref<string[] | null>(null)
 
+// Render mode actually shown: with the feature disabled we present the flat
+// view WITHOUT overwriting the persisted localStorage preference, so the
+// user's grouped/flat choice survives a temporary disable.
+const effectiveGroupViewMode = computed<'grouped' | 'flat'>(() =>
+  groupsUiEnabled.value ? groupViewMode.value : 'flat'
+)
+
 if (siteId.value !== 'all') {
   const state = loadGroupUiState(siteId.value)
   groupViewMode.value = state.viewMode
@@ -719,7 +736,7 @@ function toggleGroupExpanded(gid: string) {
 }
 
 async function fetchGroups() {
-  if (siteId.value === 'all') return
+  if (siteId.value === 'all' || !switchGroupsEnabled.value) return
   try {
     const response = await $fetch<{ data: SwitchGroup[] }>('/api/switch-groups', {
       query: { site_id: siteId.value }
@@ -908,10 +925,12 @@ async function loadData() {
 }
 
 onMounted(async () => {
-  const fetches: Promise<void>[] = [loadData()]
+  const fetches: Promise<void>[] = [loadData(), fetchAppSettings()]
   if (siteId.value === 'all') fetches.push(fetchAllSites())
-  else fetches.push(fetchGroups())
   await Promise.all(fetches)
+  // fetchGroups runs only after settings resolve so the feature gate never
+  // hits the 404-guarded switch-groups API while disabled.
+  await fetchGroups()
   pageLoading.value = false
 })
 </script>

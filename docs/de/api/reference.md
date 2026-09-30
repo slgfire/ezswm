@@ -99,6 +99,25 @@ erDiagram
 | POST | `/api/switches/:id/duplicate` | Switch duplizieren |
 | PUT | `/api/switches/sort` | Sortierreihenfolge aktualisieren |
 
+Switch-Gruppen-Toggle-Verhalten für generische Switch-Write-Routen:
+
+- `POST /api/switches` und `PUT /api/switches/:id` bleiben verfügbar, wenn Switch-Gruppen deaktiviert sind.
+- Wenn der validierte Request-Body explizit `group_id` enthält (einschließlich `null`), liefert die API im deaktivierten Zustand `400`.
+- Ist `group_id` im Body nicht vorhanden, bleibt das normale Switch-Erstellen/-Aktualisieren unverändert.
+
+## Switch-Gruppen (settings-gated)
+
+Alle authentifizierten Switch-Gruppen-Routen liefern `404 Not found`, solange `switch_groups_enabled` auf `false` steht.
+
+| Methode | Endpunkt | Beschreibung |
+|---------|----------|--------------|
+| GET | `/api/switch-groups` | Switch-Gruppen auflisten (`site_id`-Filter unterstützt) |
+| POST | `/api/switch-groups` | Switch-Gruppe erstellen |
+| GET | `/api/switch-groups/:id` | Switch-Gruppe per UUID oder Slug abrufen (`siteId`-Query unterstützt) |
+| PUT | `/api/switch-groups/:id` | Switch-Gruppe aktualisieren |
+| DELETE | `/api/switch-groups/:id` | Switch-Gruppe löschen |
+| PUT | `/api/switch-groups/sort` | Sortierreihenfolge der Switch-Gruppen aktualisieren |
+
 ### Switch-Ports und konfigurierte VLANs
 
 | Methode | Endpunkt | Beschreibung |

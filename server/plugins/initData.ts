@@ -97,7 +97,8 @@ export default defineNitroPlugin(async () => {
         port_speeds: JSON.stringify(['100M', '1G', '2.5G', '10G', '100G']),
         setup_completed: false,
         sites_initialized: false,
-        patch_panels_enabled: false
+        patch_panels_enabled: false,
+        switch_groups_enabled: true
       }
     })
   }

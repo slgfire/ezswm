@@ -1,7 +1,10 @@
 import { switchGroupRepository } from '../../repositories/switchGroupRepository'
 import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
+import { requireSwitchGroupsEnabled } from '../../utils/requireSwitchGroupsEnabled'
 
 export default defineEventHandler(async (event) => {
+  await requireSwitchGroupsEnabled()
+
   const query = getQuery(event)
   const siteId = await resolveSiteIdQuery(query.site_id as string | undefined)
   const search = query.search as string | undefined

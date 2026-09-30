@@ -732,7 +732,9 @@
       "defaultPortStatus": "Default port status",
       "portSpeeds": "Available port speeds",
       "patchPanelsEnabled": "Enable Patch Panels",
-      "patchPanelsEnabledHint": "Show patch panel management in navigation and search."
+      "patchPanelsEnabledHint": "Show patch panel management in navigation and search.",
+      "switchGroupsEnabled": "Enable Switch Groups",
+      "switchGroupsEnabledHint": "When disabled, switch group management, grouping views, and assignment menus are hidden. Existing groups and assignments are preserved and reappear when re-enabled."
     },
     "account": {
       "title": "Account",

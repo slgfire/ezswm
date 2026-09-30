@@ -2,6 +2,24 @@
 
 ## Latest Stage
 
+Date: 2026-09-29
+Stage: Switch Groups toggle documentation update
+Status: Complete
+Version: 0.39.0
+
+### Docs: Switch Groups default-on + disable/re-enable behavior clarified (v0.39.0)
+
+- Updated EN/DE user guides to document that Switch Groups are enabled by default.
+- Documented global Settings toggle behavior for Switch Groups (disable/re-enable).
+- Clarified disabled-state behavior: group UI is hidden and group-management endpoints are gated, while stored groups and switch assignments are retained and restored on re-enable.
+- Clarified assignment and group-manager behavior in the Switch Groups section (site-scoped grouping, ordering constraints, delete unassign behavior).
+- Added screenshot references in both guides for settings toggle, grouped view, and assignment menu.
+- Updated EN/DE API reference to document:
+  - `/api/switch-groups/*` routes return 404 when Switch Groups are disabled.
+  - Generic switch create/update routes remain available, but requests carrying `group_id` return 400 while disabled.
+
+---
+
 Date: 2026-09-25
 Stage: Per-site switch groups documentation update
 Status: Complete

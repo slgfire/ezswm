@@ -206,7 +206,11 @@ Die Toolbar der Switch-Liste bietet drei Filter-Dropdowns (Standort, Rolle, Tags
 
 ### Switch-Gruppen (pro Site)
 
-Switch-Gruppen werden pro Site verwaltet. In einer site-spezifischen Switch-Liste kannst du Gruppen anlegen und Switches einer Gruppe zuweisen.
+Switch-Gruppen sind **standardmäßig aktiviert** und werden pro Site verwaltet. In einer site-spezifischen Switch-Liste kannst du Gruppen anlegen und Switches einer Gruppe zuweisen.
+
+![Switch-Gruppen gruppierte Ansicht](/images/screenshot-switch-groups-grouped-view.png)
+
+![Switch-Gruppen Zuweisungsmenü](/images/screenshot-switch-groups-assignment-menu.png)
 
 - **Gruppenzuweisung** -- jeder Switch kann für diese Site genau einer Gruppe zugewiesen werden.
 - **Ansichtsmodus (lokal)** -- wähle zwischen gruppierter und flacher Anzeige in dieser Site. Diese Einstellung ist lokal für diese Site und beeinflusst andere Sites nicht.
@@ -214,6 +218,8 @@ Switch-Gruppen werden pro Site verwaltet. In einer site-spezifischen Switch-List
 - **Sortierregeln** -- du kannst Gruppen umsortieren; Switches lassen sich nur innerhalb ihrer aktuellen Gruppe umsortieren.
 - **Position Ungruppiert** -- ungruppierte Switches bleiben in einem festen Abschnitt **Ungruppiert** am Ende.
 - **Löschen einer Gruppe** -- beim Löschen einer Gruppe werden keine Switches gelöscht; die Switches werden nur aus der Gruppe entfernt.
+
+Du kannst Switch-Gruppen global in den **Einstellungen** deaktivieren/reaktivieren. Im deaktivierten Zustand wird gruppenbezogene UI ausgeblendet und die Group-Management-API wird gesperrt. Bereits vorhandene Gruppen und Switch-Zuweisungen bleiben in der Datenbank erhalten und sind nach dem Reaktivieren unverändert wieder sichtbar.
 
 In der Ansicht **Alle Standorte** bleibt das Verhalten unverändert zu vorherigen Releases (keine per-Site-Gruppenverwaltung in dieser globalen Ansicht).
 
@@ -648,6 +654,10 @@ Backups sind JSON-Dumps der zugrundeliegenden SQLite-Tabellen, ein Array pro Ent
 Öffne die Einstellungen über das Benutzermenü in der Kopfleiste oder die Seitenleiste. Allgemeine Einstellungen umfassen die anwendungsweite Konfiguration.
 
 In den allgemeinen Einstellungen kannst du die optionale Patch-Panel-Funktion aktivieren oder deaktivieren.
+
+Switch-Gruppen werden ebenfalls in den allgemeinen Einstellungen gesteuert (Standard: aktiviert). Beim Deaktivieren wird die Switch-Gruppen-Verwaltung in der UI ausgeblendet und die Gruppen-Endpunkte werden abgeschaltet, ohne bestehende Gruppen oder Mitgliedschaften zu löschen.
+
+![Switch-Gruppen Einstellungsschalter](/images/screenshot-switch-groups-settings-toggle.png)
 
 ### Kontoeinstellungen
 

@@ -471,6 +471,14 @@ const { items: templates, fetch: fetchTemplates } = useLayoutTemplates()
 const { items: vlans, fetch: fetchVlans } = useVlans()
 const { items: lagGroups, fetch: fetchLags, lagById, lagByPortId, update: updateLag, remove: removeLag } = useLagGroups(id, siteId)
 
+// Global switch-groups toggle: while disabled the switch save body must not
+// carry group_id (the groups API is 404-gated). Default ON until settings
+// resolve; shared useState means no extra request if settings were already
+// fetched elsewhere. Passed as a getter so the edit form always reads the
+// current value at save time, not a setup-time snapshot.
+const { settings: appSettings, fetch: fetchAppSettings } = useSettings()
+const switchGroupsEnabled = computed(() => appSettings.value?.switch_groups_enabled ?? true)
+
 const lagSlideoverRef = ref<{ openEdit: (lag: LAGGroup, removePortId?: string) => void; openCreate: (ports: string[]) => void } | null>(null)
 const showLagDeleteDialog = ref(false)
 const lagToDelete = ref<LAGGroup | null>(null)
@@ -491,7 +499,7 @@ function getPortLabel(portId: string): string {
   return port.label || `${port.unit}/${port.index}`
 }
 
-const { editMode, saving, editFormRef, editTagInput, editForm, stackSizeOptions, editRoleOptions, templateOptions, openEditPanel, validateEdit, onSave, addEditTag, removeEditTag, requestCloseEdit, onEditOpenChange, showTemplateConfirm, removedPorts, removesAllPorts, pendingTemplateName, pendingStackOnlyChange, confirmTemplateChange } = useSwitchEditForm(item, templates, updateAndSyncRoute, fetchSwitch)
+const { editMode, saving, editFormRef, editTagInput, editForm, stackSizeOptions, editRoleOptions, templateOptions, openEditPanel, validateEdit, onSave, addEditTag, removeEditTag, requestCloseEdit, onEditOpenChange, showTemplateConfirm, removedPorts, removesAllPorts, pendingTemplateName, pendingStackOnlyChange, confirmTemplateChange } = useSwitchEditForm(item, templates, updateAndSyncRoute, fetchSwitch, { get groupsEnabled() { return switchGroupsEnabled.value } })
 
 const MAX_REMOVED_PORT_CHIPS = 24
 const templateConfirmTitle = computed(() => pendingStackOnlyChange.value
@@ -721,5 +729,6 @@ onMounted(() => {
   fetchVlans(siteParams.value)
   fetchLags()
   fetchActivity()
+  if (!appSettings.value) fetchAppSettings()
 })
 </script>

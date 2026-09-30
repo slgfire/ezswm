@@ -13,6 +13,7 @@ function rowToSettings(row: {
   setup_completed: boolean
   sites_initialized: boolean
   patch_panels_enabled?: boolean
+  switch_groups_enabled?: boolean
 }): AppSettings {
   return {
     app_name: row.app_name,
@@ -22,7 +23,8 @@ function rowToSettings(row: {
     port_speeds: JSON.parse(row.port_speeds) as string[],
     setup_completed: row.setup_completed,
     sites_initialized: row.sites_initialized,
-    patch_panels_enabled: row.patch_panels_enabled ?? false
+    patch_panels_enabled: row.patch_panels_enabled ?? false,
+    switch_groups_enabled: row.switch_groups_enabled ?? true
   }
 }
 
@@ -47,7 +49,8 @@ export const settingsRepository = {
         port_speeds: JSON.stringify(merged.port_speeds),
         setup_completed: merged.setup_completed,
         sites_initialized: merged.sites_initialized,
-        patch_panels_enabled: merged.patch_panels_enabled
+        patch_panels_enabled: merged.patch_panels_enabled,
+        switch_groups_enabled: merged.switch_groups_enabled
       },
       update: {
         app_name: merged.app_name,
@@ -57,7 +60,8 @@ export const settingsRepository = {
         port_speeds: JSON.stringify(merged.port_speeds),
         setup_completed: merged.setup_completed,
         sites_initialized: merged.sites_initialized,
-        patch_panels_enabled: merged.patch_panels_enabled
+        patch_panels_enabled: merged.patch_panels_enabled,
+        switch_groups_enabled: merged.switch_groups_enabled
       }
     })
     return rowToSettings(row)

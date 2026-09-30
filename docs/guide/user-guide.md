@@ -206,7 +206,11 @@ The switch list toolbar provides three filter dropdowns (location, role, tags). 
 
 ### Switch Groups (per site)
 
-Switch groups are managed per site. In a site-scoped switch list, you can create groups and assign switches to a group.
+Switch Groups are **enabled by default** and managed per site. In a site-scoped switch list, you can create groups and assign switches to a group.
+
+![Switch Groups grouped view](/images/screenshot-switch-groups-grouped-view.png)
+
+![Switch Group assignment menu](/images/screenshot-switch-groups-assignment-menu.png)
 
 - **Group assignment** -- each switch can be assigned to one group for that site.
 - **Display mode (local)** -- choose between grouped and flat display in that site. This preference is local to that site and does not change other sites.
@@ -214,6 +218,8 @@ Switch groups are managed per site. In a site-scoped switch list, you can create
 - **Ordering rules** -- you can reorder groups, and reorder switches only inside their current group.
 - **Ungrouped placement** -- ungrouped switches stay in a fixed **Ungrouped** section at the bottom.
 - **Delete behavior** -- deleting a group does not delete switches; it only unassigns those switches from the removed group.
+
+You can globally disable/re-enable Switch Groups in **Settings**. When disabled, group-related UI is hidden and group-management API endpoints are gated. Existing groups and switch-to-group assignments are retained in the database and become available again unchanged after re-enabling.
 
 When viewing **All Sites**, switch-group behavior is unchanged from previous releases (no per-site group management controls in that global view).
 
@@ -648,6 +654,10 @@ Backups are JSON dumps of the underlying SQLite tables, one array per entity, wi
 Access settings via the user menu in the header or the sidebar. General settings cover application-level configuration.
 
 Use General Settings to enable or disable the optional Patch Panels feature.
+
+Switch Groups are also controlled in General Settings (default: enabled). Turning the toggle off hides Switch Group management in the UI and disables group endpoints, without deleting any existing groups or memberships.
+
+![Switch Groups setting toggle](/images/screenshot-switch-groups-settings-toggle.png)
 
 ### Account Settings
 
