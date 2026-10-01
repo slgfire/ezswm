@@ -5,7 +5,8 @@ hero:
   text: Switch & IP Management
   tagline: Lightweight, database-free infrastructure documentation for LAN parties and homelabs
   image:
-    src: /logo.png
+    light: /logo.svg
+    dark: /logo-dark.svg
     alt: ezSWM Logo
   actions:
     - theme: brand

@@ -4,6 +4,8 @@ title: Benutzerhandbuch
 
 # Benutzerhandbuch
 
+Das Switch-Logo kennzeichnet ezSWM in der Seitenleiste, bei Anmeldung und Einrichtung sowie im Browser-Tab. Die eingeklappte Seitenleiste zeigt nur das Symbol; im Dunkelmodus ist der Schriftzug hell.
+
 ## Erste Schritte
 
 ### Erste Anmeldung
