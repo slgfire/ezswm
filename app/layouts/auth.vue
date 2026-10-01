@@ -18,8 +18,9 @@
 
     <div class="w-full max-w-md">
       <div class="mb-8 text-center">
-        <h2 class="font-display text-3xl font-bold">
-          <span class="text-primary-500">ez</span><span class="text-gray-900 dark:text-white">SWM</span>
+        <h2>
+          <img src="/logo.svg" alt="ezSWM" class="mx-auto h-24 w-72 object-contain dark:hidden">
+          <img src="/logo-dark.svg" alt="ezSWM" class="mx-auto hidden h-24 w-72 object-contain dark:block">
         </h2>
         <p class="mt-1 font-mono text-sm text-gray-400 dark:text-gray-500">Switch &amp; IP Management</p>
       </div>

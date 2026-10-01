@@ -4,6 +4,8 @@ title: User Guide
 
 # User Guide
 
+The switch logo identifies ezSWM in the sidebar, login/setup screens, and browser tab. The collapsed sidebar shows only the symbol; dark mode uses a light wordmark.
+
 ## Getting Started
 
 ### First Login

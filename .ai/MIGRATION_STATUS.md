@@ -2,6 +2,20 @@
 
 ## Latest Stage
 
+Date: 2026-10-01
+Stage: Refresh ezSWM branding
+Status: Implemented; builds verified, live runtime and Docker validation pending
+Version: 0.39.1
+
+- Added true vector logo and square switch emblem with transparent backgrounds.
+- Replaced sidebar and authentication branding, including collapsed-sidebar and dark-mode variants.
+- Updated README and EN/DE documentation branding and regenerated PNG/ICO assets.
+- Fixed the documentation favicon URL for its `/ezswm/` deployment base.
+- Validation: SVG previews on light/dark backgrounds, vector structure, PNG dimensions, focused ESLint (zero warnings), documentation build, and production build passed. Production build required `NODE_OPTIONS=--max-old-space-size=4096` after the default heap limit was exhausted.
+- Environment limits: development runtime could not start (`uv_interface_addresses` / socket restriction); Docker is not installed. CI/runtime checks remain required.
+
+---
+
 Date: 2026-09-29
 Stage: Switch Groups toggle documentation update
 Status: Complete

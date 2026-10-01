@@ -8,8 +8,12 @@
   >
     <!-- Logo (single header row) -->
     <template #header="{ collapsed }">
-      <NuxtLink :to="sitePrefix" class="font-display text-xl font-bold">
-        <span class="text-primary-500">ez</span><span v-if="!collapsed" class="tracking-tight text-gray-900 dark:text-white">SWM</span>
+      <NuxtLink :to="sitePrefix" class="flex items-center">
+        <img v-if="collapsed" src="/favicon.svg" alt="ezSWM" class="size-8">
+        <template v-else>
+          <img src="/logo.svg" alt="ezSWM" class="h-12 w-36 object-contain dark:hidden">
+          <img src="/logo-dark.svg" alt="ezSWM" class="hidden h-12 w-36 object-contain dark:block">
+        </template>
       </NuxtLink>
     </template>
 

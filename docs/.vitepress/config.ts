@@ -13,7 +13,7 @@ export default withMermaid(
     lastUpdated: true,
 
     head: [
-      ['link', { rel: 'icon', href: '/favicon.svg' }],
+      ['link', { rel: 'icon', href: '/ezswm/favicon.svg' }],
     ],
 
     locales: {
@@ -123,7 +123,7 @@ export default withMermaid(
     },
 
     themeConfig: {
-      logo: '/logo.png',
+      logo: { light: '/logo.svg', dark: '/logo-dark.svg', alt: 'ezSWM' },
 
       editLink: {
         pattern: `${GITHUB_REPO}/edit/main/docs/:path`,
