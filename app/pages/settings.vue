@@ -241,7 +241,7 @@
                       :disabled="!oidcConfig?.client_secret_configured"
                       :label="$t('settings.oidc.clearSecret')"
                     />
-                    <div class="rounded-lg bg-gray-50 px-3 py-3 dark:bg-gray-950/60">
+                    <div class="rounded-lg bg-muted px-3 py-3">
                       <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <UFormField :label="$t('settings.oidc.callbackUrl')" class="min-w-0 flex-1">
                           <UInput :model-value="oidcConfig?.callback_url || ''" readonly class="w-full font-mono text-xs" />
@@ -257,19 +257,19 @@
                           {{ $t('settings.oidc.copyCallback') }}
                         </UButton>
                       </div>
-                      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ $t('settings.oidc.callbackHint') }}</p>
+                      <p class="mt-2 text-xs text-muted">{{ $t('settings.oidc.callbackHint') }}</p>
                     </div>
                   </div>
                 </section>
 
                 <section class="rounded-xl border border-gray-200 bg-default p-4 sm:p-6 dark:border-gray-800">
                   <div class="mb-5 flex items-start gap-3">
-                    <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-500">
+                    <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-elevated text-muted">
                       <UIcon name="i-lucide-users-round" class="size-5" />
                     </div>
                     <div>
                       <h3 class="font-semibold">{{ $t('settings.oidc.groupsSection') }}</h3>
-                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $t('settings.oidc.groupsHint') }}</p>
+                      <p class="mt-1 text-xs text-muted">{{ $t('settings.oidc.groupsHint') }}</p>
                     </div>
                   </div>
 
@@ -317,7 +317,7 @@
                       </div>
                     </div>
 
-                    <UAlert color="info" variant="subtle" icon="i-lucide-info" :description="$t('settings.oidc.adminWins')" />
+                    <UAlert color="neutral" variant="subtle" icon="i-lucide-info" :description="$t('settings.oidc.adminWins')" />
 
                     <div class="rounded-lg border border-dashed border-gray-300 p-3 dark:border-gray-700">
                       <div class="mb-3 flex items-start justify-between gap-3">
