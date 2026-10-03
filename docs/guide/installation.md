@@ -63,8 +63,21 @@ docker compose -f compose.dev.yaml up --build -d
 | `DATA_DIR` | No | `/app/data` | Directory for application data (SQLite file, WAL, and the JSON migration archive from older installs). |
 | `DATABASE_URL` | No | `file:/app/data/db.sqlite` | SQLite location. Override only if you want the DB somewhere other than next to the data directory. |
 | `PUID` / `PGID` | No | `1000` / `1000` | UID/GID the container process runs as. Set `PUID=0 PGID=0` to run as root. |
+| `OIDC_ENCRYPTION_KEY` (container: `NUXT_OIDC_ENCRYPTION_KEY`) | Only with a client secret | (empty) | Server-only key that encrypts the OIDC client secret at rest. See [OIDC / SSO](#oidc-sso-optional). |
+| `PUBLIC_BASE_URL` (container: `NUXT_PUBLIC_BASE_URL`) | No | (empty) | Canonical public origin used to build the OIDC callback URL. |
 
 In Docker, environment variables that configure Nuxt runtime must use the `NUXT_` prefix. Use `NUXT_JWT_SECRET` inside the container/compose `environment:` block, not plain `JWT_SECRET`. The official compose file only uses host-side `JWT_SECRET` as a convenience and maps it to `NUXT_JWT_SECRET`.
+
+### OIDC / SSO (optional)
+
+Single sign-on is configured in the UI (**Settings → Authentication**); no provider settings live in environment variables. Two optional variables support it. Both may stay blank — ezSWM starts normally and local login is unaffected.
+
+- **`OIDC_ENCRYPTION_KEY`** (`NUXT_OIDC_ENCRYPTION_KEY` is also accepted): server-only key that encrypts the stored client secret. **It is only needed when you configure a client secret (confidential client); a public client without a secret needs no key.** Canonical format is standard base64 of 32 random bytes: `openssl rand -base64 32`. A 64-character hex string is also accepted. It must be different from `JWT_SECRET` (there is no fallback to the JWT secret). If a secret is configured and the key is missing, invalid, or does not match the one used to save the secret, only the secret-dependent SSO is disabled (fail closed); local login and recovery are unaffected.
+- **`PUBLIC_BASE_URL`** (`NUXT_PUBLIC_BASE_URL` is also accepted): canonical origin such as `https://ezswm.example.com` — origin only, no path, credentials, query or fragment. The callback URL is `<PUBLIC_BASE_URL>/api/auth/oidc/callback`. Behind a reverse proxy, set this explicitly; ezSWM never trusts unvalidated `X-Forwarded-*` host headers.
+
+The official compose files forward `OIDC_ENCRYPTION_KEY` and `PUBLIC_BASE_URL` from the host environment as the `NUXT_` variables (blank by default).
+
+**Backups:** backups contain the client secret only as ciphertext, and the key is not part of them — store it separately. Restoring with the exact same key restores the secret; with a different key SSO is switched off (the enabled flag is cleared); the local admin must re-enter the client secret **and** re-enable SSO. Pending login transactions are never part of a backup.
 
 The container's `ENTRYPOINT` runs `prisma migrate deploy` before starting the server, so schema upgrades apply themselves on each container start — no separate migration step.
 

@@ -63,8 +63,21 @@ docker compose -f compose.dev.yaml up --build -d
 | `DATA_DIR` | Nein | `/app/data` | Verzeichnis für Anwendungsdaten (SQLite-Datei, WAL und das JSON-Migrations-Archiv von älteren Installs). |
 | `DATABASE_URL` | Nein | `file:/app/data/db.sqlite` | SQLite-Pfad. Nur überschreiben, wenn du die DB außerhalb von `DATA_DIR` ablegen willst. |
 | `PUID` / `PGID` | Nein | `1000` / `1000` | UID/GID unter der der Container-Prozess läuft. Setze `PUID=0 PGID=0` um als root zu laufen. |
+| `OIDC_ENCRYPTION_KEY` (Container: `NUXT_OIDC_ENCRYPTION_KEY`) | Nur mit Client-Secret | (leer) | Serverseitiger Schlüssel, der das OIDC-Client-Secret verschlüsselt speichert. Siehe [OIDC / SSO](#oidc-sso-optional). |
+| `PUBLIC_BASE_URL` (Container: `NUXT_PUBLIC_BASE_URL`) | Nein | (leer) | Kanonischer öffentlicher Origin für die OIDC-Callback-URL. |
 
 In Docker müssen Umgebungsvariablen, die die Nuxt-Laufzeit konfigurieren, das Präfix `NUXT_` verwenden. Nutze im Container/Compose-`environment:`-Block `NUXT_JWT_SECRET`, nicht nur `JWT_SECRET`. Die offizielle Compose-Datei nutzt host-seitig `JWT_SECRET` nur als Komfortvariable und mapped sie auf `NUXT_JWT_SECRET`.
+
+### OIDC / SSO (optional)
+
+Single Sign-On wird in der Oberfläche konfiguriert (**Einstellungen → Authentifizierung**); Provider-Einstellungen stehen nicht in Umgebungsvariablen. Zwei optionale Variablen unterstützen es. Beide dürfen leer bleiben — ezSWM startet normal und der lokale Login bleibt unberührt.
+
+- **`OIDC_ENCRYPTION_KEY`** (auch `NUXT_OIDC_ENCRYPTION_KEY`): serverseitiger Schlüssel zur Verschlüsselung des gespeicherten Client-Secrets. **Er wird nur benötigt, wenn ein Client-Secret konfiguriert ist (vertraulicher Client); ein öffentlicher Client ohne Secret braucht keinen Schlüssel.** Kanonisches Format: Standard-Base64 von 32 Zufallsbytes: `openssl rand -base64 32`. Ein 64-stelliger Hex-String wird ebenfalls akzeptiert. Er muss sich von `JWT_SECRET` unterscheiden (kein Fallback auf das JWT-Secret). Ist ein Secret konfiguriert und der Schlüssel fehlt, ist ungültig oder passt nicht zu dem beim Speichern verwendeten, wird nur das vom Secret abhängige SSO deaktiviert (fail closed); lokaler Login und Wiederherstellung bleiben unberührt.
+- **`PUBLIC_BASE_URL`** (auch `NUXT_PUBLIC_BASE_URL`): kanonischer Origin wie `https://ezswm.example.com` — nur Origin, kein Pfad, keine Zugangsdaten, keine Query, kein Fragment. Die Callback-URL lautet `<PUBLIC_BASE_URL>/api/auth/oidc/callback`. Hinter einem Reverse Proxy explizit setzen; ezSWM vertraut niemals ungeprüften `X-Forwarded-*`-Host-Headern.
+
+Die offiziellen Compose-Dateien leiten `OIDC_ENCRYPTION_KEY` und `PUBLIC_BASE_URL` aus der Host-Umgebung als `NUXT_`-Variablen weiter (standardmäßig leer).
+
+**Backups:** Backups enthalten das Client-Secret nur als Chiffrat, der Schlüssel gehört nicht dazu — separat aufbewahren. Mit exakt demselben Schlüssel wird das Secret wiederhergestellt; mit einem anderen wird SSO abgeschaltet (das Aktiviert-Flag wird zurückgesetzt); der lokale Admin muss das Client-Secret neu eingeben **und** SSO wieder aktivieren. Laufende Login-Transaktionen sind nie Teil eines Backups.
 
 Der ENTRYPOINT des Containers ruft beim Start `prisma migrate deploy` auf, bevor der Server hochfährt. Schema-Upgrades werden also automatisch beim Container-Start angewandt — kein separater Migrations-Schritt nötig.
 
