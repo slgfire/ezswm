@@ -1,10 +1,6 @@
-interface AuthUser {
-  id: string
-  username: string
-  display_name: string
-  role: string
-  language: string
-}
+import type { SafeUser } from '../../types/user'
+
+type AuthUser = SafeUser
 
 interface SetupStatus {
   setup_completed: boolean

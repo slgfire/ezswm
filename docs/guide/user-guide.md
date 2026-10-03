@@ -55,7 +55,7 @@ Navigate to **Layout Templates** in the sidebar and click **Create Template**. A
 Search for any device by manufacturer or model name (e.g., "Cisco 9200" or "MikroTik CRS328"). Select a device to see a port grid preview. Click **Import** to populate the create form with the device's port layout, which you can adjust before saving.
 
 The import automatically:
-- Maps NetBox interface types to ezSWM port types (RJ45, SFP, SFP+, QSFP, Console, Management)
+- Maps NetBox interface types to ezSWM port types (RJ45, SFP, SFP+, QSFP, Console, Management); `40gbase-x-qsfpp` maps to QSFP at **40G**
 - Detects PoE capabilities and sets them on port blocks
 - Deduplicates combo ports (e.g., Juniper ge/xe on the same physical slot)
 - Filters out non-physical interfaces (WiFi, stacking, virtual)
@@ -95,7 +95,7 @@ Each block defines a group of ports within a unit:
   - **Sequential** -- fills top row first, then bottom row
   - **Odd/Even** -- odd-numbered ports on top, even on bottom
   - **Even/Odd** -- even-numbered ports on top, odd on bottom
-- **Default Speed** -- 100M, 1G, 2.5G, 10G, or 100G
+- **Default Speed** -- 100M, 1G, 2.5G, 10G, 40G, or 100G. 40G is new, additive and not restricted to QSFP ports; it is also selectable in the port editor, bulk editor and templates. No XFP port type and no 25G speed were added. Existing stored speed lists are kept unchanged (no startup backfill); new defaults include 40G.
 - **Label** -- optional prefix for port labels
 - **PoE** -- Power over Ethernet type: 802.3af (15W), 802.3at (30W), 802.3bt Type 3 (60W), 802.3bt Type 4 (100W), Passive 24V, or Passive 48V. Ports generated from this block inherit the PoE setting. PoE ports are marked with a yellow "PoE" label in the port grid.
 - **Physical Type** -- (Management ports only) RJ45 or SFP, to indicate the physical connector type
@@ -653,15 +653,57 @@ Backups are JSON dumps of the underlying SQLite tables, one array per entity, wi
 
 Access settings via the user menu in the header or the sidebar. General settings cover application-level configuration.
 
-Use General Settings to enable or disable the optional Patch Panels feature.
+Use General Settings to enable or disable the optional Patch Panels feature. Basic and Optional features (Patch Panels, Switch Groups) are saved together with a single **Save** action.
 
 Switch Groups are also controlled in General Settings (default: enabled). Turning the toggle off hides Switch Group management in the UI and disables group endpoints, without deleting any existing groups or memberships.
 
 ![Switch Groups setting toggle](/images/screenshot-switch-groups-settings-toggle.png)
 
+The ezSWM logo is shown on the login page and in the sidebar, with light and dark variants following the active theme.
+
 ### Account Settings
 
-Change your display name and preferred language (English or German).
+Change your display name and preferred language (English or German). Local accounts can also change their local password here. For SSO accounts the page shows a notice that the password is managed by your identity provider.
+
+### Authentication (OIDC / SSO)
+
+Admins can let users sign in through a standard OpenID Connect provider (Authorization Code flow with PKCE, state and nonce; ID token signature, issuer and nonce are validated against the provider's JWKS). The feature is provider-independent and is configured under **Settings → Authentication** (admin only). Use a provider that signs ID tokens with an asymmetric algorithm such as RS256; the provider must advertise a supported asymmetric signing algorithm (for example RS256). HS256 (shared-secret) ID tokens are not supported and are rejected. If the provider's discovery document omits the signing-algorithm list, ezSWM assumes RS256 for compatibility with incomplete discovery (the standard requires the field). If the list is present but malformed, empty, or contains only unsupported algorithms, **Check connection** reports `unsupported_id_token_alg`; users see only the generic sign-in-unavailable message on the login page.
+
+**Prerequisites**
+
+- Set `PUBLIC_BASE_URL` to the canonical `https` origin of ezSWM and register the exact callback URL `<PUBLIC_BASE_URL>/api/auth/oidc/callback` with your provider (the Settings page shows it with a copy button).
+- Public client (no client secret): **no encryption key is needed.**
+- Confidential client (a client secret): set a separate, dedicated `OIDC_ENCRYPTION_KEY` (32 bytes, see [Installation](./installation.md#oidc-sso-optional); `NUXT_OIDC_ENCRYPTION_KEY` is the container runtime equivalent; there is no fallback to `JWT_SECRET`). A missing or wrong key disables only the SSO that depends on the secret; local login and local recovery are unaffected.
+- Keep the key **outside** your backups. Restoring a backup with the exact same key restores the stored secret; with a different key the restore still succeeds, but SSO is switched off (the enabled flag is cleared) and a warning is shown. The local admin must re-enter the client secret **and** re-enable SSO. Local login keeps working throughout.
+
+**Configuration fields** (saved in the GUI, not in environment variables)
+
+- **Enabled** – shows or hides the SSO button on the login page.
+- **Provider display name** (optional) – plain text, trimmed, at most 64 characters. It becomes the login button label (“Sign in with …”); blank uses a generic label. The name is cosmetic only: changing it does not log anyone out or invalidate pending logins.
+- **Issuer**, **Client ID**, **Client secret** – the secret is never returned or shown again; the form only indicates that one is configured. Leave it empty to keep it, or use the remove option to clear it.
+- **Callback URL** – copy it and register it with the provider.
+- **Scopes** and **Groups claim** – the claim may be a plain name or a dot path (e.g. `realm_access.roles`); an exact top-level key (such as a namespaced URL claim) wins over dot-path traversal. Add extra scopes and configure the provider to emit the groups claim.
+- **Admin groups** / **Viewer groups** – arbitrary, exactly matched group names. A user in both lists is an admin.
+- **Allow users with no matching group as viewers** – default **off**: users without a matching group are denied and no account is created. When **on**, users whose groups claim is missing, empty or unmapped sign in as viewer; a malformed or overage claim is still denied.
+- **Allow HTTP issuer** – HTTPS is the normal and default requirement, including for internal or private-network (RFC 1918) providers: a private address is not a reason to enable this. The checkbox is a deliberate exception for a controlled, trusted, isolated internal or lab provider only; it is not meant for public-Internet production use. It applies to the visible issuer **and** to the endpoints the provider advertises (authorization, token, JWKS, UserInfo). HTTP can expose authorization codes, client credentials and claims, and allows discovery/JWKS responses to be tampered with. JWKS contains public verification keys, not the provider's private signing key. TLS therefore remains recommended even on a LAN. Enabling the option shows a warning. ezSWM does not filter by address range and never disables TLS certificate verification.
+
+All meaningful security changes (issuer, client, secret, scopes, mapping, enabling/disabling) bump the configuration revision and invalidate existing SSO sessions and pending logins.
+
+**Save first, then check.** **Check connection** reads the provider's discovery document for the *saved* configuration. It is not a real login and never exposes secrets.
+
+**Groups are not a standard OIDC directory.** ezSWM cannot list your provider's groups. Group names seen during permitted, successful SSO logins appear as *observed suggestions* (no directory API, live polling or push). Suggestions are filtered against both unsaved draft mappings in real time: adding one hides it, removing it makes it reappear. Hiding an assigned suggestion does not delete the observed group history; removing the mapping brings the suggestion back. You can also type a group that has never been observed. Suggestions never grant access by themselves.
+
+**Identity and roles**
+
+- Users are identified by provider **issuer + `sub`**; accounts are never linked by username or email and are created on the first successful login.
+- The role comes from the mapping and is re-evaluated on **every** SSO login; the database is authoritative and stale sessions are revoked. OIDC users cannot be promoted manually and have no ezSWM password.
+- Local accounts keep password login. The login page always shows the local form first, with SSO below it. The last local administrator cannot be deleted or demoted, so a local emergency admin always remains.
+
+**Viewer role:** viewers are read-only for infrastructure data and cannot access admin functions: settings changes, user administration, backups and the OIDC configuration. Their own exceptions are changing their own display name and language, their local password (local accounts only) and logging out.
+
+### Users (admin, read-only)
+
+Admins see a read-only **Users** page in the sidebar with four fields per account: username, display name, role, and sign-in method (local or OpenID Connect). It lists provisioned ezSWM accounts only — it is not a directory of your identity provider — and has no create, edit, delete or password-reset controls. (The underlying user API still supports admin CRUD; the page does not expose it.)
 
 ### Password Change
 

@@ -185,6 +185,7 @@ const speedOptions = computed(() => [
   { label: '1G', value: '1G' },
   { label: '2.5G', value: '2.5G' },
   { label: '10G', value: '10G' },
+  { label: '40G', value: '40G' },
   { label: '100G', value: '100G' }
 ])
 

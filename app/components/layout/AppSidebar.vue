@@ -2,14 +2,18 @@
   <UDashboardSidebar
     collapsible
     :default-size="16"
-    :ui="{ header: 'px-4', body: 'p-0 gap-0', footer: 'px-2 py-2' }"
+    :ui="{ header: 'relative px-4', body: 'p-0 gap-0', footer: 'px-2 py-2' }"
     role="complementary"
     aria-label="Sidebar navigation"
   >
     <!-- Logo (single header row) -->
     <template #header="{ collapsed }">
-      <NuxtLink :to="sitePrefix" class="font-display text-xl font-bold">
-        <span class="text-primary-500">ez</span><span v-if="!collapsed" class="tracking-tight text-gray-900 dark:text-white">SWM</span>
+      <NuxtLink :to="sitePrefix" class="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center" aria-label="ezSWM">
+        <img v-if="collapsed" src="/favicon.svg" alt="" width="32" height="32" class="size-8 shrink-0 object-contain">
+        <template v-else>
+          <img src="/logo.svg" alt="" width="2172" height="724" class="h-12 w-36 shrink-0 object-contain dark:hidden">
+          <img src="/logo-dark.svg" alt="" width="2172" height="724" class="hidden h-12 w-36 shrink-0 object-contain dark:block">
+        </template>
       </NuxtLink>
     </template>
 
@@ -74,10 +78,12 @@ const { updateAvailable, load } = useVersionCheck()
 onMounted(() => load())
 
 const route = useRoute()
+const { user } = useAuth()
 const { currentSiteId } = useCurrentSite()
 const { settings, fetch: fetchSettings } = useSettings()
 onMounted(() => { if (!settings.value) fetchSettings() })
 const patchPanelsEnabled = computed(() => settings.value?.patch_panels_enabled ?? false)
+const isAdmin = computed(() => user.value?.role === 'admin')
 
 const sitePrefix = computed(() => `/sites/${currentSiteId.value}`)
 
@@ -115,6 +121,7 @@ const navSections = computed(() => [
     divider: true,
     items: [
       { to: '/sites', icon: 'i-heroicons-building-office-2', label: 'nav.sites' },
+      ...(isAdmin.value ? [{ to: '/users', icon: 'i-heroicons-users', label: 'nav.users' }] : []),
       { to: '/settings', icon: 'i-heroicons-cog-6-tooth', label: 'nav.settings' }
     ]
   }

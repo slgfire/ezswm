@@ -17,6 +17,9 @@ Public exceptions in `server/middleware/auth.ts`:
 - `GET /api/setup/status`
 - `GET /api/changelog`
 - `GET /api/version-latest`
+- `GET /api/auth/oidc/status`
+- `GET /api/auth/oidc/start`
+- `GET /api/auth/oidc/callback`
 - `GET /api/settings` (special-case exception)
 - `GET /api/p/:token` (public switch view)
 - `GET /api/p/pp/:token` (public patch-panel view; only available while Patch Panels are enabled)
@@ -59,6 +62,14 @@ erDiagram
 | POST | `/api/auth/logout` | Log out and clear JWT cookie (public) |
 | GET | `/api/auth/me` | Get current authenticated user |
 | POST | `/api/auth/setup` | Initial admin account setup (public until completed) |
+| GET | `/api/auth/oidc/status` | `{ enabled }` — whether SSO login is usable; includes `provider_name` only when enabled and a non-blank name is set (public) |
+| GET | `/api/auth/oidc/start` | Begin OIDC login: sets a durable browser-binding cookie (24 h, scoped to the OIDC path) and a short-lived (10 min) single-use login transaction, then redirects to the provider (public; may return 429 when too many logins are pending) |
+| GET | `/api/auth/oidc/callback` | OIDC redirect target; on success sets the JWT cookie and redirects, on failure redirects to `/login?oidc_error=<code>` with a safe error code (public) |
+| GET | `/api/auth/oidc/config` | Admin only. OIDC config DTO: `client_secret_configured` (boolean), nullable `provider_name`, `callback_url`, `encryption_key_ready`, `secret_decryptable`, revision. Never contains the secret or ciphertext |
+| PUT | `/api/auth/oidc/config` | Admin only. Partial update. `client_secret` omitted = keep, `client_secret_clear: true` = remove. Optional `provider_name`: omit = retain, `null`/blank = clear, max 64 characters (cosmetic only). Group fields are trimmed, de-duplicated and size-limited. Security-relevant real changes bump the config revision, purge pending login transactions and invalidate SSO sessions. Exception: a `provider_name`-only change is cosmetic and does not bump the revision or invalidate pending logins/sessions; an unchanged (no-op) update does not bump it either |
+| POST | `/api/auth/oidc/check` | Admin only. Read-only discovery check of the **saved** config (not a login test). Returns a safe error code on failure, including `unsupported_id_token_alg` when the advertised ID-token signing algorithms are malformed, empty or all unsupported (a missing advertisement defaults to RS256 for compatibility). For public login these algorithm-negotiation failures map to `oidc_unavailable` |
+
+Error codes: `oidc_not_configured`, `oidc_invalid_request`, `oidc_transaction_invalid`, `oidc_provider_error`, `oidc_token_invalid`, `oidc_access_denied`, `oidc_unavailable`. Roles are read from the database on each request; `viewer` users are read-only for infrastructure data (except own profile GET/PUT, language, local password and logout); user administration, settings writes, backup operations and OIDC config/check are admin-only. The public `GET /api/settings` wizard exception stays as listed above.
 
 ## Setup & system
 

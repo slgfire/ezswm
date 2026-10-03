@@ -11,6 +11,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: 'Invalid username or password' })
   }
 
+  // OIDC-managed accounts (or any account without a local password) cannot use password login.
+  // Same generic 401 as a wrong password so account existence/type is not leaked.
+  if (user.auth_provider !== 'local' || !user.password_hash) {
+    throw createError({ statusCode: 401, message: 'Invalid username or password' })
+  }
+
   const valid = await verifyPassword(validated.password, user.password_hash)
   if (!valid) {
     throw createError({ statusCode: 401, message: 'Invalid username or password' })
