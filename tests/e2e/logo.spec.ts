@@ -163,6 +163,39 @@ async function expectBrandClearOfThemeButton(page: Page, h2: Locator) {
 /** Sidebar header link + image. `scope` = the sidebar (desktop) or the open drawer dialog (mobile). */
 const brandLink = (scope: Locator) => scope.getByRole('link', { name: 'ezSWM' })
 
+/** The image box stays centered on both axes within the actual Nuxt UI sidebar header. */
+async function expectSidebarBrandCentered(link: Locator) {
+  const image = link.locator('img').filter({ visible: true })
+  await expect(image).toHaveCount(1)
+  const geometry = await image.evaluate((img) => {
+    const header = img.closest('[data-slot="header"]')
+    if (!header) return null
+    const imageBox = img.getBoundingClientRect()
+    const headerBox = header.getBoundingClientRect()
+    return {
+      imageCenterX: imageBox.left + imageBox.width / 2,
+      imageCenterY: imageBox.top + imageBox.height / 2,
+      headerCenterX: headerBox.left + headerBox.width / 2,
+      headerCenterY: headerBox.top + headerBox.height / 2,
+      imageLeft: imageBox.left,
+      imageRight: imageBox.right,
+      imageTop: imageBox.top,
+      imageBottom: imageBox.bottom,
+      headerLeft: headerBox.left,
+      headerRight: headerBox.right,
+      headerTop: headerBox.top,
+      headerBottom: headerBox.bottom
+    }
+  })
+  expect(geometry, 'visible logo belongs to a rendered sidebar header').not.toBeNull()
+  expect(Math.abs(geometry!.imageCenterX - geometry!.headerCenterX), 'logo is horizontally centered').toBeLessThanOrEqual(1)
+  expect(Math.abs(geometry!.imageCenterY - geometry!.headerCenterY), 'logo is vertically centered').toBeLessThanOrEqual(1)
+  expect(geometry!.imageLeft).toBeGreaterThanOrEqual(geometry!.headerLeft - 1)
+  expect(geometry!.imageRight).toBeLessThanOrEqual(geometry!.headerRight + 1)
+  expect(geometry!.imageTop).toBeGreaterThanOrEqual(geometry!.headerTop - 1)
+  expect(geometry!.imageBottom).toBeLessThanOrEqual(geometry!.headerBottom + 1)
+}
+
 async function switchLang(page: Page, lang: Lang) {
   await page.getByRole('button', { name: /^(Language|Sprache)$/ }).click()
   await page.getByRole('menuitem', { name: lang === 'de' ? 'Deutsch' : 'English' }).click()
@@ -244,6 +277,7 @@ test.describe('Logo in the sidebar header (authenticated admin fixture)', () => 
           return still
         }, { message: 'brand image position settled' }).toBeGreaterThanOrEqual(3)
         expectImage(await visibleImage(brandLink(scope)), { src: FULL[theme], natural: FULL_NATURAL, box: [144, 48] })
+        await expectSidebarBrandCentered(brandLink(scope))
         expect((await visibleImage(brandLink(scope))).alt, 'decorative image (the link carries the name)').toBe('')
         if (SIDEBAR_SHOTS.has(key)) await shot(page, `logo-sidebar-expanded-${key}`)
         if (vp === 'desktop') {
@@ -251,6 +285,7 @@ test.describe('Logo in the sidebar header (authenticated admin fixture)', () => 
           await expect(scope.locator('a[href="/users"]')).toContainText(/^$/)
           await expect(brandLink(scope)).toHaveCount(1)
           expectImage(await visibleImage(brandLink(scope)), { src: FAVICON, natural: FAVICON_NATURAL, box: [32, 32] })
+          await expectSidebarBrandCentered(brandLink(scope))
           if (key === 'en-dark-desktop') await shot(page, 'logo-sidebar-collapsed-en-dark-desktop')
           await scope.getByRole('button', { name: /^(Expand sidebar|Seitenleiste erweitern)$/ }).click()
           await expect(scope.locator('a[href="/users"]')).toContainText(lang === 'de' ? 'Benutzer' : 'Users')

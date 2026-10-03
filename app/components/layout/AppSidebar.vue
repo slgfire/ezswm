@@ -2,13 +2,13 @@
   <UDashboardSidebar
     collapsible
     :default-size="16"
-    :ui="{ header: 'px-4', body: 'p-0 gap-0', footer: 'px-2 py-2' }"
+    :ui="{ header: 'relative px-4', body: 'p-0 gap-0', footer: 'px-2 py-2' }"
     role="complementary"
     aria-label="Sidebar navigation"
   >
     <!-- Logo (single header row) -->
     <template #header="{ collapsed }">
-      <NuxtLink :to="sitePrefix" class="flex items-center" aria-label="ezSWM">
+      <NuxtLink :to="sitePrefix" class="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center" aria-label="ezSWM">
         <img v-if="collapsed" src="/favicon.svg" alt="" width="32" height="32" class="size-8 shrink-0 object-contain">
         <template v-else>
           <img src="/logo.svg" alt="" width="2172" height="724" class="h-12 w-36 shrink-0 object-contain dark:hidden">
