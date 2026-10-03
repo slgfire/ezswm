@@ -543,7 +543,8 @@ const checkErrorMessage = computed(() => {
     'redirect_not_allowed',
     'response_too_large',
     'pkce_not_supported',
-    'id_token_invalid'
+    'id_token_invalid',
+    'unsupported_id_token_alg'
   ]
   const code = checkResult.value?.code
   if (!code || !safeCodes.includes(code)) return t('settings.oidc.checkFailedDescription')

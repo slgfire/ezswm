@@ -883,7 +883,8 @@
         "oidc_invalid_request": "The saved settings are incomplete or invalid. Review the issuer and client details.",
         "oidc_provider_error": "The identity provider returned an error. Verify the issuer and provider availability.",
         "oidc_unavailable": "The provider could not be reached. Check the issuer address and network access from the server.",
-        "unsupported_client_auth": "The provider and client settings do not support a compatible authentication method."
+        "unsupported_client_auth": "The provider and client settings do not support a compatible authentication method.",
+        "unsupported_id_token_alg": "The provider\u0027s advertised ID token signing algorithms are unsupported or invalid."
       },
       "checkWarnings": {
         "insecure_http_issuer": "The provider uses HTTP. Sign-in traffic is not encrypted in transit.",

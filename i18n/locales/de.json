@@ -883,7 +883,8 @@
         "oidc_invalid_request": "Die gespeicherten Einstellungen sind unvollständig oder ungültig. Prüfen Sie Aussteller- und Client-Angaben.",
         "oidc_provider_error": "Der Identitätsanbieter hat einen Fehler gemeldet. Prüfen Sie Aussteller und Verfügbarkeit des Anbieters.",
         "oidc_unavailable": "Der Anbieter ist nicht erreichbar. Prüfen Sie die Aussteller-Adresse und den Netzwerkzugriff des Servers.",
-        "unsupported_client_auth": "Anbieter und Client-Einstellungen unterstützen keine gemeinsame Authentifizierungsmethode."
+        "unsupported_client_auth": "Anbieter und Client-Einstellungen unterstützen keine gemeinsame Authentifizierungsmethode.",
+        "unsupported_id_token_alg": "Die vom Anbieter angegebenen Signaturalgorithmen für ID-Tokens werden nicht unterstützt oder sind ungültig."
       },
       "checkWarnings": {
         "insecure_http_issuer": "Der Anbieter verwendet HTTP. Die Anmeldung ist während der Übertragung nicht verschlüsselt.",

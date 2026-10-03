@@ -667,7 +667,7 @@ Change your display name and preferred language (English or German). Local accou
 
 ### Authentication (OIDC / SSO)
 
-Admins can let users sign in through a standard OpenID Connect provider (Authorization Code flow with PKCE, state and nonce; ID token signature, issuer and nonce are validated against the provider's JWKS). The feature is provider-independent and is configured under **Settings → Authentication** (admin only). Use a provider that signs ID tokens with an asymmetric algorithm such as RS256; the provider must advertise a supported asymmetric signing algorithm (for example RS256). HS256 (shared-secret) ID tokens are not supported and are rejected.
+Admins can let users sign in through a standard OpenID Connect provider (Authorization Code flow with PKCE, state and nonce; ID token signature, issuer and nonce are validated against the provider's JWKS). The feature is provider-independent and is configured under **Settings → Authentication** (admin only). Use a provider that signs ID tokens with an asymmetric algorithm such as RS256; the provider must advertise a supported asymmetric signing algorithm (for example RS256). HS256 (shared-secret) ID tokens are not supported and are rejected. If the provider's discovery document omits the signing-algorithm list, ezSWM assumes RS256 for compatibility with incomplete discovery (the standard requires the field). If the list is present but malformed, empty, or contains only unsupported algorithms, **Check connection** reports `unsupported_id_token_alg`; users see only the generic sign-in-unavailable message on the login page.
 
 **Prerequisites**
 
@@ -685,7 +685,7 @@ Admins can let users sign in through a standard OpenID Connect provider (Authori
 - **Scopes** and **Groups claim** – the claim may be a plain name or a dot path (e.g. `realm_access.roles`); an exact top-level key (such as a namespaced URL claim) wins over dot-path traversal. Add extra scopes and configure the provider to emit the groups claim.
 - **Admin groups** / **Viewer groups** – arbitrary, exactly matched group names. A user in both lists is an admin.
 - **Allow users with no matching group as viewers** – default **off**: users without a matching group are denied and no account is created. When **on**, users whose groups claim is missing, empty or unmapped sign in as viewer; a malformed or overage claim is still denied.
-- **Allow HTTP issuer** – TLS is expected by default; enabling this shows a warning.
+- **Allow HTTP issuer** – HTTPS is the normal and default requirement, including for internal or private-network (RFC 1918) providers: a private address is not a reason to enable this. The checkbox is a deliberate exception for a controlled, trusted, isolated internal or lab provider only; it is not meant for public-Internet production use. It applies to the visible issuer **and** to the endpoints the provider advertises (authorization, token, JWKS, UserInfo). HTTP can expose authorization codes, client credentials and claims, and allows discovery/JWKS responses to be tampered with. JWKS contains public verification keys, not the provider's private signing key. TLS therefore remains recommended even on a LAN. Enabling the option shows a warning. ezSWM does not filter by address range and never disables TLS certificate verification.
 
 All meaningful security changes (issuer, client, secret, scopes, mapping, enabling/disabling) bump the configuration revision and invalidate existing SSO sessions and pending logins.
 

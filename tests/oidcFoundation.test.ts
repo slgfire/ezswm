@@ -228,7 +228,7 @@ describe('oidc validators & client policy', () => {
     expect(selectIdTokenAlg(undefined)).toBe('RS256')
     expect(selectIdTokenAlg(['ES256', 'RS256'])).toBe('RS256')
     expect(selectIdTokenAlg(['HS256', 'ES256'])).toBe('ES256')
-    expect(selectIdTokenAlg(['none', 'HS256'])).toBe('RS256')
+    expect(() => selectIdTokenAlg(['none', 'HS256'])).toThrow(expect.objectContaining({ code: 'unsupported_id_token_alg' }))
   })
 })
 

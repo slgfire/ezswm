@@ -38,6 +38,7 @@ export type OidcClientErrorCode =
   | 'pkce_not_supported'
   | 'not_configured'
   | 'id_token_invalid'
+  | 'unsupported_id_token_alg'
 
 export class OidcClientError extends Error {
   code: OidcClientErrorCode
@@ -189,11 +190,20 @@ export function selectTokenAuthMethod(advertised: readonly string[] | undefined,
 
 const ASYMMETRIC_ALGS = ['RS256', 'PS256', 'ES256', 'EdDSA', 'RS384', 'PS384', 'ES384', 'RS512', 'PS512', 'ES512']
 
-/** RS256 when supported/unspecified; otherwise the first supported asymmetric alg. Never HMAC or none. */
-export function selectIdTokenAlg(supported: readonly string[] | undefined): string {
-  if (!supported || supported.length === 0 || supported.includes('RS256')) return 'RS256'
+/**
+ * RS256 only when the provider does not advertise the field at all (missing-field compatibility). A present value must be a
+ * non-empty array of non-empty strings containing at least one supported asymmetric alg (RS256 preferred); otherwise
+ * unsupported_id_token_alg. Never HMAC or none; no trimming or case folding.
+ */
+export function selectIdTokenAlg(supported: unknown): string {
+  if (supported === undefined) return 'RS256'
+  if (!Array.isArray(supported) || supported.length === 0 || supported.some(a => typeof a !== 'string' || a.length === 0)) {
+    throw new OidcClientError('unsupported_id_token_alg')
+  }
+  if (supported.includes('RS256')) return 'RS256'
   const pick = ASYMMETRIC_ALGS.find(a => supported.includes(a))
-  return pick ?? 'RS256'
+  if (!pick) throw new OidcClientError('unsupported_id_token_alg')
+  return pick
 }
 
 export interface OidcClientSettings {

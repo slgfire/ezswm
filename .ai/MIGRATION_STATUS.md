@@ -4,7 +4,7 @@
 
 Date: 2026-10-03
 Stage: OIDC SSO (issue #283) + Settings/Login/Logo/QSFP-40G amendments — implemented; final artifact, browser evidence with limits and visual review accepted; isolated testdomain rollout verified
-Status: Testdomain update completed with verified offline backup; no Git commit, push or published release
+Status: Original batch deployed to the testdomain and published in PR #291; review follow-ups verified locally, without a follow-up deployment or published release
 Version: 0.40.0 (target; `package.json` is the single source of truth)
 
 ### Phase: OIDC / SSO login (v0.40.0)
@@ -19,6 +19,17 @@ Version: 0.40.0 (target; `package.json` is the single source of truth)
 - API: `GET/PUT /api/auth/oidc/config`, `POST /api/auth/oidc/check` (admin), `GET /status` (`{enabled}` plus `provider_name` only when enabled and non-blank), `/start`, `/callback` (public).
 - Related items documented: Logo (PR #285, selective: fixed branding assets only, no wholesale merge) and QSFP 40G (#287: additive `40G` port speed, NetBox `40gbase-x-qsfpp` mapping, combo-dedup rank 40G between 10G and 100G; no XFP port type, no 25G speed, 40G not restricted to QSFP ports, no Prisma migration, stored speed arrays preserved with no startup backfill, new defaults include 40G). VM #290 was removed from the current batch in favor of a SEPARATE future configurable-IPAM-type-list feature; that feature is NOT implemented and not documented as released.
 - Docs updated: EN/DE user guide, EN/DE installation, EN/DE API reference, `.env.example` comments.
+
+### Phase: PR #291 review follow-up — algorithm negotiation + HTTP exception docs (verified locally)
+
+- Status: implementation, independent security review, compiled browser checks and visual review accepted locally. These follow-ups are NOT deployed or released; the testdomain still runs the earlier final0067 image.
+- Implemented behavior: missing ID-token algorithm advertisement defaults to RS256 (intentional compatibility, not standards-compliant discovery); present but malformed/empty/only-unsupported lists fail fast with admin connection-check code `unsupported_id_token_alg`; these negotiation failures map to `oidc_unavailable` for public login. The existing asymmetric allow-list and signature, issuer, state, nonce, PKCE and UserInfo-subject checks remain unchanged.
+- `allow_http_issuer` documented as a deliberate trusted, isolated internal/lab exception; HTTPS stays the normal default including private-network IdPs; it also covers advertised token/JWKS/UserInfo endpoints; HTTP lacks confidentiality/authenticity and TLS remains recommended on a LAN. No address-range filter, no TLS-verification disable.
+- Unit evidence (parent-run): 65 files / 971 tests passed. New real-HTTP tests use genuinely signed PS256 tokens and JWKS, reject wrong-key/tampered signatures without provisioning, and cover unsupported advertisements, missing/mismatched discovery issuers and upstream PKCE rejection. The earlier 943-test result below is historical.
+- Compiled artifact: `ezswm:oidc-review-verified`, immutable `sha256:1953a644f5d03401bb212d7f1ed4cbf94db878db2ed2325893ba12ccdb640fd3`. Explicit synthetic-dotenv preparation/type-check/build, full lint and ordinary-root no-cache Docker build passed; image environment-file exclusion and guarded runtime/preservation checks passed. A separate fresh GET-only dev check passed and was stopped safely; 11 completed migration names match the source folders, with zero users/sites/login transactions.
+- Browser/visual evidence: one 12-case run passed with zero failures, retries, flaky tests or skips (four EN/DE connection-check result cases plus eight existing palette cases). Strict console/page-error guards passed. All 20 actual screenshots were reviewed and accepted; some tall mobile Groups captures crop the lower card, while result captures show the complete notices. The check responses are synthetic UI mocks, not real-provider discovery/login proof; native signature evidence is supplied by the real-HTTP unit tests.
+- Sidebar centering and neutral Authentication presentation are also verified locally. Fixture baseline values and protected-container metadata were preserved; owned verification instances were stopped. Earlier language-menu/DEV timing and network-root-cause limitations remain recorded, not claimed fixed. No new CI result, testdomain rollout or release is claimed.
+- Docs touched: EN/DE user guide, installation and API reference. No version bump.
 
 ### Verification status
 
