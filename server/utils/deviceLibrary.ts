@@ -128,8 +128,10 @@ export function mapNetboxType(iface: { type: string; mgmt_only?: boolean }): Map
   } else if (value === '25gbase-x-sfp28') {
     type = 'sfp+'
     speed = '10G'
+  } else if (value === '40gbase-x-qsfpp') {
+    type = 'qsfp'
+    speed = '40G'
   } else if (
-    value === '40gbase-x-qsfpp' ||
     value === '100gbase-x-qsfp28' ||
     value === '100gbase-x-qsfpdd' ||
     value === '200gbase-x-qsfp56' ||
@@ -318,7 +320,7 @@ export function groupInterfacesToBlocks(
 
   // Deduplicate combo ports: ge-0/0/X and xe-0/0/X are the same physical port.
   // Keep the higher-speed variant (sfp+ over sfp, sfp over rj45).
-  const SPEED_RANK: Record<string, number> = { '100M': 1, '1G': 2, '2.5G': 3, '10G': 4, '100G': 5 }
+  const SPEED_RANK: Record<string, number> = { '100M': 1, '1G': 2, '2.5G': 3, '10G': 4, '40G': 4.5, '100G': 5 }
   const portByNumber = new Map<string, MappedIface>()
   for (const item of mapped) {
     // Use trailing number as dedup key (only for non-management, same slot pattern)

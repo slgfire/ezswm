@@ -264,7 +264,7 @@ const toast = useToast()
 const { confirm } = useConfirm()
 const { apiFetch } = useApiFetch()
 const route = useRoute()
-const speeds = ['100M', '1G', '2.5G', '10G', '100G']
+const speeds = ['100M', '1G', '2.5G', '10G', '40G', '100G']
 const siteParams = computed(() => route.params.siteId && route.params.siteId !== 'all' ? { siteId: route.params.siteId as string } : undefined)
 
 const portModeOptions = computed(() => [

@@ -11,7 +11,7 @@ const layoutBlockSchema = z.object({
   start_index: z.number().int().min(0),
   rows: z.number().int().positive(),
   row_layout: z.preprocess(v => v === '' ? undefined : v, z.enum(['sequential', 'odd-even', 'even-odd']).optional()),
-  default_speed: z.preprocess(v => v === '' ? undefined : v, z.enum(['100M', '1G', '2.5G', '10G', '100G']).optional()),
+  default_speed: z.preprocess(v => v === '' ? undefined : v, z.enum(['100M', '1G', '2.5G', '10G', '40G', '100G']).optional()),
   label: z.string().max(100).optional(),
   physical_type: z.preprocess(v => v === '' ? undefined : v, z.enum(['rj45', 'sfp']).optional()),
   poe: poeConfigSchema.optional()

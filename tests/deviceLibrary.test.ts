@@ -60,9 +60,9 @@ describe('mapNetboxType — SFP types', () => {
 })
 
 describe('mapNetboxType — QSFP types', () => {
-  it('maps 40gbase-x-qsfpp to qsfp / 100G', () => {
+  it('maps 40gbase-x-qsfpp to qsfp / 40G', () => {
     const result = mapNetboxType({ type: '40gbase-x-qsfpp' })
-    expect(result).toEqual({ type: 'qsfp', speed: '100G' })
+    expect(result).toEqual({ type: 'qsfp', speed: '40G' })
   })
 
   it('maps 100gbase-x-qsfp28 to qsfp / 100G', () => {
@@ -87,6 +87,11 @@ describe('mapNetboxType — QSFP types', () => {
 })
 
 describe('mapNetboxType — management interfaces', () => {
+  it('maps mgmt_only + 40gbase-x-qsfpp to management / sfp physical (override unchanged by the 40G mapping)', () => {
+    const result = mapNetboxType({ type: '40gbase-x-qsfpp', mgmt_only: true })
+    expect(result).toEqual({ type: 'management', speed: '1G', physical_type: 'sfp' })
+  })
+
   it('maps mgmt_only + base-t to management / rj45 physical', () => {
     const result = mapNetboxType({ type: '1000base-t', mgmt_only: true })
     expect(result).toEqual({ type: 'management', speed: '1G', physical_type: 'rj45' })
@@ -235,6 +240,33 @@ describe('incrementMemberLabel', () => {
 // ---------------------------------------------------------------------------
 // groupInterfacesToBlocks
 // ---------------------------------------------------------------------------
+
+describe('groupInterfacesToBlocks — combo-port speed ranking incl. 40G', () => {
+  // Same physical slot (0/0/1) exposed under two name prefixes: the higher-speed variant must win in BOTH input orders.
+  const sfpPlus = { name: 'xe-0/0/1', type: '10gbase-x-sfpp' }
+  const qsfp40 = { name: 'et-0/0/1', type: '40gbase-x-qsfpp' }
+  const qsfp100 = { name: 'ce-0/0/1', type: '100gbase-x-qsfp28' }
+
+  for (const [label, input] of [['10G first', [sfpPlus, qsfp40]], ['40G first', [qsfp40, sfpPlus]]] as const) {
+    it(`40G beats 10G for the same slot (${label})`, () => {
+      const blocks = groupInterfacesToBlocks([...input], [])
+      expect(blocks).toHaveLength(1)
+      expect(blocks[0]!.type).toBe('qsfp')
+      expect(blocks[0]!.default_speed).toBe('40G')
+      expect(blocks[0]!.count).toBe(1)
+    })
+  }
+
+  for (const [label, input] of [['40G first', [qsfp40, qsfp100]], ['100G first', [qsfp100, qsfp40]]] as const) {
+    it(`100G beats 40G for the same slot (${label})`, () => {
+      const blocks = groupInterfacesToBlocks([...input], [])
+      expect(blocks).toHaveLength(1)
+      expect(blocks[0]!.type).toBe('qsfp')
+      expect(blocks[0]!.default_speed).toBe('100G')
+      expect(blocks[0]!.count).toBe(1)
+    })
+  }
+})
 
 describe('groupInterfacesToBlocks — basic grouping', () => {
   it('groups 24 identical rj45 interfaces into one block', () => {

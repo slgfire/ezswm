@@ -5,7 +5,11 @@ import type { LayoutTemplate } from '../../../types/layoutTemplate'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const validated = createLayoutTemplateSchema.parse(body)
+  const validation = createLayoutTemplateSchema.safeParse(body)
+  if (!validation.success) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid request body' })
+  }
+  const validated = validation.data
 
   const template = await layoutTemplateRepository.create(validated as Omit<LayoutTemplate, 'id' | 'created_at' | 'updated_at'>)
 

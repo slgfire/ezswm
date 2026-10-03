@@ -11,7 +11,11 @@ export default defineEventHandler(async (event) => {
   const switchId = sw.id
 
   const body = await readBody(event)
-  const parsed = bulkUpdatePortsSchema.parse(body)
+  const validation = bulkUpdatePortsSchema.safeParse(body)
+  if (!validation.success) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid request body' })
+  }
+  const parsed = validation.data
 
   const expectedUpdatedAt = parsed.expected_updated_at
 

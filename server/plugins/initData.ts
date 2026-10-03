@@ -98,7 +98,7 @@ export default defineNitroPlugin(async () => {
         app_logo_url: null,
         default_vlan: null,
         default_port_status: 'down',
-        port_speeds: JSON.stringify(['100M', '1G', '2.5G', '10G', '100G']),
+        port_speeds: JSON.stringify(['100M', '1G', '2.5G', '10G', '40G', '100G']),
         setup_completed: false,
         sites_initialized: false,
         patch_panels_enabled: false,
