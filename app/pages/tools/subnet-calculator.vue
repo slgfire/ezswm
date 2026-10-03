@@ -1,6 +1,6 @@
 <template>
   <div class="p-6">
-    <h1 class="mb-6 text-2xl font-bold">{{ $t('tools.subnetCalculator.title') }}</h1>
+    <h1 class="mb-6 text-xl font-bold">{{ $t('tools.subnetCalculator.title') }}</h1>
 
     <div class="max-w-xl">
       <UFormField :label="$t('tools.subnetCalculator.inputLabel')">

@@ -37,6 +37,7 @@ const labelMap: Record<string, string> = {
   'data-management': 'nav.dataManagement',
   'settings': 'nav.settings',
   'sites': 'nav.sites',
+  'users': 'nav.users',
   'create': 'common.create',
   'edit': 'common.edit'
 }
@@ -86,6 +87,7 @@ const crumbs = computed(() => {
     }
   } else if (parts[0] === 'sites' && !siteId) {
     // /sites list page
+    result.push({ path: '/', label: t('nav.dashboard'), icon: DASHBOARD_ICON })
     result.push({ path: '/sites', label: t('nav.sites'), icon: iconMap['sites'] })
     const remainingParts = parts.slice(1)
     let currentPath = '/sites'

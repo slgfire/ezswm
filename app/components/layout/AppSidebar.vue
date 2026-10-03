@@ -78,10 +78,12 @@ const { updateAvailable, load } = useVersionCheck()
 onMounted(() => load())
 
 const route = useRoute()
+const { user } = useAuth()
 const { currentSiteId } = useCurrentSite()
 const { settings, fetch: fetchSettings } = useSettings()
 onMounted(() => { if (!settings.value) fetchSettings() })
 const patchPanelsEnabled = computed(() => settings.value?.patch_panels_enabled ?? false)
+const isAdmin = computed(() => user.value?.role === 'admin')
 
 const sitePrefix = computed(() => `/sites/${currentSiteId.value}`)
 
@@ -119,6 +121,7 @@ const navSections = computed(() => [
     divider: true,
     items: [
       { to: '/sites', icon: 'i-heroicons-building-office-2', label: 'nav.sites' },
+      ...(isAdmin.value ? [{ to: '/users', icon: 'i-heroicons-users', label: 'nav.users' }] : []),
       { to: '/settings', icon: 'i-heroicons-cog-6-tooth', label: 'nav.settings' }
     ]
   }

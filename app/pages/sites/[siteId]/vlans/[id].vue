@@ -2,7 +2,7 @@
   <div class="p-6">
     <div class="mb-6 flex items-center gap-2">
       <UButton icon="i-heroicons-arrow-left" variant="ghost" :to="`/sites/${siteId}/vlans`" />
-      <h1 class="text-2xl font-bold">
+      <h1 class="text-xl font-bold">
         <template v-if="vlan">
           <VlanColorSwatch :color="vlan.color" size="lg" class="mr-2" />
           VLAN {{ vlan.vlan_id }} - {{ vlan.name }}

@@ -1,6 +1,6 @@
 <template>
   <div class="p-6">
-    <h1 class="mb-6 text-2xl font-bold">{{ $t('dataManagement.title') }}</h1>
+    <h1 class="mb-6 text-xl font-bold">{{ $t('dataManagement.title') }}</h1>
 
     <UTabs :items="tabs" variant="link" color="neutral">
       <template #backup>
