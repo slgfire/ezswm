@@ -27,6 +27,13 @@ describe('restoreAll', () => {
     await resetDb()
   })
 
+  /** A local emergency administrator (restore rejects payloads without one). */
+  const localAdmin = () => ({
+    id: randomUUID(), username: 'admin', display_name: 'Admin', password_hash: '$2a$10$fixturehashfixturehashfixturehashfixturehashfixtureha',
+    role: 'admin', language: 'en', is_setup_user: true,
+    created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z'
+  })
+
   function mkPayload(extra: Record<string, unknown[]> = {}) {
     const siteId = randomUUID()
     const userId = randomUUID()
@@ -101,6 +108,7 @@ describe('restoreAll', () => {
     const payload = {
       schema: 'sqlite-v1',
       data: {
+        users: [localAdmin()],
         sites: [{ id: siteId, slug: 'site-x', name: 'X', description: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
         vlans: [{
           id: vlanId, site_id: siteId, vlan_id: 10, name: 'V', description: null,
@@ -141,6 +149,7 @@ describe('restoreAll', () => {
     const payload = {
       schema: 'sqlite-v1',
       data: {
+        users: [localAdmin()],
         sites: [{ id: siteId, slug: 'home', name: 'Home', description: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
         switches: [{
           id: switchId, site_id: siteId, slug: 'sw-core', name: 'core-01',
@@ -168,6 +177,7 @@ describe('restoreAll', () => {
     const payload = {
       schema: 'sqlite-v1',
       data: {
+        users: [localAdmin()],
         sites: [{ id: siteId, slug: 'hq', name: 'HQ', description: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }],
         switchGroups: [{
           id: groupId,
