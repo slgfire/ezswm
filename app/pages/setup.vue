@@ -7,10 +7,10 @@
             <h1 class="text-2xl font-bold">
               {{ currentStep === 1 ? $t('auth.setupTitle') : $t('setup.siteTitle') }}
             </h1>
-            <p class="mt-1 text-sm text-gray-400">
+            <p class="mt-1 text-sm text-muted">
               {{ currentStep === 1 ? $t('auth.setupDescription') : $t('setup.siteDescription') }}
             </p>
-            <p class="mt-2 text-xs uppercase tracking-wide text-gray-500">
+            <p class="mt-2 text-xs uppercase tracking-wide text-muted">
               {{ $t('setup.stepIndicator', { current: currentStep, total: 2 }) }} ·
               {{ currentStep === 1 ? $t('setup.stepAccount') : $t('setup.stepSite') }}
             </p>
@@ -57,7 +57,7 @@
         <div v-else>
           <UAlert
             v-if="orphanTotal > 0"
-            color="info"
+            color="neutral"
             variant="subtle"
             class="mb-4"
             :description="$t('setup.migrationBanner', {

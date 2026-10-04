@@ -9,16 +9,19 @@
     <UTabs :items="tabs" variant="link" color="neutral">
       <template #general>
         <div class="mt-4 space-y-6">
-          <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('common.general') }}</h2>
+          <div>
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-muted">{{ $t('common.general') }}</h2>
+            <p class="mt-2 text-sm text-muted">{{ $t('settings.general.description') }}</p>
+          </div>
           <form class="space-y-6" @submit.prevent="saveGeneral">
-            <section class="list-container rounded-xl border border-gray-200 bg-default p-4 sm:p-6 dark:border-gray-800">
+            <section class="list-container rounded-xl border border-default bg-default p-4 sm:p-6">
               <div class="mb-5 flex items-start gap-3">
                 <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-500/10 text-primary-500">
                   <UIcon name="i-lucide-settings-2" class="size-5" />
                 </div>
                 <div>
                   <h3 class="text-base font-semibold">{{ $t('settings.general.basicTitle') }}</h3>
-                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $t('settings.general.basicHint') }}</p>
+                  <p class="mt-1 text-xs text-muted">{{ $t('settings.general.basicHint') }}</p>
                 </div>
               </div>
               <div class="max-w-lg space-y-4">
@@ -31,24 +34,24 @@
               </div>
             </section>
 
-            <section class="list-container rounded-xl border border-gray-200 bg-default p-4 sm:p-6 dark:border-gray-800">
+            <section class="list-container rounded-xl border border-default bg-default p-4 sm:p-6">
               <div class="mb-5 flex items-start gap-3">
-                <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-500">
+                <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-elevated text-muted">
                   <UIcon name="i-lucide-toggle-left" class="size-5" />
                 </div>
                 <div>
                   <h3 class="text-base font-semibold">{{ $t('settings.general.featuresTitle') }}</h3>
-                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $t('settings.general.featuresHint') }}</p>
+                  <p class="mt-1 text-xs text-muted">{{ $t('settings.general.featuresHint') }}</p>
                 </div>
               </div>
               <div class="max-w-lg space-y-4">
                 <UFormField :label="$t('settings.general.patchPanelsEnabled')">
                   <USwitch v-model="generalForm.patch_panels_enabled" />
-                  <p class="mt-1 text-xs text-gray-500">{{ $t('settings.general.patchPanelsEnabledHint') }}</p>
+                  <p class="mt-1 text-xs text-muted">{{ $t('settings.general.patchPanelsEnabledHint') }}</p>
                 </UFormField>
                 <UFormField :label="$t('settings.general.switchGroupsEnabled')">
                   <USwitch v-model="generalForm.switch_groups_enabled" />
-                  <p class="mt-1 text-xs text-gray-500">{{ $t('settings.general.switchGroupsEnabledHint') }}</p>
+                  <p class="mt-1 text-xs text-muted">{{ $t('settings.general.switchGroupsEnabledHint') }}</p>
                 </UFormField>
               </div>
             </section>
@@ -62,15 +65,18 @@
 
       <template #account>
         <div class="mt-4 space-y-6">
-          <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('settings.account.title') }}</h2>
-          <section class="list-container rounded-xl border border-gray-200 bg-default p-4 sm:p-6 dark:border-gray-800">
+          <div>
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-muted">{{ $t('settings.account.title') }}</h2>
+            <p class="mt-2 text-sm text-muted">{{ $t('settings.account.description') }}</p>
+          </div>
+          <section class="list-container rounded-xl border border-default bg-default p-4 sm:p-6">
             <div class="mb-5 flex items-start gap-3">
               <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-500/10 text-primary-500">
                 <UIcon name="i-lucide-user-round" class="size-5" />
               </div>
               <div>
                 <h3 class="text-base font-semibold">{{ $t('settings.account.profileTitle') }}</h3>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $t('settings.account.profileHint') }}</p>
+                <p class="mt-1 text-xs text-muted">{{ $t('settings.account.profileHint') }}</p>
               </div>
             </div>
             <form @submit.prevent="saveAccount">
@@ -97,19 +103,19 @@
               </div>
               <div>
                 <h3 class="font-semibold">{{ $t('settings.account.oidcManagedTitle') }}</h3>
-                <p class="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">{{ $t('settings.account.oidcManagedDescription') }}</p>
+                <p class="mt-1 max-w-2xl text-sm text-toned">{{ $t('settings.account.oidcManagedDescription') }}</p>
               </div>
             </div>
           </div>
 
-          <div v-else class="list-container rounded-xl border border-gray-200 bg-default p-4 sm:p-6 dark:border-gray-800">
+          <div v-else class="list-container rounded-xl border border-default bg-default p-4 sm:p-6">
             <div class="mb-5 flex items-start gap-3">
               <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
                 <UIcon name="i-lucide-lock-keyhole" class="size-5" />
               </div>
               <div>
                 <h3 class="text-base font-semibold">{{ $t('settings.account.changePassword') }}</h3>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $t('settings.account.passwordHint') }}</p>
+                <p class="mt-1 text-xs text-muted">{{ $t('settings.account.passwordHint') }}</p>
               </div>
             </div>
             <UForm :state="passwordForm" :validate="validatePassword" :validate-on="['blur', 'change']" novalidate @submit="handleChangePassword">
@@ -141,15 +147,15 @@
           <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div class="min-w-0 flex-1">
               <div class="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-                <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('settings.oidc.tab') }}</h2>
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-muted">{{ $t('settings.oidc.tab') }}</h2>
                 <UBadge :color="oidcConfig?.enabled ? 'success' : 'neutral'" variant="subtle" size="sm">
                   {{ oidcConfig?.enabled ? $t('settings.oidc.savedEnabled') : $t('settings.oidc.savedDisabled') }}
                 </UBadge>
               </div>
-              <p class="text-sm text-gray-500 dark:text-gray-400">{{ $t('settings.oidc.description') }}</p>
+              <p class="text-sm text-muted">{{ $t('settings.oidc.description') }}</p>
             </div>
-            <div v-if="oidcConfig" class="w-fit self-end rounded-lg border border-gray-200 px-3 py-2 text-right dark:border-gray-800 md:self-start">
-              <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{{ $t('settings.oidc.savedRevision') }}</p>
+            <div v-if="oidcConfig" class="w-fit self-end rounded-lg border border-default px-3 py-2 text-right md:self-start">
+              <p class="text-[11px] font-semibold uppercase tracking-wider text-muted">{{ $t('settings.oidc.savedRevision') }}</p>
               <p class="font-mono text-sm">{{ oidcConfig.config_revision }}</p>
             </div>
           </div>
@@ -200,14 +206,14 @@
 
             <div class="grid grid-cols-1 gap-6">
               <div class="space-y-6">
-                <section class="rounded-xl border border-gray-200 bg-default p-4 sm:p-6 dark:border-gray-800">
+                <section class="rounded-xl border border-default bg-default p-4 sm:p-6">
                   <div class="mb-5 flex items-start gap-3">
                     <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-500/10 text-primary-500">
                       <UIcon name="i-lucide-building-2" class="size-5" />
                     </div>
                     <div>
                       <h3 class="font-semibold">{{ $t('settings.oidc.providerSection') }}</h3>
-                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $t('settings.oidc.providerHint') }}</p>
+                      <p class="mt-1 text-xs text-muted">{{ $t('settings.oidc.providerHint') }}</p>
                     </div>
                   </div>
 
@@ -215,7 +221,7 @@
                     <UFormField :label="$t('settings.oidc.enabledLabel')">
                       <div class="flex items-center gap-3">
                         <USwitch v-model="oidcForm.enabled" />
-                        <span class="text-sm text-gray-600 dark:text-gray-300">{{ oidcForm.enabled ? $t('settings.oidc.turnOn') : $t('settings.oidc.turnOff') }}</span>
+                        <span class="text-sm text-toned">{{ oidcForm.enabled ? $t('settings.oidc.turnOn') : $t('settings.oidc.turnOff') }}</span>
                       </div>
                     </UFormField>
                     <UFormField :label="$t('settings.oidc.providerName')" :hint="$t('settings.oidc.providerNameHint')">
@@ -262,7 +268,7 @@
                   </div>
                 </section>
 
-                <section class="rounded-xl border border-gray-200 bg-default p-4 sm:p-6 dark:border-gray-800">
+                <section class="rounded-xl border border-default bg-default p-4 sm:p-6">
                   <div class="mb-5 flex items-start gap-3">
                     <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-elevated text-muted">
                       <UIcon name="i-lucide-users-round" class="size-5" />
@@ -319,24 +325,24 @@
 
                     <UAlert color="neutral" variant="subtle" icon="i-lucide-info" :description="$t('settings.oidc.adminWins')" />
 
-                    <div class="rounded-lg border border-dashed border-gray-300 p-3 dark:border-gray-700">
+                    <div class="rounded-lg border border-dashed border-accented p-3">
                       <div class="mb-3 flex items-start justify-between gap-3">
                         <div>
                           <h4 class="text-sm font-medium">{{ $t('settings.oidc.observedTitle') }}</h4>
-                          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $t('settings.oidc.observedHint') }}</p>
+                      <p class="mt-1 text-xs text-muted">{{ $t('settings.oidc.observedHint') }}</p>
                         </div>
                         <UBadge v-if="observedSuggestions.length" color="neutral" variant="subtle" size="sm">
                           {{ observedSuggestions.length }}
                         </UBadge>
                       </div>
-                      <p v-if="!oidcConfig?.observed_groups.length" class="text-sm text-gray-500 dark:text-gray-400">
+                      <p v-if="!oidcConfig?.observed_groups.length" class="text-sm text-muted">
                         {{ $t('settings.oidc.observedNone') }}
                       </p>
-                      <p v-else-if="!observedSuggestions.length" class="text-sm text-gray-500 dark:text-gray-400">
+                      <p v-else-if="!observedSuggestions.length" class="text-sm text-muted">
                         {{ $t('settings.oidc.observedAllAssigned') }}
                       </p>
                       <ul v-else class="space-y-2">
-                        <li v-for="group in observedSuggestions" :key="group" class="flex flex-col gap-3 rounded-md bg-gray-50 px-3 py-3 dark:bg-gray-950/50 sm:flex-row sm:items-center sm:justify-between">
+                        <li v-for="group in observedSuggestions" :key="group" class="flex flex-col gap-3 rounded-md bg-muted px-3 py-3 dark:bg-elevated/50 sm:flex-row sm:items-center sm:justify-between">
                           <code class="min-w-0 break-all text-xs sm:flex-1">{{ group }}</code>
                           <div class="flex w-full flex-col gap-2 sm:w-auto sm:shrink-0 sm:flex-row">
                             <UButton size="sm" class="min-h-11 w-full justify-center whitespace-nowrap sm:w-auto" color="neutral" variant="outline" @click="addObservedGroup('admin_groups', group)">{{ $t('settings.oidc.addAsAdmin') }}</UButton>
@@ -347,40 +353,40 @@
                     </div>
 
                     <UCheckbox v-model="oidcForm.allow_unmatched_viewer" :label="$t('settings.oidc.allowUnmatchedViewer')" />
-                    <p class="-mt-4 pl-7 text-xs text-gray-500 dark:text-gray-400">{{ $t('settings.oidc.unmatchedHint') }}</p>
+                    <p class="-mt-4 pl-7 text-xs text-muted">{{ $t('settings.oidc.unmatchedHint') }}</p>
                   </div>
                 </section>
               </div>
 
               <div class="space-y-6">
-                <section class="rounded-xl border border-gray-200 bg-default p-4 sm:p-6 dark:border-gray-800">
+                <section class="rounded-xl border border-default bg-default p-4 sm:p-6">
                   <div class="mb-5 flex items-start gap-3">
                     <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
                       <UIcon name="i-lucide-lock-keyhole" class="size-5" />
                     </div>
                     <div>
                       <h3 class="font-semibold">{{ $t('settings.oidc.securitySection') }}</h3>
-                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $t('settings.oidc.securityHint') }}</p>
+                      <p class="mt-1 text-xs text-muted">{{ $t('settings.oidc.securityHint') }}</p>
                     </div>
                   </div>
                   <div class="space-y-4">
                     <UCheckbox v-model="oidcForm.allow_http_issuer" :label="$t('settings.oidc.allowHttpIssuer')" />
-                    <p class="-mt-3 pl-7 text-xs text-gray-500 dark:text-gray-400">{{ $t('settings.oidc.allowHttpHint') }}</p>
-                    <div class="rounded-lg bg-gray-50 p-3 text-xs leading-relaxed text-gray-600 dark:bg-gray-950/60 dark:text-gray-300">
-                      <p class="font-medium text-gray-800 dark:text-gray-100">{{ $t('settings.oidc.secretStorageTitle') }}</p>
+                    <p class="-mt-3 pl-7 text-xs text-muted">{{ $t('settings.oidc.allowHttpHint') }}</p>
+                    <div class="rounded-lg bg-muted p-3 text-xs leading-relaxed text-toned dark:bg-elevated/60">
+                      <p class="font-medium text-highlighted">{{ $t('settings.oidc.secretStorageTitle') }}</p>
                       <p class="mt-1">{{ $t('settings.oidc.secretStorageHint') }}</p>
                     </div>
                   </div>
                 </section>
 
-                <section class="rounded-xl border border-gray-200 bg-default p-4 sm:p-6 dark:border-gray-800">
+                <section class="rounded-xl border border-default bg-default p-4 sm:p-6">
                   <div class="mb-4 flex items-center gap-3">
                     <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
                       <UIcon name="i-lucide-radio-tower" class="size-5" />
                     </div>
                     <div>
                       <h3 class="font-semibold">{{ $t('settings.oidc.connectionSection') }}</h3>
-                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $t('settings.oidc.connectionHint') }}</p>
+                      <p class="mt-1 text-xs text-muted">{{ $t('settings.oidc.connectionHint') }}</p>
                     </div>
                   </div>
 
@@ -411,7 +417,7 @@
                             {{ endpoint.label }}
                           </li>
                         </ul>
-                        <ul v-if="checkResult.warnings?.length" class="space-y-1 border-t border-gray-200/70 pt-2 text-xs dark:border-gray-700/70">
+                        <ul v-if="checkResult.warnings?.length" class="space-y-1 border-t border-default/70 pt-2 text-xs">
                           <li v-for="warning in checkResult.warnings" :key="warning" class="flex items-start gap-1.5">
                             <UIcon name="i-lucide-triangle-alert" class="mt-0.5 shrink-0 text-amber-500" />
                             <span>{{ checkWarningLabel(warning) }}</span>
@@ -429,12 +435,12 @@
                       {{ $t('settings.oidc.saveConfiguration') }}
                     </UButton>
                   </div>
-                  <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">{{ $t('settings.oidc.checkNoLogin') }}</p>
+                  <p class="mt-3 text-xs text-muted">{{ $t('settings.oidc.checkNoLogin') }}</p>
                 </section>
               </div>
             </div>
           </template>
-          <div v-else-if="loadingOidc" class="flex items-center gap-3 rounded-xl border border-gray-200 bg-default p-6 text-sm text-gray-500 dark:border-gray-800">
+          <div v-else-if="loadingOidc" class="flex items-center gap-3 rounded-xl border border-default bg-default p-6 text-sm text-muted">
             <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin" />
             {{ $t('common.loading') }}
           </div>

@@ -10,7 +10,7 @@
       >
         <!-- Row 1: port number + side badge + tested badge -->
         <div class="flex items-center justify-between gap-2">
-          <span class="text-sm font-bold text-gray-200">{{ socket.port_number }}</span>
+          <span class="text-sm font-bold text-neutral-200">{{ socket.port_number }}</span>
           <div class="flex items-center gap-1.5">
             <span
               v-if="socket.side"
@@ -29,7 +29,7 @@
         </div>
 
         <!-- Row 3: location -->
-        <div v-if="socket.location" class="mt-0.5 text-[11px] text-gray-500">
+        <div v-if="socket.location" class="mt-0.5 text-[11px] text-neutral-500">
           {{ socket.location }}
         </div>
       </div>

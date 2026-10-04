@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-dark">
+  <div class="flex min-h-screen items-center justify-center bg-muted px-4 dark:bg-dark">
     <!-- Theme toggle -->
     <div class="absolute right-4 top-4">
       <ClientOnly>
@@ -22,7 +22,7 @@
           <img src="/logo.svg" alt="ezSWM" width="2172" height="724" class="block h-auto w-full max-w-full object-contain dark:hidden">
           <img src="/logo-dark.svg" alt="ezSWM" width="2172" height="724" class="hidden h-auto w-full max-w-full object-contain dark:block">
         </h2>
-        <p class="mt-1 font-mono text-sm text-gray-400 dark:text-gray-500">Switch &amp; IP Management</p>
+        <p class="mt-1 font-mono text-sm text-muted">Switch &amp; IP Management</p>
       </div>
       <slot />
     </div>

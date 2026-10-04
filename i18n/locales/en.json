@@ -19,6 +19,7 @@
   },
   "ipAddresses": {
     "title": "IP Addresses",
+    "description": "View and manage IP addresses across the documented subnets.",
     "add": "Add IP Address",
     "delete": "Delete IP Address",
     "emptyTitle": "No IP addresses yet",
@@ -59,7 +60,9 @@
   },
   "sites": {
     "title": "Sites",
+    "description": "Group switches, VLANs, and subnets by site.",
     "create": "Create Site",
+    "createDescription": "Create a site to organize its switches, VLANs, and subnets.",
     "edit": "Edit Site",
     "delete": "Delete Site",
     "sections": {
@@ -194,6 +197,7 @@
     "copyToClipboard": "Copy to clipboard"
   },
   "dashboard": {
+    "description": "Review infrastructure totals, IP usage, and recent activity.",
     "emptyTitle": "Welcome to ezSWM!",
     "emptyDescription": "Start by creating your first switch.",
     "switchCount": "Switches",
@@ -211,7 +215,10 @@
   },
   "switches": {
     "title": "Switches",
+    "description": "Browse and filter switches, then review their port and connection records.",
     "create": "Create Switch",
+    "createDescription": "Add a switch and choose a layout template to generate its ports.",
+    "detailDescription": "Review switch details and document its ports, VLANs, and connections.",
     "edit": "Edit Switch",
     "delete": "Delete Switch",
     "sections": {
@@ -390,7 +397,10 @@
   },
   "vlans": {
     "title": "VLANs",
+    "description": "Manage VLANs and review how they are used by switches and subnets.",
     "create": "Create VLAN",
+    "createDescription": "Define a VLAN for use by switches and subnets.",
+    "detailDescription": "Review where this VLAN is used and update its details.",
     "edit": "Edit VLAN",
     "delete": "Delete VLAN",
     "fields": {
@@ -438,7 +448,10 @@
   },
   "networks": {
     "title": "Subnets",
+    "description": "Manage subnets and review their address use.",
     "create": "Create Subnet",
+    "createDescription": "Add an IPv4 subnet, then link it to a VLAN and enter any gateway or DNS details.",
+    "detailDescription": "Review IP addresses, ranges, and address use for this subnet.",
     "edit": "Edit Subnet",
     "delete": "Delete Subnet",
     "sections": {
@@ -577,8 +590,12 @@
   },
   "templates": {
     "title": "Layout Templates",
+    "description": "Define reusable port layouts for switch models.",
     "create": "Create Template",
+    "createDescription": "Create a port layout that can be used when adding switches.",
     "edit": "Edit Template",
+    "editDescription": "Update template details, units, and port blocks.",
+    "detailDescription": "Review a template's switch details and port layout.",
     "delete": "Delete Template",
     "detail": "Template Details",
     "importFromLibrary": "Import from Library",
@@ -692,6 +709,7 @@
   "tools": {
     "subnetCalculator": {
       "title": "Subnet Calculator",
+      "description": "Enter an IPv4 CIDR to calculate its network and host details.",
       "inputLabel": "CIDR Notation",
       "inputPlaceholder": "e.g. 10.0.1.0/24",
       "results": "Results"
@@ -699,6 +717,8 @@
   },
   "patchPanels": {
     "title": "Patch Panels",
+    "description": "Document patch-panel ports, outlet locations, and test status.",
+    "detailDescription": "Record outlet details and test status for each patch-panel port.",
     "create": "Create Patch Panel",
     "edit": "Edit Patch Panel",
     "delete": "Delete Patch Panel",
@@ -747,6 +767,7 @@
     "title": "Settings",
     "general": {
       "title": "General",
+      "description": "Set defaults and manage optional features.",
       "basicTitle": "Basic settings",
       "basicHint": "Application name and default status for new ports.",
       "featuresTitle": "Optional features",
@@ -762,6 +783,7 @@
     },
     "account": {
       "title": "Account",
+      "description": "Manage your profile and language preferences.",
       "profileTitle": "Profile",
       "profileHint": "Update the name and language shown in ezSWM.",
       "passwordHint": "Set a new password for your account.",
@@ -958,6 +980,7 @@
   },
   "dataManagement": {
     "title": "Data Management",
+    "description": "Import or export individual records, or create and restore a full backup.",
     "backupRestoreTab": "Backup & Restore",
     "exportTab": "Export",
     "importTab": "Import",
@@ -1155,6 +1178,7 @@
     },
     "pp": {
       "loading": "Loading patch panel data...",
+      "description": "Read-only overview of panel ports, outlet locations, and test status.",
       "linkLabel": "Public link for this patch panel",
       "free": "Free",
       "revokeConfirm": "Are you sure you want to revoke this public link? The QR code sticker will stop working."

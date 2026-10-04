@@ -1,8 +1,11 @@
 <template>
   <div class="p-6">
-    <div class="flex items-center gap-4 mb-6">
+    <div class="mb-6 flex items-start gap-4">
       <UButton to="/layout-templates" icon="i-heroicons-arrow-left" color="neutral" variant="ghost" />
-      <h1 class="text-2xl font-bold">{{ $t('templates.create') }}</h1>
+      <div>
+        <h1 class="text-2xl font-bold">{{ $t('templates.create') }}</h1>
+        <p class="mt-1 text-sm text-muted">{{ $t('templates.createDescription') }}</p>
+      </div>
     </div>
 
 
@@ -54,7 +57,7 @@
                 </UButton>
               </div>
 
-              <div v-for="(unit, unitIndex) in form.units" :key="unitIndex" class="mb-6 border border-gray-700 rounded-lg p-4">
+              <div v-for="(unit, unitIndex) in form.units" :key="unitIndex" class="mb-6 border border-default rounded-lg p-4">
                 <div class="flex items-center justify-between mb-4">
                   <h3 class="font-medium">{{ $t('templates.units.unitNumber') }}: {{ unit.unit_number }}</h3>
                   <UButton
@@ -81,7 +84,7 @@
                 <!-- Blocks Section -->
                 <div>
                   <div class="flex items-center justify-between mb-3">
-                    <h4 class="text-sm font-medium text-gray-400">{{ $t('templates.blocks.title') }}</h4>
+                    <h4 class="text-sm font-medium text-muted">{{ $t('templates.blocks.title') }}</h4>
                     <UButton icon="i-heroicons-plus" size="xs" variant="soft" @click="addBlock(unitIndex)">
                       {{ $t('templates.blocks.add') }}
                     </UButton>
@@ -90,10 +93,10 @@
                   <div
                     v-for="(block, blockIndex) in unit.blocks"
                     :key="blockIndex"
-                    class="mb-3 border border-gray-600 rounded-md p-3"
+                    class="mb-3 border border-accented rounded-md p-3"
                   >
                     <div class="flex items-start justify-between mb-3">
-                      <span class="text-sm text-gray-400">{{ $t('templates.blocks.title') }} #{{ blockIndex + 1 }}</span>
+                      <span class="text-sm text-muted">{{ $t('templates.blocks.title') }} #{{ blockIndex + 1 }}</span>
                       <div class="flex items-center gap-1">
                         <UButton
                           icon="i-heroicons-chevron-up"
@@ -160,14 +163,14 @@
                     </div>
                   </div>
 
-                  <div v-if="unit.blocks.length === 0" class="text-center py-4 text-sm text-gray-500">
+                  <div v-if="unit.blocks.length === 0" class="py-4 text-center text-sm text-muted">
                     {{ $t('common.noData') }}
                   </div>
                   <p v-if="errors[`units[${unitIndex}].blocks`]" class="mt-1 text-sm text-red-500">{{ errors[`units[${unitIndex}].blocks`] }}</p>
                 </div>
               </div>
 
-              <div v-if="form.units.length === 0" class="text-center py-8 text-gray-500">
+              <div v-if="form.units.length === 0" class="py-8 text-center text-muted">
                 {{ $t('common.noData') }}
               </div>
               <p v-if="errors.units" class="mt-1 text-sm text-red-500">{{ errors.units }}</p>
@@ -184,7 +187,7 @@
                   :selected-ports="[]"
                 />
               </div>
-              <p v-else class="text-sm text-gray-400">{{ $t('templates.previewEmpty') }}</p>
+              <p v-else class="text-sm text-muted">{{ $t('templates.previewEmpty') }}</p>
             </div>
 
             <USeparator />

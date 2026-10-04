@@ -8,7 +8,7 @@
               <UIcon name="i-lucide-network" class="size-6" />
             </div>
             <h1 class="font-display text-2xl font-bold tracking-tight">{{ $t('auth.loginTitle') }}</h1>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $t('auth.loginDescription') }}</p>
+            <p class="mt-1 text-sm text-muted">{{ $t('auth.loginDescription') }}</p>
           </div>
         </template>
 
@@ -46,14 +46,14 @@
             {{ error }}
           </div>
 
-          <div v-if="oidcEnabled" class="-mt-2 text-center text-xs text-gray-500 dark:text-gray-400">
+          <div v-if="oidcEnabled" class="-mt-2 text-center text-xs text-muted">
             {{ $t('auth.oidc.localHint') }}
           </div>
 
           <div v-if="oidcEnabled" class="relative flex items-center" aria-hidden="true">
-            <div class="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
-            <span class="px-3 text-xs font-medium uppercase tracking-wider text-gray-400">{{ $t('auth.oidc.orSso') }}</span>
-            <div class="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
+            <div class="h-px flex-1 bg-accented" />
+            <span class="px-3 text-xs font-medium uppercase tracking-wider text-muted">{{ $t('auth.oidc.orSso') }}</span>
+            <div class="h-px flex-1 bg-accented" />
           </div>
 
           <a

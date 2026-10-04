@@ -3,7 +3,7 @@
     <template #title>
       <div v-if="editTarget" class="flex items-center gap-2">
         <code class="font-mono text-sm">{{ editTarget.ip_address }}</code>
-        <span v-if="editTarget.hostname" class="text-sm text-gray-400">{{ editTarget.hostname }}</span>
+        <span v-if="editTarget.hostname" class="text-sm text-muted">{{ editTarget.hostname }}</span>
       </div>
       <span v-else>{{ $t('ipAddresses.add') }}</span>
     </template>
@@ -27,7 +27,7 @@
         <!-- Network: editable + auto-preselected (add); read-only (edit) -->
         <UFormField :label="$t('ipAddresses.fields.network')" required>
           <div v-if="editTarget" class="flex items-center gap-2 text-sm">
-            <span class="font-medium text-gray-900 dark:text-white">{{ editTarget.network_name }}</span>
+            <span class="font-medium text-highlighted">{{ editTarget.network_name }}</span>
             <code class="rounded bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">{{ editTarget.network_subnet }}</code>
           </div>
           <template v-else>

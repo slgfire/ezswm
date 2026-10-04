@@ -96,7 +96,7 @@
               {{ $t('switches.ports.portConflictOverride') }}
             </div>
           </UFormField>
-          <div v-if="selectedSwitchId && targetSwitchMissingVlans.length > 0" class="mt-1 rounded-md bg-blue-500/10 border border-blue-500/30 px-3 py-2 text-xs text-blue-400">
+          <div v-if="selectedSwitchId && targetSwitchMissingVlans.length > 0" class="mt-1 rounded-md border border-default bg-muted px-3 py-2 text-xs text-toned">
             <UIcon name="i-heroicons-information-circle" class="size-3.5 inline-block mr-1" />
             {{ $t('vlans.targetSwitchWillAdd', { vlans: targetSwitchMissingVlans.join(', ') }) }}
           </div>
@@ -147,7 +147,7 @@
         <!-- Helper View Settings (collapsible) -->
         <div class="border-t border-default pt-4 mt-4">
           <button
-            class="flex w-full items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-300"
+            class="flex w-full items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted hover:text-toned"
             @click="helperExpanded = !helperExpanded"
           >
             <UIcon name="i-heroicons-chevron-right" :class="['h-3.5 w-3.5 transition-transform duration-200', helperExpanded ? 'rotate-90' : '']" />
@@ -174,7 +174,7 @@
         <UFormField :label="$t('lag.group')">
           <div v-if="lagGroup" class="flex items-center gap-2">
             <UBadge color="info" variant="soft" size="sm">{{ lagGroup.name }}</UBadge>
-            <span v-if="lagGroup.remote_device" class="text-xs text-gray-400">→ {{ lagGroup.remote_device }}</span>
+            <span v-if="lagGroup.remote_device" class="text-xs text-muted">→ {{ lagGroup.remote_device }}</span>
             <UButton
               size="xs"
               variant="ghost"
@@ -184,7 +184,7 @@
               {{ $t('lag.removeFromLag') }}
             </UButton>
           </div>
-          <span v-else class="text-sm text-gray-400">{{ $t('common.none') }}</span>
+          <span v-else class="text-sm text-muted">{{ $t('common.none') }}</span>
         </UFormField>
       </div>
 

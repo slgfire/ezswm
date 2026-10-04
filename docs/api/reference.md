@@ -320,12 +320,24 @@ Both endpoints depend on internet access to GitHub and can return `503` when una
     "activity": [...],
     "settings": [...],
     "publicTokens": [...],
-    "topologyLayouts": [...]
+    "topologyLayouts": [...],
+    "oidcConfig": [...],
+    "patchPanels": [...],
+    "patchPanelSockets": [...],
+    "patchPanelTokens": [...]
   }
 }
 ```
 
-Patch Panel tables (`patchPanels`, `patchPanelSockets`, `patchPanelTokens`) are part of the live data model, but are not yet included in this full-backup payload.
+The payload also carries three Patch Panel arrays inside `data` (abbreviated above): `patchPanels`, `patchPanelSockets` and `patchPanelTokens`. A full admin backup includes password hashes, the encrypted OIDC secret and Patch Panel public token values (never a plaintext OIDC client secret, the OIDC encryption key or pending login transactions). Access token values are usable as stored, so keep backups confidential.
+
+`POST /api/backup/import` rules for these keys: if all three are absent (legacy backup) the import is accepted only when no Patch Panel, socket or token currently exists, otherwise it returns `400` before any write. If any of the three is present, all three must be arrays (partial, `null` or non-array → `400`). Three empty arrays are an intentional empty snapshot and delete existing Patch Panels:
+
+```json
+{ "schema": "sqlite-v1", "data": { "users": [...], "patchPanels": [], "patchPanelSockets": [], "patchPanelTokens": [] } }
+```
+
+Note: this abbreviated sketch is not a safe complete backup. Use a complete exported payload so no omitted data is lost; a restore requires a usable local administrator in `users` plus the Patch Panel array rules above.
 
 ## Activity
 

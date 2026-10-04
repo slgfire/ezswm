@@ -2,16 +2,16 @@
   <nav v-if="crumbs.length > 1" class="border-b border-default px-4 py-2">
     <ol class="flex items-center gap-1 text-sm">
       <li v-for="(crumb, i) in crumbs" :key="crumb.path" class="flex items-center gap-1">
-        <UIcon v-if="i > 0" name="i-heroicons-chevron-right-20-solid" class="h-4 w-4 text-neutral-500" />
+        <UIcon v-if="i > 0" name="i-heroicons-chevron-right-20-solid" class="h-4 w-4 text-muted" />
         <NuxtLink
           v-if="i < crumbs.length - 1"
           :to="crumb.path"
-          class="flex items-center gap-1.5 text-neutral-400 hover:text-gray-900 dark:hover:text-white"
+          class="flex items-center gap-1.5 text-muted hover:text-highlighted"
         >
           <UIcon v-if="crumb.icon" :name="crumb.icon" class="h-4 w-4 flex-shrink-0" />
           {{ crumb.label }}
         </NuxtLink>
-        <span v-else class="flex items-center gap-1.5 text-gray-900 dark:text-white">
+        <span v-else class="flex items-center gap-1.5 text-highlighted">
           <UIcon v-if="crumb.icon" :name="crumb.icon" class="h-4 w-4 flex-shrink-0" />
           {{ crumb.label }}
         </span>

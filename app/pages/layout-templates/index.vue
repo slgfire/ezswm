@@ -1,8 +1,11 @@
 <template>
   <div class="p-6">
     <!-- Header -->
-    <div class="mb-4 flex items-center justify-between">
-      <h1 class="text-xl font-bold">{{ $t('templates.title') }}</h1>
+    <div class="mb-4 flex flex-wrap items-start justify-between gap-4">
+      <div class="min-w-0">
+        <h1 class="text-xl font-bold">{{ $t('templates.title') }}</h1>
+        <p class="mt-1 text-sm text-muted">{{ $t('templates.description') }}</p>
+      </div>
       <UButton icon="i-heroicons-plus" size="sm" @click="void (showCreateModal = true)">
         {{ $t('templates.create') }}
       </UButton>
@@ -63,7 +66,7 @@ v-model="selectedPortType"
 
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center py-12">
-      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
     </div>
 
     <!-- Card Grid View -->
@@ -90,8 +93,8 @@ v-model="selectedPortType"
           <!-- Card Body -->
           <div class="p-4">
             <div class="min-w-0">
-              <h3 class="truncate font-semibold text-gray-900 dark:text-white">{{ tpl.name }}</h3>
-              <p v-if="tpl.manufacturer || tpl.model" class="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
+              <h3 class="truncate font-semibold text-highlighted">{{ tpl.name }}</h3>
+              <p v-if="tpl.manufacturer || tpl.model" class="mt-0.5 truncate text-sm text-muted">
                 {{ [tpl.manufacturer, tpl.model].filter(Boolean).join(' · ') }}
               </p>
             </div>
@@ -116,7 +119,7 @@ v-model="selectedPortType"
             </div>
 
             <!-- Usage -->
-            <div :class="['mt-3 flex items-center gap-1.5 text-xs', tpl.switch_count ? 'text-gray-400 dark:text-gray-500' : 'text-orange-400 dark:text-orange-500']">
+            <div :class="['mt-3 flex items-center gap-1.5 text-xs', tpl.switch_count ? 'text-muted' : 'text-orange-400 dark:text-orange-500']">
               <UIcon :name="tpl.switch_count ? 'i-heroicons-link' : 'i-heroicons-exclamation-triangle'" class="h-3.5 w-3.5" />
               <span>{{ $t('templates.usedBy', { count: tpl.switch_count || 0 }) }}</span>
             </div>
@@ -142,8 +145,8 @@ v-model="selectedPortType"
           <!-- Info -->
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2">
-              <h3 class="truncate font-semibold text-gray-900 dark:text-white">{{ tpl.name }}</h3>
-              <span v-if="tpl.manufacturer || tpl.model" class="hidden truncate text-sm text-gray-400 dark:text-gray-500 md:inline">
+              <h3 class="truncate font-semibold text-highlighted">{{ tpl.name }}</h3>
+              <span v-if="tpl.manufacturer || tpl.model" class="hidden truncate text-sm text-muted md:inline">
                 {{ [tpl.manufacturer, tpl.model].filter(Boolean).join(' · ') }}
               </span>
             </div>
@@ -163,7 +166,7 @@ v-model="selectedPortType"
               >
                 {{ pt.label }}
               </UBadge>
-              <span :class="['ml-1 flex items-center gap-1 text-xs', tpl.switch_count ? 'text-gray-400 dark:text-gray-500' : 'text-orange-400 dark:text-orange-500']">
+              <span :class="['ml-1 flex items-center gap-1 text-xs', tpl.switch_count ? 'text-muted' : 'text-orange-400 dark:text-orange-500']">
                 <UIcon :name="tpl.switch_count ? 'i-heroicons-link' : 'i-heroicons-exclamation-triangle'" class="h-3 w-3" />
                 {{ $t('templates.usedBy', { count: tpl.switch_count || 0 }) }}
               </span>
@@ -188,8 +191,8 @@ v-model="selectedPortType"
 
     <!-- No results after filtering -->
     <div v-else-if="!loading && allItems.length > 0 && filteredItems.length === 0" class="py-12 text-center">
-      <UIcon name="i-heroicons-funnel" class="mx-auto mb-3 h-10 w-10 text-gray-300 dark:text-gray-600" />
-      <p class="text-sm text-gray-500 dark:text-gray-400">{{ $t('templates.noResults') }}</p>
+      <UIcon name="i-heroicons-funnel" class="mx-auto mb-3 h-10 w-10 text-muted" />
+      <p class="text-sm text-muted">{{ $t('templates.noResults') }}</p>
     </div>
 
     <!-- Empty state -->

@@ -8,7 +8,7 @@
   >
     <!-- Logo (single header row) -->
     <template #header="{ collapsed }">
-      <NuxtLink :to="sitePrefix" class="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center" aria-label="ezSWM">
+      <NuxtLink :to="sitePrefix" class="flex h-full flex-1 items-center justify-center" :class="{ 'pt-2': !collapsed }" aria-label="ezSWM">
         <img v-if="collapsed" src="/favicon.svg" alt="" width="32" height="32" class="size-8 shrink-0 object-contain">
         <template v-else>
           <img src="/logo.svg" alt="" width="2172" height="724" class="h-12 w-36 shrink-0 object-contain dark:hidden">
@@ -32,7 +32,7 @@
                 :class="[
                   isActive(item.to)
                     ? 'sidebar-active bg-primary-500/10 text-primary-500 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white',
+                    : 'text-toned hover:bg-elevated hover:text-highlighted',
                   collapsed ? 'justify-center' : ''
                 ]"
               >
@@ -47,7 +47,7 @@
 
     <!-- Footer: version/github (hidden when collapsed) + collapse toggle (always) -->
     <template #footer="{ collapsed }">
-      <div v-if="!collapsed" class="flex items-center gap-2.5 px-1 font-mono text-sm text-neutral-500">
+      <div v-if="!collapsed" class="flex items-center gap-2.5 px-1 font-mono text-sm text-muted">
         <button
           type="button"
           class="relative transition-colors hover:text-primary-500"
@@ -60,7 +60,7 @@
             class="absolute -right-2.5 -top-1 h-2 w-2 rounded-full bg-primary-500"
           />
         </button>
-        <a href="https://github.com/slgfire/ezswm" target="_blank" rel="noopener" class="text-neutral-400 hover:text-primary-500 transition-colors">
+        <a href="https://github.com/slgfire/ezswm" target="_blank" rel="noopener" class="text-muted hover:text-primary-500 transition-colors">
           <UIcon name="i-simple-icons-github" class="h-4.5 w-4.5" />
         </a>
       </div>

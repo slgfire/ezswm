@@ -1,7 +1,10 @@
 <template>
   <div class="p-6">
-    <div class="mb-4 flex items-center justify-between">
-      <h1 class="text-xl font-bold">{{ $t('switches.title') }}</h1>
+    <div class="mb-4 flex flex-wrap items-start justify-between gap-4">
+      <div class="min-w-0">
+        <h1 class="text-xl font-bold">{{ $t('switches.title') }}</h1>
+        <p class="mt-1 text-sm text-muted">{{ $t('switches.description') }}</p>
+      </div>
       <UButton :to="`/sites/${siteId}/switches/create`" icon="i-heroicons-plus" size="sm">
         {{ $t('switches.create') }}
       </UButton>
@@ -122,7 +125,7 @@
           <template #content>
             <div class="w-72 p-3">
               <div class="mb-2 flex items-center justify-between">
-                <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">{{ $t('common.print') }}</span>
+                <span class="text-xs font-semibold text-toned">{{ $t('common.print') }}</span>
                 <div class="flex gap-1">
                   <UButton size="xs" variant="ghost" @click="print.selectedIds.length === filteredItems.length ? print.deselectAll() : print.selectAll(filteredItems.map((s) => s.id))">
                     {{ print.selectedIds.length === filteredItems.length ? $t('common.deselectAll') : $t('common.selectAll') }}
@@ -133,7 +136,7 @@
               <div class="max-h-60 overflow-y-auto space-y-0.5">
                 <template v-if="siteId === 'all'">
                   <template v-for="group in print.filteredGroups" :key="group.siteId">
-                    <div v-if="group.siteName" class="mt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">{{ group.siteName }}</div>
+                    <div v-if="group.siteName" class="mt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted">{{ group.siteName }}</div>
                     <label
                       v-for="sw in group.items"
                       :key="sw.id"
@@ -186,7 +189,7 @@
           <template #content>
             <div class="w-72 p-3">
               <div class="mb-2 flex items-center justify-between">
-                <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">{{ $t('public.admin.title') }}</span>
+                <span class="text-xs font-semibold text-toned">{{ $t('public.admin.title') }}</span>
                 <div class="flex gap-1">
                   <UButton size="xs" variant="ghost" @click="qr.selectedIds.length === filteredItems.length ? qr.deselectAll() : qr.selectAll(filteredItems.map((s) => s.id))">
                     {{ qr.selectedIds.length === filteredItems.length ? $t('common.deselectAll') : $t('common.selectAll') }}
@@ -197,7 +200,7 @@
               <div class="max-h-60 overflow-y-auto space-y-0.5">
                 <template v-if="siteId === 'all'">
                   <template v-for="group in qr.filteredGroups" :key="group.siteId">
-                    <div v-if="group.siteName" class="mt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">{{ group.siteName }}</div>
+                    <div v-if="group.siteName" class="mt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted">{{ group.siteName }}</div>
                     <label
                       v-for="sw in group.items"
                       :key="sw.id"
@@ -248,15 +251,15 @@
 
     <!-- Loading -->
     <div v-if="loading" class="flex justify-center py-12">
-      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
     </div>
 
     <!-- Grid View: Grouped (All Sites) -->
     <template v-if="!loading && filteredItems.length > 0 && viewMode === 'grid' && siteId === 'all'">
       <div v-for="group in groupedItems" :key="group.siteId" class="mb-6">
         <div v-if="groupedItems.length > 1" class="mb-3 flex items-center gap-3">
-          <UIcon name="i-heroicons-building-office-2" class="h-4 w-4 text-gray-500" />
-          <span class="text-sm font-semibold text-gray-400">{{ group.siteName }}</span>
+          <UIcon name="i-heroicons-building-office-2" class="h-4 w-4 text-muted" />
+          <span class="text-sm font-semibold text-muted">{{ group.siteName }}</span>
           <div class="h-px flex-1 bg-default" />
         </div>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -493,8 +496,8 @@
     <div v-if="!loading && filteredItems.length > 0 && viewMode === 'list' && (siteId === 'all' || effectiveGroupViewMode === 'flat')">
       <div v-for="group in groupedItems" :key="group.siteId" class="mb-6">
         <div v-if="groupedItems.length > 1" class="mb-3 flex items-center gap-3">
-          <UIcon name="i-heroicons-building-office-2" class="h-4 w-4 text-gray-500" />
-          <span class="text-sm font-semibold text-gray-400">{{ group.siteName }}</span>
+          <UIcon name="i-heroicons-building-office-2" class="h-4 w-4 text-muted" />
+          <span class="text-sm font-semibold text-muted">{{ group.siteName }}</span>
           <div class="h-px flex-1 bg-default" />
         </div>
         <div class="flex flex-col gap-2">
@@ -517,8 +520,8 @@
 
     <!-- No results -->
     <div v-if="!loading && allItems.length > 0 && filteredItems.length === 0" class="py-12 text-center">
-      <UIcon name="i-heroicons-funnel" class="mx-auto mb-3 h-10 w-10 text-gray-300 dark:text-gray-600" />
-      <p class="text-sm text-gray-500 dark:text-gray-400">{{ $t('switches.noResults') }}</p>
+      <UIcon name="i-heroicons-funnel" class="mx-auto mb-3 h-10 w-10 text-muted" />
+      <p class="text-sm text-muted">{{ $t('switches.noResults') }}</p>
     </div>
 
     <!-- Empty state -->

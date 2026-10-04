@@ -237,12 +237,12 @@ a, button {
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: var(--ui-bg-accented);
   border-radius: 3px;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: var(--ui-border-accented);
 }
 
 /* LAG group visual indicators */
@@ -251,19 +251,19 @@ a, button {
     -45deg,
     transparent,
     transparent 5px,
-    rgba(148, 163, 184, 0.18) 5px,
-    rgba(148, 163, 184, 0.18) 7px
+    color-mix(in srgb, var(--ui-text-muted) 18%, transparent) 5px,
+    color-mix(in srgb, var(--ui-text-muted) 18%, transparent) 7px
   );
 }
 
 .lag-stripe-icon {
-  background-color: rgba(148, 163, 184, 0.1);
+  background-color: color-mix(in srgb, var(--ui-text-muted) 10%, transparent);
   background-image: repeating-linear-gradient(
     -45deg,
     transparent,
     transparent 2px,
-    rgba(148, 163, 184, 0.25) 2px,
-    rgba(148, 163, 184, 0.25) 3px
+    color-mix(in srgb, var(--ui-text-muted) 25%, transparent) 2px,
+    color-mix(in srgb, var(--ui-text-muted) 25%, transparent) 3px
   );
 }
 
@@ -565,6 +565,10 @@ body.print-mode {
       color: #000 !important;
     }
 
+    .port-strip-trunk {
+      background-color: #000 !important;
+    }
+
     body {
       background-color: #fff !important;
     }
@@ -641,4 +645,3 @@ body.print-mode {
     }
   }
 }
-

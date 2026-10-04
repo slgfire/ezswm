@@ -19,6 +19,7 @@
   },
   "ipAddresses": {
     "title": "IP-Adressen",
+    "description": "Zeigen und verwalten Sie IP-Adressen in den dokumentierten Subnetzen.",
     "add": "IP-Adresse hinzufügen",
     "delete": "IP-Adresse löschen",
     "emptyTitle": "Noch keine IP-Adressen",
@@ -59,7 +60,9 @@
   },
   "sites": {
     "title": "Standorte",
+    "description": "Gruppieren Sie Switches, VLANs und Subnetze nach Standort.",
     "create": "Standort erstellen",
+    "createDescription": "Erstellen Sie einen Standort, um die dortigen Switches, VLANs und Subnetze zu organisieren.",
     "edit": "Standort bearbeiten",
     "delete": "Standort löschen",
     "sections": {
@@ -194,6 +197,7 @@
     "copyToClipboard": "In Zwischenablage kopieren"
   },
   "dashboard": {
+    "description": "Prüfen Sie Infrastruktur-Zahlen, IP-Auslastung und aktuelle Aktivitäten.",
     "emptyTitle": "Willkommen bei ezSWM!",
     "emptyDescription": "Erstellen Sie Ihren ersten Switch, um zu beginnen.",
     "switchCount": "Switches",
@@ -211,7 +215,10 @@
   },
   "switches": {
     "title": "Switches",
+    "description": "Durchsuchen und filtern Sie Switches und sehen Sie deren Port- und Verbindungsdetails ein.",
     "create": "Switch erstellen",
+    "createDescription": "Erstellen Sie einen Switch und wählen Sie eine Layout-Vorlage, um seine Ports anzulegen.",
+    "detailDescription": "Sehen Sie Switch-Details ein und dokumentieren Sie Ports, VLANs und Verbindungen.",
     "edit": "Switch bearbeiten",
     "delete": "Switch löschen",
     "sections": {
@@ -390,7 +397,10 @@
   },
   "vlans": {
     "title": "VLANs",
+    "description": "Verwalten Sie VLANs und sehen Sie deren Verwendung durch Switches und Subnetze ein.",
     "create": "VLAN erstellen",
+    "createDescription": "Legen Sie ein VLAN zur Verwendung durch Switches und Subnetze an.",
+    "detailDescription": "Sehen Sie die Verwendung dieses VLANs ein und bearbeiten Sie seine Details.",
     "edit": "VLAN bearbeiten",
     "delete": "VLAN löschen",
     "fields": {
@@ -438,7 +448,10 @@
   },
   "networks": {
     "title": "Subnetze",
+    "description": "Verwalten Sie Subnetze und prüfen Sie deren IP-Auslastung.",
     "create": "Subnetz erstellen",
+    "createDescription": "Legen Sie ein IPv4-Subnetz an und ergänzen Sie bei Bedarf VLAN, Gateway und DNS.",
+    "detailDescription": "Prüfen Sie IP-Adressen, Bereiche und Auslastung dieses Subnetzes.",
     "edit": "Subnetz bearbeiten",
     "delete": "Subnetz löschen",
     "sections": {
@@ -577,8 +590,12 @@
   },
   "templates": {
     "title": "Layout-Vorlagen",
+    "description": "Definieren Sie wiederverwendbare Port-Layouts für Switch-Modelle.",
     "create": "Vorlage erstellen",
+    "createDescription": "Erstellen Sie ein Port-Layout, das Sie beim Anlegen von Switches verwenden können.",
     "edit": "Vorlage bearbeiten",
+    "editDescription": "Bearbeiten Sie Vorlagendetails, Einheiten und Port-Blöcke.",
+    "detailDescription": "Prüfen Sie Switch-Angaben und Port-Layout der Vorlage.",
     "delete": "Vorlage löschen",
     "detail": "Vorlagen-Details",
     "importFromLibrary": "Aus Bibliothek importieren",
@@ -692,6 +709,7 @@
   "tools": {
     "subnetCalculator": {
       "title": "Subnetz-Rechner",
+      "description": "Geben Sie ein IPv4-CIDR ein, um Netzwerk- und Hostdaten zu berechnen.",
       "inputLabel": "CIDR-Notation",
       "inputPlaceholder": "z.B. 10.0.1.0/24",
       "results": "Ergebnisse"
@@ -699,6 +717,8 @@
   },
   "patchPanels": {
     "title": "Patchfelder",
+    "description": "Dokumentieren Sie Patchfeld-Ports, Anschlussdosen und Prüfstatus.",
+    "detailDescription": "Erfassen Sie Anschlussdetails und Prüfstatus für jeden Patchfeld-Port.",
     "create": "Patchfeld erstellen",
     "edit": "Patchfeld bearbeiten",
     "delete": "Patchfeld löschen",
@@ -747,6 +767,7 @@
     "title": "Einstellungen",
     "general": {
       "title": "Allgemein",
+      "description": "Verwalten Sie Standardeinstellungen und optionale Funktionen.",
       "basicTitle": "Grundeinstellungen",
       "basicHint": "Anwendungsname und Standardstatus für neue Ports.",
       "featuresTitle": "Optionale Funktionen",
@@ -762,6 +783,7 @@
     },
     "account": {
       "title": "Konto",
+      "description": "Verwalten Sie Ihr Profil und Ihre Spracheinstellungen.",
       "profileTitle": "Profil",
       "profileHint": "Ändern Sie den in ezSWM angezeigten Namen und die Sprache.",
       "passwordHint": "Legen Sie ein neues Passwort für Ihr Konto fest.",
@@ -958,6 +980,7 @@
   },
   "dataManagement": {
     "title": "Datenverwaltung",
+    "description": "Importieren oder exportieren Sie einzelne Datensätze oder erstellen Sie ein vollständiges Backup und stellen Sie es wieder her.",
     "backupRestoreTab": "Backup & Restore",
     "exportTab": "Export",
     "importTab": "Import",
@@ -1155,6 +1178,7 @@
     },
     "pp": {
       "loading": "Lade Patchfeld-Daten...",
+      "description": "Schreibgeschützte Übersicht der Patchfeld-Ports, Anschlussorte und Prüfstatus.",
       "linkLabel": "Öffentlicher Link für dieses Patchfeld",
       "free": "Frei",
       "revokeConfirm": "Möchten Sie diesen öffentlichen Link wirklich widerrufen? Der QR-Code-Sticker funktioniert dann nicht mehr."

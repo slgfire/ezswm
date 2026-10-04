@@ -23,7 +23,9 @@ Nach der Einrichtung wirst du zum Anmeldebildschirm weitergeleitet.
 
 Nach der Anmeldung bietet das Dashboard eine Zusammenfassung deiner Infrastruktur: Gesamtzahl der Switches, VLANs, Subnetze und IP-Auslastung. Die Seitenleiste links ermöglicht den Zugriff auf alle Bereiche. Die Kopfleiste enthält die globale Suche, einen Theme-Umschalter (Dunkel/Hell), Sprachauswahl und Benutzermenü.
 
-![Dashboard](/images/screenshot-dashboard.png)
+Die Oberfläche verwendet neutrale Flächen für Layout und Gestaltung. Farbe bleibt dort erhalten, wo sie Informationen vermittelt: VLANs behalten ihre zugewiesenen Farben, während Port-Status und Warnungen ihre Statusfarben behalten, etwa Grün für Up, Gelb/Orange für Warnungen und Rot für Down oder Fehler.
+
+![Dashboard — synthetisches Beispiel, Demo-Daten, englischsprachige Oberfläche](/images/screenshot-dashboard-synthetic-current.png)
 
 ### Schutz vor nicht gespeicherten Änderungen
 
@@ -35,13 +37,19 @@ Bestätigungsdialoge lassen sich einheitlich über **Abbrechen**, den **Schließ
 
 Über die Sprachauswahl in der Kopfleiste (oben rechts, Globus-Symbol) kannst du jederzeit zwischen Englisch und Deutsch umschalten. Deine Auswahl wird in deinem Profil gespeichert und bleibt so über Reloads und Geräte hinweg erhalten. Du kannst sie auch unter Einstellungen → Konto ändern.
 
+Kurze Einführungen auf den Hauptseiten sind auf Englisch und Deutsch verfügbar und folgen der für dein Konto gewählten Sprache.
+
+### Aktualität der Screenshots
+
+Vier Screenshots in dieser Anleitung — Dashboard, Layout-Templates, Switch-Liste und Standorte — sind synthetische Beispiele mit Demo-Daten (englischsprachige Oberfläche), aufgenommen vor der letzten Korrektur des Logo-Abstands in der Seitenleiste (die Logo-Position kann daher leicht von der aktuellen Oberfläche abweichen). Icon-Anfragen wurden mit lokalen SVG-Daten aus Icon-Paketen und dem Build-Cache beantwortet, ohne sie an ein Backend oder eine externe Icon-API weiterzuleiten. Bei der visuellen Prüfung fehlten weiterhin Icons in Seitenleiste und Toolbar; die fehlenden Icons sind eine Einschränkung der Aufnahme, kein bekannter Anwendungsfehler; die Beispiele bilden die Icon-Darstellung nicht vollständig ab. Die übrigen Screenshots in dieser Anleitung sind ältere Assets und wurden für dieses Release nicht erneut geprüft.
+
 ## Layout-Templates
 
 ### Was sie sind
 
 Layout-Templates definieren wiederverwendbare Switch-Modell-Definitionen. Anstatt Port-Layouts für jeden Switch manuell zu konfigurieren, erstellst du einmal ein Template (z.B. "Cisco C9300-48P") und weist es beliebig vielen Switches zu. Das Template bestimmt, wie viele Ports angezeigt werden, deren Typen und wie sie visuell angeordnet sind.
 
-![Layout-Templates](/images/screenshot-templates.png)
+![Layout-Templates — synthetisches Beispiel, Demo-Daten, englischsprachige Oberfläche](/images/screenshot-templates-synthetic-current.png)
 
 ### Erstellung eines Templates
 
@@ -112,7 +120,7 @@ Während du Einheiten und Blöcke konfigurierst, wird am unteren Rand des Formul
 
 ### Switch erstellen
 
-![Switch-Liste](/images/screenshot-switches.png)
+![Switch-Liste — synthetisches Beispiel, Demo-Daten, englischsprachige Oberfläche](/images/screenshot-switches-synthetic-current.png)
 
 Navigiere zu **Switches** in der Seitenleiste und klicke auf **Erstellen**.
 
@@ -629,21 +637,19 @@ Dies ist ein rein clientseitiges Werkzeug — es werden keine Daten gespeichert.
 
 Jeder Entitätstyp (Switches, VLANs, Subnetze, IP-Zuweisungen, IP-Bereiche, Layout-Templates) kann einzeln als JSON oder CSV exportiert werden. Der Tab **Backup & Restore** liefert zusätzlich einen einzelnen JSON-Dump aller Tabellen, markiert mit `schema: "sqlite-v1"`.
 
-### Import & Restore (temporär deaktiviert in 0.21.x)
+### Import und vollständige Wiederherstellung
 
-::: warning Import & Restore werden für SQLite umgebaut
-Der 0.21-Storage-Switch hat die Schreibseite des Import-/Restore-Flows auf dem alten JSON-Pfad zurückgelassen, der sich nicht sauber auf das neue Schema mit FK-Constraints übersetzen lässt. Die Import-Endpoints und der Activity-Log-Undo-Button liefern aktuell **`501 Not Implemented`**:
+Über den Tab **Import** fügst du neue Einträge aus einer unterstützten CSV- oder JSON-Datei hinzu. Wähle den Entitätstyp, lade bei Bedarf eine Vorlage herunter, lade die Datei hoch und prüfe Vorschau und Validierungsergebnisse. Nur gültige Zeilen werden importiert; vorhandene Einträge werden nicht ersetzt.
 
-- Per-Entity-Import (CSV/JSON in eine Liste droppen)
-- Vollständiger Backup-Restore (Backup & Restore Tab)
-- Activity-Log "Rückgängig"-Button
-
-Sie kommen in einem Patch-Release zurück. Die **Export**-Seite funktioniert weiterhin, und ein manuelles Rollback geht über das Zurückspielen einer alten `db.sqlite`-Datei. Fortschritt unter [#156](https://github.com/slgfire/ezswm/issues/156).
-:::
+Für eine vollständige Wiederherstellung verwende **Backup & Restore** mit einem vollständigen Administrator-Backup. Ein vollständiger Restore ersetzt den aktuellen Datenbestand durch den Backup-Snapshot. Lade deshalb vor dem Restore ein aktuelles Voll-Backup herunter.
 
 ### Backup-Format
 
 Backups sind JSON-Dumps der zugrundeliegenden SQLite-Tabellen, ein Array pro Entity, mit einem `schema: "sqlite-v1"`-Marker am Anfang. JSON-Spalten (Tags, `configured_vlans`, `tagged_vlans` auf Ports, Template-`units`, Activity-`changes`/`previous_state`) bleiben als JSON-Strings — der Restore-Pfad parsed sie beim Wiedereinspielen.
+
+Das Administrator-Voll-Backup enthält Patch-Panel-Daten (`patchPanels`, `patchPanelSockets`, `patchPanelTokens`). Es enthält Passwort-Hashes und – sofern konfiguriert – das OIDC-Client-Secret in verschlüsselter Form; bewahre die Datei deshalb vertraulich auf. Klartext-OIDC-Client-Secret, OIDC-Verschlüsselungsschlüssel und offene Login-Transaktionen sind nicht enthalten. Die öffentlichen Patch-Panel-Tokenwerte sind nutzbare Zugriffsberechtigungen; veröffentliche die Datei niemals. Einzelne CSV-/JSON-Exporte unter **Export** enthalten nur ausgewählte Entitätstypen und sind keine Voll-Backups für die vollständige Wiederherstellung.
+
+Beim Restore wird ein Backup ohne alle drei Patch-Panel-Schlüssel (älteres Backup) nur akzeptiert, wenn aktuell keine Patch Panels, Sockets oder Tokens existieren; andernfalls wird es vor jeder Änderung abgelehnt – erstelle zuerst ein aktuelles Voll-Backup. Ist einer der drei Schlüssel vorhanden, müssen alle drei als Listen vorhanden sein. Drei leere Listen sind ein bewusster leerer Snapshot und löschen die vorhandenen Patch Panels.
 
 ## Einstellungen
 
@@ -717,7 +723,7 @@ Admins sehen in der Seitenleiste eine schreibgeschützte Seite **Benutzer** mit 
 
 Standorte repräsentieren physische Orte oder logische Gruppierungen für deine Infrastruktur. Jeder Standort hat eigene Switches, VLANs, Subnetze, Topologie und (wenn aktiviert) Patch Panels. Verwende Standorte, um verschiedene Orte zu trennen (z.B. "Rechenzentrum", "Büro", "LAN-Party Halle A").
 
-![Standorte](/images/screenshot-sites.png)
+![Standorte — synthetisches Beispiel, Demo-Daten, englischsprachige Oberfläche](/images/screenshot-sites-synthetic-current.png)
 
 ### Standorte verwalten
 

@@ -1,8 +1,11 @@
 <template>
   <div class="p-6">
-    <h1 class="mb-6 text-2xl font-bold">{{ $t('nav.dashboard') }}</h1>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold">{{ $t('nav.dashboard') }}</h1>
+      <p class="mt-1 text-sm text-muted">{{ $t('dashboard.description') }}</p>
+    </div>
 
-    <div v-if="loading" class="text-gray-400">{{ $t('common.loading') }}</div>
+    <div v-if="loading" class="text-muted">{{ $t('common.loading') }}</div>
 
     <div v-else-if="stats && hasSomeData" class="space-y-6">
       <!-- KPI Cards -->
@@ -14,18 +17,18 @@
             </div>
             <div>
               <div class="kpi-number font-display text-3xl font-bold">{{ stats.counts.switches }}</div>
-              <div class="text-sm text-gray-400">{{ $t('dashboard.switchCount') }}</div>
+              <div class="text-sm text-muted">{{ $t('dashboard.switchCount') }}</div>
             </div>
           </div>
         </NuxtLink>
         <NuxtLink :to="`/sites/${siteId}/subnets`" class="stagger-item card-glow block rounded-lg bg-default p-5">
           <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-500/10">
-              <UIcon name="i-heroicons-globe-alt" class="h-6 w-6 text-cyan-500" />
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-elevated">
+              <UIcon name="i-heroicons-globe-alt" class="h-6 w-6 text-muted" />
             </div>
             <div>
-              <div class="font-display text-3xl font-bold text-cyan-500">{{ stats.counts.networks }}</div>
-              <div class="text-sm text-gray-400">{{ $t('dashboard.networkCount') }}</div>
+              <div class="font-display text-3xl font-bold text-highlighted">{{ stats.counts.networks }}</div>
+              <div class="text-sm text-muted">{{ $t('dashboard.networkCount') }}</div>
             </div>
           </div>
         </NuxtLink>
@@ -36,7 +39,7 @@
             </div>
             <div>
               <div class="font-display text-3xl font-bold text-violet-500">{{ stats.counts.vlans }}</div>
-              <div class="text-sm text-gray-400">{{ $t('dashboard.vlanCount') }}</div>
+              <div class="text-sm text-muted">{{ $t('dashboard.vlanCount') }}</div>
             </div>
           </div>
         </NuxtLink>
@@ -47,7 +50,7 @@
             </div>
             <div>
               <div class="font-display text-3xl font-bold text-amber-500">{{ stats.counts.allocations }}</div>
-              <div class="text-sm text-gray-400">IP Allocations</div>
+              <div class="text-sm text-muted">IP Allocations</div>
             </div>
           </div>
         </NuxtLink>
@@ -55,7 +58,7 @@
 
       <!-- Favorite Switches -->
       <div v-if="stats.favorites?.switches?.length" class="stagger-item">
-        <h2 class="mb-2 text-sm font-semibold text-gray-400">
+        <h2 class="mb-2 text-sm font-semibold text-muted">
           <UIcon name="i-heroicons-star-solid" class="mr-1 inline h-3.5 w-3.5 text-amber-400" />
           {{ $t('dashboard.favorites') }}
         </h2>
@@ -66,7 +69,7 @@
             :to="`/sites/${siteId}/switches/${(fav as any).id}`"
             class="card-glow flex items-center gap-2 rounded-lg bg-default px-3 py-2 text-sm transition-colors hover:text-primary-500"
           >
-            <UIcon name="i-heroicons-server-stack" class="h-3.5 w-3.5 text-gray-500" />
+            <UIcon name="i-heroicons-server-stack" class="h-3.5 w-3.5 text-muted" />
             <span class="font-medium">{{ (fav as any).name }}</span>
             <UBadge v-if="(fav as any).role" :color="roleColor((fav as any).role)" variant="subtle" size="xs">
               {{ (fav as any).role }}
@@ -101,7 +104,7 @@
               </svg>
               <div class="absolute inset-0 flex flex-col items-center justify-center">
                 <span class="font-display text-lg font-bold text-white">{{ totalPorts }}</span>
-                <span class="text-[10px] uppercase tracking-wider text-gray-400">Ports</span>
+                <span class="text-[10px] uppercase tracking-wider text-muted">Ports</span>
               </div>
             </div>
             <!-- Legend -->
@@ -151,7 +154,7 @@
           <template #header>
             <div class="flex items-center justify-between">
               <h2 class="font-semibold">{{ $t('dashboard.ipUtilization') }}</h2>
-              <span v-if="stats.networkUtilization.length" class="text-xs text-gray-500">{{ stats.networkUtilization.length }} {{ $t('networks.title').toLowerCase() }}</span>
+              <span v-if="stats.networkUtilization.length" class="text-xs text-toned">{{ stats.networkUtilization.length }} {{ $t('networks.title').toLowerCase() }}</span>
             </div>
           </template>
           <SharedEmptyState
@@ -165,7 +168,7 @@
               <div class="flex items-center gap-2">
                 <span v-if="net.vlan_color" class="h-2 w-2 shrink-0 rounded-full" :style="{ backgroundColor: net.vlan_color }" />
                 <NuxtLink :to="`/sites/${siteId}/subnets/${net.slug || net.id}`" class="min-w-0 flex-1 truncate text-sm hover:text-primary-400">{{ net.name }}</NuxtLink>
-                <code class="shrink-0 font-mono text-[11px] text-gray-500">{{ net.subnet }}</code>
+                <code class="shrink-0 font-mono text-[11px] text-toned">{{ net.subnet }}</code>
                 <span class="w-9 shrink-0 text-right font-mono text-xs" :class="net.percentage > 80 ? 'text-red-400' : net.percentage > 50 ? 'text-yellow-400' : 'text-gray-400'">{{ net.percentage }}%</span>
               </div>
               <div class="mt-0.5 flex h-1.5 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
@@ -177,22 +180,22 @@
           </div>
           <button
             v-if="sortedUtilization.length > UTIL_TOP_N"
-            class="mt-2 flex w-full items-center justify-center gap-1 text-xs text-gray-400 hover:text-primary-400 transition-colors"
+            class="mt-2 flex w-full items-center justify-center gap-1 text-xs text-muted hover:text-primary-400 transition-colors"
             @click="showAllNetworks = !showAllNetworks"
           >
             <UIcon :name="showAllNetworks ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
             {{ showAllNetworks ? $t('common.showLess') : $t('common.showAll', { count: sortedUtilization.length }) }}
           </button>
-          <div v-if="stats.networkUtilization.length > 0 && stats.networkUtilization.length <= 1" class="mt-3 flex items-center gap-2 text-xs text-gray-500">
+          <div v-if="stats.networkUtilization.length > 0 && stats.networkUtilization.length <= 1" class="mt-3 flex items-center gap-2 text-xs text-toned">
             <UIcon name="i-heroicons-light-bulb" class="h-3.5 w-3.5 text-yellow-500" />
             <NuxtLink :to="`/sites/${siteId}/subnets/create`" class="hover:text-primary-400">Add more subnets to track utilization</NuxtLink>
           </div>
           <template #footer>
             <div v-if="stats.networkUtilization.some((n: any) => n.dhcp_percent > 0 || n.reserved_percent > 0)" class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-gray-400">
-              <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-primary-500" /> Allocated</span>
-              <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-blue-500/60" /> DHCP</span>
-              <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-yellow-500/50" /> Reserved</span>
-              <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-gray-500/30" /> Free</span>
+              <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-primary-500" /> {{ $t('networks.infoBar.allocated') }}</span>
+              <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-blue-500/60" /> {{ $t('networks.ranges.types.dhcp') }}</span>
+              <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-yellow-500/50" /> {{ $t('networks.ranges.types.reserved') }}</span>
+              <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full bg-gray-500/30" /> {{ $t('common.free') }}</span>
             </div>
           </template>
         </UCard>
@@ -212,16 +215,16 @@
                     class="h-3 w-3"
                   />
                 </span>
-                <span class="font-mono text-xs text-gray-500">{{ entry.entity_type }}</span>
+                <span class="font-mono text-xs text-toned">{{ entry.entity_type }}</span>
                 <NuxtLink
                   v-if="activityLink(entry)"
                   :to="activityLink(entry)"
                   class="truncate font-medium hover:text-primary-400"
                 >{{ entry.entity_name }}</NuxtLink>
                 <span v-else class="truncate font-medium">{{ entry.entity_name }}</span>
-                <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relTime(entry.timestamp) }}</span>
+                <span class="ml-auto shrink-0 text-xs text-toned">{{ relTime(entry.timestamp) }}</span>
               </div>
-              <div v-if="formatActivity(entry)" class="ml-7 mt-0.5 truncate text-xs text-gray-400">{{ formatActivity(entry) }}</div>
+              <div v-if="formatActivity(entry)" class="ml-7 mt-0.5 truncate text-xs text-muted">{{ formatActivity(entry) }}</div>
             </div>
           </div>
         </UCard>

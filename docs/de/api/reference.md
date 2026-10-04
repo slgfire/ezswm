@@ -320,12 +320,24 @@ Beide Endpunkte benötigen Internetzugriff auf GitHub und können bei Ausfall `5
     "activity": [...],
     "settings": [...],
     "publicTokens": [...],
-    "topologyLayouts": [...]
+    "topologyLayouts": [...],
+    "oidcConfig": [...],
+    "patchPanels": [...],
+    "patchPanelSockets": [...],
+    "patchPanelTokens": [...]
   }
 }
 ```
 
-Patch-Panel-Tabellen (`patchPanels`, `patchPanelSockets`, `patchPanelTokens`) gehören zum Live-Datenmodell, sind aber in dieser Full-Backup-Payload aktuell noch nicht enthalten.
+Die Payload enthält in `data` außerdem drei Patch-Panel-Arrays (oben abgekürzt): `patchPanels`, `patchPanelSockets` und `patchPanelTokens`. Ein Admin-Voll-Backup enthält Passwort-Hashes, das verschlüsselte OIDC-Secret und öffentliche Patch-Panel-Tokenwerte (nie ein Klartext-OIDC-Client-Secret, den OIDC-Verschlüsselungsschlüssel oder offene Login-Transaktionen). Zugriffstokenwerte sind so wie gespeichert nutzbar; Backups daher vertraulich halten.
+
+Regeln von `POST /api/backup/import` für diese Schlüssel: Fehlen alle drei (Legacy-Backup), wird der Import nur akzeptiert, wenn aktuell keine Patch Panels, Sockets oder Tokens existieren, sonst `400` vor jeder Änderung. Ist einer vorhanden, müssen alle drei Arrays sein (teilweise, `null` oder kein Array → `400`). Drei leere Arrays sind ein bewusster leerer Snapshot und löschen vorhandene Patch Panels:
+
+```json
+{ "schema": "sqlite-v1", "data": { "users": [...], "patchPanels": [], "patchPanelSockets": [], "patchPanelTokens": [] } }
+```
+
+Hinweis: Diese verkürzte Skizze ist kein sicheres vollständiges Backup. Verwende eine vollständig exportierte Payload, damit keine ausgelassenen Daten verloren gehen; ein Restore benötigt einen nutzbaren lokalen Administrator in `users` sowie die oben genannten Patch-Panel-Array-Regeln.
 
 ## Aktivität
 

@@ -23,7 +23,9 @@ After setup, you are redirected to the login screen.
 
 After logging in, the dashboard provides a summary of your infrastructure: total switches, VLANs, subnets, and IP utilization. The sidebar on the left gives access to all sections. The header bar contains global search, a theme toggle (dark/light), language selector, and user menu.
 
-![Dashboard](/images/screenshot-dashboard.png)
+The interface uses neutral surfaces for layout and decoration. Color remains where it carries information: VLANs keep their assigned colors, while port states and warnings retain their status cues, such as green for up, amber for warnings, and red for down or errors.
+
+![Dashboard — synthetic example, demo data](/images/screenshot-dashboard-synthetic-current.png)
 
 ### Unsaved Changes Protection
 
@@ -35,13 +37,19 @@ Confirmation dialogs can be dismissed consistently using **Cancel**, the **close
 
 Use the language selector in the header bar (top-right, globe icon) to switch between English and German at any time. Your choice is saved to your profile, so it persists across reloads and devices. You can also change it under Settings → Account.
 
+Short introductions on the main pages are available in English and German and follow the language selected for your account.
+
+### Screenshot freshness
+
+Four screenshots in this guide — Dashboard, Layout Templates, Switch list, and Sites — are synthetic examples with demo data, captured before the final sidebar-logo spacing fix (so the logo position may differ slightly from the current interface). Icon requests were mocked using local icon-package and build-cache SVG data, without forwarding them to a backend or external icon API. Visual review still found missing sidebar and toolbar icons; the missing icons are a capture limitation, not a known application defect, and the examples do not fully represent real icon rendering. The remaining screenshots in this guide are legacy assets and have not been reverified for this release.
+
 ## Layout Templates
 
 ### What They Are
 
 Layout templates define reusable switch model definitions. Instead of manually configuring port layouts for every switch, you create a template once (e.g., "Cisco C9300-48P") and assign it to any number of switches. The template determines how many ports appear, their types, and how they are visually arranged.
 
-![Layout Templates](/images/screenshot-templates.png)
+![Layout Templates — synthetic example, demo data](/images/screenshot-templates-synthetic-current.png)
 
 ### How to Create One
 
@@ -112,7 +120,7 @@ As you configure units and blocks, a live port grid preview renders at the botto
 
 ### Creating a Switch
 
-![Switch list](/images/screenshot-switches.png)
+![Switch list — synthetic example, demo data](/images/screenshot-switches-synthetic-current.png)
 
 Navigate to **Switches** in the sidebar and click **Create**.
 
@@ -629,21 +637,19 @@ This is a client-side tool — no data is saved. Useful for quick subnet calcula
 
 Each entity type (switches, VLANs, subnets, IP allocations, IP ranges, layout templates) can be individually exported to JSON or CSV. The **Backup & Restore** tab also produces a single JSON file containing every table, tagged with `schema: "sqlite-v1"`.
 
-### Import and Restore (temporarily disabled in 0.21.x)
+### Import and Full Restore
 
-::: warning Import & Restore are being reworked for SQLite
-The 0.21 storage switch left the write side of the import/restore flow on the legacy JSON path, which doesn't translate cleanly to the new schema with FK constraints. The import endpoints and the activity-log undo button currently return **`501 Not Implemented`**:
+Use the **Import** tab to add new records from a supported CSV or JSON file. Select an entity type, download a template if needed, upload the file, and review the preview and validation results. Only valid rows are imported; existing records are not replaced.
 
-- Per-entity import (drag a CSV/JSON onto a list)
-- Full backup restore (Backup & Restore tab)
-- Activity-log "Undo" button
-
-They'll be back in a follow-up release. Until then, the **Export** side still works, and you can roll back manually by copying a previous `db.sqlite` file into place. Track progress in [#156](https://github.com/slgfire/ezswm/issues/156).
-:::
+Use **Backup & Restore** to restore a full administrator backup. A full restore replaces the current data with the backup snapshot, so download a current full backup before restoring.
 
 ### Backup Format
 
 Backups are JSON dumps of the underlying SQLite tables, one array per entity, with a `schema: "sqlite-v1"` marker at the top. JSON-column fields (tags, `configured_vlans`, port `tagged_vlans`, layout `units`, activity `changes`/`previous_state`) are kept as JSON strings — the restore path parses them back on the way in.
+
+The administrator full backup includes Patch Panel data (`patchPanels`, `patchPanelSockets`, `patchPanelTokens`). It contains password hashes and, if configured, the OIDC client secret in encrypted form, so store the file confidentially. It never contains the plaintext OIDC client secret, the OIDC encryption key or pending login transactions. Patch Panel public-access token values in the backup are usable capabilities; never publish the file. Individual CSV/JSON exports from **Export** contain selected entity types only and are not full backups or full-restore files.
+
+On restore, a backup that has none of the three Patch Panel keys (an older backup) is only accepted if there are currently no Patch Panels, sockets or tokens; otherwise it is rejected before anything is changed, so create a current full backup first. If any of the three keys is present, all three must be present as lists. Three empty lists are an intentional empty snapshot and will delete the existing Patch Panels.
 
 ## Settings
 
@@ -715,7 +721,7 @@ Change your password from the account settings page. You must provide your curre
 
 Sites represent physical locations or logical groupings for your infrastructure. Each site has its own switches, VLANs, subnets, topology, and (when enabled) patch panels. Use sites to separate different locations (e.g., "Data Center", "Office", "LAN Party Hall A").
 
-![Sites](/images/screenshot-sites.png)
+![Sites — synthetic example, demo data](/images/screenshot-sites-synthetic-current.png)
 
 ### Managing Sites
 

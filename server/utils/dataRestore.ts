@@ -21,6 +21,9 @@ const REVERSE_FK_DELETE_ORDER = [
   'oidcLoginTxn', // server-only; always purged, never restored
   'oidcConfig', // re-created explicitly (revision must stay monotonic)
   'user',
+  'patchPanelToken',
+  'patchPanelSocket',
+  'patchPanel',
   'site'
 ] as const
 
@@ -29,6 +32,9 @@ const FK_INSERT_ORDER = [
   ['users', 'user'],
   ['settings', 'appSettings'],
   ['sites', 'site'],
+  ['patchPanels', 'patchPanel'],
+  ['patchPanelSockets', 'patchPanelSocket'],
+  ['patchPanelTokens', 'patchPanelToken'],
   ['layoutTemplates', 'layoutTemplate'],
   ['switchGroups', 'switchGroup'],
   ['switches', 'switch'],
@@ -157,6 +163,22 @@ function normalizeOidcConfig(rows: unknown[] | undefined): Record<string, unknow
   return out
 }
 
+const PATCH_PANEL_KEYS = ['patchPanels', 'patchPanelSockets', 'patchPanelTokens'] as const
+
+/**
+ * Patch panel data is all-or-nothing: either all three arrays are absent (legacy
+ * backup) or all three are arrays (an empty array is an intentional empty snapshot).
+ * Returns true when the payload carries patch panel data.
+ */
+function hasPatchPanelData(data: DataPayload): boolean {
+  const present = PATCH_PANEL_KEYS.filter(k => data[k] !== undefined)
+  if (present.length === 0) return false
+  if (present.length !== PATCH_PANEL_KEYS.length || PATCH_PANEL_KEYS.some(k => !Array.isArray(data[k]))) {
+    bad('Backup contains incomplete patch panel data: patchPanels, patchPanelSockets and patchPanelTokens must all be present as arrays.')
+  }
+  return true
+}
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 function validatePayload(payload: unknown): { data: DataPayload } {
@@ -201,6 +223,7 @@ export async function restoreAll(prisma: PrismaClient, payload: unknown, options
   const { data } = validatePayload(payload)
   const users = normalizeUsers(data.users)
   const oidcConfig = normalizeOidcConfig(data.oidcConfig)
+  const includesPatchPanels = hasPatchPanelData(data)
 
   // ID validation pass — fail fast before we touch the DB.
   for (const [key, table] of FK_INSERT_ORDER) {
@@ -218,6 +241,13 @@ export async function restoreAll(prisma: PrismaClient, payload: unknown, options
     // (and any in-flight transactions) can never become valid again.
     const prior = await tx.oidcConfig.findUnique({ where: { id: 'singleton' } })
     const priorRevision = prior?.config_revision ?? 0
+
+    if (!includesPatchPanels) {
+      const existing = (await tx.patchPanel.count()) + (await tx.patchPanelSocket.count()) + (await tx.patchPanelToken.count())
+      if (existing > 0) {
+        bad('This backup does not include patch panel data and restoring it would delete the existing patch panels. Create a current full backup first.')
+      }
+    }
 
     for (const table of REVERSE_FK_DELETE_ORDER) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

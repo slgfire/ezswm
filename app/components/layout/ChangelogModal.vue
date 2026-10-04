@@ -1,7 +1,7 @@
 <template>
   <UModal v-model:open="open" :title="$t('changelog.title')">
     <template #body>
-      <div v-if="failed || (loaded && releases.length === 0)" class="text-sm text-neutral-400">
+      <div v-if="failed || (loaded && releases.length === 0)" class="text-sm text-muted">
         {{ $t('changelog.unavailable') }}
       </div>
 
@@ -24,8 +24,8 @@
             class="border-b border-default pb-3 last:border-b-0"
           >
             <div class="mb-1 flex items-baseline gap-2">
-              <span class="font-mono font-semibold text-gray-900 dark:text-white">v{{ rel.version }}</span>
-              <span class="text-xs text-neutral-500">{{ formatDate(rel.published_at) }}</span>
+              <span class="font-mono font-semibold text-highlighted">v{{ rel.version }}</span>
+              <span class="text-xs text-muted">{{ formatDate(rel.published_at) }}</span>
             </div>
             <div class="changelog-body text-sm" v-html="rel.html" />
           </div>

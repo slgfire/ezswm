@@ -17,7 +17,7 @@
             v-model="searchQuery"
             :placeholder="$t('common.search')"
             data-testid="search-input"
-            class="w-64 border-0 bg-transparent py-1.5 pl-2 font-mono text-sm text-gray-900 placeholder-gray-400 outline-none dark:text-white dark:placeholder-gray-500"
+            class="w-64 border-0 bg-transparent py-1.5 pl-2 font-mono text-sm text-highlighted placeholder:text-muted outline-none"
             autocomplete="off"
             @focus="showResults = true"
             @keydown.escape="dismissSearch"
@@ -25,7 +25,7 @@
             @keydown.up.prevent="moveSelection(-1)"
             @keydown.enter.prevent="navigateToSelected"
           >
-          <kbd class="ml-auto hidden rounded border border-default bg-default px-1.5 py-0.5 font-mono text-[10px] text-gray-500 lg:inline-block">/</kbd>
+          <kbd class="ml-auto hidden rounded border border-default bg-default px-1.5 py-0.5 font-mono text-[10px] text-muted lg:inline-block">/</kbd>
         </div>
 
         <!-- Search results dropdown -->
@@ -35,28 +35,28 @@
           class="absolute left-0 top-full z-50 mt-1 w-96 rounded-lg border border-default bg-default shadow-lg"
         >
           <div v-if="searching" class="flex items-center justify-center py-4">
-            <UIcon name="i-heroicons-arrow-path" class="h-4 w-4 animate-spin text-gray-400" />
+            <UIcon name="i-heroicons-arrow-path" class="h-4 w-4 animate-spin text-muted" />
           </div>
 
           <div v-else-if="hasResults" class="max-h-96 overflow-y-auto py-1">
             <!-- Switches -->
             <template v-if="results.switches?.length">
-              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.switches') }}</div>
+              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted">{{ $t('search.switches') }}</div>
               <NuxtLink
                 v-for="(sw, i) in results.switches"
                 :key="sw.id"
                 :to="`${searchSitePrefix}/switches/${sw.slug || sw.id}`"
-                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('switches', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('switches', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-elevated']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('switches', i)"
               >
-                <UIcon name="i-heroicons-server-stack" class="h-4 w-4 flex-shrink-0 text-gray-400" />
+                <UIcon name="i-heroicons-server-stack" class="h-4 w-4 flex-shrink-0 text-muted" />
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-1.5">
-                    <span class="font-medium text-gray-900 dark:text-white" v-html="highlight(sw.name)" />
+                    <span class="font-medium text-highlighted" v-html="highlight(sw.name)" />
                     <span v-if="sw.role" class="rounded bg-neutral-100 px-1 py-0.5 text-[10px] font-medium text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">{{ sw.role }}</span>
                   </div>
-                  <div class="flex items-center gap-2 truncate text-xs text-gray-400">
+                  <div class="flex items-center gap-2 truncate text-xs text-muted">
                     <span v-if="sw.manufacturer || sw.model" v-html="highlight([sw.manufacturer, sw.model].filter(Boolean).join(' '))" />
                     <span v-if="sw.management_ip" class="font-mono" v-html="highlight(sw.management_ip)" />
                     <span v-if="sw.tags?.length" class="truncate">{{ sw.tags.join(', ') }}</span>
@@ -67,113 +67,113 @@
 
             <!-- VLANs -->
             <template v-if="results.vlans?.length">
-              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.vlans') }}</div>
+              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted">{{ $t('search.vlans') }}</div>
               <NuxtLink
                 v-for="(vlan, i) in results.vlans"
                 :key="vlan.id"
                 :to="`${searchSitePrefix}/vlans/${vlan.id}`"
-                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('vlans', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('vlans', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-elevated']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('vlans', i)"
               >
                 <div class="h-3 w-3 flex-shrink-0 rounded" :style="{ backgroundColor: vlan.color }" />
                 <div class="min-w-0 flex-1">
-                  <div class="font-medium text-gray-900 dark:text-white"><span v-html="highlight(`VLAN ${vlan.vlan_id} — ${vlan.name}`)" /></div>
+                  <div class="font-medium text-highlighted"><span v-html="highlight(`VLAN ${vlan.vlan_id} — ${vlan.name}`)" /></div>
                 </div>
               </NuxtLink>
             </template>
 
             <!-- Networks -->
             <template v-if="results.networks?.length">
-              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.networks') }}</div>
+              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted">{{ $t('search.networks') }}</div>
               <NuxtLink
                 v-for="(net, i) in results.networks"
                 :key="net.id"
                 :to="`${searchSitePrefix}/subnets/${net.slug || net.id}`"
-                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('networks', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('networks', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-elevated']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('networks', i)"
               >
-                <UIcon name="i-heroicons-globe-alt" class="h-4 w-4 flex-shrink-0 text-gray-400" />
+                <UIcon name="i-heroicons-globe-alt" class="h-4 w-4 flex-shrink-0 text-muted" />
                 <div class="min-w-0 flex-1">
-                  <div class="font-medium text-gray-900 dark:text-white" v-html="highlight(net.name)" />
-                  <div class="font-mono text-xs text-gray-400" v-html="highlight(net.subnet)" />
+                  <div class="font-medium text-highlighted" v-html="highlight(net.name)" />
+                  <div class="font-mono text-xs text-muted" v-html="highlight(net.subnet)" />
                 </div>
               </NuxtLink>
             </template>
 
             <!-- Allocations -->
             <template v-if="results.allocations?.length">
-              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.ipAllocations') }}</div>
+              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted">{{ $t('search.ipAllocations') }}</div>
               <NuxtLink
                 v-for="(alloc, i) in results.allocations"
                 :key="alloc.id"
                 :to="allocLink(alloc)"
-                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('allocations', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('allocations', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-elevated']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('allocations', i)"
               >
-                <UIcon name="i-heroicons-map-pin" class="h-4 w-4 flex-shrink-0 text-gray-400" />
+                <UIcon name="i-heroicons-map-pin" class="h-4 w-4 flex-shrink-0 text-muted" />
                 <div class="min-w-0 flex-1">
-                  <div class="font-mono font-medium text-gray-900 dark:text-white" v-html="highlight(alloc.ip_address)" />
-                  <div v-if="alloc.hostname" class="text-xs text-gray-400" v-html="highlight(alloc.hostname)" />
+                  <div class="font-mono font-medium text-highlighted" v-html="highlight(alloc.ip_address)" />
+                  <div v-if="alloc.hostname" class="text-xs text-muted" v-html="highlight(alloc.hostname)" />
                 </div>
               </NuxtLink>
             </template>
 
             <!-- IP Ranges -->
             <template v-if="results.ranges?.length">
-              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.ipRanges') }}</div>
+              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted">{{ $t('search.ipRanges') }}</div>
               <NuxtLink
                 v-for="(range, i) in results.ranges"
                 :key="range.id"
                 :to="range.site_id ? `/sites/${range.site_id}/subnets/${range.network_id}` : `${searchSitePrefix}/subnets/${range.network_id}`"
-                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('ranges', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('ranges', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-elevated']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('ranges', i)"
               >
-                <UIcon name="i-heroicons-arrows-right-left" class="h-4 w-4 flex-shrink-0 text-gray-400" />
+                <UIcon name="i-heroicons-arrows-right-left" class="h-4 w-4 flex-shrink-0 text-muted" />
                 <div class="min-w-0 flex-1">
-                  <div class="font-mono font-medium text-gray-900 dark:text-white" v-html="highlight(`${range.start_ip} — ${range.end_ip}`)" />
-                  <div class="text-xs text-gray-400">{{ range.type.toUpperCase() }} · {{ range.network_name }}</div>
+                  <div class="font-mono font-medium text-highlighted" v-html="highlight(`${range.start_ip} — ${range.end_ip}`)" />
+                  <div class="text-xs text-muted">{{ range.type.toUpperCase() }} · {{ range.network_name }}</div>
                 </div>
               </NuxtLink>
             </template>
 
             <!-- Templates -->
             <template v-if="results.templates?.length">
-              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.templates') }}</div>
+              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted">{{ $t('search.templates') }}</div>
               <NuxtLink
                 v-for="(tpl, i) in results.templates"
                 :key="tpl.id"
                 :to="`/layout-templates/${tpl.id}`"
-                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('templates', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('templates', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-elevated']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('templates', i)"
               >
-                <UIcon name="i-heroicons-rectangle-group" class="h-4 w-4 flex-shrink-0 text-gray-400" />
+                <UIcon name="i-heroicons-rectangle-group" class="h-4 w-4 flex-shrink-0 text-muted" />
                 <div class="min-w-0 flex-1">
-                  <div class="font-medium text-gray-900 dark:text-white" v-html="highlight(tpl.name)" />
-                  <div v-if="tpl.manufacturer || tpl.model" class="text-xs text-gray-400" v-html="highlight([tpl.manufacturer, tpl.model].filter(Boolean).join(' · '))" />
+                  <div class="font-medium text-highlighted" v-html="highlight(tpl.name)" />
+                  <div v-if="tpl.manufacturer || tpl.model" class="text-xs text-muted" v-html="highlight([tpl.manufacturer, tpl.model].filter(Boolean).join(' · '))" />
                 </div>
               </NuxtLink>
             </template>
 
             <!-- LAG Groups -->
             <template v-if="results.lagGroups?.length">
-              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.lagGroups') }}</div>
+              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted">{{ $t('search.lagGroups') }}</div>
               <NuxtLink
                 v-for="(lg, i) in results.lagGroups"
                 :key="lg.id"
                 :to="`/sites/${lg.site_id}/switches/${lg.switch_id}?lag=${lg.id}`"
-                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('lagGroups', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('lagGroups', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-elevated']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('lagGroups', i)"
               >
-                <UIcon name="i-heroicons-link" class="h-4 w-4 flex-shrink-0 text-gray-400" />
+                <UIcon name="i-heroicons-link" class="h-4 w-4 flex-shrink-0 text-muted" />
                 <div class="min-w-0 flex-1">
-                  <div class="font-medium text-gray-900 dark:text-white" v-html="highlight(lg.name)" />
-                  <div class="flex items-center gap-2 text-xs text-gray-400">
+                  <div class="font-medium text-highlighted" v-html="highlight(lg.name)" />
+                  <div class="flex items-center gap-2 text-xs text-muted">
                     <span v-html="highlight(lg.switch_name)" />
                     <span>·</span>
                     <span>{{ lg.port_count }} {{ $t('lag.ports') }}</span>
@@ -184,19 +184,19 @@
 
             <!-- Patch Panels -->
             <template v-if="results.patchPanels?.length">
-              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400">{{ $t('search.patchPanels') }}</div>
+              <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted">{{ $t('search.patchPanels') }}</div>
               <NuxtLink
                 v-for="(pp, i) in results.patchPanels"
                 :key="pp.id"
                 :to="`/sites/${pp.site_id}/patch-panels/${pp.slug || pp.id}`"
-                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('patchPanels', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800']"
+                :class="['flex items-center gap-3 px-3 py-2 text-sm transition-colors', flatIndex('patchPanels', i) === selectedIndex ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-elevated']"
                 @click="closeSearch"
                 @mouseenter="selectedIndex = flatIndex('patchPanels', i)"
               >
-                <UIcon name="i-heroicons-squares-plus" class="h-4 w-4 flex-shrink-0 text-gray-400" />
+                <UIcon name="i-heroicons-squares-plus" class="h-4 w-4 flex-shrink-0 text-muted" />
                 <div class="min-w-0 flex-1">
-                  <div class="font-medium text-gray-900 dark:text-white" v-html="highlight(pp.name)" />
-                  <div class="flex items-center gap-2 truncate text-xs text-gray-400">
+                  <div class="font-medium text-highlighted" v-html="highlight(pp.name)" />
+                  <div class="flex items-center gap-2 truncate text-xs text-muted">
                     <span v-if="pp.location" v-html="highlight(pp.location)" />
                     <span v-if="pp.outlet_number" class="font-mono" v-html="highlight(pp.outlet_number)" />
                   </div>
@@ -205,7 +205,7 @@
             </template>
           </div>
 
-          <div v-else class="py-4 text-center text-sm text-gray-400">
+          <div v-else class="py-4 text-center text-sm text-muted">
             {{ $t('search.noResults') }}
           </div>
         </div>

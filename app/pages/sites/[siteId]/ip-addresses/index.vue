@@ -1,13 +1,16 @@
 <template>
   <div class="flex h-full flex-col p-6">
-    <div class="mb-4 flex items-center justify-between">
-      <h1 class="text-xl font-bold">{{ $t('ipAddresses.title') }}</h1>
+    <div class="mb-4 flex flex-wrap items-start justify-between gap-4">
+      <div class="min-w-0">
+        <h1 class="text-xl font-bold">{{ $t('ipAddresses.title') }}</h1>
+        <p class="mt-1 text-sm text-muted">{{ $t('ipAddresses.description') }}</p>
+      </div>
       <UButton icon="i-heroicons-plus" size="sm" @click="openAdd">{{ $t('ipAddresses.add') }}</UButton>
     </div>
 
     <!-- Loading -->
     <div v-if="pageLoading" class="flex justify-center py-12">
-      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
     </div>
 
     <template v-else>
@@ -38,7 +41,7 @@
       >
           <template #network_name-cell="{ row }">
             <div class="flex items-center gap-2">
-              <span class="font-medium text-gray-900 dark:text-white">{{ row.original.network_name }}</span>
+              <span class="font-medium text-highlighted">{{ row.original.network_name }}</span>
               <code class="rounded bg-primary-50 px-1.5 py-0.5 text-xs font-medium text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">{{ row.original.network_subnet }}</code>
             </div>
           </template>
@@ -51,12 +54,12 @@
             >
               {{ row.original.vlan_tag }}<template v-if="row.original.vlan_name"> · {{ row.original.vlan_name }}</template>
             </span>
-            <span v-else class="text-gray-400">—</span>
+            <span v-else class="text-muted">—</span>
           </template>
 
           <template #mac_address-cell="{ row }">
             <code v-if="row.original.mac_address" class="font-mono text-xs">{{ row.original.mac_address }}</code>
-            <span v-else class="text-gray-400">—</span>
+            <span v-else class="text-muted">—</span>
           </template>
 
           <template #device_type-cell="{ row }">

@@ -2,14 +2,14 @@
   <div v-if="isAdmin" class="p-6">
     <div class="mb-4">
       <h1 class="text-xl font-bold">{{ $t('users.title') }}</h1>
-      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $t('users.description') }}</p>
+      <p class="mt-1 text-sm text-muted">{{ $t('users.description') }}</p>
     </div>
 
     <section aria-labelledby="users-list-title">
       <h2 id="users-list-title" class="sr-only">{{ $t('users.listTitle') }}</h2>
 
       <div v-if="loading || !hasLoaded" class="flex justify-center py-12" role="status" aria-live="polite">
-        <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" aria-hidden="true" />
+        <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" aria-hidden="true" />
         <span class="sr-only">{{ $t('users.loading') }}</span>
       </div>
 
@@ -45,7 +45,7 @@
               <col class="w-1/4">
               <col class="w-1/4">
             </colgroup>
-            <thead class="border-b border-default text-[10px] uppercase tracking-wider text-gray-500">
+            <thead class="border-b border-default text-[10px] uppercase tracking-wider text-muted">
               <tr>
                 <th scope="col" class="px-5 py-1.5">{{ $t('users.username') }}</th>
                 <th scope="col" class="px-5 py-1.5">{{ $t('users.displayName') }}</th>
@@ -55,8 +55,8 @@
             </thead>
             <tbody class="divide-y divide-default">
               <tr v-for="row in userRows" :key="row.username" class="row-hover">
-                <th scope="row" class="break-all px-5 py-3 text-left font-medium text-gray-900 dark:text-white">{{ row.username }}</th>
-                <td class="break-words px-5 py-3 text-gray-600 dark:text-gray-300">{{ row.display_name || '—' }}</td>
+                <th scope="row" class="break-all px-5 py-3 text-left font-medium text-highlighted">{{ row.username }}</th>
+                <td class="break-words px-5 py-3 text-toned">{{ row.display_name || '—' }}</td>
                 <td class="px-5 py-3">
                   <UBadge :color="row.role === 'admin' ? 'primary' : 'neutral'" variant="subtle">
                     {{ row.role === 'admin' ? $t('users.admin') : $t('users.viewer') }}

@@ -30,7 +30,7 @@
                 <UIcon name="i-heroicons-x-mark" class="ml-0.5 h-3 w-3" />
               </button>
             </UBadge>
-            <span v-if="form.port_ids.length === 0" class="text-sm text-gray-400">
+            <span v-if="form.port_ids.length === 0" class="text-sm text-muted">
               {{ $t('lag.noPortsSelected') }}
             </span>
           </div>
@@ -85,7 +85,7 @@
             </template>
           </USelectMenu>
 
-          <div v-if="remoteMode === 'switch' && selectedRemoteSwitchId && remoteSwitchMissingVlans.length > 0" class="mt-1 rounded-md border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs text-blue-400">
+          <div v-if="remoteMode === 'switch' && selectedRemoteSwitchId && remoteSwitchMissingVlans.length > 0" class="mt-1 rounded-md border border-default bg-muted px-3 py-2 text-xs text-toned">
             <UIcon name="i-heroicons-information-circle" class="size-3.5 inline-block mr-1" />
             {{ $t('lag.remoteSwitchWillAdd', { vlans: remoteSwitchMissingVlans.join(', ') }) }}
           </div>
@@ -114,7 +114,7 @@
 
         <!-- Port mapping table -->
          <div v-if="showPortMapping && form.port_ids.length > 0" class="rounded-lg border border-default bg-default/50 p-3">
-          <div class="mb-2 text-xs font-semibold text-gray-600 dark:text-gray-300">
+          <div class="mb-2 text-xs font-semibold text-toned">
             {{ $t('lag.portMapping') }}
           </div>
           <div class="space-y-2">
@@ -124,10 +124,10 @@
               class="space-y-1"
             >
               <div class="flex items-center gap-2">
-                <span class="w-24 shrink-0 truncate text-xs font-medium text-gray-700 dark:text-gray-200">
+                <span class="w-24 shrink-0 truncate text-xs font-medium text-default">
                   {{ getPortLabel(portId) }}
                 </span>
-                <span class="text-xs text-gray-400">→</span>
+                <span class="text-xs text-muted">→</span>
 
                 <USelectMenu
                   v-if="remoteMode === 'switch' && selectedRemoteSwitchId"
@@ -165,7 +165,7 @@
 
         <!-- VLAN configuration for LAG ports -->
         <div class="space-y-3">
-          <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-400">
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-muted">
             {{ $t('lag.vlanSection') }}
           </h4>
 
@@ -182,7 +182,7 @@
                 @click="portStatus = opt.value"
               >{{ opt.label }}</button>
             </div>
-            <p class="mt-1 text-xs text-gray-400">{{ $t('lag.portStatusHint') }}</p>
+            <p class="mt-1 text-xs text-muted">{{ $t('lag.portStatusHint') }}</p>
           </UFormField>
 
           <UFormField :label="$t('switches.ports.portMode')">

@@ -17,14 +17,14 @@
       <div class="space-y-6">
         <!-- Loading -->
         <div v-if="loading" class="flex items-center justify-center py-8">
-          <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
+          <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
         </div>
 
         <!-- No token -->
         <div v-else-if="!token" class="space-y-4 py-4">
-          <div class="rounded-lg border border-dashed border-gray-600 p-6 text-center">
-            <UIcon name="i-heroicons-qr-code" class="mx-auto mb-3 h-10 w-10 text-gray-500" />
-            <p class="text-sm text-gray-400">{{ $t('public.admin.linkLabel') }}</p>
+          <div class="rounded-lg border border-dashed border-accented p-6 text-center">
+            <UIcon name="i-heroicons-qr-code" class="mx-auto mb-3 h-10 w-10 text-muted" />
+            <p class="text-sm text-muted">{{ $t('public.admin.linkLabel') }}</p>
             <UButton class="mt-4" color="primary" icon="i-heroicons-qr-code" :loading="loading" @click="handleGenerate">
               {{ $t('public.admin.generate') }}
             </UButton>
@@ -53,29 +53,29 @@
             </div>
             <template #fallback>
               <div class="flex justify-center">
-                <div class="h-[212px] w-[212px] rounded-xl bg-gray-800" />
+                <div class="h-[212px] w-[212px] rounded-xl bg-elevated" />
               </div>
             </template>
           </ClientOnly>
 
           <!-- Public URL -->
           <div class="space-y-1.5">
-            <label class="text-[10px] uppercase tracking-wider text-gray-500">{{ $t('public.admin.publicUrl') }}</label>
+            <label class="text-[10px] uppercase tracking-wider text-muted">{{ $t('public.admin.publicUrl') }}</label>
             <div class="flex items-center gap-2">
-              <code class="flex-1 truncate rounded-md bg-gray-800 px-3 py-2 font-mono text-xs text-gray-300">{{ publicUrl }}</code>
+              <code class="flex-1 truncate rounded-md bg-elevated px-3 py-2 font-mono text-xs text-toned">{{ publicUrl }}</code>
               <UButton icon="i-heroicons-clipboard" size="sm" color="neutral" variant="soft" @click="handleCopy" />
             </div>
           </div>
 
           <!-- Meta -->
-          <div class="grid grid-cols-2 gap-3 rounded-lg bg-gray-800/50 p-3 text-xs">
+          <div class="grid grid-cols-2 gap-3 rounded-lg bg-elevated/50 p-3 text-xs">
             <div>
-              <div class="text-gray-500">{{ $t('public.admin.createdAt') }}</div>
-              <div class="mt-0.5 text-gray-300">{{ new Date(token.created_at).toLocaleDateString() }}</div>
+              <div class="text-muted">{{ $t('public.admin.createdAt') }}</div>
+              <div class="mt-0.5 text-toned">{{ new Date(token.created_at).toLocaleDateString() }}</div>
             </div>
             <div>
-              <div class="text-gray-500">{{ $t('public.admin.lastAccess') }}</div>
-              <div class="mt-0.5 text-gray-300">{{ token.last_access_at ? new Date(token.last_access_at).toLocaleString() : $t('public.admin.lastAccessNever') }}</div>
+              <div class="text-muted">{{ $t('public.admin.lastAccess') }}</div>
+              <div class="mt-0.5 text-toned">{{ token.last_access_at ? new Date(token.last_access_at).toLocaleString() : $t('public.admin.lastAccessNever') }}</div>
             </div>
           </div>
 

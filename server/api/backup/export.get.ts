@@ -5,7 +5,8 @@ import { prisma } from '../../db/client'
 export default defineEventHandler(async (event) => {
   const [
     sites, users, switches, switchGroups, ports, vlans, networks, ipAllocations, ipRanges,
-    layoutTemplates, lagGroups, activity, settings, publicTokens, topologyLayouts, oidcConfig
+    layoutTemplates, lagGroups, activity, settings, publicTokens, topologyLayouts, oidcConfig,
+    patchPanels, patchPanelSockets, patchPanelTokens
   ] = await Promise.all([
     prisma.site.findMany(),
     prisma.user.findMany(),
@@ -23,7 +24,11 @@ export default defineEventHandler(async (event) => {
     prisma.publicToken.findMany(),
     prisma.topologyLayout.findMany(),
     // Includes the ENCRYPTED client secret only (no key, no login transactions).
-    prisma.oidcConfig.findMany()
+    prisma.oidcConfig.findMany(),
+    prisma.patchPanel.findMany(),
+    prisma.patchPanelSocket.findMany(),
+    // Opaque public access tokens; the backup is admin-only.
+    prisma.patchPanelToken.findMany()
   ])
 
   const backup = {
@@ -32,7 +37,8 @@ export default defineEventHandler(async (event) => {
     schema: 'sqlite-v1',
     data: {
       sites, users, switches, switchGroups, ports, vlans, networks, ipAllocations, ipRanges,
-      layoutTemplates, lagGroups, activity, settings, publicTokens, topologyLayouts, oidcConfig
+      layoutTemplates, lagGroups, activity, settings, publicTokens, topologyLayouts, oidcConfig,
+      patchPanels, patchPanelSockets, patchPanelTokens
     }
   }
 

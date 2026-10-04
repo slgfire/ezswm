@@ -45,7 +45,7 @@
       <div class="space-y-1.5 text-xs">
         <!-- VLAN section -->
         <template v-if="isTrunk">
-          <div class="font-semibold text-gray-700 dark:text-gray-200">Trunk</div>
+          <div class="font-semibold text-default">Trunk</div>
           <div v-if="port.native_vlan" class="flex items-center gap-1.5">
             <div class="h-2 w-2 flex-shrink-0 rounded" :style="{ backgroundColor: getVlanColor(port.native_vlan) }" />
             <span class="font-medium text-gray-700 dark:text-gray-200">{{ port.native_vlan }}</span>
@@ -59,7 +59,7 @@
           </div>
         </template>
         <template v-else-if="vlanDotColor">
-          <div class="font-semibold text-gray-700 dark:text-gray-200">Access</div>
+          <div class="font-semibold text-default">Access</div>
           <div class="flex items-center gap-1.5">
             <div class="h-2 w-2 flex-shrink-0 rounded-sm" :style="{ backgroundColor: vlanDotColor }" />
             <span class="font-medium text-gray-700 dark:text-gray-200">{{ port.access_vlan || port.native_vlan }}</span>
@@ -72,18 +72,18 @@
 
         <!-- LAG section -->
         <template v-if="lagGroup">
-          <div class="font-semibold text-gray-700 dark:text-gray-200">{{ lagGroup.name }}</div>
-          <div class="text-gray-400">{{ lagGroup.port_ids?.length || 0 }} {{ $t('lag.ports') }}</div>
-          <div v-if="lagGroup.remote_device" class="text-gray-400">→ {{ lagGroup.remote_device }}</div>
+          <div class="font-semibold text-default">{{ lagGroup.name }}</div>
+          <div class="text-muted">{{ lagGroup.port_ids?.length || 0 }} {{ $t('lag.ports') }}</div>
+          <div v-if="lagGroup.remote_device" class="text-muted">→ {{ lagGroup.remote_device }}</div>
         </template>
 
         <!-- Connected device (when not in a LAG) -->
         <template v-else-if="port.connected_device">
-          <div class="flex items-center gap-1.5 text-gray-400">
+          <div class="flex items-center gap-1.5 text-muted">
             <UIcon name="i-heroicons-link" class="h-3 w-3 shrink-0" />
             <span class="truncate">{{ port.connected_device }}</span>
           </div>
-          <div v-if="port.connected_port" class="text-gray-500 pl-[1.125rem]">{{ port.connected_port }}</div>
+          <div v-if="port.connected_port" class="text-toned pl-[1.125rem]">{{ port.connected_port }}</div>
         </template>
       </div>
     </div>
@@ -94,7 +94,7 @@
     <div v-if="hasTooltipContent && publicMode" v-show="hovered" class="pointer-events-none fixed z-[9999] min-w-[10rem] rounded-md border border-default bg-default p-2 shadow-lg" :style="tooltipStyle">
       <div class="space-y-1.5 text-xs">
         <template v-if="isTrunk">
-          <div class="font-semibold text-gray-700 dark:text-gray-200">Trunk</div>
+          <div class="font-semibold text-default">Trunk</div>
           <div v-if="port.native_vlan" class="flex items-center gap-1.5">
             <div class="h-2 w-2 flex-shrink-0 rounded" :style="{ backgroundColor: getVlanColor(port.native_vlan) }" />
             <span class="font-medium text-gray-700 dark:text-gray-200">{{ port.native_vlan }}</span>
@@ -108,7 +108,7 @@
           </div>
         </template>
         <template v-else-if="vlanDotColor">
-          <div class="font-semibold text-gray-700 dark:text-gray-200">Access</div>
+          <div class="font-semibold text-default">Access</div>
           <div class="flex items-center gap-1.5">
             <div class="h-2 w-2 flex-shrink-0 rounded-sm" :style="{ backgroundColor: vlanDotColor }" />
             <span class="font-medium text-gray-700 dark:text-gray-200">{{ port.access_vlan || port.native_vlan }}</span>

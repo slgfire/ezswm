@@ -1,7 +1,10 @@
 <template>
   <div class="p-6">
-    <div class="mb-4 flex items-center justify-between">
-      <h1 class="text-xl font-bold">{{ $t('patchPanels.title') }}</h1>
+    <div class="mb-4 flex flex-wrap items-start justify-between gap-4">
+      <div class="min-w-0">
+        <h1 class="text-xl font-bold">{{ $t('patchPanels.title') }}</h1>
+        <p class="mt-1 text-sm text-muted">{{ $t('patchPanels.description') }}</p>
+      </div>
       <div class="flex items-center gap-2">
         <UButton
           v-if="filteredItems.length > 0"
@@ -20,7 +23,7 @@
 
     <!-- Loading -->
     <div v-if="pageLoading" class="flex justify-center py-12">
-      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
     </div>
 
     <template v-else>
@@ -39,8 +42,8 @@
       <div v-if="filteredItems.length > 0">
         <div v-for="group in groupedItems" :key="group.siteId" class="mb-4">
           <div v-if="groupedItems.length > 1" class="mb-2 flex items-center gap-3">
-            <UIcon name="i-heroicons-building-office-2" class="h-4 w-4 text-gray-500" />
-            <span class="text-sm font-semibold text-gray-400">{{ group.siteName }}</span>
+            <UIcon name="i-heroicons-building-office-2" class="h-4 w-4 text-muted" />
+            <span class="text-sm font-semibold text-muted">{{ group.siteName }}</span>
             <div class="h-px flex-1 bg-default" />
           </div>
           <div class="list-container rounded-lg bg-default">
@@ -59,14 +62,14 @@
               >
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2">
-                    <span class="text-base font-semibold text-gray-900 dark:text-white">{{ panel.name }}</span>
+                    <span class="text-base font-semibold text-highlighted">{{ panel.name }}</span>
                     <UBadge variant="subtle" color="neutral" size="sm">{{ panel.port_count }} {{ $t('patchPanels.ports') }}</UBadge>
                   </div>
-                  <div v-if="panel.description" class="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
+                  <div v-if="panel.description" class="mt-0.5 truncate text-xs text-muted">
                     {{ panel.description }}
                   </div>
                 </div>
-                <div class="flex items-center gap-3 text-xs text-gray-400">
+                <div class="flex items-center gap-3 text-xs text-muted">
                   <span>{{ occupiedCount(panel) }}/{{ panel.sockets.length }} {{ $t('patchPanels.occupied') }}</span>
                 </div>
               </NuxtLink>
@@ -84,8 +87,8 @@
 
       <!-- No results -->
       <div v-else-if="allItems.length > 0" class="py-12 text-center">
-        <UIcon name="i-heroicons-funnel" class="mx-auto mb-3 h-10 w-10 text-gray-300 dark:text-gray-600" />
-        <p class="text-sm text-gray-500 dark:text-gray-400">{{ $t('patchPanels.noResults') }}</p>
+        <UIcon name="i-heroicons-funnel" class="mx-auto mb-3 h-10 w-10 text-muted" />
+        <p class="text-sm text-muted">{{ $t('patchPanels.noResults') }}</p>
       </div>
 
       <!-- Empty state -->
@@ -120,7 +123,7 @@
           </UFormField>
           <UFormField :label="$t('patchPanels.fields.portCount')" name="port_count" required>
             <USelect v-model="createForm.port_count" :items="portCountOptions" class="w-full" />
-            <p class="mt-1 text-xs text-gray-500">{{ $t('patchPanels.portCountHint') }}</p>
+            <p class="mt-1 text-xs text-muted">{{ $t('patchPanels.portCountHint') }}</p>
           </UFormField>
         </UForm>
       </template>

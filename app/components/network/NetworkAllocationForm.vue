@@ -3,7 +3,7 @@
     <template #title>
       <div v-if="editTarget" class="flex items-center gap-2">
         <code class="font-mono text-sm">{{ editTarget.ip_address }}</code>
-        <span v-if="editTarget.hostname" class="text-sm text-gray-400">{{ editTarget.hostname }}</span>
+        <span v-if="editTarget.hostname" class="text-sm text-muted">{{ editTarget.hostname }}</span>
       </div>
       <span v-else>{{ $t('common.add') }}</span>
     </template>
