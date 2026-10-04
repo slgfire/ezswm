@@ -10,7 +10,7 @@
     <template #body>
       <UTabs v-model="mode" :items="tabItems" variant="link" class="mb-4">
         <template #manual>
-          <p class="mb-4 text-sm text-gray-400">{{ $t('templates.quickCreate.description') }}</p>
+          <p class="mb-4 text-sm text-muted">{{ $t('templates.quickCreate.description') }}</p>
           <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit.prevent="onSubmit">
             <div class="space-y-4">
               <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -42,7 +42,7 @@
 
     <template #footer>
       <div class="flex w-full items-center justify-between gap-2">
-        <NuxtLink to="/layout-templates/create" class="text-sm text-gray-400 hover:text-primary-500" @click="onClose">
+        <NuxtLink to="/layout-templates/create" class="text-sm text-muted hover:text-primary-500" @click="onClose">
           {{ $t('templates.quickCreate.openFullEditor') }} →
         </NuxtLink>
         <div class="flex gap-2">

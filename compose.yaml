@@ -28,6 +28,9 @@ services:
       - NODE_ENV=production
       - NUXT_JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
       - NUXT_DATA_DIR=/app/data
+      # Optional OIDC SSO. Leave blank to disable (local login keeps working).
+      - NUXT_OIDC_ENCRYPTION_KEY=${OIDC_ENCRYPTION_KEY:-}
+      - NUXT_PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health"]
       interval: 30s

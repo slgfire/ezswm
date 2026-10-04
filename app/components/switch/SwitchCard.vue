@@ -8,7 +8,7 @@
     <!-- Favorite star (top-left, always visible) -->
     <button
       class="absolute left-1.5 top-px z-10 transition-colors"
-      :class="sw.is_favorite ? 'text-amber-400' : 'text-gray-600 hover:text-amber-400 dark:text-gray-700 dark:hover:text-amber-400'"
+      :class="sw.is_favorite ? 'text-amber-400' : 'text-muted hover:text-amber-400'"
       :title="sw.is_favorite ? $t('switches.unfavorite') : $t('switches.favorite')"
       @click.prevent="emit('favorite', sw)"
     >
@@ -46,11 +46,11 @@
     <div class="h-[6.5rem] px-5 pt-4 pb-2">
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
-          <h3 class="truncate font-semibold text-gray-900 group-hover:text-primary-500 dark:text-white" :title="sw.name">
+          <h3 class="truncate font-semibold text-highlighted group-hover:text-primary-500" :title="sw.name">
             {{ sw.name }}
           </h3>
           <!-- Reserve the subtitle line even when empty -->
-          <p class="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
+          <p class="mt-0.5 truncate text-sm text-toned">
             <template v-if="sw.manufacturer || sw.model">{{ [sw.manufacturer, sw.model].filter(Boolean).join(' · ') }}</template>
             <template v-else>&nbsp;</template>
           </p>
@@ -71,17 +71,17 @@
     <div class="h-[3rem] space-y-1.5 px-5 pb-3 text-sm">
       <div v-if="sw.location" class="flex items-center gap-2">
         <UIcon name="i-heroicons-map-pin" class="h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
-        <span class="text-gray-500 dark:text-gray-400">{{ sw.location }}</span>
+        <span class="text-toned">{{ sw.location }}</span>
       </div>
       <div v-if="sw.management_ip" class="flex items-center gap-2">
         <UIcon name="i-heroicons-globe-alt" class="h-3.5 w-3.5 flex-shrink-0 text-teal-400" />
-        <span class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ sw.management_ip }}</span>
+        <span class="font-mono text-xs text-toned">{{ sw.management_ip }}</span>
       </div>
     </div>
 
     <!-- Ports footer -->
     <div class="mt-auto flex items-center justify-between border-t border-default px-5 py-2.5 font-mono">
-      <span class="text-xs font-medium uppercase tracking-wider text-gray-400">{{ sw.ports?.length || 0 }} ports</span>
+      <span class="text-xs font-medium uppercase tracking-wider text-muted">{{ sw.ports?.length || 0 }} ports</span>
       <div class="flex items-center gap-3 text-xs">
         <span v-if="portStats.up" class="flex items-center gap-1 text-green-500">
           <span class="inline-block h-2 w-2 rounded-full bg-green-500" />
@@ -107,7 +107,7 @@
     <!-- Favorite star (list view) -->
     <button
       class="shrink-0 transition-colors"
-      :class="sw.is_favorite ? 'text-amber-400' : 'text-gray-600 hover:text-amber-400 dark:text-gray-700 dark:hover:text-amber-400'"
+      :class="sw.is_favorite ? 'text-amber-400' : 'text-muted hover:text-amber-400'"
       :title="sw.is_favorite ? $t('switches.unfavorite') : $t('switches.favorite')"
       @click.prevent="emit('favorite', sw)"
     >
@@ -143,15 +143,15 @@
     <!-- Info -->
     <div class="min-w-0 flex-1">
       <div class="flex items-center gap-2">
-        <h3 class="truncate font-semibold text-gray-900 dark:text-white">{{ sw.name }}</h3>
+        <h3 class="truncate font-semibold text-highlighted">{{ sw.name }}</h3>
         <UBadge v-if="sw.role" :color="roleColor(sw.role)" variant="subtle" size="sm">
           {{ $t(`switches.roles.${sw.role}`) }}
         </UBadge>
-        <span v-if="sw.manufacturer || sw.model" class="hidden text-sm text-gray-500 dark:text-gray-400 md:inline">
+        <span v-if="sw.manufacturer || sw.model" class="hidden text-sm text-toned md:inline">
           {{ [sw.manufacturer, sw.model].filter(Boolean).join(' · ') }}
         </span>
       </div>
-      <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
+      <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
         <span v-if="sw.location" class="flex items-center gap-1">
           <UIcon name="i-heroicons-map-pin" class="h-3 w-3" />
           {{ sw.location }}
@@ -168,7 +168,7 @@
 
     <!-- Port Stats (right-aligned) -->
     <div class="hidden shrink-0 text-right sm:block">
-      <span class="text-xs font-medium uppercase tracking-wider text-gray-400">{{ sw.ports?.length || 0 }} ports</span>
+      <span class="text-xs font-medium uppercase tracking-wider text-muted">{{ sw.ports?.length || 0 }} ports</span>
       <div class="mt-1 flex items-center justify-end gap-3 text-xs">
         <span v-if="portStats.up" class="flex items-center gap-1 text-green-500">
           <span class="inline-block h-2 w-2 rounded-full bg-green-500" />

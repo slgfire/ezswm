@@ -1,7 +1,10 @@
 <template>
   <div class="p-6">
-    <div class="mb-4 flex items-center justify-between">
-      <h1 class="text-xl font-bold">{{ $t('vlans.title') }}</h1>
+    <div class="mb-4 flex flex-wrap items-start justify-between gap-4">
+      <div class="min-w-0">
+        <h1 class="text-xl font-bold">{{ $t('vlans.title') }}</h1>
+        <p class="mt-1 text-sm text-muted">{{ $t('vlans.description') }}</p>
+      </div>
       <UButton :to="`/sites/${siteId}/vlans/create`" icon="i-heroicons-plus" size="sm">
         {{ $t('vlans.create') }}
       </UButton>
@@ -9,7 +12,7 @@
 
     <!-- Loading -->
     <div v-if="pageLoading" class="flex justify-center py-12">
-      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
     </div>
 
     <template v-else>
@@ -34,22 +37,22 @@
     <div v-if="sortedItems.length > 0">
       <div v-for="group in groupedItems" :key="group.siteId" class="mb-4">
         <div v-if="groupedItems.length > 1" class="mb-2 flex items-center gap-3">
-          <UIcon name="i-heroicons-building-office-2" class="h-4 w-4 text-gray-500" />
-          <span class="text-sm font-semibold text-gray-400">{{ group.siteName }}</span>
+          <UIcon name="i-heroicons-building-office-2" class="h-4 w-4 text-muted" />
+          <span class="text-sm font-semibold text-muted">{{ group.siteName }}</span>
           <div class="h-px flex-1 bg-default" />
         </div>
         <div class="list-container rounded-lg bg-default">
           <!-- Sort header -->
-          <div class="flex items-center gap-4 border-b border-default px-5 py-1.5 text-[10px] uppercase tracking-wider text-gray-500">
-            <button class="flex items-center gap-1 transition-colors hover:text-gray-300" @click="toggleSort('vlan_id')">
+          <div class="flex items-center gap-4 border-b border-default px-5 py-1.5 text-[10px] uppercase tracking-wider text-muted">
+            <button class="flex items-center gap-1 transition-colors hover:text-default" @click="toggleSort('vlan_id')">
               {{ $t('vlans.sortId') }}
               <UIcon v-if="sortField === 'vlan_id'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
             </button>
-            <button class="flex items-center gap-1 transition-colors hover:text-gray-300" @click="toggleSort('name')">
+            <button class="flex items-center gap-1 transition-colors hover:text-default" @click="toggleSort('name')">
               {{ $t('vlans.sortName') }}
               <UIcon v-if="sortField === 'name'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
             </button>
-            <button class="flex items-center gap-1 transition-colors hover:text-gray-300" @click="toggleSort('status')">
+            <button class="flex items-center gap-1 transition-colors hover:text-default" @click="toggleSort('status')">
               {{ $t('vlans.sortStatus') }}
               <UIcon v-if="sortField === 'status'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
             </button>
@@ -81,12 +84,12 @@
             <div class="min-w-0 flex-1 py-3 pl-4">
               <div class="flex items-center gap-3">
                 <span class="text-lg font-bold" :style="{ color: vlan.color }">{{ vlan.vlan_id }}</span>
-                <span class="text-base font-semibold text-gray-900 dark:text-white">{{ vlan.name }}</span>
+                <span class="text-base font-semibold text-highlighted">{{ vlan.name }}</span>
                 <UBadge :color="vlan.status === 'active' ? 'success' : 'neutral'" variant="subtle" size="sm">
                   {{ vlan.status === 'active' ? $t('common.active') : $t('common.inactive') }}
                 </UBadge>
               </div>
-              <div class="mt-0.5 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+              <div class="mt-0.5 flex items-center gap-4 text-xs text-toned">
                 <span v-if="getNetworksForVlan(vlan.id).length" class="flex items-center gap-1 font-medium text-primary-500/80">
                   <UIcon name="i-heroicons-globe-alt" class="h-3 w-3" />
                   {{ getNetworksForVlan(vlan.id).map(n => n.name).join(', ') }}
@@ -158,13 +161,13 @@
 
           <!-- Routing device -->
           <div v-if="selectedVlan.routing_device">
-            <span class="text-sm text-gray-400">{{ $t('vlans.fields.routingDevice') }}</span>
+            <span class="text-sm text-muted">{{ $t('vlans.fields.routingDevice') }}</span>
             <p class="text-sm font-medium">{{ selectedVlan.routing_device }}</p>
           </div>
 
           <!-- Description -->
           <div v-if="selectedVlan.description">
-            <span class="text-sm text-gray-400">{{ $t('common.description') }}</span>
+            <span class="text-sm text-muted">{{ $t('common.description') }}</span>
             <p class="text-sm">{{ selectedVlan.description }}</p>
           </div>
 
@@ -172,7 +175,7 @@
 
           <!-- Associated networks -->
           <div>
-            <span class="text-sm font-medium text-gray-400">{{ $t('networks.title') }}</span>
+            <span class="text-sm font-medium text-muted">{{ $t('networks.title') }}</span>
             <div v-if="panelNetworks.length" class="mt-2 space-y-1">
               <NuxtLink
                 v-for="net in panelNetworks"
@@ -181,7 +184,7 @@
                 class="flex items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-elevated"
               >
                 <span class="font-medium text-primary-500">{{ net.name }}</span>
-                <span class="text-xs text-gray-500">{{ net.subnet }}</span>
+                <span class="text-xs text-toned">{{ net.subnet }}</span>
               </NuxtLink>
             </div>
             <p v-else class="mt-2 text-sm text-gray-500">{{ $t('vlans.noNetwork') }}</p>

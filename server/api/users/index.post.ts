@@ -1,7 +1,6 @@
-import { userRepository } from '../../repositories/userRepository'
+import { userRepository, type CreateLocalUserInput } from '../../repositories/userRepository'
 import { createUserSchema } from '../../validators/userSchemas'
 import { hashPassword } from '../../utils/auth'
-import type { User } from '../../../types/user'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -9,11 +8,16 @@ export default defineEventHandler(async (event) => {
 
   const hashedPassword = await hashPassword(validated.password)
 
-  const { password: _pw, ...userData } = validated
-  const user = await userRepository.create({
-    ...userData,
-    password_hash: hashedPassword,
-  } as Omit<User, 'id' | 'created_at' | 'updated_at'>)
+  // Manual creation only ever yields LOCAL password users (never OIDC identities).
+  const input: CreateLocalUserInput = {
+    username: validated.username,
+    display_name: validated.display_name,
+    role: validated.role,
+    language: validated.language,
+    is_setup_user: false,
+    password_hash: hashedPassword
+  }
+  const user = await userRepository.create(input)
 
   const { password_hash: _, ...safeUser } = user
 

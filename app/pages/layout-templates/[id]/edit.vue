@@ -1,21 +1,24 @@
 <template>
   <div class="p-6">
     <div v-if="loading" class="flex items-center justify-center py-12">
-      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
-      <span class="ml-2 text-gray-400">{{ $t('common.loading') }}</span>
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
+      <span class="ml-2 text-muted">{{ $t('common.loading') }}</span>
     </div>
 
     <template v-else-if="form">
-      <div class="flex items-center gap-4 mb-6">
+      <div class="mb-6 flex items-start gap-4">
         <UButton :to="`/layout-templates/${route.params.id}`" icon="i-heroicons-arrow-left" color="neutral" variant="ghost" />
-        <h1 class="text-2xl font-bold">{{ $t('templates.edit') }}</h1>
+        <div>
+          <h1 class="text-2xl font-bold">{{ $t('templates.edit') }}</h1>
+          <p class="mt-1 text-sm text-muted">{{ $t('templates.editDescription') }}</p>
+        </div>
       </div>
 
       <form @submit.prevent="handleSubmit">
         <div class="space-y-6">
           <!-- Basic Info -->
           <div class="list-container rounded-lg bg-default p-5">
-            <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('templates.fields.name') }}</h2>
+            <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-muted">{{ $t('templates.fields.name') }}</h2>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
               <UFormField :label="$t('templates.fields.name')" name="name" :error="errors.name" required>
                 <UInput v-model="form.name" :placeholder="$t('templates.fields.name')" class="w-full" />
@@ -41,7 +44,7 @@
           <!-- Units Section -->
           <div>
             <div class="mb-4 flex items-center justify-between">
-              <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('templates.units.title') }}</h2>
+              <h2 class="text-sm font-semibold uppercase tracking-wider text-muted">{{ $t('templates.units.title') }}</h2>
               <UButton icon="i-heroicons-plus" size="sm" @click="addUnit">
                 {{ $t('templates.units.add') }}
               </UButton>
@@ -73,7 +76,7 @@
               <!-- Blocks Section -->
               <div>
                 <div class="mb-3 flex items-center justify-between">
-                  <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-500">{{ $t('templates.blocks.title') }}</h4>
+                  <h4 class="text-xs font-semibold uppercase tracking-wider text-muted">{{ $t('templates.blocks.title') }}</h4>
                   <UButton icon="i-heroicons-plus" size="xs" variant="soft" @click="addBlock(unitIndex)">
                     {{ $t('templates.blocks.add') }}
                   </UButton>
@@ -92,11 +95,11 @@
                   >
                     <div class="mb-3 flex items-center justify-between">
                       <div class="flex items-center gap-2">
-                        <UIcon name="i-heroicons-bars-3" class="drag-handle h-4 w-4 cursor-grab text-gray-400 active:cursor-grabbing" />
+                        <UIcon name="i-heroicons-bars-3" class="drag-handle h-4 w-4 cursor-grab text-muted active:cursor-grabbing" />
                         <UBadge :color="block.type === 'rj45' ? 'primary' : block.type === 'sfp+' ? 'info' : block.type === 'qsfp' ? 'warning' : 'neutral'" variant="subtle" size="sm">
                           {{ (block.type || 'N/A').toUpperCase() }}
                         </UBadge>
-                        <span class="text-xs text-gray-500">#{{ Number(blockIndex) + 1 }}</span>
+                        <span class="text-xs text-muted">#{{ Number(blockIndex) + 1 }}</span>
                       </div>
                       <div class="flex items-center gap-1">
                         <UButton
@@ -159,7 +162,7 @@
                   </template>
                 </draggable>
 
-                <div v-if="unit.blocks.length === 0" class="rounded-md border border-dashed border-default py-6 text-center text-sm text-gray-500">
+                <div v-if="unit.blocks.length === 0" class="rounded-md border border-dashed border-default py-6 text-center text-sm text-muted">
                   {{ $t('common.noData') }}
                 </div>
                 <p v-if="errors[`units[${unitIndex}].blocks`]" class="mt-1 text-sm text-red-500">{{ errors[`units[${unitIndex}].blocks`] }}</p>
@@ -169,7 +172,7 @@
 
           <!-- Live Preview -->
           <div class="list-container rounded-lg bg-default p-5">
-            <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('templates.preview') }}</h2>
+            <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-muted">{{ $t('templates.preview') }}</h2>
             <div v-if="previewPorts.length" class="rounded-lg border border-default bg-elevated p-4">
               <SwitchPortGrid
                 :ports="(previewPorts as any[])"
@@ -177,7 +180,7 @@
                 :selected-ports="[]"
               />
             </div>
-            <p v-else class="text-sm text-gray-500">{{ $t('templates.previewEmpty') }}</p>
+            <p v-else class="text-sm text-muted">{{ $t('templates.previewEmpty') }}</p>
           </div>
 
           <!-- Form Actions -->
@@ -285,6 +288,7 @@ const speedOptions = [
   { label: '1G', value: '1G' },
   { label: '2.5G', value: '2.5G' },
   { label: '10G', value: '10G' },
+  { label: '40G', value: '40G' },
   { label: '100G', value: '100G' }
 ]
 

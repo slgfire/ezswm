@@ -37,3 +37,4 @@ docs/superpowers/
 .vscode/
 graphify-out/
 session-*.md
+.slim/deepwork/

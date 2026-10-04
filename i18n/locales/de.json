@@ -19,6 +19,7 @@
   },
   "ipAddresses": {
     "title": "IP-Adressen",
+    "description": "Zeigen und verwalten Sie IP-Adressen in den dokumentierten Subnetzen.",
     "add": "IP-Adresse hinzufügen",
     "delete": "IP-Adresse löschen",
     "emptyTitle": "Noch keine IP-Adressen",
@@ -59,7 +60,9 @@
   },
   "sites": {
     "title": "Standorte",
+    "description": "Gruppieren Sie Switches, VLANs und Subnetze nach Standort.",
     "create": "Standort erstellen",
+    "createDescription": "Erstellen Sie einen Standort, um die dortigen Switches, VLANs und Subnetze zu organisieren.",
     "edit": "Standort bearbeiten",
     "delete": "Standort löschen",
     "sections": {
@@ -96,7 +99,27 @@
     "setupTitle": "Willkommen",
     "setupDescription": "Erstellen Sie Ihr Admin-Konto, um zu beginnen.",
     "loginTitle": "Anmelden",
-    "loginDescription": "Geben Sie Ihre Zugangsdaten ein."
+    "loginDescription": "Geben Sie Ihre Zugangsdaten ein.",
+    "loginFailed": "Anmeldung fehlgeschlagen. Prüfen Sie Benutzername und Passwort und versuchen Sie es erneut.",
+    "validation": {
+      "usernameMin": "Der Benutzername muss mindestens 3 Zeichen lang sein",
+      "passwordRequired": "Passwort ist erforderlich"
+    },
+    "oidc": {
+      "signIn": "Mit dem Organisationskonto fortfahren",
+      "signInWith": "Mit {provider} anmelden",
+      "orSso": "oder",
+      "localHint": "Die lokale Anmeldung für Administratoren bleibt zur Wiederherstellung verfügbar.",
+      "errors": {
+        "oidc_not_configured": "Single Sign-on ist derzeit nicht verfügbar. Wenden Sie sich an den ezSWM-Administrator oder verwenden Sie ein lokales Konto.",
+        "oidc_invalid_request": "Die Anmeldung konnte nicht abgeschlossen werden. Bitte starten Sie sie erneut.",
+        "oidc_transaction_invalid": "Diese Anmeldeanfrage ist abgelaufen oder wurde bereits verwendet. Bitte starten Sie sie erneut.",
+        "oidc_provider_error": "Der Identitätsanbieter konnte die Anmeldung nicht abschließen. Versuchen Sie es erneut oder verwenden Sie ein lokales Konto.",
+        "oidc_token_invalid": "Die Antwort des Identitätsanbieters konnte nicht verifiziert werden. Wenden Sie sich an den Administrator.",
+        "oidc_access_denied": "Ihr Konto hat derzeit keinen Zugriff auf ezSWM. Wenden Sie sich an den Administrator.",
+        "oidc_unavailable": "Single Sign-on ist vorübergehend nicht verfügbar. Versuchen Sie es später erneut oder verwenden Sie ein lokales Konto."
+      }
+    }
   },
   "setup": {
     "stepIndicator": "Schritt {current} von {total}",
@@ -174,6 +197,7 @@
     "copyToClipboard": "In Zwischenablage kopieren"
   },
   "dashboard": {
+    "description": "Prüfen Sie Infrastruktur-Zahlen, IP-Auslastung und aktuelle Aktivitäten.",
     "emptyTitle": "Willkommen bei ezSWM!",
     "emptyDescription": "Erstellen Sie Ihren ersten Switch, um zu beginnen.",
     "switchCount": "Switches",
@@ -191,7 +215,10 @@
   },
   "switches": {
     "title": "Switches",
+    "description": "Durchsuchen und filtern Sie Switches und sehen Sie deren Port- und Verbindungsdetails ein.",
     "create": "Switch erstellen",
+    "createDescription": "Erstellen Sie einen Switch und wählen Sie eine Layout-Vorlage, um seine Ports anzulegen.",
+    "detailDescription": "Sehen Sie Switch-Details ein und dokumentieren Sie Ports, VLANs und Verbindungen.",
     "edit": "Switch bearbeiten",
     "delete": "Switch löschen",
     "sections": {
@@ -370,7 +397,10 @@
   },
   "vlans": {
     "title": "VLANs",
+    "description": "Verwalten Sie VLANs und sehen Sie deren Verwendung durch Switches und Subnetze ein.",
     "create": "VLAN erstellen",
+    "createDescription": "Legen Sie ein VLAN zur Verwendung durch Switches und Subnetze an.",
+    "detailDescription": "Sehen Sie die Verwendung dieses VLANs ein und bearbeiten Sie seine Details.",
     "edit": "VLAN bearbeiten",
     "delete": "VLAN löschen",
     "fields": {
@@ -418,7 +448,10 @@
   },
   "networks": {
     "title": "Subnetze",
+    "description": "Verwalten Sie Subnetze und prüfen Sie deren IP-Auslastung.",
     "create": "Subnetz erstellen",
+    "createDescription": "Legen Sie ein IPv4-Subnetz an und ergänzen Sie bei Bedarf VLAN, Gateway und DNS.",
+    "detailDescription": "Prüfen Sie IP-Adressen, Bereiche und Auslastung dieses Subnetzes.",
     "edit": "Subnetz bearbeiten",
     "delete": "Subnetz löschen",
     "sections": {
@@ -557,8 +590,12 @@
   },
   "templates": {
     "title": "Layout-Vorlagen",
+    "description": "Definieren Sie wiederverwendbare Port-Layouts für Switch-Modelle.",
     "create": "Vorlage erstellen",
+    "createDescription": "Erstellen Sie ein Port-Layout, das Sie beim Anlegen von Switches verwenden können.",
     "edit": "Vorlage bearbeiten",
+    "editDescription": "Bearbeiten Sie Vorlagendetails, Einheiten und Port-Blöcke.",
+    "detailDescription": "Prüfen Sie Switch-Angaben und Port-Layout der Vorlage.",
     "delete": "Vorlage löschen",
     "detail": "Vorlagen-Details",
     "importFromLibrary": "Aus Bibliothek importieren",
@@ -672,6 +709,7 @@
   "tools": {
     "subnetCalculator": {
       "title": "Subnetz-Rechner",
+      "description": "Geben Sie ein IPv4-CIDR ein, um Netzwerk- und Hostdaten zu berechnen.",
       "inputLabel": "CIDR-Notation",
       "inputPlaceholder": "z.B. 10.0.1.0/24",
       "results": "Ergebnisse"
@@ -679,6 +717,8 @@
   },
   "patchPanels": {
     "title": "Patchfelder",
+    "description": "Dokumentieren Sie Patchfeld-Ports, Anschlussdosen und Prüfstatus.",
+    "detailDescription": "Erfassen Sie Anschlussdetails und Prüfstatus für jeden Patchfeld-Port.",
     "create": "Patchfeld erstellen",
     "edit": "Patchfeld bearbeiten",
     "delete": "Patchfeld löschen",
@@ -727,6 +767,11 @@
     "title": "Einstellungen",
     "general": {
       "title": "Allgemein",
+      "description": "Verwalten Sie Standardeinstellungen und optionale Funktionen.",
+      "basicTitle": "Grundeinstellungen",
+      "basicHint": "Anwendungsname und Standardstatus für neue Ports.",
+      "featuresTitle": "Optionale Funktionen",
+      "featuresHint": "Wählen Sie, welche optionalen Funktionen verfügbar sind.",
       "appName": "Anwendungsname",
       "defaultVlan": "Standard-VLAN für neue Ports",
       "defaultPortStatus": "Standard-Port-Status",
@@ -738,6 +783,10 @@
     },
     "account": {
       "title": "Konto",
+      "description": "Verwalten Sie Ihr Profil und Ihre Spracheinstellungen.",
+      "profileTitle": "Profil",
+      "profileHint": "Ändern Sie den in ezSWM angezeigten Namen und die Sprache.",
+      "passwordHint": "Legen Sie ein neues Passwort für Ihr Konto fest.",
       "displayName": "Anzeigename",
       "language": "Sprache",
       "changePassword": "Passwort ändern",
@@ -745,7 +794,130 @@
       "newPassword": "Neues Passwort",
       "confirmNewPassword": "Neues Passwort bestätigen",
       "saveProfile": "Profil speichern",
-      "savePassword": "Passwort ändern"
+      "savePassword": "Passwort ändern",
+      "oidcManagedTitle": "Passwort wird vom Identitätsanbieter verwaltet",
+      "oidcManagedDescription": "Ihr Anmeldepasswort und Ihre Zugangsdaten werden von Ihrer Organisation verwaltet. Wenden Sie sich zum Ändern an die Administration Ihres Identitätsanbieters. Anzeigename und Sprache in ezSWM können Sie weiterhin hier ändern.",
+      "validation": {
+        "currentPasswordRequired": "Aktuelles Passwort ist erforderlich",
+        "newPasswordMin": "Das neue Passwort muss mindestens 8 Zeichen lang sein",
+        "passwordMismatch": "Die Passwörter stimmen nicht überein"
+      }
+    },
+    "oidc": {
+      "tab": "Authentifizierung",
+      "title": "Single Sign-on",
+      "description": "Verbinden Sie ezSWM mit Ihrem OpenID-Connect-Identitätsanbieter. Lokale Konten bleiben zur Wiederherstellung verfügbar.",
+      "savedEnabled": "Gespeicherte Einstellung: aktiviert",
+      "savedDisabled": "Gespeicherte Einstellung: deaktiviert",
+      "enabled": "Aktiviert",
+      "disabled": "Deaktiviert",
+      "savedRevision": "Gespeicherte Revision",
+      "loadFailedTitle": "SSO-Einstellungen konnten nicht geladen werden",
+      "loadFailedDescription": "Die Einstellungen konnten nicht gelesen werden. Laden Sie die Seite neu oder versuchen Sie es später erneut.",
+      "providerSection": "Anbieter",
+      "providerHint": "Verwenden Sie die Aussteller-URL und Client-Zugangsdaten, die bei Ihrem Identitätsanbieter registriert sind.",
+      "providerName": "Anzeigename des Anbieters",
+      "providerNameHint": "Wird auf der Anmeldeschaltfläche angezeigt. Leer lassen, um die Standardbeschriftung zu verwenden.",
+      "providerNamePlaceholder": "z. B. Unternehmens-SSO",
+      "enabledLabel": "Single Sign-on erlauben",
+      "turnOn": "Anmeldung ist aktiviert",
+      "turnOff": "Anmeldung ist deaktiviert",
+      "issuer": "Aussteller-URL",
+      "issuerHint": "Geben Sie die vom Anbieter veröffentlichte Aussteller-Adresse exakt ein. Standardmäßig wird HTTPS erwartet.",
+      "clientId": "Client-ID",
+      "clientSecret": "Client-Secret",
+      "secretConfiguredHint": "Ein Secret ist sicher gespeichert. Leer lassen, um es beizubehalten, oder ein neues zum Ersetzen eingeben.",
+      "secretEmptyHint": "Das Secret wird sicher übertragen und vor dem Speichern verschlüsselt.",
+      "secretStoredPlaceholder": "Secret gespeichert — leer lassen, um es beizubehalten",
+      "secretInputPlaceholder": "Client-Secret eingeben",
+      "clearSecret": "Gespeichertes Client-Secret entfernen",
+      "callbackUrl": "Registrierte Callback-URL",
+      "copyCallback": "URL kopieren",
+      "callbackHint": "Fügen Sie diese exakte URL bei Ihrem Identitätsanbieter zu den erlaubten Weiterleitungs-URLs hinzu.",
+      "groupsSection": "Berechtigungen und Gruppen",
+      "groupsHint": "Ordnen Sie Gruppenwerte im Identitätstoken den ezSWM-Rollen zu. Gruppennamen werden manuell eingetragen; beobachtete Werte sind nur Vorschläge.",
+      "scopes": "Scopes",
+      "scopesHint": "openid ist erforderlich. Ergänzen Sie weitere, von Ihrem Anbieter benötigte Scopes.",
+      "addScope": "Scope hinzufügen",
+      "removeScope": "Scope entfernen",
+      "groupsClaim": "Gruppen-Claim",
+      "groupsClaimHint": "Claim-Name oder Pfad mit Punkten, zum Beispiel groups oder profile.groups.",
+      "adminGroups": "Admin-Gruppen",
+      "viewerGroups": "Viewer-Gruppen",
+      "groupPlaceholder": "Exakter Gruppenwert des Anbieters",
+      "removeGroup": "Gruppe entfernen",
+      "adminWins": "Wenn eine Person in beiden Listen vorkommt, hat die Admin-Rolle Vorrang. Gruppen werden exakt abgeglichen.",
+      "observedTitle": "Beobachtete Gruppenvorschläge",
+      "observedHint": "Bei früheren Anmeldungen gesehen. Diese Vorschläge vergeben keine Berechtigungen, bis Sie eine Gruppe oben ausdrücklich hinzufügen.",
+      "observedNone": "Bisher wurden keine Gruppenwerte beobachtet.",
+      "observedAllAssigned": "Alle beobachteten Gruppen sind bereits zugeordnet. Entfernen Sie eine Zuordnung, um einen Vorschlag wieder einzublenden.",
+      "addAsAdmin": "Als Admin hinzufügen",
+      "addAsViewer": "Als Viewer hinzufügen",
+      "allowUnmatchedViewer": "Personen ohne passende Gruppe als Viewer zulassen",
+      "unmatchedHint": "Standardmäßig deaktiviert. Ist die Option aus, werden Anmeldungen ohne Admin- oder Viewer-Gruppe abgelehnt.",
+      "securitySection": "Sicherheit",
+      "securityHint": "Schützen Sie die Anbieterdaten. Ein serverseitiger Verschlüsselungsschlüssel ist erforderlich, wenn Sie ein Client-Secret konfigurieren.",
+      "allowHttpIssuer": "HTTP-Aussteller-URL erlauben",
+      "allowHttpHint": "Nur für einen vertrauenswürdigen internen Identitätsanbieter aktivieren, der kein HTTPS unterstützt. HTTP verschlüsselt die Anmeldung während der Übertragung nicht.",
+      "httpWarningTitle": "Der Anbieter verwendet HTTP",
+      "httpWarningDescription": "Die Anmeldung zu diesem Anbieter ist während der Übertragung nicht verschlüsselt. Verwenden Sie nach Möglichkeit HTTPS.",
+      "secretStorageTitle": "Umgang mit dem Secret",
+      "secretStorageHint": "Das Client-Secret wird im Ruhezustand verschlüsselt und nie wieder angezeigt. Hinterlegen Sie OIDC_ENCRYPTION_KEY (oder NUXT_OIDC_ENCRYPTION_KEY) in der Server-Umgebung und verwenden Sie nicht den JWT-Signaturschlüssel.",
+      "keyMissingTitle": "SSO-Verschlüsselungsschlüssel ist nicht bereit",
+      "keyMissingDescription": "Hinterlegen Sie OIDC_ENCRYPTION_KEY (oder NUXT_OIDC_ENCRYPTION_KEY) als eigenen 32-Byte-Schlüssel in der Server-Umgebung. SSO bleibt nicht verfügbar; lokale Anmeldung ist nicht betroffen.",
+      "secretUnavailableTitle": "Gespeichertes Secret kann nicht entschlüsselt werden",
+      "secretUnavailableDescription": "Der Verschlüsselungsschlüssel wurde möglicherweise geändert oder das gespeicherte Secret ist ungültig. Hinterlegen Sie den korrekten OIDC_ENCRYPTION_KEY oder speichern Sie ein Ersatz-Secret. SSO bleibt bis zur Behebung deaktiviert.",
+      "configurationIncompleteTitle": "SSO ist aktiviert, aber noch nicht bereit",
+      "configurationIncompleteDescription": "Ergänzen Sie Aussteller und Client-ID und speichern Sie die Konfiguration. Bei öffentlichen Clients ist ein Client-Secret optional. Wenn Sie eines verwenden, benötigt der Server seinen OIDC-Verschlüsselungsschlüssel.",
+      "connectionSection": "Anbieter prüfen",
+      "connectionHint": "Prüfen Sie die gespeicherte Anbieterkonfiguration, ohne eine Anmeldung zu starten.",
+      "saveBeforeCheck": "Speichern Sie Änderungen, bevor Sie den Anbieter prüfen. Die Prüfung verwendet immer die gespeicherte Konfiguration.",
+      "checkConnection": "Verbindung prüfen",
+      "checkNoLogin": "Es werden nur die Anbieter-Metadaten geprüft. Sie werden nicht angemeldet und die aktuelle Sitzung wird nicht geändert.",
+      "checkPassed": "Anbieterprüfung erfolgreich",
+      "checkPassedDescription": "Die Anbieter-Metadaten wurden gefunden und die gespeicherte Konfiguration ist für die Anmeldung bereit.",
+      "checkFailed": "Anbieterprüfung benötigt Aufmerksamkeit",
+      "checkFailedDescription": "Die gespeicherte Anbieterkonfiguration konnte nicht verifiziert werden. Prüfen Sie Aussteller, Client-Einstellungen und Server-Schlüssel.",
+      "authMethod": "Client-Authentifizierung",
+      "tokenAlgorithm": "ID-Token-Algorithmus",
+      "authorizationEndpoint": "Autorisierung",
+      "tokenEndpoint": "Token",
+      "jwksEndpoint": "Signaturschlüssel",
+      "userInfoEndpoint": "Benutzerinfo",
+      "authMethods": {
+        "client_secret_basic": "Client-Secret (Basic)",
+        "client_secret_post": "Client-Secret (POST)",
+        "none": "Keine Client-Authentifizierung"
+      },
+      "checkErrors": {
+        "not_configured": "SSO ist noch nicht konfiguriert. Tragen Sie Aussteller und Client-ID ein und speichern Sie. Bei öffentlichen Clients ist ein Client-Secret optional.",
+        "encryption_key_unavailable": "Der Server kann seinen OIDC-Verschlüsselungsschlüssel nicht verwenden. Konfigurieren Sie OIDC_ENCRYPTION_KEY (oder NUXT_OIDC_ENCRYPTION_KEY), bevor Sie ein Client-Secret speichern oder prüfen.",
+        "secret_undecryptable": "Das gespeicherte Client-Secret kann nicht entschlüsselt werden. Prüfen Sie den Serverschlüssel oder geben Sie ein Ersatz-Secret ein und speichern Sie.",
+        "issuer_invalid": "Die Aussteller-URL ist ungültig oder erfüllt die eingestellte Sicherheitsrichtlinie nicht.",
+        "issuer_mismatch": "Der Aussteller in den Anbieter-Metadaten stimmt nicht mit der konfigurierten URL überein.",
+        "endpoint_invalid": "Die Anbieter-Metadaten enthalten eine ungültige Endpunkt-URL. Prüfen Sie die OpenID-Konfiguration des Anbieters.",
+        "redirect_not_allowed": "Der Server hat eine Weiterleitung eines Anbieter-Endpunkts abgelehnt. Prüfen Sie Anbieter-Konfiguration und Endpunkt-URLs.",
+        "response_too_large": "Eine Antwort des Anbieters überschreitet die zulässige Größe. Prüfen Sie die Discovery-Metadaten des Identitätsanbieters.",
+        "pkce_not_supported": "Dieser Anbieter unterstützt die erforderliche PKCE-Sicherheitsmethode nicht.",
+        "id_token_invalid": "Die Discovery-Antwort des Anbieters konnte nicht validiert werden. Prüfen Sie Aussteller und Anbieter-Konfiguration.",
+        "oidc_token_invalid": "Die Antwort des Anbieters konnte nicht validiert werden. Prüfen Sie Aussteller und Anbieter-Konfiguration.",
+        "oidc_not_configured": "SSO ist noch nicht konfiguriert. Tragen Sie Aussteller und Client-ID ein und speichern Sie. Bei öffentlichen Clients ist ein Client-Secret optional.",
+        "oidc_invalid_request": "Die gespeicherten Einstellungen sind unvollständig oder ungültig. Prüfen Sie Aussteller- und Client-Angaben.",
+        "oidc_provider_error": "Der Identitätsanbieter hat einen Fehler gemeldet. Prüfen Sie Aussteller und Verfügbarkeit des Anbieters.",
+        "oidc_unavailable": "Der Anbieter ist nicht erreichbar. Prüfen Sie die Aussteller-Adresse und den Netzwerkzugriff des Servers.",
+        "unsupported_client_auth": "Anbieter und Client-Einstellungen unterstützen keine gemeinsame Authentifizierungsmethode.",
+        "unsupported_id_token_alg": "Die vom Anbieter angegebenen Signaturalgorithmen für ID-Tokens werden nicht unterstützt oder sind ungültig."
+      },
+      "checkWarnings": {
+        "insecure_http_issuer": "Der Anbieter verwendet HTTP. Die Anmeldung ist während der Übertragung nicht verschlüsselt.",
+        "pkce_support_not_advertised": "Der Anbieter hat PKCE-Unterstützung nicht angekündigt. Die erforderliche S256-Methode wird möglicherweise trotzdem unterstützt.",
+        "generic": "Der Anbieter hat eine Konfigurationswarnung zurückgegeben. Prüfen Sie Einstellungen und Anbieter-Metadaten."
+      },
+      "saveConfiguration": "Konfiguration speichern",
+      "saved": "SSO-Konfiguration gespeichert",
+      "saveFailed": "SSO-Einstellungen konnten nicht gespeichert werden. Prüfen Sie die Felder und versuchen Sie es erneut.",
+      "callbackCopied": "Callback-URL kopiert",
+      "callbackCopyFailed": "Callback-URL konnte nicht kopiert werden"
     },
     "messages": {
       "updated": "Einstellungen erfolgreich aktualisiert",
@@ -753,6 +925,27 @@
       "passwordChanged": "Passwort erfolgreich geändert",
       "passwordMismatch": "Passwörter stimmen nicht überein"
     }
+  },
+  "users": {
+    "title": "Benutzer",
+    "description": "Hier werden nur in ezSWM angelegte Konten angezeigt, nicht alle Identitäten Ihres Anbieters.",
+    "listTitle": "Angelegte Konten",
+    "listDescription": "Rolle und Anmeldemethode",
+    "tableCaption": "In ezSWM angelegte Benutzerkonten",
+    "username": "Benutzername",
+    "displayName": "Anzeigename",
+    "role": "Rolle",
+    "signInMethod": "Anmeldemethode",
+    "admin": "Admin",
+    "viewer": "Viewer",
+    "localAccount": "Lokales Konto",
+    "openIdConnect": "OpenID Connect",
+    "loading": "Konten werden geladen…",
+    "loadFailedTitle": "Benutzer konnten nicht geladen werden",
+    "loadFailedDescription": "Die Kontenliste konnte nicht geladen werden. Versuchen Sie es erneut.",
+    "retry": "Erneut versuchen",
+    "emptyTitle": "Noch keine Konten",
+    "emptyDescription": "In ezSWM wurden noch keine lokalen oder OpenID-Connect-Konten angelegt."
   },
   "backup": {
     "title": "Backup & Restore",
@@ -787,6 +980,7 @@
   },
   "dataManagement": {
     "title": "Datenverwaltung",
+    "description": "Importieren oder exportieren Sie einzelne Datensätze oder erstellen Sie ein vollständiges Backup und stellen Sie es wieder her.",
     "backupRestoreTab": "Backup & Restore",
     "exportTab": "Export",
     "importTab": "Import",
@@ -984,6 +1178,7 @@
     },
     "pp": {
       "loading": "Lade Patchfeld-Daten...",
+      "description": "Schreibgeschützte Übersicht der Patchfeld-Ports, Anschlussorte und Prüfstatus.",
       "linkLabel": "Öffentlicher Link für dieses Patchfeld",
       "free": "Frei",
       "revokeConfirm": "Möchten Sie diesen öffentlichen Link wirklich widerrufen? Der QR-Code-Sticker funktioniert dann nicht mehr."

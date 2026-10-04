@@ -17,6 +17,9 @@ Standardmäßig benötigt `/api/**` ein gültiges JWT-Cookie.
 - `GET /api/setup/status`
 - `GET /api/changelog`
 - `GET /api/version-latest`
+- `GET /api/auth/oidc/status`
+- `GET /api/auth/oidc/start`
+- `GET /api/auth/oidc/callback`
 - `GET /api/settings` (Sonderfall-Ausnahme)
 - `GET /api/p/:token` (öffentliche Switch-Ansicht)
 - `GET /api/p/pp/:token` (öffentliche Patch-Panel-Ansicht; nur verfügbar, wenn Patch Panels aktiviert sind)
@@ -59,6 +62,14 @@ erDiagram
 | POST | `/api/auth/logout` | Abmelden und JWT-Cookie löschen (öffentlich) |
 | GET | `/api/auth/me` | Aktuell authentifizierten Benutzer abrufen |
 | POST | `/api/auth/setup` | Initiales Admin-Setup (öffentlich bis abgeschlossen) |
+| GET | `/api/auth/oidc/status` | `{ enabled }` — ob SSO-Login nutzbar ist; enthält `provider_name` nur, wenn aktiviert und ein nicht-leerer Name gesetzt ist (öffentlich) |
+| GET | `/api/auth/oidc/start` | OIDC-Login starten: setzt ein langlebiges Browser-Binding-Cookie (24 h, auf den OIDC-Pfad begrenzt) und eine kurzlebige (10 min) einmalig nutzbare Login-Transaktion und leitet zum Provider weiter (öffentlich; kann 429 liefern, wenn zu viele Logins offen sind) |
+| GET | `/api/auth/oidc/callback` | OIDC-Redirect-Ziel; bei Erfolg JWT-Cookie setzen und weiterleiten, bei Fehler Redirect auf `/login?oidc_error=<code>` mit sicherem Fehlercode (öffentlich) |
+| GET | `/api/auth/oidc/config` | Nur Admin. OIDC-Config-DTO: `client_secret_configured` (Boolean), nullable `provider_name`, `callback_url`, `encryption_key_ready`, `secret_decryptable`, Revision. Enthält nie Secret oder Chiffrat |
+| PUT | `/api/auth/oidc/config` | Nur Admin. Teil-Update. `client_secret` weggelassen = behalten, `client_secret_clear: true` = entfernen. Optionales `provider_name`: weggelassen = behalten, `null`/leer = löschen, max. 64 Zeichen (nur kosmetisch). Gruppenfelder werden getrimmt, dedupliziert und größenbegrenzt. Sicherheitsrelevante echte Änderungen erhöhen die Config-Revision, verwerfen offene Login-Transaktionen und machen SSO-Sitzungen ungültig. Ausnahme: Eine reine `provider_name`-Änderung ist kosmetisch und erhöht weder die Revision noch macht sie offene Logins/Sitzungen ungültig; ein unverändertes Update (No-op) erhöht sie ebenfalls nicht |
+| POST | `/api/auth/oidc/check` | Nur Admin. Lesende Discovery-Prüfung der **gespeicherten** Config (kein Login-Test). Liefert bei Fehlern einen sicheren Fehlercode, u. a. `unsupported_id_token_alg`, wenn die angekündigten ID-Token-Signaturalgorithmen fehlerhaft, leer oder alle nicht unterstützt sind (fehlende Angabe ergibt aus Kompatibilität RS256). Beim öffentlichen Login werden diese Fehler der Algorithmus-Aushandlung auf `oidc_unavailable` abgebildet |
+
+Fehlercodes: `oidc_not_configured`, `oidc_invalid_request`, `oidc_transaction_invalid`, `oidc_provider_error`, `oidc_token_invalid`, `oidc_access_denied`, `oidc_unavailable`. Rollen werden bei jeder Anfrage aus der Datenbank gelesen; `viewer` ist für Infrastrukturdaten schreibgeschützt (außer eigenes Profil GET/PUT, Sprache, lokales Passwort und Logout); Benutzerverwaltung, Schreiben von Einstellungen, Backup-Operationen und OIDC-Config/-Check sind nur für Admins. Die öffentliche Ausnahme `GET /api/settings` (Wizard) bleibt wie oben aufgeführt.
 
 ## Setup & System
 
@@ -309,12 +320,24 @@ Beide Endpunkte benötigen Internetzugriff auf GitHub und können bei Ausfall `5
     "activity": [...],
     "settings": [...],
     "publicTokens": [...],
-    "topologyLayouts": [...]
+    "topologyLayouts": [...],
+    "oidcConfig": [...],
+    "patchPanels": [...],
+    "patchPanelSockets": [...],
+    "patchPanelTokens": [...]
   }
 }
 ```
 
-Patch-Panel-Tabellen (`patchPanels`, `patchPanelSockets`, `patchPanelTokens`) gehören zum Live-Datenmodell, sind aber in dieser Full-Backup-Payload aktuell noch nicht enthalten.
+Die Payload enthält in `data` außerdem drei Patch-Panel-Arrays (oben abgekürzt): `patchPanels`, `patchPanelSockets` und `patchPanelTokens`. Ein Admin-Voll-Backup enthält Passwort-Hashes, das verschlüsselte OIDC-Secret und öffentliche Patch-Panel-Tokenwerte (nie ein Klartext-OIDC-Client-Secret, den OIDC-Verschlüsselungsschlüssel oder offene Login-Transaktionen). Zugriffstokenwerte sind so wie gespeichert nutzbar; Backups daher vertraulich halten.
+
+Regeln von `POST /api/backup/import` für diese Schlüssel: Fehlen alle drei (Legacy-Backup), wird der Import nur akzeptiert, wenn aktuell keine Patch Panels, Sockets oder Tokens existieren, sonst `400` vor jeder Änderung. Ist einer vorhanden, müssen alle drei Arrays sein (teilweise, `null` oder kein Array → `400`). Drei leere Arrays sind ein bewusster leerer Snapshot und löschen vorhandene Patch Panels:
+
+```json
+{ "schema": "sqlite-v1", "data": { "users": [...], "patchPanels": [], "patchPanelSockets": [], "patchPanelTokens": [] } }
+```
+
+Hinweis: Diese verkürzte Skizze ist kein sicheres vollständiges Backup. Verwende eine vollständig exportierte Payload, damit keine ausgelassenen Daten verloren gehen; ein Restore benötigt einen nutzbaren lokalen Administrator in `users` sowie die oben genannten Patch-Panel-Array-Regeln.
 
 ## Aktivität
 

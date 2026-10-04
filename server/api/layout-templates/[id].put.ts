@@ -17,7 +17,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const validated = updateLayoutTemplateSchema.parse(body)
+  const validation = updateLayoutTemplateSchema.safeParse(body)
+  if (!validation.success) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid request body' })
+  }
+  const validated = validation.data
 
   const updated = await layoutTemplateRepository.update(id, validated as Partial<Omit<LayoutTemplate, 'id' | 'created_at'>>)
 

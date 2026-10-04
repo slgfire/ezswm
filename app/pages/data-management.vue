@@ -1,14 +1,17 @@
 <template>
   <div class="p-6">
-    <h1 class="mb-6 text-2xl font-bold">{{ $t('dataManagement.title') }}</h1>
+    <div class="mb-6">
+      <h1 class="text-xl font-bold">{{ $t('dataManagement.title') }}</h1>
+      <p class="mt-1 text-sm text-muted">{{ $t('dataManagement.description') }}</p>
+    </div>
 
     <UTabs :items="tabs" variant="link" color="neutral">
       <template #backup>
         <div class="mt-4 grid gap-6 md:grid-cols-2">
           <!-- Create Backup -->
           <div class="list-container rounded-lg bg-default p-5">
-            <h2 class="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('backup.createTitle') }}</h2>
-            <p class="mb-4 text-sm text-gray-500">{{ $t('backup.exportDescription') }}</p>
+            <h2 class="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">{{ $t('backup.createTitle') }}</h2>
+            <p class="mb-4 text-sm text-muted">{{ $t('backup.exportDescription') }}</p>
             <UButton size="sm" icon="i-heroicons-arrow-down-tray" @click="downloadBackup">
               {{ $t('backup.export') }}
             </UButton>
@@ -16,8 +19,8 @@
 
           <!-- Restore Backup -->
           <div class="list-container rounded-lg bg-default p-5">
-            <h2 class="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('backup.restoreTitle') }}</h2>
-            <p class="mb-4 text-sm text-gray-500">{{ $t('backup.importDescription') }}</p>
+            <h2 class="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">{{ $t('backup.restoreTitle') }}</h2>
+            <p class="mb-4 text-sm text-muted">{{ $t('backup.importDescription') }}</p>
             <div class="space-y-4">
               <div
                 class="cursor-pointer rounded-lg border-2 border-dashed border-default p-6 text-center transition-colors hover:border-primary-500/50"
@@ -27,8 +30,8 @@
                 @dragleave="isBackupDragOver = false"
                 @drop.prevent="onBackupFileDrop"
               >
-                <UIcon name="i-heroicons-cloud-arrow-up" class="mx-auto mb-2 h-8 w-8 text-gray-500" />
-                <p class="text-sm text-gray-400">
+                <UIcon name="i-heroicons-cloud-arrow-up" class="mx-auto mb-2 h-8 w-8 text-muted" />
+                <p class="text-sm text-muted">
                   <span v-if="backupFile" class="text-primary-400">{{ (backupFile as File).name }}</span>
                   <span v-else>{{ $t('backup.selectFile') }} (.json)</span>
                 </p>
@@ -55,7 +58,7 @@
 
       <template #export>
         <div class="mt-4 max-w-lg">
-          <p class="mb-4 text-sm text-gray-500">{{ $t('dataManagement.export.description') }}</p>
+          <p class="mb-4 text-sm text-muted">{{ $t('dataManagement.export.description') }}</p>
           <div class="space-y-4">
             <UFormField :label="$t('dataManagement.export.selectType')">
               <USelectMenu
@@ -94,7 +97,7 @@
 
       <template #import>
         <div class="mt-4 max-w-lg">
-          <p class="mb-4 text-sm text-gray-500">{{ $t('dataManagement.import.description') }}</p>
+          <p class="mb-4 text-sm text-muted">{{ $t('dataManagement.import.description') }}</p>
           <div class="space-y-4">
             <!-- Step 1: Entity Type -->
             <UFormField :label="$t('dataManagement.import.selectType')">
@@ -120,7 +123,7 @@
               >
                 {{ $t('dataManagement.import.downloadTemplate') }}
               </UButton>
-              <span class="text-xs text-gray-500">{{ $t('dataManagement.import.templateHint') }}</span>
+              <span class="text-xs text-muted">{{ $t('dataManagement.import.templateHint') }}</span>
             </div>
 
             <!-- Step 3: File Upload -->
@@ -132,12 +135,12 @@
               @dragleave="isDragOver = false"
               @drop.prevent="onImportFileDrop"
             >
-              <UIcon name="i-heroicons-cloud-arrow-up" class="mx-auto mb-1 h-7 w-7 text-gray-500" />
-              <p class="text-sm text-gray-400">
+              <UIcon name="i-heroicons-cloud-arrow-up" class="mx-auto mb-1 h-7 w-7 text-muted" />
+              <p class="text-sm text-muted">
                 <span v-if="importFile" class="text-primary-400">{{ (importFile as File).name }}</span>
                 <span v-else>{{ $t('dataManagement.import.dropOrSelect') }}</span>
               </p>
-              <p v-if="!importFile" class="mt-1 text-xs text-gray-500">JSON, CSV — max. 5 MB</p>
+              <p v-if="!importFile" class="mt-1 text-xs text-muted">JSON, CSV — max. 5 MB</p>
               <input
                 ref="importFileInput"
                 type="file"
@@ -149,7 +152,7 @@
 
             <!-- Preview -->
             <div v-if="importPreview !== null" class="rounded-md bg-elevated p-3">
-              <p class="text-sm text-gray-600 dark:text-gray-300">
+              <p class="text-sm text-toned">
                 {{ $t('dataManagement.import.preview') }}: <strong>{{ importPreview }}</strong> {{ $t('dataManagement.import.rows') }}
               </p>
             </div>

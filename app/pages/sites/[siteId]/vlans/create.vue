@@ -1,14 +1,17 @@
 <template>
   <div class="mx-auto w-full max-w-5xl px-6 py-6">
-    <div class="mb-6 flex items-center gap-3">
+    <div class="mb-6 flex items-start gap-3">
       <UButton icon="i-heroicons-arrow-left" variant="ghost" :to="`/sites/${siteId}/vlans`" :aria-label="$t('common.back')" />
-      <h1 class="text-2xl font-bold">{{ $t('vlans.create') }}</h1>
+      <div>
+        <h1 class="text-2xl font-bold">{{ $t('vlans.create') }}</h1>
+        <p class="mt-1 text-sm text-muted">{{ $t('vlans.createDescription') }}</p>
+      </div>
     </div>
 
     <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit.prevent="onSubmit">
       <div class="space-y-6">
         <div class="list-container rounded-lg bg-default p-5">
-          <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">VLAN</h2>
+          <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-muted">VLAN</h2>
           <div class="space-y-4">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
               <UFormField :label="$t('vlans.fields.vlanId')" name="vlan_id" required>

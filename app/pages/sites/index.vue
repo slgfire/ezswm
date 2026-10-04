@@ -1,7 +1,10 @@
 <template>
   <div class="p-6">
-    <div class="mb-4 flex items-center justify-between">
-      <h1 class="text-xl font-bold">{{ $t('sites.title', 'Sites') }}</h1>
+    <div class="mb-4 flex flex-wrap items-start justify-between gap-4">
+      <div class="min-w-0">
+        <h1 class="text-xl font-bold">{{ $t('sites.title', 'Sites') }}</h1>
+        <p class="mt-1 text-sm text-muted">{{ $t('sites.description') }}</p>
+      </div>
       <UButton to="/sites/create" icon="i-heroicons-plus" size="sm">
         {{ $t('sites.create', 'Create Site') }}
       </UButton>
@@ -9,7 +12,7 @@
 
     <!-- Loading -->
     <div v-if="loading" class="flex justify-center py-12">
-      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
     </div>
 
     <!-- Sites Grid -->
@@ -21,7 +24,7 @@
         class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
       >
         <!-- Hover actions -->
-        <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
+        <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-elevated/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100">
           <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="xs" @click.prevent="editSite(site)" />
           <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="confirmDelete(site)" />
         </div>
@@ -33,10 +36,10 @@
               <UIcon name="i-heroicons-building-office-2" class="h-5 w-5 text-primary-500" />
             </div>
             <div class="min-w-0 flex-1">
-              <h3 class="truncate font-semibold text-gray-900 group-hover:text-primary-500 dark:text-white">
+              <h3 class="truncate font-semibold text-highlighted group-hover:text-primary-500">
                 {{ site.name }}
               </h3>
-              <p v-if="site.description" class="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
+              <p v-if="site.description" class="mt-0.5 truncate text-sm text-muted">
                 {{ site.description }}
               </p>
             </div>
@@ -44,7 +47,7 @@
         </div>
 
         <!-- Counts footer -->
-        <div class="mt-auto flex items-center justify-between border-t border-default px-5 py-2.5 text-xs text-gray-400">
+        <div class="mt-auto flex items-center justify-between border-t border-default px-5 py-2.5 text-xs text-muted">
           <span class="flex items-center gap-1">
             <UIcon name="i-heroicons-server-stack" class="h-3.5 w-3.5" />
             {{ site._counts?.switches || 0 }} {{ $t('nav.switches', 'Switches') }}

@@ -2,14 +2,18 @@
   <UDashboardSidebar
     collapsible
     :default-size="16"
-    :ui="{ header: 'px-4', body: 'p-0 gap-0', footer: 'px-2 py-2' }"
+    :ui="{ header: 'relative px-4', body: 'p-0 gap-0', footer: 'px-2 py-2' }"
     role="complementary"
     aria-label="Sidebar navigation"
   >
     <!-- Logo (single header row) -->
     <template #header="{ collapsed }">
-      <NuxtLink :to="sitePrefix" class="font-display text-xl font-bold">
-        <span class="text-primary-500">ez</span><span v-if="!collapsed" class="tracking-tight text-gray-900 dark:text-white">SWM</span>
+      <NuxtLink :to="sitePrefix" class="flex h-full flex-1 items-center justify-center" :class="{ 'pt-2': !collapsed }" aria-label="ezSWM">
+        <img v-if="collapsed" src="/favicon.svg" alt="" width="32" height="32" class="size-8 shrink-0 object-contain">
+        <template v-else>
+          <img src="/logo.svg" alt="" width="2172" height="724" class="h-12 w-36 shrink-0 object-contain dark:hidden">
+          <img src="/logo-dark.svg" alt="" width="2172" height="724" class="hidden h-12 w-36 shrink-0 object-contain dark:block">
+        </template>
       </NuxtLink>
     </template>
 
@@ -28,7 +32,7 @@
                 :class="[
                   isActive(item.to)
                     ? 'sidebar-active bg-primary-500/10 text-primary-500 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white',
+                    : 'text-toned hover:bg-elevated hover:text-highlighted',
                   collapsed ? 'justify-center' : ''
                 ]"
               >
@@ -43,7 +47,7 @@
 
     <!-- Footer: version/github (hidden when collapsed) + collapse toggle (always) -->
     <template #footer="{ collapsed }">
-      <div v-if="!collapsed" class="flex items-center gap-2.5 px-1 font-mono text-sm text-neutral-500">
+      <div v-if="!collapsed" class="flex items-center gap-2.5 px-1 font-mono text-sm text-muted">
         <button
           type="button"
           class="relative transition-colors hover:text-primary-500"
@@ -56,7 +60,7 @@
             class="absolute -right-2.5 -top-1 h-2 w-2 rounded-full bg-primary-500"
           />
         </button>
-        <a href="https://github.com/slgfire/ezswm" target="_blank" rel="noopener" class="text-neutral-400 hover:text-primary-500 transition-colors">
+        <a href="https://github.com/slgfire/ezswm" target="_blank" rel="noopener" class="text-muted hover:text-primary-500 transition-colors">
           <UIcon name="i-simple-icons-github" class="h-4.5 w-4.5" />
         </a>
       </div>
@@ -74,10 +78,12 @@ const { updateAvailable, load } = useVersionCheck()
 onMounted(() => load())
 
 const route = useRoute()
+const { user } = useAuth()
 const { currentSiteId } = useCurrentSite()
 const { settings, fetch: fetchSettings } = useSettings()
 onMounted(() => { if (!settings.value) fetchSettings() })
 const patchPanelsEnabled = computed(() => settings.value?.patch_panels_enabled ?? false)
+const isAdmin = computed(() => user.value?.role === 'admin')
 
 const sitePrefix = computed(() => `/sites/${currentSiteId.value}`)
 
@@ -115,6 +121,7 @@ const navSections = computed(() => [
     divider: true,
     items: [
       { to: '/sites', icon: 'i-heroicons-building-office-2', label: 'nav.sites' },
+      ...(isAdmin.value ? [{ to: '/users', icon: 'i-heroicons-users', label: 'nav.users' }] : []),
       { to: '/settings', icon: 'i-heroicons-cog-6-tooth', label: 'nav.settings' }
     ]
   }

@@ -61,7 +61,7 @@
         <div class="port-grid-unit overflow-x-auto rounded-lg border border-default bg-default/30 p-2 lg:p-3">
           <div class="flex flex-wrap items-start gap-5 w-max lg:w-auto">
             <div v-for="block in unit.blocks" :key="block.id" class="flex flex-col gap-1">
-              <div v-if="block.label" class="text-[10px] font-medium text-gray-400 dark:text-gray-500">{{ block.label }}</div>
+              <div v-if="block.label" class="text-[10px] font-medium text-muted">{{ block.label }}</div>
             <!-- Multi-row block with layout modes -->
             <div
               v-if="block.rows >= 2"
@@ -124,35 +124,35 @@
 
     <!-- Legend + LAG Card -->
     <template v-if="!publicMode && !printMode">
-    <div class="port-legend mt-4 px-1 text-[11px] text-gray-500 dark:text-gray-400">
+    <div class="port-legend mt-4 px-1 text-[11px] text-muted">
       <!-- Row 1: Status / Type / Mode -->
       <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5">
         <!-- Status -->
-        <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.status') }}:</span>
+        <span class="font-semibold text-toned">{{ $t('legend.status') }}:</span>
         <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-green-400 bg-green-50 dark:bg-neutral-700" /> {{ $t('legend.up') }}</span>
         <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-gray-300 bg-gray-100 dark:border-neutral-600 dark:bg-neutral-800" /> {{ $t('legend.down') }}</span>
         <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded border border-red-300 bg-red-50 dark:bg-neutral-800" /> {{ $t('legend.disabled') }}</span>
 
-        <span class="text-gray-300 dark:text-gray-600">|</span>
+        <span class="text-dimmed">|</span>
 
         <!-- Port types -->
-        <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.type') }}:</span>
+        <span class="font-semibold text-toned">{{ $t('legend.type') }}:</span>
         <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-sky-400" /> {{ $t('legend.sfp') }}</span>
         <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-violet-400" /> {{ $t('legend.qsfp') }}</span>
         <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-amber-400" /> {{ $t('legend.console') }}</span>
         <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-1 rounded-sm bg-teal-400" /> {{ $t('legend.mgmt') }}</span>
 
-        <span class="text-gray-300 dark:text-gray-600">|</span>
+        <span class="text-dimmed">|</span>
 
         <!-- Mode (was "Indicators") -->
-        <span class="font-semibold text-gray-600 dark:text-gray-300">{{ $t('legend.mode') }}:</span>
+        <span class="font-semibold text-toned">{{ $t('legend.mode') }}:</span>
         <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 bg-gray-400" style="border-radius: 0" /> {{ $t('legend.access') }}</span>
         <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-full bg-gray-400" style="box-shadow: 0 0 0 1.5px var(--color-default), 0 0 0 2.5px #9ca3af" /> {{ $t('legend.trunk') }}</span>
       </div>
 
       <!-- Row 2: VLANs (conditional) -->
       <div v-if="usedVlans.length" class="mt-1.5 flex flex-wrap items-center gap-x-5 gap-y-1.5">
-        <span class="font-semibold text-gray-600 dark:text-gray-300">VLANs:</span>
+        <span class="font-semibold text-toned">VLANs:</span>
         <template v-for="vlan in usedVlans" :key="vlan.vlan_id">
           <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm" :style="{ backgroundColor: vlan.color }" /> {{ vlan.vlan_id }} {{ vlan.name }}</span>
         </template>
@@ -160,7 +160,7 @@
 
       <!-- Row 3: LAG (conditional) -->
       <div v-if="lagGroups?.length" class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-        <span class="font-semibold text-gray-600 dark:text-gray-300">LAG:</span>
+        <span class="font-semibold text-toned">LAG:</span>
 
         <template v-for="lag in visibleLags" :key="lag.id">
           <div
@@ -170,11 +170,11 @@
             @click="isTouch ? $emit('view-lag', lag) : $emit('edit-lag', lag)"
           >
             <span class="lag-stripe-icon inline-block h-3 w-4 rounded-sm" />
-            <span class="max-w-[150px] truncate font-medium text-gray-700 dark:text-gray-200">{{ lag.name }}</span>
-            <span class="text-gray-400">{{ lag.port_ids.length }}p</span>
-            <span v-if="lag.remote_device" class="text-gray-400">&rarr; {{ lag.remote_device }}</span>
+            <span class="max-w-[150px] truncate font-medium text-default">{{ lag.name }}</span>
+            <span class="text-muted">{{ lag.port_ids.length }}p</span>
+            <span v-if="lag.remote_device" class="text-muted">&rarr; {{ lag.remote_device }}</span>
             <button
-              class="ml-1 rounded p-0.5 text-gray-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/30"
+              class="ml-1 rounded p-0.5 text-muted hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/30"
               @click.stop="$emit('delete-lag', lag)"
             >
               <UIcon name="i-heroicons-x-mark" class="h-3 w-3" />
@@ -192,7 +192,7 @@
       </div>
 
       <!-- Row 4: Multi-Select Hint (hidden when ports selected) -->
-      <div v-if="selectedPorts.length === 0" class="mt-1.5 flex items-center gap-1 text-slate-500">
+      <div v-if="selectedPorts.length === 0" class="mt-1.5 flex items-center gap-1 text-muted">
         <UIcon name="i-heroicons-cursor-arrow-ripple" class="h-3 w-3" />
         {{ $t('switches.ports.multiSelectHint') }}
       </div>

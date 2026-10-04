@@ -3,7 +3,7 @@
   <div>
     <!-- Loading -->
     <div v-if="pending" class="flex min-h-[60vh] items-center justify-center">
-      <div class="text-center text-gray-500">
+      <div class="text-center text-neutral-500">
         <UIcon name="i-heroicons-arrow-path" class="mb-2 h-8 w-8 animate-spin" />
         <p class="text-sm">{{ $t('public.pp.loading') }}</p>
       </div>
@@ -11,8 +11,8 @@
 
     <!-- Error -->
     <div v-else-if="error" class="flex min-h-[60vh] items-center justify-center">
-      <div class="text-center text-gray-500">
-        <UIcon name="i-heroicons-exclamation-circle" class="mb-2 h-12 w-12 text-gray-600" />
+      <div class="text-center text-neutral-500">
+        <UIcon name="i-heroicons-exclamation-circle" class="mb-2 h-12 w-12 text-neutral-600" />
         <p class="text-sm">{{ $t('public.error') }}</p>
       </div>
     </div>
@@ -21,21 +21,22 @@
     <div v-else-if="data" class="space-y-4">
       <!-- Header -->
       <div class="text-center">
-        <div class="text-[10px] uppercase tracking-widest text-gray-600">ezSWM</div>
-        <h1 class="mt-1 text-xl font-bold text-gray-100">{{ data.name }}</h1>
+        <div class="text-[10px] uppercase tracking-widest text-neutral-600">ezSWM</div>
+        <h1 class="mt-1 text-xl font-bold text-neutral-100">{{ data.name }}</h1>
+        <p class="mt-1 text-sm text-neutral-500">{{ $t('public.pp.description') }}</p>
       </div>
 
       <!-- KPI strip -->
-      <div class="flex items-center justify-center gap-4 text-xs text-gray-400">
+      <div class="flex items-center justify-center gap-4 text-xs text-neutral-400">
         <span>{{ portCount }} {{ $t('patchPanels.ports') }}</span>
-        <span class="text-gray-600">·</span>
+        <span class="text-neutral-600">·</span>
         <span>{{ occupiedCount }} {{ $t('patchPanels.occupied') }}</span>
-        <span class="text-gray-600">·</span>
+        <span class="text-neutral-600">·</span>
         <span>{{ testedCount }} {{ $t('patchPanels.tested').toLowerCase() }}</span>
       </div>
 
       <!-- Visual port overview (read-only, same state colors) -->
-      <div class="overflow-x-auto rounded-lg border border-gray-800 bg-[#111] p-3">
+      <div class="overflow-x-auto rounded-lg border border-neutral-800 bg-[#111] p-3">
         <div class="flex flex-wrap items-start gap-1.5 justify-center">
           <div
             v-for="portNum in portCount"
@@ -60,7 +61,7 @@
       <PatchPanelPublicPortList :sockets="data.sockets" />
 
       <!-- Footer -->
-      <div class="border-t border-gray-800 pt-4 text-center text-[10px] text-gray-600">
+      <div class="border-t border-neutral-800 pt-4 text-center text-[10px] text-neutral-600">
         <div>{{ $t('public.footer') }}</div>
       </div>
     </div>

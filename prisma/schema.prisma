@@ -300,14 +300,61 @@ model User {
   id            String  @id
   username      String  @unique
   display_name  String
-  password_hash String
+  password_hash String? // null for OIDC-provisioned users (no local password)
   role          String
   language      String
   is_setup_user Boolean @default(false)
   created_at    String
   updated_at    String
 
+  // OIDC SSO identity (issuer + sub); never linked by username/email.
+  auth_provider        String  @default("local") // 'local' | 'oidc'
+  oidc_issuer          String?
+  oidc_subject         String?
+  oidc_session_version Int     @default(0) // bumped on post-validation access denial to invalidate older OIDC JWTs
+
   activities ActivityEntry[]
+
+  @@unique([oidc_issuer, oidc_subject])
+}
+
+// ---------------------------------------------------------------------------
+// OIDC SSO: singleton provider configuration + server-only login transactions
+// ---------------------------------------------------------------------------
+
+model OidcConfig {
+  id                         String  @id @default("singleton")
+  enabled                    Boolean @default(false)
+  issuer                     String?
+  client_id                  String?
+  client_secret_ciphertext   String? // AES-256-GCM v1 payload; never returned to clients
+  scopes                     String  @default("[\"openid\",\"profile\"]") // JSON array
+  groups_claim               String  @default("groups")
+  admin_groups               String  @default("[]") // JSON array
+  viewer_groups              String  @default("[]") // JSON array
+  allow_unmatched_viewer     Boolean @default(false)
+  allow_http_issuer          Boolean @default(false)
+  observed_groups            String  @default("[]") // JSON array, bounded, suggestions only
+  provider_name              String? // optional plain-text login branding; cosmetic, not security policy
+  config_revision            Int     @default(0)
+  updated_at                 String  @default("")
+}
+
+// Server-only, single-use authorization transactions. Never exported/backed up.
+model OidcLoginTxn {
+  id              String  @id
+  state_hash      String  @unique
+  nonce           String
+  code_verifier   String
+  binding_hash    String
+  config_revision Int
+  return_to       String?
+  created_at      String
+  expires_at      String
+  consumed_at     String?
+
+  @@index([binding_hash])
+  @@index([expires_at])
 }
 
 // ---------------------------------------------------------------------------

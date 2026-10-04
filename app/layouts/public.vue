@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#0a0a0a] text-gray-200">
+  <div class="min-h-screen bg-[#0a0a0a] text-neutral-200">
     <Head>
       <Meta name="robots" content="noindex" />
     </Head>

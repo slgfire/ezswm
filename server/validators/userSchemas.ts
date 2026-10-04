@@ -14,6 +14,12 @@ export const updateUserSchema = z.object({
   language: z.enum(['en', 'de']).optional()
 })
 
+/** Self-service profile update for non-admins: ONLY these fields, anything else is a 400. */
+export const updateProfileSchema = z.object({
+  display_name: z.string().min(1).max(100).optional(),
+  language: z.enum(['en', 'de']).optional()
+}).strict()
+
 export const changePasswordSchema = z.object({
   current_password: z.string().min(1),
   new_password: z.string().min(8)

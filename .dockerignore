@@ -4,3 +4,9 @@ docs/node_modules
 .output
 data
 .git
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example

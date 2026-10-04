@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-1.5">
     <div v-for="unit in template.units" :key="unit.unit_number">
-      <div v-if="template.units.length > 1" class="mb-1 text-[9px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+      <div v-if="template.units.length > 1" class="mb-1 text-[9px] font-medium uppercase tracking-wider text-muted">
         {{ unit.label || `Unit ${unit.unit_number}` }}
       </div>
       <div class="flex flex-wrap items-start gap-2">

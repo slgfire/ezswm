@@ -1,20 +1,24 @@
 <template>
   <div class="p-6">
     <!-- Header -->
-    <div class="mb-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
+    <div class="mb-4 flex flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-0">
+      <div class="flex min-w-0 items-start gap-3">
         <UButton
           icon="i-heroicons-arrow-left"
           variant="ghost"
           size="sm"
+          class="shrink-0"
           :to="`/sites/${siteId}/switches`"
           :aria-label="$t('common.back')"
         />
-        <h1 class="text-xl font-bold">
-          {{ item?.name || $t('common.loading') }}
-        </h1>
+        <div class="min-w-0">
+          <h1 class="break-words text-xl font-bold">
+            {{ item?.name || $t('common.loading') }}
+          </h1>
+          <p class="mt-1 text-sm text-muted">{{ $t('switches.detailDescription') }}</p>
+        </div>
       </div>
-      <div v-if="item" class="flex items-center gap-1">
+      <div v-if="item" class="flex w-full min-w-0 flex-wrap items-center gap-1 sm:w-auto sm:flex-nowrap sm:justify-end">
         <!-- Group A: View/Panel toggles -->
         <UButton
           icon="i-heroicons-square-3-stack-3d"
@@ -30,12 +34,11 @@
           color="neutral"
           size="sm"
           :label="$t('switches.detailsAction')"
-          class="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
           @click="void (showSecondaryDetails = true)"
         />
 
         <!-- Divider -->
-        <span class="mx-1 h-5 w-px bg-neutral-200 dark:bg-neutral-700" />
+        <span class="mx-1 hidden h-5 w-px bg-neutral-200 dark:bg-neutral-700 sm:block" />
 
         <!-- Group B: Actions -->
         <SwitchPublicAccess
@@ -66,7 +69,7 @@
         </UTooltip>
 
         <!-- Divider -->
-        <span class="mx-1 h-5 w-px bg-neutral-200 dark:bg-neutral-700" />
+        <span class="mx-1 hidden h-5 w-px bg-neutral-200 dark:bg-neutral-700 sm:block" />
 
         <!-- Group C: Destructive -->
         <UTooltip :text="$t('common.delete')">
@@ -84,8 +87,8 @@
 
     <!-- Loading state -->
     <div v-if="loading" class="flex items-center justify-center py-12">
-      <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-gray-400" />
-      <span class="ml-2 text-gray-400">{{ $t('common.loading') }}</span>
+      <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-muted" />
+      <span class="ml-2 text-muted">{{ $t('common.loading') }}</span>
     </div>
 
     <!-- Switch details -->
@@ -107,7 +110,7 @@
           <UButton
             size="xs"
             variant="soft"
-            color="info"
+            color="neutral"
             :disabled="!canCreateLag.allowed"
             @click="lagSlideoverRef?.openCreate(selectedLagPortIds)"
           >
@@ -161,7 +164,7 @@
           :ports="item.ports"
           :vlans="vlans"
         />
-        <p v-else class="text-sm text-gray-400">{{ $t('switches.ports.noPortsMessage') }}</p>
+        <p v-else class="text-sm text-muted">{{ $t('switches.ports.noPortsMessage') }}</p>
       </div>
 
       <!-- VLAN Management Slideover -->
@@ -208,9 +211,9 @@
                         class="h-3 w-3"
                       />
                     </span>
-                    <span v-if="formatActivity(entry)" class="truncate text-xs text-gray-300">{{ formatActivity(entry) }}</span>
-                    <span v-else class="text-xs text-gray-500">{{ entry.action }}</span>
-                    <span class="ml-auto shrink-0 text-xs text-gray-500">{{ relTime(entry.timestamp) }}</span>
+                    <span v-if="formatActivity(entry)" class="truncate text-xs text-toned">{{ formatActivity(entry) }}</span>
+                    <span v-else class="text-xs text-muted">{{ entry.action }}</span>
+                    <span class="ml-auto shrink-0 text-xs text-muted">{{ relTime(entry.timestamp) }}</span>
                   </div>
                 </div>
               </div>
@@ -345,7 +348,7 @@ v-model="editForm.role"
     >
       <div class="mt-3">
         <div class="flex items-center gap-2">
-          <span class="text-xs uppercase tracking-wider text-gray-400">{{ $t('switches.portsRemovedList') }}</span>
+          <span class="text-xs uppercase tracking-wider text-muted">{{ $t('switches.portsRemovedList') }}</span>
           <UBadge color="error" variant="soft" size="sm">{{ removedPorts.length }}</UBadge>
         </div>
         <div class="mt-2 flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
@@ -373,9 +376,9 @@ v-model="editForm.role"
     <UModal v-model:open="showLagDetail" :title="viewingLag?.name || 'LAG'" :description="$t('lag.group')">
       <template #body>
         <div v-if="viewingLag" class="space-y-3">
-          <div v-if="viewingLag.description" class="text-sm text-gray-400">{{ viewingLag.description }}</div>
+          <div v-if="viewingLag.description" class="text-sm text-muted">{{ viewingLag.description }}</div>
           <div class="flex items-center gap-2 text-sm">
-            <span class="text-gray-500">{{ $t('lag.ports') }}:</span>
+            <span class="text-muted">{{ $t('lag.ports') }}:</span>
             <span class="font-medium">{{ viewingLag.port_ids.length }}</span>
           </div>
           <div class="flex flex-wrap gap-1.5">
@@ -384,7 +387,7 @@ v-model="editForm.role"
             </UBadge>
           </div>
           <div v-if="viewingLag.remote_device" class="flex items-center gap-2 text-sm">
-            <span class="text-gray-500">{{ $t('lag.remoteDevice') }}:</span>
+            <span class="text-muted">{{ $t('lag.remoteDevice') }}:</span>
             <span class="font-medium">{{ viewingLag.remote_device }}</span>
           </div>
         </div>

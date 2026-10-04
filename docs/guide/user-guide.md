@@ -23,7 +23,9 @@ After setup, you are redirected to the login screen.
 
 After logging in, the dashboard provides a summary of your infrastructure: total switches, VLANs, subnets, and IP utilization. The sidebar on the left gives access to all sections. The header bar contains global search, a theme toggle (dark/light), language selector, and user menu.
 
-![Dashboard](/images/screenshot-dashboard.png)
+The interface uses neutral surfaces for layout and decoration. Color remains where it carries information: VLANs keep their assigned colors, while port states and warnings retain their status cues, such as green for up, amber for warnings, and red for down or errors.
+
+![Dashboard — synthetic example, demo data](/images/screenshot-dashboard-synthetic-current.png)
 
 ### Unsaved Changes Protection
 
@@ -35,13 +37,19 @@ Confirmation dialogs can be dismissed consistently using **Cancel**, the **close
 
 Use the language selector in the header bar (top-right, globe icon) to switch between English and German at any time. Your choice is saved to your profile, so it persists across reloads and devices. You can also change it under Settings → Account.
 
+Short introductions on the main pages are available in English and German and follow the language selected for your account.
+
+### Screenshot freshness
+
+Four screenshots in this guide — Dashboard, Layout Templates, Switch list, and Sites — are synthetic examples with demo data, captured before the final sidebar-logo spacing fix (so the logo position may differ slightly from the current interface). Icon requests were mocked using local icon-package and build-cache SVG data, without forwarding them to a backend or external icon API. Visual review still found missing sidebar and toolbar icons; the missing icons are a capture limitation, not a known application defect, and the examples do not fully represent real icon rendering. The remaining screenshots in this guide are legacy assets and have not been reverified for this release.
+
 ## Layout Templates
 
 ### What They Are
 
 Layout templates define reusable switch model definitions. Instead of manually configuring port layouts for every switch, you create a template once (e.g., "Cisco C9300-48P") and assign it to any number of switches. The template determines how many ports appear, their types, and how they are visually arranged.
 
-![Layout Templates](/images/screenshot-templates.png)
+![Layout Templates — synthetic example, demo data](/images/screenshot-templates-synthetic-current.png)
 
 ### How to Create One
 
@@ -55,7 +63,7 @@ Navigate to **Layout Templates** in the sidebar and click **Create Template**. A
 Search for any device by manufacturer or model name (e.g., "Cisco 9200" or "MikroTik CRS328"). Select a device to see a port grid preview. Click **Import** to populate the create form with the device's port layout, which you can adjust before saving.
 
 The import automatically:
-- Maps NetBox interface types to ezSWM port types (RJ45, SFP, SFP+, QSFP, Console, Management)
+- Maps NetBox interface types to ezSWM port types (RJ45, SFP, SFP+, QSFP, Console, Management); `40gbase-x-qsfpp` maps to QSFP at **40G**
 - Detects PoE capabilities and sets them on port blocks
 - Deduplicates combo ports (e.g., Juniper ge/xe on the same physical slot)
 - Filters out non-physical interfaces (WiFi, stacking, virtual)
@@ -95,7 +103,7 @@ Each block defines a group of ports within a unit:
   - **Sequential** -- fills top row first, then bottom row
   - **Odd/Even** -- odd-numbered ports on top, even on bottom
   - **Even/Odd** -- even-numbered ports on top, odd on bottom
-- **Default Speed** -- 100M, 1G, 2.5G, 10G, or 100G
+- **Default Speed** -- 100M, 1G, 2.5G, 10G, 40G, or 100G. 40G is new, additive and not restricted to QSFP ports; it is also selectable in the port editor, bulk editor and templates. No XFP port type and no 25G speed were added. Existing stored speed lists are kept unchanged (no startup backfill); new defaults include 40G.
 - **Label** -- optional prefix for port labels
 - **PoE** -- Power over Ethernet type: 802.3af (15W), 802.3at (30W), 802.3bt Type 3 (60W), 802.3bt Type 4 (100W), Passive 24V, or Passive 48V. Ports generated from this block inherit the PoE setting. PoE ports are marked with a yellow "PoE" label in the port grid.
 - **Physical Type** -- (Management ports only) RJ45 or SFP, to indicate the physical connector type
@@ -112,7 +120,7 @@ As you configure units and blocks, a live port grid preview renders at the botto
 
 ### Creating a Switch
 
-![Switch list](/images/screenshot-switches.png)
+![Switch list — synthetic example, demo data](/images/screenshot-switches-synthetic-current.png)
 
 Navigate to **Switches** in the sidebar and click **Create**.
 
@@ -629,21 +637,19 @@ This is a client-side tool — no data is saved. Useful for quick subnet calcula
 
 Each entity type (switches, VLANs, subnets, IP allocations, IP ranges, layout templates) can be individually exported to JSON or CSV. The **Backup & Restore** tab also produces a single JSON file containing every table, tagged with `schema: "sqlite-v1"`.
 
-### Import and Restore (temporarily disabled in 0.21.x)
+### Import and Full Restore
 
-::: warning Import & Restore are being reworked for SQLite
-The 0.21 storage switch left the write side of the import/restore flow on the legacy JSON path, which doesn't translate cleanly to the new schema with FK constraints. The import endpoints and the activity-log undo button currently return **`501 Not Implemented`**:
+Use the **Import** tab to add new records from a supported CSV or JSON file. Select an entity type, download a template if needed, upload the file, and review the preview and validation results. Only valid rows are imported; existing records are not replaced.
 
-- Per-entity import (drag a CSV/JSON onto a list)
-- Full backup restore (Backup & Restore tab)
-- Activity-log "Undo" button
-
-They'll be back in a follow-up release. Until then, the **Export** side still works, and you can roll back manually by copying a previous `db.sqlite` file into place. Track progress in [#156](https://github.com/slgfire/ezswm/issues/156).
-:::
+Use **Backup & Restore** to restore a full administrator backup. A full restore replaces the current data with the backup snapshot, so download a current full backup before restoring.
 
 ### Backup Format
 
 Backups are JSON dumps of the underlying SQLite tables, one array per entity, with a `schema: "sqlite-v1"` marker at the top. JSON-column fields (tags, `configured_vlans`, port `tagged_vlans`, layout `units`, activity `changes`/`previous_state`) are kept as JSON strings — the restore path parses them back on the way in.
+
+The administrator full backup includes Patch Panel data (`patchPanels`, `patchPanelSockets`, `patchPanelTokens`). It contains password hashes and, if configured, the OIDC client secret in encrypted form, so store the file confidentially. It never contains the plaintext OIDC client secret, the OIDC encryption key or pending login transactions. Patch Panel public-access token values in the backup are usable capabilities; never publish the file. Individual CSV/JSON exports from **Export** contain selected entity types only and are not full backups or full-restore files.
+
+On restore, a backup that has none of the three Patch Panel keys (an older backup) is only accepted if there are currently no Patch Panels, sockets or tokens; otherwise it is rejected before anything is changed, so create a current full backup first. If any of the three keys is present, all three must be present as lists. Three empty lists are an intentional empty snapshot and will delete the existing Patch Panels.
 
 ## Settings
 
@@ -653,15 +659,57 @@ Backups are JSON dumps of the underlying SQLite tables, one array per entity, wi
 
 Access settings via the user menu in the header or the sidebar. General settings cover application-level configuration.
 
-Use General Settings to enable or disable the optional Patch Panels feature.
+Use General Settings to enable or disable the optional Patch Panels feature. Basic and Optional features (Patch Panels, Switch Groups) are saved together with a single **Save** action.
 
 Switch Groups are also controlled in General Settings (default: enabled). Turning the toggle off hides Switch Group management in the UI and disables group endpoints, without deleting any existing groups or memberships.
 
 ![Switch Groups setting toggle](/images/screenshot-switch-groups-settings-toggle.png)
 
+The ezSWM logo is shown on the login page and in the sidebar, with light and dark variants following the active theme.
+
 ### Account Settings
 
-Change your display name and preferred language (English or German).
+Change your display name and preferred language (English or German). Local accounts can also change their local password here. For SSO accounts the page shows a notice that the password is managed by your identity provider.
+
+### Authentication (OIDC / SSO)
+
+Admins can let users sign in through a standard OpenID Connect provider (Authorization Code flow with PKCE, state and nonce; ID token signature, issuer and nonce are validated against the provider's JWKS). The feature is provider-independent and is configured under **Settings → Authentication** (admin only). Use a provider that signs ID tokens with an asymmetric algorithm such as RS256; the provider must advertise a supported asymmetric signing algorithm (for example RS256). HS256 (shared-secret) ID tokens are not supported and are rejected. If the provider's discovery document omits the signing-algorithm list, ezSWM assumes RS256 for compatibility with incomplete discovery (the standard requires the field). If the list is present but malformed, empty, or contains only unsupported algorithms, **Check connection** reports `unsupported_id_token_alg`; users see only the generic sign-in-unavailable message on the login page.
+
+**Prerequisites**
+
+- Set `PUBLIC_BASE_URL` to the canonical `https` origin of ezSWM and register the exact callback URL `<PUBLIC_BASE_URL>/api/auth/oidc/callback` with your provider (the Settings page shows it with a copy button).
+- Public client (no client secret): **no encryption key is needed.**
+- Confidential client (a client secret): set a separate, dedicated `OIDC_ENCRYPTION_KEY` (32 bytes, see [Installation](./installation.md#oidc-sso-optional); `NUXT_OIDC_ENCRYPTION_KEY` is the container runtime equivalent; there is no fallback to `JWT_SECRET`). A missing or wrong key disables only the SSO that depends on the secret; local login and local recovery are unaffected.
+- Keep the key **outside** your backups. Restoring a backup with the exact same key restores the stored secret; with a different key the restore still succeeds, but SSO is switched off (the enabled flag is cleared) and a warning is shown. The local admin must re-enter the client secret **and** re-enable SSO. Local login keeps working throughout.
+
+**Configuration fields** (saved in the GUI, not in environment variables)
+
+- **Enabled** – shows or hides the SSO button on the login page.
+- **Provider display name** (optional) – plain text, trimmed, at most 64 characters. It becomes the login button label (“Sign in with …”); blank uses a generic label. The name is cosmetic only: changing it does not log anyone out or invalidate pending logins.
+- **Issuer**, **Client ID**, **Client secret** – the secret is never returned or shown again; the form only indicates that one is configured. Leave it empty to keep it, or use the remove option to clear it.
+- **Callback URL** – copy it and register it with the provider.
+- **Scopes** and **Groups claim** – the claim may be a plain name or a dot path (e.g. `realm_access.roles`); an exact top-level key (such as a namespaced URL claim) wins over dot-path traversal. Add extra scopes and configure the provider to emit the groups claim.
+- **Admin groups** / **Viewer groups** – arbitrary, exactly matched group names. A user in both lists is an admin.
+- **Allow users with no matching group as viewers** – default **off**: users without a matching group are denied and no account is created. When **on**, users whose groups claim is missing, empty or unmapped sign in as viewer; a malformed or overage claim is still denied.
+- **Allow HTTP issuer** – HTTPS is the normal and default requirement, including for internal or private-network (RFC 1918) providers: a private address is not a reason to enable this. The checkbox is a deliberate exception for a controlled, trusted, isolated internal or lab provider only; it is not meant for public-Internet production use. It applies to the visible issuer **and** to the endpoints the provider advertises (authorization, token, JWKS, UserInfo). HTTP can expose authorization codes, client credentials and claims, and allows discovery/JWKS responses to be tampered with. JWKS contains public verification keys, not the provider's private signing key. TLS therefore remains recommended even on a LAN. Enabling the option shows a warning. ezSWM does not filter by address range and never disables TLS certificate verification.
+
+All meaningful security changes (issuer, client, secret, scopes, mapping, enabling/disabling) bump the configuration revision and invalidate existing SSO sessions and pending logins.
+
+**Save first, then check.** **Check connection** reads the provider's discovery document for the *saved* configuration. It is not a real login and never exposes secrets.
+
+**Groups are not a standard OIDC directory.** ezSWM cannot list your provider's groups. Group names seen during permitted, successful SSO logins appear as *observed suggestions* (no directory API, live polling or push). Suggestions are filtered against both unsaved draft mappings in real time: adding one hides it, removing it makes it reappear. Hiding an assigned suggestion does not delete the observed group history; removing the mapping brings the suggestion back. You can also type a group that has never been observed. Suggestions never grant access by themselves.
+
+**Identity and roles**
+
+- Users are identified by provider **issuer + `sub`**; accounts are never linked by username or email and are created on the first successful login.
+- The role comes from the mapping and is re-evaluated on **every** SSO login; the database is authoritative and stale sessions are revoked. OIDC users cannot be promoted manually and have no ezSWM password.
+- Local accounts keep password login. The login page always shows the local form first, with SSO below it. The last local administrator cannot be deleted or demoted, so a local emergency admin always remains.
+
+**Viewer role:** viewers are read-only for infrastructure data and cannot access admin functions: settings changes, user administration, backups and the OIDC configuration. Their own exceptions are changing their own display name and language, their local password (local accounts only) and logging out.
+
+### Users (admin, read-only)
+
+Admins see a read-only **Users** page in the sidebar with four fields per account: username, display name, role, and sign-in method (local or OpenID Connect). It lists provisioned ezSWM accounts only — it is not a directory of your identity provider — and has no create, edit, delete or password-reset controls. (The underlying user API still supports admin CRUD; the page does not expose it.)
 
 ### Password Change
 
@@ -673,7 +721,7 @@ Change your password from the account settings page. You must provide your curre
 
 Sites represent physical locations or logical groupings for your infrastructure. Each site has its own switches, VLANs, subnets, topology, and (when enabled) patch panels. Use sites to separate different locations (e.g., "Data Center", "Office", "LAN Party Hall A").
 
-![Sites](/images/screenshot-sites.png)
+![Sites — synthetic example, demo data](/images/screenshot-sites-synthetic-current.png)
 
 ### Managing Sites
 

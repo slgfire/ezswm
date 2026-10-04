@@ -1,15 +1,18 @@
 <template>
   <div class="p-6">
     <div v-if="loading" class="flex items-center justify-center py-12">
-      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
     </div>
 
     <template v-else-if="template">
       <!-- Header -->
       <div class="mb-4 flex items-center justify-between">
-        <div class="flex items-center gap-3">
+        <div class="flex min-w-0 items-start gap-3">
           <UButton to="/layout-templates" icon="i-heroicons-arrow-left" variant="ghost" size="sm" />
-          <h1 class="text-xl font-bold">{{ template.name }}</h1>
+          <div class="min-w-0">
+            <h1 class="break-words text-xl font-bold">{{ template.name }}</h1>
+            <p class="mt-1 text-sm text-muted">{{ $t('templates.detailDescription') }}</p>
+          </div>
         </div>
         <div class="flex items-center gap-1">
           <UTooltip :text="$t('common.edit')">
@@ -25,7 +28,7 @@
       </div>
 
       <!-- Quick info -->
-      <div class="-mt-2 mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+      <div class="mt-1 mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
         <span v-if="template.manufacturer" class="flex items-center gap-1">
           <UIcon name="i-heroicons-building-office" class="h-3.5 w-3.5" />
           {{ template.manufacturer }}
@@ -42,7 +45,7 @@
           <UIcon name="i-heroicons-rectangle-group" class="h-3.5 w-3.5" />
           {{ getTotalPortCount() }} {{ $t('templates.infoBar.ports') }}
         </span>
-        <span v-if="template.description" class="text-gray-400">— {{ template.description }}</span>
+        <span v-if="template.description" class="text-toned">— {{ template.description }}</span>
         <span v-if="template.airflow" class="flex items-center gap-1">
           <UIcon name="i-heroicons-arrow-right-circle" class="h-3.5 w-3.5" />
           {{ $t('airflowOptions.' + template.airflow) }}
@@ -61,7 +64,7 @@
 
       <!-- Port Preview -->
       <div v-if="previewPorts.length" class="mb-6 list-container rounded-lg bg-default p-5">
-        <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">{{ $t('templates.preview') }}</h2>
+        <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-muted">{{ $t('templates.preview') }}</h2>
         <div class="rounded-lg border border-default bg-elevated p-4">
           <SwitchPortGrid
             :ports="(previewPorts as any[])"
@@ -80,7 +83,7 @@
         >
           <div class="mb-4 flex items-center justify-between">
             <h3 class="font-mono text-sm font-semibold text-primary-500">UNIT {{ unit.unit_number }}</h3>
-            <span class="font-mono text-xs text-gray-500">{{ getUnitPortCount(unit) }} ports</span>
+            <span class="font-mono text-xs text-muted">{{ getUnitPortCount(unit) }} ports</span>
           </div>
 
           <div v-if="unit.blocks && unit.blocks.length > 0" class="space-y-2">
@@ -93,32 +96,32 @@
                 {{ block.type.toUpperCase() }}
               </UBadge>
               <div class="flex flex-1 flex-wrap gap-x-6 gap-y-1 font-mono text-xs">
-                <span class="text-gray-300"><span class="text-gray-500">Count:</span> {{ block.count }}</span>
-                <span class="text-gray-300"><span class="text-gray-500">Start:</span> {{ block.start_index }}</span>
-                <span class="text-gray-300"><span class="text-gray-500">Rows:</span> {{ block.rows }}</span>
-                <span v-if="block.row_layout && block.row_layout !== 'sequential'" class="text-gray-300">
-                  <span class="text-gray-500">Layout:</span> {{ block.row_layout }}
+                <span class="text-default"><span class="text-muted">Count:</span> {{ block.count }}</span>
+                <span class="text-default"><span class="text-muted">Start:</span> {{ block.start_index }}</span>
+                <span class="text-default"><span class="text-muted">Rows:</span> {{ block.rows }}</span>
+                <span v-if="block.row_layout && block.row_layout !== 'sequential'" class="text-default">
+                  <span class="text-muted">Layout:</span> {{ block.row_layout }}
                 </span>
                 <span v-if="block.default_speed" class="text-primary-400">
-                  <span class="text-gray-500">Speed:</span> {{ block.default_speed }}
+                  <span class="text-muted">Speed:</span> {{ block.default_speed }}
                 </span>
-                <span v-if="block.label" class="text-gray-300">
-                  <span class="text-gray-500">Label:</span> {{ block.label }}
+                <span v-if="block.label" class="text-default">
+                  <span class="text-muted">Label:</span> {{ block.label }}
                 </span>
                 <span v-if="block.poe?.type" class="text-yellow-400">
-                  <span class="text-gray-500">{{ $t('templates.poe') }}:</span> {{ block.poe.type }}<span v-if="block.poe.max_watts"> ({{ block.poe.max_watts }}W)</span>
+                  <span class="text-muted">{{ $t('templates.poe') }}:</span> {{ block.poe.type }}<span v-if="block.poe.max_watts"> ({{ block.poe.max_watts }}W)</span>
                 </span>
-                <span v-if="block.type === 'management' && block.physical_type" class="text-gray-300">
-                  <span class="text-gray-500">{{ $t('templates.physicalType') }}:</span> {{ block.physical_type.toUpperCase() }}
+                <span v-if="block.type === 'management' && block.physical_type" class="text-default">
+                  <span class="text-muted">{{ $t('templates.physicalType') }}:</span> {{ block.physical_type.toUpperCase() }}
                 </span>
               </div>
             </div>
           </div>
-          <p v-else class="text-xs text-gray-500">{{ $t('common.noData') }}</p>
+          <p v-else class="text-xs text-muted">{{ $t('common.noData') }}</p>
         </div>
       </div>
 
-      <div v-if="!template.units || template.units.length === 0" class="py-8 text-center text-gray-500">
+      <div v-if="!template.units || template.units.length === 0" class="py-8 text-center text-muted">
         {{ $t('common.noData') }}
       </div>
     </template>

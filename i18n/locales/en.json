@@ -19,6 +19,7 @@
   },
   "ipAddresses": {
     "title": "IP Addresses",
+    "description": "View and manage IP addresses across the documented subnets.",
     "add": "Add IP Address",
     "delete": "Delete IP Address",
     "emptyTitle": "No IP addresses yet",
@@ -59,7 +60,9 @@
   },
   "sites": {
     "title": "Sites",
+    "description": "Group switches, VLANs, and subnets by site.",
     "create": "Create Site",
+    "createDescription": "Create a site to organize its switches, VLANs, and subnets.",
     "edit": "Edit Site",
     "delete": "Delete Site",
     "sections": {
@@ -96,7 +99,27 @@
     "setupTitle": "Welcome",
     "setupDescription": "Create your admin account to get started.",
     "loginTitle": "Sign in",
-    "loginDescription": "Enter your credentials to continue."
+    "loginDescription": "Enter your credentials to continue.",
+    "loginFailed": "Login failed. Check your username and password and try again.",
+    "validation": {
+      "usernameMin": "Username must be at least 3 characters",
+      "passwordRequired": "Password is required"
+    },
+    "oidc": {
+      "signIn": "Continue with your organization",
+      "signInWith": "Sign in with {provider}",
+      "orSso": "or",
+      "localHint": "Local administrator sign-in remains available for recovery.",
+      "errors": {
+        "oidc_not_configured": "Single sign-on is not available right now. Contact your ezSWM administrator or use a local account.",
+        "oidc_invalid_request": "The sign-in request could not be completed. Please start again.",
+        "oidc_transaction_invalid": "This sign-in request expired or was already used. Please start again.",
+        "oidc_provider_error": "Your identity provider could not complete sign-in. Try again or use a local account.",
+        "oidc_token_invalid": "The identity provider returned a response that could not be verified. Contact your administrator.",
+        "oidc_access_denied": "Your account does not currently have access to ezSWM. Contact your administrator.",
+        "oidc_unavailable": "Single sign-on is temporarily unavailable. Try again later or use a local account."
+      }
+    }
   },
   "setup": {
     "stepIndicator": "Step {current} of {total}",
@@ -174,6 +197,7 @@
     "copyToClipboard": "Copy to clipboard"
   },
   "dashboard": {
+    "description": "Review infrastructure totals, IP usage, and recent activity.",
     "emptyTitle": "Welcome to ezSWM!",
     "emptyDescription": "Start by creating your first switch.",
     "switchCount": "Switches",
@@ -191,7 +215,10 @@
   },
   "switches": {
     "title": "Switches",
+    "description": "Browse and filter switches, then review their port and connection records.",
     "create": "Create Switch",
+    "createDescription": "Add a switch and choose a layout template to generate its ports.",
+    "detailDescription": "Review switch details and document its ports, VLANs, and connections.",
     "edit": "Edit Switch",
     "delete": "Delete Switch",
     "sections": {
@@ -370,7 +397,10 @@
   },
   "vlans": {
     "title": "VLANs",
+    "description": "Manage VLANs and review how they are used by switches and subnets.",
     "create": "Create VLAN",
+    "createDescription": "Define a VLAN for use by switches and subnets.",
+    "detailDescription": "Review where this VLAN is used and update its details.",
     "edit": "Edit VLAN",
     "delete": "Delete VLAN",
     "fields": {
@@ -418,7 +448,10 @@
   },
   "networks": {
     "title": "Subnets",
+    "description": "Manage subnets and review their address use.",
     "create": "Create Subnet",
+    "createDescription": "Add an IPv4 subnet, then link it to a VLAN and enter any gateway or DNS details.",
+    "detailDescription": "Review IP addresses, ranges, and address use for this subnet.",
     "edit": "Edit Subnet",
     "delete": "Delete Subnet",
     "sections": {
@@ -557,8 +590,12 @@
   },
   "templates": {
     "title": "Layout Templates",
+    "description": "Define reusable port layouts for switch models.",
     "create": "Create Template",
+    "createDescription": "Create a port layout that can be used when adding switches.",
     "edit": "Edit Template",
+    "editDescription": "Update template details, units, and port blocks.",
+    "detailDescription": "Review a template's switch details and port layout.",
     "delete": "Delete Template",
     "detail": "Template Details",
     "importFromLibrary": "Import from Library",
@@ -672,6 +709,7 @@
   "tools": {
     "subnetCalculator": {
       "title": "Subnet Calculator",
+      "description": "Enter an IPv4 CIDR to calculate its network and host details.",
       "inputLabel": "CIDR Notation",
       "inputPlaceholder": "e.g. 10.0.1.0/24",
       "results": "Results"
@@ -679,6 +717,8 @@
   },
   "patchPanels": {
     "title": "Patch Panels",
+    "description": "Document patch-panel ports, outlet locations, and test status.",
+    "detailDescription": "Record outlet details and test status for each patch-panel port.",
     "create": "Create Patch Panel",
     "edit": "Edit Patch Panel",
     "delete": "Delete Patch Panel",
@@ -727,6 +767,11 @@
     "title": "Settings",
     "general": {
       "title": "General",
+      "description": "Set defaults and manage optional features.",
+      "basicTitle": "Basic settings",
+      "basicHint": "Application name and default status for new ports.",
+      "featuresTitle": "Optional features",
+      "featuresHint": "Choose which optional features are available.",
       "appName": "Application Name",
       "defaultVlan": "Default VLAN for new ports",
       "defaultPortStatus": "Default port status",
@@ -738,6 +783,10 @@
     },
     "account": {
       "title": "Account",
+      "description": "Manage your profile and language preferences.",
+      "profileTitle": "Profile",
+      "profileHint": "Update the name and language shown in ezSWM.",
+      "passwordHint": "Set a new password for your account.",
       "displayName": "Display Name",
       "language": "Language",
       "changePassword": "Change Password",
@@ -745,7 +794,130 @@
       "newPassword": "New Password",
       "confirmNewPassword": "Confirm New Password",
       "saveProfile": "Save Profile",
-      "savePassword": "Change Password"
+      "savePassword": "Change Password",
+      "oidcManagedTitle": "Password managed by your identity provider",
+      "oidcManagedDescription": "Your sign-in password and credentials are managed by your organization. Contact your identity provider administrator to change them. You can still update your ezSWM display name and language here.",
+      "validation": {
+        "currentPasswordRequired": "Current password is required",
+        "newPasswordMin": "New password must be at least 8 characters",
+        "passwordMismatch": "Passwords do not match"
+      }
+    },
+    "oidc": {
+      "tab": "Authentication",
+      "title": "Single sign-on",
+      "description": "Connect ezSWM to your OpenID Connect identity provider. Local accounts remain available for recovery.",
+      "savedEnabled": "Saved setting: enabled",
+      "savedDisabled": "Saved setting: disabled",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "savedRevision": "Saved revision",
+      "loadFailedTitle": "Could not load SSO settings",
+      "loadFailedDescription": "The settings could not be read. Refresh the page or try again later.",
+      "providerSection": "Provider",
+      "providerHint": "Use the issuer URL and client credentials registered with your identity provider.",
+      "providerName": "Provider display name",
+      "providerNameHint": "Shown on the sign-in button. Leave blank to use the default label.",
+      "providerNamePlaceholder": "e.g. Company SSO",
+      "enabledLabel": "Allow single sign-on",
+      "turnOn": "Sign-in is enabled",
+      "turnOff": "Sign-in is disabled",
+      "issuer": "Issuer URL",
+      "issuerHint": "Enter the issuer address exactly as published by your provider. HTTPS is expected by default.",
+      "clientId": "Client ID",
+      "clientSecret": "Client secret",
+      "secretConfiguredHint": "A secret is stored securely. Leave this blank to keep it, or enter a new one to replace it.",
+      "secretEmptyHint": "The secret is sent securely and encrypted before storage.",
+      "secretStoredPlaceholder": "Stored secret — leave blank to keep",
+      "secretInputPlaceholder": "Enter client secret",
+      "clearSecret": "Remove the stored client secret",
+      "callbackUrl": "Registered callback URL",
+      "copyCallback": "Copy URL",
+      "callbackHint": "Add this exact URL to the allowed redirect URLs in your identity provider.",
+      "groupsSection": "Scopes and group access",
+      "groupsHint": "Match the group values in the identity token to ezSWM roles. Group names are entered manually; observed values are suggestions only.",
+      "scopes": "Scopes",
+      "scopesHint": "openid is required. Add any additional scopes your provider needs.",
+      "addScope": "Add scope",
+      "removeScope": "Remove scope",
+      "groupsClaim": "Groups claim",
+      "groupsClaimHint": "Claim name or dot path, for example groups or profile.groups.",
+      "adminGroups": "Admin groups",
+      "viewerGroups": "Viewer groups",
+      "groupPlaceholder": "Exact provider group value",
+      "removeGroup": "Remove group",
+      "adminWins": "If a user matches both lists, the admin role takes precedence. Group matching is exact.",
+      "observedTitle": "Observed group suggestions",
+      "observedHint": "Seen during past sign-ins. These suggestions do not grant access until you explicitly add a group above.",
+      "observedNone": "No group values have been observed yet.",
+      "observedAllAssigned": "All observed groups are assigned. Remove a draft mapping to show one again.",
+      "addAsAdmin": "Add as admin",
+      "addAsViewer": "Add as viewer",
+      "allowUnmatchedViewer": "Allow users with no matching group as viewers",
+      "unmatchedHint": "Off by default. When off, users without an admin or viewer group are denied sign-in.",
+      "securitySection": "Security",
+      "securityHint": "Keep provider details protected. A server-side encryption key is required when you configure a client secret.",
+      "allowHttpIssuer": "Allow an HTTP issuer URL",
+      "allowHttpHint": "Only enable this for a trusted internal identity provider that cannot use HTTPS. HTTP does not protect sign-in traffic in transit.",
+      "httpWarningTitle": "Issuer is using HTTP",
+      "httpWarningDescription": "Sign-in traffic to this provider is not encrypted in transit. Use HTTPS whenever possible.",
+      "secretStorageTitle": "Secret handling",
+      "secretStorageHint": "The client secret is encrypted at rest and is never shown again. Store OIDC_ENCRYPTION_KEY (or NUXT_OIDC_ENCRYPTION_KEY) in the server environment; do not reuse the JWT signing key.",
+      "keyMissingTitle": "SSO encryption key is not ready",
+      "keyMissingDescription": "Set OIDC_ENCRYPTION_KEY (or NUXT_OIDC_ENCRYPTION_KEY) to a dedicated 32-byte key in the server environment. SSO remains unavailable; local sign-in is unaffected.",
+      "secretUnavailableTitle": "Stored secret cannot be decrypted",
+      "secretUnavailableDescription": "The configured encryption key may have changed or the saved secret may be invalid. Set the correct OIDC_ENCRYPTION_KEY, or enter a replacement secret and save. SSO will remain unavailable until this is resolved.",
+      "configurationIncompleteTitle": "SSO is enabled but not ready",
+      "configurationIncompleteDescription": "Add the issuer and client ID, then save the configuration. A client secret is optional for public clients. If you use one, the server needs its OIDC encryption key.",
+      "connectionSection": "Provider check",
+      "connectionHint": "Check the saved provider configuration without starting a sign-in.",
+      "saveBeforeCheck": "Save changes before checking the provider. The check always uses the saved configuration.",
+      "checkConnection": "Check connection",
+      "checkNoLogin": "This checks provider discovery only. It does not sign you in or change the current session.",
+      "checkPassed": "Provider check passed",
+      "checkPassedDescription": "The provider metadata was discovered and the saved configuration is ready for sign-in.",
+      "checkFailed": "Provider check needs attention",
+      "checkFailedDescription": "The saved provider configuration could not be verified. Check the issuer, client settings, and server key.",
+      "authMethod": "Client authentication",
+      "tokenAlgorithm": "ID token algorithm",
+      "authorizationEndpoint": "Authorize",
+      "tokenEndpoint": "Token",
+      "jwksEndpoint": "Signing keys",
+      "userInfoEndpoint": "User info",
+      "authMethods": {
+        "client_secret_basic": "Client secret (Basic)",
+        "client_secret_post": "Client secret (POST)",
+        "none": "No client authentication"
+      },
+      "checkErrors": {
+        "not_configured": "SSO is not configured yet. Add an issuer and client ID, then save. A client secret is optional for public clients.",
+        "encryption_key_unavailable": "The server cannot use its OIDC encryption key. Configure OIDC_ENCRYPTION_KEY (or NUXT_OIDC_ENCRYPTION_KEY) before saving or checking a client secret.",
+        "secret_undecryptable": "The saved client secret cannot be decrypted. Check the server key or enter a replacement secret and save.",
+        "issuer_invalid": "The issuer URL is invalid or does not meet the configured security policy.",
+        "issuer_mismatch": "The issuer in the provider metadata does not match the configured issuer URL.",
+        "endpoint_invalid": "The provider metadata contains an invalid endpoint URL. Check the provider's OpenID configuration.",
+        "redirect_not_allowed": "The server refused a provider endpoint redirect. Check the provider configuration and endpoint URLs.",
+        "response_too_large": "A provider response exceeded the allowed size. Check the identity provider's discovery metadata.",
+        "pkce_not_supported": "This provider does not support the required PKCE security method.",
+        "id_token_invalid": "The provider's discovery response could not be validated. Check the issuer and provider configuration.",
+        "oidc_token_invalid": "The provider response could not be validated. Check the issuer and provider configuration.",
+        "oidc_not_configured": "SSO is not configured yet. Add an issuer and client ID, then save. A client secret is optional for public clients.",
+        "oidc_invalid_request": "The saved settings are incomplete or invalid. Review the issuer and client details.",
+        "oidc_provider_error": "The identity provider returned an error. Verify the issuer and provider availability.",
+        "oidc_unavailable": "The provider could not be reached. Check the issuer address and network access from the server.",
+        "unsupported_client_auth": "The provider and client settings do not support a compatible authentication method.",
+        "unsupported_id_token_alg": "The provider\u0027s advertised ID token signing algorithms are unsupported or invalid."
+      },
+      "checkWarnings": {
+        "insecure_http_issuer": "The provider uses HTTP. Sign-in traffic is not encrypted in transit.",
+        "pkce_support_not_advertised": "The provider did not advertise PKCE support. It may still support the required S256 method.",
+        "generic": "The provider returned a configuration warning. Review the settings and provider metadata."
+      },
+      "saveConfiguration": "Save configuration",
+      "saved": "SSO configuration saved",
+      "saveFailed": "Could not save SSO settings. Check the fields and try again.",
+      "callbackCopied": "Callback URL copied",
+      "callbackCopyFailed": "Could not copy the callback URL"
     },
     "messages": {
       "updated": "Settings updated successfully",
@@ -753,6 +925,27 @@
       "passwordChanged": "Password changed successfully",
       "passwordMismatch": "Passwords do not match"
     }
+  },
+  "users": {
+    "title": "Users",
+    "description": "Provisioned ezSWM accounts only; this is not a list of every identity in your provider.",
+    "listTitle": "Provisioned accounts",
+    "listDescription": "Account role and sign-in method",
+    "tableCaption": "Provisioned ezSWM user accounts",
+    "username": "Username",
+    "displayName": "Display name",
+    "role": "Role",
+    "signInMethod": "Sign-in method",
+    "admin": "Admin",
+    "viewer": "Viewer",
+    "localAccount": "Local account",
+    "openIdConnect": "OpenID Connect",
+    "loading": "Loading accounts…",
+    "loadFailedTitle": "Users could not be loaded",
+    "loadFailedDescription": "The account list could not be loaded. Try again.",
+    "retry": "Try again",
+    "emptyTitle": "No accounts yet",
+    "emptyDescription": "No local or OpenID Connect accounts have been provisioned in ezSWM."
   },
   "backup": {
     "title": "Backup & Restore",
@@ -787,6 +980,7 @@
   },
   "dataManagement": {
     "title": "Data Management",
+    "description": "Import or export individual records, or create and restore a full backup.",
     "backupRestoreTab": "Backup & Restore",
     "exportTab": "Export",
     "importTab": "Import",
@@ -984,6 +1178,7 @@
     },
     "pp": {
       "loading": "Loading patch panel data...",
+      "description": "Read-only overview of panel ports, outlet locations, and test status.",
       "linkLabel": "Public link for this patch panel",
       "free": "Free",
       "revokeConfirm": "Are you sure you want to revoke this public link? The QR code sticker will stop working."

@@ -1,6 +1,9 @@
 <template>
   <div class="p-6">
-    <h1 class="mb-6 text-2xl font-bold">{{ $t('tools.subnetCalculator.title') }}</h1>
+    <div class="mb-6">
+      <h1 class="text-xl font-bold">{{ $t('tools.subnetCalculator.title') }}</h1>
+      <p class="mt-1 text-sm text-muted">{{ $t('tools.subnetCalculator.description') }}</p>
+    </div>
 
     <div class="max-w-xl">
       <UFormField :label="$t('tools.subnetCalculator.inputLabel')">
@@ -22,36 +25,36 @@
         <div class="grid grid-cols-2 gap-3 text-sm">
           <!-- /32: Host Address only -->
           <template v-if="result.prefix_length === 32">
-            <div><span class="text-gray-400">{{ $t('networks.subnetInfo.hostAddress') }}:</span></div>
+            <div><span class="text-muted">{{ $t('networks.subnetInfo.hostAddress') }}:</span></div>
             <div><SharedCopyButton :value="result.network_address">{{ result.network_address }}</SharedCopyButton></div>
           </template>
           <!-- /31: Endpoint A + B -->
           <template v-else-if="result.prefix_length === 31">
-            <div><span class="text-gray-400">{{ $t('networks.subnetInfo.endpointA') }}:</span></div>
+            <div><span class="text-muted">{{ $t('networks.subnetInfo.endpointA') }}:</span></div>
             <div><SharedCopyButton :value="result.network_address">{{ result.network_address }}</SharedCopyButton></div>
-            <div><span class="text-gray-400">{{ $t('networks.subnetInfo.endpointB') }}:</span></div>
+            <div><span class="text-muted">{{ $t('networks.subnetInfo.endpointB') }}:</span></div>
             <div><SharedCopyButton :value="result.broadcast_address">{{ result.broadcast_address }}</SharedCopyButton></div>
           </template>
           <!-- Normal subnets -->
           <template v-else>
-            <div><span class="text-gray-400">{{ $t('networks.subnetInfo.networkAddress') }}:</span></div>
+            <div><span class="text-muted">{{ $t('networks.subnetInfo.networkAddress') }}:</span></div>
             <div><SharedCopyButton :value="result.network_address">{{ result.network_address }}</SharedCopyButton></div>
-            <div><span class="text-gray-400">{{ $t('networks.subnetInfo.broadcastAddress') }}:</span></div>
+            <div><span class="text-muted">{{ $t('networks.subnetInfo.broadcastAddress') }}:</span></div>
             <div><SharedCopyButton :value="result.broadcast_address">{{ result.broadcast_address }}</SharedCopyButton></div>
           </template>
-          <div><span class="text-gray-400">{{ $t('networks.subnetInfo.subnetMask') }}:</span></div>
+          <div><span class="text-muted">{{ $t('networks.subnetInfo.subnetMask') }}:</span></div>
           <div><SharedCopyButton :value="result.subnet_mask">{{ result.subnet_mask }}</SharedCopyButton></div>
-          <div><span class="text-gray-400">{{ $t('networks.subnetInfo.wildcardMask') }}:</span></div>
+          <div><span class="text-muted">{{ $t('networks.subnetInfo.wildcardMask') }}:</span></div>
           <div><SharedCopyButton :value="result.wildcard_mask">{{ result.wildcard_mask }}</SharedCopyButton></div>
           <template v-if="result.prefix_length < 31">
-            <div><span class="text-gray-400">{{ $t('networks.subnetInfo.firstUsable') }}:</span></div>
+            <div><span class="text-muted">{{ $t('networks.subnetInfo.firstUsable') }}:</span></div>
             <div><SharedCopyButton :value="result.first_usable">{{ result.first_usable }}</SharedCopyButton></div>
-            <div><span class="text-gray-400">{{ $t('networks.subnetInfo.lastUsable') }}:</span></div>
+            <div><span class="text-muted">{{ $t('networks.subnetInfo.lastUsable') }}:</span></div>
             <div><SharedCopyButton :value="result.last_usable">{{ result.last_usable }}</SharedCopyButton></div>
           </template>
-          <div><span class="text-gray-400">{{ $t('networks.subnetInfo.totalHosts') }}:</span></div>
+          <div><span class="text-muted">{{ $t('networks.subnetInfo.totalHosts') }}:</span></div>
           <div>{{ result.total_hosts }}</div>
-          <div><span class="text-gray-400">{{ $t('networks.subnetInfo.usableHosts') }}:</span></div>
+          <div><span class="text-muted">{{ $t('networks.subnetInfo.usableHosts') }}:</span></div>
           <div>{{ result.usable_hosts }}</div>
         </div>
       </UCard>

@@ -1,20 +1,23 @@
 <template>
   <div class="p-6">
-    <div class="mb-6 flex items-center gap-2">
+    <div class="mb-6 flex items-start gap-2">
       <UButton icon="i-heroicons-arrow-left" variant="ghost" :to="`/sites/${siteId}/vlans`" />
-      <h1 class="text-2xl font-bold">
-        <template v-if="vlan">
-          <VlanColorSwatch :color="vlan.color" size="lg" class="mr-2" />
-          VLAN {{ vlan.vlan_id }} - {{ vlan.name }}
-        </template>
-        <template v-else>
-          {{ $t('common.loading') }}
-        </template>
-      </h1>
+      <div>
+        <h1 class="text-xl font-bold">
+          <template v-if="vlan">
+            <VlanColorSwatch :color="vlan.color" size="lg" class="mr-2" />
+            VLAN {{ vlan.vlan_id }} - {{ vlan.name }}
+          </template>
+          <template v-else>
+            {{ $t('common.loading') }}
+          </template>
+        </h1>
+        <p class="mt-1 text-sm text-muted">{{ $t('vlans.detailDescription') }}</p>
+      </div>
     </div>
 
     <div v-if="loading" class="flex justify-center py-12">
-      <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-gray-400" />
+      <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-muted" />
     </div>
 
     <div v-else-if="vlan" class="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -49,15 +52,15 @@
         <div v-if="!editing" class="space-y-4">
           <div class="grid grid-cols-2 gap-x-6 gap-y-3">
             <div>
-              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('vlans.fields.vlanId') }}</dt>
+              <dt class="text-[10px] uppercase tracking-wider text-muted">{{ $t('vlans.fields.vlanId') }}</dt>
               <dd class="mt-0.5 text-sm font-medium">{{ vlan.vlan_id }}</dd>
             </div>
             <div>
-              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('vlans.fields.name') }}</dt>
+              <dt class="text-[10px] uppercase tracking-wider text-muted">{{ $t('vlans.fields.name') }}</dt>
               <dd class="mt-0.5 text-sm font-medium">{{ vlan.name }}</dd>
             </div>
             <div>
-              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('vlans.fields.status') }}</dt>
+              <dt class="text-[10px] uppercase tracking-wider text-muted">{{ $t('vlans.fields.status') }}</dt>
               <dd class="mt-0.5">
                 <UBadge
                   :color="vlan.status === 'active' ? 'success' : 'neutral'"
@@ -69,11 +72,11 @@
               </dd>
             </div>
             <div>
-              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('vlans.fields.routingDevice') }}</dt>
+              <dt class="text-[10px] uppercase tracking-wider text-muted">{{ $t('vlans.fields.routingDevice') }}</dt>
               <dd class="mt-0.5 text-sm font-medium">{{ vlan.routing_device || '-' }}</dd>
             </div>
             <div>
-              <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('vlans.fields.color') }}</dt>
+              <dt class="text-[10px] uppercase tracking-wider text-muted">{{ $t('vlans.fields.color') }}</dt>
               <dd class="mt-0.5 flex items-center gap-2 text-sm">
                 <VlanColorSwatch :color="vlan.color" size="md" />
                 <span class="font-mono text-xs text-gray-400">{{ vlan.color }}</span>
@@ -81,7 +84,7 @@
             </div>
           </div>
           <div v-if="vlan.description" class="border-t border-default pt-3">
-            <dt class="text-[10px] uppercase tracking-wider text-gray-400">{{ $t('common.description') }}</dt>
+            <dt class="text-[10px] uppercase tracking-wider text-muted">{{ $t('common.description') }}</dt>
             <dd class="mt-1 text-sm">{{ vlan.description }}</dd>
           </div>
         </div>
@@ -109,7 +112,7 @@
                 <input
                   v-model="editForm.color"
                   type="color"
-                  class="h-10 w-14 cursor-pointer rounded border border-gray-700 bg-gray-900"
+                  class="h-10 w-14 cursor-pointer rounded border border-default bg-elevated"
                 >
                 <UInput v-model="editForm.color" class="w-32" />
                 <VlanColorSwatch :color="editForm.color" size="lg" />
@@ -141,7 +144,7 @@
             class="flex items-center justify-between rounded-md px-3 py-2 transition-colors hover:bg-elevated"
           >
             <span class="text-sm font-medium text-primary-500">{{ net.name }}</span>
-            <span class="text-xs text-gray-400">{{ net.subnet }}</span>
+            <span class="text-xs text-toned">{{ net.subnet }}</span>
           </NuxtLink>
         </div>
         <p v-else class="text-sm text-gray-400">{{ $t('vlans.noNetwork') }}</p>

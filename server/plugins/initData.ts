@@ -4,6 +4,10 @@ import { join } from 'node:path'
 import { prisma } from '../db/client'
 import { runJsonToPrismaMigration } from '../migrations/jsonToPrisma'
 import { cleanupMigrationPlaceholderSlugs } from '../utils/slugPlaceholderCleanup'
+import { oidcConfigRepository } from '../repositories/oidcConfigRepository'
+import { oidcLoginTxnRepository } from '../repositories/oidcLoginTxnRepository'
+import { canDecryptOidcSecret } from '../utils/oidc/crypto'
+import { getKeyState, readOidcRuntimeSettings } from '../utils/oidc/session'
 
 // Legacy JSON files the migration looks for. If any of these are present in
 // dataDir AND the database is empty, we trigger the one-shot import.
@@ -94,7 +98,7 @@ export default defineNitroPlugin(async () => {
         app_logo_url: null,
         default_vlan: null,
         default_port_status: 'down',
-        port_speeds: JSON.stringify(['100M', '1G', '2.5G', '10G', '100G']),
+        port_speeds: JSON.stringify(['100M', '1G', '2.5G', '10G', '40G', '100G']),
         setup_completed: false,
         sites_initialized: false,
         patch_panels_enabled: false,
@@ -130,6 +134,23 @@ export default defineNitroPlugin(async () => {
     }
   } catch (err) {
     console.warn('[ezSWM] Slug cleanup pass failed (non-fatal):', err)
+  }
+
+  // OIDC housekeeping: drop expired login transactions once and warn (no secrets) about
+  // a missing/invalid key or an undecryptable stored secret. Local login is unaffected.
+  try {
+    await oidcLoginTxnRepository.deleteExpired()
+    const oidc = await oidcConfigRepository.get()
+    if (oidc.enabled || oidc.client_secret_ciphertext) {
+      const keyState = getKeyState(readOidcRuntimeSettings())
+      if (!keyState.ready) {
+        console.warn(`[ezSWM] WARNING: OIDC_ENCRYPTION_KEY is unusable (${keyState.error}); SSO is disabled until it is fixed. Local login still works.`)
+      } else if (oidc.client_secret_ciphertext && !canDecryptOidcSecret(oidc.client_secret_ciphertext, keyState.key)) {
+        console.warn('[ezSWM] WARNING: the stored OIDC client secret cannot be decrypted with the current OIDC_ENCRYPTION_KEY; SSO is disabled until the secret is re-entered.')
+      }
+    }
+  } catch (err) {
+    console.warn('[ezSWM] OIDC startup checks failed (non-fatal):', err instanceof Error ? err.name : 'error')
   }
 
   console.log(`[ezSWM] Database ready (data dir: ${dataDir})`)

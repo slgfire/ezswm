@@ -10,17 +10,17 @@
         <div class="space-y-1 text-sm">
           <div v-if="node.location" class="flex items-center gap-2">
             <UIcon name="i-heroicons-map-pin" class="h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
-            <span class="text-gray-500 dark:text-gray-400">{{ node.location }}</span>
+            <span class="text-toned">{{ node.location }}</span>
           </div>
           <SharedCopyButton v-if="node.management_ip" :value="node.management_ip"><span class="flex items-center gap-2">
             <UIcon name="i-heroicons-globe-alt" class="h-3.5 w-3.5 flex-shrink-0 text-teal-400" />
-            <span class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ node.management_ip }}</span>
+            <span class="font-mono text-xs text-toned">{{ node.management_ip }}</span>
           </span></SharedCopyButton>
         </div>
 
         <!-- Port stats -->
         <div class="flex items-center justify-between border-t border-b border-default py-1.5 font-mono">
-          <span class="text-[11px] font-medium uppercase tracking-wider text-gray-400 leading-none">
+          <span class="text-[11px] font-medium uppercase tracking-wider text-muted leading-none">
             {{ node.port_count }} {{ $t('topology.ports') }}
           </span>
           <div class="flex items-center gap-3 text-xs">
@@ -41,7 +41,7 @@
 
         <!-- Connections grouped by target switch -->
         <div v-if="switchGroups.length">
-          <div class="text-[11px] font-medium uppercase tracking-wider text-gray-500 mb-1.5">
+          <div class="text-[11px] font-medium uppercase tracking-wider text-muted mb-1.5">
             {{ $t('topology.connections') }} ({{ nodeLinks.length }})
           </div>
           <div class="space-y-1.5">
@@ -54,7 +54,7 @@
             >
               <!-- Target switch header -->
               <div class="flex items-center justify-between px-3 py-2">
-                <span class="text-sm font-medium text-gray-900 dark:text-white truncate">
+                <span class="text-sm font-medium text-highlighted truncate">
                   {{ sw.targetName }}
                 </span>
                 <UBadge
@@ -70,17 +70,17 @@
               <!-- Port mappings -->
               <div class="border-t border-default px-3 py-1.5 space-y-0.5">
                 <template v-for="lag in sw.lagGroups" :key="lag.key">
-                  <div v-if="lag.lagName" class="text-[10px] text-gray-500 font-medium pt-0.5">
+                  <div v-if="lag.lagName" class="text-[10px] text-toned font-medium pt-0.5">
                     LAG: {{ lag.lagName }}
                   </div>
                   <div
                     v-for="link in lag.links"
                     :key="link.id"
-                    class="flex items-center gap-2 py-0.5 font-mono text-xs text-gray-400"
+                    class="flex items-center gap-2 py-0.5 font-mono text-xs text-toned"
                   >
-                    <span class="text-gray-300 dark:text-gray-300">{{ getLocalPort(link) }}</span>
-                    <span class="text-gray-600">↔</span>
-                    <span class="text-gray-500">{{ getRemotePort(link) }}</span>
+                    <span class="text-toned">{{ getLocalPort(link) }}</span>
+                    <span class="text-muted">↔</span>
+                    <span class="text-toned">{{ getRemotePort(link) }}</span>
                   </div>
                 </template>
               </div>

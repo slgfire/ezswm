@@ -208,7 +208,7 @@
     </ClientOnly>
 
     <!-- Bottom bar: Legend (matching app chip style) -->
-    <div class="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 pointer-events-none text-[11px] text-gray-500 dark:text-gray-400">
+    <div class="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 pointer-events-none text-[11px] text-muted">
       <!-- Role chips -->
       <div class="pointer-events-auto inline-flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 leading-none dark:bg-neutral-800">
         <span class="inline-block h-2 w-2 rounded-full" style="background: #ef4444" />
@@ -226,7 +226,7 @@
         <span class="inline-block h-2 w-2 rounded-full" style="background: #eab308" />
         <span class="font-medium text-gray-700 dark:text-gray-200">Mgmt</span>
       </div>
-      <span class="text-gray-600 dark:text-gray-500">|</span>
+      <span class="text-muted">|</span>
       <!-- Edge type chips -->
       <div class="pointer-events-auto inline-flex items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 leading-none dark:bg-neutral-800">
         <span class="inline-block w-3 border-t border-gray-500" />
@@ -240,9 +240,9 @@
         <span class="inline-block w-3 border-t-2 border-[#7a8999]" />
         <span>LAG</span>
       </div>
-      <span class="text-gray-600 dark:text-gray-500">|</span>
+      <span class="text-muted">|</span>
       <!-- Stats -->
-      <span class="font-mono text-gray-500">
+      <span class="font-mono text-toned">
         {{ Object.keys(graphNodes).length }} switches · {{ Object.keys(graphEdges).length }} links
       </span>
     </div>

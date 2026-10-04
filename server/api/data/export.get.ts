@@ -1,14 +1,14 @@
 import { prisma } from '../../db/client'
 
-// Alias of /api/backup/export. Whole-DB JSON dump; field shapes match the
-// SQLite columns.
+// Inventory export (readable by viewers). Whole-DB JSON dump of inventory data; field
+// shapes match the SQLite columns. Users (password hashes) and OIDC config are
+// deliberately NOT included — use the admin-only /api/backup/export for full backups.
 export default defineEventHandler(async (event) => {
   const [
-    sites, users, switches, switchGroups, ports, vlans, networks, ipAllocations, ipRanges,
+    sites, switches, switchGroups, ports, vlans, networks, ipAllocations, ipRanges,
     layoutTemplates, lagGroups, activity, settings, publicTokens, topologyLayouts
   ] = await Promise.all([
     prisma.site.findMany(),
-    prisma.user.findMany(),
     prisma.switch.findMany(),
     prisma.switchGroup.findMany(),
     prisma.port.findMany(),
@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     created_at: new Date().toISOString(),
     schema: 'sqlite-v1',
     data: {
-      sites, users, switches, switchGroups, ports, vlans, networks, ipAllocations, ipRanges,
+      sites, switches, switchGroups, ports, vlans, networks, ipAllocations, ipRanges,
       layoutTemplates, lagGroups, activity, settings, publicTokens, topologyLayouts
     }
   }

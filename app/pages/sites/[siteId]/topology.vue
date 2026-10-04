@@ -2,14 +2,14 @@
   <div class="flex h-full overflow-hidden">
     <!-- Empty state: all sites -->
     <div v-if="isAllContext" class="flex flex-1 flex-col items-center justify-center p-6 text-center">
-      <UIcon name="i-heroicons-share" class="mb-4 h-16 w-16 text-gray-500" />
-      <h2 class="mb-2 text-xl font-semibold text-gray-300">{{ $t('topology.selectSiteTitle') }}</h2>
-      <p class="max-w-md text-sm text-gray-500">{{ $t('topology.selectSiteDescription') }}</p>
+      <UIcon name="i-heroicons-share" class="mb-4 h-16 w-16 text-muted" />
+      <h2 class="mb-2 text-xl font-semibold text-highlighted">{{ $t('topology.selectSiteTitle') }}</h2>
+      <p class="max-w-md text-sm text-muted">{{ $t('topology.selectSiteDescription') }}</p>
     </div>
 
     <!-- Loading -->
     <div v-else-if="loading" class="flex flex-1 items-center justify-center">
-      <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-gray-400" />
+      <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-muted" />
     </div>
 
     <!-- Empty state: no connections -->
@@ -17,9 +17,9 @@
       v-else-if="!data?.links.length"
       class="flex flex-1 flex-col items-center justify-center p-6 text-center"
     >
-      <UIcon name="i-heroicons-share" class="mb-4 h-16 w-16 text-gray-500" />
-      <h2 class="mb-2 text-xl font-semibold text-gray-300">{{ $t('topology.emptyTitle') }}</h2>
-      <p class="max-w-md text-sm text-gray-500">{{ $t('topology.emptyDescription') }}</p>
+      <UIcon name="i-heroicons-share" class="mb-4 h-16 w-16 text-muted" />
+      <h2 class="mb-2 text-xl font-semibold text-highlighted">{{ $t('topology.emptyTitle') }}</h2>
+      <p class="max-w-md text-sm text-muted">{{ $t('topology.emptyDescription') }}</p>
     </div>
 
     <!-- Graph (full width, panel overlays via USlideover) -->

@@ -8,7 +8,7 @@
     </template>
 
     <template #body>
-      <p class="text-sm text-gray-400">{{ message }}</p>
+      <p class="text-sm text-muted">{{ message }}</p>
       <slot />
     </template>
 

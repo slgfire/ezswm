@@ -1,10 +1,13 @@
 <template>
   <div class="p-6">
     <!-- Header -->
-    <div class="mb-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
+    <div class="mb-4 flex items-start justify-between gap-4">
+      <div class="flex min-w-0 items-start gap-3">
         <UButton icon="i-heroicons-arrow-left" variant="ghost" size="sm" :to="`/sites/${siteId}/subnets`" />
-        <h1 class="text-xl font-bold">{{ network?.name || $t('common.loading') }}</h1>
+        <div class="min-w-0">
+          <h1 class="break-words text-xl font-bold">{{ network?.name || $t('common.loading') }}</h1>
+          <p class="mt-1 text-sm text-muted">{{ $t('networks.detailDescription') }}</p>
+        </div>
       </div>
       <div v-if="network" class="flex items-center gap-1">
         <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="sm" :title="$t('common.edit')" @click="startEdit()" />
@@ -13,7 +16,7 @@
     </div>
 
     <div v-if="pageLoading" class="flex justify-center py-12">
-      <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-gray-400" />
+      <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-muted" />
     </div>
 
     <div v-else-if="network" class="space-y-5">
@@ -39,7 +42,7 @@
       <!-- Unified IP Overview -->
       <div>
         <div class="mb-3 flex items-center justify-between">
-          <h2 class="text-base font-semibold text-gray-700 dark:text-gray-300">{{ $t('networks.unified.title') }}</h2>
+          <h2 class="text-base font-semibold text-default">{{ $t('networks.unified.title') }}</h2>
           <UButton icon="i-heroicons-plus" size="sm" @click="openAddPanel()">
             {{ $t('common.add') }}
           </UButton>
@@ -57,25 +60,25 @@
             <!-- Fixed rows (network, gateway, broadcast) -->
             <template v-if="row.kind === 'fixed'">
               <div class="w-40 shrink-0">
-                <SharedCopyButton :value="row.ip!"><code class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ row.ip }}</code></SharedCopyButton>
+                <SharedCopyButton :value="row.ip!"><code class="font-mono text-xs text-toned">{{ row.ip }}</code></SharedCopyButton>
               </div>
               <div class="flex-1">
-                <span class="text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ row.label }}</span>
+                <span class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ row.label }}</span>
               </div>
             </template>
 
             <!-- Allocation rows -->
             <template v-else-if="row.kind === 'allocation'">
               <div class="w-40 shrink-0">
-                <SharedCopyButton :value="(row.data as IPAllocation).ip_address"><code class="font-mono text-xs text-gray-900 dark:text-white">{{ (row.data as IPAllocation).ip_address }}</code></SharedCopyButton>
+                <SharedCopyButton :value="(row.data as IPAllocation).ip_address"><code class="font-mono text-xs text-highlighted">{{ (row.data as IPAllocation).ip_address }}</code></SharedCopyButton>
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span class="text-sm font-medium text-gray-900 dark:text-white">{{ (row.data as IPAllocation).hostname || (row.data as IPAllocation).ip_address }}</span>
+                  <span class="text-sm font-medium text-highlighted">{{ (row.data as IPAllocation).hostname || (row.data as IPAllocation).ip_address }}</span>
                   <UBadge v-if="(row.data as IPAllocation).device_type" variant="subtle" color="neutral" size="sm">{{ $t(`networks.allocations.deviceTypes.${(row.data as IPAllocation).device_type}`) }}</UBadge>
                   <UBadge :color="(row.data as IPAllocation).status === 'active' ? 'success' : (row.data as IPAllocation).status === 'reserved' ? 'warning' : 'neutral'" variant="subtle" size="sm">{{ $t(`networks.allocations.statuses.${(row.data as IPAllocation).status}`) }}</UBadge>
                 </div>
-                <div v-if="(row.data as IPAllocation).description || (row.data as IPAllocation).mac_address" class="mt-0.5 flex items-center gap-3 text-[11px] text-gray-400">
+                <div v-if="(row.data as IPAllocation).description || (row.data as IPAllocation).mac_address" class="mt-0.5 flex items-center gap-3 text-[11px] text-muted">
                   <span v-if="(row.data as IPAllocation).description">{{ (row.data as IPAllocation).description }}</span>
                   <SharedCopyButton v-if="(row.data as IPAllocation).mac_address" :value="(row.data as IPAllocation).mac_address!"><span class="font-mono">{{ (row.data as IPAllocation).mac_address }}</span></SharedCopyButton>
                 </div>
@@ -89,14 +92,14 @@
             <!-- Range rows -->
             <template v-else-if="row.kind === 'range'">
               <div class="w-40 shrink-0">
-                <SharedCopyButton :value="`${(row.data as IPRange).start_ip} - ${(row.data as IPRange).end_ip}`"><code class="font-mono text-xs text-gray-900 dark:text-white">{{ (row.data as IPRange).start_ip }} – {{ abbreviateEndIp((row.data as IPRange).start_ip, (row.data as IPRange).end_ip) }}</code></SharedCopyButton>
+                <SharedCopyButton :value="`${(row.data as IPRange).start_ip} - ${(row.data as IPRange).end_ip}`"><code class="font-mono text-xs text-highlighted">{{ (row.data as IPRange).start_ip }} – {{ abbreviateEndIp((row.data as IPRange).start_ip, (row.data as IPRange).end_ip) }}</code></SharedCopyButton>
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
                   <UBadge :color="rangeTypeBadgeColor((row.data as IPRange).type)" variant="subtle" size="sm">{{ $t(`networks.ranges.types.${(row.data as IPRange).type}`) }}</UBadge>
                   <UBadge :color="rangeTypeBadgeColor((row.data as IPRange).type)" variant="subtle" size="sm" class="font-mono">{{ $t('networks.ranges.ipCount', { count: rangeIpCount((row.data as IPRange).start_ip, (row.data as IPRange).end_ip) }) }}</UBadge>
-                  <span v-if="(row.data as IPRange).description" class="text-xs text-gray-500 dark:text-gray-400">{{ (row.data as IPRange).description }}</span>
-                  <span v-if="(row.data as IPRange).type !== 'dhcp' && countAllocsInRange(row.data as IPRange) > 0" class="text-xs text-gray-400">
+                  <span v-if="(row.data as IPRange).description" class="text-xs text-muted">{{ (row.data as IPRange).description }}</span>
+                  <span v-if="(row.data as IPRange).type !== 'dhcp' && countAllocsInRange(row.data as IPRange) > 0" class="text-xs text-muted">
                     ({{ $t('networks.ranges.ipsDocumented', { count: countAllocsInRange(row.data as IPRange) }) }})
                   </span>
                 </div>
@@ -108,7 +111,7 @@
             </template>
           </div>
           <div v-if="unifiedList.length === 0" class="px-4 py-3">
-            <p class="text-xs text-gray-500">{{ $t('common.noData') }}</p>
+            <p class="text-xs text-muted">{{ $t('common.noData') }}</p>
           </div>
         </div>
       </div>

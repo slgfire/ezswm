@@ -1,6 +1,6 @@
 <template>
   <div class="flex h-full items-center justify-center">
-    <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
+    <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
   </div>
 </template>
 

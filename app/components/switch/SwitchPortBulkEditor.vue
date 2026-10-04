@@ -3,7 +3,7 @@
 
     <template #body>
       <div class="space-y-4">
-        <p class="text-xs text-gray-400">{{ $t('switches.ports.bulkEditHint', { count: selectedPorts.length }) }}</p>
+        <p class="text-xs text-muted">{{ $t('switches.ports.bulkEditHint', { count: selectedPorts.length }) }}</p>
         <UFormField :label="$t('switches.ports.copySource')">
           <USelect v-model="copySourceId" :items="sourceOptionsWithClear" :placeholder="$t('switches.ports.copySourcePlaceholder')" class="w-full" />
           <p class="mt-1 text-xs text-amber-400">{{ $t('switches.ports.copyPrefillHint') }}</p>
@@ -23,8 +23,8 @@
               @keydown="onStatusKeydown($event, option.value)"
             >{{ option.label }}</button>
           </div>
-          <p v-if="form.status !== ''" class="mt-1 text-xs text-gray-400">
-            <button type="button" class="cursor-pointer underline hover:text-gray-300" @click="form.status = ''">{{ $t('common.noChange') }}</button>
+          <p v-if="form.status !== ''" class="mt-1 text-xs text-muted">
+            <button type="button" class="cursor-pointer underline hover:text-toned" @click="form.status = ''">{{ $t('common.noChange') }}</button>
           </p>
         </UFormField>
 
@@ -185,6 +185,7 @@ const speedOptions = computed(() => [
   { label: '1G', value: '1G' },
   { label: '2.5G', value: '2.5G' },
   { label: '10G', value: '10G' },
+  { label: '40G', value: '40G' },
   { label: '100G', value: '100G' }
 ])
 

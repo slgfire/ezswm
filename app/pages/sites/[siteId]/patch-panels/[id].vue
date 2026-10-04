@@ -1,10 +1,13 @@
 <template>
   <div class="p-6">
     <!-- Header -->
-    <div class="mb-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
+    <div class="mb-4 flex items-start justify-between gap-4">
+      <div class="flex min-w-0 items-start gap-3">
         <UButton icon="i-heroicons-arrow-left" variant="ghost" size="sm" :to="`/sites/${siteId}/patch-panels`" :aria-label="$t('common.back')" />
-        <h1 class="text-xl font-bold">{{ panel?.name || $t('common.loading') }}</h1>
+        <div class="min-w-0">
+          <h1 class="break-words text-xl font-bold">{{ panel?.name || $t('common.loading') }}</h1>
+          <p class="mt-1 text-sm text-muted">{{ $t('patchPanels.detailDescription') }}</p>
+        </div>
       </div>
       <div v-if="panel" class="flex items-center gap-1">
         <PatchPanelPublicAccess
@@ -18,7 +21,7 @@
     </div>
 
     <div v-if="pageLoading" class="flex justify-center py-12">
-      <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-gray-400" />
+      <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-muted" />
     </div>
 
     <div v-else-if="panel" class="space-y-5">
@@ -31,18 +34,18 @@
             </div>
             <div>
               <div class="font-display text-3xl font-bold">{{ kpi.occupied }}</div>
-              <div class="text-sm text-gray-400">{{ $t('patchPanels.kpi.occupied') }}</div>
+              <div class="text-sm text-muted">{{ $t('patchPanels.kpi.occupied') }}</div>
             </div>
           </div>
         </div>
         <div class="card-glow rounded-lg bg-default p-5">
           <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-500/10">
-              <UIcon name="i-heroicons-signal-slash" class="h-6 w-6 text-cyan-500" />
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-elevated">
+              <UIcon name="i-heroicons-signal-slash" class="h-6 w-6 text-muted" />
             </div>
             <div>
-              <div class="font-display text-3xl font-bold text-cyan-500">{{ kpi.free }}</div>
-              <div class="text-sm text-gray-400">{{ $t('patchPanels.kpi.free') }}</div>
+              <div class="font-display text-3xl font-bold text-highlighted">{{ kpi.free }}</div>
+              <div class="text-sm text-muted">{{ $t('patchPanels.kpi.free') }}</div>
             </div>
           </div>
         </div>
@@ -53,7 +56,7 @@
             </div>
             <div>
               <div class="font-display text-3xl font-bold text-green-500">{{ kpi.tested }}</div>
-              <div class="text-sm text-gray-400">{{ $t('patchPanels.kpi.tested') }}</div>
+              <div class="text-sm text-muted">{{ $t('patchPanels.kpi.tested') }}</div>
             </div>
           </div>
         </div>
@@ -64,18 +67,18 @@
             </div>
             <div>
               <div class="font-display text-3xl font-bold text-amber-500">{{ kpi.untested }}</div>
-              <div class="text-sm text-gray-400">{{ $t('patchPanels.kpi.untested') }}</div>
+              <div class="text-sm text-muted">{{ $t('patchPanels.kpi.untested') }}</div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Description -->
-      <p v-if="panel.description" class="text-sm text-gray-500 dark:text-gray-400">{{ panel.description }}</p>
+      <p v-if="panel.description" class="text-sm text-muted">{{ panel.description }}</p>
 
       <!-- Visual port overview -->
       <div>
-        <h2 class="mb-3 text-base font-semibold text-gray-700 dark:text-gray-300">{{ $t('patchPanels.portOverview') }}</h2>
+        <h2 class="mb-3 text-base font-semibold text-default">{{ $t('patchPanels.portOverview') }}</h2>
         <div class="overflow-x-auto rounded-lg border border-default bg-default/30 p-2 lg:p-3">
           <div class="flex flex-wrap items-start justify-center gap-1.5">
             <div
@@ -113,23 +116,23 @@
           :style="tooltipStyle"
         >
           <div class="space-y-1 text-xs">
-            <div class="font-semibold text-gray-700 dark:text-gray-200">
+            <div class="font-semibold text-default">
               {{ $t('patchPanels.fields.port') }} {{ hoveredSocket.portNumber }}<template v-if="hoveredSocket.socket?.side"> ({{ hoveredSocket.socket.side }})</template>
             </div>
             <div v-if="hoveredSocket.socket?.side" class="flex items-center gap-1.5">
-              <span class="text-gray-400">{{ $t('patchPanels.fields.side') }}:</span>
-              <span class="font-medium text-gray-700 dark:text-gray-200">{{ hoveredSocket.socket.side }}</span>
+              <span class="text-muted">{{ $t('patchPanels.fields.side') }}:</span>
+              <span class="font-medium text-default">{{ hoveredSocket.socket.side }}</span>
             </div>
             <div class="flex items-center gap-1.5">
-              <span class="text-gray-400">{{ $t('patchPanels.fields.outletNumber') }}:</span>
-              <span class="font-mono font-medium text-gray-700 dark:text-gray-200">{{ hoveredSocket.socket?.outlet_number || '—' }}</span>
+              <span class="text-muted">{{ $t('patchPanels.fields.outletNumber') }}:</span>
+              <span class="font-mono font-medium text-default">{{ hoveredSocket.socket?.outlet_number || '—' }}</span>
             </div>
             <div class="flex items-center gap-1.5">
-              <span class="text-gray-400">{{ $t('patchPanels.fields.location') }}:</span>
-              <span class="font-medium text-gray-700 dark:text-gray-200">{{ hoveredSocket.socket?.location || '—' }}</span>
+              <span class="text-muted">{{ $t('patchPanels.fields.location') }}:</span>
+              <span class="font-medium text-default">{{ hoveredSocket.socket?.location || '—' }}</span>
             </div>
             <div class="flex items-center gap-1.5">
-              <span class="text-gray-400">{{ $t('patchPanels.fields.tested') }}:</span>
+              <span class="text-muted">{{ $t('patchPanels.fields.tested') }}:</span>
               <span
                 class="inline-block h-2.5 w-2.5 rounded-full"
                 :class="hoveredSocket.socket?.tested ? 'bg-green-500' : 'bg-red-500'"
@@ -144,7 +147,7 @@
 
       <!-- Socket table -->
       <div>
-        <h2 class="mb-3 text-base font-semibold text-gray-700 dark:text-gray-300">{{ $t('patchPanels.sockets') }}</h2>
+        <h2 class="mb-3 text-base font-semibold text-default">{{ $t('patchPanels.sockets') }}</h2>
         <UTable
           :data="tableRows"
           :columns="columns"
@@ -153,21 +156,21 @@
           @select="onRowSelect"
         >
           <template #port_number-cell="{ row }">
-            <span class="font-mono font-medium text-gray-900 dark:text-white">{{ row.original.port_number }}</span>
+            <span class="font-mono font-medium text-highlighted">{{ row.original.port_number }}</span>
           </template>
           <template #side-cell="{ row }">
             <UBadge v-if="row.original.side" :color="row.original.side === 'L' ? 'primary' : 'info'" variant="subtle" size="sm">
               {{ row.original.side }}
             </UBadge>
-            <span v-else class="text-gray-400">—</span>
+            <span v-else class="text-muted">—</span>
           </template>
           <template #outlet_number-cell="{ row }">
             <span v-if="row.original.outlet_number" class="font-mono text-sm">{{ row.original.outlet_number }}</span>
-            <span v-else class="text-gray-400">—</span>
+            <span v-else class="text-muted">—</span>
           </template>
           <template #location-cell="{ row }">
             <span v-if="row.original.location" class="text-sm">{{ row.original.location }}</span>
-            <span v-else class="text-gray-400">—</span>
+            <span v-else class="text-muted">—</span>
           </template>
           <template #tested-cell="{ row }">
             <UBadge :color="row.original.tested ? 'success' : 'neutral'" variant="subtle" size="sm">

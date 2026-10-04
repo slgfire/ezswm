@@ -1,7 +1,10 @@
 <template>
   <div class="p-6">
-    <div class="mb-4 flex items-center justify-between">
-      <h1 class="text-xl font-bold">{{ $t('networks.title') }}</h1>
+    <div class="mb-4 flex flex-wrap items-start justify-between gap-4">
+      <div class="min-w-0">
+        <h1 class="text-xl font-bold">{{ $t('networks.title') }}</h1>
+        <p class="mt-1 text-sm text-muted">{{ $t('networks.description') }}</p>
+      </div>
       <UButton :to="`/sites/${siteId}/subnets/create`" icon="i-heroicons-plus" size="sm">
         {{ $t('networks.create') }}
       </UButton>
@@ -9,7 +12,7 @@
 
     <!-- Loading -->
     <div v-if="pageLoading" class="flex justify-center py-12">
-      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-gray-400" />
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
     </div>
 
     <template v-else>
@@ -35,22 +38,22 @@
     <div v-if="sortedItems.length > 0">
       <div v-for="group in groupedItems" :key="group.siteId" class="mb-4">
         <div v-if="groupedItems.length > 1" class="mb-2 flex items-center gap-3">
-          <UIcon name="i-heroicons-building-office-2" class="h-4 w-4 text-gray-500" />
-          <span class="text-sm font-semibold text-gray-400">{{ group.siteName }}</span>
+          <UIcon name="i-heroicons-building-office-2" class="h-4 w-4 text-muted" />
+          <span class="text-sm font-semibold text-muted">{{ group.siteName }}</span>
           <div class="h-px flex-1 bg-default" />
         </div>
         <div class="list-container rounded-lg bg-default">
           <!-- Sort header -->
-          <div class="flex items-center gap-4 border-b border-default px-5 py-1.5 text-[10px] uppercase tracking-wider text-gray-500">
-            <button class="flex items-center gap-1 transition-colors hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('name')">
+          <div class="flex items-center gap-4 border-b border-default px-5 py-1.5 text-[10px] uppercase tracking-wider text-muted">
+            <button class="flex items-center gap-1 transition-colors hover:text-default" @click="toggleSort('name')">
               {{ $t('common.name') }}
               <UIcon v-if="sortField === 'name'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
             </button>
-            <button class="flex items-center gap-1 transition-colors hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('subnet')">
+            <button class="flex items-center gap-1 transition-colors hover:text-default" @click="toggleSort('subnet')">
               {{ $t('networks.infoBar.subnet') }}
               <UIcon v-if="sortField === 'subnet'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
             </button>
-            <button class="flex items-center gap-1 transition-colors hover:text-gray-600 dark:hover:text-gray-200" @click="toggleSort('gateway')">
+            <button class="flex items-center gap-1 transition-colors hover:text-default" @click="toggleSort('gateway')">
               {{ $t('networks.infoBar.gateway') }}
               <UIcon v-if="sortField === 'gateway'" :name="sortAsc ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
             </button>
@@ -77,20 +80,20 @@
             <!-- Main info -->
             <div class="min-w-0 flex-1 py-3 pl-4">
               <div class="flex items-center gap-2">
-                <span class="text-base font-semibold text-gray-900 dark:text-white">{{ net.name }}</span>
+                <span class="text-base font-semibold text-highlighted">{{ net.name }}</span>
                 <code class="rounded bg-primary-50 px-2 py-0.5 text-sm font-medium text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">{{ net.subnet }}</code>
               </div>
               <div class="mt-0.5 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                 <span v-if="net.gateway" class="flex items-center gap-1 font-mono">
-                  <UIcon name="i-heroicons-arrow-right-circle" class="h-3 w-3 text-gray-400" />
+                  <UIcon name="i-heroicons-arrow-right-circle" class="h-3 w-3 text-muted" />
                   {{ net.gateway }}
                 </span>
                 <span v-if="getVlan(net.vlan_id)" class="flex items-center gap-1">
-                  <UIcon name="i-heroicons-tag" class="h-3 w-3 text-gray-400" />
+                  <UIcon name="i-heroicons-tag" class="h-3 w-3 text-muted" />
                   VLAN {{ getVlan(net.vlan_id)?.vlan_id }} · {{ getVlan(net.vlan_id)?.name }}
                 </span>
                 <span v-if="net.description" class="flex items-center gap-1 truncate">
-                  <UIcon name="i-heroicons-document-text" class="h-3 w-3 flex-shrink-0 text-gray-400" />
+                  <UIcon name="i-heroicons-document-text" class="h-3 w-3 flex-shrink-0 text-muted" />
                   {{ net.description }}
                 </span>
               </div>

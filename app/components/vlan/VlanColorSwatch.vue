@@ -1,6 +1,6 @@
 <template>
   <span
-    class="inline-block rounded-sm border border-gray-700"
+    class="inline-block rounded-sm border border-default"
     :class="sizeClasses"
     :style="{ backgroundColor: color }"
     :title="color"

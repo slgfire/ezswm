@@ -12,8 +12,8 @@
         :key="f.key"
         class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
         :class="activeFilter === f.key
-          ? 'bg-gray-600 text-white ring-1 ring-gray-500'
-          : 'bg-gray-800/60 text-gray-400 hover:bg-gray-700 hover:text-gray-200'"
+          ? 'bg-neutral-600 text-white ring-1 ring-neutral-500'
+          : 'bg-neutral-800/60 text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200'"
         @click="activeFilter = f.key"
       >
         <span v-if="f.color" class="inline-block h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: f.color }" />
@@ -54,7 +54,7 @@
         >
           <!-- Row 1: port label + VLAN badge -->
           <div class="flex items-center justify-between gap-2">
-            <span class="text-sm font-bold text-gray-200">{{ portLabel(port) }}</span>
+            <span class="text-sm font-bold text-neutral-200">{{ portLabel(port) }}</span>
             <span
               v-if="getPrimaryVlanId(port)"
               class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
@@ -85,7 +85,7 @@
     </div>
 
     <!-- Empty filter state -->
-    <div v-if="filteredPorts.length === 0" class="py-6 text-center text-sm text-gray-500">
+    <div v-if="filteredPorts.length === 0" class="py-6 text-center text-sm text-neutral-500">
       {{ $t('public.helper.noPortsForFilter') }}
     </div>
   </div>
@@ -235,12 +235,6 @@ function isConnected(port: PublicPort): boolean {
 }
 
 // ponytail: hash LAG name → stable HSL hue, unlimited distinct colors for many LAGs
-function lagColor(name: string | null | undefined): string {
-  if (!name) return '#8b5cf6'
-  let h = 0
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
-  return `hsl(${h % 360}, 70%, 60%)`
-}
 function lagPillStyle(name: string | null | undefined): Record<string, string> {
   if (!name) return { backgroundColor: '#8b5cf626', color: '#8b5cf6' }
   let h = 0
@@ -252,11 +246,11 @@ function lagPillStyle(name: string | null | undefined): Record<string, string> {
 function portBorderStyle(port: PublicPort): Record<string, string> {
   const usage = getHelperUsage(port)
   if (usage === 'special') {
-    return { borderLeftWidth: '3px', borderLeftColor: '#38bdf8', borderColor: 'rgba(55,65,81,0.5)' }
+    return { borderColor: 'rgba(82,82,82,0.5)', borderLeftWidth: '3px', borderLeftColor: '#38bdf8' }
   }
   const color = getPrimaryVlanColor(port)
-  if (!color) return { borderColor: 'rgba(55,65,81,0.5)' }
-  return { borderLeftWidth: '3px', borderLeftColor: color, borderColor: 'rgba(55,65,81,0.5)' }
+  if (!color) return { borderColor: 'rgba(82,82,82,0.5)' }
+  return { borderColor: 'rgba(82,82,82,0.5)', borderLeftWidth: '3px', borderLeftColor: color }
 }
 
 function vlanChipStyle(port: PublicPort): Record<string, string> {

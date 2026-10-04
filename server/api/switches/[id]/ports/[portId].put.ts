@@ -20,7 +20,11 @@ export default defineEventHandler(async (event) => {
   const oldPort = existing.ports.find(p => p.id === portId)
 
   const body = await readBody(event)
-  const parsed = updatePortSchema.parse(body)
+  const validation = updatePortSchema.safeParse(body)
+  if (!validation.success) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid request body' })
+  }
+  const parsed = validation.data
 
   // Extract override/concurrency fields before passing to port update
   const addVlansToTargetSwitch = parsed.add_vlans_to_target_switch
