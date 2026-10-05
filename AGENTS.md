@@ -106,6 +106,22 @@ Only edit the version in `package.json`. `nuxt.config.ts` reads it from
 `process.env.npm_package_version` (and the sidebar reads it from there), so
 do not hardcode the version anywhere else.
 
+### Changelog
+
+`CHANGELOG/en.md` and `CHANGELOG/de.md` are the release history (shown in
+the app's changelog modal and on the docs release-notes pages
+`docs/release-notes.md` / `docs/de/release-notes.md`, which include them).
+
+- Before every push to Git, add a meaningful entry for the change under
+  `## [Unreleased]` (Added / Changed / Fixed) in both files, in the same
+  PR. Do not duplicate an entry for the same change; update it instead.
+  Documentation-only and process changes are recorded too.
+- On a version bump, move the applicable `[Unreleased]` entries under a
+  new `## [x.y.z] — YYYY-MM-DD` heading in the same PR. Entries for
+  changes that are not part of the release stay under `[Unreleased]`.
+- The changelog parser ignores non-semver headings, so `[Unreleased]` is
+  not shown in the in-app modal.
+
 ---
 
 ## Git Workflow

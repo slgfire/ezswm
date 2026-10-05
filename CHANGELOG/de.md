@@ -1,3 +1,128 @@
+## [Unreleased]
+
+### Geändert
+- Dokumentation: Projektanweisungen, Architektur und Spezifikationen beschreiben jetzt die aktuelle SQLite/Prisma-Persistenz; JSON-Dateien bleiben nur Austausch-/Kompatibilitätsformate (Backups, Import/Export, Legacy-Migration); Array-/Objektfelder werden als JSON in SQLite-Spalten serialisiert.
+- Dokumentation: Die englische und deutsche FAQ nennen jetzt die tatsächliche Einschränkung bei der Passwort-Wiederherstellung und beschreiben eine sichere Sicherung bei gestopptem Container.
+- Dokumentation: Das README-Logo ist auf GitHub horizontal und annähernd vertikal zentriert.
+- Projektprozess: Bei jedem Push ins Git muss ein aussagekräftiger Eintrag unter `[Unreleased]` in `CHANGELOG/en.md` und `CHANGELOG/de.md` ergänzt werden; bei einem Versionssprung wandern die zutreffenden Einträge unter die neue Versionsüberschrift.
+
+---
+
+## [0.40.0] — 2026-10-05
+
+### Hinzugefügt
+- OIDC-/SSO-Login: Standard-OpenID-Connect-Authorization-Code-Flow mit PKCE (S256), mit State, Nonce sowie Prüfung von ID-Token-Signatur, Issuer und Subject. Anbieter, die nur symmetrische Signaturalgorithmen (z. B. HS256) anbieten, werden nicht unterstützt. Konten werden nicht per Benutzername oder E-Mail verknüpft; der lokale Notfall-Admin bleibt verfügbar.
+- SSO-Rollen und -Gruppen werden bei jedem SSO-Login neu ausgewertet; die Viewer-Rolle ist für Infrastrukturdaten schreibgeschützt. Admins konfigurieren OIDC unter Einstellungen, inklusive Verbindungsprüfung und optionalem Anbieternamen auf der Login-Seite.
+- Reine Admin-Seite „Benutzer“ (nur lesend) mit Benutzername, Anzeigename, Rolle und lokalem/OIDC-Konto.
+- Port-Geschwindigkeit `40G` (QSFP) mit NetBox-Zuordnung `40gbase-x-qsfpp`; neue Standardwerte enthalten 40G.
+
+### Geändert
+- Einstellungen: Basis- und optionale Funktionseinstellungen (Patch Panels, Switch-Gruppen) werden mit einer Speichern-Aktion gesichert. Die Konto-Seite zeigt SSO-Benutzern einen Hinweis auf OIDC-Verwaltung. Die Login-Seite zeigt zuerst das lokale Formular, darunter SSO. Einheitliche UI-Anpassungen und Logo-Abstand in der Seitenleiste.
+- Backups: Das vollständige JSON-Backup enthält jetzt Patch-Panel-Daten (Panels, Sockets, öffentliche Tokens) und speichert ein OIDC-Client-Secret nur verschlüsselt und enthält den OIDC-Verschlüsselungsschlüssel nicht. Backups enthalten weiterhin Passwort-Hashes und öffentliche Zugriffstokens und sind daher vertraulich zu behandeln.
+- Neue optionale Umgebungsvariablen `PUBLIC_BASE_URL` (Callback-Origin) und `OIDC_ENCRYPTION_KEY` (nur zum Speichern eines vertraulichen Client-Secrets nötig; öffentliche Clients funktionieren ohne).
+
+---
+
+## [0.39.0] — 2026-09-30
+
+### Hinzugefügt
+- Switch-Gruppen: Switches lassen sich in standortbezogenen Gruppen organisieren, mit gruppierter Ansicht auf der Switch-Seite, Zuweisungsmenü und Gruppenverwaltung. Die Funktion ist standardmäßig aktiv und in den Einstellungen abschaltbar; gespeicherte Gruppen und Zuweisungen bleiben erhalten und werden beim erneuten Aktivieren wiederhergestellt. Die API-Referenz dokumentiert die neuen Gruppen-Endpunkte.
+
+---
+
+## [0.38.0] — 2026-09-23
+
+### Hinzugefügt
+- Netzwerke können über eine neue Option pro Netzwerk (Standard: enthalten) aus den Dashboard- und Subnetz-Auslastungswerten ausgeschlossen werden. Enthält eine Datenbankmigration.
+
+---
+
+## [0.37.2] — 2026-09-13
+
+### Behoben
+- Switch-Detail: Nach dem Umbenennen eines Switches folgt die Seiten-URL jetzt dem neuen Slug, sodass weitere Änderungen nicht mehr die alte Adresse ansprechen und fehlschlagen.
+
+---
+
+## [0.37.1] — 2026-09-08
+
+### Geändert
+- Dokumentation: API-Referenz aktualisiert.
+
+---
+
+## [0.37.0] — 2026-09-08
+
+### Hinzugefügt
+- Patch Panels: Jedes Panel kann einen widerrufbaren, schreibgeschützten öffentlichen Link haben, den angemeldete Benutzer erzeugen, kopieren und widerrufen können, inklusive öffentlicher Panel-Seite und Druckansicht.
+
+---
+
+## [0.36.0] — 2026-09-05
+
+### Hinzugefügt
+- Optionale eigenständige Patch Panels (standardmäßig deaktiviert, in den Einstellungen aktivierbar): 12-/24-/48-Port-Panels mit optionalen Informationen zur linken/rechten Gegenseite, Dosennummer, Standort und Teststatus. Panels werden pro Standort oder standortübergreifend gelistet und erscheinen in der Suche; Daten bleiben beim Deaktivieren erhalten. Enthält eine Datenbankmigration.
+
+---
+
+## [0.35.4] — 2026-09-04
+
+### Behoben
+- Switch-Druckansicht: dichteres Port-Raster, sodass mehr Ports auf eine gedruckte Seite passen.
+
+---
+
+## [0.35.3] — 2026-09-03
+
+### Behoben
+- Switch-Druckansicht: kompakteres Druck-Layout.
+
+---
+
+## [0.35.2] — 2026-09-03
+
+### Behoben
+- Layout der QR-Sticker-Druckansicht vereinheitlicht.
+
+---
+
+## [0.35.1] — 2026-09-02
+
+### Behoben
+- Massenbearbeitung von Ports: Das Status-Steuerelement nutzt jetzt denselben Up/Down/Disabled-Button-Stil wie die Einzelbearbeitung, mit separatem Zustand „Keine Änderung“, der den Status unverändert lässt.
+- Dokumentation: RTK-Befehlshinweise für Mitwirkende ergänzt.
+
+---
+
+## [0.35.0] — 2026-09-02
+
+### Hinzugefügt
+- Port-Bearbeitung: Der Status wird jetzt über eine exklusive Up/Down/Disabled-Buttongruppe statt über ein Dropdown gewählt.
+
+---
+
+## [0.34.3] — 2026-09-01
+
+### Behoben
+- Switch bearbeiten: Das Leeren optionaler Textfelder (Modell, Hersteller, Seriennummer, Standort, Rack-Position, Management-IP, Firmware, Notizen) wird jetzt gespeichert, statt den alten Wert beizubehalten.
+
+---
+
+## [0.34.2] — 2026-08-31
+
+### Behoben
+- Switch bearbeiten: Beim Ändern des Layout-Templates oder der Stack-Größe erscheint jetzt ein Bestätigungsdialog mit den Ports, die entfernt würden, sodass Ports nicht mehr unerwartet gelöscht werden.
+
+---
+
+## [0.34.0] — 2026-08-31
+
+### Hinzugefügt
+- Docker-Start erstellt jetzt bei einer Versionsänderung ein SQLite-Backup vor dem Upgrade (Datenbank plus WAL/SHM-Dateien) im Ordner `backups/` des Datenverzeichnisses, behält die neuesten fünf und bricht vor den Migrationen ab, wenn das Backup fehlschlägt.
+- Änderungen an Switches, Ports und LAGs sind jetzt gegen gleichzeitige Bearbeitung geschützt (Konflikte liefern eine klare 409-Antwort), Löschen und Neuaufbau von Switches bereinigen Port-Verbindungen und Remote-LAG-Referenzen konsistent, und Massen-Port-Updates lehnen fehlende oder fremde Ziele atomar ab.
+
+---
+
 ## [0.33.0] — 2026-08-02
 
 ### Hinzugefügt
