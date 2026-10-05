@@ -215,7 +215,19 @@
         </div>
         <form class="space-y-4" @submit.prevent="onSaveSocket">
           <UFormField :label="$t('patchPanels.fields.side')">
-            <USelect v-model="socketForm.side" :items="sideOptions" class="w-full" />
+            <div class="flex items-center gap-1" role="group" :aria-label="$t('patchPanels.fields.side')">
+              <button
+                v-for="option in sideOptions"
+                :key="option.value"
+                type="button"
+                :aria-pressed="socketForm.side === option.value"
+                class="cursor-pointer px-2.5 py-1 text-xs font-medium rounded border transition-colors focus-visible:outline-2 focus-visible:outline-primary-500"
+                :class="socketForm.side === option.value ? option.activeClass : option.idleClass"
+                @click="toggleSide(option.value)"
+                @keydown="onSideKeydown($event, option.value)"
+              >{{ option.label }}</button>
+            </div>
+            <p class="mt-1 text-xs text-muted">{{ $t('patchPanels.sideToggleHint') }}</p>
           </UFormField>
           <UFormField :label="$t('patchPanels.fields.outletNumber')">
             <UInput v-model="socketForm.outlet_number" class="w-full" :placeholder="$t('patchPanels.fields.outletNumberPlaceholder')" />
@@ -450,11 +462,38 @@ const { takeSnapshot: snapshotSocket, requestClose: requestCloseSocket, onOpenCh
   () => { showSocketEdit.value = false; socketEditTarget.value = null }
 )
 
-const sideOptions = computed(() => [
-  { label: t('patchPanels.sideNone'), value: '_none' },
-  { label: 'L', value: 'L' },
-  { label: 'R', value: 'R' }
-])
+const sideOptions: { label: string; value: 'L' | 'R'; activeClass: string; idleClass: string }[] = [
+  {
+    label: 'L', value: 'L',
+    activeClass: 'bg-primary-500/20 border-primary-500/50 text-primary-400',
+    idleClass: 'border-neutral-300 bg-neutral-100 text-neutral-500 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-300'
+  },
+  {
+    label: 'R', value: 'R',
+    activeClass: 'bg-info-500/20 border-info-500/50 text-info-400',
+    idleClass: 'border-neutral-300 bg-neutral-100 text-neutral-500 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-300'
+  }
+]
+
+function toggleSide(value: 'L' | 'R') {
+  socketForm.value.side = socketForm.value.side === value ? '_none' : value
+}
+
+// Arrow keys keep the compact side controls navigable; activation still uses native toggle-button behavior.
+function onSideKeydown(event: KeyboardEvent, value: 'L' | 'R') {
+  const keys = ['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown']
+  if (!keys.includes(event.key)) return
+  event.preventDefault()
+  const current = sideOptions.findIndex(option => option.value === value)
+  const delta = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1
+  const nextIndex = (current + delta + sideOptions.length) % sideOptions.length
+  const next = sideOptions[nextIndex]
+  if (!next) return
+  socketForm.value.side = next.value
+  const group = (event.currentTarget as HTMLElement).closest('[role="group"]')
+  const buttons = group?.querySelectorAll<HTMLElement>('button[aria-pressed]')
+  buttons?.[nextIndex]?.focus()
+}
 
 function openSocketEdit(socket: PatchPanelSocket) {
   socketEditTarget.value = socket

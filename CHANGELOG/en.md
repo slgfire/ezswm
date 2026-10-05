@@ -1,3 +1,134 @@
+## [Unreleased]
+
+---
+
+## [0.40.1] — 2026-10-05
+
+### Changed
+- Documentation: project instructions, architecture and specs now describe the current SQLite/Prisma persistence; JSON files remain only exchange/compatibility formats (backups, import/export, legacy migration input); array/object fields are serialized as JSON inside SQLite columns.
+- Documentation: the English and German FAQ now state the real password-recovery limitation and describe a safe backup with the container stopped.
+- Documentation: the README logo is centered horizontally and approximately vertically on GitHub.
+- Documentation: the release history was backfilled for 0.34.0 through 0.40.0 in the English and German changelogs.
+- Patch Panels: the socket side (L/R) in the socket edit form is now chosen with visible L (green) and R (blue) buttons instead of a dropdown; only one side can be selected, and clicking the selected button again clears only the side (hint: "Click again to clear the selection.").
+- Project process: every push to Git must add a meaningful entry under `[Unreleased]` in `CHANGELOG/en.md` and `CHANGELOG/de.md`; on a version bump the applicable entries move under the new version heading.
+
+---
+
+## [0.40.0] — 2026-10-05
+
+### Added
+- OIDC / SSO login: standard OpenID Connect Authorization Code flow with PKCE (S256), with state, nonce, ID-token signature, issuer and subject validation. A provider that advertises only symmetric signing algorithms (e.g. HS256) is not supported. Accounts are not linked by username or email, and the local emergency admin remains available.
+- SSO roles and groups are re-evaluated on every SSO login; the Viewer role is read-only for infrastructure data. OIDC settings are configured by admins under Settings, including a connection check and an optional provider name on the login page.
+- Admin-only read-only Users page showing username, display name, role and whether the account is local or OIDC.
+- Port speed `40G` (QSFP) with NetBox `40gbase-x-qsfpp` mapping; new defaults include 40G.
+
+### Changed
+- Settings: Basic and optional-feature settings (Patch Panels, Switch Groups) are saved with a single Save action. The Account page shows an OIDC-managed notice for SSO users. The login page shows the local form first with SSO below. Consistent UI polish and sidebar logo spacing.
+- Backups: the full JSON backup now round-trips Patch Panel data (panels, sockets, public tokens) and stores an OIDC client secret only in encrypted form and does not include the OIDC encryption key. Backups still contain password hashes and public access tokens, so treat them as secret.
+- New optional environment variables `PUBLIC_BASE_URL` (callback origin) and `OIDC_ENCRYPTION_KEY` (needed only to store a confidential client secret; public clients work without it).
+
+---
+
+## [0.39.0] — 2026-09-30
+
+### Added
+- Switch Groups: switches can be organized into site-scoped groups with a grouped view on the switches page, an assignment menu, and a group manager. The feature is enabled by default and can be turned off in Settings; stored groups and assignments are kept and restored when it is re-enabled. The API reference documents the new group endpoints.
+
+---
+
+## [0.38.0] — 2026-09-23
+
+### Added
+- Networks can be excluded from the dashboard and subnet utilization figures with a new per-network option (default: included). Adds a database migration.
+
+---
+
+## [0.37.2] — 2026-09-13
+
+### Fixed
+- Switch detail: after renaming a switch, the page URL now follows the new slug so follow-up edits no longer target the old address and fail.
+
+---
+
+## [0.37.1] — 2026-09-08
+
+### Changed
+- Documentation: refreshed the API reference.
+
+---
+
+## [0.37.0] — 2026-09-08
+
+### Added
+- Patch Panels: each panel can have one revocable, read-only public link that authenticated users can generate, copy and revoke, plus a public panel page and a print view.
+
+---
+
+## [0.36.0] — 2026-09-05
+
+### Added
+- Optional standalone Patch Panels (disabled by default, enabled in Settings): 12/24/48-port panels with optional left/right remote-side information, outlet number, location and tested status. Panels are listed per site or across all sites and appear in search; data is retained when the feature is turned off. Adds a database migration.
+
+---
+
+## [0.35.4] — 2026-09-04
+
+### Fixed
+- Switch print layout: denser port grid so more ports fit on a printed page.
+
+---
+
+## [0.35.3] — 2026-09-03
+
+### Fixed
+- Switch print layout: more compact printed layout.
+
+---
+
+## [0.35.2] — 2026-09-03
+
+### Fixed
+- QR sticker print layout standardized.
+
+---
+
+## [0.35.1] — 2026-09-02
+
+### Fixed
+- Bulk port editor: the status control now uses the same Up/Down/Disabled button style as single-port editing, with a separate "No change" state that leaves status untouched.
+- Documentation: added RTK command guidance for contributors.
+
+---
+
+## [0.35.0] — 2026-09-02
+
+### Added
+- Port editing: the status selector is now an exclusive Up/Down/Disabled button group instead of a dropdown.
+
+---
+
+## [0.34.3] — 2026-09-01
+
+### Fixed
+- Switch edit: clearing optional text fields (model, manufacturer, serial, location, rack position, management IP, firmware, notes) now persists the cleared value instead of keeping the old one.
+
+---
+
+## [0.34.2] — 2026-08-31
+
+### Fixed
+- Switch edit: changing the layout template or stack size now shows a confirmation dialog listing the ports that would be removed, so ports are no longer deleted unexpectedly.
+
+---
+
+## [0.34.0] — 2026-08-31
+
+### Added
+- Docker startup now creates a pre-upgrade SQLite backup (database plus WAL/SHM files) under the data directory's `backups/` folder when the app version changes, keeps the newest five, and stops before migrations if the backup fails.
+- Switch, port and LAG updates are now protected against concurrent edits (conflicts return a clear 409), switch deletion and regeneration clean up port connections and remote LAG references consistently, and bulk port updates reject missing or foreign targets atomically.
+
+---
+
 ## [0.33.0] — 2026-08-02
 
 ### Added

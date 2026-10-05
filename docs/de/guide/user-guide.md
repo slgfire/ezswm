@@ -316,6 +316,8 @@ Die öffentliche Seite zeigt nur Patch-Panel-Informationen: Panel-Daten sowie pr
 
 Der Patch-Panel-Druck nutzt ein kompaktes Layout mit genau einem Eintrag pro Portnummer und enthält Status, Outlet-Nummer, Standort sowie optionale L/R-Metadaten. Die visuellen Statusfarben bleiben erhalten.
 
+Beim Bearbeiten einer Buchse wählst du die Seite über die sichtbaren Buttons **L** (grün) und **R** (blau) statt über ein Dropdown. Es kann nur eine Seite gewählt werden. Klicke den gewählten Button erneut, um die Auswahl aufzuheben (weder L noch R gewählt bedeutet keine Seite); dabei wird nur die Seite geändert, die übrigen Buchsenfelder bleiben unverändert. Im Formular steht der Hinweis „Erneut klicken, um die Auswahl aufzuheben.“
+
 V1 ist nur standalone: Patch Panels sind nicht mit Switches oder Topologie verknüpft.
 
 Wenn du die Funktion später wieder deaktivierst, bleiben die Patch-Panel-Daten erhalten, werden aber ausgeblendet, bis die Funktion wieder aktiviert wird. Öffentliche Patch-Panel-Links sind während der Deaktivierung nicht verfügbar.

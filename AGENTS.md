@@ -47,12 +47,21 @@ Codebase rules:
 - Code, comments, UI and documentation must be English
 - Use Nuxt 4.x
 - UI built with Nuxt UI v4
-- No database
-- JSON storage only
+- Primary persistence: SQLite via Prisma (no external database service)
+- The earlier "no database / JSON storage only" rule is historical and
+  superseded by the SQLite/Prisma implementation (`prisma/schema.prisma`,
+  `prisma/migrations/`, `server/db/client.ts`)
+- JSON files remain only as exchange/compatibility formats: backups
+  (`schema: "sqlite-v1"`), CSV/JSON import/export, layout-template
+  export/import, and the one-shot legacy JSON → SQLite migration input.
+  Separately, array/object fields are stored as JSON strings inside SQLite
+  columns (serialised in repositories); that is not JSON file storage
 
 Persistent storage path:
 
-`/app/data`
+`/app/data` (SQLite database `db.sqlite` plus WAL files, pre-upgrade
+backups, and archived legacy JSON files; `DATABASE_URL` points at the
+database file, `DATA_DIR` at the directory)
 
 ---
 
@@ -69,6 +78,8 @@ Use exactly:
 - bcrypt (password hashing)
 - jsonwebtoken (JWT)
 - nanoid (ID generation)
+- Prisma (`prisma`, `@prisma/client`, `@prisma/adapter-better-sqlite3`)
+  with SQLite (`better-sqlite3`)
 - Docker
 - docker-compose
 
@@ -95,6 +106,22 @@ Only edit the version in `package.json`. `nuxt.config.ts` reads it from
 `process.env.npm_package_version` (and the sidebar reads it from there), so
 do not hardcode the version anywhere else.
 
+### Changelog
+
+`CHANGELOG/en.md` and `CHANGELOG/de.md` are the release history (shown in
+the app's changelog modal and on the docs release-notes pages
+`docs/release-notes.md` / `docs/de/release-notes.md`, which include them).
+
+- Before every push to Git, add a meaningful entry for the change under
+  `## [Unreleased]` (Added / Changed / Fixed) in both files, in the same
+  PR. Do not duplicate an entry for the same change; update it instead.
+  Documentation-only and process changes are recorded too.
+- On a version bump, move the applicable `[Unreleased]` entries under a
+  new `## [x.y.z] — YYYY-MM-DD` heading in the same PR. Entries for
+  changes that are not part of the release stay under `[Unreleased]`.
+- The changelog parser ignores non-semver headings, so `[Unreleased]` is
+  not shown in the in-app modal.
+
 ---
 
 ## Git Workflow
@@ -109,10 +136,22 @@ do not hardcode the version anywhere else.
 
 ## Architecture Rules
 
-- Only `server/repositories` may access storage
-- JSON writes must be atomic (write temp file → rename)
+- Only `server/repositories` may access storage (Prisma). Documented
+  exceptions in the current code are the DB client `server/db/client.ts`
+  and a few places that import it directly: backup/restore and data/entity
+  export/import (`server/api/backup`, `server/api/data`, `server/api/export`,
+  `server/utils/dataRestore.ts`, `server/utils/entityImport.ts`), activity
+  undo, admin allocation recovery, `/api/health` and the startup plugin
+  `server/plugins/initData.ts`. New persistence code belongs in repositories
+- Persistent writes go through Prisma; use `prisma.$transaction` where
+  several rows must change atomically. Schema changes require a Prisma
+  migration in `prisma/migrations/` (applied by `prisma migrate deploy` in
+  `docker-entrypoint.sh`)
+- Atomic temp-file → rename writes apply only to the file-based legacy
+  utility `server/storage/jsonStorage.ts`, not to primary persistence
 - Domain types live in `types/`
-- Storage utilities live in `server/storage`
+- Database client lives in `server/db`; the legacy JSON file helper and
+  one-shot migration live in `server/storage` and `server/migrations`
 - Zod validators live in `server/validators`
 - API routes live in `server/api`
 - UI logic stays in `app/`
@@ -205,7 +244,7 @@ A stage is complete only if:
 
 - No client or server console errors exist
 - i18n works correctly
-- JSON persistence works in `/app/data`
+- SQLite persistence works in `/app/data` (migrations applied, `/api/health` reports `database_ok: true`)
 - Docker build succeeds
 - Docker runtime succeeds with healthcheck
 - MIGRATION_STATUS.md updated

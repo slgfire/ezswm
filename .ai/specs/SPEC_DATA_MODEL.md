@@ -1,6 +1,8 @@
 # SPEC: Data Model
 
-This document defines all domain entities, their fields, relationships, validation rules, and JSON storage schemas for ezSWM.
+This document defines all domain entities, their fields, relationships, validation rules, and storage schema for ezSWM.
+
+> **Storage status:** primary persistence is SQLite via Prisma. `prisma/schema.prisma` (and `prisma/migrations/`) is the authoritative table/column definition; the entity tables below describe the logical model and may lag behind newer columns and entities (Site, SwitchGroup, PatchPanel*, PublicToken, OidcConfig, OidcLoginTxn, TopologyLayout, local/OIDC user fields). The earlier one-JSON-file-per-entity design (`users.json`, `switches.json`, …) is historical; those files are only read by the one-shot legacy migration. Array/object fields are stored as JSON strings inside SQLite columns and (de)serialised in repositories; this is column serialisation within the primary database, not JSON file storage.
 
 Related documents:
 - [SPEC_BACKEND.md](SPEC_BACKEND.md)
@@ -11,31 +13,40 @@ Related documents:
 
 ## 1. Entity Overview
 
-| Entity | Description | JSON File |
+| Entity | Description | Prisma model / legacy JSON file |
 |--------|-------------|-----------|
-| User | Application user account | `users.json` |
-| Switch | Physical or logical switch | `switches.json` |
-| Port | Individual port on a switch | Embedded in `switches.json` |
-| VLAN | Virtual LAN definition | `vlans.json` |
-| Network | IP subnet, optionally linked to a VLAN | `networks.json` |
-| IPAllocation | Single IP assignment within a network | `ip-allocations.json` |
-| IPRange | IP address range within a network | `ip-ranges.json` |
-| LayoutTemplate | Reusable switch model definition | `layout-templates.json` |
-| LayoutBlock | Group of ports within a template | Embedded in `layout-templates.json` |
-| LAGGroup | Link aggregation group | `lag-groups.json` |
-| ActivityEntry | Activity feed entry | `activity.json` |
-| AppSettings | Global application settings | `settings.json` |
-| UserPreferences | Per-user preferences | Embedded in `users.json` |
+| User | Application user account | `User` (legacy `users.json`) |
+| Switch | Physical or logical switch | `Switch` (legacy `switches.json`) |
+| Port | Individual port on a switch | `Port` table (legacy: embedded in `switches.json`) |
+| VLAN | Virtual LAN definition | `Vlan` (legacy `vlans.json`) |
+| Network | IP subnet, optionally linked to a VLAN | `Network` (legacy `networks.json`) |
+| IPAllocation | Single IP assignment within a network | `IpAllocation` (legacy `ip-allocations.json`) |
+| IPRange | IP address range within a network | `IpRange` (legacy `ip-ranges.json`) |
+| LayoutTemplate | Reusable switch model definition | `LayoutTemplate`; units/blocks are a JSON string in `units` (legacy `layout-templates.json`) |
+| LayoutBlock | Group of ports within a template | Nested inside the `LayoutTemplate.units` JSON string |
+| LAGGroup | Link aggregation group | `LagGroup` (legacy `lag-groups.json`) |
+| ActivityEntry | Activity feed entry | `ActivityEntry` (legacy `activity.json`) |
+| AppSettings | Global application settings | `AppSettings` singleton row, id `singleton` (legacy `settings.json`) |
+| UserPreferences | Per-user preferences | Fields on `User` (legacy: embedded in `users.json`) |
 
 ---
 
 ## 2. ID Format
 
-All entities use **nanoid** for unique identifiers.
+Entity IDs are **UUIDs** (v4, string) generated server-side with `randomUUID()` from `node:crypto` in the repositories (for example `siteRepository.ts`, `switchRepository.ts`, `userRepository.ts`).
+
+- Exceptions (not UUIDs): the singleton rows `AppSettings` and `OidcConfig` use the fixed id `"singleton"`; `TopologyLayout` is keyed by its `site_id`.
+- Public access token values (`PublicToken.token`, `PatchPanelToken.token`) are separate secrets generated with `nanoid(32)`; they are not entity IDs.
+- Field tables below that say `string (UUID)` refer to these IDs.
+
+### Historical ID format (nanoid)
+
+The original design (and legacy JSON data from before 0.21.0) used **nanoid** IDs:
 
 - Length: 21 characters (nanoid default)
 - Format: URL-safe characters (A-Za-z0-9_-)
-- Generated server-side on creation
+
+The legacy migration remaps nanoid IDs to UUIDs (`server/utils/idMapping.ts`), and full-backup restore rejects nanoid-shaped IDs (`server/api/backup/import.post.ts`).
 
 ---
 
@@ -58,7 +69,7 @@ Represents an application user account.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `id` | string (nanoid) | yes | Unique identifier |
+| `id` | string (UUID) | yes | Unique identifier |
 | `username` | string | yes | Login name, unique |
 | `display_name` | string | yes | Display name in UI |
 | `password_hash` | string | yes | bcrypt hashed password |
@@ -85,7 +96,7 @@ Represents a physical or logical (stacked) network switch.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `id` | string (nanoid) | yes | Unique identifier |
+| `id` | string (UUID) | yes | Unique identifier |
 | `name` | string | yes | Hostname of the switch |
 | `model` | string | no | Model designation |
 | `manufacturer` | string | no | Manufacturer name |
@@ -94,7 +105,7 @@ Represents a physical or logical (stacked) network switch.
 | `rack_position` | string | no | Position in rack |
 | `management_ip` | string | no | Management IPv4 address |
 | `firmware_version` | string | no | Firmware version |
-| `layout_template_id` | string (nanoid) | no | Reference to LayoutTemplate |
+| `layout_template_id` | string (UUID) | no | Reference to LayoutTemplate |
 | `ports` | Port[] | yes | Array of port objects |
 | `is_favorite` | boolean | yes | Pinned to dashboard (default: false) |
 | `notes` | string | no | Freetext notes |
@@ -112,13 +123,13 @@ Represents a physical or logical (stacked) network switch.
 
 ## 6. Entity: Port
 
-Embedded within a Switch. Represents a single port on a switch.
+Stored in the separate `Port` table (legacy JSON: embedded within a Switch). Represents a single port on a switch.
 
 ### Fields
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `id` | string (nanoid) | yes | Unique identifier |
+| `id` | string (UUID) | yes | Unique identifier |
 | `unit` | number | yes | Stack unit number (1-based) |
 | `index` | number | yes | Port index within unit (1-based) |
 | `label` | string | no | Display name (e.g., "Gi0/1") |
@@ -128,12 +139,12 @@ Embedded within a Switch. Represents a single port on a switch.
 | `native_vlan` | number | no | Untagged/native VLAN ID |
 | `tagged_vlans` | number[] | yes | Array of tagged VLAN IDs (default: []) |
 | `connected_device` | string | no | Freetext or reference to another switch name |
-| `connected_device_id` | string (nanoid) | no | Reference to another Switch (for auto-bidirectional links) |
-| `connected_port_id` | string (nanoid) | no | Reference to the port on the connected switch |
+| `connected_device_id` | string (UUID) | no | Reference to another Switch (for auto-bidirectional links) |
+| `connected_port_id` | string (UUID) | no | Reference to the port on the connected switch |
 | `connected_port` | string | no | Port label on the connected device (freetext fallback) |
 | `description` | string | no | Freetext description |
 | `mac_address` | string | no | MAC address of connected device |
-| `lag_group_id` | string (nanoid) | no | Reference to LAGGroup |
+| `lag_group_id` | string (UUID) | no | Reference to LAGGroup |
 
 ### Validation Rules
 
@@ -159,7 +170,7 @@ Represents a Virtual LAN definition. Separate from Network.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `id` | string (nanoid) | yes | Unique identifier |
+| `id` | string (UUID) | yes | Unique identifier |
 | `vlan_id` | number | yes | VLAN number (1-4094) |
 | `name` | string | yes | VLAN name (e.g., "Server", "Voice") |
 | `description` | string | no | Freetext description |
@@ -204,9 +215,9 @@ Represents an IP subnet. Optionally linked to a VLAN. A VLAN can have 0, 1, or m
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `id` | string (nanoid) | yes | Unique identifier |
+| `id` | string (UUID) | yes | Unique identifier |
 | `name` | string | yes | Network name (e.g., "Server-Net Building A") |
-| `vlan_id` | string (nanoid) | no | Reference to VLAN entity (optional) |
+| `vlan_id` | string (UUID) | no | Reference to VLAN entity (optional) |
 | `subnet` | string | yes | CIDR notation (e.g., "10.0.1.0/24") |
 | `gateway` | string | no | Gateway IPv4 address (optional, e.g., /31 has none) |
 | `dns_servers` | string[] | yes | DNS server IPs (default: []) |
@@ -239,8 +250,8 @@ Represents a single IP address assignment within a Network.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `id` | string (nanoid) | yes | Unique identifier |
-| `network_id` | string (nanoid) | yes | Reference to Network |
+| `id` | string (UUID) | yes | Unique identifier |
+| `network_id` | string (UUID) | yes | Reference to Network |
 | `ip_address` | string | yes | IPv4 address |
 | `hostname` | string | no | Hostname of the device |
 | `mac_address` | string | no | MAC address |
@@ -267,8 +278,8 @@ Represents a range of IP addresses within a Network (static pool, DHCP pool, or 
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `id` | string (nanoid) | yes | Unique identifier |
-| `network_id` | string (nanoid) | yes | Reference to Network |
+| `id` | string (UUID) | yes | Unique identifier |
+| `network_id` | string (UUID) | yes | Reference to Network |
 | `start_ip` | string | yes | Start of range (IPv4) |
 | `end_ip` | string | yes | End of range (IPv4) |
 | `type` | enum | yes | `static` \| `dhcp` \| `reserved` |
@@ -293,7 +304,7 @@ Reusable switch model definition. Users create and manage templates via the UI.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `id` | string (nanoid) | yes | Unique identifier |
+| `id` | string (UUID) | yes | Unique identifier |
 | `name` | string | yes | Template name (e.g., "Cisco 2960-24T") |
 | `manufacturer` | string | no | Manufacturer name |
 | `model` | string | no | Model designation |
@@ -336,7 +347,7 @@ Embedded within LayoutUnit. Represents a group of identical ports.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `id` | string (nanoid) | yes | Unique identifier |
+| `id` | string (UUID) | yes | Unique identifier |
 | `type` | enum | yes | `rj45` \| `sfp` \| `sfp+` \| `console` \| `management` |
 | `count` | number | yes | Number of ports in this block |
 | `start_index` | number | yes | Starting port index (1-based) |
@@ -426,12 +437,12 @@ Represents a Link Aggregation Group (Port-Channel / LACP).
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `id` | string (nanoid) | yes | Unique identifier |
-| `switch_id` | string (nanoid) | yes | Reference to the Switch owning this LAG |
+| `id` | string (UUID) | yes | Unique identifier |
+| `switch_id` | string (UUID) | yes | Reference to the Switch owning this LAG |
 | `name` | string | yes | LAG name (e.g., "Po1", "LAG-to-Core") |
 | `port_ids` | string[] | yes | Array of Port IDs that are members |
 | `remote_device` | string | no | Freetext: what is on the other end |
-| `remote_device_id` | string (nanoid) | no | Reference to another Switch (if applicable) |
+| `remote_device_id` | string (UUID) | no | Reference to another Switch (if applicable) |
 | `description` | string | no | Freetext description |
 | `created_at` | string (ISO 8601) | yes | Creation timestamp |
 | `updated_at` | string (ISO 8601) | yes | Last modification timestamp |
@@ -452,11 +463,11 @@ Represents an entry in the global activity feed.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `id` | string (nanoid) | yes | Unique identifier |
-| `user_id` | string (nanoid) | yes | Who performed the action |
+| `id` | string (UUID) | yes | Unique identifier |
+| `user_id` | string (UUID) | yes | Who performed the action |
 | `action` | enum | yes | `create` \| `update` \| `delete` |
 | `entity_type` | string | yes | Entity type (e.g., "switch", "vlan", "network") |
-| `entity_id` | string (nanoid) | yes | ID of the affected entity |
+| `entity_id` | string (UUID) | yes | ID of the affected entity |
 | `entity_name` | string | yes | Name/label of the affected entity (for display after deletion) |
 | `changes` | object | no | Key-value of changed fields (for undo support) |
 | `previous_state` | object | no | Full entity state before change (for undo support) |
@@ -472,7 +483,7 @@ Represents an entry in the global activity feed.
 
 ## 16. Entity: AppSettings
 
-Global application settings, stored as a single JSON object.
+Global application settings, stored as the single `AppSettings` row (id `singleton`; legacy: one `settings.json` object).
 
 ### Fields
 
@@ -494,12 +505,12 @@ Global application settings, stored as a single JSON object.
 User (standalone)
 
 LayoutTemplate
-  └── LayoutUnit[] (embedded)
-       └── LayoutBlock[] (embedded)
+  └── LayoutUnit[] (JSON string in `units`)
+       └── LayoutBlock[] (nested in the JSON)
 
 Switch
   ├── layout_template_id → LayoutTemplate
-  └── Port[] (embedded)
+  └── Port[] (`Port` table; legacy JSON: embedded)
        ├── native_vlan → VLAN.vlan_id
        ├── tagged_vlans[] → VLAN.vlan_id
        ├── connected_device_id → Switch.id (bidirectional)
@@ -537,50 +548,30 @@ ActivityEntry
 
 ---
 
-## 18. JSON File Structure
+## 18. Storage Layout and Legacy JSON Files
 
-All files stored in `/app/data/`:
+### Current storage (SQLite)
 
 ```
 /app/data/
-├── users.json          # User[]
-├── switches.json       # Switch[] (with embedded Port[])
-├── vlans.json          # VLAN[]
-├── networks.json       # Network[]
-├── ip-allocations.json  # IPAllocation[]
-├── ip-ranges.json       # IPRange[]
-├── layout-templates.json # LayoutTemplate[] (with embedded LayoutUnit[]/LayoutBlock[])
-├── lag-groups.json      # LAGGroup[]
-├── activity.json       # ActivityEntry[]
-└── settings.json       # AppSettings (single object)
+├── db.sqlite            # primary persistence (Prisma), plus -wal / -shm files
+├── .version             # last started app version (docker-entrypoint.sh)
+├── backups/             # pre-upgrade database copies (newest 5)
+└── _archive_<ISO>/      # original legacy JSON files after the one-shot migration
 ```
 
-### File Format
+- The database file is created/updated by `prisma migrate deploy` (migrations in `prisma/migrations/`).
+- On startup, `server/plugins/initData.ts` ensures the singleton `AppSettings` row exists with defaults; it never overwrites existing data.
+- Array/object columns are JSON strings (see header comment of `prisma/schema.prisma`).
 
-Each file (except `settings.json`) contains a JSON array:
+### Legacy JSON files (historical, migration input only)
 
-```json
-[
-  { "id": "abc123", ... },
-  { "id": "def456", ... }
-]
-```
+Earlier versions stored one JSON file per entity in `/app/data/` (`users.json`, `switches.json` with embedded ports, `vlans.json`, `networks.json`, `ip-allocations.json`, `ip-ranges.json`, `layout-templates.json`, `lag-groups.json`, `activity.json`, `settings.json`, and later `sites.json`, `public-tokens.json`, `topology-layouts.json`). If the database is empty and any of these exist, `server/migrations/jsonToPrisma.ts` imports them once and moves them to `_archive_<ISO>/`.
 
-`settings.json` contains a single JSON object:
+### JSON as exchange format
 
-```json
-{
-  "app_name": "ezSWM",
-  "pagination_size": 25,
-  ...
-}
-```
-
-### Initialization
-
-- On first startup, if files do not exist, create them with empty arrays / default settings
-- Never overwrite existing files on startup
-- `settings.json` is initialized with defaults from AppSettings entity definition
+- Full backup: `GET /api/backup/export` / `POST /api/backup/import`, a single JSON document with `schema: "sqlite-v1"` whose field shapes match the SQLite columns.
+- Inventory export `GET /api/data/export`, CSV/JSON entity import/export, and layout-template JSON export/import.
 
 ---
 

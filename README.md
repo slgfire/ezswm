@@ -1,7 +1,10 @@
 <div align="center">
 
-  
-  <img src="public/logo.png" alt="ezSWM" width="400"/>
+
+  <p align="center">
+    <br />
+    <img src="public/logo.png" alt="ezSWM" width="400"/>
+  </p>
 
   [![Version](https://img.shields.io/github/v/release/slgfire/ezswm?label=Version&color=22c55e)](https://github.com/slgfire/ezswm/releases)
   [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)

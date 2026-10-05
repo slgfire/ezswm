@@ -733,6 +733,7 @@
     "untested": "Ungeprüft",
     "socketTitle": "Port {port}",
     "sideNone": "Nicht gesetzt",
+    "sideToggleHint": "Erneut klicken, um die Auswahl aufzuheben.",
     "portCountHint": "Die Portanzahl kann nach der Erstellung nicht mehr geändert werden.",
     "kpi": {
       "occupied": "Belegt",

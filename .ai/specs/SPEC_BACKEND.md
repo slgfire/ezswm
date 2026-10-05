@@ -11,70 +11,50 @@ Related documents:
 
 ## 1. Storage Layer
 
-### File Location
+> The original design stored each entity as an atomically written JSON file. That design is historical and superseded: primary persistence is **SQLite accessed through Prisma**. JSON remains only as an exchange/compatibility format (see below).
 
-All JSON data files are stored in the directory specified by the `DATA_DIR` environment variable (default: `/app/data`).
+### Database Location
 
-### Atomic Writes
+- `DATABASE_URL` selects the SQLite file (`.env.example`: `file:./data/db.sqlite`; Docker image: `file:/app/data/db.sqlite`). `nuxt.config.ts` falls back to `file:../data/db.sqlite` (relative to `/prisma`).
+- `DATA_DIR` (default `/app/data`, runtime config `NUXT_DATA_DIR`) is the persistent directory holding `db.sqlite` (plus WAL files), `.version`, `backups/` (pre-upgrade copies) and archived legacy JSON (`_archive_<ISO>/`).
 
-All JSON writes must be atomic to prevent data corruption:
+### Schema and Client
 
-1. Write data to a temporary file (`<filename>.tmp`)
-2. Rename temporary file to target file (`rename()` is atomic on most filesystems)
-3. If rename fails, delete temporary file and throw error
+- `prisma/schema.prisma` (provider `sqlite`) defines the tables; SQL migrations live in `prisma/migrations/` and are applied by `docker-entrypoint.sh` with `prisma migrate deploy`. Before applying migrations to an existing database with a changed version, the entrypoint copies the database (and WAL/SHM files) to `DATA_DIR/backups/` and keeps the 5 newest.
+- `server/db/client.ts` exports a lazily created `PrismaClient` using `@prisma/adapter-better-sqlite3`. Tests may inject their own client.
+- SQLite has no native arrays/JSON columns: array/object fields (for example `tags`, `configured_vlans`, `tagged_vlans`, `dns_servers`, layout `units`, OIDC `scopes`) are stored as JSON strings and (de)serialised in the repository layer.
 
-```
-writeAtomic(filePath, data):
-  tmpPath = filePath + '.tmp'
-  writeFileSync(tmpPath, JSON.stringify(data, null, 2))
-  renameSync(tmpPath, filePath)
-```
+### Initialization
 
-### File Initialization
-
-On application startup:
-
-1. Check if `DATA_DIR` directory exists, create if not
-2. For each expected JSON file:
-   - If file does not exist: create with default content (empty array or default settings)
-   - If file exists: do not overwrite
-3. `settings.json` is initialized with default values from AppSettings entity
+The Nitro plugin `server/plugins/initData.ts` connects to the database on startup, ensures the singleton AppSettings row exists, and runs the legacy JSON migration when applicable (see below). It does not create per-entity JSON files.
 
 ### Concurrency Strategy
 
-- **MVP**: Last-write-wins with atomic writes
-- No file locking mechanism
-- Atomic writes protect against corruption but not against lost updates
-- Designed so that locking can be added later without architectural changes
+- Writes go through Prisma; multi-row changes that must be atomic use `prisma.$transaction` (for example whole-backup restore in `server/utils/dataRestore.ts`).
+- There is no application-level locking beyond what SQLite provides.
 
-### Storage Utility Interface
+### Legacy JSON Storage (compatibility only)
 
-```typescript
-// server/storage/jsonStorage.ts
-
-interface JsonStorage {
-  read<T>(fileName: string): T
-  write<T>(fileName: string, data: T): void
-  exists(fileName: string): boolean
-  initialize(fileName: string, defaultData: unknown): void
-}
-```
+- `server/storage/jsonStorage.ts` still contains the old atomic temp-file → rename helper (`readJson`, `writeJson`, `initializeFile`); it is not used for primary persistence.
+- `server/migrations/jsonToPrisma.ts`: if the database is empty and legacy files (`sites.json`, `switches.json`, `users.json`, `settings.json`, …) exist in `DATA_DIR`, a one-shot migration imports them into SQLite and archives the originals in `_archive_<ISO>/`. `POST /api/admin/recover-allocations` can recover archived IP allocations that were skipped.
 
 ---
 
 ## 2. Repository Layer
 
-Each domain entity has a dedicated repository in `server/repositories/`. Repositories are the **only** code that may access the storage layer.
+Each domain entity has a dedicated repository in `server/repositories/`. Repositories (Prisma) are the **intended** place for database access. Documented exceptions that import `server/db/client.ts` directly: backup/restore and data/entity export/import, activity undo, admin allocation recovery, `/api/health` and the startup plugin.
 
 ### Base Repository Interface
 
 ```typescript
+// Conceptual shape; repositories are asynchronous (Prisma) and not all
+// implement every method.
 interface BaseRepository<T> {
-  list(filters?: Record<string, unknown>): T[]
-  getById(id: string): T | null
-  create(data: Omit<T, 'id' | 'created_at' | 'updated_at'>): T
-  update(id: string, data: Partial<T>): T
-  delete(id: string): boolean
+  list(filters?: Record<string, unknown>): Promise<T[]>
+  getById(id: string): Promise<T | null>
+  create(data: Omit<T, 'id' | 'created_at' | 'updated_at'>): Promise<T>
+  update(id: string, data: Partial<T>): Promise<T>
+  delete(id: string): Promise<boolean>
 }
 ```
 
@@ -83,7 +63,7 @@ interface BaseRepository<T> {
 | File | Entity | Notes |
 |------|--------|-------|
 | `server/repositories/userRepository.ts` | User | Password hashing, username uniqueness |
-| `server/repositories/switchRepository.ts` | Switch + Port | Embedded ports, bidirectional link management |
+| `server/repositories/switchRepository.ts` | Switch + Port | Ports in a separate `Port` table, bidirectional link management |
 | `server/repositories/vlanRepository.ts` | VLAN | Color uniqueness, deletion cascade check |
 | `server/repositories/networkRepository.ts` | Network | VLAN reference validation |
 | `server/repositories/ipAllocationRepository.ts` | IPAllocation | Global IP uniqueness, subnet membership |
@@ -249,8 +229,8 @@ All routes are internal Nuxt server routes under `server/api/`. No public API.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/backup/export` | Download full backup (all JSON files as ZIP) |
-| POST | `/api/backup/import` | Upload and restore backup |
+| GET | `/api/backup/export` | Download full backup (single JSON document, `schema: "sqlite-v1"`; admin) |
+| POST | `/api/backup/import` | Restore a `sqlite-v1` backup (replaces all tables in one transaction; admin) |
 
 ### Import/Export Routes
 
@@ -403,7 +383,7 @@ interface ValidationError {
 
 ### Setup Wizard Flow
 
-1. On first start: `settings.json` has `setup_completed: false`
+1. On first start: the AppSettings row has `setup_completed: false`
 2. User is redirected to setup page
 3. Setup page creates admin user via `POST /api/auth/setup`
 4. `setup_completed` is set to `true`
@@ -447,16 +427,16 @@ Server-side search via `/api/search?q=<query>`.
 
 ### Export
 
-- `GET /api/backup/export` creates a ZIP file containing all JSON data files
-- Filename format: `ezswm-backup-YYYY-MM-DD-HHmmss.zip`
-- Triggered manually via UI button
+- `GET /api/backup/export` (`server/api/backup/export.get.ts`) returns one JSON document: `{ version, created_at, schema: "sqlite-v1", data: { sites, users, switches, switchGroups, ports, vlans, networks, ipAllocations, ipRanges, layoutTemplates, lagGroups, activity, settings, publicTokens, topologyLayouts, oidcConfig, patchPanels, patchPanelSockets, patchPanelTokens } }`; field shapes match the SQLite columns
+- Filename format: `ezswm-backup-YYYY-MM-DD.json`
+- Triggered manually via UI button; the file contains password hashes and the encrypted OIDC secret and must be treated as confidential
+- `GET /api/data/export` is the narrower inventory export (no users/OIDC), not a restorable full backup
 
 ### Import/Restore
 
-- `POST /api/backup/import` accepts a ZIP file
-- Validates that all expected files are present and valid JSON
-- **Overwrites** all current data (with confirmation dialog in UI)
-- Creates an automatic pre-restore backup before overwriting
+- `POST /api/backup/import` accepts the `sqlite-v1` JSON document (`restoreAll` in `server/utils/dataRestore.ts`); unsupported schemas are rejected
+- **Overwrites** all current data: every table is wiped and bulk-inserted in FK-safe order inside a single `prisma.$transaction` (failures roll back); confirmation dialog in the UI
+- No automatic pre-restore copy is created by this endpoint; the container entrypoint only keeps pre-upgrade database copies in `DATA_DIR/backups/` on version changes
 
 ---
 
