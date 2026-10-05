@@ -1,11 +1,15 @@
 ## [Unreleased]
 
+---
+
+## [0.40.1] — 2026-10-05
+
 ### Changed
 - Documentation: project instructions, architecture and specs now describe the current SQLite/Prisma persistence; JSON files remain only exchange/compatibility formats (backups, import/export, legacy migration input); array/object fields are serialized as JSON inside SQLite columns.
 - Documentation: the English and German FAQ now state the real password-recovery limitation and describe a safe backup with the container stopped.
 - Documentation: the README logo is centered horizontally and approximately vertically on GitHub.
+- Documentation: the release history was backfilled for 0.34.0 through 0.40.0 in the English and German changelogs.
 - Project process: every push to Git must add a meaningful entry under `[Unreleased]` in `CHANGELOG/en.md` and `CHANGELOG/de.md`; on a version bump the applicable entries move under the new version heading.
-
 
 ---
 

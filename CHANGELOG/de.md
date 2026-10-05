@@ -1,9 +1,14 @@
 ## [Unreleased]
 
+---
+
+## [0.40.1] — 2026-10-05
+
 ### Geändert
 - Dokumentation: Projektanweisungen, Architektur und Spezifikationen beschreiben jetzt die aktuelle SQLite/Prisma-Persistenz; JSON-Dateien bleiben nur Austausch-/Kompatibilitätsformate (Backups, Import/Export, Legacy-Migration); Array-/Objektfelder werden als JSON in SQLite-Spalten serialisiert.
 - Dokumentation: Die englische und deutsche FAQ nennen jetzt die tatsächliche Einschränkung bei der Passwort-Wiederherstellung und beschreiben eine sichere Sicherung bei gestopptem Container.
 - Dokumentation: Das README-Logo ist auf GitHub horizontal und annähernd vertikal zentriert.
+- Dokumentation: Die Release-Historie für 0.34.0 bis 0.40.0 wurde im englischen und deutschen Changelog nachgetragen.
 - Projektprozess: Bei jedem Push ins Git muss ein aussagekräftiger Eintrag unter `[Unreleased]` in `CHANGELOG/en.md` und `CHANGELOG/de.md` ergänzt werden; bei einem Versionssprung wandern die zutreffenden Einträge unter die neue Versionsüberschrift.
 
 ---
