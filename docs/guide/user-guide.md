@@ -316,6 +316,8 @@ The public page shows only Patch Panel information: panel details plus per-port 
 
 Patch Panel print output uses a compact one-port-per-number layout and includes status, outlet number, location, and optional L/R metadata, while preserving visual state colors.
 
+When you edit a socket, choose its side with the visible **L** (green) and **R** (blue) buttons instead of a dropdown. Only one side can be selected. Click the selected button again to clear the selection (neither L nor R selected means no side); this changes only the side and leaves the other socket fields untouched. A hint in the form reads "Click again to clear the selection."
+
 V1 is standalone only: Patch Panels are not linked to switches or topology.
 
 If the feature is disabled again, Patch Panel data is retained but hidden until re-enabled, and Patch Panel public links are unavailable while disabled.

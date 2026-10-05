@@ -9,6 +9,7 @@
 - Dokumentation: Die englische und deutsche FAQ nennen jetzt die tatsächliche Einschränkung bei der Passwort-Wiederherstellung und beschreiben eine sichere Sicherung bei gestopptem Container.
 - Dokumentation: Das README-Logo ist auf GitHub horizontal und annähernd vertikal zentriert.
 - Dokumentation: Die Release-Historie für 0.34.0 bis 0.40.0 wurde im englischen und deutschen Changelog nachgetragen.
+- Patch Panels: Die Buchsen-Seite (L/R) im Bearbeiten-Formular wird jetzt über sichtbare Buttons L (grün) und R (blau) statt über ein Dropdown gewählt; es kann nur eine Seite gewählt werden, und erneutes Klicken auf den gewählten Button hebt nur die Seite auf (Hinweis: „Erneut klicken, um die Auswahl aufzuheben.“).
 - Projektprozess: Bei jedem Push ins Git muss ein aussagekräftiger Eintrag unter `[Unreleased]` in `CHANGELOG/en.md` und `CHANGELOG/de.md` ergänzt werden; bei einem Versionssprung wandern die zutreffenden Einträge unter die neue Versionsüberschrift.
 
 ---

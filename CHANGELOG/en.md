@@ -9,6 +9,7 @@
 - Documentation: the English and German FAQ now state the real password-recovery limitation and describe a safe backup with the container stopped.
 - Documentation: the README logo is centered horizontally and approximately vertically on GitHub.
 - Documentation: the release history was backfilled for 0.34.0 through 0.40.0 in the English and German changelogs.
+- Patch Panels: the socket side (L/R) in the socket edit form is now chosen with visible L (green) and R (blue) buttons instead of a dropdown; only one side can be selected, and clicking the selected button again clears only the side (hint: "Click again to clear the selection.").
 - Project process: every push to Git must add a meaningful entry under `[Unreleased]` in `CHANGELOG/en.md` and `CHANGELOG/de.md`; on a version bump the applicable entries move under the new version heading.
 
 ---

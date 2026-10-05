@@ -733,6 +733,7 @@
     "untested": "Untested",
     "socketTitle": "Port {port}",
     "sideNone": "Not set",
+    "sideToggleHint": "Click again to clear the selection.",
     "portCountHint": "Port count cannot be changed after creation.",
     "kpi": {
       "occupied": "Occupied",
