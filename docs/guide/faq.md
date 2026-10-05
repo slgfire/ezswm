@@ -7,23 +7,23 @@ title: FAQ & Troubleshooting
 ## General
 
 **Where is the data stored?**
-All data is stored as JSON files in the `data/` directory (configurable via `DATA_DIR`). No database required.
+All data is stored in an embedded SQLite database (`db.sqlite`) in the `data/` directory (`/app/data` in Docker; the directory is configurable via `DATA_DIR`). No separate database server is required. JSON is used only for exports, backups and imports (and for reading legacy pre-0.21 JSON files once during migration).
 
 **Is the data safe?**
-All writes are atomic (write to temp file, then rename). This prevents corruption from crashes or power loss.
+Data is written to SQLite through Prisma; changes that must stay consistent (for example a backup restore) run in a single database transaction and are rolled back on failure. SQLite has no built-in protection against all failures, so use the **Backup & Restore** tab to create regular backups and keep them confidential (they contain password hashes). On a version change, the container also copies the database to `data/backups/` before applying migrations (the newest 5 copies are kept).
 
 **Can multiple users work simultaneously?**
 Yes, but there is no real-time sync between browser sessions. If two users edit the same entity at the same time, the last save wins. For most use cases (LAN party setup, homelab documentation) this is not an issue.
 
 **How do I reset everything?**
-Stop the app, delete the `data/` directory, and restart. The setup wizard will appear again.
+This permanently deletes **all** data (database, pre-upgrade copies and archived files). Download a full backup first if you may need anything. Then stop the app, delete the contents of the `data/` directory, and restart. The setup wizard will appear again.
 
 ---
 
 ## Authentication
 
 **I forgot my password**
-There is no password recovery. Delete `data/users.json` and restart — the setup wizard will create a new admin account. All other data is preserved.
+There is no self-service password recovery, and no administrator can reset another user's password: changing a local password requires the current password (**Account** page). SSO accounts have no ezSWM password; their password is managed by your identity provider. If SSO is configured and you can sign in with an account that is mapped to the admin role, you can use that. Otherwise the supported way back in is a stored password or a login you still have; ezSWM does not offer a documented recovery command. A restored backup brings back the password hashes from that backup, so it only helps if you remember the password that was valid then. Do not delete the database or user data as a shortcut: that would remove your documentation.
 
 **How do I change the JWT secret?**
 For Docker Compose, set `NUXT_JWT_SECRET` in the service `environment:` block. The official compose file also accepts a host-side `JWT_SECRET` shell variable and maps it to `NUXT_JWT_SECRET`. After changing the secret, all existing sessions are invalidated and users must log in again.
@@ -90,8 +90,8 @@ Each port's background is tinted with its native VLAN's color at 20% opacity. Th
 
 **How do I back up my data?**
 Option 1: Use the built-in backup feature in Data Management → Export full backup (JSON).
-Option 2: Copy the entire `data/` directory.
+Option 2: Stop the container, then copy the entire `data/` directory (it contains the SQLite database and its WAL files).
 
 **How do I restore from backup?**
 Option 1: Use Data Management → Import backup.
-Option 2: Replace the `data/` directory with your backup and restart.
+Option 2: Stop the container, replace the `data/` directory with your copy and restart.

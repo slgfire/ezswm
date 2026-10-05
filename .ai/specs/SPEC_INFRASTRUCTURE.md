@@ -14,11 +14,13 @@ Related documents:
 | Technology | Version | Notes |
 |------------|---------|-------|
 | Node.js | 22 LTS | Docker base image: `node:22-alpine` |
-| Nuxt | 3.x (latest 3.x) | With `compatibilityVersion: 4` |
-| Nuxt UI | 2.x (latest 2.x) | Dashboard template compatible |
-| TypeScript | 5.x | Strict mode |
-| Zod | 3.x | Request validation |
-| bcrypt | 5.x (or bcryptjs) | Password hashing |
+| Nuxt | 4.x (see `package.json`) | Originally specified as 3.x with `compatibilityVersion: 4` (historical) |
+| Nuxt UI | 4.x (see `package.json`) | Originally specified as 2.x (historical) |
+| TypeScript | see `package.json` | Strict mode |
+| Zod | see `package.json` | Request validation |
+| Prisma | `prisma`, `@prisma/client`, `@prisma/adapter-better-sqlite3` (exact versions in `package.json`) | ORM/migrations for primary persistence |
+| SQLite (`better-sqlite3`) | exact version in `package.json` | Embedded database file `/app/data/db.sqlite`; no external DB service |
+| bcrypt | `bcryptjs` | Password hashing |
 | jsonwebtoken | 9.x | JWT token handling |
 | nanoid | 5.x | ID generation |
 | Tailwind CSS | via Nuxt UI | No separate install |
@@ -29,7 +31,7 @@ Related documents:
 
 - All versions pinned exactly (e.g., `"nuxt": "3.16.0"`, not `"^3.16.0"`)
 - No `^`, no `~`, no `latest`
-- `package-lock.json` committed to repository
+- `pnpm-lock.yaml` committed to repository (pnpm workspace; the earlier `package-lock.json` plan is historical)
 - Dependencies reviewed before adding
 
 ---
@@ -236,8 +238,12 @@ ezswm/
 │   │   ├── lagGroupRepository.ts
 │   │   ├── activityRepository.ts
 │   │   └── settingsRepository.ts
+│   ├── db/
+│   │   └── client.ts                        # Prisma client (SQLite, better-sqlite3 adapter)
+│   ├── migrations/
+│   │   └── jsonToPrisma.ts                  # One-shot legacy JSON -> SQLite migration
 │   ├── storage/
-│   │   └── jsonStorage.ts                   # Atomic read/write utilities
+│   │   └── jsonStorage.ts                   # Legacy JSON file helper (not primary persistence)
 │   ├── validators/
 │   │   ├── switchSchemas.ts
 │   │   ├── vlanSchemas.ts
@@ -279,10 +285,15 @@ ezswm/
 │       ├── SPEC_BACKEND.md
 │       ├── SPEC_FRONTEND.md
 │       └── SPEC_INFRASTRUCTURE.md
+├── prisma/
+│   ├── schema.prisma                        # SQLite schema
+│   └── migrations/                          # SQL migrations (prisma migrate deploy)
+├── prisma.config.ts
+├── docker-entrypoint.sh                     # pre-upgrade DB copy, prisma migrate deploy, start
 ├── nuxt.config.ts
 ├── app.config.ts
 ├── package.json
-├── package-lock.json
+├── pnpm-lock.yaml
 ├── tsconfig.json
 ├── Dockerfile
 ├── compose.yaml
@@ -348,10 +359,13 @@ NODE_ENV=production
 
 # Data
 DATA_DIR=/app/data
+DATABASE_URL=file:./data/db.sqlite
 
 # Authentication
 JWT_SECRET=change-me-to-a-random-secret-in-production
 ```
+
+(Excerpt; the real `.env.example` also documents optional `OIDC_ENCRYPTION_KEY` and `PUBLIC_BASE_URL`.)
 
 ### Variable Descriptions
 
@@ -360,14 +374,15 @@ JWT_SECRET=change-me-to-a-random-secret-in-production
 | `PORT` | no | `3000` | HTTP port |
 | `HOST` | no | `0.0.0.0` | Bind address |
 | `NODE_ENV` | no | `production` | Environment mode |
-| `DATA_DIR` | no | `/app/data` | JSON data storage path |
+| `DATA_DIR` | no | `/app/data` | Persistent data directory (SQLite file, pre-upgrade backups, archived legacy JSON). Compose sets runtime config via `NUXT_DATA_DIR` |
+| `DATABASE_URL` | yes (image sets it) | `file:/app/data/db.sqlite` in the Docker image | SQLite database URL used by Prisma and `prisma migrate deploy` |
 | `JWT_SECRET` | **yes** | none | Secret for JWT signing (must be changed in production) |
 
 ### Startup Validation
 
 On application start:
 - Warn if `JWT_SECRET` is not set or equals `change-me-to-a-random-secret-in-production`
-- Ensure `DATA_DIR` exists and is writable
+- Connect to the SQLite database (failure is logged; `/api/health` reports `database_ok`)
 - Log configured port and host
 
 ---
@@ -375,6 +390,8 @@ On application start:
 ## 5. Docker Configuration
 
 ### Dockerfile (Multi-Stage)
+
+> Illustrative outline of the original design. The real `Dockerfile` additionally runs `prisma generate`, keeps `prisma`/`@prisma/client` at runtime, copies `prisma/`, `prisma.config.ts` and `docker-entrypoint.sh`, sets `DATABASE_URL=file:/app/data/db.sqlite`, and starts through `ENTRYPOINT ["/app/docker-entrypoint.sh"]`, which copies the database to `DATA_DIR/backups/` on version change (keeps 5), runs `prisma migrate deploy`, then starts `node .output/server/index.mjs`.
 
 ```dockerfile
 # Stage 1: Build
@@ -457,7 +474,7 @@ services:
 
 ### Volume Mount
 
-- `./data:/app/data` — persistent JSON storage
+- `./data:/app/data` — persistent storage (SQLite database `db.sqlite`, WAL files, `backups/`, archived legacy JSON)
 - Only the `data/` directory is mounted
 - Data survives container recreation
 
@@ -568,7 +585,7 @@ curl http://localhost:3000/api/health
 - [ ] No client-side console errors
 - [ ] No server-side console errors
 - [ ] i18n works correctly (switch between EN/DE)
-- [ ] JSON persistence works in `/app/data`
+- [ ] SQLite persistence works in `/app/data` (migrations applied, `/api/health` shows `database_ok: true`)
 - [ ] Docker build succeeds
 - [ ] Docker runtime succeeds with healthcheck
 - [ ] MIGRATION_STATUS.md updated
@@ -577,20 +594,14 @@ curl http://localhost:3000/api/health
 
 ## 10. Data Directory Structure
 
-On first startup, `/app/data/` will be initialized with:
+On first startup, `docker-entrypoint.sh` applies the Prisma migrations, which create `/app/data/db.sqlite`; the startup plugin creates the default singleton settings row. Legacy JSON files from earlier versions (`users.json`, `switches.json`, …) are only read once by the legacy migration and then archived in `_archive_<ISO>/`.
 
 ```
 /app/data/
-├── users.json              # []
-├── switches.json           # []
-├── vlans.json              # []
-├── networks.json           # []
-├── ip-allocations.json     # []
-├── ip-ranges.json          # []
-├── layout-templates.json   # []
-├── lag-groups.json         # []
-├── activity.json           # []
-└── settings.json           # { default AppSettings }
+├── db.sqlite               # primary persistence (+ db.sqlite-wal / -shm)
+├── .version                # last started app version
+├── backups/                # pre-upgrade database copies (newest 5)
+└── _archive_<ISO>/         # archived legacy JSON files (only after migration)
 ```
 
 ### Permissions
@@ -613,8 +624,7 @@ data/
 ## 11. Seed Data
 
 - **No seed data** is shipped by default
-- Empty arrays for all entity files
-- Default settings in `settings.json`
+- An empty database with the default singleton settings row
 - Layout templates can be imported via the UI (sharing feature)
 - Setup wizard creates the first admin user
 
@@ -635,19 +645,19 @@ data/
 Based on STRATEGY.md, refined with SPEC decisions:
 
 ### Phase 1: Project Bootstrap
-- Initialize Nuxt 3.x project with compatibilityVersion: 4
+- Initialize Nuxt project (originally 3.x with compatibilityVersion: 4; now Nuxt 4.x)
 - Install and configure all dependencies (pinned versions)
-- Configure nuxt.config.ts (Nuxt UI v2, i18n, color mode)
+- Configure nuxt.config.ts (Nuxt UI, i18n, color mode)
 - Set up project structure (directories)
 - Verify: pnpm dev, pnpm build, Docker build + run
 
 ### Phase 2: Storage & Data Foundation
 - Define all TypeScript interfaces in types/
-- Implement jsonStorage.ts (atomic read/write)
+- Originally: jsonStorage.ts (atomic read/write); now: Prisma schema, migrations and `server/db/client.ts`
 - Implement all repositories
 - Implement Zod validation schemas
-- Initialize data directory on startup
-- Verify: JSON persistence works
+- Initialize database/settings on startup
+- Verify: SQLite persistence works
 
 ### Phase 3: Authentication
 - Implement User entity and repository

@@ -18,15 +18,18 @@ Related documents:
 
 ezSWM is a lightweight infrastructure documentation tool built with:
 
-- Nuxt 3.x (with `compatibilityVersion: 4`)
+- Nuxt 4.x
 - TypeScript (strict mode)
-- Nuxt UI v2
+- Nuxt UI v4
 - Nuxt i18n
 - Zod (validation)
-- JSON file storage
+- SQLite via Prisma (`prisma/schema.prisma`, `better-sqlite3` driver adapter)
 - Docker
 
-Persistent data is stored in: `/app/data`
+Persistent data is stored in `/app/data` (SQLite file `db.sqlite`, selected via
+`DATABASE_URL`; `DATA_DIR` is the directory). The earlier JSON-file storage
+design is historical: JSON files are now only read by the one-shot legacy
+migration and are used as exchange formats (backups, import/export).
 
 Architecture layers:
 
@@ -35,7 +38,8 @@ Architecture layers:
 3. API Layer (`server/api`)
 4. Validation Layer (`server/validators` — Zod schemas)
 5. Repository Layer (`server/repositories`)
-6. Storage Layer (`server/storage`)
+6. Persistence Layer (Prisma client in `server/db/client.ts`; schema in
+   `prisma/schema.prisma`; migrations in `prisma/migrations/`)
 
 ---
 
@@ -61,21 +65,29 @@ Repositories:
 - Persistence logic
 - Cross-entity validation
 
-Storage:
-- JSON file access (atomic read/write)
+Persistence (Prisma/SQLite):
+- Prisma client access to the SQLite database
+- Array/object fields that SQLite cannot store natively are JSON strings,
+  (de)serialised in the repository layer (see header of `prisma/schema.prisma`)
 
-## Repository-only file access
+## Repository-only storage access
 
-Only `server/repositories` may read/write JSON files.
+`server/repositories` owns database access through Prisma. Current direct
+users of `server/db/client.ts` outside repositories are limited to
+backup/restore and data/entity export/import, activity undo, admin
+allocation recovery, `/api/health` and the startup plugin; new persistence
+code belongs in repositories.
 
 ## Atomic writes
 
-All JSON writes must be atomic.
+Primary persistence writes go through Prisma; multi-row changes that must be
+atomic use `prisma.$transaction` (e.g. whole-backup restore in
+`server/utils/dataRestore.ts`). Schema changes ship as Prisma migrations,
+applied with `prisma migrate deploy` by `docker-entrypoint.sh` at container
+start (a pre-upgrade copy of the database is kept in `/app/data/backups`).
 
-Write pattern:
-
-1. Write to temporary file (`<file>.tmp`)
-2. Rename temporary file to target (atomic operation)
+The temp-file → rename pattern remains only in the legacy file helper
+`server/storage/jsonStorage.ts`; it is not the primary persistence path.
 
 ## Strict typing
 
@@ -100,8 +112,10 @@ app/
 server/
   api/                # API route handlers
   middleware/          # Server-side auth middleware
-  repositories/       # Data persistence
-  storage/            # JSON file utilities
+  repositories/       # Data persistence (Prisma)
+  db/                 # Prisma client (SQLite via better-sqlite3 adapter)
+  migrations/         # One-shot legacy JSON -> SQLite migration code
+  storage/            # Legacy JSON file helper (not primary persistence)
   validators/         # Zod schemas
   utils/              # IPv4, auth utilities
 
@@ -120,7 +134,7 @@ data/                 # Local development data (gitignored)
 
 # 4. UI Layer Architecture
 
-The UI must follow the Nuxt UI v2 dashboard template architecture.
+The UI must follow the Nuxt UI v4 dashboard template architecture.
 
 Reference:
 https://github.com/nuxt-ui-templates/dashboard
@@ -150,8 +164,8 @@ User
 → API route
 → Zod validation
 → repository
-→ storage
-→ JSON file
+→ Prisma client
+→ SQLite database (`/app/data/db.sqlite`)
 ```
 
 Response flows back the same way.
@@ -169,7 +183,7 @@ Responsibilities:
 
 API must NOT:
 
-- Access JSON files directly
+- Access the database directly (use repositories; see the documented exceptions above)
 - Contain UI logic
 
 Routes are organized by domain:
@@ -211,7 +225,7 @@ Typical functions:
 
 Repositories may:
 
-- Call storage utilities
+- Use the Prisma client
 - Enforce persistence rules
 - Perform cross-entity validation
 
@@ -222,30 +236,37 @@ Repositories must NOT:
 
 ---
 
-# 8. Storage Layer
+# 8. Persistence Layer (SQLite via Prisma)
 
-Handles JSON files in `/app/data`.
+The database is the SQLite file `/app/data/db.sqlite` (`DATABASE_URL`,
+default in Docker `file:/app/data/db.sqlite`).
 
 Responsibilities:
 
-- Ensure files exist on startup
-- Read JSON
-- Write JSON atomically
+- `server/db/client.ts`: lazily constructed `PrismaClient` with the
+  `@prisma/adapter-better-sqlite3` adapter
+- `prisma/schema.prisma` is the source of truth for tables; incremental SQL
+  migrations live in `prisma/migrations/` and are applied by
+  `docker-entrypoint.sh` (`prisma migrate deploy`)
+- `server/plugins/initData.ts` (Nitro startup plugin) connects to the
+  database, ensures the singleton settings row and runs the legacy migration
+  when needed
 
-JSON files:
+Tables/models (see `prisma/schema.prisma`): Site, PatchPanel, PatchPanelToken,
+PatchPanelSocket, Switch, SwitchGroup, Port (separate table, no longer
+embedded in Switch), Vlan, Network, IpAllocation, IpRange, LagGroup,
+LayoutTemplate, PublicToken, User, OidcConfig, OidcLoginTxn, ActivityEntry,
+TopologyLayout, AppSettings.
 
-```
-users.json
-switches.json          (with embedded Port[])
-vlans.json
-networks.json
-ip-allocations.json
-ip-ranges.json
-layout-templates.json   (with embedded LayoutUnit[]/LayoutBlock[])
-lag-groups.json
-activity.json
-settings.json          (single object, not array)
-```
+Legacy JSON compatibility (not primary storage):
+
+- If the database is empty and legacy files such as `switches.json`,
+  `users.json` or `settings.json` exist in `DATA_DIR`, the startup plugin runs
+  the one-shot `server/migrations/jsonToPrisma.ts` migration and archives the
+  originals in an `_archive_<ISO>/` directory
+- Backups (`GET /api/backup/export`) are a single JSON document with
+  `schema: "sqlite-v1"`, restored by `POST /api/backup/import`
+- CSV/JSON entity import/export and layout-template JSON export/import
 
 ---
 
@@ -255,13 +276,13 @@ Core entities:
 
 - User
 - Switch
-- Port (embedded in Switch)
+- Port (separate `Port` table linked to Switch; legacy JSON embedded it)
 - VLAN (separate entity)
 - Network
 - IPAllocation
 - IPRange
 - LayoutTemplate
-- LayoutUnit (embedded in LayoutTemplate)
+- LayoutUnit (nested in the LayoutTemplate `units` JSON string)
 - LayoutBlock (embedded in LayoutUnit)
 - LAGGroup
 - ActivityEntry
@@ -362,7 +383,7 @@ Runtime:
 node .output/server/index.mjs
 ```
 
-compose.yaml mounts only: `./data:/app/data`
+compose.yaml mounts only: `./data:/app/data` (holds the SQLite database)
 
 Health check: `GET /api/health`
 
@@ -391,7 +412,7 @@ After each stage:
 # 16. Implementation Priorities
 
 1. Project bootstrap
-2. Storage & data foundation
+2. Storage & data foundation (originally JSON files; now SQLite via Prisma)
 3. Authentication
 4. Dashboard shell
 5. Core CRUD pages
@@ -409,9 +430,9 @@ Full phase details: .ai/STRATEGY.md and .ai/specs/SPEC_INFRASTRUCTURE.md §13
 
 Avoid early complexity:
 
-- Role/permission systems (Admin/Viewer comes post-MVP)
+- Role/permission systems (historical early-stage note; Admin/Viewer roles now exist, see `.ai/MIGRATION_STATUS.md`)
 - Advanced multi-user workflows
-- Database support
+- External database services (embedded SQLite via Prisma is the current storage)
 - Drag-and-drop editors (except topology)
 - IPv6 (post-MVP)
 - SNMP/API integration (post-MVP)

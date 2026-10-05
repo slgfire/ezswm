@@ -7,23 +7,23 @@ title: FAQ & Problemlösung
 ## Allgemein
 
 **Wo werden die Daten gespeichert?**
-Alle Daten werden als JSON-Dateien im Verzeichnis `data/` gespeichert (konfigurierbar über `DATA_DIR`). Keine Datenbank erforderlich.
+Alle Daten werden in einer eingebetteten SQLite-Datenbank (`db.sqlite`) im Verzeichnis `data/` gespeichert (`/app/data` in Docker; das Verzeichnis ist über `DATA_DIR` konfigurierbar). Ein separater Datenbankserver ist nicht erforderlich. JSON wird nur für Exporte, Backups und Importe verwendet (sowie zum einmaligen Einlesen alter JSON-Dateien vor 0.21 bei der Migration).
 
 **Sind die Daten sicher?**
-Alle Schreibvorgänge sind atomar (Schreiben in temporäre Datei, dann Umbenennen). Dies verhindert Beschädigungen durch Abstürze oder Stromausfälle.
+Daten werden über Prisma in SQLite geschrieben; Änderungen, die konsistent bleiben müssen (z. B. eine Backup-Wiederherstellung), laufen in einer einzigen Datenbank-Transaktion und werden bei Fehlern zurückgerollt. SQLite schützt nicht vor allen Ausfällen – erstelle daher regelmäßig Backups im Tab **Backup & Restore** und bewahre sie vertraulich auf (sie enthalten Passwort-Hashes). Bei einem Versionswechsel kopiert der Container die Datenbank außerdem vor den Migrationen nach `data/backups/` (die neuesten 5 Kopien bleiben erhalten).
 
 **Können mehrere Benutzer gleichzeitig arbeiten?**
 Ja, aber es gibt keine Echtzeit-Synchronisierung zwischen Browser-Sitzungen. Wenn zwei Benutzer dieselbe Entität gleichzeitig bearbeiten, gewinnt die letzte Speicherung. Für die meisten Anwendungsfälle (LAN-Party-Aufbau, Homelab-Dokumentation) ist das kein Problem.
 
 **Wie setze ich alles zurück?**
-Stoppe die App, lösche das Verzeichnis `data/` und starte neu. Der Einrichtungsassistent erscheint erneut.
+Dadurch werden **alle** Daten dauerhaft gelöscht (Datenbank, Kopien vor Upgrades und archivierte Dateien). Lade zuvor ein vollständiges Backup herunter, falls du etwas behalten möchtest. Stoppe dann die App, lösche den Inhalt des Verzeichnisses `data/` und starte neu. Der Einrichtungsassistent erscheint erneut.
 
 ---
 
 ## Authentifizierung
 
 **Ich habe mein Passwort vergessen**
-Es gibt keine Passwortwiederherstellung. Lösche `data/users.json` und starte neu — der Einrichtungsassistent erstellt ein neues Admin-Konto. Alle anderen Daten bleiben erhalten.
+Es gibt keine Selbstbedienungs-Passwortwiederherstellung, und kein Administrator kann das Passwort eines anderen Benutzers zurücksetzen: Das Ändern eines lokalen Passworts erfordert das aktuelle Passwort (Seite **Konto**). SSO-Konten haben kein ezSWM-Passwort; ihr Passwort wird von deinem Identity Provider verwaltet. Wenn SSO eingerichtet ist und du dich mit einem Konto anmelden kannst, das der Admin-Rolle zugeordnet ist, kannst du dieses verwenden. Andernfalls hilft nur ein bekanntes Passwort oder ein noch vorhandener Zugang; ezSWM bietet keinen dokumentierten Wiederherstellungsbefehl. Ein wiederhergestelltes Backup bringt die Passwort-Hashes aus diesem Backup zurück und hilft daher nur, wenn du das damals gültige Passwort kennst. Lösche nicht die Datenbank oder Benutzerdaten als Abkürzung: Damit würdest du deine Dokumentation entfernen.
 
 **Wie ändere ich das JWT-Secret?**
 Setze bei Docker Compose `NUXT_JWT_SECRET` im `environment:`-Block des Services. Die offizielle Compose-Datei akzeptiert auch eine host-seitige Shell-Variable `JWT_SECRET` und mapped sie auf `NUXT_JWT_SECRET`. Nach der Änderung werden alle bestehenden Sitzungen ungültig und Benutzer müssen sich erneut anmelden.
@@ -90,8 +90,8 @@ Der Hintergrund jedes Ports ist mit der Farbe seines Native-VLANs bei 20% Deckkr
 
 **Wie sichere ich meine Daten?**
 Option 1: Verwende die integrierte Backup-Funktion unter Datenverwaltung → Vollständiges Backup exportieren (JSON).
-Option 2: Kopiere das gesamte Verzeichnis `data/`.
+Option 2: Stoppe den Container und kopiere dann das gesamte Verzeichnis `data/` (es enthält die SQLite-Datenbank und deren WAL-Dateien).
 
 **Wie stelle ich aus einem Backup wieder her?**
 Option 1: Verwende Datenverwaltung → Backup importieren.
-Option 2: Ersetze das Verzeichnis `data/` durch dein Backup und starte neu.
+Option 2: Stoppe den Container, ersetze das Verzeichnis `data/` durch deine Kopie und starte neu.
