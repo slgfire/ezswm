@@ -1,6 +1,5 @@
 <div align="center">
 
-  
   <img src="public/logo.png" alt="ezSWM" width="400"/>
 
   [![Version](https://img.shields.io/github/v/release/slgfire/ezswm?label=Version&color=22c55e)](https://github.com/slgfire/ezswm/releases)
