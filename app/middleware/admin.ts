@@ -1,7 +1,10 @@
-export default defineNuxtRouteMiddleware(() => {
-  const { user } = useAuth()
+export default defineNuxtRouteMiddleware(async () => {
+  const { isAdmin, authResolved, fetchUser } = useAuth()
 
-  if (user.value?.role !== 'admin') {
+  // Wait for initial resolution; never treat "still loading" as non-admin.
+  if (!authResolved.value) await fetchUser()
+
+  if (!isAdmin.value) {
     return navigateTo('/')
   }
 })

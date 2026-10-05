@@ -1,8 +1,11 @@
+import { isPublicAuthPath } from '../utils/permissions'
+
 export default defineNuxtRouteMiddleware(async (to) => {
   // Public routes — no auth required
   if (to.path.startsWith('/p/')) return
 
-  const { user, fetchUser, checkSetup, setupCompleted, sitesInitialized } = useAuth()
+  const nuxtApp = useNuxtApp()
+  const { user, authResolved, fetchUser, checkSetup, setupCompleted, sitesInitialized } = useAuth()
 
   // Fetch setup status on first load
   if (setupCompleted.value === null || sitesInitialized.value === null) {
@@ -21,9 +24,16 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return
   }
 
-  // Try to fetch the current user if not loaded
-  if (!user.value) {
+  // Resolve the current user. First resolution waits; afterwards at most one
+  // single-flight background refresh per protected client navigation keeps
+  // the role fresh without blocking and without clearing the last user on
+  // transient errors.
+  if (!user.value || !authResolved.value) {
     await fetchUser()
+  } else if (import.meta.client && !nuxtApp.isHydrating && !isPublicAuthPath(to.path)) {
+    void fetchUser().then((u) => {
+      if (!u) void navigateTo('/login')
+    })
   }
 
   // Apply user's language preference

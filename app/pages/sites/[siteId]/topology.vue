@@ -23,19 +23,23 @@
     </div>
 
     <!-- Graph (full width, panel overlays via USlideover) -->
-    <div v-else class="flex-1">
-      <TopologyGraph
-        ref="graphRef"
-        :nodes="data!.nodes"
-        :links="data!.links"
-        :ghost-nodes="data!.ghost_nodes"
-        :saved-positions="layout?.node_positions ?? null"
-        :selected-node-id="selectedNodeId"
-        @select-node="onSelectNode"
-        @select-edge="onSelectEdge"
-        @positions-changed="onPositionsChanged"
-        @reset="onReset"
-      />
+    <div v-else class="flex min-h-0 flex-1 flex-col">
+      <SharedViewOnlyNotice v-if="isViewer" class="mb-2 shrink-0" />
+      <div class="min-h-0 flex-1">
+        <TopologyGraph
+          ref="graphRef"
+          :nodes="data!.nodes"
+          :links="data!.links"
+          :ghost-nodes="data!.ghost_nodes"
+          :saved-positions="layout?.node_positions ?? null"
+          :selected-node-id="selectedNodeId"
+          :can-edit-infrastructure="canEditInfrastructure"
+          @select-node="onSelectNode"
+          @select-edge="onSelectEdge"
+          @positions-changed="onPositionsChanged"
+          @reset="onReset"
+        />
+      </div>
     </div>
 
     <!-- Detail panel (USlideover overlay) -->
@@ -59,6 +63,7 @@ const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 const isAllContext = computed(() => siteId.value === 'all')
 
+const { canEditInfrastructure, isViewer } = useAuth()
 const { data, layout, loading, fetchTopology, saveLayout, resetLayout } = useTopology(siteId)
 
 const graphRef = ref<{ fitToContents: () => void } | null>(null)
@@ -82,11 +87,14 @@ function onClosePanel() {
 }
 
 function onPositionsChanged(positions: Record<string, { x: number; y: number }>) {
+  if (!canEditInfrastructure.value) return
   saveLayout(positions)
 }
 
 async function onReset() {
-  await resetLayout()
+  if (!canEditInfrastructure.value) return
+  const reset = await resetLayout()
+  if (!reset) return
   await fetchTopology()
   selectedNodeId.value = null
   nextTick(() => graphRef.value?.fitToContents())

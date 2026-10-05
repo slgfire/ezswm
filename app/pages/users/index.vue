@@ -1,5 +1,9 @@
 <template>
-  <div v-if="isAdmin" class="p-6">
+  <div v-if="isAuthLoading" class="flex min-h-48 items-center justify-center p-6" role="status" aria-live="polite">
+    <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-muted" aria-hidden="true" />
+    <span class="sr-only">{{ $t('common.loading') }}</span>
+  </div>
+  <div v-else-if="canEditInfrastructure" class="p-6">
     <div class="mb-4">
       <h1 class="text-xl font-bold">{{ $t('users.title') }}</h1>
       <p class="mt-1 text-sm text-muted">{{ $t('users.description') }}</p>
@@ -82,8 +86,7 @@ import type { User } from '~~/types/user'
 definePageMeta({ middleware: 'admin' })
 
 const { t } = useI18n()
-const { user } = useAuth()
-const isAdmin = computed(() => user.value?.role === 'admin')
+const { canEditInfrastructure, isAuthLoading, authResolved, fetchUser } = useAuth()
 const { items, loading, fetch: fetchUsers } = useUsers()
 const hasLoaded = ref(false)
 const loadError = ref(false)
@@ -110,7 +113,8 @@ async function loadUsers() {
   }
 }
 
-onMounted(() => {
-  if (isAdmin.value) void loadUsers()
+onMounted(async () => {
+  if (!authResolved.value) await fetchUser()
+  if (canEditInfrastructure.value) void loadUsers()
 })
 </script>

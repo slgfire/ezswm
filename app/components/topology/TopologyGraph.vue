@@ -6,7 +6,7 @@
       <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-minus" :title="$t('topology.zoomOut')" @click="zoomOut" />
       <div class="mx-0.5 h-4 w-px bg-default" />
       <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-arrows-pointing-out" :title="$t('topology.fit')" @click="fitToContents" />
-      <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-arrow-path" :title="$t('topology.resetLayout')" @click="$emit('reset')" />
+      <UButton v-if="canEditInfrastructure" size="xs" color="neutral" variant="ghost" icon="i-heroicons-arrow-path" :title="$t('topology.resetLayout')" @click="requestReset" />
       <div class="mx-0.5 h-4 w-px bg-default" />
       <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-arrow-down-tray" :title="$t('topology.exportPng')" @click="exportPng" />
     </div>
@@ -40,14 +40,14 @@
         <template #override-node="{ nodeId, scale }">
           <!-- Interaction layer: drag + click + hover -->
           <rect
-            class="draggable selectable"
+            :class="canEditInfrastructure ? 'draggable selectable' : 'selectable'"
             :x="-getNodeSize(nodeId).w / 2 * scale"
             :y="-getNodeSize(nodeId).h / 2 * scale"
             :width="getNodeSize(nodeId).w * scale"
             :height="getNodeSize(nodeId).h * scale"
             fill="transparent"
             stroke="none"
-            style="pointer-events: all; cursor: grab"
+            :style="{ pointerEvents: 'all', cursor: canEditInfrastructure ? 'grab' : 'pointer' }"
             @click="onNodeClick(nodeId)"
             @pointerenter="hoveredNodeId = nodeId"
             @pointerleave="hoveredNodeId = null"
@@ -258,6 +258,7 @@ const props = defineProps<{
   ghostNodes: TopologyGhostNode[]
   savedPositions: Record<string, { x: number; y: number }> | null
   selectedNodeId: string | null
+  canEditInfrastructure: boolean
   highlightEdgeId?: string | null
 }>()
 
@@ -447,7 +448,7 @@ const graphLayouts = computed(() => {
 
 // --- Configs ---
 
-const { graphConfigs } = useTopologyGraphConfig(isDark)
+const { graphConfigs } = useTopologyGraphConfig(isDark, computed(() => props.canEditInfrastructure))
 
 // --- Event handlers ---
 
@@ -463,6 +464,11 @@ function onNodeClick(nodeId: string) {
   if (!isGhostNode(nodeId)) {
     emit('select-node', nodeId)
   }
+}
+
+function requestReset() {
+  if (!props.canEditInfrastructure) return
+  emit('reset')
 }
 
 // Read node positions from SVG transform attributes
@@ -516,6 +522,7 @@ const eventHandlers = {
     emit('select-node', '')
   },
   'node:dragend': () => {
+    if (!props.canEditInfrastructure) return
     isDragging.value = true
     // Read positions from SVG transforms (graphRef.layouts returns the
     // prop object, not the internal state after drag)

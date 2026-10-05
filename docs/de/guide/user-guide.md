@@ -711,6 +711,15 @@ Alle sicherheitsrelevanten Änderungen (Issuer, Client, Secret, Scopes, Mapping,
 
 **Viewer-Rolle:** Viewer haben nur Lesezugriff auf Infrastrukturdaten und keinen Zugriff auf Admin-Funktionen: Einstellungen ändern, Benutzerverwaltung, Backups und OIDC-Konfiguration. Eigene Ausnahmen: Anzeigename und Sprache ändern, lokales Passwort (nur lokale Konten) ändern und sich abmelden.
 
+**Was ein Viewer sieht (Lesezugriff-Oberfläche):** Die Oberfläche wird so angepasst, dass Viewer keine Bedienelemente mehr sehen, die sie nicht nutzen können. Admins behalten vollen Zugriff und sehen alle Bearbeitungsfunktionen.
+
+- **Für Viewer verfügbar:** Übersichten und Detailseiten zu Standorten, Switches, Ports, LAG-Gruppen, VLANs, Netzwerken, IP-Adressen, Patchpanels, Layout-Vorlagen und Topologie; globale Suche; Filter, Sortierung und lokal im Browser gespeicherte Anzeigeeinstellungen; die normalen Datenexporte, der Import-Vorlagen-Download und Druckseiten; das eigene Profil (Anzeigename, Sprache), das lokale Passwort (aktuelles Passwort erforderlich; über OpenID Connect verwaltete Konten haben kein ezSWM-Passwort) und die Abmeldung. Die Export-Regeln sind unverändert: aktuelle Exporte können öffentliche Zugriffstokens enthalten, daher vertraulich behandeln.
+- **Für Viewer ausgeblendet oder schreibgeschützt:** Anlegen, Bearbeiten, Löschen und Importieren von Infrastrukturdaten, Port- und LAG-Bearbeitung, Mehrfachbearbeitung, Speichern von Layout-Vorlagen, Erstellen oder Widerrufen öffentlicher Zugriffstokens, Backup und Wiederherstellung sowie geheime Einstellungen. Ports, LAG-Gruppen, Netzwerke und Zuweisungen öffnen sich als reine Detailansicht. Direkte Links auf Anlege- oder Bearbeitungsseiten führen mit kurzem Hinweis zur nächstliegenden Liste oder Detailseite. Wo sinnvoll, steht dort: „Sie haben nur Lesezugriff. Änderungen können nur Admins vornehmen."
+- **Topologie:** Viewer können die Ansicht verschieben, zoomen, Knoten auswählen und Details ansehen, aber keine Knoten bewegen und keine Positionen speichern oder zurücksetzen.
+- **QR-Druck (Switches):** Viewer können einen vorhandenen, gültigen QR-Code für den öffentlichen Zugriff drucken. Fehlt ein gültiger Link (nicht vorhanden oder widerrufen), wird der QR-Code mit Hinweis weggelassen; Viewer erstellen oder reaktivieren niemals Links.
+- **Öffentliche Seiten** (geteilte Links) sind nicht betroffen.
+- Berechtigungen werden vom Server durchgesetzt und durch diese Oberflächenarbeit nicht geändert. Nach einer Rollenänderung kann die Oberfläche bis zur nächsten Navigation oder zum Neuladen die alte Rolle anzeigen; der Server wendet die neue Rolle sofort an.
+
 ### Benutzer (Admin, nur lesend)
 
 Admins sehen in der Seitenleiste eine schreibgeschützte Seite **Benutzer** mit vier Feldern pro Konto: Benutzername, Anzeigename, Rolle und Anmeldemethode (lokal oder OpenID Connect). Sie listet nur in ezSWM angelegte Konten auf — kein Verzeichnis Ihres Identity-Providers — und bietet keine Funktionen zum Anlegen, Bearbeiten, Löschen oder Zurücksetzen von Passwörtern. (Die Benutzer-API unterstützt weiterhin Admin-CRUD; die Seite stellt es nicht bereit.)

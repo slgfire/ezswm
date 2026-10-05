@@ -135,6 +135,11 @@
     "migrationBanner": "Wir haben vorhandene Daten ohne Site-Zuordnung gefunden: {switches} Switches, {vlans} VLANs, {networks} Subnetze. Sie werden der hier angelegten Site zugeordnet.",
     "createSiteFailed": "Site konnte nicht angelegt werden"
   },
+  "permissions": {
+    "viewOnly": "Sie haben nur Lesezugriff. Änderungen können nur Admins vornehmen.",
+    "accessChanged": "Ihr Zugriff hat sich geändert. Bearbeiten ist nicht mehr möglich.",
+    "qrUnavailable": "Es ist kein aktiver QR-Link verfügbar. Sie können diese Seite trotzdem drucken."
+  },
   "common": {
     "welcome": "Willkommen bei ezSWM",
     "save": "Speichern",
@@ -982,6 +987,7 @@
   "dataManagement": {
     "title": "Datenverwaltung",
     "description": "Importieren oder exportieren Sie einzelne Datensätze oder erstellen Sie ein vollständiges Backup und stellen Sie es wieder her.",
+    "viewerDescription": "Exportieren Sie Infrastrukturdatensätze oder laden Sie Vorlagen zur Referenz herunter.",
     "backupRestoreTab": "Backup & Restore",
     "exportTab": "Export",
     "importTab": "Import",
@@ -995,6 +1001,8 @@
     },
     "export": {
       "description": "Einzelne Entitätstypen als JSON- oder CSV-Datei exportieren.",
+      "templateTitle": "Importvorlage herunterladen",
+      "templateDescription": "Wählen Sie einen Datentyp und laden Sie eine CSV-Vorlage mit den erwarteten Spalten herunter.",
       "selectType": "Entitätstyp",
       "selectFormat": "Format",
       "download": "Herunterladen",

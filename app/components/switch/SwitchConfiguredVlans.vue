@@ -1,6 +1,9 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-3">
+    <div v-if="readonly" class="mb-3 rounded-xl border border-primary-500/20 bg-primary-500/[0.06] px-4 py-3 text-sm text-toned">
+      {{ $t('permissions.viewOnly') }}
+    </div>
+    <div v-if="!readonly" class="flex items-center justify-between mb-3">
       <span class="text-sm font-medium text-gray-400">{{ configuredVlanDetails.length }} VLANs</span>
       <UButton
         size="xs"
@@ -19,11 +22,15 @@
       <div
         v-for="vlan in configuredVlanDetails"
         :key="vlan.vlan_id"
-        class="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-elevated"
+        class="flex items-center gap-3 rounded-lg border border-default bg-elevated/20 px-3 py-2.5"
       >
         <span class="size-3 shrink-0 rounded-full" :style="{ backgroundColor: vlan.color || '#888' }" />
-        <span class="flex-1 text-sm">{{ vlan.vlan_id }} · {{ vlan.name || 'Unknown VLAN' }}</span>
+        <div class="min-w-0 flex-1">
+          <div class="text-sm font-medium">{{ vlan.name || 'Unknown VLAN' }}</div>
+          <div class="mt-0.5 font-mono text-xs text-muted">VLAN {{ vlan.vlan_id }}</div>
+        </div>
         <UButton
+          v-if="!readonly"
           size="xs"
           variant="ghost"
           color="error"
@@ -34,7 +41,7 @@
     </div>
 
     <!-- Add VLANs inline (shown when + button clicked) -->
-    <div v-if="showAddDialog" class="mt-3 rounded-md border border-default p-3">
+    <div v-if="!readonly && showAddDialog" class="mt-3 rounded-md border border-default p-3">
       <p class="text-xs font-medium text-dimmed mb-2">{{ $t('vlans.group.otherSite') }}</p>
       <div v-if="availableToAdd.length === 0" class="text-xs text-dimmed">
         {{ $t('common.noResults') }}
@@ -54,7 +61,7 @@
     </div>
 
     <SwitchVlanRemoveConfirmDialog
-      v-if="removeDialog.open"
+      v-if="!readonly && removeDialog.open"
       v-model:open="removeDialog.open"
       :vlan-id="removeDialog.vlanId"
       :affected-ports="removeDialog.affectedPorts"
@@ -71,6 +78,7 @@
 <script setup lang="ts">
 const { t } = useI18n()
 const toast = useToast()
+const { canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 
 const props = defineProps<{
   switchId: string
@@ -78,6 +86,7 @@ const props = defineProps<{
   configuredVlans: number[]
   allVlans: Array<{ vlan_id: number; name: string; color: string }>
   updatedAt: string
+  readonly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -112,6 +121,7 @@ const removeDialog = reactive({
 })
 
 async function addVlan(vlanId: number) {
+  if (props.readonly || !canEditInfrastructure.value) return
   try {
     await $fetch(`/api/switches/${props.switchId}/configured-vlans`, {
       method: 'PUT',
@@ -125,12 +135,16 @@ async function addVlan(vlanId: number) {
     showAddDialog.value = false
     emit('updated')
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+    if (access === 'demoted' || access === 'already-handled') return
     const e = err as { statusMessage?: string }
     toast.add({ title: e.statusMessage || 'Error', color: 'error' })
   }
 }
 
 async function removeVlan(vlanId: number) {
+  if (props.readonly || !canEditInfrastructure.value) return
   try {
     await $fetch(`/api/switches/${props.switchId}/configured-vlans`, {
       method: 'PUT',
@@ -143,6 +157,9 @@ async function removeVlan(vlanId: number) {
     toast.add({ title: t('vlans.remove.success', { id: vlanId, count: 0 }) })
     emit('updated')
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+    if (access === 'demoted' || access === 'already-handled') return
     const e = err as { statusCode?: number; statusMessage?: string; data?: Record<string, unknown> }
     if (e.statusCode === 409 && e.data?.affected_ports) {
       removeDialog.vlanId = vlanId
@@ -159,6 +176,7 @@ async function removeVlan(vlanId: number) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function confirmRemove(cleanup: any[], expectedUpdatedAt: string) {
+  if (props.readonly || !canEditInfrastructure.value) return
   try {
     const result = await $fetch<Record<string, unknown>>(`/api/switches/${props.switchId}/configured-vlans`, {
       method: 'PUT',
@@ -172,6 +190,9 @@ async function confirmRemove(cleanup: any[], expectedUpdatedAt: string) {
     toast.add({ title: t('vlans.remove.success', { id: removeDialog.vlanId, count: (result as Record<string, unknown>)?.ports_updated || 0 }) })
     emit('updated')
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+    if (access === 'demoted' || access === 'already-handled') return
     const e = err as { statusCode?: number; statusMessage?: string }
     if (e.statusCode === 409) {
       toast.add({ title: 'Switch was modified. Please try again.', color: 'warning' })

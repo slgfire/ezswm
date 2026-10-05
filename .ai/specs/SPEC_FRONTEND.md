@@ -67,7 +67,7 @@ Import/Export
 Backup
 ─────────────────
 Settings
-Users (admin only, later)
+Users (admin only)
 ```
 
 ### Behavior
@@ -273,7 +273,7 @@ Three sections:
 
 ### 3.17 Settings (`/settings`)
 
-Tabs: General | Account | Users (admin, later)
+Tabs: General | Account (admin settings and Users are admin only; viewers get Account only)
 
 #### General Tab
 - App name
@@ -289,10 +289,8 @@ Tabs: General | Account | Users (admin, later)
 - Change password
 - Language selection (EN/DE)
 
-#### Users Tab (future, admin only)
-- List users
-- Create/edit/delete users
-- Assign roles
+#### Users (admin only)
+- Read-only list of provisioned users (username, display name, role, sign-in method); no create/edit/delete controls in the UI
 
 ### 3.18 Layout Templates (`/layout-templates`)
 

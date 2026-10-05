@@ -1,13 +1,17 @@
 <template>
-  <div class="p-6">
+  <div v-if="isAuthLoading || !user" class="flex min-h-48 items-center justify-center p-6" role="status" aria-live="polite">
+    <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-muted" aria-hidden="true" />
+    <span class="sr-only">{{ $t('common.loading') }}</span>
+  </div>
+  <div v-else class="p-6">
     <div class="mb-6">
       <h1 class="text-xl font-bold">{{ $t('dataManagement.title') }}</h1>
-      <p class="mt-1 text-sm text-muted">{{ $t('dataManagement.description') }}</p>
+      <p class="mt-1 text-sm text-muted">{{ $t(isViewer ? 'dataManagement.viewerDescription' : 'dataManagement.description') }}</p>
     </div>
 
-    <UTabs :items="tabs" variant="link" color="neutral">
+    <UTabs v-model="activeTab" :items="tabs" variant="link" color="neutral">
       <template #backup>
-        <div class="mt-4 grid gap-6 md:grid-cols-2">
+        <div v-if="canEditInfrastructure" class="mt-4 grid gap-6 md:grid-cols-2">
           <!-- Create Backup -->
           <div class="list-container rounded-lg bg-default p-5">
             <h2 class="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">{{ $t('backup.createTitle') }}</h2>
@@ -58,6 +62,7 @@
 
       <template #export>
         <div class="mt-4 max-w-lg">
+          <SharedViewOnlyNotice v-if="isViewer" class="mb-5" />
           <p class="mb-4 text-sm text-muted">{{ $t('dataManagement.export.description') }}</p>
           <div class="space-y-4">
             <UFormField :label="$t('dataManagement.export.selectType')">
@@ -92,11 +97,37 @@
               {{ $t('dataManagement.export.download') }}
             </UButton>
           </div>
+
+          <section v-if="isViewer" class="mt-6 space-y-4 rounded-xl border border-default bg-default p-4 sm:p-5">
+            <div>
+              <h2 class="text-sm font-semibold">{{ $t('dataManagement.export.templateTitle') }}</h2>
+              <p class="mt-1 text-sm text-muted">{{ $t('dataManagement.export.templateDescription') }}</p>
+            </div>
+            <UFormField :label="$t('dataManagement.import.selectType')">
+              <USelectMenu
+                v-model="templateType"
+                :search-input="false"
+                :items="entityTypeOptions"
+                value-key="value"
+                size="sm"
+                class="w-full"
+              />
+            </UFormField>
+            <UButton
+              size="sm"
+              variant="outline"
+              icon="i-heroicons-document-arrow-down"
+              :disabled="!templateType"
+              @click="downloadTemplate(templateType)"
+            >
+              {{ $t('dataManagement.import.downloadTemplate') }}
+            </UButton>
+          </section>
         </div>
       </template>
 
       <template #import>
-        <div class="mt-4 max-w-lg">
+        <div v-if="canEditInfrastructure" class="mt-4 max-w-lg">
           <p class="mb-4 text-sm text-muted">{{ $t('dataManagement.import.description') }}</p>
           <div class="space-y-4">
             <!-- Step 1: Entity Type -->
@@ -119,7 +150,7 @@
                 variant="outline"
                 icon="i-heroicons-document-arrow-down"
                 :disabled="!importType"
-                @click="downloadTemplate"
+                @click="downloadTemplate(importType)"
               >
                 {{ $t('dataManagement.import.downloadTemplate') }}
               </UButton>
@@ -200,6 +231,7 @@
 
     <!-- Restore Backup Confirm Dialog -->
     <SharedConfirmDialog
+      v-if="canEditInfrastructure"
       v-model="showRestoreDialog"
       :title="$t('backup.import')"
       :message="$t('backup.confirmRestore')"
@@ -208,6 +240,7 @@
 
     <!-- Import Confirm Dialog -->
     <SharedConfirmDialog
+      v-if="canEditInfrastructure"
       v-model="showImportDialog"
       :title="$t('dataManagement.import.confirmTitle')"
       :message="$t('dataManagement.import.confirmMessage', { count: importPreview ?? 0, type: importType })"
@@ -219,15 +252,20 @@
 <script setup lang="ts">
 const toast = useToast()
 const { t } = useI18n()
+const { user, authResolved, isAuthLoading, isViewer, canEditInfrastructure, fetchUser } = useAuth()
 useHead({ title: t('dataManagement.title') })
 
 const MAX_IMPORT_SIZE = 5 * 1024 * 1024 // 5MB
 
-const tabs = computed(() => [
-  { label: t('dataManagement.backupRestoreTab'), slot: 'backup' as const },
-  { label: t('dataManagement.exportTab'), slot: 'export' as const },
-  { label: t('dataManagement.importTab'), slot: 'import' as const }
-])
+const activeTab = ref<'backup' | 'export' | 'import'>(canEditInfrastructure.value ? 'backup' : 'export')
+const tabs = computed(() => {
+  const items = [
+    { label: t('dataManagement.backupRestoreTab'), value: 'backup', slot: 'backup' as const },
+    { label: t('dataManagement.exportTab'), value: 'export', slot: 'export' as const },
+    { label: t('dataManagement.importTab'), value: 'import', slot: 'import' as const }
+  ]
+  return canEditInfrastructure.value ? items : [items[1]!]
+})
 
 const entityTypeOptions = computed(() => [
   { value: 'switches', label: t('dataManagement.entities.switches') },
@@ -259,6 +297,7 @@ function onBackupFileDrop(event: DragEvent) {
 }
 
 async function downloadBackup() {
+  if (!canEditInfrastructure.value) return
   try {
     const response = await $fetch('/api/backup/export', { responseType: 'blob' })
     downloadBlob(response as unknown as Blob, `ezswm-backup-${new Date().toISOString().slice(0, 10)}.json`)
@@ -269,6 +308,10 @@ async function downloadBackup() {
 }
 
 async function restoreBackup() {
+  if (!canEditInfrastructure.value) {
+    showRestoreDialog.value = false
+    return
+  }
   if (!backupFile.value) return
   try {
     const text = await backupFile.value.text()
@@ -405,20 +448,24 @@ function onImportFileDrop(event: DragEvent) {
   onImportFileSelect(fakeEvent)
 }
 
-async function downloadTemplate() {
-  if (!importType.value) return
+async function downloadTemplate(type: string) {
+  if (!type) return
   try {
     const response = await $fetch(`/api/data/template`, {
-      params: { type: importType.value },
+      params: { type },
       responseType: 'blob'
     })
-    downloadBlob(response as unknown as Blob, `ezswm-${importType.value}-template.csv`)
+    downloadBlob(response as unknown as Blob, `ezswm-${type}-template.csv`)
   } catch {
     toast.add({ title: t('errors.serverError'), color: 'error' })
   }
 }
 
 async function executeImport() {
+  if (!canEditInfrastructure.value) {
+    showImportDialog.value = false
+    return
+  }
   showImportDialog.value = false
   if (!importType.value || !importParsedData.value) return
 
@@ -443,4 +490,16 @@ async function executeImport() {
     toast.add({ title: message || t('errors.serverError'), color: 'error' })
   }
 }
+
+const templateType = ref('switches')
+
+watch(canEditInfrastructure, (canEdit) => {
+  if (!canEdit && activeTab.value !== 'export') activeTab.value = 'export'
+})
+
+onMounted(async () => {
+  if (!authResolved.value) await fetchUser()
+  if (!user.value) return
+  activeTab.value = canEditInfrastructure.value ? 'backup' : 'export'
+})
 </script>

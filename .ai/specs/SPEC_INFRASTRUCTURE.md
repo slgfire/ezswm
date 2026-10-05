@@ -750,7 +750,7 @@ Based on STRATEGY.md, refined with SPEC decisions:
 - Integration tests for API routes
 - Future: IPv6 support
 - Future: SNMP/API port status
-- Future: Admin/Viewer roles
+- Admin/Viewer roles: implemented (server-enforced; the UI hides write controls for viewers)
 - Future: Structured logging (pino)
 
 ---

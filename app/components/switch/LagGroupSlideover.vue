@@ -1,12 +1,45 @@
 <template>
   <USlideover
     :open="isOpen"
-    :title="isEdit ? $t('lag.edit') : $t('lag.create')"
-    :description="isEdit ? $t('lag.editDescription') : $t('lag.createDescription')"
+    :title="readonly && editingLag ? editingLag.name : isEdit ? $t('lag.edit') : $t('lag.create')"
+    :description="readonly ? $t('permissions.viewOnly') : isEdit ? $t('lag.editDescription') : $t('lag.createDescription')"
     @update:open="onOpenChange"
   >
     <template #body>
-      <UForm ref="lagFormRef" :state="form" :validate="validate" :validate-on="['blur', 'change']" class="space-y-4" @submit="onSubmit">
+      <div v-if="readonly && editingLag" class="space-y-5">
+        <div class="rounded-xl border border-primary-500/20 bg-primary-500/[0.06] p-4">
+          <div class="flex flex-wrap items-center gap-2">
+            <UBadge color="info" variant="soft">{{ editingLag.name }}</UBadge>
+            <UBadge color="neutral" variant="subtle">{{ editingLag.port_ids.length }} {{ $t('lag.ports') }}</UBadge>
+          </div>
+          <p v-if="editingLag.description" class="mt-2 text-sm text-toned">{{ editingLag.description }}</p>
+          <p v-else class="mt-2 text-xs text-muted">{{ $t('permissions.viewOnly') }}</p>
+        </div>
+
+        <section class="rounded-xl border border-default bg-elevated/20 p-4">
+          <h3 class="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted">{{ $t('lag.ports') }}</h3>
+          <div class="flex flex-wrap gap-1.5">
+            <UBadge v-for="portId in editingLag.port_ids" :key="portId" color="neutral" variant="soft">{{ getPortLabel(portId) }}</UBadge>
+          </div>
+          <div v-if="inspectedPorts.length" class="mt-3 space-y-2 border-t border-default pt-3">
+            <div v-for="port in inspectedPorts" :key="port.id" class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+              <span class="font-mono font-medium text-toned">{{ port.label || `${port.unit}/${port.index}` }}</span>
+              <UBadge :color="port.status === 'up' ? 'success' : port.status === 'disabled' ? 'error' : 'neutral'" variant="subtle" size="xs">{{ port.status }}</UBadge>
+              <span class="text-muted">{{ port.port_mode || 'access' }}</span>
+              <span v-if="port.connected_port" class="text-muted">→ {{ port.connected_device || editingLag.remote_device || $t('lag.remoteDevice') }} / {{ port.connected_port }}</span>
+            </div>
+          </div>
+        </section>
+
+        <dl class="grid grid-cols-2 gap-3 rounded-xl border border-default bg-elevated/20 p-4 text-sm">
+          <div><dt class="text-[10px] font-semibold uppercase tracking-wider text-muted">{{ $t('lag.remoteDevice') }}</dt><dd class="mt-1">{{ editingLag.remote_device || remoteDisplay || '—' }}</dd></div>
+          <div><dt class="text-[10px] font-semibold uppercase tracking-wider text-muted">{{ $t('switches.ports.portMode') }}</dt><dd class="mt-1">{{ firstLagPort?.port_mode || 'access' }}</dd></div>
+          <div v-if="firstLagPort?.port_mode === 'trunk'" class="col-span-2"><dt class="text-[10px] font-semibold uppercase tracking-wider text-muted">{{ $t('switches.ports.nativeVlan') }} / {{ $t('switches.ports.taggedVlans') }}</dt><dd class="mt-1 flex flex-wrap gap-1.5"><UBadge v-if="firstLagPort.native_vlan" color="primary" variant="soft">{{ firstLagPort.native_vlan }} · native</UBadge><UBadge v-for="vid in firstLagPort.tagged_vlans || []" :key="vid" color="neutral" variant="subtle">{{ vid }}</UBadge><span v-if="!firstLagPort.native_vlan && !firstLagPort.tagged_vlans?.length" class="text-muted">—</span></dd></div>
+          <div v-else class="col-span-2"><dt class="text-[10px] font-semibold uppercase tracking-wider text-muted">{{ $t('switches.ports.accessVlan') }}</dt><dd class="mt-1">{{ firstLagPort?.access_vlan ?? '—' }}</dd></div>
+        </dl>
+      </div>
+
+      <UForm v-else-if="!readonly" ref="lagFormRef" :state="form" :validate="validate" :validate-on="['blur', 'change']" class="space-y-4" @submit="onSubmit">
         <UFormField :label="$t('lag.name')" name="name" required>
           <UInput v-model="form.name" maxlength="100" class="w-full" />
         </UFormField>
@@ -209,7 +242,10 @@
     </template>
 
     <template #footer>
-      <div class="flex justify-end gap-2">
+      <div v-if="readonly" class="flex justify-end">
+        <UButton color="neutral" variant="subtle" @click="isOpen = false">{{ $t('common.close') }}</UButton>
+      </div>
+      <div v-else class="flex justify-end gap-2">
         <UButton color="neutral" variant="subtle" @click="requestClose">
           {{ $t('common.cancel') }}
         </UButton>
@@ -242,6 +278,7 @@ const props = defineProps<{
   existingLags: LAGGroup[]
   configuredVlans?: number[]
   switchUpdatedAt?: string
+  readonly?: boolean
 }>()
 
 // Site context disambiguates per-site-unique switch slugs on local-switch calls.
@@ -249,11 +286,13 @@ const localQuery = computed(() => (props.siteId ? { siteId: props.siteId } : und
 
 const emit = defineEmits<{
   saved: []
+  'access-changed': []
 }>()
 
 const { t } = useI18n()
 const toast = useToast()
 const { confirm } = useConfirm()
+const { canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 
 const isOpen = ref(false)
 const saving = ref(false)
@@ -261,6 +300,10 @@ const lagFormRef = ref<{ submit: () => void } | null>(null)
 const editingLag = ref<LAGGroup | null>(null)
 const isDuplicate = ref(false)
 const isEdit = computed(() => !!editingLag.value)
+const writable = computed(() => canEditInfrastructure.value && props.readonly !== true)
+const readonly = computed(() => !writable.value)
+const inspectedPorts = computed(() => props.ports.filter(port => editingLag.value?.port_ids.includes(port.id)))
+const firstLagPort = computed(() => inspectedPorts.value[0])
 const localPortMenuOpen = ref(false)
 
 const form = reactive({
@@ -317,8 +360,13 @@ const {
   vlanForm
 )
 
+const remoteDisplay = computed(() => {
+  const remoteId = editingLag.value?.remote_device_id
+  return inspectedPorts.value.find(port => port.connected_device_id === remoteId)?.connected_device || undefined
+})
+
 // Unsaved-changes guard. Editable state spans form + VLAN + remote-connection refs.
-const { takeSnapshot, requestClose, onOpenChange } = useSlideoverGuard(
+const { takeSnapshot, requestClose, onOpenChange: onEditableOpenChange } = useSlideoverGuard(
   () => ({
     ...form,
     vlanForm: { ...vlanForm },
@@ -329,6 +377,24 @@ const { takeSnapshot, requestClose, onOpenChange } = useSlideoverGuard(
   }),
   () => { isOpen.value = false }
 )
+
+function onOpenChange(open: boolean) {
+  if (readonly.value) {
+    isOpen.value = open
+    return
+  }
+  onEditableOpenChange(open)
+}
+
+watch(writable, (allowed, wasAllowed) => {
+  if (wasAllowed && !allowed) {
+    // Drop the editor without entering its unsaved-changes flow.
+    isOpen.value = false
+    saving.value = false
+    localPortMenuOpen.value = false
+    duplicateSourceLag.value = null
+  }
+})
 
 const remoteConnectionModes = computed(() => [
   { label: t('common.none'), value: 'none' as const },
@@ -409,6 +475,7 @@ const duplicateSourceLag = ref<LAGGroup | null>(null)
 // --- onSubmit stage functions ---
 
 async function createOrUpdateLocalLag(): Promise<void> {
+  if (!writable.value) throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
   const body = {
     name: form.name.trim(),
     port_ids: [...form.port_ids],
@@ -436,9 +503,11 @@ async function createOrUpdateLocalLag(): Promise<void> {
 }
 
 async function updateLocalPortConnections(): Promise<void> {
+  if (!writable.value) throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
   if (remoteMode.value === 'switch') return
   if (remoteMode.value !== 'none' && form.remote_device.trim()) {
     for (const portId of form.port_ids) {
+      if (!writable.value) throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
       const portBody = buildLocalPortConnectionUpdateBody({
         isDuplicate: isDuplicate.value,
         remoteMode: remoteMode.value,
@@ -451,10 +520,14 @@ async function updateLocalPortConnections(): Promise<void> {
       })
       try {
         await $fetch(`/api/switches/${props.switchId}/ports/${portId}`, { method: 'PUT', body: portBody, query: localQuery.value })
-      } catch { /* best-effort */ }
+      } catch (error: unknown) {
+        if ((error as { statusCode?: number }).statusCode === 403) throw error
+        // Connection metadata remains best-effort for ordinary failures.
+      }
     }
   } else if (remoteMode.value === 'none') {
     for (const portId of form.port_ids) {
+      if (!writable.value) throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
       try {
         const portBody = buildLocalPortConnectionUpdateBody({
           isDuplicate: isDuplicate.value,
@@ -471,12 +544,16 @@ async function updateLocalPortConnections(): Promise<void> {
           body: portBody,
           query: localQuery.value
         })
-      } catch { /* best-effort */ }
+      } catch (error: unknown) {
+        if ((error as { statusCode?: number }).statusCode === 403) throw error
+        // Connection metadata remains best-effort for ordinary failures.
+      }
     }
   }
 }
 
 async function applyVlanConfig(): Promise<void> {
+  if (!writable.value) throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
   if (remoteMode.value === 'switch') return
   const vlanUpdates: Record<string, unknown> = {
     port_mode: vlanForm.port_mode,
@@ -500,6 +577,11 @@ async function applyVlanConfig(): Promise<void> {
     })
     toast.add({ title: t('lag.vlanApplied', { count: form.port_ids.length }), color: 'success' })
    } catch (e: unknown) {
+     const access = await handleInfrastructureForbidden(e)
+     if (access === 'demoted') emit('access-changed')
+     if (access === 'demoted' || access === 'already-handled') {
+       throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
+     }
      const err = e as { data?: { message?: string } }
      toast.add({ title: err?.data?.message || t('lag.vlanApplyFailed'), color: 'error' })
      throw e
@@ -507,16 +589,21 @@ async function applyVlanConfig(): Promise<void> {
 }
 
 async function onSubmit() {
+  if (!writable.value) return
   const errors = validate(form)
   if (errors.length > 0) return
 
   if (hasConnectionConflicts.value) {
     if (!(await confirm({ title: t('lag.conflictConfirmTitle'), message: t('lag.conflictConfirm') }))) return
+    if (!writable.value) return
   }
 
   if (existingRemoteLag.value && !isEdit.value) {
     if (!(await confirm({ title: t('lag.replaceRemoteLagTitle'), message: t('lag.replaceRemoteLag', { name: existingRemoteLag.value.name, switch: form.remote_device }) }))) return
+    if (!writable.value) return
   }
+
+  if (!writable.value) return
 
   saving.value = true
   try {
@@ -537,6 +624,14 @@ async function onSubmit() {
       }
     })
   } catch (e: unknown) {
+    const access = await handleInfrastructureForbidden(e)
+    if (access === 'demoted') emit('access-changed')
+    if (access === 'demoted' || access === 'already-handled') {
+      // A 403 after demotion cancels the remaining LAG sequence; do not save or
+      // invoke the dirty-close guard on this editor.
+      isOpen.value = false
+      return
+    }
     const err = e as { statusCode?: number; data?: { message?: string } }
     if (err.statusCode === 409) {
       toast.add({ title: 'Switch was modified. Please try again.', color: 'warning' })
@@ -550,6 +645,7 @@ async function onSubmit() {
 }
 
 function openCreate(portIds: string[]) {
+  if (!writable.value) return
   isDuplicate.value = false
   duplicateSourceLag.value = null
   editingLag.value = null
@@ -574,7 +670,7 @@ function openCreate(portIds: string[]) {
 }
 
 function duplicateLag() {
-  if (!editingLag.value) return
+  if (!writable.value || !editingLag.value) return
   const source = editingLag.value
   const name = suggestLagCopyName(source.name, props.existingLags.map(lag => lag.name))
   const prefill = getLagDuplicatePrefill(source)
@@ -604,6 +700,12 @@ function duplicateLag() {
 }
 
 async function openEdit(lag: LAGGroup, removePortId?: string) {
+  if (!writable.value) {
+    editingLag.value = lag
+    isDuplicate.value = false
+    isOpen.value = true
+    return
+  }
   isDuplicate.value = false
   duplicateSourceLag.value = null
   editingLag.value = lag
@@ -642,19 +744,28 @@ async function openEdit(lag: LAGGroup, removePortId?: string) {
 
   isOpen.value = true
   await fetchSwitches()
+  if (!writable.value) return
   fetchVlans()
   if (lag.remote_device_id) {
     // Normalize to UUID now that the switch list is loaded — stored data may be a
     // slug (older mirror LAGs) which wouldn't match the UUID-keyed options.
     selectedRemoteSwitchId.value = resolveSwitchUuid(lag.remote_device_id)
     await fetchRemoteLags(selectedRemoteSwitchId.value)
+    if (!writable.value) return
   }
+  if (!writable.value) return
   if (removePortId) removePort(removePortId)
   // Snapshot after async UUID normalization has settled.
   takeSnapshot()
 }
 
-defineExpose({ openCreate, openEdit, duplicateLag })
+function closeEditor() {
+  isOpen.value = false
+  saving.value = false
+  duplicateSourceLag.value = null
+}
+
+defineExpose({ openCreate, openEdit, duplicateLag, closeEditor })
 
 watch(isOpen, (open) => {
   if (!open) duplicateSourceLag.value = null

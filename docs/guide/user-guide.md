@@ -709,6 +709,15 @@ All meaningful security changes (issuer, client, secret, scopes, mapping, enabli
 
 **Viewer role:** viewers are read-only for infrastructure data and cannot access admin functions: settings changes, user administration, backups and the OIDC configuration. Their own exceptions are changing their own display name and language, their local password (local accounts only) and logging out.
 
+**What a Viewer sees (view-only interface):** the interface is being adapted so that viewers no longer see controls they cannot use. Admins keep full access and see all editing controls.
+
+- **Available to viewers:** browsing and detail pages for sites, switches, ports, LAG groups, VLANs, networks, IP addresses, patch panels, layout templates and the topology; global search; filters, sorting and display preferences stored locally in the browser; the ordinary data exports, import-template download and print pages; your own profile (display name, language), your local password (you must enter the current password; accounts managed by OpenID Connect have no ezSWM password) and logout. The export policy is unchanged: current exports can contain public access tokens, so treat them as secret.
+- **Hidden or read-only for viewers:** creating, editing, deleting and importing infrastructure data, port and LAG editing, bulk edits, saving layout templates, creating or revoking public access tokens, backup and restore, and secret settings. Ports, LAG groups, networks and allocations open as read-only details. Direct links to create or edit pages lead back to the nearest list or detail page with a short note. Where it helps, the interface says: "You have view-only access. Only admins can make changes."
+- **Topology:** viewers can pan, zoom, select nodes and view details, but cannot move nodes or save/reset positions.
+- **QR print (switches):** a viewer can print an existing, valid public-access QR code. If a switch has no valid link (missing or revoked), the QR code is left out with a notice; viewers never create or reactivate links.
+- **Public pages** (shared links) are unaffected.
+- Permissions are enforced by the server and are unchanged by this interface work. After a role change, the interface may show the old role until the next navigation or reload; the server applies the new role immediately.
+
 ### Users (admin, read-only)
 
 Admins see a read-only **Users** page in the sidebar with four fields per account: username, display name, role, and sign-in method (local or OpenID Connect). It lists provisioned ezSWM accounts only — it is not a directory of your identity provider — and has no create, edit, delete or password-reset controls. (The underlying user API still supports admin CRUD; the page does not expose it.)

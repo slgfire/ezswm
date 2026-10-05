@@ -1,8 +1,39 @@
 <template>
-  <USlideover :open="isOpen" :title="port?.label || `Port ${port?.unit}/${port?.index}`" description="Edit port configuration" @update:open="onOpenChange">
+  <USlideover :open="isOpen" :title="port?.label || `Port ${port?.unit}/${port?.index}`" :description="readonly ? $t('permissions.viewOnly') : 'Edit port configuration'" @update:open="onOpenChange">
 
     <template #body>
-      <div v-if="port" class="space-y-4">
+      <div v-if="port && readonly" class="space-y-5">
+        <div class="rounded-xl border border-primary-500/20 bg-primary-500/[0.06] p-4">
+          <div class="flex flex-wrap items-center gap-2">
+            <UBadge color="neutral" variant="soft">{{ port.type }}</UBadge>
+            <UBadge :color="port.status === 'up' ? 'success' : port.status === 'disabled' ? 'error' : 'neutral'" variant="subtle">{{ port.status }}</UBadge>
+            <UBadge v-if="port.poe?.type && port.poe.type !== 'disabled'" color="warning" variant="subtle">PoE · {{ port.poe.type }}</UBadge>
+          </div>
+          <p class="mt-2 text-xs text-muted">{{ $t('permissions.viewOnly') }}</p>
+        </div>
+
+        <dl class="grid grid-cols-2 gap-x-4 gap-y-4 rounded-xl border border-default bg-elevated/30 p-4 text-sm">
+          <div><dt class="text-[10px] font-semibold uppercase tracking-wider text-muted">{{ $t('switches.ports.speed') }}</dt><dd class="mt-1 font-medium">{{ port.speed || '—' }}</dd></div>
+          <div><dt class="text-[10px] font-semibold uppercase tracking-wider text-muted">{{ $t('switches.ports.portMode') }}</dt><dd class="mt-1 font-medium">{{ port.port_mode || (port.tagged_vlans?.length ? 'trunk' : 'access') }}</dd></div>
+          <div v-if="port.port_mode === 'trunk' || port.tagged_vlans?.length" class="col-span-2">
+            <dt class="text-[10px] font-semibold uppercase tracking-wider text-muted">{{ $t('switches.ports.nativeVlan') }} / {{ $t('switches.ports.taggedVlans') }}</dt>
+            <dd class="mt-1 flex flex-wrap gap-1.5">
+              <UBadge v-if="port.native_vlan" color="primary" variant="soft">{{ vlanLabel(port.native_vlan) }} · native</UBadge>
+              <UBadge v-for="vid in port.tagged_vlans || []" :key="vid" color="neutral" variant="subtle">{{ vlanLabel(vid) }}</UBadge>
+              <span v-if="!port.native_vlan && !port.tagged_vlans?.length" class="text-muted">—</span>
+            </dd>
+          </div>
+          <div v-else class="col-span-2"><dt class="text-[10px] font-semibold uppercase tracking-wider text-muted">{{ $t('switches.ports.accessVlan') }}</dt><dd class="mt-1"><UBadge v-if="port.access_vlan" color="primary" variant="soft">{{ vlanLabel(port.access_vlan) }}</UBadge><span v-else class="text-muted">—</span></dd></div>
+          <div class="col-span-2"><dt class="text-[10px] font-semibold uppercase tracking-wider text-muted">{{ $t('switches.ports.connectedDevice') }}</dt><dd class="mt-1 font-medium">{{ port.connected_device || lagGroup?.remote_device || '—' }}</dd></div>
+          <div><dt class="text-[10px] font-semibold uppercase tracking-wider text-muted">{{ $t('switches.ports.connectedPort') }}</dt><dd class="mt-1 font-mono">{{ port.connected_port || '—' }}</dd></div>
+          <div><dt class="text-[10px] font-semibold uppercase tracking-wider text-muted">{{ $t('switches.ports.macAddress') }}</dt><dd class="mt-1 font-mono">{{ port.mac_address || '—' }}</dd></div>
+          <div v-if="port.description" class="col-span-2"><dt class="text-[10px] font-semibold uppercase tracking-wider text-muted">{{ $t('common.description') }}</dt><dd class="mt-1 whitespace-pre-wrap">{{ port.description }}</dd></div>
+          <div v-if="port.helper_usage || port.helper_label" class="col-span-2"><dt class="text-[10px] font-semibold uppercase tracking-wider text-muted">{{ $t('helperUsage.helperSection') }}</dt><dd class="mt-1">{{ [port.helper_usage, port.helper_label].filter(Boolean).join(' · ') }}</dd></div>
+          <div v-if="lagGroup" class="col-span-2 border-t border-default pt-3"><dt class="text-[10px] font-semibold uppercase tracking-wider text-muted">{{ $t('lag.group') }}</dt><dd class="mt-1 flex flex-wrap items-center gap-2"><UBadge color="info" variant="soft">{{ lagGroup.name }}</UBadge><span class="text-xs text-muted">{{ lagGroup.port_ids.length }} {{ $t('lag.ports') }}</span><span v-if="lagGroup.remote_device" class="text-xs text-muted">→ {{ lagGroup.remote_device }}</span></dd></div>
+        </dl>
+      </div>
+
+      <div v-else-if="port" class="space-y-4">
         <div class="flex gap-2">
           <UBadge>{{ port.type }}</UBadge>
           <UBadge :color="port.status === 'up' ? 'success' : port.status === 'disabled' ? 'error' : 'neutral'">{{ port.status }}</UBadge>
@@ -198,7 +229,10 @@
     </template>
 
     <template #footer>
-      <div class="flex w-full items-center justify-between">
+      <div v-if="readonly" class="flex w-full justify-end">
+        <UButton variant="subtle" color="neutral" @click="isOpen = false">{{ $t('common.close') }}</UButton>
+      </div>
+      <div v-else class="flex w-full items-center justify-between">
         <div class="flex items-center gap-2">
           <UButton variant="subtle" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
           <UDropdownMenu
@@ -245,12 +279,16 @@ const props = withDefaults(defineProps<{
   templateUnits?: LayoutUnit[]
   /** All ports on the current switch, used to offer a same-switch source port for the copy-config picker. */
   ports?: Port[]
+  vlans?: VLAN[]
+  readonly?: boolean
 }>(), {
   lagGroup: undefined,
   configuredVlans: () => [],
   switchUpdatedAt: undefined,
   templateUnits: () => [],
-  ports: () => []
+  ports: () => [],
+  vlans: () => [],
+  readonly: false
 })
 
 const emit = defineEmits<{
@@ -381,7 +419,7 @@ const taggedVlansStr = ref('')
 
 // Unsaved-changes guard. The editable surface spans more than `form` (VLAN and
 // connection state live in separate refs), so snapshot a composite of all of it.
-const { takeSnapshot, requestClose, onOpenChange } = useSlideoverGuard(
+const { takeSnapshot, requestClose, onOpenChange: onEditableOpenChange } = useSlideoverGuard(
   () => ({
     ...form,
     selectedTaggedVlans: selectedTaggedVlans.value,
@@ -394,6 +432,19 @@ const { takeSnapshot, requestClose, onOpenChange } = useSlideoverGuard(
   () => { isOpen.value = false }
 )
 const helperExpanded = ref(false)
+
+function onOpenChange(open: boolean) {
+  if (props.readonly) {
+    isOpen.value = open
+    return
+  }
+  onEditableOpenChange(open)
+}
+
+function vlanLabel(vlanId: number): string {
+  const vlan = props.vlans.find(item => item.vlan_id === vlanId)
+  return vlan ? `${vlan.name} (${vlanId})` : String(vlanId)
+}
 
 async function fetchSwitches() {
   try {
@@ -687,6 +738,7 @@ watch(() => props.port, (p) => {
 
 watch(isOpen, async (open) => {
   if (open) {
+    if (props.readonly) return
 
     // Re-load form state from port data to discard any unsaved changes
     const p = props.port
@@ -733,6 +785,7 @@ async function onSaveClick() {
 }
 
 async function save() {
+  if (props.readonly) return
   const tagged_vlans = allVlans.value.length ? [...selectedTaggedVlans.value] : taggedVlansStr.value ? taggedVlansStr.value.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v)) : []
   const body: Record<string, unknown> = { ...form, tagged_vlans }
   if (poeCapable.value) {
@@ -854,12 +907,14 @@ const sourceMenuItems = computed(() =>
 )
 
 async function resetPort() {
+  if (props.readonly) return
   const ok = await confirm({
     title: t('switches.ports.confirmBulkResetTitle'),
     message: t('switches.ports.confirmReset'),
     confirmLabel: t('switches.ports.reset')
   })
   if (!ok) return
+  if (props.readonly) return
   try {
     const siteId = useRoute().params.siteId as string
     const query = siteId && siteId !== 'all' ? `?siteId=${encodeURIComponent(siteId)}` : ''

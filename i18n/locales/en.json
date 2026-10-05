@@ -135,6 +135,11 @@
     "migrationBanner": "We found existing data without a site assignment: {switches} switches, {vlans} VLANs, {networks} subnets. They will be assigned to the site you create here.",
     "createSiteFailed": "Failed to create site"
   },
+  "permissions": {
+    "viewOnly": "You have view-only access. Only admins can make changes.",
+    "accessChanged": "Your access has changed. Editing is no longer available.",
+    "qrUnavailable": "No active QR link is available. You can still print this page."
+  },
   "common": {
     "welcome": "Welcome to ezSWM",
     "save": "Save",
@@ -982,6 +987,7 @@
   "dataManagement": {
     "title": "Data Management",
     "description": "Import or export individual records, or create and restore a full backup.",
+    "viewerDescription": "Export infrastructure records or download templates for reference.",
     "backupRestoreTab": "Backup & Restore",
     "exportTab": "Export",
     "importTab": "Import",
@@ -995,6 +1001,8 @@
     },
     "export": {
       "description": "Export individual entity types as JSON or CSV file.",
+      "templateTitle": "Download an import template",
+      "templateDescription": "Choose a record type and download a CSV template with the expected columns.",
       "selectType": "Entity Type",
       "selectFormat": "Format",
       "download": "Download",

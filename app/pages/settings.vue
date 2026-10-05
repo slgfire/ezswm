@@ -1,14 +1,18 @@
 <template>
-  <div class="w-full p-6">
+  <div v-if="isAuthLoading || !user" class="flex min-h-48 items-center justify-center p-6" role="status" aria-live="polite">
+    <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-muted" aria-hidden="true" />
+    <span class="sr-only">{{ $t('common.loading') }}</span>
+  </div>
+  <div v-else class="w-full p-6">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div>
         <h1 class="text-xl font-bold">{{ $t('settings.title') }}</h1>
       </div>
     </div>
 
-    <UTabs :items="tabs" variant="link" color="neutral">
+    <UTabs v-model="activeTab" :items="tabs" variant="link" color="neutral">
       <template #general>
-        <div class="mt-4 space-y-6">
+        <div v-if="canEditInfrastructure" class="mt-4 space-y-6">
           <div>
             <h2 class="text-sm font-semibold uppercase tracking-wider text-muted">{{ $t('common.general') }}</h2>
             <p class="mt-2 text-sm text-muted">{{ $t('settings.general.description') }}</p>
@@ -143,7 +147,7 @@
       </template>
 
       <template #authentication>
-        <div class="mt-4 space-y-6">
+        <div v-if="canEditInfrastructure" class="mt-4 space-y-6">
           <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div class="min-w-0 flex-1">
               <div class="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -456,7 +460,7 @@ import type { OidcCheckResultDto, OidcConfigDto } from '../../types/oidc'
 const toast = useToast()
 const { t, setLocale } = useI18n()
 useHead({ title: t('settings.title') })
-const { user } = useAuth()
+const { user, authResolved, isAuthLoading, canEditInfrastructure, fetchUser } = useAuth()
 const { settings, fetch: fetchSettings, update: updateSettings } = useSettings()
 const { update: updateUser, changePassword: changePasswordApi } = useUsers()
 const { getConfig, saveConfig: saveOidcConfig, checkSavedConfig } = useOidc()
@@ -472,7 +476,7 @@ const oidcLoadError = ref(false)
 const oidcConfig = ref<OidcConfigDto | null>(null)
 const checkResult = ref<OidcCheckResultDto | null>(null)
 const oidcBaseline = ref('')
-const isAdmin = computed(() => user.value?.role === 'admin')
+const activeTab = ref<'general' | 'account' | 'authentication'>(canEditInfrastructure.value ? 'general' : 'account')
 
 interface OidcFormState {
   enabled: boolean
@@ -558,10 +562,10 @@ const checkErrorMessage = computed(() => {
 })
 
 const tabs = computed(() => {
-  const items = [] as Array<{ label: string, slot: 'general' | 'account' | 'authentication' }>
-  if (isAdmin.value) items.push({ label: t('common.general'), slot: 'general' })
-  items.push({ label: t('common.account'), slot: 'account' })
-  if (isAdmin.value) items.push({ label: t('settings.oidc.tab'), slot: 'authentication' })
+  const items = [] as Array<{ label: string, value: 'general' | 'account' | 'authentication', slot: 'general' | 'account' | 'authentication' }>
+  if (canEditInfrastructure.value) items.push({ label: t('common.general'), value: 'general', slot: 'general' })
+  items.push({ label: t('common.account'), value: 'account', slot: 'account' })
+  if (canEditInfrastructure.value) items.push({ label: t('settings.oidc.tab'), value: 'authentication', slot: 'authentication' })
   return items
 })
 
@@ -631,7 +635,7 @@ function applyOidcConfig(config: OidcConfigDto) {
 }
 
 async function loadOidcConfig() {
-  if (!isAdmin.value) return
+  if (!canEditInfrastructure.value) return
   loadingOidc.value = true
   oidcLoadError.value = false
   try {
@@ -645,6 +649,7 @@ async function loadOidcConfig() {
 }
 
 async function saveGeneral() {
+  if (!canEditInfrastructure.value) return
   savingGeneral.value = true
   try {
     await updateSettings({
@@ -731,7 +736,7 @@ function addObservedGroup(target: 'admin_groups' | 'viewer_groups', group: strin
 }
 
 async function copyCallbackUrl() {
-  if (!oidcConfig.value?.callback_url) return
+  if (!canEditInfrastructure.value || !oidcConfig.value?.callback_url) return
   try {
     await navigator.clipboard.writeText(oidcConfig.value.callback_url)
     toast.add({ title: t('settings.oidc.callbackCopied'), color: 'success' })
@@ -759,7 +764,7 @@ function buildOidcPayload() {
 }
 
 async function saveOidc() {
-  if (!oidcDirty.value) return
+  if (!canEditInfrastructure.value || !oidcDirty.value) return
   savingOidc.value = true
   try {
     const config = await saveOidcConfig(buildOidcPayload())
@@ -776,7 +781,7 @@ async function saveOidc() {
 }
 
 async function checkOidc() {
-  if (oidcDirty.value || !oidcLoaded.value) return
+  if (!canEditInfrastructure.value || oidcDirty.value || !oidcLoaded.value) return
   checkingOidc.value = true
   checkResult.value = null
   try {
@@ -806,19 +811,44 @@ watch(() => oidcForm.client_secret, (secret) => {
   if (secret) oidcForm.client_secret_clear = false
 })
 
-onMounted(async () => {
-  await fetchSettings()
+watch(canEditInfrastructure, (canEdit) => {
+  if (canEdit) return
+
   if (settings.value) {
     generalForm.app_name = settings.value.app_name || 'ezSWM'
     generalForm.default_port_status = settings.value.default_port_status || 'down'
     generalForm.patch_panels_enabled = settings.value.patch_panels_enabled ?? false
     generalForm.switch_groups_enabled = settings.value.switch_groups_enabled ?? true
   }
+  if (oidcConfig.value) applyOidcConfig(oidcConfig.value)
+  else {
+    Object.assign(oidcForm, createDefaultOidcForm())
+    oidcBaseline.value = serializeOidcForm()
+    oidcLoaded.value = false
+  }
+  checkResult.value = null
+  activeTab.value = 'account'
+})
+
+onMounted(async () => {
+  if (!authResolved.value) await fetchUser()
+  if (!user.value) return
+
+  if (canEditInfrastructure.value) {
+    await fetchSettings()
+    if (settings.value) {
+      generalForm.app_name = settings.value.app_name || 'ezSWM'
+      generalForm.default_port_status = settings.value.default_port_status || 'down'
+      generalForm.patch_panels_enabled = settings.value.patch_panels_enabled ?? false
+      generalForm.switch_groups_enabled = settings.value.switch_groups_enabled ?? true
+    }
+  }
   if (user.value) {
     accountForm.display_name = user.value.display_name || ''
     accountForm.language = user.value.language || 'en'
   }
   await loadOidcConfig()
+  activeTab.value = canEditInfrastructure.value ? 'general' : 'account'
   await nextTick()
   clearDirty()
 })

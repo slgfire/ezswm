@@ -2,6 +2,15 @@
 
 ---
 
+## [0.40.2] — 2026-10-05
+
+### Fixed
+- Viewer-Rolle: Die Oberfläche entspricht jetzt den bestehenden Lesezugriffs-Berechtigungen. Viewer sehen keine Bedienelemente mehr für Anlegen, Bearbeiten, Löschen, Import, Mehrfachbearbeitung, LAG, Layout-Speichern, Topologie-Verschieben/Zurücksetzen, Favoriten/Sortierung und öffentliche Tokens, die der Server mit 403 ablehnt. Ports, LAG-Gruppen, Netzwerke und Zuweisungen öffnen sich als reine Detailansicht, und direkte Links auf Anlege-/Bearbeitungsseiten führen zur nächsten Liste oder Detailseite zurück. Durchsuchen, Suche, Details, normale Exporte, Drucken, lokale Anzeigeeinstellungen, eigenes Profil/Sprache, lokale Passwortänderung (aktuelles Passwort erforderlich; nicht für OIDC-Konten) und Abmelden bleiben verfügbar; Admins behalten vollen Zugriff.
+- QR-Druck: Viewer können einen vorhandenen, gültigen QR-Code für den öffentlichen Zugriff drucken; ist der Link nicht vorhanden oder widerrufen, wird der QR-Code mit Hinweis weggelassen und kein Link erstellt oder reaktiviert. Öffentliche Seiten sind nicht betroffen.
+
+### Changed
+- Dokumentation: Die Benutzerhandbücher (EN/DE) beschreiben die Lesezugriff-Oberfläche; veraltete Formulierungen („künftige Viewer-Rolle / alle Benutzer sind Admin") in Architektur und Specs wurden korrigiert. Server-Berechtigungen und Exporte (die öffentliche Tokens enthalten können) sind unverändert.
+
 ## [0.40.1] — 2026-10-05
 
 ### Geändert

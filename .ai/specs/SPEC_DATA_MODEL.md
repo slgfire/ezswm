@@ -73,7 +73,7 @@ Represents an application user account.
 | `username` | string | yes | Login name, unique |
 | `display_name` | string | yes | Display name in UI |
 | `password_hash` | string | yes | bcrypt hashed password |
-| `role` | enum | yes | `admin` \| `viewer` (MVP: all users are `admin`) |
+| `role` | enum | yes | `admin` \| `viewer` (`viewer` is read-only for infrastructure data) |
 | `language` | enum | yes | `en` \| `de` — per-user language setting |
 | `is_setup_user` | boolean | yes | Whether this is the initial setup admin |
 | `created_at` | string (ISO 8601) | yes | Creation timestamp |
@@ -84,7 +84,7 @@ Represents an application user account.
 - `username`: 3-50 characters, alphanumeric + underscore, unique
 - `display_name`: 1-100 characters
 - `password`: minimum 8 characters (before hashing)
-- `role`: MVP defaults to `admin`, `viewer` role planned for later
+- `role`: `admin` or `viewer`; local accounts default to `admin`, OIDC accounts receive the mapped role
 
 ---
 

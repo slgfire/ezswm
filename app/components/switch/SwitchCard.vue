@@ -7,6 +7,7 @@
   >
     <!-- Favorite star (top-left, always visible) -->
     <button
+      v-if="editable"
       class="absolute left-1.5 top-px z-10 transition-colors"
       :class="sw.is_favorite ? 'text-amber-400' : 'text-muted hover:text-amber-400'"
       :title="sw.is_favorite ? $t('switches.unfavorite') : $t('switches.favorite')"
@@ -17,9 +18,9 @@
 
     <!-- Hover actions -->
     <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
-      <UButton v-if="draggable" icon="i-tabler-grip-horizontal" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="neutral" size="xs" @click.prevent />
+      <UButton v-if="draggable && editable" icon="i-tabler-grip-horizontal" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="neutral" size="xs" @click.prevent />
       <UDropdownMenu
-        v-if="groups"
+        v-if="groups && editable"
         :items="groupMenuItems"
         :content="{ align: 'end' }"
         :ui="{ content: 'max-h-60 min-w-44 overflow-y-auto' }"
@@ -38,8 +39,8 @@
         </UTooltip>
       </UDropdownMenu>
       <UButton icon="i-heroicons-printer" variant="ghost" color="warning" size="xs" @click.prevent="emit('print', sw.id)" />
-      <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="emit('duplicate', sw)" />
-      <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="emit('delete', sw)" />
+      <UButton v-if="editable" icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="emit('duplicate', sw)" />
+      <UButton v-if="editable" icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="emit('delete', sw)" />
     </div>
 
     <!-- Header: fixed-height zone so grouped rows align (name, subtitle, role, tags) -->
@@ -106,6 +107,7 @@
   >
     <!-- Favorite star (list view) -->
     <button
+      v-if="editable"
       class="shrink-0 transition-colors"
       :class="sw.is_favorite ? 'text-amber-400' : 'text-muted hover:text-amber-400'"
       :title="sw.is_favorite ? $t('switches.unfavorite') : $t('switches.favorite')"
@@ -117,7 +119,7 @@
     <!-- Hover actions -->
     <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
       <UDropdownMenu
-        v-if="groups"
+        v-if="groups && editable"
         :items="groupMenuItems"
         :content="{ align: 'end' }"
         :ui="{ content: 'max-h-60 min-w-44 overflow-y-auto' }"
@@ -136,8 +138,8 @@
         </UTooltip>
       </UDropdownMenu>
       <UButton icon="i-heroicons-printer" variant="ghost" color="warning" size="xs" @click.prevent="emit('print', sw.id)" />
-      <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="emit('duplicate', sw)" />
-      <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="emit('delete', sw)" />
+      <UButton v-if="editable" icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="emit('duplicate', sw)" />
+      <UButton v-if="editable" icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="emit('delete', sw)" />
     </div>
 
     <!-- Info -->
@@ -202,10 +204,12 @@ const props = withDefaults(defineProps<{
   /** Current site's groups for the assign-to-group menu. When undefined the
       action is hidden (all-sites overview and contexts without group data). */
   groups?: SwitchGroup[]
+  editable?: boolean
 }>(), {
   draggable: false,
   uniform: false,
-  groups: undefined
+  groups: undefined,
+  editable: true
 })
 
 const emit = defineEmits<{

@@ -3,6 +3,15 @@
 ## Latest Stage
 
 Date: 2026-10-05
+Stage: Viewer read-only UI (branch `fix/viewer-readonly-ui`, base main `617245fc`, prepared version 0.40.2) — **IN PROGRESS**
+Status: implementation is in progress; the verification checks (typecheck/lint, targeted unit tests, focused Viewer/Admin browser checks, production build, isolated dev/Docker health) are PENDING until final evidence is recorded by the owner. Nothing here claims passed checks, a release, a merge or any deployment; 0.40.2 in `package.json` is a prepared version only (last released: 0.40.1).
+Goal: align the UI with the existing server-enforced Viewer role. Viewers should see no futile write controls (create/edit/delete/import/bulk/LAG/layout save/topology move and reset/persisted sort and favorites/public-token create and revoke), get read-only detail views, and safe fallbacks for direct create/edit links. Kept for viewers: browsing, search, details, ordinary exports and print, local display preferences, own profile/language, local password change (current password required; OIDC accounts have no ezSWM password) and logout. Admin behaviour is unchanged; public pages are unaffected. QR print shows an existing valid public link and falls back without it when missing or revoked (never creates or reactivates). Server permissions are unchanged and no role permissions or export restrictions are added (current exports include public tokens). Known limitation: client role state can be stale until navigation/refetch/denied action; the server enforces immediately.
+Documentation: user guides (EN/DE), changelogs (EN/DE) and stale "future Viewer / all users admin" wording in `.ai/ARCHITECTURE.md` and the specs were updated.
+Checks: PENDING.
+
+## Previous Stage
+
+Date: 2026-10-05
 Stage: Release status: PR #291 merged and v0.40.0 released; logo spacing and SSO login accepted by the user on the test domain; production update is performed by the user
 Status (2026-10-05, per user report): PR #291 is merged and v0.40.0 is released. The user accepted the sidebar logo position and SSO login on the test domain. This is a user report only, not an independent all-provider or per-account security test. Production: the user updates production themselves; this document does not claim that production is updated. (Historical at release confirmation: no further task was active then.) The cancelled colour test run and the cancelled German closing report stay cancelled and are not revived. Historical context: the rest of this stage entry, the entries below and the log `.slim/deepwork/oidc-283.md` record the state at the time they were written (including the pre-merge wording "not yet published", pre-merge CI notes and testdomain deployment details) and are not an execution plan. Superseded: the "JSON only / no database" lines in `AGENTS.md` and parts of `.ai/ARCHITECTURE.md` are historical; the real stack is SQLite via Prisma in `/app/data`.
 

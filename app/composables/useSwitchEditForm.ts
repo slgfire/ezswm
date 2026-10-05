@@ -102,6 +102,7 @@ export function useSwitchEditForm(
 ) {
   const { t } = useI18n()
   const toast = useToast()
+  const { canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 
   const editMode = ref(false)
   const saving = ref(false)
@@ -145,7 +146,7 @@ export function useSwitchEditForm(
   }
 
   function openEditPanel() {
-    if (!item.value) return
+    if (!canEditInfrastructure.value || !item.value) return
     editForm.name = item.value.name || ''
     editForm.model = item.value.model || ''
     editForm.manufacturer = item.value.manufacturer || ''
@@ -185,6 +186,15 @@ export function useSwitchEditForm(
   const pendingStackOnlyChange = ref(false)
   let pendingSaveBody: Record<string, unknown> | null = null
 
+  watch(canEditInfrastructure, (allowed, wasAllowed) => {
+    if (wasAllowed && !allowed) {
+      // A role change cancels the pending edit without invoking the dirty guard.
+      editMode.value = false
+      showTemplateConfirm.value = false
+      pendingSaveBody = null
+    }
+  })
+
   // Returns current ports the save would delete under the repository's update()
   // behavior, or [] for a non-destructive save.
   function computeRemovedPorts(): { removed: { id: string; label: string }[]; removesAll: boolean } {
@@ -205,6 +215,7 @@ export function useSwitchEditForm(
   }
 
   async function onSave() {
+    if (!canEditInfrastructure.value) return
     const body = buildSaveBody()
     const { removed, removesAll } = computeRemovedPorts()
     if (removed.length > 0) {
@@ -223,11 +234,17 @@ export function useSwitchEditForm(
   }
 
   async function confirmTemplateChange() {
-    if (!pendingSaveBody) return
+    if (!canEditInfrastructure.value || !pendingSaveBody) return
     await executeSave(pendingSaveBody)
   }
 
   async function executeSave(body: Record<string, unknown>) {
+    if (!canEditInfrastructure.value) {
+      editMode.value = false
+      showTemplateConfirm.value = false
+      pendingSaveBody = null
+      return
+    }
     saving.value = true
     try {
       await updateFn(body)
@@ -236,6 +253,14 @@ export function useSwitchEditForm(
       pendingSaveBody = null
       editMode.value = false
     } catch (e: unknown) {
+      const access = await handleInfrastructureForbidden(e)
+      if (access === 'demoted') toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+      if (access === 'demoted' || access === 'already-handled') {
+        editMode.value = false
+        showTemplateConfirm.value = false
+        pendingSaveBody = null
+        return
+      }
       const err = e as { statusCode?: number; statusMessage?: string; data?: { message?: string } }
       if (err.statusCode === 409) {
         showTemplateConfirm.value = false
