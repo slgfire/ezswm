@@ -14,18 +14,20 @@
             <p class="mt-1 text-sm text-muted">{{ $t('templates.detailDescription') }}</p>
           </div>
         </div>
-        <div class="flex items-center gap-1">
+        <div v-if="authResolved && canEditInfrastructure" class="flex items-center gap-1">
           <UTooltip :text="$t('common.edit')">
-            <UButton :to="`/layout-templates/${template.id}/edit`" icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" />
+            <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click="navigateToEditor" />
           </UTooltip>
           <UTooltip :text="$t('common.duplicate')">
             <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click="onDuplicate" />
           </UTooltip>
           <UTooltip :text="$t('common.delete')">
-            <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="void (showDeleteDialog = true)" />
+            <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="openDeleteDialog" />
           </UTooltip>
         </div>
       </div>
+
+      <SharedViewOnlyNotice v-if="authResolved && !canEditInfrastructure" class="mb-4" />
 
       <!-- Quick info -->
       <div class="mt-1 mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
@@ -135,9 +137,11 @@
     </div>
 
     <SharedConfirmDialog
+      v-if="authResolved && canEditInfrastructure"
       v-model="showDeleteDialog"
       :title="$t('templates.delete')"
       :message="$t('templates.confirmDelete')"
+      :loading="deleting"
       @confirm="handleDelete"
     />
   </div>
@@ -162,13 +166,24 @@ const toast = useToast()
 const router = useRouter()
 const route = useRoute()
 const { getById, remove } = useLayoutTemplates()
+const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
+let permissionGeneration = 0
+let accessChangeNoticeShown = false
 
 const template = ref<LayoutTemplate | null>(null)
 const loading = ref(true)
 
 useHead({ title: computed(() => template.value?.name || t('templates.title')) })
 const showDeleteDialog = ref(false)
+const deleteTargetId = ref<string | null>(null)
+const deleting = ref(false)
 const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrides', () => ({}))
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
 
 watch(template, (tpl) => {
   if (tpl?.name) breadcrumbOverrides.value[`/layout-templates/${route.params.id}`] = tpl.name
@@ -216,20 +231,58 @@ function getPortTypeColor(type: string): string {
 }
 
 function onDuplicate() {
-  navigateTo(`/layout-templates/create?clone=${route.params.id}`)
+  if (!authResolved.value || !canEditInfrastructure.value || !template.value) return
+  void navigateTo(`/layout-templates/create?clone=${template.value.id}`)
+}
+
+function navigateToEditor() {
+  if (!authResolved.value || !canEditInfrastructure.value || !template.value) return
+  void navigateTo(`/layout-templates/${template.value.id}/edit`)
+}
+
+function openDeleteDialog() {
+  if (!authResolved.value || !canEditInfrastructure.value || !template.value) return
+  deleteTargetId.value = template.value.id
+  showDeleteDialog.value = true
 }
 
 async function handleDelete() {
+  if (!authResolved.value || !canEditInfrastructure.value || deleting.value || !deleteTargetId.value) return
+  const generation = permissionGeneration
+  const targetId = deleteTargetId.value
+  if (route.params.id !== targetId) return
+  deleting.value = true
   try {
-    await remove(route.params.id as string)
+    await remove(targetId)
+    if (generation !== permissionGeneration || !canEditInfrastructure.value || route.params.id !== targetId || deleteTargetId.value !== targetId) return
+    showDeleteDialog.value = false
+    deleteTargetId.value = null
     toast.add({ title: t('templates.messages.deleted'), color: 'success' })
-    router.push('/layout-templates')
-  } catch {
+    void router.push('/layout-templates')
+  } catch (error: unknown) {
+    const access = await handleInfrastructureForbidden(error)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled') return
+    if (generation !== permissionGeneration || !canEditInfrastructure.value || route.params.id !== targetId || deleteTargetId.value !== targetId) return
     toast.add({ title: t('errors.serverError'), color: 'error' })
   } finally {
-    showDeleteDialog.value = false
+    if (generation === permissionGeneration && canEditInfrastructure.value && route.params.id === targetId && deleteTargetId.value === targetId) {
+      showDeleteDialog.value = false
+      deleteTargetId.value = null
+    }
+    deleting.value = false
   }
 }
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (!wasEditable || canEdit || !authResolved.value) return
+  permissionGeneration++
+  showDeleteDialog.value = false
+  deleteTargetId.value = null
+}, { flush: 'sync' })
 
 onMounted(async () => {
   try {

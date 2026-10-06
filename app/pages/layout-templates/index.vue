@@ -6,10 +6,12 @@
         <h1 class="text-xl font-bold">{{ $t('templates.title') }}</h1>
         <p class="mt-1 text-sm text-muted">{{ $t('templates.description') }}</p>
       </div>
-      <UButton icon="i-heroicons-plus" size="sm" @click="void (showCreateModal = true)">
+      <UButton v-if="authResolved && canEditInfrastructure" icon="i-heroicons-plus" size="sm" @click="openCreateModal">
         {{ $t('templates.create') }}
       </UButton>
     </div>
+
+    <SharedViewOnlyNotice v-if="authResolved && !canEditInfrastructure" class="mb-4" />
 
     <!-- Toolbar -->
     <div v-if="!loading && allItems.length > 0" class="mb-4 flex flex-wrap items-center gap-3">
@@ -84,8 +86,8 @@ v-model="selectedPortType"
           </div>
 
           <!-- Hover actions -->
-          <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
-            <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.stop="void navigateTo(`/layout-templates/${tpl.id}/edit`)" />
+          <div v-if="authResolved && canEditInfrastructure" class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
+            <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.stop="navigateToEditor(tpl)" />
             <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.stop="onDuplicate(tpl)" />
             <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.stop="confirmDelete(tpl)" />
           </div>
@@ -174,9 +176,9 @@ v-model="selectedPortType"
           </div>
 
           <!-- Actions -->
-          <div class="flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100">
+          <div v-if="authResolved && canEditInfrastructure" class="flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100">
             <UTooltip :text="$t('common.edit')">
-              <UButton :to="`/layout-templates/${tpl.id}/edit`" icon="i-heroicons-pencil-square" size="xs" variant="ghost" color="primary" @click.stop />
+              <UButton icon="i-heroicons-pencil-square" size="xs" variant="ghost" color="primary" @click.stop="navigateToEditor(tpl)" />
             </UTooltip>
             <UTooltip :text="$t('common.duplicate')">
               <UButton icon="i-heroicons-document-duplicate" size="xs" variant="ghost" @click.stop="onDuplicate(tpl)" />
@@ -202,21 +204,23 @@ v-model="selectedPortType"
       :title="$t('templates.emptyTitle')"
       :description="$t('templates.emptyDescription')"
     >
-      <template #action>
-        <UButton icon="i-heroicons-plus" @click="void (showCreateModal = true)">
+      <template v-if="authResolved && canEditInfrastructure" #action>
+        <UButton icon="i-heroicons-plus" @click="openCreateModal">
           {{ $t('templates.create') }}
         </UButton>
       </template>
     </SharedEmptyState>
 
     <SharedConfirmDialog
+      v-if="authResolved && canEditInfrastructure"
       v-model="showDeleteDialog"
       :title="$t('templates.delete')"
       :message="$t('templates.confirmDelete')"
+      :loading="deleting"
       @confirm="handleDelete"
     />
 
-    <UModal v-model:open="showCreateModal" :title="$t('templates.create')" :description="$t('templates.manualDescription')">
+    <UModal v-if="authResolved && canEditInfrastructure" v-model:open="showCreateModal" :title="$t('templates.create')" :description="$t('templates.manualDescription')">
       <template #body>
         <div class="p-2">
           <h2 class="text-lg font-semibold mb-4 text-center">{{ $t('templates.create') }}</h2>
@@ -224,7 +228,7 @@ v-model="selectedPortType"
             <!-- Manual -->
             <button
               class="group flex flex-col items-center gap-3 p-6 rounded-xl border border-default hover:border-primary/50 hover:bg-primary/5 transition-all"
-              @click="void navigateTo('/layout-templates/create')"
+              @click="navigateToCreate('manual')"
             >
               <UIcon name="i-heroicons-pencil-square" class="text-3xl text-primary" />
               <span class="font-medium">{{ $t('templates.manual') }}</span>
@@ -234,7 +238,7 @@ v-model="selectedPortType"
             <!-- Library Import -->
             <button
               class="group flex flex-col items-center gap-3 p-6 rounded-xl border border-default hover:border-primary/50 hover:bg-primary/5 transition-all"
-              @click="navigateTo('/layout-templates/create?mode=import')"
+              @click="navigateToCreate('import')"
             >
               <UIcon name="i-heroicons-cloud-arrow-down" class="text-3xl text-primary" />
               <span class="font-medium">{{ $t('templates.importFromLibrary') }}</span>
@@ -254,6 +258,9 @@ const { t } = useI18n()
 useHead({ title: t('templates.title') })
 const toast = useToast()
 const { items, loading, fetch, remove } = useLayoutTemplates()
+const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
+let permissionGeneration = 0
+let accessChangeNoticeShown = false
 
 const showCreateModal = ref(false)
 const viewMode = ref<'grid' | 'table'>('grid')
@@ -262,7 +269,14 @@ const selectedManufacturer = ref('')
 const selectedPortType = ref('')
 const showDeleteDialog = ref(false)
 const deleteTarget = ref<(LayoutTemplate & { switch_count?: number }) | null>(null)
+const deleting = ref(false)
 const manufacturers = ref<string[]>([])
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
 
 const allItems = computed(() => items.value as (LayoutTemplate & { switch_count?: number })[])
 
@@ -336,25 +350,59 @@ function getPortTypes(template: LayoutTemplate): { type: string; label: string; 
 }
 
 function onDuplicate(row: LayoutTemplate & { switch_count?: number }) {
-  navigateTo(`/layout-templates/create?clone=${row.id}`)
+  if (!authResolved.value || !canEditInfrastructure.value) return
+  void navigateTo(`/layout-templates/create?clone=${row.id}`)
+}
+
+function navigateToEditor(row: LayoutTemplate & { switch_count?: number }) {
+  if (!authResolved.value || !canEditInfrastructure.value) return
+  void navigateTo(`/layout-templates/${row.id}/edit`)
+}
+
+function openCreateModal() {
+  if (!authResolved.value || !canEditInfrastructure.value) return
+  showCreateModal.value = true
+}
+
+function navigateToCreate(mode: 'manual' | 'import') {
+  if (!authResolved.value || !canEditInfrastructure.value) return
+  showCreateModal.value = false
+  void navigateTo(mode === 'import' ? '/layout-templates/create?mode=import' : '/layout-templates/create')
 }
 
 function confirmDelete(row: LayoutTemplate & { switch_count?: number }) {
+  if (!authResolved.value || !canEditInfrastructure.value || deleting.value) return
   deleteTarget.value = row
   showDeleteDialog.value = true
 }
 
 async function handleDelete() {
-  if (!deleteTarget.value) return
+  if (!authResolved.value || !canEditInfrastructure.value || !deleteTarget.value || deleting.value) return
+  const generation = permissionGeneration
+  const targetId = deleteTarget.value.id
+  deleting.value = true
   try {
-    await remove(deleteTarget.value.id)
-    toast.add({ title: t('templates.messages.deleted'), color: 'success' })
-    await loadData()
-  } catch {
-    toast.add({ title: t('errors.serverError'), color: 'error' })
-  } finally {
+    await remove(targetId)
+    if (generation !== permissionGeneration || !canEditInfrastructure.value || deleteTarget.value?.id !== targetId) return
     showDeleteDialog.value = false
     deleteTarget.value = null
+    toast.add({ title: t('templates.messages.deleted'), color: 'success' })
+    await loadData(generation)
+  } catch (error: unknown) {
+    const access = await handleInfrastructureForbidden(error)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled') return
+    if (generation !== permissionGeneration || !canEditInfrastructure.value || deleteTarget.value?.id !== targetId) return
+    toast.add({ title: t('errors.serverError'), color: 'error' })
+  } finally {
+    if (generation === permissionGeneration && canEditInfrastructure.value && deleteTarget.value?.id === targetId) {
+      showDeleteDialog.value = false
+      deleteTarget.value = null
+    }
+    deleting.value = false
   }
 }
 
@@ -368,13 +416,25 @@ function onFilter() {
 
 const { apiFetch } = useApiFetch()
 
-async function loadData() {
+async function loadData(reloadPermissionGeneration?: number) {
+  if (reloadPermissionGeneration !== undefined && (reloadPermissionGeneration !== permissionGeneration || !canEditInfrastructure.value)) return
   await fetch()
+  if (reloadPermissionGeneration !== undefined && (reloadPermissionGeneration !== permissionGeneration || !canEditInfrastructure.value)) return
   try {
     const response = await apiFetch<{ manufacturers?: string[] }>('/api/layout-templates')
+    if (reloadPermissionGeneration !== undefined && (reloadPermissionGeneration !== permissionGeneration || !canEditInfrastructure.value)) return
     manufacturers.value = response?.manufacturers || []
   } catch { /* silent */ }
 }
 
-onMounted(() => { loadData() })
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (!wasEditable || canEdit || !authResolved.value) return
+  permissionGeneration++
+  // Drop write-only modal state directly; do not invoke any close/save flow.
+  showCreateModal.value = false
+  showDeleteDialog.value = false
+  deleteTarget.value = null
+}, { flush: 'sync' })
+
+onMounted(() => { void loadData() })
 </script>

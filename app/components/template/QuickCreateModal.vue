@@ -1,5 +1,5 @@
 <template>
-  <UModal :open="model" :title="$t('templates.quickCreate.title')" :ui="{ content: mode === 'library' ? 'sm:max-w-2xl' : undefined }" @close="onClose">
+  <UModal v-if="authResolved && canEditInfrastructure" :open="model" :title="$t('templates.quickCreate.title')" :ui="{ content: mode === 'library' ? 'sm:max-w-2xl' : undefined }" @close="onClose">
     <template #header>
       <div class="flex items-center gap-2">
         <UIcon name="i-heroicons-bolt" class="h-5 w-5 text-primary-500" />
@@ -67,7 +67,21 @@ const emit = defineEmits<{ created: [template: LayoutTemplate] }>()
 
 const { t } = useI18n()
 const toast = useToast()
+const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 const { create } = useLayoutTemplates()
+let permissionGeneration = 0
+let accessChangeNoticeShown = false
+let libraryImportGeneration = permissionGeneration
+
+function isCurrentAdmin(generation = permissionGeneration) {
+  return generation === permissionGeneration && authResolved.value && canEditInfrastructure.value
+}
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
 
 const submitting = ref(false)
 const mode = ref<'manual' | 'library'>('manual')
@@ -116,7 +130,9 @@ function onClose() {
 }
 
 async function onSubmit() {
+  if (!isCurrentAdmin()) return
   if (validate(form).length > 0) return
+  const generation = permissionGeneration
   submitting.value = true
   try {
     const created = await create({
@@ -137,14 +153,21 @@ async function onSubmit() {
         }
       ]
     } as Partial<LayoutTemplate>)
+    if (!isCurrentAdmin(generation)) return
     if (created) {
       toast.add({ title: t('templates.messages.created'), color: 'success' })
       emit('created', created)
       resetForm()
       model.value = false
     }
-  } catch (e: unknown) {
-    const err = e as { data?: { message?: string } }
+  } catch (error: unknown) {
+    const access = await handleInfrastructureForbidden(error)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled' || !isCurrentAdmin(generation)) return
+    const err = error as { data?: { message?: string } }
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     submitting.value = false
@@ -152,23 +175,46 @@ async function onSubmit() {
 }
 
 async function handleLibraryImport(template: LayoutTemplate) {
+  if (!isCurrentAdmin(libraryImportGeneration)) return
+  const generation = permissionGeneration
   submitting.value = true
   try {
     // Template from device.get.ts is Omit<LayoutTemplate,'id'|'created_at'|'updated_at'>
     // and its blocks are already schema-valid (speeds + poe types match Zod enum).
     // No poe_selection remapping needed — pass directly to create().
     const created = await create(template as Partial<LayoutTemplate>)
+    if (!isCurrentAdmin(generation)) return
     if (created) {
       toast.add({ title: t('templates.messages.created'), color: 'success' })
       emit('created', created)
       mode.value = 'manual'
       model.value = false
     }
-  } catch (e: unknown) {
-    const err = e as { data?: { message?: string } }
+  } catch (error: unknown) {
+    const access = await handleInfrastructureForbidden(error)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled' || !isCurrentAdmin(generation)) return
+    const err = error as { data?: { message?: string } }
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     submitting.value = false
   }
 }
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (!wasEditable || canEdit || !authResolved.value) return
+  permissionGeneration++
+  resetForm()
+  mode.value = 'manual'
+  model.value = false
+}, { flush: 'sync' })
+
+watch(mode, (currentMode) => {
+  if (currentMode === 'library' && isCurrentAdmin()) {
+    libraryImportGeneration = permissionGeneration
+  }
+}, { flush: 'sync' })
 </script>

@@ -1,6 +1,6 @@
 <template>
   <!-- Trigger button (placed in header by parent) -->
-  <UTooltip :text="$t('public.admin.title')">
+  <UTooltip v-if="authResolved && canEditInfrastructure" :text="$t('public.admin.title')">
     <UButton
       icon="i-heroicons-qr-code"
       variant="ghost"
@@ -12,7 +12,7 @@
   </UTooltip>
 
   <!-- Slideover drawer -->
-  <USlideover v-model:open="drawerOpen" :title="$t('public.admin.title')" :description="$t('public.pp.linkLabel')">
+  <USlideover v-if="authResolved && canEditInfrastructure" :open="drawerOpen" :title="$t('public.admin.title')" :description="$t('public.pp.linkLabel')" @update:open="onDrawerOpenChange">
     <template #body>
       <div class="space-y-6">
         <!-- Loading -->
@@ -97,6 +97,7 @@
   </USlideover>
 
   <SharedConfirmDialog
+    v-if="authResolved && canEditInfrastructure"
     v-model="showRevokeConfirm"
     :title="$t('public.admin.revoke')"
     :message="$t('public.pp.revokeConfirm')"
@@ -106,6 +107,7 @@
 
 <script setup lang="ts">
 import QRCode from 'qrcode'
+import type { PublicToken } from '~~/types/publicToken'
 
 const props = defineProps<{
   panelId: string
@@ -115,15 +117,78 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const toast = useToast()
+const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 
 const drawerOpen = ref(false)
 const showRevokeConfirm = ref(false)
 const qrCanvas = ref<HTMLCanvasElement | null>(null)
+let permissionGeneration = 0
+let tokenRequestGeneration = 0
+let tokenOperationGeneration = 0
+let accessChangeNoticeShown = false
 
-const { token, loading, fetchToken, createToken, revokeToken } = usePublicToken(
+const { token, loading, createToken } = usePublicToken(
   () => `/api/patch-panels/${props.panelId}/public-token`,
   toRef(() => props.siteId ?? '')
 )
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
+
+function clearQrCanvas() {
+  const canvas = qrCanvas.value
+  if (!canvas) return
+  canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
+}
+
+function isCurrentTarget(panelId: string, siteId: string | undefined) {
+  return props.panelId === panelId && (props.siteId ?? '') === (siteId ?? '')
+}
+
+function isCurrentOperation(operation: number, permission: number, panelId: string, siteId: string | undefined) {
+  return authResolved.value && canEditInfrastructure.value && drawerOpen.value &&
+    operation === tokenOperationGeneration && permission === permissionGeneration &&
+    isCurrentTarget(panelId, siteId)
+}
+
+async function fetchTokenForDrawer() {
+  if (!authResolved.value || !canEditInfrastructure.value || !drawerOpen.value) return
+  const request = ++tokenRequestGeneration
+  const permission = permissionGeneration
+  const panelId = props.panelId
+  const siteId = props.siteId
+  loading.value = true
+  try {
+    const data = await $fetch<PublicToken>(`/api/patch-panels/${panelId}/public-token`, {
+      query: siteId ? { siteId } : undefined
+    })
+    if (
+      request !== tokenRequestGeneration || permission !== permissionGeneration ||
+      !authResolved.value || !canEditInfrastructure.value || !drawerOpen.value ||
+      !isCurrentTarget(panelId, siteId)
+    ) {
+      token.value = null
+      return
+    }
+    token.value = data
+  } catch (error: unknown) {
+    const status = (error as { statusCode?: number; status?: number })?.statusCode ?? (error as { status?: number })?.status
+    if (status !== 404) {
+      const access = await handleInfrastructureForbidden(error)
+      if (access === 'demoted') noticeAccessChanged()
+    }
+  } finally {
+    if (
+      request !== tokenRequestGeneration || permission !== permissionGeneration ||
+      !authResolved.value || !canEditInfrastructure.value || !drawerOpen.value ||
+      !isCurrentTarget(panelId, siteId)
+    ) token.value = null
+    if (request === tokenRequestGeneration) loading.value = false
+  }
+}
 
 const publicUrl = computed(() => {
   if (!token.value) return ''
@@ -134,22 +199,39 @@ const publicUrl = computed(() => {
 })
 
 function openDrawer() {
+  if (!authResolved.value || !canEditInfrastructure.value) return
   drawerOpen.value = true
   if (token.value === null && !loading.value) {
-    fetchToken()
+    void fetchTokenForDrawer()
   }
+}
+
+function onDrawerOpenChange(open: boolean) {
+  if (open) {
+    openDrawer()
+    return
+  }
+  drawerOpen.value = false
+  tokenOperationGeneration++
 }
 
 // Render QR code when token becomes available and canvas is mounted
 watch([token, qrCanvas], async ([tok, canvas]) => {
-  if (tok && !tok.revoked_at && canvas) {
+  const permission = permissionGeneration
+  const panelId = props.panelId
+  const siteId = props.siteId
+  if (tok && !tok.revoked_at && canvas && authResolved.value && canEditInfrastructure.value) {
     await nextTick()
+    if (!authResolved.value || !canEditInfrastructure.value || permission !== permissionGeneration || token.value !== tok || !isCurrentTarget(panelId, siteId)) return
     try {
       await QRCode.toCanvas(canvas, publicUrl.value, {
         width: 180,
         margin: 1,
         color: { dark: '#000000', light: '#ffffff' }
       })
+      if (!authResolved.value || !canEditInfrastructure.value || permission !== permissionGeneration || token.value !== tok || !isCurrentTarget(panelId, siteId)) {
+        canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
+      }
     } catch {
       // QR render failed silently
     }
@@ -157,36 +239,92 @@ watch([token, qrCanvas], async ([tok, canvas]) => {
 })
 
 async function handleGenerate() {
+  if (!authResolved.value || !canEditInfrastructure.value || !drawerOpen.value) return
+  const permission = permissionGeneration
+  const panelId = props.panelId
+  const siteId = props.siteId
+  const operation = ++tokenOperationGeneration
+  tokenRequestGeneration++
   try {
     await createToken()
+    if (!isCurrentOperation(operation, permission, panelId, siteId)) {
+      token.value = null
+      return
+    }
     toast.add({ title: t('public.admin.generated'), color: 'success' })
-  } catch {
+  } catch (error: unknown) {
+    const access = await handleInfrastructureForbidden(error)
+    if (access === 'demoted') noticeAccessChanged()
+    if (access === 'demoted' || access === 'already-handled') return
+    if (!isCurrentOperation(operation, permission, panelId, siteId)) return
     toast.add({ title: t('public.admin.generateFailed'), color: 'error' })
   }
 }
 
 async function handleRevoke() {
+  if (!authResolved.value || !canEditInfrastructure.value || !drawerOpen.value || !showRevokeConfirm.value) return
+  const permission = permissionGeneration
+  const panelId = props.panelId
+  const siteId = props.siteId
+  const operation = ++tokenOperationGeneration
+  tokenRequestGeneration++
   showRevokeConfirm.value = false
+  loading.value = true
   try {
-    await revokeToken()
+    // Keep the follow-up token read outside usePublicToken.revokeToken so permission is rechecked first.
+    await $fetch(`/api/patch-panels/${panelId}/public-token`, {
+      method: 'DELETE',
+      query: siteId ? { siteId } : undefined
+    })
+    if (!isCurrentOperation(operation, permission, panelId, siteId)) {
+      token.value = null
+      return
+    }
     toast.add({ title: t('public.admin.revokedSuccess'), color: 'success' })
-  } catch {
+    await fetchTokenForDrawer()
+    if (!isCurrentOperation(operation, permission, panelId, siteId)) token.value = null
+  } catch (error: unknown) {
+    const access = await handleInfrastructureForbidden(error)
+    if (access === 'demoted') noticeAccessChanged()
+    if (access === 'demoted' || access === 'already-handled') return
+    if (!isCurrentOperation(operation, permission, panelId, siteId)) return
     toast.add({ title: t('public.admin.revokeFailed'), color: 'error' })
+  } finally {
+    if (operation === tokenOperationGeneration || !drawerOpen.value || !canEditInfrastructure.value) loading.value = false
   }
 }
 
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (!wasEditable || canEdit) return
+  permissionGeneration++
+  tokenRequestGeneration++
+  tokenOperationGeneration++
+  drawerOpen.value = false
+  showRevokeConfirm.value = false
+  token.value = null
+  loading.value = false
+  clearQrCanvas()
+}, { flush: 'sync' })
+
 async function handleCopy() {
+  if (!authResolved.value || !canEditInfrastructure.value || !drawerOpen.value || !token.value) return
+  const permission = permissionGeneration
+  const operation = tokenOperationGeneration
+  const panelId = props.panelId
+  const siteId = props.siteId
   const text = publicUrl.value
   let copied = false
 
   if (navigator.clipboard) {
     try {
       await navigator.clipboard.writeText(text)
+      if (!isCurrentOperation(operation, permission, panelId, siteId)) return
       copied = true
     } catch { /* fall through */ }
   }
 
   if (!copied) {
+    if (!isCurrentOperation(operation, permission, panelId, siteId)) return
     try {
       const el = document.createElement('textarea')
       el.value = text
@@ -203,6 +341,8 @@ async function handleCopy() {
     } catch { /* fall through */ }
   }
 
+  if (!isCurrentOperation(operation, permission, panelId, siteId)) return
+
   if (!copied) {
     toast.add({ title: t('public.admin.copyFailed'), color: 'error' })
     return
@@ -212,13 +352,18 @@ async function handleCopy() {
 }
 
 async function handleDownloadSvg() {
-  if (!token.value) return
+  if (!authResolved.value || !canEditInfrastructure.value || !drawerOpen.value || !token.value) return
+  const permission = permissionGeneration
+  const operation = tokenOperationGeneration
+  const panelId = props.panelId
+  const siteId = props.siteId
   try {
     const svg = await QRCode.toString(publicUrl.value, {
       type: 'svg',
       margin: 1,
       color: { dark: '#000000', light: '#ffffff' }
     })
+    if (!isCurrentOperation(operation, permission, panelId, siteId)) return
     const blob = new Blob([svg], { type: 'image/svg+xml' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -227,24 +372,29 @@ async function handleDownloadSvg() {
     a.click()
     URL.revokeObjectURL(url)
   } catch {
-    toast.add({ title: t('public.admin.downloadFailed'), color: 'error' })
+    if (isCurrentOperation(operation, permission, panelId, siteId)) toast.add({ title: t('public.admin.downloadFailed'), color: 'error' })
   }
 }
 
 async function handleDownloadPng() {
-  if (!token.value) return
+  if (!authResolved.value || !canEditInfrastructure.value || !drawerOpen.value || !token.value) return
+  const permission = permissionGeneration
+  const operation = tokenOperationGeneration
+  const panelId = props.panelId
+  const siteId = props.siteId
   try {
     const dataUrl = await QRCode.toDataURL(publicUrl.value, {
       width: 512,
       margin: 2,
       color: { dark: '#000000', light: '#ffffff' }
     })
+    if (!isCurrentOperation(operation, permission, panelId, siteId)) return
     const a = document.createElement('a')
     a.href = dataUrl
     a.download = `qr-pp-${props.panelName.replace(/\s+/g, '-')}.png`
     a.click()
   } catch {
-    toast.add({ title: t('public.admin.downloadFailed'), color: 'error' })
+    if (isCurrentOperation(operation, permission, panelId, siteId)) toast.add({ title: t('public.admin.downloadFailed'), color: 'error' })
   }
 }
 </script>

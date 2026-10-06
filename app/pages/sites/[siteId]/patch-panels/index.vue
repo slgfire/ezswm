@@ -15,11 +15,13 @@
           :title="$t('common.print')"
           @click="openPrintPage"
         />
-        <UButton icon="i-heroicons-plus" size="sm" @click="openCreate">
+        <UButton v-if="authResolved && canEditInfrastructure" icon="i-heroicons-plus" size="sm" @click="openCreate">
           {{ $t('patchPanels.create') }}
         </UButton>
       </div>
     </div>
+
+    <SharedViewOnlyNotice v-if="authResolved && !canEditInfrastructure" class="mb-4" />
 
     <!-- Loading -->
     <div v-if="pageLoading" class="flex justify-center py-12">
@@ -75,6 +77,7 @@
               </NuxtLink>
               <div class="flex items-center pr-3 opacity-0 transition-opacity group-hover:opacity-100">
                 <PatchPanelPublicAccess
+                  v-if="authResolved && canEditInfrastructure"
                   :panel-id="panel.id"
                   :site-id="panel.site_id"
                   :panel-name="panel.name"
@@ -98,14 +101,14 @@
         :title="$t('patchPanels.emptyTitle')"
         :description="$t('patchPanels.emptyDescription')"
       >
-        <template #action>
+        <template v-if="authResolved && canEditInfrastructure" #action>
           <UButton icon="i-heroicons-plus" @click="openCreate">{{ $t('patchPanels.create') }}</UButton>
         </template>
       </SharedEmptyState>
     </template>
 
     <!-- Create slideover -->
-    <USlideover :open="showCreate" @update:open="onCreateOpenChange">
+    <USlideover v-if="authResolved && canEditInfrastructure" :open="showCreate" @update:open="onCreateOpenChange">
       <template #title>
         <span>{{ $t('patchPanels.create') }}</span>
       </template>
@@ -147,6 +150,16 @@ const { t } = useI18n()
 useHead({ title: t('patchPanels.title') })
 const toast = useToast()
 const router = useRouter()
+const { authResolved, canEditInfrastructure, fetchUser, handleInfrastructureForbidden } = useAuth()
+let permissionGeneration = 0
+let createGeneration = 0
+let accessChangeNoticeShown = false
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
 
 const { items, fetch: fetchPanels, create } = usePatchPanels()
 const { items: allSites, fetch: fetchAllSites } = useSites()
@@ -211,12 +224,38 @@ const portCountOptions = [
   { label: '48', value: '48' }
 ]
 
-const { takeSnapshot: snapshotCreate, requestClose: requestCloseCreate, onOpenChange: onCreateOpenChange } = useSlideoverGuard(
+const { takeSnapshot: snapshotCreate, requestClose: guardedRequestCloseCreate, onOpenChange: guardedOnCreateOpenChange } = useSlideoverGuard(
   createForm,
-  () => { showCreate.value = false }
+  closeCreateForm
 )
 
+function closeCreateForm() {
+  createGeneration++
+  creating.value = false
+  showCreate.value = false
+  createForm.value = { site_id: '', name: '', description: '', port_count: '24' }
+}
+
+function requestCloseCreate() {
+  if (!authResolved.value || !canEditInfrastructure.value) {
+    closeCreateForm()
+    return
+  }
+  guardedRequestCloseCreate()
+}
+
+function onCreateOpenChange(open: boolean) {
+  if (open) {
+    if (authResolved.value && canEditInfrastructure.value) showCreate.value = true
+    return
+  }
+  if (!authResolved.value || !canEditInfrastructure.value) closeCreateForm()
+  else guardedOnCreateOpenChange(false)
+}
+
 function openCreate() {
+  if (!authResolved.value || !canEditInfrastructure.value) return
+  createGeneration++
   createForm.value = {
     site_id: siteId.value !== 'all' ? siteId.value : (allSites.value[0]?.id || ''),
     name: '',
@@ -239,6 +278,11 @@ function validateCreate(state: typeof createForm.value) {
 }
 
 async function onSubmitCreate() {
+  if (!authResolved.value || !canEditInfrastructure.value || !showCreate.value || creating.value) return
+  const permission = permissionGeneration
+  const generation = ++createGeneration
+  const routeSiteId = siteId.value
+  const targetSiteId = createForm.value.site_id
   creating.value = true
   try {
     const body = {
@@ -248,17 +292,39 @@ async function onSubmitCreate() {
       port_count: Number(createForm.value.port_count)
     }
     const result = await create(body)
+    if (
+      permission !== permissionGeneration || generation !== createGeneration ||
+      !authResolved.value || !canEditInfrastructure.value || !showCreate.value ||
+      createForm.value.site_id !== targetSiteId || siteId.value !== routeSiteId
+    ) return
     toast.add({ title: t('patchPanels.messages.created'), color: 'success' })
-    showCreate.value = false
+    closeCreateForm()
+    const completedGeneration = createGeneration
+    if (permission !== permissionGeneration || !authResolved.value || !canEditInfrastructure.value || siteId.value !== routeSiteId) return
     await loadData()
-    if (result?.id) {
+    if (
+      permission !== permissionGeneration || completedGeneration !== createGeneration ||
+      !authResolved.value || !canEditInfrastructure.value || siteId.value !== routeSiteId
+    ) return
+    if (result?.id && result.site_id === targetSiteId) {
       await router.push(`/sites/${result.site_id}/patch-panels/${result.slug || result.id}`)
     }
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled') return
+    if (
+      permission !== permissionGeneration || generation !== createGeneration ||
+      !authResolved.value || !canEditInfrastructure.value || !showCreate.value ||
+      createForm.value.site_id !== targetSiteId || siteId.value !== routeSiteId
+    ) return
     const error = err as { data?: { message?: string } }
     toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
-    creating.value = false
+    if (generation === createGeneration) creating.value = false
   }
 }
 
@@ -274,9 +340,19 @@ async function loadData() {
 }
 
 onMounted(async () => {
+  if (!authResolved.value) await fetchUser()
   const fetches: Promise<void>[] = [loadData()]
   if (siteId.value === 'all') fetches.push(fetchAllSites())
   await Promise.all(fetches)
   pageLoading.value = false
 })
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (!wasEditable || canEdit || !authResolved.value) return
+  permissionGeneration++
+  createGeneration++
+  creating.value = false
+  // Discard the revoked draft directly; never trigger the unsaved-changes prompt.
+  closeCreateForm()
+}, { flush: 'sync' })
 </script>
