@@ -21,6 +21,7 @@ export function useTopology(siteId: Ref<string> | string) {
   let saveTimer: ReturnType<typeof setTimeout> | null = null
   let queuedPositions: Record<string, { x: number; y: number }> | null = null
   let saveGeneration = 0
+  let resetInProgress = false
   const activeSaves = new Set<Promise<void>>()
 
   function cancelQueuedSave() {
@@ -72,7 +73,7 @@ export function useTopology(siteId: Ref<string> | string) {
   }
 
   async function persistLayout(positions: Record<string, { x: number; y: number }>, generation: number) {
-    if (!canEditInfrastructure.value || generation !== saveGeneration) return
+    if (!canEditInfrastructure.value || resetInProgress || generation !== saveGeneration) return
     try {
       await apiFetch(`/api/sites/${id.value}/topology-layout`, {
         method: 'PUT',
@@ -84,7 +85,7 @@ export function useTopology(siteId: Ref<string> | string) {
   }
 
   function saveLayout(positions: Record<string, { x: number; y: number }>) {
-    if (!canEditInfrastructure.value) return
+    if (!canEditInfrastructure.value || resetInProgress) return
     queuedPositions = positions
     if (saveTimer) clearTimeout(saveTimer)
     const generation = saveGeneration
@@ -101,14 +102,16 @@ export function useTopology(siteId: Ref<string> | string) {
   }
 
   async function resetLayout(): Promise<boolean> {
-    if (!canEditInfrastructure.value) return false
-    cancelQueuedSave()
-    const siteIdAtRequest = id.value
-    // Let already-dispatched position saves settle before deleting the saved
-    // layout, so an older autosave cannot recreate it after reset.
-    await Promise.all([...activeSaves])
-    if (id.value !== siteIdAtRequest || !canEditInfrastructure.value) return false
+    if (!canEditInfrastructure.value || resetInProgress) return false
+    // Block new autosaves synchronously, before anything is cancelled/awaited.
+    resetInProgress = true
     try {
+      cancelQueuedSave()
+      const siteIdAtRequest = id.value
+      // Let already-dispatched position saves settle before deleting the saved
+      // layout, so an older autosave cannot recreate it after reset.
+      await Promise.all([...activeSaves])
+      if (id.value !== siteIdAtRequest || !canEditInfrastructure.value) return false
       await apiFetch(`/api/sites/${siteIdAtRequest}/topology-layout`, {
         method: 'DELETE'
       })
@@ -118,6 +121,8 @@ export function useTopology(siteId: Ref<string> | string) {
     } catch (cause: unknown) {
       await showMutationError(cause)
       return false
+    } finally {
+      resetInProgress = false
     }
   }
 

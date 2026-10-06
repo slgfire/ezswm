@@ -223,7 +223,7 @@ import type { AirflowDirection, LayoutTemplate, LayoutUnit } from '~~/types/layo
 import { buildLayoutTemplatePoeOptions, layoutTemplatePoeSelection, normalizeLayoutTemplatePoeSelection, poeNoneValue } from '~~/app/utils/layoutTemplatePoe'
 
 definePageMeta({
-  middleware: [async (to) => {
+  middleware: [async () => {
     const auth = useAuth()
     if (!auth.authResolved.value) await auth.fetchUser()
     if (!auth.canEditInfrastructure.value) {

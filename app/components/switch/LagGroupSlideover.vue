@@ -1,12 +1,12 @@
 <template>
   <USlideover
     :open="isOpen"
-    :title="readonly && editingLag ? editingLag.name : isEdit ? $t('lag.edit') : $t('lag.create')"
-    :description="readonly ? $t('permissions.viewOnly') : isEdit ? $t('lag.editDescription') : $t('lag.createDescription')"
+    :title="isReadonly && editingLag ? editingLag.name : isEdit ? $t('lag.edit') : $t('lag.create')"
+    :description="isReadonly ? $t('permissions.viewOnly') : isEdit ? $t('lag.editDescription') : $t('lag.createDescription')"
     @update:open="onOpenChange"
   >
     <template #body>
-      <div v-if="readonly && editingLag" class="space-y-5">
+      <div v-if="isReadonly && editingLag" class="space-y-5">
         <div class="rounded-xl border border-primary-500/20 bg-primary-500/[0.06] p-4">
           <div class="flex flex-wrap items-center gap-2">
             <UBadge color="info" variant="soft">{{ editingLag.name }}</UBadge>
@@ -39,7 +39,7 @@
         </dl>
       </div>
 
-      <UForm v-else-if="!readonly" ref="lagFormRef" :state="form" :validate="validate" :validate-on="['blur', 'change']" class="space-y-4" @submit="onSubmit">
+      <UForm v-else-if="!isReadonly" ref="lagFormRef" :state="form" :validate="validate" :validate-on="['blur', 'change']" class="space-y-4" @submit="onSubmit">
         <UFormField :label="$t('lag.name')" name="name" required>
           <UInput v-model="form.name" maxlength="100" class="w-full" />
         </UFormField>
@@ -242,7 +242,7 @@
     </template>
 
     <template #footer>
-      <div v-if="readonly" class="flex justify-end">
+      <div v-if="isReadonly" class="flex justify-end">
         <UButton color="neutral" variant="subtle" @click="() => { isOpen = false }">{{ $t('common.close') }}</UButton>
       </div>
       <div v-else class="flex justify-end gap-2">
@@ -301,7 +301,7 @@ const editingLag = ref<LAGGroup | null>(null)
 const isDuplicate = ref(false)
 const isEdit = computed(() => !!editingLag.value)
 const writable = computed(() => canEditInfrastructure.value && props.readonly !== true)
-const readonly = computed(() => !writable.value)
+const isReadonly = computed(() => !writable.value)
 const inspectedPorts = computed(() => props.ports.filter(port => editingLag.value?.port_ids.includes(port.id)))
 const firstLagPort = computed(() => inspectedPorts.value[0])
 const localPortMenuOpen = ref(false)
@@ -379,7 +379,7 @@ const { takeSnapshot, requestClose, onOpenChange: onEditableOpenChange } = useSl
 )
 
 function onOpenChange(open: boolean) {
-  if (readonly.value) {
+  if (isReadonly.value) {
     isOpen.value = open
     return
   }
