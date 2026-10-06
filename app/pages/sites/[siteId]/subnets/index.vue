@@ -5,10 +5,12 @@
         <h1 class="text-xl font-bold">{{ $t('networks.title') }}</h1>
         <p class="mt-1 text-sm text-muted">{{ $t('networks.description') }}</p>
       </div>
-      <UButton :to="`/sites/${siteId}/subnets/create`" icon="i-heroicons-plus" size="sm">
+      <UButton v-if="canEditInfrastructure" :to="`/sites/${siteId}/subnets/create`" icon="i-heroicons-plus" size="sm">
         {{ $t('networks.create') }}
       </UButton>
     </div>
+
+    <SharedViewOnlyNotice v-if="route.query.access === 'readonly'" class="mb-4" />
 
     <!-- Loading -->
     <div v-if="pageLoading" class="flex justify-center py-12">
@@ -100,7 +102,7 @@
             </div>
 
             <!-- Actions (on hover) -->
-            <div class="flex items-center gap-1 py-3 opacity-0 transition-opacity group-hover:opacity-100">
+            <div v-if="canEditInfrastructure" class="flex items-center gap-1 py-3 opacity-0 transition-opacity group-hover:opacity-100">
               <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="openDeleteDialog(net)" />
             </div>
           </NuxtLink>
@@ -114,13 +116,14 @@
       :title="$t('networks.emptyTitle')"
       :description="$t('networks.emptyDescription')"
     >
-      <template #action>
+      <template v-if="canEditInfrastructure" #action>
         <UButton :to="`/sites/${siteId}/subnets/create`" icon="i-heroicons-plus">{{ $t('networks.create') }}</UButton>
       </template>
     </SharedEmptyState>
     </template>
 
     <SharedConfirmDialog
+      v-if="canEditInfrastructure"
       v-model="showDeleteDialog"
       :title="$t('networks.delete')"
       :message="deleteMessage"
@@ -139,6 +142,16 @@ const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
 useHead({ title: t('networks.title') })
 const toast = useToast()
+const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
+let accessChangeNoticeShown = false
+let permissionGeneration = 0
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
+
 const { items, loading, fetch: fetchNetworks, remove } = useNetworks()
 const { items: vlans, fetch: fetchVlans } = useVlans()
 const { items: allSites, fetch: fetchAllSites } = useSites()
@@ -192,6 +205,7 @@ const sortAsc = ref(initial.dir)
 
 function syncState() {
   const query: Record<string, string> = {}
+  if (route.query.access === 'readonly') query.access = 'readonly'
   if (search.value) query.q = search.value
   if (vlanFilter.value !== 'all') query.vlan = vlanFilter.value
   if (sortField.value !== 'name') query.sort = sortField.value
@@ -292,24 +306,45 @@ const groupedItems = computed(() => {
 })
 
 function openDeleteDialog(network: Network) {
+  if (!authResolved.value || !canEditInfrastructure.value) return
   deleteTarget.value = network
   deleteMessage.value = `${t('networks.delete')}: ${network.name} (${network.subnet})?`
   showDeleteDialog.value = true
 }
 
 async function confirmDelete() {
-  if (!deleteTarget.value) return
+  if (!authResolved.value || !canEditInfrastructure.value || !deleteTarget.value) return
+  const generation = permissionGeneration
+  const target = deleteTarget.value
   deleting.value = true
   try {
-    await remove(deleteTarget.value.id)
+    await remove(target.id)
+    if (generation !== permissionGeneration || !canEditInfrastructure.value) return
     toast.add({ title: t('networks.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
+    deleteTarget.value = null
+    deleteMessage.value = ''
     await fetchNetworks(siteParams.value)
+    if (generation !== permissionGeneration || !canEditInfrastructure.value) return
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled') return
     const error = err as { data?: { message?: string } }
     toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
   } finally { deleting.value = false }
 }
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (!wasEditable || canEdit || !authResolved.value) return
+  permissionGeneration++
+  showDeleteDialog.value = false
+  deleteTarget.value = null
+  deleteMessage.value = ''
+}, { flush: 'sync' })
 
 watch([search, vlanFilter], () => {})
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})

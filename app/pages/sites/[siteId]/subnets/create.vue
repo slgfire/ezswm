@@ -8,7 +8,15 @@
       </div>
     </div>
 
-    <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit.prevent="onSubmit">
+    <div v-if="!authResolved" class="flex justify-center py-12" role="status" aria-live="polite">
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
+    </div>
+    <div v-else-if="!canEditInfrastructure" class="space-y-4">
+      <SharedViewOnlyNotice />
+      <UButton color="neutral" variant="subtle" :to="`/sites/${siteId}/subnets`">{{ $t('common.back') }}</UButton>
+    </div>
+
+    <UForm v-else :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit.prevent="onSubmit">
       <div class="space-y-6">
         <!-- Network Info -->
         <div class="list-container rounded-lg bg-default p-5">
@@ -63,14 +71,36 @@
 <script setup lang="ts">
 import type { Network } from '~~/types/network'
 
+definePageMeta({
+  middleware: [async (to) => {
+    const auth = useAuth()
+    if (!auth.authResolved.value) await auth.fetchUser()
+    if (!auth.canEditInfrastructure.value) {
+      return navigateTo({
+        path: `/sites/${to.params.siteId}/subnets`,
+        query: { access: 'readonly' }
+      })
+    }
+  }]
+})
+
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
 useHead({ title: t('networks.create') })
 const toast = useToast()
 const router = useRouter()
+const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 const { create } = useNetworks()
 const { items: vlans, fetch: fetchVlans } = useVlans()
+let permissionGeneration = 0
+let accessChangeNoticeShown = false
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
 
 const submitting = ref(false)
 const dnsInput = ref('')
@@ -113,6 +143,8 @@ function parseDns(): string[] {
 }
 
 async function onSubmit() {
+  if (!authResolved.value || !canEditInfrastructure.value) return
+  const generation = permissionGeneration
   submitting.value = true
   let result: unknown
   try {
@@ -128,17 +160,42 @@ async function onSubmit() {
       body.site_id = siteId.value
     }
     result = await create(body)
+    if (generation !== permissionGeneration || !canEditInfrastructure.value) return
     clearDirty()
     toast.add({ title: t('networks.messages.created'), color: 'success' })
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled') return
     const error = err as { data?: { message?: string } }
     toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
     return
   } finally {
     submitting.value = false
   }
-  await router.push(`/sites/${siteId.value}/subnets/${(result as Network).id}`)
+  if (generation === permissionGeneration && canEditInfrastructure.value) {
+    await router.push(`/sites/${siteId.value}/subnets/${(result as Network).id}`)
+  }
 }
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (!wasEditable || canEdit || !authResolved.value) return
+  permissionGeneration++
+  form.value = {
+    name: '',
+    subnet: '',
+    gateway: '',
+    vlan_id: '',
+    description: ''
+  }
+  dnsInput.value = ''
+  // Discard revoked draft state without opening the unsaved-changes flow.
+  clearDirty()
+  void navigateTo({ path: `/sites/${siteId.value}/subnets`, query: { access: 'readonly' } })
+}, { flush: 'sync' })
 
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 

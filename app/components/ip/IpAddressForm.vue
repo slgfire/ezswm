@@ -1,5 +1,5 @@
 <template>
-  <USlideover :open="open" @update:open="onOpenChange">
+  <USlideover :open="open" @update:open="handleOpenChange">
     <template #title>
       <div v-if="editTarget" class="flex items-center gap-2">
         <code class="font-mono text-sm">{{ editTarget.ip_address }}</code>
@@ -9,17 +9,65 @@
     </template>
 
     <template #actions>
-      <div v-if="editTarget" class="flex items-center gap-1">
-        <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="emit('delete')" />
+      <div v-if="editTarget && !readonly" class="flex items-center gap-1">
+        <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="onDelete" />
       </div>
     </template>
 
     <template #body>
-      <div v-if="error" class="mb-4 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+      <div v-if="error && !readonly" class="mb-4 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
         {{ error }}
       </div>
 
-      <form class="space-y-4" @submit.prevent="onSubmit">
+      <dl v-if="readonly" class="grid gap-4 sm:grid-cols-2">
+        <div class="rounded-lg border border-default bg-elevated/40 p-3 sm:col-span-2">
+          <dt class="text-xs font-medium uppercase tracking-wide text-muted">{{ $t('ipAddresses.fields.ipAddress') }}</dt>
+          <dd class="mt-1"><code class="font-mono text-base font-semibold text-highlighted">{{ editTarget?.ip_address || '—' }}</code></dd>
+        </div>
+        <div>
+          <dt class="text-xs font-medium uppercase tracking-wide text-muted">{{ $t('ipAddresses.fields.hostname') }}</dt>
+          <dd class="mt-1 text-sm text-highlighted">{{ editTarget?.hostname || '—' }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-medium uppercase tracking-wide text-muted">{{ $t('ipAddresses.fields.macAddress') }}</dt>
+          <dd class="mt-1 font-mono text-sm text-highlighted">{{ editTarget?.mac_address || '—' }}</dd>
+        </div>
+        <div class="sm:col-span-2">
+          <dt class="text-xs font-medium uppercase tracking-wide text-muted">{{ $t('ipAddresses.fields.network') }}</dt>
+          <dd class="mt-1 flex flex-wrap items-center gap-2 text-sm">
+            <span class="font-medium text-highlighted">{{ editTarget?.network_name || '—' }}</span>
+            <code v-if="editTarget?.network_subnet" class="rounded bg-primary-50 px-2 py-0.5 font-mono text-xs text-primary-700 dark:bg-primary-500/10 dark:text-primary-300">{{ editTarget?.network_subnet }}</code>
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs font-medium uppercase tracking-wide text-muted">{{ $t('ipAddresses.fields.vlan') }}</dt>
+          <dd class="mt-1 text-sm text-highlighted">
+            <span v-if="editTarget && editTarget.vlan_tag !== null" class="inline-flex items-center gap-2">
+              <span class="size-2.5 rounded-full" :style="{ backgroundColor: editTarget.vlan_color || '#6B7280' }" />
+              <span>VLAN {{ editTarget.vlan_tag }}<template v-if="editTarget.vlan_name"> · {{ editTarget.vlan_name }}</template></span>
+            </span>
+            <span v-else>—</span>
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs font-medium uppercase tracking-wide text-muted">{{ $t('ipAddresses.fields.site') }}</dt>
+          <dd class="mt-1 text-sm text-highlighted">{{ editTarget?.site_name || '—' }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-medium uppercase tracking-wide text-muted">{{ $t('ipAddresses.fields.deviceType') }}</dt>
+          <dd class="mt-1 text-sm text-highlighted">{{ optionLabel(deviceTypeOptions, editTarget?.device_type) }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-medium uppercase tracking-wide text-muted">{{ $t('ipAddresses.fields.status') }}</dt>
+          <dd class="mt-1 text-sm text-highlighted">{{ optionLabel(allocStatusOptions, editTarget?.status) }}</dd>
+        </div>
+        <div class="sm:col-span-2">
+          <dt class="text-xs font-medium uppercase tracking-wide text-muted">{{ $t('common.description') }}</dt>
+          <dd class="mt-1 whitespace-pre-wrap text-sm text-highlighted">{{ editTarget?.description || '—' }}</dd>
+        </div>
+      </dl>
+
+      <form v-else class="space-y-4" @submit.prevent="onSubmit">
         <UFormField :label="$t('ipAddresses.fields.ipAddress')" required>
           <UInput v-model="form.ip_address" placeholder="10.0.1.10" required :color="error ? 'error' : undefined" class="w-full" />
         </UFormField>
@@ -68,10 +116,13 @@
 
     <template #footer>
       <div class="flex justify-end gap-2">
-        <UButton variant="subtle" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
-        <UButton :loading="saving" :disabled="!effectiveNetworkId" @click="onSubmit">
-          {{ editTarget ? $t('common.save') : $t('common.add') }}
-        </UButton>
+        <UButton v-if="readonly" variant="subtle" color="neutral" @click="requestClose">{{ $t('common.close') }}</UButton>
+        <template v-else>
+          <UButton variant="subtle" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
+          <UButton :loading="saving" :disabled="!effectiveNetworkId" @click="onSubmit">
+            {{ editTarget ? $t('common.save') : $t('common.add') }}
+          </UButton>
+        </template>
       </div>
     </template>
   </USlideover>
@@ -91,8 +142,9 @@ interface FormState {
   description: string
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   open: boolean
+  readonly?: boolean
   editTarget: IpAllocationEnriched | null
   networks: Network[]
   vlans: VLAN[]
@@ -100,7 +152,7 @@ const props = defineProps<{
   allocStatusOptions: { label: string; value: string }[]
   error: string
   saving: boolean
-}>()
+}>(), { readonly: false })
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
@@ -117,7 +169,7 @@ const form = ref<FormState>(blankForm())
 const manualNetworkId = ref('')
 
 // Unsaved-changes guard. Closing routes through @close (parent owns open state).
-const { takeSnapshot, requestClose, onOpenChange } = useSlideoverGuard(
+const { takeSnapshot, requestClose: guardedRequestClose, onOpenChange: guardedOnOpenChange } = useSlideoverGuard(
   () => ({ ...form.value, manualNetworkId: manualNetworkId.value }),
   () => emit('close')
 )
@@ -154,7 +206,7 @@ const showNoMatchHint = computed(() =>
   !manualNetworkId.value
 )
 
-watch(() => props.open, (open) => {
+watch([() => props.open, () => props.editTarget, () => props.readonly], ([open]) => {
   if (!open) return
   if (props.editTarget) {
     const t = props.editTarget
@@ -174,10 +226,36 @@ watch(() => props.open, (open) => {
   // derivedNetwork watch may still set manualNetworkId from a typed IP; snapshot
   // next tick so that auto-fill is part of the baseline, not a phantom edit.
   nextTick(takeSnapshot)
-})
+}, { flush: 'post' })
+
+function optionLabel(options: { label: string; value: string }[], value?: string | null) {
+  if (!value) return '—'
+  return options.find(option => option.value === value)?.label ?? value
+}
+
+function requestClose() {
+  if (props.readonly) {
+    emit('close')
+    return
+  }
+  guardedRequestClose()
+}
+
+function handleOpenChange(open: boolean) {
+  if (open) {
+    emit('update:open', true)
+    return
+  }
+  if (props.readonly) emit('close')
+  else guardedOnOpenChange(false)
+}
+
+function onDelete() {
+  if (!props.readonly) emit('delete')
+}
 
 function onSubmit() {
-  if (!effectiveNetworkId.value) return
+  if (props.readonly || !effectiveNetworkId.value) return
   const body: Partial<IPAllocation> = {
     ip_address: form.value.ip_address.trim(),
     hostname: form.value.hostname.trim() || undefined,
