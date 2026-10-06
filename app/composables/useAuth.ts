@@ -16,8 +16,16 @@ interface SetupStatus {
 
 export type InfrastructureForbiddenResult = 'not-forbidden' | 'demoted' | 'already-handled' | 'unchanged'
 
+// A 403-triggered role refresh. Each handler keeps its own immutable batch (the generation is captured
+// locally), so a batch from before an auth transition can never act for a newer one.
+interface ForcedRefresh {
+  promise: Promise<AuthUser | null>
+  generation: number
+}
+
 interface AuthRuntime {
   refresh: Promise<AuthUser | null> | null
+  forced: ForcedRefresh | null
   demotionNotified: boolean
   // bumped on every explicit auth transition; stale refreshes must not write
   generation: number
@@ -30,7 +38,7 @@ export function useAuth() {
   const nuxtApp = useNuxtApp()
   let runtime = runtimes.get(nuxtApp)
   if (!runtime) {
-    runtime = { refresh: null, demotionNotified: false, generation: 0 }
+    runtime = { refresh: null, forced: null, demotionNotified: false, generation: 0 }
     runtimes.set(nuxtApp, runtime)
   }
   const rt = runtime
@@ -68,6 +76,7 @@ export function useAuth() {
   function invalidateRefresh() {
     rt.generation++
     rt.refresh = null
+    rt.forced = null
     authRefreshing.value = false
   }
 
@@ -113,7 +122,21 @@ export function useAuth() {
   async function handleInfrastructureForbidden(error: unknown): Promise<InfrastructureForbiddenResult> {
     if (getErrorStatus(error) !== 403) return 'not-forbidden'
     if (authResolved.value && !canEditInfrastructure.value) return 'already-handled'
-    await fetchUser()
+    let batch = rt.forced
+    if (!batch) {
+      // An in-flight normal refresh may have started before the role change that caused this 403:
+      // drop it and start a fresh request now, so the answer reflects the state after the 403.
+      invalidateRefresh()
+      const created: ForcedRefresh = { promise: fetchUser(), generation: rt.generation }
+      batch = created
+      rt.forced = created
+      void created.promise.finally(() => {
+        if (rt.forced === created) rt.forced = null
+      })
+    }
+    await batch.promise
+    // An auth transition (login/logout/setup) happened while this batch was in flight: it belongs to an old session.
+    if (batch.generation !== rt.generation) return 'already-handled'
     if (canEditInfrastructure.value) return 'unchanged'
     if (rt.demotionNotified) return 'already-handled'
     rt.demotionNotified = true
