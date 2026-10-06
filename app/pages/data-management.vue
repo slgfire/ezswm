@@ -252,10 +252,35 @@
 <script setup lang="ts">
 const toast = useToast()
 const { t } = useI18n()
-const { user, authResolved, isAuthLoading, isViewer, canEditInfrastructure, fetchUser } = useAuth()
+const { user, authResolved, isAuthLoading, isViewer, canEditInfrastructure, fetchUser, handleInfrastructureForbidden } = useAuth()
 useHead({ title: t('dataManagement.title') })
 
 const MAX_IMPORT_SIZE = 5 * 1024 * 1024 // 5MB
+
+// Admin-only state/results are invalidated when the role is lost. Async admin completions capture
+// the generation at start and ignore their result if it changed or edit permission is gone
+// (also covers demote -> promote while a request is in flight). A request already dispatched
+// cannot be cancelled; only its completion handling is ignored.
+let adminGeneration = 0
+let accessNoticeShown = false
+let hasBeenDemoted = false
+
+function adminCurrent(gen: number) {
+  return gen === adminGeneration && canEditInfrastructure.value
+}
+
+function noticeAccessChanged() {
+  if (accessNoticeShown) return
+  accessNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
+
+// Returns true when the failure must NOT show the generic error (role lost / stale request).
+async function handleAdminError(error: unknown, gen: number): Promise<boolean> {
+  const access = await handleInfrastructureForbidden(error)
+  if (access === 'demoted') noticeAccessChanged()
+  return access === 'demoted' || access === 'already-handled' || !adminCurrent(gen)
+}
 
 const activeTab = ref<'backup' | 'export' | 'import'>(canEditInfrastructure.value ? 'backup' : 'export')
 const tabs = computed(() => {
@@ -286,23 +311,28 @@ const showRestoreDialog = ref(false)
 const isBackupDragOver = ref(false)
 
 function onBackupFileSelect(event: Event) {
+  if (!canEditInfrastructure.value) return
   const target = event.target as HTMLInputElement
   backupFile.value = target.files?.[0] || null
 }
 
 function onBackupFileDrop(event: DragEvent) {
   isBackupDragOver.value = false
+  if (!canEditInfrastructure.value) return
   const file = event.dataTransfer?.files?.[0] || null
   if (file) backupFile.value = file
 }
 
 async function downloadBackup() {
   if (!canEditInfrastructure.value) return
+  const gen = adminGeneration
   try {
     const response = await $fetch('/api/backup/export', { responseType: 'blob' })
+    if (!adminCurrent(gen)) return
     downloadBlob(response as unknown as Blob, `ezswm-backup-${new Date().toISOString().slice(0, 10)}.json`)
     toast.add({ title: t('backup.messages.exported'), color: 'success' })
-  } catch {
+  } catch (e) {
+    if (await handleAdminError(e, gen)) return
     toast.add({ title: t('errors.serverError'), color: 'error' })
   }
 }
@@ -312,14 +342,20 @@ async function restoreBackup() {
     showRestoreDialog.value = false
     return
   }
-  if (!backupFile.value) return
+  const file = backupFile.value
+  if (!file) return
+  const gen = adminGeneration
   try {
-    const text = await backupFile.value.text()
+    const text = await file.text()
+    // Re-check role, generation and the selected file right before the destructive POST.
+    if (!adminCurrent(gen) || backupFile.value !== file) return
     const backup = JSON.parse(text)
     await $fetch('/api/backup/import', { method: 'POST', body: backup })
+    if (!adminCurrent(gen)) return
     toast.add({ title: t('backup.messages.imported'), color: 'success' })
-    backupFile.value = null
+    if (backupFile.value === file) backupFile.value = null
   } catch (err: unknown) {
+    if (await handleAdminError(err, gen)) return
     const message = (err as { data?: { message?: string } })?.data?.message
     toast.add({ title: message || t('errors.serverError'), color: 'error' })
   } finally {
@@ -406,6 +442,8 @@ function parseCsvLine(line: string): string[] {
 }
 
 async function onImportFileSelect(event: Event) {
+  if (!canEditInfrastructure.value) return
+  const gen = adminGeneration
   const target = event.target as HTMLInputElement
   const file = target.files?.[0] || null
   importFile.value = file
@@ -423,6 +461,7 @@ async function onImportFileSelect(event: Event) {
 
   try {
     const text = await file.text()
+    if (!adminCurrent(gen) || importFile.value !== file) return
     let data: Record<string, unknown>[]
 
     if (file.name.endsWith('.csv')) {
@@ -435,12 +474,14 @@ async function onImportFileSelect(event: Event) {
     importParsedData.value = data
     importPreview.value = data.length
   } catch {
+    if (!adminCurrent(gen) || importFile.value !== file) return
     toast.add({ title: t('dataManagement.import.parseError'), color: 'error' })
   }
 }
 
 function onImportFileDrop(event: DragEvent) {
   isDragOver.value = false
+  if (!canEditInfrastructure.value) return
   const file = event.dataTransfer?.files?.[0] || null
   if (!file) return
   // Reuse the same logic as file input selection
@@ -467,25 +508,28 @@ async function executeImport() {
     return
   }
   showImportDialog.value = false
-  if (!importType.value || !importParsedData.value) return
+  const type = importType.value
+  const data = importParsedData.value
+  if (!type || !data) return
+  const gen = adminGeneration
 
   try {
     const result = await $fetch('/api/data/import', {
       method: 'POST',
-      body: {
-        type: importType.value,
-        data: importParsedData.value
-      }
+      body: { type, data }
     })
-    importResults.value = result as unknown as { imported: number; skipped: number; skippedDetails: string[]; errors: string[] }
+    if (!adminCurrent(gen)) return
+    const summary = result as unknown as { imported: number; skipped: number; skippedDetails: string[]; errors: string[] }
+    importResults.value = summary
 
-    if (importResults.value.imported > 0) {
-      toast.add({ title: t('dataManagement.import.success', { count: importResults.value.imported }), color: 'success' })
+    if (summary.imported > 0) {
+      toast.add({ title: t('dataManagement.import.success', { count: summary.imported }), color: 'success' })
     }
-    if (importResults.value.errors.length > 0) {
-      toast.add({ title: t('dataManagement.import.hasErrors', { count: importResults.value.errors.length }), color: 'warning' })
+    if (summary.errors.length > 0) {
+      toast.add({ title: t('dataManagement.import.hasErrors', { count: summary.errors.length }), color: 'warning' })
     }
   } catch (err: unknown) {
+    if (await handleAdminError(err, gen)) return
     const message = (err as { data?: { message?: string } })?.data?.message
     toast.add({ title: message || t('errors.serverError'), color: 'error' })
   }
@@ -494,7 +538,28 @@ async function executeImport() {
 const templateType = ref('switches')
 
 watch(canEditInfrastructure, (canEdit) => {
-  if (!canEdit && activeTab.value !== 'export') activeTab.value = 'export'
+  if (canEdit) {
+    if (hasBeenDemoted) {
+      adminGeneration++
+      accessNoticeShown = false
+    }
+    return
+  }
+  // true -> false: the role was lost. Invalidate in-flight admin work and drop admin-only state.
+  adminGeneration++
+  hasBeenDemoted = true
+  noticeAccessChanged()
+  showRestoreDialog.value = false
+  showImportDialog.value = false
+  isBackupDragOver.value = false
+  isDragOver.value = false
+  backupFile.value = null
+  importType.value = ''
+  importFile.value = null
+  importPreview.value = null
+  importParsedData.value = null
+  importResults.value = null
+  if (activeTab.value !== 'export') activeTab.value = 'export'
 })
 
 onMounted(async () => {

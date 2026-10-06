@@ -460,7 +460,7 @@ import type { OidcCheckResultDto, OidcConfigDto } from '../../types/oidc'
 const toast = useToast()
 const { t, setLocale } = useI18n()
 useHead({ title: t('settings.title') })
-const { user, authResolved, isAuthLoading, canEditInfrastructure, fetchUser } = useAuth()
+const { user, authResolved, isAuthLoading, canEditInfrastructure, fetchUser, handleInfrastructureForbidden } = useAuth()
 const { settings, fetch: fetchSettings, update: updateSettings } = useSettings()
 const { update: updateUser, changePassword: changePasswordApi } = useUsers()
 const { getConfig, saveConfig: saveOidcConfig, checkSavedConfig } = useOidc()
@@ -605,8 +605,48 @@ const passwordForm = reactive({
   confirm_password: ''
 })
 
-const dirtyTracker = computed(() => ({ ...generalForm, ...accountForm, ...passwordForm, ...oidcForm }))
-const { clearDirty } = useUnsavedChanges(dirtyTracker)
+// Admin-only state is invalidated when the role is lost. Async admin completions capture the
+// generation at start and ignore their result if it changed or edit permission is gone
+// (also covers demote -> promote while a request is in flight).
+let adminGeneration = 0
+let hasBeenDemoted = false
+let accessNoticeShown = false
+
+function adminCurrent(gen: number) {
+  return gen === adminGeneration && canEditInfrastructure.value
+}
+
+function noticeAccessChanged() {
+  if (accessNoticeShown) return
+  accessNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
+
+// Returns true when the failure must NOT show the generic error (role lost / stale request).
+async function handleAdminError(error: unknown, gen: number): Promise<boolean> {
+  const access = await handleInfrastructureForbidden(error)
+  if (access === 'demoted') noticeAccessChanged()
+  return access === 'demoted' || access === 'already-handled' || !adminCurrent(gen)
+}
+
+// Last saved/loaded admin (general + OIDC) field values. While the user cannot edit
+// infrastructure, the single dirty tracker compares these saved values (never revoked admin
+// edits) together with the live personal account/password fields.
+function snapshotInfra() {
+  return JSON.parse(JSON.stringify({ general: { ...generalForm }, oidc: { ...oidcForm } })) as { general: typeof generalForm, oidc: OidcFormState }
+}
+let infraBaseline = snapshotInfra()
+
+const dirtyTracker = computed(() => {
+  const infra = canEditInfrastructure.value ? { general: generalForm, oidc: oidcForm } : infraBaseline
+  return { ...infra.general, ...accountForm, ...passwordForm, ...infra.oidc }
+})
+const { clearDirty: clearTrackerDirty } = useUnsavedChanges(dirtyTracker)
+
+function clearDirty() {
+  if (canEditInfrastructure.value) infraBaseline = snapshotInfra()
+  clearTrackerDirty()
+}
 
 function serializeOidcForm() {
   return JSON.stringify({ ...oidcForm })
@@ -636,12 +676,15 @@ function applyOidcConfig(config: OidcConfigDto) {
 
 async function loadOidcConfig() {
   if (!canEditInfrastructure.value) return
+  const gen = adminGeneration
   loadingOidc.value = true
   oidcLoadError.value = false
   try {
     const config = await getConfig()
+    if (!adminCurrent(gen)) return
     applyOidcConfig(config)
-  } catch {
+  } catch (e) {
+    if (await handleAdminError(e, gen)) return
     oidcLoadError.value = true
   } finally {
     loadingOidc.value = false
@@ -650,6 +693,7 @@ async function loadOidcConfig() {
 
 async function saveGeneral() {
   if (!canEditInfrastructure.value) return
+  const gen = adminGeneration
   savingGeneral.value = true
   try {
     await updateSettings({
@@ -658,9 +702,11 @@ async function saveGeneral() {
       patch_panels_enabled: generalForm.patch_panels_enabled,
       switch_groups_enabled: generalForm.switch_groups_enabled
     })
+    if (!adminCurrent(gen)) return
     clearDirty()
     toast.add({ title: t('settings.messages.updated'), color: 'success' })
-  } catch {
+  } catch (e) {
+    if (await handleAdminError(e, gen)) return
     toast.add({ title: t('errors.serverError'), color: 'error' })
   } finally {
     savingGeneral.value = false
@@ -669,14 +715,23 @@ async function saveGeneral() {
 
 async function saveAccount() {
   if (!user.value) return
+  // Capture what is submitted before any await so later input edits cannot change the comparison.
+  const userId = user.value.id
+  const displayName = accountForm.display_name
+  const language = accountForm.language as 'en' | 'de'
   savingProfile.value = true
   try {
-    await updateUser(user.value.id, {
-      display_name: accountForm.display_name,
-      language: accountForm.language as 'en' | 'de'
-    })
-    await setLocale(accountForm.language as 'en' | 'de')
-    Object.assign(user.value, { display_name: accountForm.display_name, language: accountForm.language })
+    await updateUser(userId, { display_name: displayName, language })
+    await setLocale(language)
+    // The auth user is read-only here; refresh it from the server (single-flight GET, not a PUT retry).
+    let refreshed = await fetchUser()
+    // fetchUser may have joined a refresh that started before the save and returned the old profile.
+    // That request has finished by now, so at most one fresh refresh can pick up the saved profile.
+    if (refreshed && refreshed.id === userId && (refreshed.display_name !== displayName || refreshed.language !== language)) {
+      refreshed = await fetchUser()
+    }
+    // Session ended or the identity changed meanwhile: do not report success for this profile.
+    if (!refreshed || refreshed.id !== userId) return
     clearDirty()
     toast.add({ title: t('settings.messages.profileUpdated'), color: 'success' })
   } catch {
@@ -765,14 +820,17 @@ function buildOidcPayload() {
 
 async function saveOidc() {
   if (!canEditInfrastructure.value || !oidcDirty.value) return
+  const gen = adminGeneration
   savingOidc.value = true
   try {
     const config = await saveOidcConfig(buildOidcPayload())
+    if (!adminCurrent(gen)) return
     applyOidcConfig(config)
     checkResult.value = null
     clearDirty()
     toast.add({ title: t('settings.oidc.saved'), color: 'success' })
-  } catch {
+  } catch (e) {
+    if (await handleAdminError(e, gen)) return
     // API validation/provider responses may include sensitive request context; keep this generic.
     toast.add({ title: t('settings.oidc.saveFailed'), color: 'error' })
   } finally {
@@ -782,11 +840,15 @@ async function saveOidc() {
 
 async function checkOidc() {
   if (!canEditInfrastructure.value || oidcDirty.value || !oidcLoaded.value) return
+  const gen = adminGeneration
   checkingOidc.value = true
   checkResult.value = null
   try {
-    checkResult.value = await checkSavedConfig()
-  } catch {
+    const result = await checkSavedConfig()
+    if (!adminCurrent(gen)) return
+    checkResult.value = result
+  } catch (e) {
+    if (await handleAdminError(e, gen)) return
     checkResult.value = { ok: false }
   } finally {
     checkingOidc.value = false
@@ -812,7 +874,19 @@ watch(() => oidcForm.client_secret, (secret) => {
 })
 
 watch(canEditInfrastructure, (canEdit) => {
-  if (canEdit) return
+  if (canEdit) {
+    // false -> true before any demotion is the initial auth resolution (handled by onMounted).
+    if (!hasBeenDemoted) return
+    // Promotion after a demotion: reload admin data (earlier in-flight results were discarded).
+    adminGeneration++
+    accessNoticeShown = false
+    if (!oidcLoaded.value) void loadOidcConfig()
+    return
+  }
+  // true -> false: the role was lost. Invalidate every in-flight admin request.
+  adminGeneration++
+  hasBeenDemoted = true
+  noticeAccessChanged()
 
   if (settings.value) {
     generalForm.app_name = settings.value.app_name || 'ezSWM'
@@ -820,12 +894,14 @@ watch(canEditInfrastructure, (canEdit) => {
     generalForm.patch_panels_enabled = settings.value.patch_panels_enabled ?? false
     generalForm.switch_groups_enabled = settings.value.switch_groups_enabled ?? true
   }
-  if (oidcConfig.value) applyOidcConfig(oidcConfig.value)
-  else {
-    Object.assign(oidcForm, createDefaultOidcForm())
-    oidcBaseline.value = serializeOidcForm()
-    oidcLoaded.value = false
-  }
+  // Drop admin OIDC data and secrets without refetching. Personal (account/password) fields and
+  // the dirty snapshot are intentionally left untouched so unsaved personal edits stay guarded.
+  oidcConfig.value = null
+  Object.assign(oidcForm, createDefaultOidcForm())
+  oidcBaseline.value = serializeOidcForm()
+  oidcLoaded.value = false
+  oidcLoadError.value = false
+  loadingOidc.value = false
   checkResult.value = null
   activeTab.value = 'account'
 })
@@ -834,8 +910,34 @@ onMounted(async () => {
   if (!authResolved.value) await fetchUser()
   if (!user.value) return
 
-  if (canEditInfrastructure.value) {
+  // Role epoch of this initial load. A role loss (watch may not have run yet, so also check the
+  // live permission) makes the continuation stale: it must not overwrite or snapshot over
+  // personal edits typed meanwhile. A normal initial Viewer is never stale.
+  const mountGen = adminGeneration
+  const mountAdmin = canEditInfrastructure.value
+  const mountStale = () => mountGen !== adminGeneration || (mountAdmin && !canEditInfrastructure.value)
+
+  let assigned: { display_name: string, language: string } | null = null
+  const assignAccount = () => {
+    assigned = { display_name: user.value?.display_name || '', language: user.value?.language || 'en' }
+    accountForm.display_name = assigned.display_name
+    accountForm.language = assigned.language
+  }
+  // When stale, finish the personal initial state only if the user has not touched it
+  // (nothing to lose), otherwise leave the form and the dirty snapshot as they are.
+  const settleIfUntouched = () => {
+    const noPasswords = !passwordForm.current_password && !passwordForm.new_password && !passwordForm.confirm_password
+    const untouched = noPasswords && (assigned
+      ? accountForm.display_name === assigned.display_name && accountForm.language === assigned.language
+      : accountForm.display_name === '' && accountForm.language === 'en')
+    if (!untouched) return
+    if (!assigned) assignAccount()
+    clearDirty()
+  }
+
+  if (mountAdmin) {
     await fetchSettings()
+    if (mountStale()) return settleIfUntouched()
     if (settings.value) {
       generalForm.app_name = settings.value.app_name || 'ezSWM'
       generalForm.default_port_status = settings.value.default_port_status || 'down'
@@ -843,13 +945,12 @@ onMounted(async () => {
       generalForm.switch_groups_enabled = settings.value.switch_groups_enabled ?? true
     }
   }
-  if (user.value) {
-    accountForm.display_name = user.value.display_name || ''
-    accountForm.language = user.value.language || 'en'
-  }
+  if (user.value) assignAccount()
   await loadOidcConfig()
+  if (mountStale()) return settleIfUntouched()
   activeTab.value = canEditInfrastructure.value ? 'general' : 'account'
   await nextTick()
+  if (mountStale()) return settleIfUntouched()
   clearDirty()
 })
 </script>
