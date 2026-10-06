@@ -183,6 +183,8 @@ Klicke auf einen beliebigen Port im Raster, um ein Seitenpanel zu öffnen. Dort 
 
 Optional ist im Footer des Port-Seitenpanels eine Quellport-Auswahl verfügbar. Öffne einen Port, klicke auf das **Kopieren/Duplizieren**-Symbol und wähle dann einen anderen Port desselben Switches als Quelle. Über das Suchfeld in der Quellliste kannst du die Ports filtern. Die gewählte Quelle füllt editierbare Konfigurationsfelder vor; prüfe oder passe die Werte an und speichere dann normal. Die Quellauswahl speichert niemals direkt, und **Zurücksetzen** bleibt eine separate Aktion.
 
+**Port-Änderungen speichern:** Beim Speichern wird nur gesendet, was du tatsächlich geändert hast. Wenn du nur Beschreibung, MAC-Adresse oder Status änderst, bleiben Port-Modus, VLANs, Verbindung und Helfer-Einstellungen unberührt; nicht gesetzte, leere oder ausgeschaltete Werte bleiben genau so, wie sie waren. Wurde nichts geändert, sendet „Speichern“ keine Anfrage und schließt das Panel nur. Eine bewusste VLAN- oder Port-Modus-Änderung speichert Port-Modus, Access-, Native- und Tagged-VLANs gemeinsam (ein nicht gesetzter Modus wird zum im Panel angezeigten Modus), und eine geänderte Verbindung speichert die Verbindungsfelder gemeinsam; ist der Port mit einem Switch verbunden, behält die VLAN-Änderung diese Verbindung und synchronisiert die VLANs auf den verbundenen Switch. „Speichern“ bleibt kurz deaktiviert, solange das Panel seine Optionen lädt; was du in dieser Zeit eingibst, bleibt erhalten.
+
 ### Massen-Port-Bearbeitung
 
 Wähle mehrere Ports aus, indem du **Strg** (oder **Cmd** auf Mac) gedrückt hältst und klickst, dann verwende die Massenbearbeitungsaktion, um dasselbe VLAN, dieselbe Geschwindigkeit oder denselben Status auf alle ausgewählten Ports gleichzeitig anzuwenden.
@@ -414,6 +416,8 @@ Beim Bearbeiten eines Ports, der zu einer LAG gehört, werden folgende Einstellu
 | Status | Verbundener Port (anderer physischer Port am selben Gerät) |
 | Eigene/Helfer-Felder | |
 | Verbundenes Gerät | |
+
+Es werden nur die gemeinsamen Einstellungen synchronisiert, die du in diesem Speichervorgang tatsächlich geändert hast; bearbeitest du nur Beschreibung oder MAC-Adresse, wird kein anderes LAG-Mitglied angefasst, und unveränderte Verbindungsdetails werden nicht auf die anderen Mitglieder kopiert.
 
 Bei manuellen/Freitext-Verbindungen wird das Paar aus Gerätename + Peer-Port identisch auf alle LAG-Mitgliedsports synchronisiert. Danach kannst du den gemeinsamen Gerätenamen bearbeiten; die Änderung wird auf die gesamte LAG übertragen.
 

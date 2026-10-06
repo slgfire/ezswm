@@ -183,6 +183,8 @@ Click any port in the grid to open a slideover panel. From there you can configu
 
 Optional source prefill is available in the port side panel footer. Open a port, click the **Copy/Duplicate** icon, then select another port on the same switch as the source. Use the source list search field to filter ports quickly. The selected source prefills editable configuration fields; review or adjust them, then click **Save**. Selecting a source never saves directly, and **Reset** remains a separate action.
 
+**Saving port changes:** saving sends only what you actually changed. Changing just the description, MAC address or status does not touch the port mode, VLANs, connection or helper settings, so untouched empty, unset and off values stay exactly as they were. If nothing was changed, Save sends no request and simply closes the panel. A deliberate VLAN or port-mode change saves the port mode, access, native and tagged VLANs together (an unset mode becomes the mode shown in the panel), and a changed connection saves the connection fields together; if the port is linked to a switch, the VLAN change also keeps that link and synchronizes the VLANs to the connected switch. Save stays disabled for a moment while the panel is still loading its options; anything you type in that time is kept.
+
 ### Bulk Port Editing
 
 Select multiple ports by holding **Ctrl** (or **Cmd** on Mac) and clicking, then use the bulk edit action to apply the same VLAN, speed, or status to all selected ports at once.
@@ -414,6 +416,8 @@ When editing a port that belongs to a LAG, the following settings are automatica
 | Status | Connected port (different physical port on same device) |
 | Custom/helper fields | |
 | Connected device | |
+
+Only the shared settings you actually changed in this save are synchronized; if you only edit the description or MAC address, no other LAG member is touched, and unchanged link details are not copied to the other members.
 
 For manual/freetext connections, the device name + peer port pair is synchronized identically across all LAG members. You can then edit the shared device name and it propagates to the full LAG.
 

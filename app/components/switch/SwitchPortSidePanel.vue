@@ -252,7 +252,7 @@
               />
             </UTooltip>
           </UDropdownMenu>
-          <UButton @click="onSaveClick">{{ $t('common.save') }}</UButton>
+          <UButton :disabled="!baselineReady" @click="onSaveClick">{{ $t('common.save') }}</UButton>
         </div>
         <UButton color="error" variant="soft" icon="i-heroicons-arrow-path" @click="resetPort">{{ $t('switches.ports.resetPort') }}</UButton>
       </div>
@@ -268,7 +268,7 @@ import type { Network } from '~~/types/network'
 import type { IPAllocation } from '~~/types/ipAllocation'
 import type { LAGGroup } from '~~/types/lagGroup'
 import type { LayoutUnit } from '~~/types/layoutTemplate'
-import { buildCopyConnectionState, buildLagSyncFields, buildSidePanelPortPutOptions } from '~/utils/sidePanelPortRequests'
+import { buildCopyConnectionState, buildLagSyncFields, buildPortSaveDiff, buildSidePanelPortPutOptions } from '~/utils/sidePanelPortRequests'
 
 const props = withDefaults(defineProps<{
   port: Port | null
@@ -421,16 +421,41 @@ const taggedVlansStr = ref('')
 
 // Unsaved-changes guard. The editable surface spans more than `form` (VLAN and
 // connection state live in separate refs), so snapshot a composite of all of it.
-const { takeSnapshot, requestClose, onOpenChange: onEditableOpenChange } = useSlideoverGuard(
-  () => ({
-    ...form,
-    selectedTaggedVlans: selectedTaggedVlans.value,
+// Immutable copy of the editable surface (live state or a frozen rehydrated seed).
+type SaveState = {
+  form: typeof form
+  selectedTaggedVlans: number[]
+  taggedVlansStr: string
+  connectionMode: 'switch' | 'device' | 'freetext'
+  selectedAllocationId: string
+  selectedSwitchId: string
+  selectedPortId: string
+}
+function liveState(): SaveState {
+  return {
+    form: { ...form },
+    selectedTaggedVlans: [...selectedTaggedVlans.value],
     taggedVlansStr: taggedVlansStr.value,
     connectionMode: connectionMode.value,
     selectedAllocationId: selectedAllocationId.value,
     selectedSwitchId: selectedSwitchId.value,
     selectedPortId: selectedPortId.value
-  }),
+  }
+}
+// Private to this component: while set, the guard snapshot reads the frozen rehydrated seed
+// instead of the live (possibly user-edited) state. Only used synchronously around takeSnapshot().
+let snapshotOverride: SaveState | null = null
+const guardComposite = (st: SaveState) => ({
+  ...st.form,
+  selectedTaggedVlans: st.selectedTaggedVlans,
+  taggedVlansStr: st.taggedVlansStr,
+  connectionMode: st.connectionMode,
+  selectedAllocationId: st.selectedAllocationId,
+  selectedSwitchId: st.selectedSwitchId,
+  selectedPortId: st.selectedPortId
+})
+const { takeSnapshot, requestClose, onOpenChange: onEditableOpenChange } = useSlideoverGuard(
+  () => guardComposite(snapshotOverride ?? liveState()),
   () => { isOpen.value = false }
 )
 const helperExpanded = ref(false)
@@ -675,6 +700,71 @@ function onAllocationSelect(option: { label: string; value: string; allocation: 
 const pendingSwitchId = ref('')
 const pendingPortId = ref('')
 
+// Settled baseline of the save candidate, derived ONLY from the frozen rehydrated seed of the
+// current port (never from live, possibly user-edited state). Missing baseline => Save disabled.
+const baseline = ref<{ candidate: Record<string, unknown>, signature: string } | null>(null)
+const baselineReady = computed(() => baseline.value !== null)
+let baselineEpoch = 0
+let optionsReady: Promise<unknown> = Promise.resolve()
+
+function stateSignature(st: SaveState): string {
+  return [st.connectionMode, st.selectedSwitchId, st.selectedPortId, st.selectedAllocationId].join('|')
+}
+const connectionSignature = () => stateSignature(liveState())
+
+function invalidateBaseline(): number {
+  baseline.value = null
+  return ++baselineEpoch
+}
+
+// Pure rehydrated state of a port (same mapping as the live rehydrate), complete even while options load.
+function seedFromPort(p: Port): SaveState {
+  const deviceId = p.connected_device_id || props.lagGroup?.remote_device_id || ''
+  const mode: SaveState['connectionMode'] = p.connected_allocation_id ? 'device' : deviceId ? 'switch' : 'freetext'
+  return {
+    form: {
+      status: p.status,
+      speed: p.speed || '',
+      port_mode: p.port_mode || (p.tagged_vlans?.length ? 'trunk' : 'access'),
+      access_vlan: p.access_vlan || null,
+      native_vlan: p.native_vlan || null,
+      connected_device: p.connected_device || '',
+      connected_port: p.connected_port || '',
+      description: p.description || '',
+      mac_address: p.mac_address || '',
+      poe_selection: p.poe?.type || '',
+      helper_usage: p.helper_usage || '_automatic',
+      helper_label: p.helper_label || '',
+      show_in_helper_list: p.show_in_helper_list ?? true
+    },
+    selectedTaggedVlans: [...(p.tagged_vlans || [])],
+    taggedVlansStr: (p.tagged_vlans || []).join(','),
+    connectionMode: mode,
+    selectedAllocationId: mode === 'device' ? (p.connected_allocation_id || '') : '',
+    selectedSwitchId: mode === 'switch' ? deviceId : '',
+    selectedPortId: mode === 'switch' ? (p.connected_port_id || '') : ''
+  }
+}
+
+// Shared settle for open and port replacement. Every step re-verifies that this is still the same
+// session (epoch/open/editable/same port+switch) before touching anything.
+async function settleSession(epoch: number, seed: SaveState, portId: string, switchId: string) {
+  const valid = () => epoch === baselineEpoch && isOpen.value && !props.readonly
+    && props.port?.id === portId && props.switchId === switchId
+  if (!valid()) return
+  await optionsReady
+  if (!valid()) return
+  // Resolve a pending switch selection only if the live state still holds that same unresolved selection.
+  if (seed.connectionMode === 'switch' && pendingSwitchId.value === seed.selectedSwitchId
+    && connectionMode.value === 'switch' && !selectedSwitchId.value) {
+    selectedSwitchId.value = pendingSwitchId.value
+    selectedPortId.value = pendingPortId.value
+  }
+  baseline.value = { candidate: buildSaveBody(seed), signature: stateSignature(seed) }
+  snapshotOverride = seed
+  try { takeSnapshot() } finally { snapshotOverride = null }
+}
+
 let isRehydrating = true
 
 watch(connectionMode, (newMode, oldMode) => {
@@ -697,6 +787,7 @@ watch(connectionMode, (newMode, oldMode) => {
 })
 
 watch(() => props.port, (p) => {
+  const baselineEpochAtChange = invalidateBaseline()
   if (p) {
     form.status = p.status; form.speed = p.speed || ''; form.port_mode = p.port_mode || (p.tagged_vlans?.length ? 'trunk' : 'access')
     form.access_vlan = p.access_vlan || null; form.native_vlan = p.native_vlan || null
@@ -735,12 +826,21 @@ watch(() => props.port, (p) => {
       pendingPortId.value = ''
     }
     nextTick(() => { isRehydrating = false })
+    if (isOpen.value && !props.readonly) void settleSession(baselineEpochAtChange, seedFromPort(p), p.id, props.switchId)
   }
 }, { immediate: true })
 
 watch(isOpen, async (open) => {
+  if (!open) {
+    invalidateBaseline()
+    return
+  }
   if (open) {
     if (props.readonly) return
+    const openEpoch = invalidateBaseline()
+    const openPortId = props.port?.id
+    const openSwitchId = props.switchId
+    const seed = props.port ? seedFromPort(props.port) : null
 
     // Re-load form state from port data to discard any unsaved changes
     const p = props.port
@@ -770,10 +870,9 @@ watch(isOpen, async (open) => {
       }
       nextTick(() => { isRehydrating = false })
     }
-    await Promise.all([fetchSwitches(), fetchVlans(), fetchAllocations()])
-    if (pendingSwitchId.value) { selectedSwitchId.value = pendingSwitchId.value; selectedPortId.value = pendingPortId.value }
-    // Snapshot once the editable state has fully settled (after async rehydrate).
-    nextTick(takeSnapshot)
+    optionsReady = Promise.all([fetchSwitches(), fetchVlans(), fetchAllocations()])
+    // Baseline + guard snapshot come from the frozen seed once options settled (no live reads).
+    if (seed && openPortId) await settleSession(openEpoch, seed, openPortId, openSwitchId)
   }
 })
 
@@ -791,42 +890,56 @@ async function onSaveClick() {
   await save()
 }
 
-async function save() {
-  if (props.readonly || !canEditInfrastructure.value) return
-  const tagged_vlans = allVlans.value.length ? [...selectedTaggedVlans.value] : taggedVlansStr.value ? taggedVlansStr.value.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v)) : []
-  const body: Record<string, unknown> = { ...form, tagged_vlans }
+// Current save candidate: everything the panel could write, after VLAN/connection coupling.
+// Protocol fields (expected_updated_at, add_vlans_to_target_switch) are intentionally NOT part of it.
+function buildSaveBody(st: SaveState = liveState()): Record<string, unknown> {
+  const tagged_vlans = allVlans.value.length ? [...st.selectedTaggedVlans] : st.taggedVlansStr ? st.taggedVlansStr.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v)) : []
+  const body: Record<string, unknown> = { ...st.form, tagged_vlans }
   if (poeCapable.value) {
-    body.poe = form.poe_selection ? { type: form.poe_selection, max_watts: POE_WATTS[form.poe_selection] } : null
+    body.poe = st.form.poe_selection ? { type: st.form.poe_selection, max_watts: POE_WATTS[st.form.poe_selection] } : null
   }
   delete body.poe_selection
-  body.helper_usage = form.helper_usage === '_automatic' ? null : (form.helper_usage || null)
-  body.helper_label = form.helper_label || null
-  body.show_in_helper_list = form.show_in_helper_list
-  if (form.port_mode === 'access') { body.native_vlan = null; body.tagged_vlans = [] }
-  if (form.port_mode === 'trunk') { body.access_vlan = null }
+  body.helper_usage = st.form.helper_usage === '_automatic' ? null : (st.form.helper_usage || null)
+  body.helper_label = st.form.helper_label || null
+  body.show_in_helper_list = st.form.show_in_helper_list
+  if (st.form.port_mode === 'access') { body.native_vlan = null; body.tagged_vlans = [] }
+  if (st.form.port_mode === 'trunk') { body.access_vlan = null }
   // Set connected_allocation_id based on mode
-  if (connectionMode.value === 'device') {
-    body.connected_allocation_id = selectedAllocationId.value || null
+  if (st.connectionMode === 'device') {
+    body.connected_allocation_id = st.selectedAllocationId || null
     body.connected_device_id = null
     body.connected_port_id = null
     body.connected_port = null
-    if (!selectedAllocationId.value) {
+    if (!st.selectedAllocationId) {
       body.connected_device = null
     }
   } else {
     body.connected_allocation_id = null
   }
-  if (connectionMode.value === 'switch' && selectedSwitchId.value) {
-    body.add_vlans_to_target_switch = true
-  }
-  if (props.switchUpdatedAt) body.expected_updated_at = props.switchUpdatedAt
-  if (connectionMode.value === 'switch' && selectedSwitchId.value) {
-    const sw = allSwitches.value.find(s => s.id === selectedSwitchId.value)
-    body.connected_device = sw?.name || ''; body.connected_device_id = selectedSwitchId.value; body.connected_port_id = selectedPortId.value || null
-    if (selectedPortId.value) { const port = sw?.ports?.find((p: Port) => p.id === selectedPortId.value); body.connected_port = port?.label || '' } else { body.connected_port = null }
-  } else if (connectionMode.value === 'switch') {
+  if (st.connectionMode === 'switch' && st.selectedSwitchId) {
+    const sw = allSwitches.value.find(s => s.id === st.selectedSwitchId)
+    body.connected_device = sw?.name || ''; body.connected_device_id = st.selectedSwitchId; body.connected_port_id = st.selectedPortId || null
+    if (st.selectedPortId) { const port = sw?.ports?.find((p: Port) => p.id === st.selectedPortId); body.connected_port = port?.label || '' } else { body.connected_port = null }
+  } else if (st.connectionMode === 'switch') {
     body.connected_device = null; body.connected_device_id = null; body.connected_port_id = null; body.connected_port = null
   } else { body.connected_device_id = null; body.connected_port_id = null }
+  return body
+}
+
+async function save() {
+  if (props.readonly || !canEditInfrastructure.value) return
+  // Fail closed: without a settled baseline no (full) write is ever sent.
+  const base = baseline.value
+  if (!base || !props.port) return
+  const diff = buildPortSaveDiff(base.candidate, buildSaveBody(), { baselineSignature: base.signature, currentSignature: connectionSignature() })
+  if (!diff) {
+    // Nothing changed: no request, no concurrency/activity bump.
+    showSetUpPrompt.value = false
+    emit('saved'); isOpen.value = false
+    return
+  }
+  const body: Record<string, unknown> = { ...diff.body }
+  if (props.switchUpdatedAt) body.expected_updated_at = props.switchUpdatedAt
   try {
     const response = await $fetch<Record<string, unknown>>(
       `/api/switches/${props.switchId}/ports/${props.port!.id}`,
@@ -844,24 +957,31 @@ async function save() {
       toast.add({ title: t('vlans.addedToTargetSwitch', { vlans: vlansAdded.join(', '), switch: targetSw?.name || '' }) })
     }
 
+    let lagSynced = false
     if ((props.lagGroup?.port_ids?.length ?? 0) > 1) {
       if (!canEditInfrastructure.value || props.readonly) {
         emit('saved')
         return
       }
-      const syncFields = buildLagSyncFields(body)
+      // Propagate only fields that actually changed (never the unchanged link dependency IDs).
+      const syncSource = { ...diff.body }
+      for (const key of diff.dependencyKeys) delete syncSource[key]
+      const syncFields = buildLagSyncFields(syncSource)
       const lagPortIds = [...props.lagGroup!.port_ids!]
-      await $fetch(`/api/switches/${props.switchId}/ports/bulk`, {
-        method: 'PUT',
-        query: siteParams.value,
-        body: {
-          port_ids: lagPortIds,
-          lag_group_id: props.lagGroup!.id,
-          updates: syncFields,
-          expected_updated_at: latestSwitchUpdatedAt(response)
-        }
-      })
-      toast.add({ title: t('switches.ports.portUpdated') + ` (${lagPortIds.length} LAG ports)`, color: 'success' })
+      if (Object.keys(syncFields).some(key => key !== 'add_vlans_to_target_switch')) {
+        await $fetch(`/api/switches/${props.switchId}/ports/bulk`, {
+          method: 'PUT',
+          query: siteParams.value,
+          body: {
+            port_ids: lagPortIds,
+            lag_group_id: props.lagGroup!.id,
+            updates: syncFields,
+            expected_updated_at: latestSwitchUpdatedAt(response)
+          }
+        })
+        lagSynced = true
+      }
+      toast.add({ title: t('switches.ports.portUpdated') + (lagSynced ? ` (${lagPortIds.length} LAG ports)` : ''), color: 'success' })
     } else {
       toast.add({ title: t('switches.ports.portUpdated'), color: 'success' })
     }
