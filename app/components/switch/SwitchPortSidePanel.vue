@@ -442,6 +442,16 @@ function liveState(): SaveState {
     selectedPortId: selectedPortId.value
   }
 }
+// Guard view of the live state: a switch link whose selection is still unresolved (options not loaded yet)
+// is represented by its pending IDs, so a freshly opened untouched session equals its frozen seed.
+function guardState(): SaveState {
+  const st = liveState()
+  if (st.connectionMode === 'switch' && !st.selectedSwitchId && pendingSwitchId.value) {
+    st.selectedSwitchId = pendingSwitchId.value
+    st.selectedPortId = st.selectedPortId || pendingPortId.value
+  }
+  return st
+}
 // Private to this component: while set, the guard snapshot reads the frozen rehydrated seed
 // instead of the live (possibly user-edited) state. Only used synchronously around takeSnapshot().
 let snapshotOverride: SaveState | null = null
@@ -455,7 +465,7 @@ const guardComposite = (st: SaveState) => ({
   selectedPortId: st.selectedPortId
 })
 const { takeSnapshot, requestClose, onOpenChange: onEditableOpenChange } = useSlideoverGuard(
-  () => guardComposite(snapshotOverride ?? liveState()),
+  () => guardComposite(snapshotOverride ?? guardState()),
   () => { isOpen.value = false }
 )
 const helperExpanded = ref(false)
@@ -811,6 +821,8 @@ watch(() => props.port, (p) => {
       selectedAllocationId.value = ''
       const deviceId = p.connected_device_id || props.lagGroup?.remote_device_id || ''
       const portId = p.connected_port_id || ''
+      selectedSwitchId.value = ''
+      selectedPortId.value = ''
       pendingSwitchId.value = deviceId
       pendingPortId.value = portId
       if (allSwitches.value.length) {
@@ -826,7 +838,12 @@ watch(() => props.port, (p) => {
       pendingPortId.value = ''
     }
     nextTick(() => { isRehydrating = false })
-    if (isOpen.value && !props.readonly) void settleSession(baselineEpochAtChange, seedFromPort(p), p.id, props.switchId)
+    if (isOpen.value && !props.readonly) {
+      // Guard snapshot of the freshly rehydrated (untouched) state, taken synchronously from the frozen seed.
+      snapshotOverride = seedFromPort(p)
+      try { takeSnapshot() } finally { snapshotOverride = null }
+      void settleSession(baselineEpochAtChange, seedFromPort(p), p.id, props.switchId)
+    }
   }
 }, { immediate: true })
 
@@ -863,12 +880,18 @@ watch(isOpen, async (open) => {
         connectionMode.value = 'switch'
         selectedAllocationId.value = ''
         const deviceId = p.connected_device_id || props.lagGroup?.remote_device_id || ''
+        selectedSwitchId.value = ''; selectedPortId.value = ''
         pendingSwitchId.value = deviceId; pendingPortId.value = p.connected_port_id || ''
       } else {
         connectionMode.value = 'freetext'
         selectedAllocationId.value = ''; selectedSwitchId.value = ''; selectedPortId.value = ''; pendingSwitchId.value = ''; pendingPortId.value = ''
       }
       nextTick(() => { isRehydrating = false })
+    }
+    if (seed) {
+      // Guard snapshot of the freshly rehydrated (untouched) state, taken synchronously before any await.
+      snapshotOverride = seed
+      try { takeSnapshot() } finally { snapshotOverride = null }
     }
     optionsReady = Promise.all([fetchSwitches(), fetchVlans(), fetchAllocations()])
     // Baseline + guard snapshot come from the frozen seed once options settled (no live reads).
