@@ -482,7 +482,7 @@ Die schwebende Toolbar oben links bietet:
 
 ### Gespeicherte Positionen
 
-Wenn Sie einen Node an eine neue Position ziehen, werden alle Node-Positionen automatisch gespeichert. Beim nächsten Seitenaufruf wird das Layout wiederhergestellt. Verwenden Sie den **Zurücksetzen**-Button, um gespeicherte Positionen zu löschen und zum automatischen hierarchischen Layout zurückzukehren.
+Wenn Sie einen Node an eine neue Position ziehen, werden alle Node-Positionen automatisch gespeichert. Beim nächsten Seitenaufruf wird das Layout wiederhergestellt. Positionen werden pro Switch (über dessen ID, nicht über den im Graphen angezeigten Namen) gespeichert; zwei Switches, deren Namen im Graphen gleich aussehen, weil die Beschriftung gekürzt wird, behalten daher bei aufeinanderfolgenden Verschiebungen und beim Neuladen ihre eigenen Positionen. Verwenden Sie den **Zurücksetzen**-Button, um gespeicherte Positionen zu löschen und zum automatischen hierarchischen Layout zurückzukehren.
 
 ## VLANs
 

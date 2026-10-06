@@ -45,6 +45,7 @@
             :y="-getNodeSize(nodeId).h / 2 * scale"
             :width="getNodeSize(nodeId).w * scale"
             :height="getNodeSize(nodeId).h * scale"
+            :data-topology-node-id="nodeId"
             fill="transparent"
             stroke="none"
             :style="{ pointerEvents: 'all', cursor: canEditInfrastructure ? 'grab' : 'pointer' }"
@@ -250,6 +251,7 @@
 
 <script setup lang="ts">
 import type { TopologyNode, TopologyLink, TopologyGhostNode } from '~~/types/topology'
+import { collectTopologyNodePositions } from '~/utils/topologyNodePositions'
 
 const props = defineProps<{
   nodes: TopologyNode[]
@@ -456,43 +458,17 @@ function requestReset() {
   emit('reset')
 }
 
-// Read node positions from SVG transform attributes
+// Read a full snapshot of all node positions from the rendered SVG (world translate per node), keyed by the
+// explicit node ID marker on each node's interaction rect (never by the visible, possibly truncated label).
 function readNodePositionsFromSvg(): Record<string, { x: number; y: number }> {
-  const positions: Record<string, { x: number; y: number }> = {}
   const container = graphRef.value?.$el as HTMLElement | undefined
-  if (!container) return positions
+  if (!container) return {}
 
-  const nodeElements = container.querySelectorAll('.v-ng-node')
-  // Build a map from node name to node ID for reverse lookup
-  const nameToId = new Map<string, string>()
-  for (const [id, node] of Object.entries(graphNodes.value)) {
-    nameToId.set(node.name, id)
-  }
-
-  nodeElements.forEach((el: Element) => {
-    const nameText = el.querySelector('text')?.textContent?.trim()
-    if (!nameText) return
-    // Match truncated names (ending with …)
-    let nodeId: string | undefined
-    if (nameText.endsWith('\u2026')) {
-      // Truncated — find by prefix match
-      const prefix = nameText.slice(0, -1)
-      for (const [name, id] of nameToId) {
-        if (name.startsWith(prefix)) { nodeId = id; break }
-      }
-    } else {
-      nodeId = nameToId.get(nameText)
-    }
-    if (!nodeId) return
-
-    const transform = el.getAttribute('transform') || ''
-    const match = transform.match(/translate\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/)
-    if (match) {
-      positions[nodeId] = { x: parseFloat(match[1]!), y: parseFloat(match[2]!) }
-    }
-  })
-
-  return positions
+  const records = Array.from(container.querySelectorAll('.v-ng-node'), el => ({
+    nodeId: el.querySelector('[data-topology-node-id]')?.getAttribute('data-topology-node-id') ?? null,
+    transform: el.getAttribute('transform')
+  }))
+  return collectTopologyNodePositions(records, new Set(Object.keys(graphNodes.value)))
 }
 
 const eventHandlers = {

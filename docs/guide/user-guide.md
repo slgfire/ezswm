@@ -482,7 +482,7 @@ The floating toolbar in the top-left corner provides:
 
 ### Saved Positions
 
-When you drag a node to a new position, all node positions are saved automatically. On the next page load, the layout is restored. Use the **Reset** button to clear saved positions and return to the automatic hierarchical layout.
+When you drag a node to a new position, all node positions are saved automatically. On the next page load, the layout is restored. Positions are stored per switch (by its ID, not by the name shown in the graph), so two switches whose names look the same in the graph because the label is shortened keep their own positions across successive moves and reloads. Use the **Reset** button to clear saved positions and return to the automatic hierarchical layout.
 
 ## VLANs
 
