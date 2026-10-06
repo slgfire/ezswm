@@ -28,7 +28,7 @@
             <h2 class="text-lg font-semibold">{{ $t('common.details') }}</h2>
             <div class="flex items-center gap-2">
               <UButton
-                v-if="!editing"
+                v-if="canEditInfrastructure && !editing"
                 icon="i-heroicons-pencil-square"
                 variant="ghost"
                 size="sm"
@@ -37,6 +37,7 @@
                 {{ $t('common.edit') }}
               </UButton>
               <UButton
+                v-if="canEditInfrastructure"
                 icon="i-heroicons-trash"
                 variant="ghost"
                 color="error"
@@ -49,7 +50,7 @@
           </div>
         </template>
 
-        <div v-if="!editing" class="space-y-4">
+        <div v-if="!editing || !canEditInfrastructure" class="space-y-4">
           <div class="grid grid-cols-2 gap-x-6 gap-y-3">
             <div>
               <dt class="text-[10px] uppercase tracking-wider text-muted">{{ $t('vlans.fields.vlanId') }}</dt>
@@ -90,7 +91,7 @@
         </div>
 
         <!-- Edit Form -->
-        <UForm v-else :state="editForm" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit="onSave">
+        <UForm v-else-if="canEditInfrastructure" :state="editForm" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit="onSave">
           <div class="space-y-4">
             <UFormField :label="$t('vlans.fields.vlanId')" name="vlan_id" required>
               <UInput v-model.number="editForm.vlan_id" type="number" :min="1" :max="4094" required />
@@ -153,6 +154,7 @@
 
     <!-- Delete confirmation -->
     <SharedConfirmDialog
+      v-if="canEditInfrastructure"
       v-model="showDeleteDialog"
       :title="$t('vlans.delete')"
       :message="vlan ? `${$t('vlans.delete')}: ${vlan.name} (VLAN ${vlan.vlan_id})?` : ''"
@@ -167,6 +169,7 @@ import type { VLAN, VlanStatus } from '~~/types/vlan'
 const { t } = useI18n()
 const toast = useToast()
 const route = useRoute()
+const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 const siteId = computed(() => route.params.siteId as string)
 const router = useRouter()
 const { update, remove } = useVlans()
@@ -184,6 +187,14 @@ const editing = ref(false)
 const saving = ref(false)
 const showDeleteDialog = ref(false)
 const deleting = ref(false)
+let permissionGeneration = 0
+let accessChangeNoticeShown = false
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
 
 const editForm = ref({
   vlan_id: 0,
@@ -205,7 +216,7 @@ const associatedNetworks = computed(() => {
 })
 
 function startEdit() {
-  if (!vlan.value) return
+  if (!authResolved.value || !canEditInfrastructure.value || !vlan.value) return
   editForm.value = {
     vlan_id: vlan.value.vlan_id,
     name: vlan.value.name,
@@ -232,6 +243,8 @@ function validate(state: typeof editForm.value) {
 }
 
 async function onSave() {
+  if (!authResolved.value || !canEditInfrastructure.value) return
+  const generation = permissionGeneration
   saving.value = true
   try {
     await update(id, {
@@ -242,10 +255,17 @@ async function onSave() {
       routing_device: editForm.value.routing_device.trim() || undefined,
       color: editForm.value.color.toUpperCase()
     })
+    if (generation !== permissionGeneration || !canEditInfrastructure.value) return
     toast.add({ title: t('vlans.messages.updated'), color: 'success' })
     editing.value = false
     await loadVlan()
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled') return
     const error = err as { data?: { message?: string } }
     toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
@@ -254,19 +274,43 @@ async function onSave() {
 }
 
 async function confirmDelete() {
+  if (!authResolved.value || !canEditInfrastructure.value) return
+  const generation = permissionGeneration
   deleting.value = true
   try {
     await remove(id)
+    if (generation !== permissionGeneration || !canEditInfrastructure.value) return
     toast.add({ title: t('vlans.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     await router.push(`/sites/${siteId.value}/vlans`)
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled') return
     const error = err as { data?: { message?: string } }
     toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     deleting.value = false
   }
 }
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (!wasEditable || canEdit || !authResolved.value) return
+  permissionGeneration++
+  editing.value = false
+  editForm.value = {
+    vlan_id: 0,
+    name: '',
+    description: '',
+    status: 'active',
+    routing_device: '',
+    color: '#3498DB'
+  }
+  showDeleteDialog.value = false
+}, { flush: 'sync' })
 
 async function loadVlan() {
   loading.value = true

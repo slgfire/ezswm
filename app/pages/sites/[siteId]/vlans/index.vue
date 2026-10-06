@@ -5,10 +5,12 @@
         <h1 class="text-xl font-bold">{{ $t('vlans.title') }}</h1>
         <p class="mt-1 text-sm text-muted">{{ $t('vlans.description') }}</p>
       </div>
-      <UButton :to="`/sites/${siteId}/vlans/create`" icon="i-heroicons-plus" size="sm">
+      <UButton v-if="canEditInfrastructure" :to="`/sites/${siteId}/vlans/create`" icon="i-heroicons-plus" size="sm">
         {{ $t('vlans.create') }}
       </UButton>
     </div>
+
+    <SharedViewOnlyNotice v-if="route.query.access === 'readonly'" class="mb-4" />
 
     <!-- Loading -->
     <div v-if="pageLoading" class="flex justify-center py-12">
@@ -110,7 +112,7 @@
             </div>
 
             <!-- Actions (on hover) -->
-            <div class="flex items-center gap-1 py-3 opacity-0 transition-opacity group-hover:opacity-100">
+            <div v-if="canEditInfrastructure" class="flex items-center gap-1 py-3 opacity-0 transition-opacity group-hover:opacity-100">
               <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.stop="openPanel(vlan, true)" />
               <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.stop="openDeleteDialog(vlan)" />
             </div>
@@ -125,7 +127,7 @@
       :title="$t('vlans.emptyTitle')"
       :description="$t('vlans.emptyDescription')"
     >
-      <template #action>
+      <template v-if="canEditInfrastructure" #action>
         <UButton :to="`/sites/${siteId}/vlans/create`" icon="i-heroicons-plus">{{ $t('vlans.create') }}</UButton>
       </template>
     </SharedEmptyState>
@@ -140,14 +142,14 @@
           </div>
         </template>
         <template #actions>
-          <div v-if="!panelEditing" class="flex items-center gap-1">
+          <div v-if="canEditInfrastructure && !panelEditing" class="flex items-center gap-1">
             <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="sm" :title="$t('common.edit')" @click="startEdit()" />
             <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="selectedVlan ? void openDeleteDialog(selectedVlan) : undefined" />
           </div>
         </template>
 
         <template #body>
-        <div v-if="selectedVlan && !panelEditing" class="space-y-4">
+        <div v-if="selectedVlan && (!panelEditing || !canEditInfrastructure)" class="space-y-4">
           <!-- Status + Color badges -->
           <div class="flex gap-2">
             <UBadge :color="selectedVlan.status === 'active' ? 'success' : 'neutral'" variant="subtle">
@@ -192,7 +194,7 @@
         </div>
 
         <!-- Edit form -->
-        <UForm v-if="panelEditing" ref="editFormRef" :state="editForm" :validate="validate" :validate-on="['blur', 'change']" novalidate class="space-y-4" @submit="onSave">
+        <UForm v-if="canEditInfrastructure && panelEditing" ref="editFormRef" :state="editForm" :validate="validate" :validate-on="['blur', 'change']" novalidate class="space-y-4" @submit="onSave">
           <UFormField :label="$t('vlans.fields.vlanId')" name="vlan_id" required>
             <UInput v-model.number="editForm.vlan_id" type="number" :min="1" :max="4094" required class="w-full" />
           </UFormField>
@@ -223,7 +225,7 @@
         </template>
 
         <template #footer>
-          <div v-if="panelEditing" class="flex justify-end gap-2">
+          <div v-if="canEditInfrastructure && panelEditing" class="flex justify-end gap-2">
             <UButton variant="subtle" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
             <UButton :loading="saving" @click="editFormRef?.submit()">{{ $t('common.save') }}</UButton>
           </div>
@@ -232,6 +234,7 @@
 
     <!-- Delete confirmation -->
     <SharedConfirmDialog
+      v-if="canEditInfrastructure"
       v-model="showDeleteDialog"
       :title="$t('vlans.delete')"
       :message="deleteMessage"
@@ -248,6 +251,16 @@ const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
 useHead({ title: t('vlans.title') })
 const toast = useToast()
+const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
+let accessChangeNoticeShown = false
+let permissionGeneration = 0
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
+
 const { items, loading, fetch: fetchVlans, update, remove } = useVlans()
 const { items: allNetworks, fetch: fetchNetworks } = useNetworks()
 const { items: allSites, fetch: fetchAllSites } = useSites()
@@ -370,6 +383,7 @@ const { takeSnapshot, requestClose, onOpenChange: onPanelOpenChange } = useSlide
 )
 
 function openPanel(vlan: VLAN, edit: boolean) {
+  if (edit && (!authResolved.value || !canEditInfrastructure.value)) return
   selectedVlan.value = vlan
   panelEditing.value = edit
   if (edit) startEdit()
@@ -377,7 +391,7 @@ function openPanel(vlan: VLAN, edit: boolean) {
 }
 
 function startEdit() {
-  if (!selectedVlan.value) return
+  if (!authResolved.value || !canEditInfrastructure.value || !selectedVlan.value) return
   editForm.value = {
     vlan_id: selectedVlan.value.vlan_id,
     name: selectedVlan.value.name,
@@ -405,9 +419,12 @@ function validate(state: typeof editForm.value) {
 }
 
 async function onSave() {
+  if (!authResolved.value || !canEditInfrastructure.value || !selectedVlan.value) return
+  const generation = permissionGeneration
+  const vlanId = selectedVlan.value.id
   saving.value = true
   try {
-    await update(selectedVlan.value!.id, {
+    await update(vlanId, {
       vlan_id: editForm.value.vlan_id,
       name: editForm.value.name.trim(),
       description: editForm.value.description.trim() || undefined,
@@ -415,12 +432,20 @@ async function onSave() {
       routing_device: editForm.value.routing_device.trim() || undefined,
       color: editForm.value.color.toUpperCase()
     })
+    if (generation !== permissionGeneration || !canEditInfrastructure.value) return
     toast.add({ title: t('vlans.messages.updated'), color: 'success' })
     panelEditing.value = false
     await fetchVlans(siteParams.value)
+    if (generation !== permissionGeneration || !canEditInfrastructure.value) return
     // Update selected vlan with fresh data
-    selectedVlan.value = items.value.find((v) => v.id === selectedVlan.value!.id) || null
+    selectedVlan.value = items.value.find((v) => v.id === vlanId) || null
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled') return
     const error = err as { data?: { message?: string } }
     toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
@@ -429,27 +454,56 @@ async function onSave() {
 }
 
 function openDeleteDialog(vlan: VLAN) {
+  if (!authResolved.value || !canEditInfrastructure.value) return
   deleteTarget.value = vlan
   deleteMessage.value = `${t('vlans.delete')}: ${vlan.name} (VLAN ${vlan.vlan_id})?`
   showDeleteDialog.value = true
 }
 
 async function confirmDelete() {
-  if (!deleteTarget.value) return
+  if (!authResolved.value || !canEditInfrastructure.value || !deleteTarget.value) return
+  const generation = permissionGeneration
+  const target = deleteTarget.value
   deleting.value = true
   try {
-    await remove(deleteTarget.value.id)
+    await remove(target.id)
+    if (generation !== permissionGeneration || !canEditInfrastructure.value) return
     toast.add({ title: t('vlans.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     showPanel.value = false
     await fetchVlans(siteParams.value)
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled') return
     const error = err as { data?: { message?: string } }
     toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     deleting.value = false
   }
 }
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (!wasEditable || canEdit || !authResolved.value) return
+  permissionGeneration++
+  // Keep the open panel in read mode, but discard all write-only state directly.
+  panelEditing.value = false
+  editForm.value = {
+    vlan_id: 0,
+    name: '',
+    description: '',
+    status: 'active',
+    routing_device: '',
+    color: '#3498DB'
+  }
+  takeSnapshot()
+  showDeleteDialog.value = false
+  deleteTarget.value = null
+  deleteMessage.value = ''
+}, { flush: 'sync' })
 
 watch([search, statusFilter], () => { page.value = 1 })
 watch(showPanel, (open) => { if (!open) panelEditing.value = false })
