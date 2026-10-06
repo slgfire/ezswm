@@ -48,7 +48,6 @@
             fill="transparent"
             stroke="none"
             :style="{ pointerEvents: 'all', cursor: canEditInfrastructure ? 'grab' : 'pointer' }"
-            @click="onNodeClick(nodeId)"
             @pointerenter="hoveredNodeId = nodeId"
             @pointerleave="hoveredNodeId = null"
           />
@@ -452,20 +451,6 @@ const { graphConfigs } = useTopologyGraphConfig(isDark, computed(() => props.can
 
 // --- Event handlers ---
 
-// Track drag state to prevent click after drag
-const isDragging = ref(false)
-
-// Node click from SVG template — ignore if we just finished a drag
-function onNodeClick(nodeId: string) {
-  if (isDragging.value) {
-    isDragging.value = false
-    return
-  }
-  if (!isGhostNode(nodeId)) {
-    emit('select-node', nodeId)
-  }
-}
-
 function requestReset() {
   if (!props.canEditInfrastructure) return
   emit('reset')
@@ -511,6 +496,11 @@ function readNodePositionsFromSvg(): Record<string, { x: number; y: number }> {
 }
 
 const eventHandlers = {
+  'node:click': ({ node }: { node: string }) => {
+    if (!isGhostNode(node)) {
+      emit('select-node', node)
+    }
+  },
   'edge:click': ({ edge }: { edge: string }) => {
     const link = edgeMap.value.get(edge)
     if (link) {
@@ -523,7 +513,6 @@ const eventHandlers = {
   },
   'node:dragend': () => {
     if (!props.canEditInfrastructure) return
-    isDragging.value = true
     // Read positions from SVG transforms (graphRef.layouts returns the
     // prop object, not the internal state after drag)
     const positions = readNodePositionsFromSvg()
