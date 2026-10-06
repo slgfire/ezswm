@@ -95,6 +95,7 @@ A template has one or more units (rack units). Each unit contains one or more po
 Each block defines a group of ports within a unit:
 
 - Blocks can be reordered within the unit by dragging the handle or using the up/down buttons (available in both template creation and template editing).
+- Block IDs: when you edit a template, existing blocks keep their IDs (also when you reorder or move them) and a block you add gets a new ID; creating, importing or duplicating a template assigns new IDs. Saving the layout is rejected with a message to reload only if one of the block IDs being saved no longer belongs to this template (for example, a block that was removed or replaced elsewhere); this is not general edit locking, and a normal edit that keeps the same IDs is accepted. A client that sends no block IDs (or empty ones) gets new IDs for all blocks. A template that already contains duplicate block IDs cannot save its layout when IDs are sent (nothing is repaired automatically). An API request that updates only the name or description and sends no layout still works; the template editor always sends the layout, so saving from the editor is rejected for such a template. Block IDs from older templates are accepted as they are.
 - **Type** -- RJ45, SFP, SFP+, QSFP, Console, or Management
 - **Count** -- number of ports in this block
 - **Start Index** -- the first port number (default 1)

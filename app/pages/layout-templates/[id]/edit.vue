@@ -234,6 +234,8 @@ definePageMeta({
 
 interface FormBlock {
   _uid: number
+  /** Persisted block id (absent for blocks added in this session); independent of the local _uid. */
+  id?: string
   type: string
   count: number
   start_index: number
@@ -482,6 +484,7 @@ async function handleSubmit() {
         unit_number: u.unit_number,
         label: u.label || undefined,
         blocks: u.blocks.map((b: FormBlock) => ({
+          ...(b.id ? { id: b.id } : {}),
           type: b.type,
           count: b.count,
           start_index: b.start_index,
@@ -540,6 +543,7 @@ async function loadTemplate(targetId: string, generation: number) {
         label: u.label || '',
         blocks: (u.blocks || []).map((b: LayoutBlock) => ({
           _uid: ++_uidCounter,
+          id: b.id || undefined,
           type: b.type,
           count: b.count,
           start_index: b.start_index,
