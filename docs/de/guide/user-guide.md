@@ -275,7 +275,7 @@ Die Sticker-Ausgabe ist clean/unbranded und nutzt ein festes Layout mit **70 × 
 - Filter-Chips zur Anzeige bestimmter VLANs (z.B. Gaming, Server, Sleeping)
 - Ein LAG-Filter-Chip, um nur Ports einer LAG-Gruppe zu zeigen
 - Stabile, konsistente Farben für LAG-Badges
-- Portlisten-Sortierung nach Helfer-Nutzung, dann physischem Typ (RJ45 → SFP → SFP+ → QSFP), dann Unit/Index; bei aktivem LAG-Filter gruppiert nach LAG-Name
+- Portliste in fester Standardreihenfolge: RJ45 → SFP → SFP+ → QSFP → Management → Konsole, danach nach Unit und Index; Uplink-, Tagged-VLAN- und Deaktiviert-Badges verschieben einen Port nicht innerhalb der Liste, und die Filter funktionieren wie bisher. Bei aktivem LAG-Filter wird zuerst nach LAG-Name gruppiert und danach nach Typ, Unit und Index sortiert. Das physische Port-Raster behält das Template-Layout des Switches
 - Klare "Nur Technik — nicht benutzen" Warnungen für Infrastruktur-Ports
 - Auf Desktop: zusätzlich die visuelle Port-Grid-Darstellung
 

@@ -275,7 +275,7 @@ Sticker output is clean/unbranded and uses a fixed **70 × 37 mm** layout in a *
 - Filter chips to show only specific VLANs (e.g. Gaming, Server, Sleeping)
 - A LAG filter chip to show only ports of one LAG group
 - Stable, consistent colors for LAG pills
-- Port list sorting by helper usage, then physical type (RJ45 → SFP → SFP+ → QSFP), then unit/index; with an active LAG filter, ports are grouped by LAG name
+- Port list in a fixed default order: RJ45 → SFP → SFP+ → QSFP → management → console, then by unit and index; uplink, tagged-VLAN and disabled-status badges do not move a port within the list, and the filters work as before. With an active LAG filter, ports are grouped by LAG name first and then ordered by type, unit and index. The physical port grid keeps the switch's template layout
 - Clear "Tech only — do not use" warnings for infrastructure ports
 - On desktop: the full port grid visualization is also shown
 
