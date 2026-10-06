@@ -230,7 +230,7 @@
 
     <template #footer>
       <div v-if="readonly" class="flex w-full justify-end">
-        <UButton variant="subtle" color="neutral" @click="isOpen = false">{{ $t('common.close') }}</UButton>
+        <UButton variant="subtle" color="neutral" @click="() => { isOpen = false }">{{ $t('common.close') }}</UButton>
       </div>
       <div v-else class="flex w-full items-center justify-between">
         <div class="flex items-center gap-2">
@@ -294,11 +294,13 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   saved: []
   'remove-from-lag': [lagId: string, portId: string]
+  'access-changed': []
 }>()
 
 const isOpen = defineModel<boolean>()
 const { t } = useI18n()
 const toast = useToast()
+const { canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 const { confirm } = useConfirm()
 const { apiFetch } = useApiFetch()
 const route = useRoute()
@@ -779,13 +781,18 @@ watch(selectedSwitchId, (newVal, oldVal) => { if (oldVal && newVal !== oldVal) s
 
 const showSetUpPrompt = ref(false)
 
+watch(() => props.readonly, (readOnly, wasEditable) => {
+  if (readOnly && wasEditable === false) showSetUpPrompt.value = false
+})
+
 async function onSaveClick() {
+  if (props.readonly || !canEditInfrastructure.value) return
   if (connectionMode.value === 'switch' && selectedSwitchId.value && selectedPortId.value && form.status === 'down') { showSetUpPrompt.value = true; return }
   await save()
 }
 
 async function save() {
-  if (props.readonly) return
+  if (props.readonly || !canEditInfrastructure.value) return
   const tagged_vlans = allVlans.value.length ? [...selectedTaggedVlans.value] : taggedVlansStr.value ? taggedVlansStr.value.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v)) : []
   const body: Record<string, unknown> = { ...form, tagged_vlans }
   if (poeCapable.value) {
@@ -826,6 +833,11 @@ async function save() {
       buildSidePanelPortPutOptions(body, siteParams.value?.siteId)
     )
 
+    if (!canEditInfrastructure.value || props.readonly) {
+      emit('saved')
+      return
+    }
+
     const vlansAdded = (response as Record<string, unknown>)?.vlans_added_to_target_switch as number[] | undefined
     if (vlansAdded?.length) {
       const targetSw = allSwitches.value.find(s => s.id === selectedSwitchId.value)
@@ -833,6 +845,10 @@ async function save() {
     }
 
     if ((props.lagGroup?.port_ids?.length ?? 0) > 1) {
+      if (!canEditInfrastructure.value || props.readonly) {
+        emit('saved')
+        return
+      }
       const syncFields = buildLagSyncFields(body)
       const lagPortIds = [...props.lagGroup!.port_ids!]
       await $fetch(`/api/switches/${props.switchId}/ports/bulk`, {
@@ -852,6 +868,13 @@ async function save() {
 
     emit('saved'); isOpen.value = false
   } catch (e: unknown) {
+    const access = await handleInfrastructureForbidden(e)
+    if (access === 'demoted') emit('access-changed')
+    if (access === 'demoted' || access === 'already-handled') {
+      showSetUpPrompt.value = false
+      emit('saved')
+      return
+    }
     const err = e as { statusCode?: number; data?: { message?: string } }
     if (err.statusCode === 409) {
       toast.add({ title: 'Switch was modified. Please try again.', color: 'warning' })
@@ -863,7 +886,7 @@ async function save() {
 }
 
 function onRemoveFromLag() {
-  if (!props.lagGroup || !props.port) return
+  if (props.readonly || !canEditInfrastructure.value || !props.lagGroup || !props.port) return
   emit('remove-from-lag', props.lagGroup.id, props.port!.id)
 }
 
@@ -907,19 +930,24 @@ const sourceMenuItems = computed(() =>
 )
 
 async function resetPort() {
-  if (props.readonly) return
+  if (props.readonly || !canEditInfrastructure.value) return
   const ok = await confirm({
     title: t('switches.ports.confirmBulkResetTitle'),
     message: t('switches.ports.confirmReset'),
     confirmLabel: t('switches.ports.reset')
   })
-  if (!ok) return
-  if (props.readonly) return
+  if (!ok || props.readonly || !canEditInfrastructure.value) return
   try {
     const siteId = useRoute().params.siteId as string
     const query = siteId && siteId !== 'all' ? `?siteId=${encodeURIComponent(siteId)}` : ''
     await ($fetch as typeof globalThis.fetch)(`/api/switches/${props.switchId}/ports/${props.port!.id}${query}`, { method: 'DELETE' })
     toast.add({ title: t('switches.ports.portReset'), color: 'success' }); emit('saved'); isOpen.value = false
-  } catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.add({ title: err.data?.message || 'Reset failed', color: 'error' }) }
+  } catch (e: unknown) {
+    const access = await handleInfrastructureForbidden(e)
+    if (access === 'demoted') emit('access-changed')
+    if (access === 'demoted' || access === 'already-handled') return
+    const err = e as { data?: { message?: string } }
+    toast.add({ title: err.data?.message || 'Reset failed', color: 'error' })
+  }
 }
 </script>

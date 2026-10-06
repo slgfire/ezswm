@@ -119,12 +119,15 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const toast = useToast()
+const { canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 
 const drawerOpen = ref(false)
 const showRevokeConfirm = ref(false)
 const qrCanvas = ref<HTMLCanvasElement | null>(null)
 
 const { token, loading, fetchToken, createToken, revokeToken } = usePublicToken(props.switchId, toRef(() => props.siteId ?? ''))
+
+const emit = defineEmits<{ 'access-changed': [] }>()
 
 const publicUrl = computed(() => {
   if (!token.value) return ''
@@ -135,6 +138,7 @@ const publicUrl = computed(() => {
 })
 
 function openDrawer() {
+  if (!canEditInfrastructure.value) return
   drawerOpen.value = true
   if (token.value === null && !loading.value) {
     fetchToken()
@@ -158,20 +162,31 @@ watch([token, qrCanvas], async ([tok, canvas]) => {
 })
 
 async function handleGenerate() {
+  if (!canEditInfrastructure.value) return
   try {
     await createToken()
     toast.add({ title: t('public.admin.generated'), color: 'success' })
-  } catch {
+  } catch (error: unknown) {
+    const access = await handleInfrastructureForbidden(error)
+    if (access === 'demoted') emit('access-changed')
+    if (access === 'demoted' || access === 'already-handled') return
     toast.add({ title: t('public.admin.generateFailed'), color: 'error' })
   }
 }
 
 async function handleRevoke() {
+  if (!canEditInfrastructure.value) {
+    showRevokeConfirm.value = false
+    return
+  }
   showRevokeConfirm.value = false
   try {
     await revokeToken()
     toast.add({ title: t('public.admin.revokedSuccess'), color: 'success' })
-  } catch {
+  } catch (error: unknown) {
+    const access = await handleInfrastructureForbidden(error)
+    if (access === 'demoted') emit('access-changed')
+    if (access === 'demoted' || access === 'already-handled') return
     toast.add({ title: t('public.admin.revokeFailed'), color: 'error' })
   }
 }

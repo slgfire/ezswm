@@ -17,6 +17,7 @@
     :style="portStyle"
     @mouseenter="onMouseEnter"
     @mouseleave="hovered = false"
+    @click="onNativeClick"
     @keydown="onKeyboardActivate"
   >
     <span class="relative z-10 text-xs font-semibold leading-none">{{ port.index }}</span>
@@ -159,6 +160,11 @@ function onMouseEnter() {
     tooltipPos.left = rect.left
   }
   hovered.value = true
+}
+
+function onNativeClick(event: MouseEvent) {
+  if (props.publicMode) return
+  emit('click', event)
 }
 
 function onKeyboardActivate(event: KeyboardEvent) {

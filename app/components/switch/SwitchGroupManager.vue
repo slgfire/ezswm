@@ -89,10 +89,12 @@ const emit = defineEmits<{
   updated: [group: SwitchGroup]
   deleted: [groupId: string]
   move: [index: number, direction: -1 | 1]
+  'access-changed': []
 }>()
 
 const { t } = useI18n()
 const toast = useToast()
+const { canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 const { confirm } = useConfirm()
 const open = ref(false)
 const name = ref('')
@@ -104,11 +106,13 @@ function switchCount(groupId: string) {
 }
 
 function openManager() {
+  if (!canEditInfrastructure.value) return
   resetForm()
   open.value = true
 }
 
 function editGroup(group: SwitchGroup) {
+  if (!canEditInfrastructure.value) return
   editingId.value = group.id
   name.value = group.name
 }
@@ -119,6 +123,7 @@ function resetForm() {
 }
 
 async function saveGroup() {
+  if (!canEditInfrastructure.value) return
   const cleanName = name.value.trim()
   if (!cleanName) return
 
@@ -142,6 +147,9 @@ async function saveGroup() {
     }
     resetForm()
   } catch (error: unknown) {
+    const access = await handleInfrastructureForbidden(error)
+    if (access === 'demoted') emit('access-changed')
+    if (access === 'demoted' || access === 'already-handled') return
     const err = error as { data?: { message?: string }; statusMessage?: string }
     toast.add({ title: err.data?.message || err.statusMessage || t('errors.serverError'), color: 'error' })
   } finally {
@@ -150,6 +158,7 @@ async function saveGroup() {
 }
 
 async function removeGroup(group: SwitchGroup) {
+  if (!canEditInfrastructure.value) return
   const count = switchCount(group.id)
   const accepted = await confirm({
     title: t('switches.groups.deleteTitle'),
@@ -158,7 +167,7 @@ async function removeGroup(group: SwitchGroup) {
       : t('switches.groups.deleteConfirm', { name: group.name }),
     confirmLabel: t('common.delete')
   })
-  if (!accepted) return
+  if (!accepted || !canEditInfrastructure.value) return
 
   saving.value = true
   try {
@@ -171,6 +180,9 @@ async function removeGroup(group: SwitchGroup) {
     toast.add({ title: t('switches.groups.deleted'), color: 'success' })
     emit('deleted', group.id)
   } catch (error: unknown) {
+    const access = await handleInfrastructureForbidden(error)
+    if (access === 'demoted') emit('access-changed')
+    if (access === 'demoted' || access === 'already-handled') return
     const err = error as { data?: { message?: string }; statusMessage?: string }
     toast.add({ title: err.data?.message || err.statusMessage || t('errors.serverError'), color: 'error' })
   } finally {

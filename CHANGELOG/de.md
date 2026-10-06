@@ -4,12 +4,15 @@
 
 ## [0.40.2] — 2026-10-05
 
-### Fixed
-- Viewer-Rolle: Die Oberfläche entspricht jetzt den bestehenden Lesezugriffs-Berechtigungen. Viewer sehen keine Bedienelemente mehr für Anlegen, Bearbeiten, Löschen, Import, Mehrfachbearbeitung, LAG, Layout-Speichern, Topologie-Verschieben/Zurücksetzen, Favoriten/Sortierung und öffentliche Tokens, die der Server mit 403 ablehnt. Ports, LAG-Gruppen, Netzwerke und Zuweisungen öffnen sich als reine Detailansicht, und direkte Links auf Anlege-/Bearbeitungsseiten führen zur nächsten Liste oder Detailseite zurück. Durchsuchen, Suche, Details, normale Exporte, Drucken, lokale Anzeigeeinstellungen, eigenes Profil/Sprache, lokale Passwortänderung (aktuelles Passwort erforderlich; nicht für OIDC-Konten) und Abmelden bleiben verfügbar; Admins behalten vollen Zugriff.
+### Behoben
+- Viewer-Rolle (Switch-Seiten): Switch-Liste, Switch-Details, Ports, LAG-Gruppen, Switch-Anlage, öffentlicher Zugriff und QR-Druck entsprechen jetzt den bestehenden Lesezugriffs-Berechtigungen. Viewer sehen keine Bedienelemente mehr für Anlegen, Bearbeiten, Löschen, Duplizieren, Mehrfachbearbeitung, LAG, Switch-Gruppen, Favoriten, gespeicherte Sortierung und öffentliche Tokens, die der Server mit 403 ablehnt. Ports und LAG-Gruppen öffnen sich als reine Detailansicht (Maus und Tastatur), und ein direkter Link auf die Anlegeseite führt zurück zur Switch-Liste. Durchsuchen, Suche, Details, normale Exporte, Drucken, lokale Anzeigeeinstellungen, eigenes Profil/Sprache, lokale Passwortänderung (aktuelles Passwort erforderlich; nicht für OIDC-Konten) und Abmelden bleiben verfügbar; Admins behalten vollen Zugriff. Standorte, VLANs, Netzwerke/IP-Adressen, Patchpanels und Layout-Vorlagen benötigen noch ihre UI-Anpassung; Einstellungen, Datenverwaltung und Topologie sind teilweise für Lesezugriff angepasst, verbleibende Absicherungen und Validierung stehen noch aus. Der Server lehnt Infrastruktur-Schreibzugriffe von Viewern weiterhin ab.
+- Rollenwechsel: Wird ein Admin zum Viewer herabgestuft, während ein Port-Editor geöffnet ist, lehnt der Server das nächste Speichern einmal ab (403) ohne erneuten Versuch, der Editor wird schreibgeschützt mit genau einem Hinweis, und es wird nichts gespeichert. Eine verzögerte Sitzungsaktualisierung kann einen Benutzer nach dem Abmelden nicht mehr zurückbringen.
 - QR-Druck: Viewer können einen vorhandenen, gültigen QR-Code für den öffentlichen Zugriff drucken; ist der Link nicht vorhanden oder widerrufen, wird der QR-Code mit Hinweis weggelassen und kein Link erstellt oder reaktiviert. Öffentliche Seiten sind nicht betroffen.
+- Die gespeicherte Spracheinstellung (EN/DE) wird beim vollständigen Laden der Seite jetzt fehlerfrei angewendet.
+- Das Öffnen eines Switches, Standorts oder Netzwerks über den UUID-Link leitet jetzt auch beim serverseitigen Rendern auf die Slug-URL weiter (das Sitzungs-Cookie wird weitergegeben); das behebt eine Hydration-Abweichung in der Breadcrumb beim Switch-UUID-Link.
 
-### Changed
-- Dokumentation: Die Benutzerhandbücher (EN/DE) beschreiben die Lesezugriff-Oberfläche; veraltete Formulierungen („künftige Viewer-Rolle / alle Benutzer sind Admin") in Architektur und Specs wurden korrigiert. Server-Berechtigungen und Exporte (die öffentliche Tokens enthalten können) sind unverändert.
+### Geändert
+- Dokumentation: Die Benutzerhandbücher (EN/DE) beschreiben die Lesezugriff-Oberfläche der Switch-Seiten und ihre aktuellen Grenzen; veraltete Formulierungen („künftige Viewer-Rolle / alle Benutzer sind Admin") in Architektur und Specs wurden korrigiert. Server-Berechtigungen und Exporte (die öffentliche Tokens enthalten können) sind unverändert.
 
 ## [0.40.1] — 2026-10-05
 

@@ -5,11 +5,14 @@
 ## [0.40.2] — 2026-10-05
 
 ### Fixed
-- Viewer role: the interface now matches the existing read-only permissions. Viewers no longer see create, edit, delete, import, bulk, LAG, layout-save, topology move/reset, favorite/sort and public-token controls that the server rejects with 403. Ports, LAG groups, networks and allocations open as read-only details, and direct links to create/edit pages return to the nearest list or detail page. Browsing, search, details, ordinary exports, printing, local display preferences, own profile/language, local password change (current password required; not for OIDC accounts) and logout remain available; admins keep full access.
+- Viewer role (Switch pages): the switch list, switch details, ports, LAG groups, switch creation, public access and QR print now match the existing read-only permissions. Viewers no longer see create, edit, delete, duplicate, bulk, LAG, switch-group, favorite, persisted-sort and public-token controls that the server rejects with 403. Ports and LAG groups open as read-only details (mouse and keyboard), and a direct link to the create page returns to the switch list. Browsing, search, details, ordinary exports, printing, local display preferences, own profile/language, local password change (current password required; not for OIDC accounts) and logout remain available; admins keep full access. Sites, VLANs, networks/IP addresses, patch panels and layout templates still need their UI adapted; settings, data management and topology have partial view-only adaptations, with remaining guards and validation pending. The server continues to reject infrastructure writes for viewers.
+- Role changes: if an admin is demoted to viewer while a port editor is open, the next save is rejected once by the server (403) without retry, the editor becomes read-only with a single notice, and nothing is saved. A delayed session refresh can no longer bring a user back after logout.
 - QR print: viewers can print an existing, valid public-access QR code; if the link is missing or revoked, the QR code is omitted with a notice and no link is created or reactivated. Public pages are unaffected.
+- The stored language preference (EN/DE) is now applied on a full page load without error.
+- Opening a switch, site or network by its UUID link now redirects to the slug URL during server rendering as well (the session cookie is forwarded), which removes a breadcrumb hydration mismatch on the switch UUID link.
 
 ### Changed
-- Documentation: user guides (EN/DE) describe the view-only interface; stale "future Viewer role / all users are admin" wording in the architecture and specs was corrected. Server permissions and exports (which can include public tokens) are unchanged.
+- Documentation: user guides (EN/DE) describe the view-only Switch interface and its current limits; stale "future Viewer role / all users are admin" wording in the architecture and specs was corrected. Server permissions and exports (which can include public tokens) are unchanged.
 
 ## [0.40.1] — 2026-10-05
 

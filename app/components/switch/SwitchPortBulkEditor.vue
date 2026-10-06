@@ -105,11 +105,12 @@ const props = defineProps<{
   switchUpdatedAt?: string
 }>()
 
-const emit = defineEmits<{ saved: [], 'clear-selection': [] }>()
+const emit = defineEmits<{ saved: [], 'clear-selection': [], 'access-changed': [] }>()
 const { t } = useI18n()
 const toast = useToast()
 const { confirm } = useConfirm()
 const { apiFetch } = useApiFetch()
+const { canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 const route = useRoute()
 const siteParams = computed(() => route.params.siteId && route.params.siteId !== 'all' ? { siteId: route.params.siteId as string } : undefined)
 
@@ -243,6 +244,7 @@ const { takeSnapshot, requestClose, onOpenChange } = useSlideoverGuard(
 )
 
 function open() {
+  if (!canEditInfrastructure.value) return
   isOpen.value = true
   takeSnapshot()
   fetchVlans()
@@ -259,6 +261,7 @@ function close() {
 }
 
 async function apply() {
+  if (!canEditInfrastructure.value) return
   if (hasSourcePrefill.value && hasLagTargets(props.selectedPorts, props.ports)) {
     toast.add({ title: t('switches.ports.copyLagBlocked'), color: 'error' })
     return
@@ -270,6 +273,7 @@ async function apply() {
   }))) {
     return
   }
+  if (!canEditInfrastructure.value) return
 
   const taggedFromInput = form.tagged_vlans_str
     ? form.tagged_vlans_str.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v))
@@ -284,6 +288,7 @@ async function apply() {
   })
 
   try {
+    if (!canEditInfrastructure.value) return
     await $fetch(`/api/switches/${props.switchId}/ports/bulk`, {
       method: 'PUT',
       query: siteParams.value,
@@ -313,6 +318,12 @@ async function apply() {
     emit('saved')
     close()
   } catch (e: unknown) {
+    const access = await handleInfrastructureForbidden(e)
+    if (access === 'demoted') emit('access-changed')
+    if (access === 'demoted' || access === 'already-handled') {
+      close()
+      return
+    }
     const err = e as { statusCode?: number; data?: { message?: string } }
     if (err.statusCode === 409) {
       toast.add({ title: 'Switch was modified. Please try again.', color: 'warning' })

@@ -8,9 +8,14 @@
       <span class="text-sm toolbar-count">
         {{ stickers.length }} {{ stickers.length === 1 ? 'QR Sticker' : 'QR Stickers' }}
       </span>
-      <UButton icon="i-heroicons-printer" size="sm" @click="onPrint">
+      <UButton icon="i-heroicons-printer" size="sm" :disabled="stickers.length === 0" @click="onPrint">
         {{ $t('common.print') }}
       </UButton>
+    </div>
+
+    <div v-if="!loading && !canEditInfrastructure && unavailableSwitches.length" class="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+      <p>{{ $t('permissions.qrUnavailable') }}</p>
+      <p class="mt-1 text-xs opacity-80">{{ unavailableSwitches.join(', ') }}</p>
     </div>
 
     <!-- Loading -->
@@ -20,7 +25,7 @@
 
     <!-- No switches -->
     <div v-else-if="stickers.length === 0" class="py-12 text-center muted">
-      No switches with public QR codes found.
+      {{ canEditInfrastructure ? 'No switches with public QR codes found.' : $t('permissions.qrUnavailable') }}
     </div>
 
     <!-- A4 sheet: Zweckform/Avery 3475, 3 × 8 labels à 70mm × 37mm.
@@ -65,8 +70,10 @@ interface Sticker {
 }
 
 const stickers = ref<Sticker[]>([])
+const unavailableSwitches = ref<string[]>([])
 const loading = ref(true)
 const canvasRefs = new Map<string, HTMLCanvasElement>()
+const { canEditInfrastructure, fetchUser, handleInfrastructureForbidden } = useAuth()
 
 function setCanvasRef(id: string, el: HTMLCanvasElement | null) {
   if (el) canvasRefs.set(id, el)
@@ -74,6 +81,10 @@ function setCanvasRef(id: string, el: HTMLCanvasElement | null) {
 
 onMounted(async () => {
   try {
+    // Resolve the latest role before a missing/revoked-token branch can decide
+    // whether token creation is allowed for this print request.
+    await fetchUser()
+
     // Fetch switches (API returns { data: [...] } envelope)
     const switchesRes = await $fetch<{ data: { id: string; name: string; model?: string; location?: string; manufacturer?: string }[] }>('/api/switches')
     const switchList = switchesRes?.data || []
@@ -84,16 +95,47 @@ onMounted(async () => {
       if (!sw) continue
 
       try {
-        // Try to get existing token
-        let tokenData: { token: string; revoked_at: string | null }
-        try {
-          tokenData = await $fetch<{ token: string; revoked_at: string | null }>(`/api/switches/${swId}/public-token`)
-        } catch {
-          // No token yet — create one automatically
-          tokenData = await $fetch<{ token: string; revoked_at: string | null }>(`/api/switches/${swId}/public-token`, { method: 'POST' })
+        let tokenData: { token: string; revoked_at: string | null } | null = null
+        const canCreate = canEditInfrastructure.value
+
+        if (!canCreate) {
+          // Viewers may print only an already-existing, non-revoked token.
+          // Missing, revoked, and failed GETs never fall through to POST.
+          try {
+            tokenData = await $fetch<{ token: string; revoked_at: string | null }>(`/api/switches/${swId}/public-token`)
+          } catch {
+            unavailableSwitches.value.push(sw.name)
+            continue
+          }
+          if (!tokenData?.token || tokenData.revoked_at) {
+            unavailableSwitches.value.push(sw.name)
+            continue
+          }
+        } else {
+          // Keep the established Admin create/revive behavior, but refresh
+          // role state immediately before any fallback token write.
+          try {
+            tokenData = await $fetch<{ token: string; revoked_at: string | null }>(`/api/switches/${swId}/public-token`)
+          } catch {
+            await fetchUser()
+            if (!canEditInfrastructure.value) {
+              unavailableSwitches.value.push(sw.name)
+              continue
+            }
+            tokenData = await $fetch<{ token: string; revoked_at: string | null }>(`/api/switches/${swId}/public-token`, { method: 'POST' })
+          }
+
+          if (tokenData?.revoked_at) {
+            await fetchUser()
+            if (!canEditInfrastructure.value) {
+              unavailableSwitches.value.push(sw.name)
+              continue
+            }
+            tokenData = await $fetch<{ token: string; revoked_at: string | null }>(`/api/switches/${swId}/public-token`, { method: 'POST' })
+          }
         }
 
-        if (tokenData && !tokenData.revoked_at) {
+        if (tokenData?.token && !tokenData.revoked_at) {
           result.push({
             id: sw.id,
             name: sw.name,
@@ -102,20 +144,12 @@ onMounted(async () => {
             url: `${window.location.origin}/p/${tokenData.token}`,
             token: tokenData.token
           })
-        } else if (tokenData?.revoked_at) {
-          // Token was revoked — create a new one
-          const newToken = await $fetch<{ token: string; revoked_at: string | null }>(`/api/switches/${swId}/public-token`, { method: 'POST' })
-          result.push({
-            id: sw.id,
-            name: sw.name,
-            model: [sw.manufacturer, sw.model].filter(Boolean).join(' ') || undefined,
-            location: sw.location,
-            url: `${window.location.origin}/p/${newToken.token}`,
-            token: newToken.token
-          })
         }
-      } catch {
-        // Failed to get or create token — skip this switch
+      } catch (error: unknown) {
+        const access = await handleInfrastructureForbidden(error)
+        if (!canEditInfrastructure.value || access === 'demoted' || access === 'already-handled') {
+          if (!unavailableSwitches.value.includes(sw.name)) unavailableSwitches.value.push(sw.name)
+        }
       }
     }
 
@@ -140,6 +174,7 @@ onMounted(async () => {
 })
 
 function onPrint() {
+  if (stickers.value.length === 0) return
   window.print()
 }
 

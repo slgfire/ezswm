@@ -164,10 +164,15 @@
 
         <template v-for="lag in visibleLags" :key="lag.id">
           <div
+            role="button"
+            tabindex="0"
+            :aria-label="`${lag.name}, ${lag.port_ids.length} ${$t('lag.ports')}${lag.remote_device ? `, connected to ${lag.remote_device}` : ''}`"
             class="flex cursor-pointer items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 transition-all hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
             @mouseenter="onLagHover(lag.id)"
             @mouseleave="onLagLeave()"
-            @click="readonly || isTouch ? $emit('view-lag', lag) : $emit('edit-lag', lag)"
+            @click="openLag(lag)"
+            @keydown.enter.self.prevent="openLag(lag)"
+            @keydown.space.self.prevent="openLag(lag)"
           >
             <span class="lag-stripe-icon inline-block h-3 w-4 rounded-sm" />
             <span class="max-w-[150px] truncate font-medium text-default">{{ lag.name }}</span>
@@ -259,6 +264,11 @@ function onLagHover(lagId: string) {
 
 function onLagLeave() {
   highlightedLagId.value = null
+}
+
+function openLag(lag: LAGGroup) {
+  if (props.readonly || isTouch.value) emit('view-lag', lag)
+  else emit('edit-lag', lag)
 }
 
 function onPortClick(event: MouseEvent, portId: string) {

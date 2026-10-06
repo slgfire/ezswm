@@ -243,7 +243,7 @@
 
     <template #footer>
       <div v-if="readonly" class="flex justify-end">
-        <UButton color="neutral" variant="subtle" @click="isOpen = false">{{ $t('common.close') }}</UButton>
+        <UButton color="neutral" variant="subtle" @click="() => { isOpen = false }">{{ $t('common.close') }}</UButton>
       </div>
       <div v-else class="flex justify-end gap-2">
         <UButton color="neutral" variant="subtle" @click="requestClose">
@@ -386,16 +386,6 @@ function onOpenChange(open: boolean) {
   onEditableOpenChange(open)
 }
 
-watch(writable, (allowed, wasAllowed) => {
-  if (wasAllowed && !allowed) {
-    // Drop the editor without entering its unsaved-changes flow.
-    isOpen.value = false
-    saving.value = false
-    localPortMenuOpen.value = false
-    duplicateSourceLag.value = null
-  }
-})
-
 const remoteConnectionModes = computed(() => [
   { label: t('common.none'), value: 'none' as const },
   { label: 'Switch', value: 'switch' as const },
@@ -471,6 +461,16 @@ const submittedLocalLagId = ref<string | null>(null)
 const submittedRemoteLagId = ref<string | null>(null)
 const submittedRemoteLagPortIds = ref<string[] | null>(null)
 const duplicateSourceLag = ref<LAGGroup | null>(null)
+
+watch(writable, (allowed, wasAllowed) => {
+  if (wasAllowed && !allowed) {
+    // Drop the editor without entering its unsaved-changes flow.
+    isOpen.value = false
+    saving.value = false
+    localPortMenuOpen.value = false
+    duplicateSourceLag.value = null
+  }
+})
 
 // --- onSubmit stage functions ---
 

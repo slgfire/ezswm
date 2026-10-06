@@ -42,13 +42,16 @@
 
         <!-- Group B: Actions -->
         <SwitchPublicAccess
+          v-if="canEditInfrastructure"
           :switch-id="item?.id || id"
           :site-id="siteId"
           :switch-name="item.name"
           :switch-location="item.location"
+          @access-changed="noticeAccessChanged"
         />
         <UTooltip :text="$t('common.edit')">
           <UButton
+            v-if="canEditInfrastructure"
             icon="i-heroicons-pencil"
             variant="ghost"
             color="primary"
@@ -59,6 +62,7 @@
         </UTooltip>
         <UTooltip :text="$t('common.duplicate')">
           <UButton
+            v-if="canEditInfrastructure"
             icon="i-heroicons-document-duplicate"
             variant="ghost"
             color="neutral"
@@ -74,6 +78,7 @@
         <!-- Group C: Destructive -->
         <UTooltip :text="$t('common.delete')">
           <UButton
+            v-if="canEditInfrastructure"
             icon="i-heroicons-trash"
             variant="ghost"
             color="error"
@@ -91,6 +96,8 @@
       <span class="ml-2 text-muted">{{ $t('common.loading') }}</span>
     </div>
 
+    <SharedViewOnlyNotice v-if="authResolved && !canEditInfrastructure" class="mb-4" />
+
     <!-- Switch details -->
     <div v-if="item && !loading" class="space-y-4">
       <!-- Info bar with inline expand toggle -->
@@ -102,7 +109,7 @@
       />
 
       <!-- Selection bar (shown when ports are selected) -->
-      <div v-if="selectedPorts.length > 0" class="flex items-center justify-between rounded-lg border border-primary-300 bg-primary-50 px-4 py-2 dark:border-primary-500/30 dark:bg-primary-500/10">
+      <div v-if="canEditInfrastructure && selectedPorts.length > 0" class="flex items-center justify-between rounded-lg border border-primary-300 bg-primary-50 px-4 py-2 dark:border-primary-500/30 dark:bg-primary-500/10">
         <span class="text-sm font-medium text-primary-700 dark:text-primary-300">
           {{ selectedPorts.length }} port{{ selectedPorts.length > 1 ? 's' : '' }} selected
         </span>
@@ -133,6 +140,7 @@
 
       <!-- Bulk Editor Sidebar -->
       <SwitchPortBulkEditor
+        v-if="canEditInfrastructure"
         ref="bulkEditorRef"
         :switch-id="id"
         :selected-ports="selectedPorts"
@@ -141,6 +149,7 @@
         :switch-updated-at="item?.updated_at"
         @saved="fetchSwitch"
         @clear-selection="selectedPorts = []"
+        @access-changed="noticeAccessChanged"
       />
 
       <!-- Port Visualization -->
@@ -151,11 +160,13 @@
           :units="templateUnits"
           :vlans="vlans"
           :selected-ports="selectedPorts"
+          :readonly="!canEditInfrastructure"
+          :selection-enabled="canEditInfrastructure"
           :lag-groups="lagGroups"
           :lag-by-port-id="lagByPortId"
           @select-port="onSelectPort"
           @toggle-select="onToggleSelect"
-          @edit-lag="lagSlideoverRef?.openEdit($event)"
+          @edit-lag="onEditLag"
           @view-lag="onViewLag"
           @delete-lag="onDeleteLagClick"
         />
@@ -176,7 +187,9 @@
             :configured-vlans="item.configured_vlans || []"
             :all-vlans="vlans"
             :updated-at="item.updated_at"
+            :readonly="!canEditInfrastructure"
             @updated="fetchSwitch"
+            @access-changed="noticeAccessChanged"
           />
         </template>
       </USlideover>
@@ -234,12 +247,15 @@
       :switch-updated-at="item?.updated_at"
       :lag-group="selectedPort ? lagByPortId.get(selectedPort.id) : undefined"
       :template-units="templateUnits"
+      :vlans="vlans"
+      :readonly="!canEditInfrastructure"
       @saved="fetchSwitch"
       @remove-from-lag="onRemovePortFromLag"
+      @access-changed="noticeAccessChanged"
     />
 
     <!-- Edit Side Panel -->
-    <USlideover :open="editMode" :title="$t('switches.edit')" description="Modify switch properties" @update:open="onEditOpenChange">
+    <USlideover v-if="canEditInfrastructure" :open="editMode" :title="$t('switches.edit')" description="Modify switch properties" @update:open="onEditOpenChange">
 
       <template #body>
         <UForm ref="editFormRef" :state="editForm" :validate="validateEdit" :validate-on="['blur', 'change']" novalidate class="space-y-4" @submit="onSave">
@@ -339,6 +355,7 @@ v-model="editForm.role"
 
     <!-- Layout template change confirmation (only when ports would be removed) -->
     <SharedConfirmDialog
+      v-if="canEditInfrastructure"
       v-model="showTemplateConfirm"
       :title="templateConfirmTitle"
       :message="templateConfirmMessage"
@@ -364,6 +381,7 @@ v-model="editForm.role"
 
     <!-- Delete confirmation dialog -->
     <SharedConfirmDialog
+      v-if="canEditInfrastructure"
       v-model="showDeleteDialog"
       :title="$t('switches.delete')"
       :message="$t('switches.delete') + ': ' + (item?.name || '') + '?'"
@@ -395,7 +413,7 @@ v-model="editForm.role"
       <template #footer>
         <div class="flex justify-end gap-2">
           <UButton variant="ghost" color="neutral" @click="void (showLagDetail = false)">{{ $t('common.close') }}</UButton>
-          <UButton @click="showLagDetail = false; void lagSlideoverRef?.openEdit(viewingLag!)">{{ $t('lag.edit') }}</UButton>
+          <UButton v-if="canEditInfrastructure" @click="showLagDetail = false; void lagSlideoverRef?.openEdit(viewingLag!)">{{ $t('lag.edit') }}</UButton>
         </div>
       </template>
     </UModal>
@@ -409,11 +427,14 @@ v-model="editForm.role"
       :existing-lags="lagGroups"
       :configured-vlans="item?.configured_vlans || []"
       :switch-updated-at="item?.updated_at"
+      :readonly="!canEditInfrastructure"
       @saved="onLagSaved"
+      @access-changed="noticeAccessChanged"
     />
 
     <!-- LAG Delete confirmation -->
     <SharedConfirmDialog
+      v-if="canEditInfrastructure"
       v-model="showLagDeleteDialog"
       :title="$t('lag.delete')"
       :message="lagDeleteMessage"
@@ -450,6 +471,20 @@ const { t } = useI18n()
 const formatActivity = (entry: ActivityEntry) => _formatActivitySummary(entry, t, true)
 const relTime = (ts: string) => _relativeTime(ts, t)
 const toast = useToast()
+const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
+let accessChangeNoticeShown = false
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
+
+async function handleMutationError(error: unknown): Promise<boolean> {
+  const result = await handleInfrastructureForbidden(error)
+  if (result === 'demoted') noticeAccessChanged()
+  return result === 'demoted' || result === 'already-handled'
+}
 const { confirm } = useConfirm()
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
@@ -482,7 +517,7 @@ const { items: lagGroups, fetch: fetchLags, lagById, lagByPortId, update: update
 const { settings: appSettings, fetch: fetchAppSettings } = useSettings()
 const switchGroupsEnabled = computed(() => appSettings.value?.switch_groups_enabled ?? true)
 
-const lagSlideoverRef = ref<{ openEdit: (lag: LAGGroup, removePortId?: string) => void; openCreate: (ports: string[]) => void } | null>(null)
+const lagSlideoverRef = ref<{ openEdit: (lag: LAGGroup, removePortId?: string) => void; openCreate: (ports: string[]) => void; closeEditor: () => void } | null>(null)
 const showLagDeleteDialog = ref(false)
 const lagToDelete = ref<LAGGroup | null>(null)
 const deleteRemoteLag = ref(false)
@@ -492,8 +527,20 @@ const showLagDetail = ref(false)
 const viewingLag = ref<LAGGroup | null>(null)
 
 function onViewLag(lag: LAGGroup) {
+  if (!canEditInfrastructure.value) {
+    void lagSlideoverRef.value?.openEdit(lag)
+    return
+  }
   viewingLag.value = lag
   showLagDetail.value = true
+}
+
+function onEditLag(lag: LAGGroup) {
+  if (!canEditInfrastructure.value) {
+    void lagSlideoverRef.value?.openEdit(lag)
+    return
+  }
+  void lagSlideoverRef.value?.openEdit(lag)
 }
 
 function getPortLabel(portId: string): string {
@@ -573,26 +620,34 @@ function onSelectPort(portId: string) {
 }
 
 async function bulkReset() {
+  if (!canEditInfrastructure.value) return
   const ok = await confirm({
     title: t('switches.ports.confirmBulkResetTitle'),
     message: t('switches.ports.confirmBulkReset', { count: selectedPorts.value.length }),
     confirmLabel: t('switches.ports.reset')
   })
-  if (!ok) return
+  if (!ok || !canEditInfrastructure.value) return
+  const portsToReset = [...selectedPorts.value]
   try {
-    for (const portId of selectedPorts.value) {
+    for (const portId of portsToReset) {
+      if (!canEditInfrastructure.value) return
       await ($fetch as typeof globalThis.fetch)(`/api/switches/${id}/ports/${portId}?siteId=${encodeURIComponent(siteId.value)}`, { method: 'DELETE' })
     }
-    toast.add({ title: t('switches.ports.bulkResetDone', { count: selectedPorts.value.length }), color: 'success' })
+    toast.add({ title: t('switches.ports.bulkResetDone', { count: portsToReset.length }), color: 'success' })
     selectedPorts.value = []
     await fetchSwitch()
   } catch (e: unknown) {
+    if (await handleMutationError(e)) {
+      selectedPorts.value = []
+      return
+    }
     const err = e as { data?: { message?: string } }
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   }
 }
 
 function onToggleSelect(portId: string) {
+  if (!canEditInfrastructure.value) return
   const idx = selectedPorts.value.indexOf(portId)
   if (idx >= 0) selectedPorts.value.splice(idx, 1)
   else selectedPorts.value.push(portId)
@@ -605,6 +660,7 @@ const currentTemplateName = computed(() => {
 })
 
 async function onDuplicate() {
+  if (!canEditInfrastructure.value) return
   try {
     const result = await duplicate(id)
     toast.add({ title: t('switches.messages.duplicated'), color: 'success' })
@@ -612,12 +668,14 @@ async function onDuplicate() {
       await navigateTo(`/sites/${siteId.value}/switches/${result.slug || result.id}`)
     }
   } catch (e: unknown) {
+    if (await handleMutationError(e)) return
     const err = e as { data?: { message?: string } }
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   }
 }
 
 async function onDelete() {
+  if (!canEditInfrastructure.value) return
   deleting.value = true
   try {
     await ($fetch as typeof globalThis.fetch)(`/api/switches/${id}`, { method: 'DELETE' })
@@ -625,6 +683,7 @@ async function onDelete() {
     showDeleteDialog.value = false
     await navigateTo(`/sites/${siteId.value}/switches`)
   } catch (e: unknown) {
+    if (await handleMutationError(e)) return
     const err = e as { data?: { message?: string } }
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
@@ -636,6 +695,7 @@ const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { sit
 
 // LAG event handlers
 function onDeleteLagClick(lag: LAGGroup) {
+  if (!canEditInfrastructure.value) return
   lagToDelete.value = lag
   deleteRemoteLag.value = false
   resetPorts.value = false
@@ -655,7 +715,7 @@ const lagDeleteMessage = computed(() => {
 })
 
 async function onDeleteLag() {
-  if (!lagToDelete.value) return
+  if (!canEditInfrastructure.value || !lagToDelete.value) return
   deletingLag.value = true
   try {
     const lag = lagToDelete.value
@@ -669,6 +729,7 @@ async function onDeleteLag() {
     await fetchSwitch()
     await fetchLags()
   } catch (e: unknown) {
+    if (await handleMutationError(e)) return
     const err = e as { data?: { message?: string } }
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
@@ -683,6 +744,7 @@ async function onLagSaved() {
 }
 
 async function onRemovePortFromLag(lagId: string, portId: string) {
+  if (!canEditInfrastructure.value) return
   const lag = lagById.value.get(lagId)
   if (!lag) return
   try {
@@ -697,6 +759,7 @@ async function onRemovePortFromLag(lagId: string, portId: string) {
       return
     } else {
       // Remove port from local LAG
+      if (!canEditInfrastructure.value) return
       await updateLag(lagId, { port_ids: newPortIds })
 
        toast.add({ title: t('lag.messages.portRemoved'), color: 'success' })
@@ -704,10 +767,22 @@ async function onRemovePortFromLag(lagId: string, portId: string) {
     await fetchSwitch()
     await fetchLags()
   } catch (e: unknown) {
+    if (await handleMutationError(e)) return
     const err = e as { data?: { message?: string } }
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   }
 }
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (wasEditable && !canEdit) {
+    selectedPorts.value = []
+    showDeleteDialog.value = false
+    showTemplateConfirm.value = false
+    showLagDeleteDialog.value = false
+    editMode.value = false
+    lagSlideoverRef.value?.closeEditor()
+  }
+})
 
 // Deep-link: ?lag=xyz opens the LAG slideover when data is ready
 const lagParam = route.query.lag as string | undefined

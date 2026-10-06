@@ -36,13 +36,15 @@ export default defineNuxtRouteMiddleware(async (to) => {
     })
   }
 
-  // Apply user's language preference
-  if (user.value?.language) {
+  // Apply user's language preference. useI18n() is component-setup-only and
+  // throws after the awaits above, so use the global composer captured via
+  // nuxtApp (valid across awaits; wrapped in the Nuxt context).
+  const language = user.value?.language
+  if ((language === 'en' || language === 'de') && nuxtApp.$i18n.locale.value !== language) {
     try {
-      const { setLocale } = useI18n()
-      await setLocale(user.value.language as 'en' | 'de')
-    } catch {
-      // useI18n may not be available during SSR
+      await nuxtApp.runWithContext(() => nuxtApp.$i18n.setLocale(language))
+    } catch (error) {
+      console.warn('[auth] Could not apply the stored language preference', error)
     }
   }
 

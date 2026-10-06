@@ -54,8 +54,12 @@
           <tr
             v-for="port in ports"
             :key="port.id"
+            tabindex="0"
+            :aria-label="`${port.label || `Port ${port.unit}/${port.index}`}: ${port.status}`"
             class="cursor-pointer border-b border-neutral-100 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800/50"
             @click="$emit('select-port', port.id)"
+            @keydown.enter.prevent="$emit('select-port', port.id)"
+            @keydown.space.prevent="$emit('select-port', port.id)"
           >
             <td class="whitespace-nowrap px-3 py-2 font-mono text-xs font-medium">
               {{ port.label || port.id }}
