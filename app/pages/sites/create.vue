@@ -13,7 +13,15 @@
       </div>
     </div>
 
-    <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit.prevent="onSubmit">
+    <div v-if="!authResolved" class="flex justify-center py-12" role="status" aria-live="polite">
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
+    </div>
+    <div v-else-if="!canEditInfrastructure" class="space-y-4">
+      <SharedViewOnlyNotice />
+      <UButton color="neutral" variant="subtle" to="/sites">{{ $t('common.back') }}</UButton>
+    </div>
+
+    <UForm v-else :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit.prevent="onSubmit">
       <div class="space-y-6">
         <div class="list-container rounded-lg bg-default p-5">
           <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-muted">{{ $t('sites.sections.siteInfo') }}</h2>
@@ -41,9 +49,28 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  middleware: [async () => {
+    const auth = useAuth()
+    if (!auth.authResolved.value) await auth.fetchUser()
+    if (!auth.canEditInfrastructure.value) {
+      return navigateTo({ path: '/sites', query: { access: 'readonly' } })
+    }
+  }]
+})
+
 const { t } = useI18n()
 useHead({ title: t('sites.create', 'Create Site') })
 const toast = useToast()
+const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
+let permissionGeneration = 0
+let accessChangeNoticeShown = false
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
 
 const submitting = ref(false)
 
@@ -63,9 +90,11 @@ function validate(state: typeof form): { name: string; message: string }[] {
 }
 
 async function onSubmit() {
+  if (!authResolved.value || !canEditInfrastructure.value) return
   const validationErrors = validate(form)
   if (validationErrors.length > 0) return
 
+  const generation = permissionGeneration
   submitting.value = true
   let result: { id: string } | undefined
   try {
@@ -76,15 +105,34 @@ async function onSubmit() {
         description: form.description.trim() || undefined
       }
     })
+    if (generation !== permissionGeneration || !canEditInfrastructure.value) return
     clearDirty()
     toast.add({ title: t('sites.messages.created', 'Site created'), color: 'success' })
   } catch (e: unknown) {
+    const access = await handleInfrastructureForbidden(e)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled') return
     const message = (e as { data?: { message?: string } })?.data?.message
     toast.add({ title: message || t('errors.serverError', 'Server error'), color: 'error' })
     return
   } finally {
     submitting.value = false
   }
-  await navigateTo(result?.id ? `/sites/${result.id}/switches` : '/sites')
+  if (generation === permissionGeneration && canEditInfrastructure.value) {
+    await navigateTo(result?.id ? `/sites/${result.id}/switches` : '/sites')
+  }
 }
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (!wasEditable || canEdit || !authResolved.value) return
+  permissionGeneration++
+  form.name = ''
+  form.description = ''
+  // Discard revoked draft state without opening the unsaved-changes flow.
+  clearDirty()
+  void navigateTo({ path: '/sites', query: { access: 'readonly' } })
+}, { flush: 'sync' })
 </script>

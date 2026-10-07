@@ -135,6 +135,11 @@
     "migrationBanner": "Wir haben vorhandene Daten ohne Site-Zuordnung gefunden: {switches} Switches, {vlans} VLANs, {networks} Subnetze. Sie werden der hier angelegten Site zugeordnet.",
     "createSiteFailed": "Site konnte nicht angelegt werden"
   },
+  "permissions": {
+    "viewOnly": "Sie haben nur Lesezugriff. Änderungen können nur Admins vornehmen.",
+    "accessChanged": "Ihr Zugriff hat sich geändert. Bearbeiten ist nicht mehr möglich.",
+    "qrUnavailable": "Es ist kein aktiver QR-Link verfügbar. Sie können diese Seite trotzdem drucken."
+  },
   "common": {
     "welcome": "Willkommen bei ezSWM",
     "save": "Speichern",
@@ -946,7 +951,42 @@
     "loadFailedDescription": "Die Kontenliste konnte nicht geladen werden. Versuchen Sie es erneut.",
     "retry": "Erneut versuchen",
     "emptyTitle": "Noch keine Konten",
-    "emptyDescription": "In ezSWM wurden noch keine lokalen oder OpenID-Connect-Konten angelegt."
+    "emptyDescription": "In ezSWM wurden noch keine lokalen oder OpenID-Connect-Konten angelegt.",
+    "management": {
+      "actions": "Aktionen",
+      "createdAt": "Erstellt am",
+      "createAccount": "Konto anlegen",
+      "editAccount": "Konto bearbeiten",
+      "editAccountFor": "Konto {username} bearbeiten",
+      "deleteAccount": "Konto löschen",
+      "deleteAccountFor": "Konto {username} löschen",
+      "providerManaged": "Rolle wird vom Anbieter verwaltet",
+      "password": "Passwort",
+      "language": "Sprache",
+      "english": "Englisch",
+      "german": "Deutsch",
+      "accessLostTitle": "Benutzerverwaltung ist nicht mehr verfügbar",
+      "accessLostDescription": "Ihr Administratorzugriff hat sich geändert. Auf dieser Seite werden keine Benutzerkonten angezeigt.",
+      "cannotDeleteSelf": "Sie können Ihr eigenes Konto nicht löschen.",
+      "deleteTitle": "Konto löschen?",
+      "deleteIdentity": "{displayName} ({username}) löschen?",
+      "historyWarning": "Der Aktivitätsverlauf des Kontos bleibt erhalten, aber die Autorenzuordnung wird entfernt.",
+      "oidcDeleteWarning": "Der Zugriff beim Identitätsanbieter wird dadurch nicht widerrufen. Das Konto kann bei der nächsten erlaubten SSO-Anmeldung erneut angelegt werden.",
+      "validation": {
+        "usernameLength": "Der Benutzername muss zwischen 3 und 50 Zeichen lang sein.",
+        "usernameFormat": "Der Benutzername darf nur Buchstaben, Zahlen und Unterstriche enthalten.",
+        "displayNameLength": "Der Anzeigename muss zwischen 1 und 100 Zeichen lang sein.",
+        "passwordLength": "Das Passwort muss mindestens 8 Zeichen lang sein."
+      },
+      "validationRejected": "Die übermittelten Kontodaten sind ungültig. Bitte prüfen Sie die Felder.",
+      "usernameExists": "Dieser Benutzername wird bereits verwendet.",
+      "lastLocalAdmin": "Der letzte lokale Administrator kann nicht entfernt oder zu einem Viewer geändert werden.",
+      "targetGone": "Dieses Konto ist nicht mehr vorhanden. Die Kontenliste wurde aktualisiert.",
+      "created": "Konto erfolgreich angelegt.",
+      "updated": "Konto erfolgreich aktualisiert.",
+      "deleted": "Konto erfolgreich gelöscht.",
+      "roleChanged": "Ihre Rolle wurde geändert. Die Benutzerverwaltung ist nicht mehr verfügbar."
+    }
   },
   "backup": {
     "title": "Backup & Restore",
@@ -982,6 +1022,7 @@
   "dataManagement": {
     "title": "Datenverwaltung",
     "description": "Importieren oder exportieren Sie einzelne Datensätze oder erstellen Sie ein vollständiges Backup und stellen Sie es wieder her.",
+    "viewerDescription": "Exportieren Sie Infrastrukturdatensätze oder laden Sie Vorlagen zur Referenz herunter.",
     "backupRestoreTab": "Backup & Restore",
     "exportTab": "Export",
     "importTab": "Import",
@@ -995,6 +1036,8 @@
     },
     "export": {
       "description": "Einzelne Entitätstypen als JSON- oder CSV-Datei exportieren.",
+      "templateTitle": "Importvorlage herunterladen",
+      "templateDescription": "Wählen Sie einen Datentyp und laden Sie eine CSV-Vorlage mit den erwarteten Spalten herunter.",
       "selectType": "Entitätstyp",
       "selectFormat": "Format",
       "download": "Herunterladen",

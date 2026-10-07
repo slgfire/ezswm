@@ -9,48 +9,48 @@
 
     <div v-else-if="stats && hasSomeData" class="space-y-6">
       <!-- KPI Cards -->
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <NuxtLink :to="`/sites/${siteId}/switches`" class="stagger-item card-glow block rounded-lg bg-default p-5">
-          <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary-500/10">
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+        <NuxtLink :to="`/sites/${siteId}/switches`" class="stagger-item card-glow block rounded-lg bg-default p-3 sm:p-5">
+          <div class="flex flex-col items-center gap-2 text-center sm:flex-row sm:gap-4 sm:text-left">
+            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-500/10 sm:h-12 sm:w-12">
               <UIcon name="i-heroicons-server-stack" class="h-6 w-6 text-primary-500" />
             </div>
-            <div>
-              <div class="kpi-number font-display text-3xl font-bold">{{ stats.counts.switches }}</div>
-              <div class="text-sm text-muted">{{ $t('dashboard.switchCount') }}</div>
+            <div class="w-full sm:w-auto">
+              <div class="kpi-number font-display text-xl font-bold sm:text-3xl">{{ stats.counts.switches }}</div>
+              <div class="text-xs text-muted sm:text-sm">{{ $t('dashboard.switchCount') }}</div>
             </div>
           </div>
         </NuxtLink>
-        <NuxtLink :to="`/sites/${siteId}/subnets`" class="stagger-item card-glow block rounded-lg bg-default p-5">
-          <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-elevated">
+        <NuxtLink :to="`/sites/${siteId}/subnets`" class="stagger-item card-glow block rounded-lg bg-default p-3 sm:p-5">
+          <div class="flex flex-col items-center gap-2 text-center sm:flex-row sm:gap-4 sm:text-left">
+            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-elevated sm:h-12 sm:w-12">
               <UIcon name="i-heroicons-globe-alt" class="h-6 w-6 text-muted" />
             </div>
-            <div>
-              <div class="font-display text-3xl font-bold text-highlighted">{{ stats.counts.networks }}</div>
-              <div class="text-sm text-muted">{{ $t('dashboard.networkCount') }}</div>
+            <div class="w-full sm:w-auto">
+              <div class="font-display text-xl font-bold text-highlighted sm:text-3xl">{{ stats.counts.networks }}</div>
+              <div class="text-xs text-muted sm:text-sm">{{ $t('dashboard.networkCount') }}</div>
             </div>
           </div>
         </NuxtLink>
-        <NuxtLink :to="`/sites/${siteId}/vlans`" class="stagger-item card-glow block rounded-lg bg-default p-5">
-          <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-violet-500/10">
+        <NuxtLink :to="`/sites/${siteId}/vlans`" class="stagger-item card-glow block rounded-lg bg-default p-3 sm:p-5">
+          <div class="flex flex-col items-center gap-2 text-center sm:flex-row sm:gap-4 sm:text-left">
+            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/10 sm:h-12 sm:w-12">
               <UIcon name="i-heroicons-tag" class="h-6 w-6 text-violet-500" />
             </div>
-            <div>
-              <div class="font-display text-3xl font-bold text-violet-500">{{ stats.counts.vlans }}</div>
-              <div class="text-sm text-muted">{{ $t('dashboard.vlanCount') }}</div>
+            <div class="w-full sm:w-auto">
+              <div class="font-display text-xl font-bold text-violet-500 sm:text-3xl">{{ stats.counts.vlans }}</div>
+              <div class="text-xs text-muted sm:text-sm">{{ $t('dashboard.vlanCount') }}</div>
             </div>
           </div>
         </NuxtLink>
-        <NuxtLink :to="`/sites/${siteId}/subnets`" class="stagger-item card-glow block rounded-lg bg-default p-5">
-          <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500/10">
+        <NuxtLink :to="`/sites/${siteId}/subnets`" class="stagger-item card-glow block rounded-lg bg-default p-3 sm:p-5">
+          <div class="flex flex-col items-center gap-2 text-center sm:flex-row sm:gap-4 sm:text-left">
+            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 sm:h-12 sm:w-12">
               <UIcon name="i-heroicons-map-pin" class="h-6 w-6 text-amber-500" />
             </div>
-            <div>
-              <div class="font-display text-3xl font-bold text-amber-500">{{ stats.counts.allocations }}</div>
-              <div class="text-sm text-muted">IP Allocations</div>
+            <div class="w-full sm:w-auto">
+              <div class="font-display text-xl font-bold text-amber-500 sm:text-3xl">{{ stats.counts.allocations }}</div>
+              <div class="text-xs text-muted sm:text-sm">IP Allocations</div>
             </div>
           </div>
         </NuxtLink>
@@ -186,7 +186,7 @@
             <UIcon :name="showAllNetworks ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" class="h-3 w-3" />
             {{ showAllNetworks ? $t('common.showLess') : $t('common.showAll', { count: sortedUtilization.length }) }}
           </button>
-          <div v-if="stats.networkUtilization.length > 0 && stats.networkUtilization.length <= 1" class="mt-3 flex items-center gap-2 text-xs text-toned">
+          <div v-if="canEditInfrastructure && stats.networkUtilization.length > 0 && stats.networkUtilization.length <= 1" class="mt-3 flex items-center gap-2 text-xs text-toned">
             <UIcon name="i-heroicons-light-bulb" class="h-3.5 w-3.5 text-yellow-500" />
             <NuxtLink :to="`/sites/${siteId}/subnets/create`" class="hover:text-primary-400">Add more subnets to track utilization</NuxtLink>
           </div>
@@ -239,7 +239,7 @@
         :description="$t('dashboard.emptyDescription')"
       >
         <template #action>
-          <UButton :to="`/sites/${siteId}/switches/create`" icon="i-heroicons-plus">
+          <UButton v-if="canEditInfrastructure" :to="`/sites/${siteId}/switches/create`" icon="i-heroicons-plus">
             {{ $t('switches.create') }}
           </UButton>
         </template>
@@ -270,6 +270,7 @@ const formatActivity = (entry: ActivityEntry) => _formatActivitySummary(entry, t
 const relTime = (ts: string) => _relativeTime(ts, t)
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
+const { canEditInfrastructure } = useAuth()
 useHead({ title: 'Dashboard' })
 
 const stats = ref<DashboardStats | null>(null)

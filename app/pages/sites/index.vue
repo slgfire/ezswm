@@ -5,10 +5,12 @@
         <h1 class="text-xl font-bold">{{ $t('sites.title', 'Sites') }}</h1>
         <p class="mt-1 text-sm text-muted">{{ $t('sites.description') }}</p>
       </div>
-      <UButton to="/sites/create" icon="i-heroicons-plus" size="sm">
+      <UButton v-if="canEditInfrastructure" to="/sites/create" icon="i-heroicons-plus" size="sm">
         {{ $t('sites.create', 'Create Site') }}
       </UButton>
     </div>
+
+    <SharedViewOnlyNotice v-if="route.query.access === 'readonly'" class="mb-4" />
 
     <!-- Loading -->
     <div v-if="loading" class="flex justify-center py-12">
@@ -24,7 +26,7 @@
         class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
       >
         <!-- Hover actions -->
-        <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-elevated/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100">
+        <div v-if="canEditInfrastructure" class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-elevated/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100">
           <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="xs" @click.prevent="editSite(site)" />
           <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="confirmDelete(site)" />
         </div>
@@ -71,7 +73,7 @@
       :title="$t('sites.emptyTitle', 'No sites yet')"
       :description="$t('sites.emptyDescription', 'Create your first site to start managing your infrastructure.')"
     >
-      <template #action>
+      <template v-if="canEditInfrastructure" #action>
         <UButton to="/sites/create" icon="i-heroicons-plus">
           {{ $t('sites.create', 'Create Site') }}
         </UButton>
@@ -79,7 +81,7 @@
     </SharedEmptyState>
 
     <!-- Edit Slideover -->
-    <USlideover :open="showEdit" :title="$t('sites.edit', 'Edit Site')" description="Edit site properties" @update:open="onOpenChange">
+    <USlideover v-if="canEditInfrastructure" :open="showEdit" :title="$t('sites.edit', 'Edit Site')" description="Edit site properties" @update:open="onOpenChange">
       <template #body>
         <div class="space-y-4">
           <UFormField :label="$t('sites.fields.name', 'Name')" name="name" required>
@@ -100,6 +102,7 @@
 
     <!-- Delete confirmation -->
     <SharedConfirmDialog
+      v-if="canEditInfrastructure"
       v-model="showDeleteDialog"
       :title="$t('sites.delete', 'Delete Site')"
       :message="deleteMessage"
@@ -116,6 +119,16 @@ import type { Site } from '~~/types/site'
 useHead({ title: 'Sites' })
 const toast = useToast()
 const { t } = useI18n()
+const route = useRoute()
+const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
+let accessChangeNoticeShown = false
+let permissionGeneration = 0
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
 
 interface SiteWithCounts extends Site {
   _counts?: { switches: number; vlans: number; networks: number }
@@ -153,6 +166,7 @@ const { takeSnapshot, requestClose, onOpenChange } = useSlideoverGuard(
 )
 
 function editSite(site: SiteWithCounts) {
+  if (!authResolved.value || !canEditInfrastructure.value) return
   editTarget.value = site
   editForm.name = site.name
   editForm.description = site.description || ''
@@ -161,17 +175,28 @@ function editSite(site: SiteWithCounts) {
 }
 
 async function onSave() {
+  if (!authResolved.value || !canEditInfrastructure.value || !editTarget.value) return
   if (!editForm.name.trim()) return
+  const generation = permissionGeneration
+  const target = editTarget.value
+  const body = { name: editForm.name.trim(), description: editForm.description.trim() || undefined }
   saving.value = true
   try {
-    await $fetch(`/api/sites/${editTarget.value!.id}`, {
+    await $fetch(`/api/sites/${target.id}`, {
       method: 'PUT',
-      body: { name: editForm.name.trim(), description: editForm.description.trim() || undefined }
+      body
     })
+    if (generation !== permissionGeneration || !canEditInfrastructure.value) return
     toast.add({ title: t('sites.messages.updated', 'Site updated'), color: 'success' })
     showEdit.value = false
     await loadSites()
   } catch (e: unknown) {
+    const access = await handleInfrastructureForbidden(e)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled') return
     const message = (e as { data?: { message?: string } })?.data?.message
     toast.add({ title: message || t('errors.serverError', 'Server error'), color: 'error' })
   } finally {
@@ -180,25 +205,47 @@ async function onSave() {
 }
 
 function confirmDelete(site: SiteWithCounts) {
+  if (!authResolved.value || !canEditInfrastructure.value) return
   deleteTarget.value = site
   showDeleteDialog.value = true
 }
 
 async function onDelete() {
-  if (!deleteTarget.value) return
+  if (!authResolved.value || !canEditInfrastructure.value || !deleteTarget.value) return
+  const generation = permissionGeneration
+  const target = deleteTarget.value
   deleting.value = true
   try {
-    await $fetch(`/api/sites/${deleteTarget.value.id}`, { method: 'DELETE' })
+    await $fetch(`/api/sites/${target.id}`, { method: 'DELETE' })
+    if (generation !== permissionGeneration || !canEditInfrastructure.value) return
     toast.add({ title: t('sites.messages.deleted', 'Site deleted'), color: 'success' })
     showDeleteDialog.value = false
     await loadSites()
   } catch (e: unknown) {
+    const access = await handleInfrastructureForbidden(e)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled') return
     const message = (e as { data?: { message?: string } })?.data?.message
     toast.add({ title: message || t('errors.serverError', 'Server error'), color: 'error' })
   } finally {
     deleting.value = false
   }
 }
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (!wasEditable || canEdit || !authResolved.value) return
+  permissionGeneration++
+  // Discard revoked editor state directly; never route through the dirty-save guard.
+  showEdit.value = false
+  editTarget.value = null
+  editForm.name = ''
+  editForm.description = ''
+  showDeleteDialog.value = false
+  deleteTarget.value = null
+}, { flush: 'sync' })
 
 onMounted(() => { loadSites() })
 </script>

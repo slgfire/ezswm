@@ -9,15 +9,24 @@
     </div>
 
 
-<div v-if="activeTab === 'import'">
-      <UCard>
-        <TemplateLibraryImport @import="handleLibraryImport" />
-      </UCard>
+    <div v-if="!authResolved" class="flex justify-center py-12" role="status" aria-live="polite">
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
+    </div>
+    <div v-else-if="!canEditInfrastructure" class="space-y-4">
+      <SharedViewOnlyNotice />
+      <UButton color="neutral" variant="subtle" to="/layout-templates">{{ $t('common.back') }}</UButton>
     </div>
 
-    <div v-if="activeTab === 'manual'">
-      <UCard>
-        <form @submit.prevent="handleSubmit">
+    <template v-else>
+      <div v-if="activeTab === 'import'">
+        <UCard>
+          <TemplateLibraryImport @import="handleLibraryImport" />
+        </UCard>
+      </div>
+
+      <div v-if="activeTab === 'manual'">
+        <UCard>
+          <form @submit.prevent="handleSubmit">
           <div class="space-y-6">
             <!-- Basic Info -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -202,15 +211,26 @@
               </UButton>
             </div>
           </div>
-        </form>
-      </UCard>
-    </div>
+          </form>
+        </UCard>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { AirflowDirection, LayoutTemplate, LayoutUnit } from '~~/types/layoutTemplate'
 import { buildLayoutTemplatePoeOptions, layoutTemplatePoeSelection, normalizeLayoutTemplatePoeSelection, poeNoneValue } from '~~/app/utils/layoutTemplatePoe'
+
+definePageMeta({
+  middleware: [async () => {
+    const auth = useAuth()
+    if (!auth.authResolved.value) await auth.fetchUser()
+    if (!auth.canEditInfrastructure.value) {
+      return navigateTo({ path: '/layout-templates', query: { access: 'readonly' } })
+    }
+  }]
+})
 
 interface PreviewPort {
   id: string
@@ -227,13 +247,27 @@ useHead({ title: t('templates.create') })
 const toast = useToast()
 const route = useRoute()
 const router = useRouter()
+const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 const { create, getById } = useLayoutTemplates()
+let permissionGeneration = 0
+let accessChangeNoticeShown = false
+let libraryImportGeneration = 0
+
+function isCurrentAdmin(generation = permissionGeneration) {
+  return generation === permissionGeneration && authResolved.value && canEditInfrastructure.value
+}
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
 
 const submitting = ref(false)
 const errors = ref<Record<string, string>>({})
-const cloneId = route.query.clone as string | undefined
+const cloneId = computed(() => typeof route.query.clone === 'string' ? route.query.clone : undefined)
 
-const activeTab = ref((route.query.mode as string) === 'import' ? 'import' : 'manual')
+const activeTab = ref<'import' | 'manual'>('manual')
 
 const portTypeOptions = [
   { label: 'RJ45', value: 'rj45' },
@@ -326,6 +360,7 @@ const previewPorts = computed(() => {
 })
 
 function addUnit() {
+  if (!isCurrentAdmin()) return
   const nextNumber = form.units.length > 0
     ? Math.max(...form.units.map(u => u.unit_number)) + 1
     : 1
@@ -337,10 +372,12 @@ function addUnit() {
 }
 
 function removeUnit(index: number) {
+  if (!isCurrentAdmin()) return
   form.units.splice(index, 1)
 }
 
 function addBlock(unitIndex: number) {
+  if (!isCurrentAdmin()) return
   const unit = form.units[unitIndex]!
   const lastBlock = unit.blocks[unit.blocks.length - 1]
   const nextStartIndex = lastBlock
@@ -360,10 +397,12 @@ function addBlock(unitIndex: number) {
 }
 
 function removeBlock(unitIndex: number, blockIndex: number) {
+  if (!isCurrentAdmin()) return
   form.units[unitIndex]!.blocks.splice(blockIndex, 1)
 }
 
 function moveBlock(unitIndex: number, blockIndex: number, direction: -1 | 1) {
+  if (!isCurrentAdmin()) return
   const blocks = form.units[unitIndex]!.blocks
   const target = blockIndex + direction
   if (target < 0 || target >= blocks.length) return
@@ -396,6 +435,7 @@ function validate(): boolean {
 }
 
 function handleLibraryImport(template: Partial<LayoutTemplate> & { units?: { unit_number: number; label?: string; blocks?: { type: string; count: number; start_index: number; rows: number; row_layout?: string; default_speed?: string; label?: string; poe?: { type: string }; physical_type?: string }[] }[] }) {
+  if (!isCurrentAdmin(libraryImportGeneration)) return
   form.name = template.name ?? ''
   form.manufacturer = template.manufacturer ?? ''
   form.model = template.model ?? ''
@@ -421,8 +461,10 @@ function handleLibraryImport(template: Partial<LayoutTemplate> & { units?: { uni
 }
 
 async function handleSubmit() {
+  if (!isCurrentAdmin()) return
   if (!validate()) return
 
+  const generation = permissionGeneration
   submitting.value = true
   try {
     const result = await create({
@@ -451,26 +493,48 @@ async function handleSubmit() {
         }))
       })) as LayoutUnit[]
     })
+    if (!isCurrentAdmin(generation)) return
+    await nextTick()
+    if (!isCurrentAdmin(generation)) return
     clearDirty()
     toast.add({ title: t('templates.messages.created'), color: 'success' })
     const created = result as LayoutTemplate
     const id = created.id
+    if (!isCurrentAdmin(generation)) return
     if (id) {
-      router.push(`/layout-templates/${id}`)
+      await router.push(`/layout-templates/${id}`)
     } else {
-      router.push('/layout-templates')
+      await router.push('/layout-templates')
     }
-  } catch {
-    toast.add({ title: t('errors.serverError'), color: 'error' })
+  } catch (error: unknown) {
+    const access = await handleInfrastructureForbidden(error)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled' || !isCurrentAdmin(generation)) return
+    const message = (error as { data?: { message?: string } })?.data?.message
+    toast.add({ title: message || t('errors.serverError'), color: 'error' })
   } finally {
     submitting.value = false
   }
 }
 
 onMounted(async () => {
-  if (cloneId) {
+  if (!authResolved.value) await useAuth().fetchUser()
+  if (!canEditInfrastructure.value) {
+    await navigateTo({ path: '/layout-templates', query: { access: 'readonly' } })
+    return
+  }
+
+  activeTab.value = route.query.mode === 'import' ? 'import' : 'manual'
+  if (activeTab.value === 'import') libraryImportGeneration = permissionGeneration
+  const requestedCloneId = cloneId.value
+  if (requestedCloneId) {
+    const generation = permissionGeneration
     try {
-      const data = await getById(cloneId) as LayoutTemplate
+      const data = await getById(requestedCloneId) as LayoutTemplate
+      if (!isCurrentAdmin(generation) || cloneId.value !== requestedCloneId) return
       form.name = `${data.name} (Copy)`
       form.manufacturer = data.manufacturer || ''
       form.model = data.model || ''
@@ -493,8 +557,35 @@ onMounted(async () => {
         }))
       }))
     } catch { /* ignore, use defaults */ }
+    if (!isCurrentAdmin(generation) || cloneId.value !== requestedCloneId) return
     await nextTick()
+    if (!isCurrentAdmin(generation) || cloneId.value !== requestedCloneId) return
     clearDirty()
   }
 })
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (!wasEditable || canEdit || !authResolved.value) return
+  permissionGeneration++
+  form.name = ''
+  form.manufacturer = ''
+  form.model = ''
+  form.description = ''
+  form.datasheet_url = ''
+  form.airflow = ''
+  form.units = [
+    {
+      unit_number: 1,
+      label: 'Unit 1',
+      blocks: [
+        { type: 'rj45', count: 24, start_index: 1, rows: 2, row_layout: 'sequential', default_speed: '', label: '', poe_selection: poeNoneValue, physical_type: '' }
+      ]
+    }
+  ]
+  errors.value = {}
+  activeTab.value = 'manual'
+  // Discard revoked draft state without opening the unsaved-changes flow.
+  clearDirty()
+  void navigateTo({ path: '/layout-templates', query: { access: 'readonly' } })
+}, { flush: 'sync' })
 </script>

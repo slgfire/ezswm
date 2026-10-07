@@ -26,6 +26,9 @@ function unwrap<T extends { slug?: string }>(payload: T | Wrapped<T>): T | undef
 export default defineNuxtRouteMiddleware(async (to) => {
   const match = to.path.match(/^\/sites\/([^/]+)(?:\/(switches|subnets)\/([^/]+))?(\/.*)?$/)
   if (!match) return
+  // Forward the request cookie on SSR (relative API paths only); the API requires auth.
+  // Capture synchronously, before any await, while the Nuxt context is still available.
+  const headers = import.meta.server ? useRequestHeaders(['cookie']) : undefined
   const siteSeg = match[1]!
   const kind = match[2] // 'switches' | 'subnets' | undefined
   const entitySeg = match[3]
@@ -37,7 +40,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // --- Site segment.
   if (siteSeg !== 'all' && UUID_RE.test(siteSeg)) {
     try {
-      const site = unwrap<Site>(await $fetch<Site | Wrapped<Site>>(`/api/sites/${siteSeg}`))
+      const site = unwrap<Site>(await $fetch<Site | Wrapped<Site>>(`/api/sites/${siteSeg}`, { headers }))
       if (site?.slug && site.slug !== siteSeg) {
         finalSiteSeg = site.slug
       }
@@ -50,7 +53,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (kind && entitySeg && UUID_RE.test(entitySeg)) {
     const apiBase = kind === 'switches' ? '/api/switches' : '/api/networks'
     try {
-      const entity = unwrap<Switch | Network>(await $fetch<Switch | Network | Wrapped<Switch | Network>>(`${apiBase}/${entitySeg}`))
+      const entity = unwrap<Switch | Network>(await $fetch<Switch | Network | Wrapped<Switch | Network>>(`${apiBase}/${entitySeg}`, { headers }))
       if (entity?.slug && entity.slug !== entitySeg) {
         finalEntitySeg = entity.slug
       }

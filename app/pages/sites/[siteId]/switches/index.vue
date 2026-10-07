@@ -5,10 +5,12 @@
         <h1 class="text-xl font-bold">{{ $t('switches.title') }}</h1>
         <p class="mt-1 text-sm text-muted">{{ $t('switches.description') }}</p>
       </div>
-      <UButton :to="`/sites/${siteId}/switches/create`" icon="i-heroicons-plus" size="sm">
+      <UButton v-if="canEditInfrastructure" :to="`/sites/${siteId}/switches/create`" icon="i-heroicons-plus" size="sm">
         {{ $t('switches.create') }}
       </UButton>
     </div>
+
+    <SharedViewOnlyNotice v-if="route.query.access === 'readonly'" class="mb-4" />
 
     <!-- Toolbar: two logical zones. The left zone (filters) is flex-1 and wraps
          internally; the right zone (display/organization/actions) keeps its own
@@ -107,7 +109,7 @@
         <!-- Manage Groups (single-site only), wrapped in the same segmented
              container so height/padding/alignment match exactly. Keeps its
              text label: it is an action, not a toggle. -->
-        <div v-if="groupsUiEnabled" class="manage-groups-trigger flex items-center rounded-md border border-default p-0.5">
+        <div v-if="groupsUiEnabled && canEditInfrastructure" class="manage-groups-trigger flex items-center rounded-md border border-default p-0.5">
           <SwitchGroupManager
             :site-id="siteId"
             :groups="orderedGroups"
@@ -116,6 +118,7 @@
             @updated="onGroupUpdated"
             @deleted="onGroupDeleted"
             @move="moveGroupByButton"
+            @access-changed="noticeAccessChanged"
           />
         </div>
 
@@ -269,6 +272,7 @@
               :site-id="siteId"
               variant="grid"
               :groups="cardGroups"
+              :editable="canEditInfrastructure"
               @favorite="toggleFavorite"
               @print="printSingleSwitch"
               @duplicate="onDuplicate"
@@ -284,6 +288,7 @@
     <ClientOnly v-if="!loading && filteredItems.length > 0 && siteId !== 'all' && effectiveGroupViewMode === 'grouped'">
       <draggable
         v-model="visibleGroups"
+        :disabled="!canEditInfrastructure"
         item-key="id"
         handle=".group-drag-handle"
         :animation="180"
@@ -295,6 +300,7 @@
           <section class="overflow-hidden rounded-lg border border-default bg-default/40">
             <header class="flex items-center gap-2 border-b border-default px-3 py-2.5">
               <UButton
+                v-if="canEditInfrastructure"
                 icon="i-tabler-grip-vertical"
                 size="xs"
                 variant="ghost"
@@ -324,6 +330,7 @@
               <ClientOnly v-if="viewMode === 'grid'">
                 <draggable
                   :list="groupSwitchItems[group.id]"
+                  :disabled="!canEditInfrastructure"
                   item-key="id"
                   handle=".drag-handle"
                   :animation="200"
@@ -340,6 +347,7 @@
                         :draggable="true"
                         :uniform="true"
                         :groups="cardGroups"
+                        :editable="canEditInfrastructure"
                         @favorite="toggleFavorite"
                         @print="printSingleSwitch"
                         @duplicate="onDuplicate"
@@ -362,6 +370,7 @@
                     :site-id="siteId"
                     variant="list"
                     :groups="cardGroups"
+                    :editable="canEditInfrastructure"
                     @favorite="toggleFavorite"
                     @print="printSingleSwitch"
                     @duplicate="onDuplicate"
@@ -402,6 +411,7 @@
           <ClientOnly v-if="viewMode === 'grid'">
             <draggable
               :list="ungroupedSwitches"
+              :disabled="!canEditInfrastructure"
               item-key="id"
               handle=".drag-handle"
               :animation="200"
@@ -418,6 +428,7 @@
                     :draggable="true"
                     :uniform="true"
                     :groups="cardGroups"
+                    :editable="canEditInfrastructure"
                     @favorite="toggleFavorite"
                     @print="printSingleSwitch"
                     @duplicate="onDuplicate"
@@ -439,7 +450,8 @@
                 :sw="sw"
                 :site-id="siteId"
                 variant="list"
-                :groups="cardGroups"
+                  :groups="cardGroups"
+                  :editable="canEditInfrastructure"
                 @favorite="toggleFavorite"
                 @print="printSingleSwitch"
                 @duplicate="onDuplicate"
@@ -461,6 +473,7 @@
     <ClientOnly v-if="!loading && filteredItems.length > 0 && viewMode === 'grid' && siteId !== 'all' && effectiveGroupViewMode === 'flat'">
       <draggable
         v-model="sortedItems"
+        :disabled="!canEditInfrastructure"
         item-key="id"
         handle=".drag-handle"
         :animation="200"
@@ -476,6 +489,7 @@
               variant="grid"
               :draggable="true"
               :groups="cardGroups"
+              :editable="canEditInfrastructure"
               @favorite="toggleFavorite"
               @print="printSingleSwitch"
               @duplicate="onDuplicate"
@@ -507,6 +521,7 @@
               :site-id="siteId"
               variant="list"
               :groups="cardGroups"
+              :editable="canEditInfrastructure"
               @favorite="toggleFavorite"
               @print="printSingleSwitch"
               @duplicate="onDuplicate"
@@ -532,11 +547,12 @@
       :description="$t('switches.emptyDescription')"
     >
       <template #action>
-        <UButton :to="`/sites/${siteId}/switches/create`" icon="i-heroicons-plus">{{ $t('switches.create') }}</UButton>
+        <UButton v-if="canEditInfrastructure" :to="`/sites/${siteId}/switches/create`" icon="i-heroicons-plus">{{ $t('switches.create') }}</UButton>
       </template>
     </SharedEmptyState>
 
     <SharedConfirmDialog
+      v-if="canEditInfrastructure"
       v-model="showDeleteDialog"
       :title="$t('switches.delete')"
       :message="deleteMessage"
@@ -556,10 +572,24 @@ import { FILTER_ALL } from '~~/app/composables/useSwitchListFilters'
 const UNGROUPED_ID = '_ungrouped'
 
 const route = useRoute()
+const { canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
 useHead({ title: t('switches.title') })
 const toast = useToast()
+let accessChangeNoticeShown = false
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
+
+async function handleMutationError(error: unknown): Promise<boolean> {
+  const result = await handleInfrastructureForbidden(error)
+  if (result === 'demoted') noticeAccessChanged()
+  return result === 'demoted' || result === 'already-handled'
+}
 const { items, loading: composableLoading, fetch: fetchSwitches, remove, duplicate } = useSwitches()
 const pageLoading = ref(true)
 const loading = computed(() => composableLoading.value || pageLoading.value)
@@ -616,10 +646,14 @@ watch(filteredItems, (fi) => {
 })
 
 async function saveSortOrder() {
+  if (!canEditInfrastructure.value) return
   const order = sortedItems.value.map((s) => s.id)
   try {
     await $fetch('/api/switches/sort', { method: 'PUT', body: { order } })
-  } catch { /* silent */ }
+  } catch (error: unknown) {
+    if (await handleMutationError(error)) return
+    // Preserve the existing silent failure for sort updates.
+  }
 }
 
 // --- Switch groups (single-site only) ---
@@ -773,6 +807,7 @@ function onGroupDeleted(groupId: string) {
 
 // Keyboard-accessible group reordering (SwitchGroupManager emits index/direction).
 async function moveGroupByButton(index: number, direction: -1 | 1) {
+  if (!canEditInfrastructure.value) return
   const ordered = [...orderedGroups.value]
   const target = index + direction
   if (target < 0 || target >= ordered.length) return
@@ -787,10 +822,14 @@ async function saveGroupSortOrder() {
 }
 
 async function submitGroupSortOrder(order: string[]) {
+  if (!canEditInfrastructure.value) return
   try {
     await $fetch('/api/switch-groups/sort', { method: 'PUT', body: { order } })
     groups.value = groups.value.map(g => ({ ...g, sort_order: order.indexOf(g.id) }))
-  } catch { /* silent — order stays local until next fetch */ }
+  } catch (error: unknown) {
+    if (await handleMutationError(error)) return
+    // Keep the existing behavior: order stays local until the next fetch.
+  }
 }
 
 // sort_order is one flat sequence per site: after an in-group move, submit the
@@ -799,6 +838,7 @@ async function submitGroupSortOrder(order: string[]) {
 // The dragged group's bucket is already mutated by vuedraggable; rebuilding
 // the full flat sequence from all buckets is what gets persisted.
 async function saveGroupedSwitchOrder() {
+  if (!canEditInfrastructure.value) return
   // Submit the COMPLETE single-site order, built from unfiltered allItems:
   // filtered-out switches must stay in the sequence (in their existing
   // relative order), otherwise a drag while a filter is active would drop
@@ -827,25 +867,33 @@ async function saveGroupedSwitchOrder() {
   }
   try {
     await $fetch('/api/switches/sort', { method: 'PUT', body: { order } })
-  } catch { /* silent */ }
+  } catch (error: unknown) {
+    if (await handleMutationError(error)) return
+    // Keep the existing silent error treatment for persisted ordering.
+  }
 }
 
 // In all-sites view the flat list must not be reorderable (sort_order is
 // per-site); in single-site flat view dragging stays as before.
 function canMoveFlatSwitch() {
-  return siteId.value !== 'all'
+  return siteId.value !== 'all' && canEditInfrastructure.value
 }
 
 async function saveFlatSortOrder() {
-  if (siteId.value === 'all') return
+  if (siteId.value === 'all' || !canEditInfrastructure.value) return
   await saveSortOrder()
 }
 
 const deleteMessage = computed(() => deleteTarget.value ? `${t('switches.delete')}: ${deleteTarget.value.name}?` : '')
 
-function confirmDelete(row: Switch) { deleteTarget.value = row; showDeleteDialog.value = true }
+function confirmDelete(row: Switch) {
+  if (!canEditInfrastructure.value) return
+  deleteTarget.value = row
+  showDeleteDialog.value = true
+}
 
 async function toggleFavorite(sw: Switch) {
+  if (!canEditInfrastructure.value) return
   try {
     // Use the PK, not the slug: per-site slugs are not globally unique, so
     // PUT /api/switches/<slug> can't resolve without a siteId and 404s. The
@@ -855,35 +903,46 @@ async function toggleFavorite(sw: Switch) {
       body: { is_favorite: !sw.is_favorite }
     })
     sw.is_favorite = !sw.is_favorite
-  } catch {
+  } catch (error: unknown) {
+    if (await handleMutationError(error)) return
     // Silent fail
   }
 }
 
 async function onDelete() {
-  if (!deleteTarget.value) return
+  if (!canEditInfrastructure.value || !deleteTarget.value) return
   deleting.value = true
   try {
     await remove(deleteTarget.value.id)
     toast.add({ title: t('switches.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     await loadData()
-  } catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' }) }
+  } catch (e: unknown) {
+    if (await handleMutationError(e)) return
+    const err = e as { data?: { message?: string } }
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
+  }
   finally { deleting.value = false }
 }
 
 async function onDuplicate(row: Switch) {
+  if (!canEditInfrastructure.value) return
   try {
     const result = await duplicate(row.id)
     toast.add({ title: t('switches.messages.duplicated'), color: 'success' })
     await loadData()
     if (result?.id) await navigateTo(`/sites/${siteId.value}/switches/${result.slug || result.id}`)
-  } catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' }) }
+  } catch (e: unknown) {
+    if (await handleMutationError(e)) return
+    const err = e as { data?: { message?: string } }
+    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
+  }
 }
 
 // Overview-only group assignment (SwitchCard dropdown). Sends only the
 // membership delta plus the OCC token, so it never disturbs other fields.
 async function assignSwitchToGroup(sw: Switch, groupId: string | null) {
+  if (!canEditInfrastructure.value) return
   const target = groupId ?? null
   if ((sw.group_id ?? null) === target) return
   try {
@@ -894,6 +953,7 @@ async function assignSwitchToGroup(sw: Switch, groupId: string | null) {
     toast.add({ title: t('switches.groups.assigned'), color: 'success' })
     await loadData()
   } catch (e: unknown) {
+    if (await handleMutationError(e)) return
     const err = e as { statusCode?: number; data?: { message?: string } }
     if (err.statusCode === 409) {
       toast.add({ title: t('switches.groups.assignConflict'), color: 'warning' })
@@ -935,6 +995,14 @@ onMounted(async () => {
   // hits the 404-guarded switch-groups API while disabled.
   await fetchGroups()
   pageLoading.value = false
+})
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (wasEditable && !canEdit) {
+    showDeleteDialog.value = false
+    void loadData()
+    void fetchGroups()
+  }
 })
 </script>
 

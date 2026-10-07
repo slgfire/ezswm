@@ -6,7 +6,7 @@
       <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-minus" :title="$t('topology.zoomOut')" @click="zoomOut" />
       <div class="mx-0.5 h-4 w-px bg-default" />
       <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-arrows-pointing-out" :title="$t('topology.fit')" @click="fitToContents" />
-      <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-arrow-path" :title="$t('topology.resetLayout')" @click="$emit('reset')" />
+      <UButton v-if="canEditInfrastructure" size="xs" color="neutral" variant="ghost" icon="i-heroicons-arrow-path" :title="$t('topology.resetLayout')" @click="requestReset" />
       <div class="mx-0.5 h-4 w-px bg-default" />
       <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-arrow-down-tray" :title="$t('topology.exportPng')" @click="exportPng" />
     </div>
@@ -40,15 +40,15 @@
         <template #override-node="{ nodeId, scale }">
           <!-- Interaction layer: drag + click + hover -->
           <rect
-            class="draggable selectable"
+            :class="canEditInfrastructure ? 'draggable selectable' : 'selectable'"
             :x="-getNodeSize(nodeId).w / 2 * scale"
             :y="-getNodeSize(nodeId).h / 2 * scale"
             :width="getNodeSize(nodeId).w * scale"
             :height="getNodeSize(nodeId).h * scale"
+            :data-topology-node-id="nodeId"
             fill="transparent"
             stroke="none"
-            style="pointer-events: all; cursor: grab"
-            @click="onNodeClick(nodeId)"
+            :style="{ pointerEvents: 'all', cursor: canEditInfrastructure ? 'grab' : 'pointer' }"
             @pointerenter="hoveredNodeId = nodeId"
             @pointerleave="hoveredNodeId = null"
           />
@@ -251,6 +251,7 @@
 
 <script setup lang="ts">
 import type { TopologyNode, TopologyLink, TopologyGhostNode } from '~~/types/topology'
+import { collectTopologyNodePositions } from '~/utils/topologyNodePositions'
 
 const props = defineProps<{
   nodes: TopologyNode[]
@@ -258,6 +259,7 @@ const props = defineProps<{
   ghostNodes: TopologyGhostNode[]
   savedPositions: Record<string, { x: number; y: number }> | null
   selectedNodeId: string | null
+  canEditInfrastructure: boolean
   highlightEdgeId?: string | null
 }>()
 
@@ -447,64 +449,34 @@ const graphLayouts = computed(() => {
 
 // --- Configs ---
 
-const { graphConfigs } = useTopologyGraphConfig(isDark)
+const { graphConfigs } = useTopologyGraphConfig(isDark, computed(() => props.canEditInfrastructure))
 
 // --- Event handlers ---
 
-// Track drag state to prevent click after drag
-const isDragging = ref(false)
-
-// Node click from SVG template — ignore if we just finished a drag
-function onNodeClick(nodeId: string) {
-  if (isDragging.value) {
-    isDragging.value = false
-    return
-  }
-  if (!isGhostNode(nodeId)) {
-    emit('select-node', nodeId)
-  }
+function requestReset() {
+  if (!props.canEditInfrastructure) return
+  emit('reset')
 }
 
-// Read node positions from SVG transform attributes
+// Read a full snapshot of all node positions from the rendered SVG (world translate per node), keyed by the
+// explicit node ID marker on each node's interaction rect (never by the visible, possibly truncated label).
 function readNodePositionsFromSvg(): Record<string, { x: number; y: number }> {
-  const positions: Record<string, { x: number; y: number }> = {}
   const container = graphRef.value?.$el as HTMLElement | undefined
-  if (!container) return positions
+  if (!container) return {}
 
-  const nodeElements = container.querySelectorAll('.v-ng-node')
-  // Build a map from node name to node ID for reverse lookup
-  const nameToId = new Map<string, string>()
-  for (const [id, node] of Object.entries(graphNodes.value)) {
-    nameToId.set(node.name, id)
-  }
-
-  nodeElements.forEach((el: Element) => {
-    const nameText = el.querySelector('text')?.textContent?.trim()
-    if (!nameText) return
-    // Match truncated names (ending with …)
-    let nodeId: string | undefined
-    if (nameText.endsWith('\u2026')) {
-      // Truncated — find by prefix match
-      const prefix = nameText.slice(0, -1)
-      for (const [name, id] of nameToId) {
-        if (name.startsWith(prefix)) { nodeId = id; break }
-      }
-    } else {
-      nodeId = nameToId.get(nameText)
-    }
-    if (!nodeId) return
-
-    const transform = el.getAttribute('transform') || ''
-    const match = transform.match(/translate\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/)
-    if (match) {
-      positions[nodeId] = { x: parseFloat(match[1]!), y: parseFloat(match[2]!) }
-    }
-  })
-
-  return positions
+  const records = Array.from(container.querySelectorAll('.v-ng-node'), el => ({
+    nodeId: el.querySelector('[data-topology-node-id]')?.getAttribute('data-topology-node-id') ?? null,
+    transform: el.getAttribute('transform')
+  }))
+  return collectTopologyNodePositions(records, new Set(Object.keys(graphNodes.value)))
 }
 
 const eventHandlers = {
+  'node:click': ({ node }: { node: string }) => {
+    if (!isGhostNode(node)) {
+      emit('select-node', node)
+    }
+  },
   'edge:click': ({ edge }: { edge: string }) => {
     const link = edgeMap.value.get(edge)
     if (link) {
@@ -516,7 +488,7 @@ const eventHandlers = {
     emit('select-node', '')
   },
   'node:dragend': () => {
-    isDragging.value = true
+    if (!props.canEditInfrastructure) return
     // Read positions from SVG transforms (graphRef.layouts returns the
     // prop object, not the internal state after drag)
     const positions = readNodePositionsFromSvg()

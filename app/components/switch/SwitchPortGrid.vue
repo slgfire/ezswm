@@ -164,16 +164,22 @@
 
         <template v-for="lag in visibleLags" :key="lag.id">
           <div
+            role="button"
+            tabindex="0"
+            :aria-label="`${lag.name}, ${lag.port_ids.length} ${$t('lag.ports')}${lag.remote_device ? `, connected to ${lag.remote_device}` : ''}`"
             class="flex cursor-pointer items-center gap-1.5 rounded-md bg-neutral-100 px-2 py-1 transition-all hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
             @mouseenter="onLagHover(lag.id)"
             @mouseleave="onLagLeave()"
-            @click="isTouch ? $emit('view-lag', lag) : $emit('edit-lag', lag)"
+            @click="openLag(lag)"
+            @keydown.enter.self.prevent="openLag(lag)"
+            @keydown.space.self.prevent="openLag(lag)"
           >
             <span class="lag-stripe-icon inline-block h-3 w-4 rounded-sm" />
             <span class="max-w-[150px] truncate font-medium text-default">{{ lag.name }}</span>
             <span class="text-muted">{{ lag.port_ids.length }}p</span>
             <span v-if="lag.remote_device" class="text-muted">&rarr; {{ lag.remote_device }}</span>
             <button
+              v-if="!readonly"
               class="ml-1 rounded p-0.5 text-muted hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/30"
               @click.stop="$emit('delete-lag', lag)"
             >
@@ -217,6 +223,8 @@ const props = defineProps<{
   lagByPortId?: Map<string, LAGGroup>
   printMode?: boolean
   publicMode?: boolean
+  readonly?: boolean
+  selectionEnabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -258,9 +266,14 @@ function onLagLeave() {
   highlightedLagId.value = null
 }
 
+function openLag(lag: LAGGroup) {
+  if (props.readonly || isTouch.value) emit('view-lag', lag)
+  else emit('edit-lag', lag)
+}
+
 function onPortClick(event: MouseEvent, portId: string) {
   if (props.publicMode) return
-  if (event.ctrlKey || event.metaKey) {
+  if (props.selectionEnabled !== false && (event.ctrlKey || event.metaKey)) {
     event.preventDefault()
     emit('toggle-select', portId)
   } else {

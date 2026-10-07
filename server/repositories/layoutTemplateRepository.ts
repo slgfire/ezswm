@@ -76,6 +76,37 @@ function assignBlockIds(units: LayoutUnit[]): LayoutUnit[] {
 }
 
 /**
+ * Update-time block id resolution (runs before any write). A supplied non-empty id is preserved only if it
+ * belongs to the template's currently stored blocks; unknown/stale/foreign ids are rejected (409), duplicate
+ * supplied ids (400) and duplicate stored ids (400, no automatic renumbering) are rejected; blocks without an
+ * id (legacy callers, new blocks) get a fresh uuid.
+ *
+ * The stored-duplicate check runs only when at least one id is supplied. A payload where every block has
+ * no (or an empty) id intentionally re-mints all ids (legacy behaviour) and so never needs the stored ids.
+ */
+function resolveUpdateBlockIds(storedUnitsJson: string, units: LayoutUnit[]): LayoutUnit[] {
+  const supplied: string[] = []
+  for (const unit of units) for (const block of unit.blocks) if (block.id) supplied.push(block.id)
+  if (new Set(supplied).size !== supplied.length) {
+    throw createError({ statusCode: 400, message: 'Duplicate block ids in layout template units' })
+  }
+  if (supplied.length > 0) {
+    const stored: string[] = []
+    for (const unit of JSON.parse(storedUnitsJson) as LayoutUnit[]) {
+      for (const block of unit.blocks || []) if (block.id) stored.push(block.id)
+    }
+    if (new Set(stored).size !== stored.length) {
+      throw createError({ statusCode: 400, message: 'This layout template has duplicate stored block ids; they must be repaired before the layout can be saved' })
+    }
+    const storedSet = new Set(stored)
+    if (supplied.some(id => !storedSet.has(id))) {
+      throw createError({ statusCode: 409, message: 'Layout template blocks changed since this page was loaded; reload the template and try again' })
+    }
+  }
+  return assignBlockIds(units)
+}
+
+/**
  * For every switch using this template, reconcile its ports against the new
  * expected layout. Matched ports keep their settings; unmatched ports are
  * dropped; new positions become fresh ports. Cross-switch labels referring to
@@ -211,7 +242,7 @@ export const layoutTemplateRepository = {
 
     let unitsJson = current.units
     if (data.units) {
-      const newUnits = assignBlockIds(data.units)
+      const newUnits = resolveUpdateBlockIds(current.units, data.units)
       unitsJson = JSON.stringify(newUnits)
     }
 

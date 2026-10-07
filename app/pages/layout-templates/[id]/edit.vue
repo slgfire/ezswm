@@ -1,8 +1,13 @@
 <template>
   <div class="p-6">
-    <div v-if="loading" class="flex items-center justify-center py-12">
+    <div v-if="!authResolved || (canEditInfrastructure && loading)" class="flex items-center justify-center py-12" role="status" aria-live="polite">
       <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
       <span class="ml-2 text-muted">{{ $t('common.loading') }}</span>
+    </div>
+
+    <div v-else-if="!canEditInfrastructure" class="space-y-4">
+      <SharedViewOnlyNotice />
+      <UButton color="neutral" variant="subtle" :to="readonlyDetailLocation">{{ $t('common.back') }}</UButton>
     </div>
 
     <template v-else-if="form">
@@ -87,6 +92,7 @@
                   item-key="_uid"
                   handle=".drag-handle"
                   :animation="150"
+                  :disabled="!isCurrentAdmin()"
                   class="space-y-3"
                 >
                   <template #item="{ element: block, index: blockIndex }">
@@ -216,8 +222,20 @@ import draggable from 'vuedraggable'
 import type { LayoutTemplate, LayoutUnit, LayoutBlock, AirflowDirection } from '~~/types/layoutTemplate'
 import { buildLayoutTemplatePoeOptions, layoutTemplatePoeSelection, normalizeLayoutTemplatePoeSelection, poeNoneValue } from '~~/app/utils/layoutTemplatePoe'
 
+definePageMeta({
+  middleware: [async (to) => {
+    const auth = useAuth()
+    if (!auth.authResolved.value) await auth.fetchUser()
+    if (!auth.canEditInfrastructure.value) {
+      return navigateTo({ path: `/layout-templates/${to.params.id}`, query: { access: 'readonly' } })
+    }
+  }]
+})
+
 interface FormBlock {
   _uid: number
+  /** Persisted block id (absent for blocks added in this session); independent of the local _uid. */
+  id?: string
   type: string
   count: number
   start_index: number
@@ -260,10 +278,35 @@ const toast = useToast()
 const route = useRoute()
 const router = useRouter()
 const { getById, update } = useLayoutTemplates()
+const { authResolved, canEditInfrastructure, fetchUser, handleInfrastructureForbidden } = useAuth()
+let permissionGeneration = 0
+let accessChangeNoticeShown = false
 
 const loading = ref(true)
 const submitting = ref(false)
 const errors = ref<Record<string, string>>({})
+
+const readonlyDetailLocation = computed(() => ({
+  path: `/layout-templates/${route.params.id}`,
+  query: { access: 'readonly' }
+}))
+
+function currentTargetId(): string {
+  return typeof route.params.id === 'string' ? route.params.id : ''
+}
+
+function isCurrentAdmin(generation = permissionGeneration, targetId = currentTargetId()): boolean {
+  return generation === permissionGeneration
+    && authResolved.value
+    && canEditInfrastructure.value
+    && currentTargetId() === targetId
+}
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
 
 const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrides', () => ({}))
 useHead({ title: computed(() => `Edit — ${breadcrumbOverrides.value['/layout-templates/' + route.params.id] || t('templates.title')}`) })
@@ -343,7 +386,7 @@ const previewPorts = computed(() => {
 })
 
 function addUnit() {
-  if (!form.value) return
+  if (!isCurrentAdmin() || !form.value) return
   const nextNumber = form.value.units.length > 0
     ? Math.max(...form.value.units.map((u: FormUnit) => u.unit_number)) + 1
     : 1
@@ -355,14 +398,14 @@ function addUnit() {
 }
 
 function removeUnit(index: string | number) {
-  if (!form.value) return
+  if (!isCurrentAdmin() || !form.value) return
   form.value.units.splice(Number(index), 1)
 }
 
 let _uidCounter = 0
 
 function addBlock(unitIndex: string | number) {
-  if (!form.value) return
+  if (!isCurrentAdmin() || !form.value) return
   const unit = form.value.units[Number(unitIndex)]
   if (!unit) return
   const lastBlock = unit.blocks[unit.blocks.length - 1]
@@ -384,12 +427,13 @@ function addBlock(unitIndex: string | number) {
 }
 
 function removeBlock(unitIndex: string | number, blockIndex: string | number) {
-  if (!form.value) return
+  if (!isCurrentAdmin() || !form.value) return
   form.value!.units[Number(unitIndex)]!.blocks.splice(Number(blockIndex), 1)
 }
 
 function moveBlock(unitIndex: string | number, blockIndex: number, direction: -1 | 1) {
-  if (!form.value) return
+  const generation = permissionGeneration
+  if (!isCurrentAdmin(generation) || !form.value) return
   const blocks = form.value.units[Number(unitIndex)]!.blocks
   const target = blockIndex + direction
   if (target < 0 || target >= blocks.length) return
@@ -422,12 +466,14 @@ function validate(): boolean {
 }
 
 async function handleSubmit() {
+  const generation = permissionGeneration
+  const targetId = currentTargetId()
+  if (!isCurrentAdmin(generation, targetId) || submitting.value || !form.value) return
   if (!validate()) return
 
-  if (!form.value) return
   submitting.value = true
   try {
-    await update(route.params.id as string, {
+    await update(targetId, {
       name: form.value!.name,
       manufacturer: form.value!.manufacturer || undefined,
       model: form.value!.model || undefined,
@@ -438,6 +484,7 @@ async function handleSubmit() {
         unit_number: u.unit_number,
         label: u.label || undefined,
         blocks: u.blocks.map((b: FormBlock) => ({
+          ...(b.id ? { id: b.id } : {}),
           type: b.type,
           count: b.count,
           start_index: b.start_index,
@@ -453,21 +500,36 @@ async function handleSubmit() {
         }))
       })) as LayoutUnit[]
     })
+    if (!isCurrentAdmin(generation, targetId)) return
+    await nextTick()
+    if (!isCurrentAdmin(generation, targetId)) return
     clearDirty()
     toast.add({ title: t('templates.messages.updated'), color: 'success' })
-    router.push(`/layout-templates/${route.params.id}`)
-  } catch {
+    if (!isCurrentAdmin(generation, targetId)) return
+    await router.push(`/layout-templates/${targetId}`)
+  } catch (error: unknown) {
+    const access = await handleInfrastructureForbidden(error)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled' || !isCurrentAdmin(generation, targetId)) return
     toast.add({ title: t('errors.serverError'), color: 'error' })
   } finally {
-    submitting.value = false
+    if (generation === permissionGeneration && currentTargetId() === targetId) submitting.value = false
   }
 }
 
-onMounted(async () => {
+async function loadTemplate(targetId: string, generation: number) {
+  if (!isCurrentAdmin(generation, targetId)) return
+  loading.value = true
+  form.value = null
+  errors.value = {}
   try {
-    const data = await getById(route.params.id as string) as LayoutTemplate
+    const data = await getById(targetId) as LayoutTemplate
+    if (!isCurrentAdmin(generation, targetId)) return
     if (data?.name) {
-      breadcrumbOverrides.value[`/layout-templates/${route.params.id}`] = data.name
+      breadcrumbOverrides.value[`/layout-templates/${targetId}`] = data.name
     }
     form.value = {
       name: data.name || '',
@@ -481,6 +543,7 @@ onMounted(async () => {
         label: u.label || '',
         blocks: (u.blocks || []).map((b: LayoutBlock) => ({
           _uid: ++_uidCounter,
+          id: b.id || undefined,
           type: b.type,
           count: b.count,
           start_index: b.start_index,
@@ -493,12 +556,61 @@ onMounted(async () => {
         }))
       }))
     }
-  } catch {
+    await nextTick()
+    if (!isCurrentAdmin(generation, targetId)) return
+    clearDirty()
+  } catch (error: unknown) {
+    const access = await handleInfrastructureForbidden(error)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled' || !isCurrentAdmin(generation, targetId)) return
     form.value = null
   } finally {
-    loading.value = false
-    await nextTick()
-    clearDirty()
+    if (isCurrentAdmin(generation, targetId)) loading.value = false
   }
+}
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (canEdit === wasEditable) return
+  permissionGeneration++
+  if (canEdit || !authResolved.value) return
+
+  const revokedTargetId = currentTargetId()
+  form.value = null
+  errors.value = {}
+  loading.value = false
+  submitting.value = false
+  // Discard the revoked draft without opening the Admin unsaved-changes guard.
+  clearDirty()
+  noticeAccessChanged()
+  void navigateTo({ path: `/layout-templates/${revokedTargetId}`, query: { access: 'readonly' } })
+}, { flush: 'sync' })
+
+watch(() => route.params.id, (id, previousId) => {
+  if (id === previousId || !isCurrentAdmin()) return
+  const targetId = currentTargetId()
+  permissionGeneration++
+  const generation = permissionGeneration
+  form.value = null
+  errors.value = {}
+  submitting.value = false
+  clearDirty()
+  void loadTemplate(targetId, generation)
+}, { flush: 'sync' })
+
+onMounted(async () => {
+  const targetId = currentTargetId()
+  if (!authResolved.value) await fetchUser()
+  if (!authResolved.value || currentTargetId() !== targetId) return
+  if (!canEditInfrastructure.value) {
+    loading.value = false
+    await navigateTo(readonlyDetailLocation.value)
+    return
+  }
+  const generation = permissionGeneration
+  if (!isCurrentAdmin(generation, targetId)) return
+  await loadTemplate(targetId, generation)
 })
 </script>

@@ -1,7 +1,7 @@
 import { defineConfigs } from 'v-network-graph'
 import type { Edge } from 'v-network-graph'
 
-export function useTopologyGraphConfig(isDark: Ref<boolean>) {
+export function useTopologyGraphConfig(isDark: Ref<boolean>, canEditInfrastructure: Ref<boolean>) {
   const graphConfigs = computed(() => defineConfigs({
     view: {
       panEnabled: true,
@@ -14,7 +14,9 @@ export function useTopologyGraphConfig(isDark: Ref<boolean>) {
     },
     node: {
       selectable: true,
-      draggable: true,
+      // Viewer and unresolved auth states must not be able to move nodes, even
+      // temporarily while their role is being resolved.
+      draggable: canEditInfrastructure.value,
       label: {
         visible: false
       },

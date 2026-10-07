@@ -5,8 +5,10 @@
         <h1 class="text-xl font-bold">{{ $t('ipAddresses.title') }}</h1>
         <p class="mt-1 text-sm text-muted">{{ $t('ipAddresses.description') }}</p>
       </div>
-      <UButton icon="i-heroicons-plus" size="sm" @click="openAdd">{{ $t('ipAddresses.add') }}</UButton>
+      <UButton v-if="canEditInfrastructure" icon="i-heroicons-plus" size="sm" @click="openAdd">{{ $t('ipAddresses.add') }}</UButton>
     </div>
+
+    <SharedViewOnlyNotice v-if="authResolved && !canEditInfrastructure" class="mb-4" />
 
     <!-- Loading -->
     <div v-if="pageLoading" class="flex justify-center py-12">
@@ -79,7 +81,7 @@
         :title="$t('ipAddresses.emptyTitle')"
         :description="$t('ipAddresses.emptyDescription')"
       >
-        <template #action>
+        <template v-if="canEditInfrastructure" #action>
           <UButton icon="i-heroicons-plus" @click="openAdd">{{ $t('ipAddresses.add') }}</UButton>
         </template>
       </SharedEmptyState>
@@ -88,6 +90,7 @@
     <IpAddressForm
       v-model:open="formOpen"
       :edit-target="editTarget"
+      :readonly="formReadonly"
       :networks="networks"
       :vlans="vlans"
       :device-type-options="deviceTypeOptions"
@@ -100,6 +103,7 @@
     />
 
     <SharedConfirmDialog
+      v-if="canEditInfrastructure"
       v-model="showDeleteDialog"
       :title="$t('ipAddresses.delete')"
       :message="deleteMessage"
@@ -107,7 +111,7 @@
       @confirm="confirmDelete"
     />
 
-    <UModal :open="showNetworkMoveDialog" @update:open="onNetworkMoveOpenChange">
+    <UModal v-if="canEditInfrastructure" :open="showNetworkMoveDialog" @update:open="onNetworkMoveOpenChange">
       <template #title>
         <div class="flex items-center gap-3">
           <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
@@ -220,6 +224,21 @@ const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
 useHead({ title: t('ipAddresses.title') })
 const toast = useToast()
+const { authResolved, canEditInfrastructure, fetchUser, handleInfrastructureForbidden } = useAuth()
+const formReadonly = computed(() => !authResolved.value || !canEditInfrastructure.value)
+let permissionGeneration = 0
+let selectionGeneration = 0
+let operationGeneration = 0
+let deleteGeneration = 0
+let deletePermissionGeneration = 0
+let deleteSelectionGeneration = 0
+let accessChangeNoticeShown = false
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
 
 const { items, fetch: fetchAllocations, create, update, remove } = useSiteIpAllocations()
 const { items: networks, fetch: fetchNetworks } = useNetworks()
@@ -369,6 +388,9 @@ const pendingMovePayload = ref<IpAllocationSubmitPayload | null>(null)
 const moveCandidates = ref<NetworkMoveCandidate[]>([])
 const selectedMoveCandidateId = ref('')
 const networkMoveError = ref('')
+const pendingMovePermissionGeneration = ref(-1)
+const pendingMoveSelectionGeneration = ref(-1)
+const pendingMoveTargetId = ref('')
 
 const selectedMoveCandidate = computed(() =>
   moveCandidates.value.find(candidate => candidate.id === selectedMoveCandidateId.value) ?? null
@@ -406,11 +428,21 @@ const selectedMoveVlanLabel = computed(() =>
   formatVlanLabel(findVlanByNetwork(findNetworkById(selectedMoveCandidateId.value)))
 )
 
-function openNetworkMoveDialog(payload: IpAllocationSubmitPayload, candidates: NetworkMoveCandidate[]) {
+function openNetworkMoveDialog(
+  payload: IpAllocationSubmitPayload,
+  candidates: NetworkMoveCandidate[],
+  permission: number,
+  selection: number,
+  target: IpAllocationEnriched
+) {
+  if (!authResolved.value || !canEditInfrastructure.value || permission !== permissionGeneration || selection !== selectionGeneration || editTarget.value !== target) return
   pendingMovePayload.value = payload
   moveCandidates.value = candidates
   selectedMoveCandidateId.value = candidates.length === 1 ? candidates[0]!.id : ''
   networkMoveError.value = ''
+  pendingMovePermissionGeneration.value = permission
+  pendingMoveSelectionGeneration.value = selection
+  pendingMoveTargetId.value = target.id
   showNetworkMoveDialog.value = true
 }
 
@@ -420,27 +452,61 @@ function closeNetworkMoveDialog() {
   moveCandidates.value = []
   selectedMoveCandidateId.value = ''
   networkMoveError.value = ''
+  pendingMovePermissionGeneration.value = -1
+  pendingMoveSelectionGeneration.value = -1
+  pendingMoveTargetId.value = ''
 }
 
 function onNetworkMoveOpenChange(open: boolean) {
-  if (open) showNetworkMoveDialog.value = true
+  if (open) {
+    if (authResolved.value && canEditInfrastructure.value) showNetworkMoveDialog.value = true
+  }
   else closeNetworkMoveDialog()
 }
 
+function invalidatePendingActions() {
+  selectionGeneration++
+  operationGeneration++
+  deleteGeneration++
+  saving.value = false
+  deleting.value = false
+}
+
+function isCurrentEditor(
+  permission: number,
+  selection: number,
+  operation: number,
+  target: IpAllocationEnriched | null
+) {
+  return authResolved.value && canEditInfrastructure.value &&
+    permission === permissionGeneration && selection === selectionGeneration &&
+    operation === operationGeneration && editTarget.value === target && formOpen.value
+}
+
 function openAdd() {
+  if (!authResolved.value || !canEditInfrastructure.value) return
+  invalidatePendingActions()
   closeNetworkMoveDialog()
+  showDeleteDialog.value = false
+  deleteTarget.value = null
   editTarget.value = null
   formError.value = ''
   formOpen.value = true
 }
 function openEdit(row: IpAllocationEnriched) {
+  invalidatePendingActions()
   closeNetworkMoveDialog()
+  showDeleteDialog.value = false
+  deleteTarget.value = null
   editTarget.value = row
   formError.value = ''
   formOpen.value = true
 }
 function onFormClose() {
+  invalidatePendingActions()
   formOpen.value = false
+  editTarget.value = null
+  formError.value = ''
   closeNetworkMoveDialog()
 }
 function onRowSelect(_e: Event, row: TableRow<IpAllocationEnriched>) {
@@ -448,53 +514,96 @@ function onRowSelect(_e: Event, row: TableRow<IpAllocationEnriched>) {
 }
 
 async function onSubmit(payload: IpAllocationSubmitPayload) {
+  if (!authResolved.value || !canEditInfrastructure.value || !formOpen.value) return
+  const permission = permissionGeneration
+  const selection = selectionGeneration
+  const target = editTarget.value
+  const operation = ++operationGeneration
   saving.value = true
   formError.value = ''
   try {
-    if (editTarget.value) {
-      await update(editTarget.value.network_id, editTarget.value.id, payload.body)
+    if (target) {
+      await update(target.network_id, target.id, payload.body)
+      if (!isCurrentEditor(permission, selection, operation, target)) return
       toast.add({ title: t('ipAddresses.messages.updated'), color: 'success' })
     } else {
       await create(payload.networkId, payload.body)
+      if (!isCurrentEditor(permission, selection, operation, target)) return
       toast.add({ title: t('ipAddresses.messages.created'), color: 'success' })
     }
     formOpen.value = false
     editTarget.value = null
+    selectionGeneration++
     await fetchAllocations(siteId.value)
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled') return
+    if (!isCurrentEditor(permission, selection, operation, target)) return
     const error = err as ApiError
     const moveError = error.data?.data ?? error.data
-    if (editTarget.value && moveError?.code === 'IP_NETWORK_MOVE_REQUIRED' && moveError.candidates?.length) {
-      openNetworkMoveDialog(payload, moveError.candidates)
+    if (target && moveError?.code === 'IP_NETWORK_MOVE_REQUIRED' && moveError.candidates?.length) {
+      openNetworkMoveDialog(payload, moveError.candidates, permission, selection, target)
       return
     }
     formError.value = error?.data?.message || t('errors.serverError')
   } finally {
-    saving.value = false
+    if (operation === operationGeneration) saving.value = false
   }
 }
 
 async function confirmNetworkMove() {
-  if (!editTarget.value || !pendingMovePayload.value || !selectedMoveCandidateId.value) return
+  const target = editTarget.value
+  const payload = pendingMovePayload.value
+  const candidateId = selectedMoveCandidateId.value
+  const permission = pendingMovePermissionGeneration.value
+  const selection = pendingMoveSelectionGeneration.value
+  if (
+    !target || !payload || !candidateId || !showNetworkMoveDialog.value ||
+    !authResolved.value || !canEditInfrastructure.value ||
+    permission !== permissionGeneration || selection !== selectionGeneration ||
+    pendingMoveTargetId.value !== target.id || !formOpen.value
+  ) return
 
+  const operation = ++operationGeneration
   saving.value = true
   formError.value = ''
 
   try {
-    await update(editTarget.value.network_id, editTarget.value.id, {
-      ...pendingMovePayload.value.body,
-      network_id: selectedMoveCandidateId.value
+    await update(target.network_id, target.id, {
+      ...payload.body,
+      network_id: candidateId
     })
+    if (
+      !isCurrentEditor(permission, selection, operation, target) ||
+      !showNetworkMoveDialog.value || selectedMoveCandidateId.value !== candidateId ||
+      pendingMoveTargetId.value !== target.id
+    ) return
     closeNetworkMoveDialog()
     formOpen.value = false
     editTarget.value = null
     toast.add({ title: t('ipAddresses.messages.updated'), color: 'success' })
+    selectionGeneration++
     await fetchAllocations(siteId.value)
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled') return
+    if (
+      !isCurrentEditor(permission, selection, operation, target) ||
+      !showNetworkMoveDialog.value || selectedMoveCandidateId.value !== candidateId ||
+      pendingMoveTargetId.value !== target.id
+    ) return
     const error = err as ApiError
     networkMoveError.value = error?.data?.message || t('errors.serverError')
   } finally {
-    saving.value = false
+    if (operation === operationGeneration) saving.value = false
   }
 }
 
@@ -507,30 +616,84 @@ const deleteMessage = computed(() =>
 )
 
 function onFormDelete() {
-  if (editTarget.value) {
-    deleteTarget.value = editTarget.value
-    formOpen.value = false
-    showDeleteDialog.value = true
-  }
+  if (!authResolved.value || !canEditInfrastructure.value || !formOpen.value || !editTarget.value) return
+  const target = editTarget.value
+  invalidatePendingActions()
+  deleteTarget.value = target
+  deletePermissionGeneration = permissionGeneration
+  deleteSelectionGeneration = selectionGeneration
+  formOpen.value = false
+  showDeleteDialog.value = true
 }
 async function confirmDelete() {
-  if (!deleteTarget.value) return
+  const target = deleteTarget.value
+  const request = deleteGeneration
+  const permission = deletePermissionGeneration
+  const selection = deleteSelectionGeneration
+  if (
+    !target || !showDeleteDialog.value || !authResolved.value || !canEditInfrastructure.value ||
+    request !== deleteGeneration || permission !== permissionGeneration || selection !== selectionGeneration
+  ) return
   deleting.value = true
   try {
-    await remove(deleteTarget.value.network_id, deleteTarget.value.id)
+    await remove(target.network_id, target.id)
+    if (
+      request !== deleteGeneration || permission !== permissionGeneration || selection !== selectionGeneration ||
+      !authResolved.value || !canEditInfrastructure.value || !showDeleteDialog.value || deleteTarget.value !== target
+    ) return
     toast.add({ title: t('ipAddresses.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     deleteTarget.value = null
+    formOpen.value = false
+    editTarget.value = null
+    formError.value = ''
+    selectionGeneration++
     await fetchAllocations(siteId.value)
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled') return
+    if (
+      request !== deleteGeneration || permission !== permissionGeneration || selection !== selectionGeneration ||
+      !authResolved.value || !canEditInfrastructure.value || !showDeleteDialog.value || deleteTarget.value !== target
+    ) return
     const error = err as { data?: { message?: string } }
     toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
-    deleting.value = false
+    if (request === deleteGeneration) deleting.value = false
   }
 }
 
+watch(showDeleteDialog, (open, wasOpen) => {
+  if (wasOpen && !open) {
+    deleteGeneration++
+    deleting.value = false
+    deleteTarget.value = null
+  }
+}, { flush: 'sync' })
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (!wasEditable || canEdit || !authResolved.value) return
+  permissionGeneration++
+  selectionGeneration++
+  operationGeneration++
+  deleteGeneration++
+  saving.value = false
+  deleting.value = false
+  formError.value = ''
+  closeNetworkMoveDialog()
+  showDeleteDialog.value = false
+  deleteTarget.value = null
+  // Keep the selected allocation open as an inspector; discard add/edit state without prompting.
+  formOpen.value = Boolean(editTarget.value)
+  if (!editTarget.value) formError.value = ''
+}, { flush: 'sync' })
+
 onMounted(async () => {
+  if (!authResolved.value) await fetchUser()
   await Promise.all([
     fetchAllocations(siteId.value),
     fetchNetworks(siteParams.value),

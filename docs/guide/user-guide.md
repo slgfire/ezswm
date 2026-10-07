@@ -23,6 +23,8 @@ After setup, you are redirected to the login screen.
 
 After logging in, the dashboard provides a summary of your infrastructure: total switches, VLANs, subnets, and IP utilization. The sidebar on the left gives access to all sections. The header bar contains global search, a theme toggle (dark/light), language selector, and user menu.
 
+On phones, the four KPI cards at the top of the dashboard appear in two columns (2×2). Larger panels retain their full width on phones; tablet and desktop layouts are unchanged.
+
 The interface uses neutral surfaces for layout and decoration. Color remains where it carries information: VLANs keep their assigned colors, while port states and warnings retain their status cues, such as green for up, amber for warnings, and red for down or errors.
 
 ![Dashboard — synthetic example, demo data](/images/screenshot-dashboard-synthetic-current.png)
@@ -95,6 +97,7 @@ A template has one or more units (rack units). Each unit contains one or more po
 Each block defines a group of ports within a unit:
 
 - Blocks can be reordered within the unit by dragging the handle or using the up/down buttons (available in both template creation and template editing).
+- Block IDs: when you edit a template, existing blocks keep their IDs (also when you reorder or move them) and a block you add gets a new ID; creating, importing or duplicating a template assigns new IDs. Saving the layout is rejected with a message to reload only if one of the block IDs being saved no longer belongs to this template (for example, a block that was removed or replaced elsewhere); this is not general edit locking, and a normal edit that keeps the same IDs is accepted. A client that sends no block IDs (or empty ones) gets new IDs for all blocks. A template that already contains duplicate block IDs cannot save its layout when IDs are sent (nothing is repaired automatically). An API request that updates only the name or description and sends no layout still works; the template editor always sends the layout, so saving from the editor is rejected for such a template. Block IDs from older templates are accepted as they are.
 - **Type** -- RJ45, SFP, SFP+, QSFP, Console, or Management
 - **Count** -- number of ports in this block
 - **Start Index** -- the first port number (default 1)
@@ -182,6 +185,8 @@ Click any port in the grid to open a slideover panel. From there you can configu
 - **Description** -- port-level notes
 
 Optional source prefill is available in the port side panel footer. Open a port, click the **Copy/Duplicate** icon, then select another port on the same switch as the source. Use the source list search field to filter ports quickly. The selected source prefills editable configuration fields; review or adjust them, then click **Save**. Selecting a source never saves directly, and **Reset** remains a separate action.
+
+**Saving port changes:** saving sends only what you actually changed. Changing just the description, MAC address or status does not touch the port mode, VLANs, connection or helper settings, so untouched empty, unset and off values stay exactly as they were. If nothing was changed, Save sends no request and simply closes the panel. A deliberate VLAN or port-mode change saves the port mode, access, native and tagged VLANs together (an unset mode becomes the mode shown in the panel), and a changed connection saves the connection fields together; if the port is linked to a switch, the VLAN change also keeps that link and synchronizes the VLANs to the connected switch. Save stays disabled for a moment while the panel is still loading its options; anything you type in that time is kept. Cancel works during that moment too: with no edits it closes without a prompt, and if you typed a change it asks before discarding it (Cancel keeps your draft, Leave discards it without saving).
 
 ### Bulk Port Editing
 
@@ -275,7 +280,7 @@ Sticker output is clean/unbranded and uses a fixed **70 × 37 mm** layout in a *
 - Filter chips to show only specific VLANs (e.g. Gaming, Server, Sleeping)
 - A LAG filter chip to show only ports of one LAG group
 - Stable, consistent colors for LAG pills
-- Port list sorting by helper usage, then physical type (RJ45 → SFP → SFP+ → QSFP), then unit/index; with an active LAG filter, ports are grouped by LAG name
+- Port list in a fixed default order: RJ45 → SFP → SFP+ → QSFP → management → console, then by unit and index; uplink, tagged-VLAN and disabled-status badges do not move a port within the list, and the filters work as before. With an active LAG filter, ports are grouped by LAG name first and then ordered by type, unit and index. The physical port grid keeps the switch's template layout
 - Clear "Tech only — do not use" warnings for infrastructure ports
 - On desktop: the full port grid visualization is also shown
 
@@ -415,6 +420,8 @@ When editing a port that belongs to a LAG, the following settings are automatica
 | Custom/helper fields | |
 | Connected device | |
 
+Only the shared settings you actually changed in this save are synchronized; if you only edit the description or MAC address, no other LAG member is touched, and unchanged link details are not copied to the other members.
+
 For manual/freetext connections, the device name + peer port pair is synchronized identically across all LAG members. You can then edit the shared device name and it propagates to the full LAG.
 
 ### LAG in Port Side Panel
@@ -477,7 +484,7 @@ The floating toolbar in the top-left corner provides:
 
 ### Saved Positions
 
-When you drag a node to a new position, all node positions are saved automatically. On the next page load, the layout is restored. Use the **Reset** button to clear saved positions and return to the automatic hierarchical layout.
+When you drag a node to a new position, all node positions are saved automatically. On the next page load, the layout is restored. Positions are stored per switch (by its ID, not by the name shown in the graph), so two switches whose names look the same in the graph because the label is shortened keep their own positions across successive moves and reloads. Use the **Reset** button to clear saved positions and return to the automatic hierarchical layout.
 
 ## VLANs
 
@@ -709,9 +716,29 @@ All meaningful security changes (issuer, client, secret, scopes, mapping, enabli
 
 **Viewer role:** viewers are read-only for infrastructure data and cannot access admin functions: settings changes, user administration, backups and the OIDC configuration. Their own exceptions are changing their own display name and language, their local password (local accounts only) and logging out.
 
-### Users (admin, read-only)
+**What a Viewer sees (view-only interface):** the **Switch pages** (switch list, details, ports, LAG groups, switch creation, public access and QR print) and the **Sites and VLAN pages** (sites list, site creation and dashboard; VLAN list, creation and details) and the **Networks and IP address pages** (network list, creation and details; IP address overview) and the **Patch panel and layout template pages** (lists, details, template creation and editing) and the **Topology page** are adapted so that viewers no longer see controls they cannot use. Admins keep full access and see all editing controls. Pages outside the listed areas have not been adapted in this checkpoint (see below); the server rejects infrastructure writes for viewers everywhere.
 
-Admins see a read-only **Users** page in the sidebar with four fields per account: username, display name, role, and sign-in method (local or OpenID Connect). It lists provisioned ezSWM accounts only — it is not a directory of your identity provider — and has no create, edit, delete or password-reset controls. (The underlying user API still supports admin CRUD; the page does not expose it.)
+- **Available to viewers:** browsing and detail pages for sites, switches, ports, LAG groups, VLANs, networks, IP addresses, patch panels, layout templates and the topology; global search; filters, sorting and display preferences stored locally in the browser; the ordinary data exports, import-template download and print pages; your own profile (display name, language), your local password (you must enter the current password; accounts managed by OpenID Connect have no ezSWM password) and logout. The export policy is unchanged: current exports can contain public access tokens, so treat them as secret.
+- **Switch pages, hidden or read-only for viewers:** creating, editing, deleting and duplicating switches, switch groups, favorites and persisted ordering (local filtering and view preferences still work), port and LAG editing, bulk edits, and creating or revoking public access tokens. Ports and LAG groups open as read-only details by mouse or keyboard. A direct link to the switch create page leads back to the switch list. Where it helps, the interface says: "You have view-only access. Only admins can make changes."
+- **QR print (switches):** a viewer can print an existing, valid public-access QR code. If a switch has no valid link (missing or revoked), the QR code is left out with a notice; viewers never create or reactivate links. Ordinary switch printing remains available.
+- **Sites and VLANs:** viewers do not see create, edit or delete controls on the sites list, the site dashboard or the VLAN pages. A direct link to the site or VLAN create page leads back to the nearest list with a short note. VLAN details and the VLAN panel open read-only with the associated networks and links; local sorting and filtering still work. On the site dashboard only the network-creation hint and the empty-state switch-creation action are hidden. If an admin loses the role while editing, an open site editor is closed, drafts are discarded and an open VLAN panel stays read-only; the first rejected request refreshes the role once with a single notice and no retry.
+- **Networks and IP addresses:** viewers do not see create, edit, delete, add or network-move controls on the network list, the network pages or the IP address overview. A direct link to the network create page leads back to the network list with a short note. Network details (subnet information and utilization) stay readable; IP allocation rows and IP range rows open as read-only inspectors with a Close button, and the IP address table opens read-only labelled details. Local filtering and sorting still work. If an admin loses the role while an editor is open, drafts are discarded, the open inspector stays read-only, and the first rejected request refreshes the role once with a single notice and no retry.
+- **Patch panels and layout templates:** viewers do not see create, edit, delete, duplicate or public-link management controls on the patch panel and template pages. Patch panel sockets open as labelled read-only inspectors (mouse, keyboard or touch) with a Close button. Direct links to template creation (including import and clone) and template editing lead back to the template list or detail page with a short note, without showing a form, the library or the editor. Admins keep the side toggle (clicking the active L or R again clears it) and manage the public link; a valid public patch panel link stays readable without signing in. Ordinary patch panel printing is unchanged. If an admin loses the role while a socket or template editor is open, the first rejected save refreshes the role once with a single notice and no retry, and the editor falls back to the read-only view.
+- **Topology:** viewers can read the topology, pan, zoom and fit the view, and click a switch to open a read-only detail panel with its connections (Close to dismiss). Nodes cannot be dragged, the Reset layout button is not shown and no layout is saved. Admins drag nodes to arrange them (positions are saved automatically shortly after the drag) and can use Reset layout to delete the saved layout without a confirmation; while Reset layout waits for an in-flight save and deletes the layout, new position saves are blocked. If an admin is demoted on the server while arranging, a save sent afterwards is rejected once with a single notice and no retry, and the saved layout stays unchanged; once the page learns the new role it becomes view-only and queued saves are cancelled. The dragged node may stay at its unsaved position until you reload. A save that has already been sent cannot be cancelled.
+- **Other areas:** the server continues to reject infrastructure writes for viewers, so any write control that is still visible returns a permission error and changes nothing.
+- **Public pages** (shared links) are unaffected.
+- **Settings and Data Management:** viewers see only the Account tab and the Export tab (ordinary exports and the import-template download); the admin tabs (General, Authentication, Backup & Restore, Import) are admin-only. If an admin loses the role while those pages are open, the next rejected admin request refreshes the role once (no retry), shows a single notice, closes the admin dialogs, drops the admin-only state (such as a selected backup or import file or OIDC secret fields) and falls back to Account or Export; late file or OIDC responses are ignored, and restore or import requests that have not started yet are blocked once the interface confirms the role loss. Requests that were already sent are not cancelled. Your own unsaved account and password edits are kept and still protected by the leave confirmation. Backup and restore remain admin-only, and exports (which can include public access tokens) are unchanged. Saving your own profile updates the header name and language after a successful session refresh.
+- Permissions are enforced by the server and are unchanged by this interface work. After a role change the interface may keep the old role until the next navigation or reload; when a save is rejected because of the role change, the app checks your role again once and, if that check completes, switches to read-only (network errors or temporary server errors keep the last known role, and an expired or invalid session still ends the session as before). If an admin is demoted while a port editor is open, the next save is rejected by the server once (no automatic retry); after a successful role refresh the editor turns read-only with a single notice, and nothing is saved.
+
+### Users (admin)
+
+Admins see a **Users** page in the sidebar listing provisioned ezSWM accounts: username, display name, role, sign-in method (local or OpenID Connect) and creation date. The creation date helps tell accounts with the same display name apart; no provider identity (issuer or subject) is shown. The page lists ezSWM accounts only — it is not a directory of your identity provider. Viewers do not see the Users entry and cannot access the admin user list or management API (their own profile settings are unaffected).
+
+**Create a Viewer (or other local account):** click **Create account**, enter username (3–50 letters, numbers, underscores), display name, a password of at least 8 characters and a language. The role defaults to **Viewer**; choose Admin only when needed.
+
+**Edit an account:** use the edit action on a row. For local accounts you can change display name, role and language; the username cannot be changed. SSO (OpenID Connect) accounts are managed by the identity provider and cannot be edited on this page; their roles follow provider mapping.
+
+**Delete an account:** use the delete action and confirm. You cannot delete your own account, and the last local emergency admin cannot be deleted or demoted to Viewer (the server rejects it with 409). Deleting an SSO account does not revoke access at the identity provider; the account may be created again at the next permitted SSO sign-in. Deleting an account keeps its activity history but removes the author attribution.
 
 ### Password Change
 

@@ -1,7 +1,11 @@
 <template>
   <USlideover v-model:open="openModel">
     <template #title>
-      <div v-if="editTarget" class="flex items-center gap-2">
+      <div v-if="readonly && editTarget" class="flex items-center gap-2">
+        <span>{{ $t('networks.allocations.title') }}</span>
+        <code class="font-mono text-sm">{{ editTarget.ip_address }}</code>
+      </div>
+      <div v-else-if="editTarget" class="flex items-center gap-2">
         <code class="font-mono text-sm">{{ editTarget.ip_address }}</code>
         <span v-if="editTarget.hostname" class="text-sm text-muted">{{ editTarget.hostname }}</span>
       </div>
@@ -9,14 +13,14 @@
     </template>
 
     <template #actions>
-      <div v-if="editTarget" class="flex items-center gap-1">
-        <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="emit('delete-alloc')" />
+      <div v-if="editTarget && !readonly" class="flex items-center gap-1">
+        <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="deleteAllocation" />
       </div>
     </template>
 
     <template #body>
       <!-- Mode toggle (only for new entries, hide range option for /31 and /32) -->
-      <div v-if="!editTarget" class="mb-4 flex items-center gap-1">
+      <div v-if="!editTarget && !readonly" class="mb-4 flex items-center gap-1">
         <button
           class="px-2.5 py-1 text-xs font-medium rounded border transition-colors"
           :class="modeModel === 'ip'
@@ -39,8 +43,35 @@
         {{ error }}
       </div>
 
+      <dl v-if="readonly && editTarget" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('networks.allocations.fields.ipAddress') }}</dt>
+          <dd class="mt-1 font-mono text-sm text-highlighted">{{ editTarget.ip_address }}</dd>
+        </div>
+        <div>
+          <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('networks.allocations.fields.hostname') }}</dt>
+          <dd class="mt-1 text-sm text-highlighted">{{ editTarget.hostname || '-' }}</dd>
+        </div>
+        <div>
+          <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('networks.allocations.fields.deviceType') }}</dt>
+          <dd class="mt-1 text-sm text-highlighted">{{ editTarget.device_type ? $t(`networks.allocations.deviceTypes.${editTarget.device_type}`) : '-' }}</dd>
+        </div>
+        <div>
+          <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('networks.allocations.fields.status') }}</dt>
+          <dd class="mt-1 text-sm text-highlighted">{{ $t(`networks.allocations.statuses.${editTarget.status}`) }}</dd>
+        </div>
+        <div>
+          <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('networks.allocations.fields.macAddress') }}</dt>
+          <dd class="mt-1 font-mono text-sm text-highlighted">{{ editTarget.mac_address || '-' }}</dd>
+        </div>
+        <div class="sm:col-span-2">
+          <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('common.description') }}</dt>
+          <dd class="mt-1 whitespace-pre-wrap text-sm text-highlighted">{{ editTarget.description || '-' }}</dd>
+        </div>
+      </dl>
+
       <!-- IP Address form -->
-      <form v-if="modeModel === 'ip'" class="space-y-4" @submit.prevent="emit('submit-allocation')">
+      <form v-else-if="!readonly && modeModel === 'ip'" class="space-y-4" @submit.prevent="submitAllocation">
         <UFormField :label="$t('networks.allocations.fields.ipAddress')" required>
           <UInput v-model="allocForm.ip_address" placeholder="10.0.1.10" required :color="error ? 'error' : undefined" class="w-full" />
         </UFormField>
@@ -64,7 +95,7 @@
       </form>
 
       <!-- IP Range form -->
-      <form v-if="modeModel === 'range'" class="space-y-4" @submit.prevent="emit('submit-range')">
+      <form v-else-if="!readonly && modeModel === 'range'" class="space-y-4" @submit.prevent="submitRange">
         <div class="grid grid-cols-2 gap-3">
           <UFormField :label="$t('networks.ranges.fields.startIp')" required>
             <UInput v-model="rangeForm.start_ip" placeholder="10.0.1.100" required :color="error ? 'error' : undefined" class="w-full" />
@@ -83,9 +114,12 @@
     </template>
 
     <template #footer>
-      <div class="flex justify-end gap-2">
+      <div v-if="readonly" class="flex justify-end gap-2">
+        <UButton variant="subtle" color="neutral" @click="emit('close')">{{ $t('common.close') }}</UButton>
+      </div>
+      <div v-else class="flex justify-end gap-2">
         <UButton variant="subtle" color="neutral" @click="emit('close')">{{ $t('common.cancel') }}</UButton>
-        <UButton :loading="saving" @click="modeModel === 'ip' ? emit('submit-allocation') : emit('submit-range')">{{ editTarget ? $t('common.save') : $t('common.add') }}</UButton>
+        <UButton :loading="saving" @click="modeModel === 'ip' ? submitAllocation() : submitRange()">{{ editTarget ? $t('common.save') : $t('common.add') }}</UButton>
       </div>
     </template>
   </USlideover>
@@ -98,6 +132,7 @@ const props = defineProps<{
   open: boolean
   editTarget: IPAllocation | null
   mode: 'ip' | 'range'
+  readonly?: boolean
   error: string
   saving: boolean
   isSpecialNet: boolean
@@ -123,8 +158,25 @@ const openModel = computed({
   set: (v) => emit('update:open', v),
 })
 
+const readonly = computed(() => props.readonly === true)
+
 const modeModel = computed({
   get: () => props.mode,
-  set: (v) => emit('update:mode', v),
+  set: (v) => { if (!readonly.value) emit('update:mode', v) },
 })
+
+function submitAllocation() {
+  if (readonly.value) return
+  emit('submit-allocation')
+}
+
+function submitRange() {
+  if (readonly.value) return
+  emit('submit-range')
+}
+
+function deleteAllocation() {
+  if (readonly.value) return
+  emit('delete-alloc')
+}
 </script>

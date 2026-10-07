@@ -9,11 +9,13 @@
           <p class="mt-1 text-sm text-muted">{{ $t('networks.detailDescription') }}</p>
         </div>
       </div>
-      <div v-if="network" class="flex items-center gap-1">
+      <div v-if="network && canEditInfrastructure" class="flex items-center gap-1">
         <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="sm" :title="$t('common.edit')" @click="startEdit()" />
-        <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="void (showDeleteDialog = true)" />
+        <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="openDeleteNetwork()" />
       </div>
     </div>
+
+    <SharedViewOnlyNotice v-if="authResolved && !canEditInfrastructure" class="mb-4" />
 
     <div v-if="pageLoading" class="flex justify-center py-12">
       <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-muted" />
@@ -43,7 +45,7 @@
       <div>
         <div class="mb-3 flex items-center justify-between">
           <h2 class="text-base font-semibold text-default">{{ $t('networks.unified.title') }}</h2>
-          <UButton icon="i-heroicons-plus" size="sm" @click="openAddPanel()">
+          <UButton v-if="canEditInfrastructure" icon="i-heroicons-plus" size="sm" @click="openAddPanel()">
             {{ $t('common.add') }}
           </UButton>
         </div>
@@ -55,7 +57,11 @@
             :key="row.key"
             class="group flex items-center gap-3 px-4 py-2.5 transition-colors"
             :class="rowClass(row)"
+            :role="row.kind !== 'fixed' && !canEditInfrastructure ? 'button' : undefined"
+            :tabindex="row.kind !== 'fixed' && !canEditInfrastructure ? 0 : undefined"
             @click="onRowClick(row)"
+            @keydown.enter.stop.prevent="!canEditInfrastructure && onRowClick(row)"
+            @keydown.space.stop.prevent="!canEditInfrastructure && onRowClick(row)"
           >
             <!-- Fixed rows (network, gateway, broadcast) -->
             <template v-if="row.kind === 'fixed'">
@@ -83,7 +89,7 @@
                   <SharedCopyButton v-if="(row.data as IPAllocation).mac_address" :value="(row.data as IPAllocation).mac_address!"><span class="font-mono">{{ (row.data as IPAllocation).mac_address }}</span></SharedCopyButton>
                 </div>
               </div>
-              <div class="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+              <div v-if="canEditInfrastructure" class="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                 <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.stop="openEditAlloc(row.data as IPAllocation)" />
                 <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.stop="openDeleteAllocDialog(row.data as IPAllocation)" />
               </div>
@@ -104,7 +110,7 @@
                   </span>
                 </div>
               </div>
-              <div class="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+              <div v-if="canEditInfrastructure" class="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                 <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click.stop="openRangeEdit(row.data as IPRange)" />
                 <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.stop="openDeleteRange(row.data as IPRange)" />
               </div>
@@ -118,7 +124,7 @@
     </div>
 
     <!-- Network edit slideover -->
-    <USlideover :open="editing" @update:open="onEditOpenChange">
+    <USlideover v-if="canEditInfrastructure" :open="editing" @update:open="onEditOpenChange">
       <template #title>
         <span>{{ $t('networks.edit') }}</span>
       </template>
@@ -158,7 +164,7 @@
     </USlideover>
 
     <!-- Range edit slideover -->
-    <USlideover :open="showRangeEdit" @update:open="onRangeEditOpenChange">
+    <USlideover :open="showRangeEdit" @update:open="handleRangeEditOpenChange">
       <template #title>
         <div class="flex items-center gap-2">
           <UBadge :color="rangeTypeBadgeColor(rangeEditForm.type)" variant="subtle" size="sm">{{ $t(`networks.ranges.types.${rangeEditForm.type}`) }}</UBadge>
@@ -167,10 +173,28 @@
       </template>
 
       <template #body>
-        <div v-if="rangeEditError" class="mb-4 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+        <dl v-if="!canEditInfrastructure && rangeEditTarget" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('networks.ranges.fields.startIp') }}</dt>
+            <dd class="mt-1 font-mono text-sm text-highlighted">{{ rangeEditTarget.start_ip }}</dd>
+          </div>
+          <div>
+            <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('networks.ranges.fields.endIp') }}</dt>
+            <dd class="mt-1 font-mono text-sm text-highlighted">{{ rangeEditTarget.end_ip }}</dd>
+          </div>
+          <div>
+            <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('networks.ranges.fields.type') }}</dt>
+            <dd class="mt-1 text-sm text-highlighted">{{ $t(`networks.ranges.types.${rangeEditTarget.type}`) }}</dd>
+          </div>
+          <div class="sm:col-span-2">
+            <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('common.description') }}</dt>
+            <dd class="mt-1 whitespace-pre-wrap text-sm text-highlighted">{{ rangeEditTarget.description || '-' }}</dd>
+          </div>
+        </dl>
+        <div v-else-if="canEditInfrastructure && rangeEditError" class="mb-4 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
           {{ rangeEditError }}
         </div>
-        <form class="space-y-4" @submit.prevent="onSaveRangeEdit">
+        <form v-if="canEditInfrastructure" class="space-y-4" @submit.prevent="onSaveRangeEdit">
           <div class="grid grid-cols-2 gap-3">
             <UFormField :label="$t('networks.ranges.fields.startIp')" required>
               <UInput v-model="rangeEditForm.start_ip" required class="w-full" />
@@ -189,7 +213,7 @@
       </template>
 
       <template #footer>
-        <div class="flex items-center justify-between">
+        <div v-if="canEditInfrastructure" class="flex items-center justify-between">
           <UButton icon="i-heroicons-trash" variant="ghost" color="error" @click="openDeleteRangeDialog(rangeEditTarget!)">
             {{ $t('common.delete') }}
           </UButton>
@@ -198,14 +222,19 @@
             <UButton :loading="savingRangeEdit" @click="onSaveRangeEdit">{{ $t('common.save') }}</UButton>
           </div>
         </div>
+        <div v-else class="flex justify-end">
+          <UButton variant="subtle" color="neutral" @click="closeRangeInspector">{{ $t('common.close') }}</UButton>
+        </div>
       </template>
     </USlideover>
 
     <NetworkAllocationForm
+      v-if="canEditInfrastructure || (showAddPanel && !!editAllocTarget)"
       v-model:mode="addPanelMode"
       v-model:alloc-form="allocForm"
       v-model:range-form="rangeForm"
       :open="showAddPanel"
+      :readonly="!canEditInfrastructure"
       :edit-target="editAllocTarget"
       :error="addPanelError"
       :saving="addPanelMode === 'ip' ? creatingAlloc : creatingRange"
@@ -213,15 +242,16 @@
       :device-type-options="deviceTypeOptions"
       :alloc-status-options="allocStatusOptions"
       :range-type-options="rangeTypeOptions"
-      @update:open="onAddOpenChange"
+      @update:open="handleAddOpenChange"
       @submit-allocation="onCreateAllocation"
       @submit-range="onCreateRange"
       @delete-alloc="openDeleteAllocDialog(editAllocTarget!)"
-      @close="requestCloseAdd"
+      @close="handleAddClose"
     />
 
-    <SharedConfirmDialog v-model="showDeleteDialog" :title="$t('networks.delete')" :message="network ? `${$t('networks.delete')}: ${network.name} (${network.subnet})?` : ''" :loading="deleting" @confirm="confirmDeleteNetwork" />
+    <SharedConfirmDialog v-if="canEditInfrastructure" v-model="showDeleteDialog" :title="$t('networks.delete')" :message="deleteNetworkTarget ? `${$t('networks.delete')}: ${deleteNetworkTarget.name} (${deleteNetworkTarget.subnet})?` : ''" :loading="deleting" @confirm="confirmDeleteNetwork" />
     <SharedConfirmDialog
+      v-if="canEditInfrastructure"
       v-model="showDeleteAllocDialog"
       :title="$t('networks.allocations.title')"
       :message="deleteAllocTarget
@@ -238,7 +268,7 @@
       @confirm="confirmDeleteAlloc"
       @update:model-value="(v) => { if (!v) allocDeleteRefs = [] }"
     />
-    <SharedConfirmDialog v-model="showDeleteRangeDialog" :title="$t('networks.ranges.title')" :message="deleteRangeTarget ? `${$t('common.delete')}: ${deleteRangeTarget.start_ip} - ${deleteRangeTarget.end_ip}?` : ''" :loading="deletingRange" @confirm="confirmDeleteRange" />
+    <SharedConfirmDialog v-if="canEditInfrastructure" v-model="showDeleteRangeDialog" :title="$t('networks.ranges.title')" :message="deleteRangeTarget ? `${$t('common.delete')}: ${deleteRangeTarget.start_ip} - ${deleteRangeTarget.end_ip}?` : ''" :loading="deletingRange" @confirm="confirmDeleteRange" />
   </div>
 </template>
 
@@ -249,6 +279,7 @@ import type { IPRange, RangeType } from '~~/types/ipRange'
 
 const { t } = useI18n()
 const toast = useToast()
+const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 const router = useRouter()
@@ -260,6 +291,15 @@ const { items: ranges, fetch: fetchRanges, create: createRange, update: updateRa
 
 const pageLoading = ref(true)
 const network = ref<Network | null>(null)
+const deleteNetworkTarget = ref<Network | null>(null)
+let permissionGeneration = 0
+let accessChangeNoticeShown = false
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
 
 useHead({ title: computed(() => network.value?.name || t('networks.title')) })
 const editing = ref(false)
@@ -317,6 +357,44 @@ const {
   () => (addPanelMode.value === 'ip' ? allocForm.value : rangeForm.value),
   () => { showAddPanel.value = false; editAllocTarget.value = null }
 )
+
+function closeAddPanel() {
+  showAddPanel.value = false
+  editAllocTarget.value = null
+  addPanelError.value = ''
+  allocForm.value = { ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' }
+  rangeForm.value = { start_ip: '', end_ip: '', type: 'static', description: '' }
+}
+
+function handleAddClose() {
+  if (!authResolved.value || !canEditInfrastructure.value) {
+    closeAddPanel()
+    return
+  }
+  requestCloseAdd()
+}
+
+function handleAddOpenChange(open: boolean) {
+  if (!open && (!authResolved.value || !canEditInfrastructure.value)) {
+    closeAddPanel()
+    return
+  }
+  onAddOpenChange(open)
+}
+
+function closeRangeInspector() {
+  showRangeEdit.value = false
+  rangeEditTarget.value = null
+  rangeEditError.value = ''
+}
+
+function handleRangeEditOpenChange(open: boolean) {
+  if (!open && (!authResolved.value || !canEditInfrastructure.value)) {
+    closeRangeInspector()
+    return
+  }
+  onRangeEditOpenChange(open)
+}
 
 const utilizationPercent = computed(() => {
   if (!subnetInfo.value.usableHosts || subnetInfo.value.usableHosts <= 0) return 0
@@ -478,6 +556,7 @@ function onRowClick(row: UnifiedRow) {
 }
 
 function openAddPanel() {
+  if (!authResolved.value || !canEditInfrastructure.value) return
   editAllocTarget.value = null
   addPanelError.value = ''
   allocForm.value = { ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' }
@@ -505,11 +584,11 @@ function openRangeEdit(range: IPRange) {
   }
   rangeEditError.value = ''
   showRangeEdit.value = true
-  snapshotRangeEdit()
+  if (authResolved.value && canEditInfrastructure.value) snapshotRangeEdit()
 }
 
 function startEdit() {
-  if (!network.value) return
+  if (!authResolved.value || !canEditInfrastructure.value || !network.value) return
   editForm.value = {
     name: network.value.name,
     subnet: network.value.subnet,
@@ -521,6 +600,12 @@ function startEdit() {
   editDnsInput.value = network.value.dns_servers?.join(', ') || ''
   editing.value = true
   snapshotEdit()
+}
+
+function openDeleteNetwork() {
+  if (!authResolved.value || !canEditInfrastructure.value || !network.value) return
+  deleteNetworkTarget.value = network.value
+  showDeleteDialog.value = true
 }
 
 function validate(state: typeof editForm.value) {
@@ -540,6 +625,9 @@ function validate(state: typeof editForm.value) {
 }
 
 async function onSave() {
+  if (!authResolved.value || !canEditInfrastructure.value || !network.value) return
+  const generation = permissionGeneration
+  const targetId = network.value.id
   saving.value = true
   try {
     const dnsServers = editDnsInput.value ? editDnsInput.value.split(',').map((s: string) => s.trim()).filter(Boolean) : []
@@ -552,21 +640,52 @@ async function onSave() {
       description: editForm.value.description.trim() || undefined,
       exclude_from_utilization: editForm.value.exclude_from_utilization
     }, siteId.value)
+    if (generation !== permissionGeneration || !canEditInfrastructure.value || network.value?.id !== targetId || !editing.value) return
     toast.add({ title: t('networks.messages.updated'), color: 'success' })
     editing.value = false
-    await loadNetwork()
-  } catch (err: unknown) { const error = err as { data?: { message?: string } }; toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' }) }
+    await loadNetwork(generation, targetId)
+  } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled' || generation !== permissionGeneration || !canEditInfrastructure.value || !editing.value || network.value?.id !== targetId) return
+    const error = err as { data?: { message?: string } }
+    toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
+  }
   finally { saving.value = false }
 }
 
 async function confirmDeleteNetwork() {
+  if (!authResolved.value || !canEditInfrastructure.value || !deleteNetworkTarget.value || !showDeleteDialog.value) return
+  const generation = permissionGeneration
+  const target = deleteNetworkTarget.value
   deleting.value = true
-  try { await removeNetwork(networkId, siteId.value); toast.add({ title: t('networks.messages.deleted'), color: 'success' }); showDeleteDialog.value = false; await router.push(`/sites/${siteId.value}/subnets`) }
-  catch (err: unknown) { const error = err as { data?: { message?: string } }; toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' }) }
+  try {
+    await removeNetwork(target.id, siteId.value)
+    if (generation !== permissionGeneration || !canEditInfrastructure.value || !showDeleteDialog.value || deleteNetworkTarget.value?.id !== target.id) return
+    toast.add({ title: t('networks.messages.deleted'), color: 'success' })
+    showDeleteDialog.value = false
+    deleteNetworkTarget.value = null
+    await router.push(`/sites/${siteId.value}/subnets`)
+  } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled' || generation !== permissionGeneration || !canEditInfrastructure.value || !showDeleteDialog.value || deleteNetworkTarget.value?.id !== target.id) return
+    const error = err as { data?: { message?: string } }
+    toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
+  }
   finally { deleting.value = false }
 }
 
 async function onCreateAllocation() {
+  if (!authResolved.value || !canEditInfrastructure.value || !showAddPanel.value || addPanelMode.value !== 'ip') return
+  const generation = permissionGeneration
+  const target = editAllocTarget.value
   addPanelError.value = ''
   creatingAlloc.value = true
   const body = {
@@ -578,11 +697,13 @@ async function onCreateAllocation() {
     status: allocForm.value.status
   }
   try {
-    if (editAllocTarget.value) {
-      await updateAllocation(editAllocTarget.value.id, body)
+    if (target) {
+      await updateAllocation(target.id, body)
+      if (generation !== permissionGeneration || !canEditInfrastructure.value || !showAddPanel.value || editAllocTarget.value?.id !== target.id) return
       toast.add({ title: t('networks.allocations.messages.updated'), color: 'success' })
     } else {
       await createAllocation(body)
+      if (generation !== permissionGeneration || !canEditInfrastructure.value || !showAddPanel.value || editAllocTarget.value) return
       toast.add({ title: t('networks.allocations.messages.created'), color: 'success' })
     }
     showAddPanel.value = false
@@ -590,6 +711,12 @@ async function onCreateAllocation() {
     allocForm.value = { ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' as AllocationStatus }
     await fetchAllocations()
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled' || generation !== permissionGeneration || !canEditInfrastructure.value || !showAddPanel.value || addPanelMode.value !== 'ip' || (target ? editAllocTarget.value?.id !== target.id : !!editAllocTarget.value)) return
     const error = err as { data?: { message?: string } }
     addPanelError.value = error?.data?.message || t('errors.serverError')
   }
@@ -609,10 +736,11 @@ function openEditAlloc(a: IPAllocation) {
   addPanelMode.value = 'ip'
   addPanelError.value = ''
   showAddPanel.value = true
-  snapshotAdd()
+  if (authResolved.value && canEditInfrastructure.value) snapshotAdd()
 }
 
 function openDeleteRange(r: IPRange) {
+  if (!authResolved.value || !canEditInfrastructure.value) return
   deleteRangeTarget.value = r
   showDeleteRangeDialog.value = true
 }
@@ -627,35 +755,62 @@ async function checkAllocationRefs(allocId: string): Promise<string[]> {
 }
 
 async function openDeleteAllocDialog(a: IPAllocation) {
+  if (!authResolved.value || !canEditInfrastructure.value) return
+  const generation = permissionGeneration
   deleteAllocTarget.value = a
-  allocDeleteRefs.value = await checkAllocationRefs(a.id)
+  showDeleteAllocDialog.value = false
+  const refs = await checkAllocationRefs(a.id)
+  if (generation !== permissionGeneration || !canEditInfrastructure.value || deleteAllocTarget.value?.id !== a.id) return
+  allocDeleteRefs.value = refs
   showDeleteAllocDialog.value = true
 }
 
 async function confirmDeleteAlloc() {
-  if (!deleteAllocTarget.value) return
+  if (!authResolved.value || !canEditInfrastructure.value || !deleteAllocTarget.value || !showDeleteAllocDialog.value) return
+  const generation = permissionGeneration
+  const target = deleteAllocTarget.value
   deletingAlloc.value = true
   try {
-    await removeAllocation(deleteAllocTarget.value.id)
+    await removeAllocation(target.id)
+    if (generation !== permissionGeneration || !canEditInfrastructure.value || !showDeleteAllocDialog.value || deleteAllocTarget.value?.id !== target.id) return
     toast.add({ title: t('networks.allocations.messages.deleted'), color: 'success' })
     showDeleteAllocDialog.value = false
+    deleteAllocTarget.value = null
     allocDeleteRefs.value = []
     await fetchAllocations()
   }
-  catch (err: unknown) { const error = err as { data?: { message?: string } }; toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' }) }
+  catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled' || generation !== permissionGeneration || !canEditInfrastructure.value || !showDeleteAllocDialog.value || deleteAllocTarget.value?.id !== target.id) return
+    const error = err as { data?: { message?: string } }
+    toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
+  }
   finally { deletingAlloc.value = false }
 }
 
 async function onCreateRange() {
+  if (!authResolved.value || !canEditInfrastructure.value || !showAddPanel.value || addPanelMode.value !== 'range') return
+  const generation = permissionGeneration
   addPanelError.value = ''
   creatingRange.value = true
   try {
     await createRange({ start_ip: rangeForm.value.start_ip.trim(), end_ip: rangeForm.value.end_ip.trim(), type: rangeForm.value.type, description: rangeForm.value.description.trim() || undefined })
+    if (generation !== permissionGeneration || !canEditInfrastructure.value || !showAddPanel.value || addPanelMode.value !== 'range') return
     toast.add({ title: t('networks.ranges.messages.created'), color: 'success' })
     showAddPanel.value = false
     rangeForm.value = { start_ip: '', end_ip: '', type: 'static' as RangeType, description: '' }
     await fetchRanges()
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled' || generation !== permissionGeneration || !canEditInfrastructure.value || !showAddPanel.value || addPanelMode.value !== 'range') return
     const error = err as { data?: { message?: string } }
     addPanelError.value = error?.data?.message || t('errors.serverError')
   }
@@ -663,46 +818,153 @@ async function onCreateRange() {
 }
 
 function openDeleteRangeDialog(r: IPRange) {
+  if (!authResolved.value || !canEditInfrastructure.value) return
   deleteRangeTarget.value = r
   showDeleteRangeDialog.value = true
   showRangeEdit.value = false
 }
 
 async function confirmDeleteRange() {
-  if (!deleteRangeTarget.value) return
+  if (!authResolved.value || !canEditInfrastructure.value || !deleteRangeTarget.value || !showDeleteRangeDialog.value) return
+  const generation = permissionGeneration
+  const target = deleteRangeTarget.value
   deletingRange.value = true
-  try { await removeRange(deleteRangeTarget.value.id); toast.add({ title: t('networks.ranges.messages.deleted'), color: 'success' }); showDeleteRangeDialog.value = false; await fetchRanges() }
-  catch (err: unknown) { const error = err as { data?: { message?: string } }; toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' }) }
+  try {
+    await removeRange(target.id)
+    if (generation !== permissionGeneration || !canEditInfrastructure.value || !showDeleteRangeDialog.value || deleteRangeTarget.value?.id !== target.id) return
+    toast.add({ title: t('networks.ranges.messages.deleted'), color: 'success' })
+    showDeleteRangeDialog.value = false
+    deleteRangeTarget.value = null
+    await fetchRanges()
+  } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled' || generation !== permissionGeneration || !canEditInfrastructure.value || !showDeleteRangeDialog.value || deleteRangeTarget.value?.id !== target.id) return
+    const error = err as { data?: { message?: string } }
+    toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
+  }
   finally { deletingRange.value = false }
 }
 
 async function onSaveRangeEdit() {
-  if (!rangeEditTarget.value) return
+  if (!authResolved.value || !canEditInfrastructure.value || !rangeEditTarget.value || !showRangeEdit.value) return
+  const generation = permissionGeneration
+  const target = rangeEditTarget.value
   rangeEditError.value = ''
   savingRangeEdit.value = true
   try {
-    await updateRange(rangeEditTarget.value.id, {
+    await updateRange(target.id, {
       start_ip: rangeEditForm.value.start_ip.trim(),
       end_ip: rangeEditForm.value.end_ip.trim(),
       type: rangeEditForm.value.type,
       description: rangeEditForm.value.description.trim() || undefined
     })
+    if (generation !== permissionGeneration || !canEditInfrastructure.value || rangeEditTarget.value?.id !== target.id || !showRangeEdit.value) return
     toast.add({ title: t('networks.ranges.messages.updated'), color: 'success' })
     showRangeEdit.value = false
     await fetchRanges()
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled' || generation !== permissionGeneration || !canEditInfrastructure.value || rangeEditTarget.value?.id !== target.id || !showRangeEdit.value) return
     const error = err as { data?: { message?: string } }
     rangeEditError.value = error?.data?.message || t('errors.serverError')
   }
   finally { savingRangeEdit.value = false }
 }
 
-async function loadNetwork() {
+async function loadNetwork(expectedGeneration?: number, expectedNetworkId?: string) {
+  const mayApply = () => expectedGeneration === undefined || (
+    expectedGeneration === permissionGeneration &&
+    canEditInfrastructure.value &&
+    network.value?.id === expectedNetworkId
+  )
+  if (!mayApply()) return
   pageLoading.value = true
-  try { network.value = await $fetch<Network>(`/api/networks/${networkId}`, { params: { siteId: siteId.value } }) }
-  catch { toast.add({ title: t('errors.notFound'), color: 'error' }); await router.push(`/sites/${siteId.value}/subnets`) }
-  finally { pageLoading.value = false }
+  try {
+    const fresh = await $fetch<Network>(`/api/networks/${networkId}`, { params: { siteId: siteId.value } })
+    if (mayApply()) network.value = fresh
+  } catch {
+    if (mayApply()) {
+      toast.add({ title: t('errors.notFound'), color: 'error' })
+      await router.push(`/sites/${siteId.value}/subnets`)
+    }
+  } finally {
+    // Always clear the loading flag when this request settles (a role loss during the reload
+    // must not leave a permanent spinner); data, error toast and navigation stay gated above.
+    pageLoading.value = false
+  }
 }
+
+function resetRangeEditFromTarget(range: IPRange) {
+  rangeEditTarget.value = range
+  rangeEditForm.value = {
+    start_ip: range.start_ip,
+    end_ip: range.end_ip,
+    type: range.type,
+    description: range.description || ''
+  }
+  rangeEditError.value = ''
+}
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (!authResolved.value || canEdit === wasEditable) return
+
+  permissionGeneration++
+  if (canEdit) {
+    accessChangeNoticeShown = false
+    if (showAddPanel.value && editAllocTarget.value) {
+      openEditAlloc(editAllocTarget.value)
+      snapshotAdd()
+    }
+    if (showRangeEdit.value && rangeEditTarget.value) {
+      resetRangeEditFromTarget(rangeEditTarget.value)
+      snapshotRangeEdit()
+    }
+    return
+  }
+
+  // A revoked editor is discarded without a dirty-close prompt. Keep existing
+  // allocation/range selections open as read-only inspectors, not stale forms.
+  editing.value = false
+  editForm.value = { name: '', subnet: '', gateway: '', vlan_id: '', description: '', exclude_from_utilization: false }
+  editDnsInput.value = ''
+  showDeleteDialog.value = false
+  deleteNetworkTarget.value = null
+
+  const selectedAllocation = editAllocTarget.value ?? deleteAllocTarget.value
+  showDeleteAllocDialog.value = false
+  deleteAllocTarget.value = null
+  allocDeleteRefs.value = []
+  if (selectedAllocation) {
+    openEditAlloc(selectedAllocation)
+  } else if (showAddPanel.value) {
+    closeAddPanel()
+  }
+  addPanelError.value = ''
+  if (editAllocTarget.value) snapshotAdd()
+
+  const selectedRange = showDeleteRangeDialog.value
+    ? deleteRangeTarget.value
+    : showRangeEdit.value
+      ? rangeEditTarget.value
+      : deleteRangeTarget.value
+  showDeleteRangeDialog.value = false
+  deleteRangeTarget.value = null
+  if (selectedRange) {
+    resetRangeEditFromTarget(selectedRange)
+    showRangeEdit.value = true
+    snapshotRangeEdit()
+  } else if (showRangeEdit.value) {
+    closeRangeInspector()
+  }
+}, { flush: 'sync' })
 
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 

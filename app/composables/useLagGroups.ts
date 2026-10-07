@@ -4,6 +4,7 @@ export function useLagGroups(switchId: Ref<string> | string, siteId?: Ref<string
   const items = ref<LAGGroup[]>([])
   const loading = ref(false)
   const { apiFetch } = useApiFetch()
+  const { canEditInfrastructure } = useAuth()
 
   const resolvedId = computed(() => typeof switchId === 'string' ? switchId : switchId.value)
   // Site context disambiguates per-site-unique switch slugs.
@@ -22,18 +23,21 @@ export function useLagGroups(switchId: Ref<string> | string, siteId?: Ref<string
   }
 
   async function create(body: { name: string; port_ids: string[]; description?: string; remote_device?: string; remote_device_id?: string; expected_updated_at?: string }) {
+    if (!canEditInfrastructure.value) return null
     const result = await apiFetch<LAGGroup>(`/api/switches/${resolvedId.value}/lag-groups`, { method: 'POST', body, params: params.value })
     await fetch()
     return result
   }
 
   async function update(lagId: string, body: Partial<Pick<LAGGroup, 'name' | 'port_ids' | 'description' | 'remote_device' | 'remote_device_id'>> & { expected_updated_at?: string }) {
+    if (!canEditInfrastructure.value) return null
     const result = await apiFetch<LAGGroup>(`/api/switches/${resolvedId.value}/lag-groups/${lagId}`, { method: 'PUT', body, params: params.value })
     await fetch()
     return result
   }
 
   async function remove(lagId: string, options: { delete_remote?: boolean; reset_ports?: boolean } = {}) {
+    if (!canEditInfrastructure.value) return
     await apiFetch(`/api/switches/${resolvedId.value}/lag-groups/${lagId}`, { method: 'DELETE', body: options, params: params.value })
     await fetch()
   }

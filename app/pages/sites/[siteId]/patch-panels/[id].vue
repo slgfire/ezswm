@@ -9,16 +9,18 @@
           <p class="mt-1 text-sm text-muted">{{ $t('patchPanels.detailDescription') }}</p>
         </div>
       </div>
-      <div v-if="panel" class="flex items-center gap-1">
+      <div v-if="panel && canEditInfrastructure" class="flex items-center gap-1">
         <PatchPanelPublicAccess
           :panel-id="panel.id"
           :site-id="siteId"
           :panel-name="panel.name"
         />
         <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="sm" :title="$t('common.edit')" @click="startEdit()" />
-        <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="void (showDeleteDialog = true)" />
+        <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="openDeleteDialog()" />
       </div>
     </div>
+
+    <SharedViewOnlyNotice v-if="authResolved && !canEditInfrastructure" class="mb-4" />
 
     <div v-if="pageLoading" class="flex justify-center py-12">
       <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-muted" />
@@ -182,7 +184,7 @@
     </div>
 
     <!-- Edit slideover -->
-    <USlideover :open="editing" @update:open="onEditOpenChange">
+    <USlideover v-if="canEditInfrastructure" :open="editing" @update:open="onEditOpenChange">
       <template #title>
         <span>{{ $t('patchPanels.edit') }}</span>
       </template>
@@ -205,15 +207,44 @@
     </USlideover>
 
     <!-- Socket edit slideover -->
-    <USlideover :open="showSocketEdit" @update:open="onSocketOpenChange">
+    <USlideover :open="showSocketEdit" @update:open="handleSocketOpenChange">
       <template #title>
         <span v-if="socketEditTarget">{{ $t('patchPanels.socketTitle', { port: socketEditTarget.port_number }) }}</span>
       </template>
       <template #body>
-        <div v-if="socketEditError" class="mb-4 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+        <dl v-if="!canEditInfrastructure && socketEditTarget" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('patchPanels.fields.port') }}</dt>
+            <dd class="mt-1 font-mono text-sm text-highlighted">{{ socketEditTarget.port_number }}</dd>
+          </div>
+          <div>
+            <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('patchPanels.fields.side') }}</dt>
+            <dd class="mt-1">
+              <UBadge v-if="socketEditTarget.side" :color="socketEditTarget.side === 'L' ? 'primary' : 'info'" variant="subtle" size="sm">{{ socketEditTarget.side }}</UBadge>
+              <span v-else class="text-sm text-muted">—</span>
+            </dd>
+          </div>
+          <div>
+            <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('patchPanels.fields.outletNumber') }}</dt>
+            <dd class="mt-1 font-mono text-sm text-highlighted">{{ socketEditTarget.outlet_number || '—' }}</dd>
+          </div>
+          <div>
+            <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('patchPanels.fields.location') }}</dt>
+            <dd class="mt-1 text-sm text-highlighted">{{ socketEditTarget.location || '—' }}</dd>
+          </div>
+          <div>
+            <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('patchPanels.fields.tested') }}</dt>
+            <dd class="mt-1">
+              <UBadge :color="socketEditTarget.tested ? 'success' : 'neutral'" variant="subtle" size="sm">
+                {{ socketEditTarget.tested ? $t('patchPanels.tested') : $t('patchPanels.untested') }}
+              </UBadge>
+            </dd>
+          </div>
+        </dl>
+        <div v-else-if="canEditInfrastructure && socketEditError" class="mb-4 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
           {{ socketEditError }}
         </div>
-        <form class="space-y-4" @submit.prevent="onSaveSocket">
+        <form v-if="canEditInfrastructure" class="space-y-4" @submit.prevent="onSaveSocket">
           <UFormField :label="$t('patchPanels.fields.side')">
             <div class="flex items-center gap-1" role="group" :aria-label="$t('patchPanels.fields.side')">
               <button
@@ -241,7 +272,7 @@
         </form>
       </template>
       <template #footer>
-        <div class="flex items-center justify-between">
+        <div v-if="canEditInfrastructure" class="flex items-center justify-between">
           <UButton
             icon="i-heroicons-arrow-uturn-left"
             variant="ghost"
@@ -257,11 +288,15 @@
             <UButton :loading="savingSocket" @click="onSaveSocket">{{ $t('common.save') }}</UButton>
           </div>
         </div>
+        <div v-else class="flex justify-end">
+          <UButton variant="subtle" color="neutral" @click="closeSocketInspector">{{ $t('common.close') }}</UButton>
+        </div>
       </template>
     </USlideover>
 
     <!-- Delete confirmation -->
     <SharedConfirmDialog
+      v-if="canEditInfrastructure"
       v-model="showDeleteDialog"
       :title="$t('patchPanels.delete')"
       :message="panel ? `${$t('patchPanels.delete')}: ${panel.name}?` : ''"
@@ -277,6 +312,7 @@ import type { PatchPanelSocket } from '~~/types/patchPanel'
 
 const { t } = useI18n()
 const toast = useToast()
+const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 const route = useRoute()
 const router = useRouter()
 const siteId = computed(() => route.params.siteId as string)
@@ -286,6 +322,14 @@ const { item: panel, fetch: fetchPanel, updateSocket } = usePatchPanel(panelId, 
 const { update: updatePanel, remove: removePanel } = usePatchPanels()
 
 const pageLoading = ref(true)
+let permissionGeneration = 0
+let accessChangeNoticeShown = false
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
 
 useHead({ title: computed(() => panel.value?.name || t('patchPanels.title')) })
 
@@ -333,7 +377,7 @@ const { takeSnapshot: snapshotEdit, requestClose: requestCloseEdit, onOpenChange
 )
 
 function startEdit() {
-  if (!panel.value) return
+  if (!authResolved.value || !canEditInfrastructure.value || !panel.value) return
   editForm.value = { name: panel.value.name, description: panel.value.description || '' }
   editing.value = true
   snapshotEdit()
@@ -348,16 +392,26 @@ function validateEdit(state: typeof editForm.value) {
 }
 
 async function onSaveEdit() {
+  if (!authResolved.value || !canEditInfrastructure.value || !panel.value || !editing.value) return
+  const generation = permissionGeneration
+  const targetId = panel.value.id
   savingEdit.value = true
   try {
     await updatePanel(panelId, {
       name: editForm.value.name.trim(),
       description: editForm.value.description.trim() || null
     }, siteId.value)
+    if (generation !== permissionGeneration || !canEditInfrastructure.value || !editing.value || panel.value?.id !== targetId) return
     toast.add({ title: t('patchPanels.messages.updated'), color: 'success' })
     editing.value = false
     await fetchPanel()
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled' || generation !== permissionGeneration || !canEditInfrastructure.value || !editing.value || panel.value?.id !== targetId) return
     const error = err as { data?: { message?: string } }
     toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
@@ -456,6 +510,8 @@ const socketEditTarget = ref<PatchPanelSocket | null>(null)
 const socketForm = ref({ side: '_none' as string, outlet_number: '', location: '', tested: false })
 const socketEditError = ref('')
 const savingSocket = ref(false)
+const resetConfirmPending = ref(false)
+const { confirm: confirmSocketReset, settle: settleSocketReset } = useConfirm()
 
 const { takeSnapshot: snapshotSocket, requestClose: requestCloseSocket, onOpenChange: onSocketOpenChange } = useSlideoverGuard(
   socketForm,
@@ -476,11 +532,13 @@ const sideOptions: { label: string; value: 'L' | 'R'; activeClass: string; idleC
 ]
 
 function toggleSide(value: 'L' | 'R') {
+  if (!authResolved.value || !canEditInfrastructure.value) return
   socketForm.value.side = socketForm.value.side === value ? '_none' : value
 }
 
 // Arrow keys keep the compact side controls navigable; activation still uses native toggle-button behavior.
 function onSideKeydown(event: KeyboardEvent, value: 'L' | 'R') {
+  if (!authResolved.value || !canEditInfrastructure.value) return
   const keys = ['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown']
   if (!keys.includes(event.key)) return
   event.preventDefault()
@@ -497,33 +555,61 @@ function onSideKeydown(event: KeyboardEvent, value: 'L' | 'R') {
 
 function openSocketEdit(socket: PatchPanelSocket) {
   socketEditTarget.value = socket
-  socketForm.value = {
-    side: socket.side || '_none',
-    outlet_number: socket.outlet_number || '',
-    location: socket.location || '',
-    tested: socket.tested
-  }
+  restoreSocketFormFromTarget()
   socketEditError.value = ''
   showSocketEdit.value = true
-  snapshotSocket()
+  if (authResolved.value && canEditInfrastructure.value) snapshotSocket()
+}
+
+function restoreSocketFormFromTarget() {
+  const target = socketEditTarget.value
+  if (!target) return
+  socketForm.value = {
+    side: target.side || '_none',
+    outlet_number: target.outlet_number || '',
+    location: target.location || '',
+    tested: target.tested
+  }
+}
+
+function closeSocketInspector() {
+  showSocketEdit.value = false
+  socketEditTarget.value = null
+  socketEditError.value = ''
+}
+
+function handleSocketOpenChange(open: boolean) {
+  if (!open && (!authResolved.value || !canEditInfrastructure.value)) {
+    closeSocketInspector()
+    return
+  }
+  onSocketOpenChange(open)
 }
 
 async function onSaveSocket() {
-  if (!socketEditTarget.value) return
+  if (!authResolved.value || !canEditInfrastructure.value || !socketEditTarget.value || !showSocketEdit.value) return
+  const generation = permissionGeneration
+  const target = socketEditTarget.value
   socketEditError.value = ''
   savingSocket.value = true
   try {
-    await updateSocket(socketEditTarget.value.id, {
+    await updateSocket(target.id, {
       side: socketForm.value.side === '_none' ? null : (socketForm.value.side as 'L' | 'R'),
       outlet_number: socketForm.value.outlet_number.trim() || null,
       location: socketForm.value.location.trim() || null,
       tested: socketForm.value.tested
     })
+    if (generation !== permissionGeneration || !canEditInfrastructure.value || !showSocketEdit.value || socketEditTarget.value?.id !== target.id) return
     toast.add({ title: t('patchPanels.messages.socketUpdated'), color: 'success' })
-    showSocketEdit.value = false
-    socketEditTarget.value = null
+    closeSocketInspector()
     await fetchPanel()
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled' || generation !== permissionGeneration || !canEditInfrastructure.value || !showSocketEdit.value || socketEditTarget.value?.id !== target.id) return
     const error = err as { data?: { message?: string } }
     socketEditError.value = error?.data?.message || t('errors.serverError')
   } finally {
@@ -532,29 +618,38 @@ async function onSaveSocket() {
 }
 
 async function onResetSocket() {
-  if (!socketEditTarget.value) return
-  const { confirm } = useConfirm()
-  const ok = await confirm({
+  if (!authResolved.value || !canEditInfrastructure.value || !socketEditTarget.value || !showSocketEdit.value) return
+  const generation = permissionGeneration
+  const target = socketEditTarget.value
+  resetConfirmPending.value = true
+  const ok = await confirmSocketReset({
     title: t('common.reset'),
-    message: t('patchPanels.resetConfirm', { port: socketEditTarget.value.port_number }),
+    message: t('patchPanels.resetConfirm', { port: target.port_number }),
     confirmLabel: t('common.reset')
   })
-  if (!ok) return
+  resetConfirmPending.value = false
+  if (!ok || generation !== permissionGeneration || !authResolved.value || !canEditInfrastructure.value || !showSocketEdit.value || socketEditTarget.value?.id !== target.id) return
 
   socketEditError.value = ''
   savingSocket.value = true
   try {
-    await updateSocket(socketEditTarget.value.id, {
+    await updateSocket(target.id, {
       side: null,
       outlet_number: null,
       location: null,
       tested: false
     })
+    if (generation !== permissionGeneration || !canEditInfrastructure.value || !showSocketEdit.value || socketEditTarget.value?.id !== target.id) return
     toast.add({ title: t('patchPanels.messages.socketReset'), color: 'success' })
-    showSocketEdit.value = false
-    socketEditTarget.value = null
+    closeSocketInspector()
     await fetchPanel()
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled' || generation !== permissionGeneration || !canEditInfrastructure.value || !showSocketEdit.value || socketEditTarget.value?.id !== target.id) return
     const error = err as { data?: { message?: string } }
     socketEditError.value = error?.data?.message || t('errors.serverError')
   } finally {
@@ -567,14 +662,23 @@ const showDeleteDialog = ref(false)
 const deleting = ref(false)
 
 async function confirmDelete() {
-  if (!panel.value) return
+  if (!authResolved.value || !canEditInfrastructure.value || !panel.value || !showDeleteDialog.value) return
+  const generation = permissionGeneration
+  const targetId = panel.value.id
   deleting.value = true
   try {
-    await removePanel(panel.value.id, siteId.value)
+    await removePanel(targetId, siteId.value)
+    if (generation !== permissionGeneration || !canEditInfrastructure.value || !showDeleteDialog.value || panel.value?.id !== targetId) return
     toast.add({ title: t('patchPanels.messages.deleted'), color: 'success' })
     showDeleteDialog.value = false
     await router.push(`/sites/${siteId.value}/patch-panels`)
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled' || generation !== permissionGeneration || !canEditInfrastructure.value || !showDeleteDialog.value || panel.value?.id !== targetId) return
     const error = err as { data?: { message?: string } }
     toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
@@ -582,18 +686,59 @@ async function confirmDelete() {
   }
 }
 
+function openDeleteDialog() {
+  if (!authResolved.value || !canEditInfrastructure.value || !panel.value) return
+  showDeleteDialog.value = true
+}
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (!authResolved.value || canEdit === wasEditable) return
+
+  permissionGeneration++
+  if (canEdit) {
+    accessChangeNoticeShown = false
+    if (showSocketEdit.value && socketEditTarget.value) {
+      restoreSocketFormFromTarget()
+      snapshotSocket()
+    }
+    return
+  }
+
+  // Drop pending write UI without a dirty-close prompt. The selected socket
+  // remains open as an inspector, backed by the original row data.
+  if (resetConfirmPending.value) {
+    resetConfirmPending.value = false
+    settleSocketReset(false)
+  }
+  editing.value = false
+  if (panel.value) {
+    editForm.value = { name: panel.value.name, description: panel.value.description || '' }
+    snapshotEdit()
+  }
+  showDeleteDialog.value = false
+
+  if (showSocketEdit.value && socketEditTarget.value) {
+    restoreSocketFormFromTarget()
+    socketEditError.value = ''
+    snapshotSocket()
+  }
+}, { flush: 'sync' })
+
 // Dismiss tooltip on any scroll (captures nested scrollable ancestors)
 function onScrollDismiss() { hoveredSocket.value = null }
 
 onMounted(async () => {
+  const generation = permissionGeneration
   document.addEventListener('scroll', onScrollDismiss, { passive: true, capture: true })
   try {
     await fetchPanel()
+    if (generation !== permissionGeneration) return
     if (!panel.value) {
       toast.add({ title: t('errors.notFound'), color: 'error' })
       await router.push(`/sites/${siteId.value}/patch-panels`)
     }
   } catch {
+    if (generation !== permissionGeneration) return
     toast.add({ title: t('errors.notFound'), color: 'error' })
     await router.push(`/sites/${siteId.value}/patch-panels`)
   } finally {

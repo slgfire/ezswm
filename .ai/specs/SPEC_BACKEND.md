@@ -120,8 +120,8 @@ All routes are internal Nuxt server routes under `server/api/`. No public API.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/users` | List all users (admin only, later) |
-| POST | `/api/users` | Create user (admin only, later) |
+| GET | `/api/users` | List all users (admin only) |
+| POST | `/api/users` | Create user (admin only) |
 | GET | `/api/users/:id` | Get user by ID |
 | PUT | `/api/users/:id` | Update user |
 | DELETE | `/api/users/:id` | Delete user |
@@ -324,7 +324,7 @@ interface ValidationError {
 | 204 | Deleted (DELETE) |
 | 400 | Validation error |
 | 401 | Not authenticated |
-| 403 | Not authorized (future: viewer role) |
+| 403 | Not authorized (e.g. viewer role on a write or admin-only endpoint) |
 | 404 | Entity not found |
 | 409 | Conflict (duplicate IP, duplicate VLAN ID, etc.) |
 | 500 | Internal server error |
@@ -391,9 +391,8 @@ interface ValidationError {
 
 ### Role-Based Access (Future)
 
-- MVP: all authenticated users have full access
-- Later: `viewer` role can only read, `admin` can read and write
-- Role check happens in API middleware
+- `admin` can read and write; `viewer` can only read (GET/HEAD) except admin-only prefixes, plus own profile (display name/language), own local password change and logout
+- The current database role is checked on every request in API middleware (`server/middleware/auth.ts`, `server/utils/requireAdmin.ts`); unknown roles are forbidden
 
 ---
 

@@ -301,8 +301,7 @@ Full data model: .ai/specs/SPEC_DATA_MODEL.md
 - Setup wizard on first start (create admin)
 - Server middleware validates JWT on all API routes (except /auth/setup, /auth/login, /health)
 - Client middleware redirects unauthenticated users to login
-- MVP: all users have full access
-- Future: Admin/Viewer roles
+- Roles: `admin` (full access) and `viewer` (read-only for infrastructure data; own profile/language, own local password and logout are allowed). Enforced server-side per request in `server/middleware/auth.ts` / `server/utils/requireAdmin.ts`; the UI hides write controls for viewers (not a security boundary)
 
 ---
 

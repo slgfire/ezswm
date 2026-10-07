@@ -135,6 +135,11 @@
     "migrationBanner": "We found existing data without a site assignment: {switches} switches, {vlans} VLANs, {networks} subnets. They will be assigned to the site you create here.",
     "createSiteFailed": "Failed to create site"
   },
+  "permissions": {
+    "viewOnly": "You have view-only access. Only admins can make changes.",
+    "accessChanged": "Your access has changed. Editing is no longer available.",
+    "qrUnavailable": "No active QR link is available. You can still print this page."
+  },
   "common": {
     "welcome": "Welcome to ezSWM",
     "save": "Save",
@@ -946,7 +951,42 @@
     "loadFailedDescription": "The account list could not be loaded. Try again.",
     "retry": "Try again",
     "emptyTitle": "No accounts yet",
-    "emptyDescription": "No local or OpenID Connect accounts have been provisioned in ezSWM."
+    "emptyDescription": "No local or OpenID Connect accounts have been provisioned in ezSWM.",
+    "management": {
+      "actions": "Actions",
+      "createdAt": "Created",
+      "createAccount": "Create account",
+      "editAccount": "Edit account",
+      "editAccountFor": "Edit account for {username}",
+      "deleteAccount": "Delete account",
+      "deleteAccountFor": "Delete account {username}",
+      "providerManaged": "Provider-managed role",
+      "password": "Password",
+      "language": "Language",
+      "english": "English",
+      "german": "German",
+      "accessLostTitle": "User management is no longer available",
+      "accessLostDescription": "Your administrator access has changed. No user accounts are shown on this page.",
+      "cannotDeleteSelf": "You cannot delete your own account.",
+      "deleteTitle": "Delete account?",
+      "deleteIdentity": "Delete {displayName} ({username})?",
+      "historyWarning": "The account's activity history will remain, but its author attribution will be removed.",
+      "oidcDeleteWarning": "This does not revoke access at the identity provider. The account may be recreated at the next permitted SSO sign-in.",
+      "validation": {
+        "usernameLength": "Username must be between 3 and 50 characters.",
+        "usernameFormat": "Use only letters, numbers, and underscores in the username.",
+        "displayNameLength": "Display name must be between 1 and 100 characters.",
+        "passwordLength": "Password must be at least 8 characters."
+      },
+      "validationRejected": "The submitted account details are invalid. Check the fields and try again.",
+      "usernameExists": "That username is already in use.",
+      "lastLocalAdmin": "The last local administrator cannot be removed or changed to Viewer.",
+      "targetGone": "That account no longer exists. The account list has been refreshed.",
+      "created": "Account created successfully.",
+      "updated": "Account updated successfully.",
+      "deleted": "Account deleted successfully.",
+      "roleChanged": "Your role was changed. User management is no longer available."
+    }
   },
   "backup": {
     "title": "Backup & Restore",
@@ -982,6 +1022,7 @@
   "dataManagement": {
     "title": "Data Management",
     "description": "Import or export individual records, or create and restore a full backup.",
+    "viewerDescription": "Export infrastructure records or download templates for reference.",
     "backupRestoreTab": "Backup & Restore",
     "exportTab": "Export",
     "importTab": "Import",
@@ -995,6 +1036,8 @@
     },
     "export": {
       "description": "Export individual entity types as JSON or CSV file.",
+      "templateTitle": "Download an import template",
+      "templateDescription": "Choose a record type and download a CSV template with the expected columns.",
       "selectType": "Entity Type",
       "selectFormat": "Format",
       "download": "Download",

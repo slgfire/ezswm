@@ -13,7 +13,15 @@
       </div>
     </div>
 
-    <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit.prevent="onSubmit">
+    <div v-if="!authResolved" class="flex justify-center py-12">
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
+    </div>
+    <div v-else-if="!canEditInfrastructure" class="space-y-4">
+      <SharedViewOnlyNotice />
+      <UButton color="neutral" variant="subtle" :to="`/sites/${siteId}/switches`">{{ $t('common.back') }}</UButton>
+    </div>
+
+    <UForm v-else :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit.prevent="onSubmit">
       <div class="space-y-6">
         <!-- Basic Info -->
         <div class="list-container rounded-lg bg-default p-5">
@@ -112,18 +120,33 @@
       </div>
     </UForm>
 
-    <TemplateQuickCreateModal v-model="showTemplateModal" @created="onTemplateCreated" />
+    <TemplateQuickCreateModal v-if="authResolved && canEditInfrastructure" v-model="showTemplateModal" @created="onTemplateCreated" />
   </div>
 </template>
 
 <script setup lang="ts">
 import type { LayoutTemplate } from '~~/types/layoutTemplate'
 
+definePageMeta({
+  middleware: [async (to) => {
+    const auth = useAuth()
+    if (!auth.authResolved.value) await auth.fetchUser()
+    if (!auth.canEditInfrastructure.value) {
+      return navigateTo({
+        path: `/sites/${to.params.siteId}/switches`,
+        query: { access: 'readonly' }
+      })
+    }
+  }]
+})
+
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
 useHead({ title: t('switches.create') })
 const toast = useToast()
+const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
+let accessChangeNoticeShown = false
 const { create } = useSwitches()
 const { items: templates, fetch: fetchTemplates } = useLayoutTemplates()
 
@@ -218,6 +241,7 @@ function validate(state: typeof form): { name: string; message: string }[] {
 }
 
 async function onSubmit() {
+  if (!authResolved.value || !canEditInfrastructure.value) return
   const validationErrors = validate(form)
   if (validationErrors.length > 0) return
 
@@ -236,9 +260,16 @@ async function onSubmit() {
       body.site_id = siteId.value
     }
     result = await create(body) as unknown as Record<string, unknown> | undefined
+    if (!canEditInfrastructure.value) return
     clearDirty()
     toast.add({ title: t('switches.messages.created'), color: 'success' })
   } catch (e: unknown) {
+    const access = await handleInfrastructureForbidden(e)
+    if (access === 'demoted' && !accessChangeNoticeShown) {
+      accessChangeNoticeShown = true
+      toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+    }
+    if (access === 'demoted' || access === 'already-handled') return
     const err = e as { data?: { message?: string } }
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
     return
@@ -251,7 +282,14 @@ async function onSubmit() {
   )
 }
 
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (wasEditable && !canEdit && authResolved.value) {
+    showTemplateModal.value = false
+    void navigateTo({ path: `/sites/${siteId.value}/switches`, query: { access: 'readonly' } })
+  }
+})
+
 onMounted(() => {
-  fetchTemplates()
+  if (authResolved.value && canEditInfrastructure.value) fetchTemplates()
 })
 </script>

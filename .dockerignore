@@ -4,6 +4,7 @@ docs/node_modules
 .output
 data
 .git
+.slim/
 .env
 .env.*
 **/.env

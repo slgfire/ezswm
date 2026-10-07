@@ -1,13 +1,17 @@
 <template>
-  <div class="p-6">
+  <div v-if="isAuthLoading || !user" class="flex min-h-48 items-center justify-center p-6" role="status" aria-live="polite">
+    <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-muted" aria-hidden="true" />
+    <span class="sr-only">{{ $t('common.loading') }}</span>
+  </div>
+  <div v-else class="p-6">
     <div class="mb-6">
       <h1 class="text-xl font-bold">{{ $t('dataManagement.title') }}</h1>
-      <p class="mt-1 text-sm text-muted">{{ $t('dataManagement.description') }}</p>
+      <p class="mt-1 text-sm text-muted">{{ $t(isViewer ? 'dataManagement.viewerDescription' : 'dataManagement.description') }}</p>
     </div>
 
-    <UTabs :items="tabs" variant="link" color="neutral">
+    <UTabs v-model="activeTab" :items="tabs" variant="link" color="neutral">
       <template #backup>
-        <div class="mt-4 grid gap-6 md:grid-cols-2">
+        <div v-if="canEditInfrastructure" class="mt-4 grid gap-6 md:grid-cols-2">
           <!-- Create Backup -->
           <div class="list-container rounded-lg bg-default p-5">
             <h2 class="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">{{ $t('backup.createTitle') }}</h2>
@@ -58,6 +62,7 @@
 
       <template #export>
         <div class="mt-4 max-w-lg">
+          <SharedViewOnlyNotice v-if="isViewer" class="mb-5" />
           <p class="mb-4 text-sm text-muted">{{ $t('dataManagement.export.description') }}</p>
           <div class="space-y-4">
             <UFormField :label="$t('dataManagement.export.selectType')">
@@ -92,11 +97,37 @@
               {{ $t('dataManagement.export.download') }}
             </UButton>
           </div>
+
+          <section v-if="isViewer" class="mt-6 space-y-4 rounded-xl border border-default bg-default p-4 sm:p-5">
+            <div>
+              <h2 class="text-sm font-semibold">{{ $t('dataManagement.export.templateTitle') }}</h2>
+              <p class="mt-1 text-sm text-muted">{{ $t('dataManagement.export.templateDescription') }}</p>
+            </div>
+            <UFormField :label="$t('dataManagement.import.selectType')">
+              <USelectMenu
+                v-model="templateType"
+                :search-input="false"
+                :items="entityTypeOptions"
+                value-key="value"
+                size="sm"
+                class="w-full"
+              />
+            </UFormField>
+            <UButton
+              size="sm"
+              variant="outline"
+              icon="i-heroicons-document-arrow-down"
+              :disabled="!templateType"
+              @click="downloadTemplate(templateType)"
+            >
+              {{ $t('dataManagement.import.downloadTemplate') }}
+            </UButton>
+          </section>
         </div>
       </template>
 
       <template #import>
-        <div class="mt-4 max-w-lg">
+        <div v-if="canEditInfrastructure" class="mt-4 max-w-lg">
           <p class="mb-4 text-sm text-muted">{{ $t('dataManagement.import.description') }}</p>
           <div class="space-y-4">
             <!-- Step 1: Entity Type -->
@@ -119,7 +150,7 @@
                 variant="outline"
                 icon="i-heroicons-document-arrow-down"
                 :disabled="!importType"
-                @click="downloadTemplate"
+                @click="downloadTemplate(importType)"
               >
                 {{ $t('dataManagement.import.downloadTemplate') }}
               </UButton>
@@ -200,6 +231,7 @@
 
     <!-- Restore Backup Confirm Dialog -->
     <SharedConfirmDialog
+      v-if="canEditInfrastructure"
       v-model="showRestoreDialog"
       :title="$t('backup.import')"
       :message="$t('backup.confirmRestore')"
@@ -208,6 +240,7 @@
 
     <!-- Import Confirm Dialog -->
     <SharedConfirmDialog
+      v-if="canEditInfrastructure"
       v-model="showImportDialog"
       :title="$t('dataManagement.import.confirmTitle')"
       :message="$t('dataManagement.import.confirmMessage', { count: importPreview ?? 0, type: importType })"
@@ -219,15 +252,45 @@
 <script setup lang="ts">
 const toast = useToast()
 const { t } = useI18n()
+const { user, authResolved, isAuthLoading, isViewer, canEditInfrastructure, fetchUser, handleInfrastructureForbidden } = useAuth()
 useHead({ title: t('dataManagement.title') })
 
 const MAX_IMPORT_SIZE = 5 * 1024 * 1024 // 5MB
 
-const tabs = computed(() => [
-  { label: t('dataManagement.backupRestoreTab'), slot: 'backup' as const },
-  { label: t('dataManagement.exportTab'), slot: 'export' as const },
-  { label: t('dataManagement.importTab'), slot: 'import' as const }
-])
+// Admin-only state/results are invalidated when the role is lost. Async admin completions capture
+// the generation at start and ignore their result if it changed or edit permission is gone
+// (also covers demote -> promote while a request is in flight). A request already dispatched
+// cannot be cancelled; only its completion handling is ignored.
+let adminGeneration = 0
+let accessNoticeShown = false
+let hasBeenDemoted = false
+
+function adminCurrent(gen: number) {
+  return gen === adminGeneration && canEditInfrastructure.value
+}
+
+function noticeAccessChanged() {
+  if (accessNoticeShown) return
+  accessNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
+
+// Returns true when the failure must NOT show the generic error (role lost / stale request).
+async function handleAdminError(error: unknown, gen: number): Promise<boolean> {
+  const access = await handleInfrastructureForbidden(error)
+  if (access === 'demoted') noticeAccessChanged()
+  return access === 'demoted' || access === 'already-handled' || !adminCurrent(gen)
+}
+
+const activeTab = ref<'backup' | 'export' | 'import'>(canEditInfrastructure.value ? 'backup' : 'export')
+const tabs = computed(() => {
+  const items = [
+    { label: t('dataManagement.backupRestoreTab'), value: 'backup', slot: 'backup' as const },
+    { label: t('dataManagement.exportTab'), value: 'export', slot: 'export' as const },
+    { label: t('dataManagement.importTab'), value: 'import', slot: 'import' as const }
+  ]
+  return canEditInfrastructure.value ? items : [items[1]!]
+})
 
 const entityTypeOptions = computed(() => [
   { value: 'switches', label: t('dataManagement.entities.switches') },
@@ -248,35 +311,51 @@ const showRestoreDialog = ref(false)
 const isBackupDragOver = ref(false)
 
 function onBackupFileSelect(event: Event) {
+  if (!canEditInfrastructure.value) return
   const target = event.target as HTMLInputElement
   backupFile.value = target.files?.[0] || null
 }
 
 function onBackupFileDrop(event: DragEvent) {
   isBackupDragOver.value = false
+  if (!canEditInfrastructure.value) return
   const file = event.dataTransfer?.files?.[0] || null
   if (file) backupFile.value = file
 }
 
 async function downloadBackup() {
+  if (!canEditInfrastructure.value) return
+  const gen = adminGeneration
   try {
     const response = await $fetch('/api/backup/export', { responseType: 'blob' })
+    if (!adminCurrent(gen)) return
     downloadBlob(response as unknown as Blob, `ezswm-backup-${new Date().toISOString().slice(0, 10)}.json`)
     toast.add({ title: t('backup.messages.exported'), color: 'success' })
-  } catch {
+  } catch (e) {
+    if (await handleAdminError(e, gen)) return
     toast.add({ title: t('errors.serverError'), color: 'error' })
   }
 }
 
 async function restoreBackup() {
-  if (!backupFile.value) return
+  if (!canEditInfrastructure.value) {
+    showRestoreDialog.value = false
+    return
+  }
+  const file = backupFile.value
+  if (!file) return
+  const gen = adminGeneration
   try {
-    const text = await backupFile.value.text()
+    const text = await file.text()
+    // Re-check role, generation and the selected file right before the destructive POST.
+    if (!adminCurrent(gen) || backupFile.value !== file) return
     const backup = JSON.parse(text)
     await $fetch('/api/backup/import', { method: 'POST', body: backup })
+    if (!adminCurrent(gen)) return
     toast.add({ title: t('backup.messages.imported'), color: 'success' })
-    backupFile.value = null
+    if (backupFile.value === file) backupFile.value = null
   } catch (err: unknown) {
+    if (await handleAdminError(err, gen)) return
     const message = (err as { data?: { message?: string } })?.data?.message
     toast.add({ title: message || t('errors.serverError'), color: 'error' })
   } finally {
@@ -363,6 +442,8 @@ function parseCsvLine(line: string): string[] {
 }
 
 async function onImportFileSelect(event: Event) {
+  if (!canEditInfrastructure.value) return
+  const gen = adminGeneration
   const target = event.target as HTMLInputElement
   const file = target.files?.[0] || null
   importFile.value = file
@@ -380,6 +461,7 @@ async function onImportFileSelect(event: Event) {
 
   try {
     const text = await file.text()
+    if (!adminCurrent(gen) || importFile.value !== file) return
     let data: Record<string, unknown>[]
 
     if (file.name.endsWith('.csv')) {
@@ -392,12 +474,14 @@ async function onImportFileSelect(event: Event) {
     importParsedData.value = data
     importPreview.value = data.length
   } catch {
+    if (!adminCurrent(gen) || importFile.value !== file) return
     toast.add({ title: t('dataManagement.import.parseError'), color: 'error' })
   }
 }
 
 function onImportFileDrop(event: DragEvent) {
   isDragOver.value = false
+  if (!canEditInfrastructure.value) return
   const file = event.dataTransfer?.files?.[0] || null
   if (!file) return
   // Reuse the same logic as file input selection
@@ -405,42 +489,82 @@ function onImportFileDrop(event: DragEvent) {
   onImportFileSelect(fakeEvent)
 }
 
-async function downloadTemplate() {
-  if (!importType.value) return
+async function downloadTemplate(type: string) {
+  if (!type) return
   try {
     const response = await $fetch(`/api/data/template`, {
-      params: { type: importType.value },
+      params: { type },
       responseType: 'blob'
     })
-    downloadBlob(response as unknown as Blob, `ezswm-${importType.value}-template.csv`)
+    downloadBlob(response as unknown as Blob, `ezswm-${type}-template.csv`)
   } catch {
     toast.add({ title: t('errors.serverError'), color: 'error' })
   }
 }
 
 async function executeImport() {
+  if (!canEditInfrastructure.value) {
+    showImportDialog.value = false
+    return
+  }
   showImportDialog.value = false
-  if (!importType.value || !importParsedData.value) return
+  const type = importType.value
+  const data = importParsedData.value
+  if (!type || !data) return
+  const gen = adminGeneration
 
   try {
     const result = await $fetch('/api/data/import', {
       method: 'POST',
-      body: {
-        type: importType.value,
-        data: importParsedData.value
-      }
+      body: { type, data }
     })
-    importResults.value = result as unknown as { imported: number; skipped: number; skippedDetails: string[]; errors: string[] }
+    if (!adminCurrent(gen)) return
+    const summary = result as unknown as { imported: number; skipped: number; skippedDetails: string[]; errors: string[] }
+    importResults.value = summary
 
-    if (importResults.value.imported > 0) {
-      toast.add({ title: t('dataManagement.import.success', { count: importResults.value.imported }), color: 'success' })
+    if (summary.imported > 0) {
+      toast.add({ title: t('dataManagement.import.success', { count: summary.imported }), color: 'success' })
     }
-    if (importResults.value.errors.length > 0) {
-      toast.add({ title: t('dataManagement.import.hasErrors', { count: importResults.value.errors.length }), color: 'warning' })
+    if (summary.errors.length > 0) {
+      toast.add({ title: t('dataManagement.import.hasErrors', { count: summary.errors.length }), color: 'warning' })
     }
   } catch (err: unknown) {
+    if (await handleAdminError(err, gen)) return
     const message = (err as { data?: { message?: string } })?.data?.message
     toast.add({ title: message || t('errors.serverError'), color: 'error' })
   }
 }
+
+const templateType = ref('switches')
+
+watch(canEditInfrastructure, (canEdit) => {
+  if (canEdit) {
+    if (hasBeenDemoted) {
+      adminGeneration++
+      accessNoticeShown = false
+    }
+    return
+  }
+  // true -> false: the role was lost. Invalidate in-flight admin work and drop admin-only state.
+  adminGeneration++
+  hasBeenDemoted = true
+  noticeAccessChanged()
+  showRestoreDialog.value = false
+  showImportDialog.value = false
+  isBackupDragOver.value = false
+  isDragOver.value = false
+  backupFile.value = null
+  importType.value = ''
+  importFile.value = null
+  importPreview.value = null
+  importParsedData.value = null
+  importResults.value = null
+  if (activeTab.value !== 'export') activeTab.value = 'export'
+})
+
+onMounted(async () => {
+  if (!authResolved.value) await fetchUser()
+  if (!user.value) return
+  activeTab.value = canEditInfrastructure.value ? 'backup' : 'export'
+})
 </script>

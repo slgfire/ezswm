@@ -332,9 +332,8 @@ const filteredPorts = computed(() => {
     ports = [...visiblePorts.value]
   }
 
-  // Sort: normal first, then special, then forbidden — within each group by type, then unit/index
-  // When LAG filter active, group by LAG name first so connected ports stay together
-  const usageOrder: Record<HelperUsage, number> = { normal: 0, special: 1, forbidden: 2 }
+  // Sort by connector family, then unit and port number, independent of usage or status.
+  // When the LAG filter is active, group by LAG name first so connected ports stay together.
   const typeOrder: Record<string, number> = { rj45: 0, sfp: 1, 'sfp+': 2, qsfp: 3, management: 4, console: 5 }
   const lagFirst = activeFilter.value === 'lag'
   return ports.sort((a, b) => {
@@ -343,13 +342,10 @@ const filteredPorts = computed(() => {
       const lb = b.lag_group_name || ''
       if (la !== lb) return la.localeCompare(lb)
     }
-    const ua = usageOrder[getHelperUsage(a)]
-    const ub = usageOrder[getHelperUsage(b)]
-    if (ua !== ub) return ua - ub
     const ta = typeOrder[a.type] ?? 99
     const tb = typeOrder[b.type] ?? 99
     if (ta !== tb) return ta - tb
-    return a.unit * 1000 + a.index - (b.unit * 1000 + b.index)
+    return (a.unit - b.unit) || (a.index - b.index)
   })
 })
 </script>

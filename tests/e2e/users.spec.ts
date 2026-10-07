@@ -3,9 +3,9 @@ import { mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 /**
- * Read-only admin Users overview (/users). Prepared against the planned contract:
- * admin-only page + nav entry, GET /api/users only, four columns (username, display name, role,
- * auth provider Local/OIDC), no mutations, no identity/secret fields rendered.
+ * Admin Users overview (/users). Contract: admin-only page + nav entry, six columns (username, display name,
+ * role, sign-in method, created, actions), no identity/secret fields rendered. Account MANAGEMENT flows
+ * (create/edit/delete) live in users-management.spec.ts; here the overview must stay idle (no spontaneous non-GET).
  *
  * Cases that mock `GET /api/users` prove CLIENT UI behaviour only. Cases gated by
  * OIDC_E2E_REAL_BRANDING=1 talk to the real isolated candidate with SYNTHETIC users they create and
@@ -57,8 +57,8 @@ const USERS = [
 ]
 
 const T = {
-  en: { users: 'Users', settings: 'Settings', local: /^Local account$/, oidc: /^OpenID Connect$/, retry: /^Try again$/, loading: /Loading accounts/, error: /Users could not be loaded/, empty: /No accounts yet/, caption: 'Provisioned ezSWM user accounts' },
-  de: { users: 'Benutzer', settings: 'Einstellungen', local: /^Lokales Konto$/, oidc: /^OpenID Connect$/, retry: /^Erneut versuchen$/, loading: /Konten werden geladen/, error: /Benutzer konnten nicht geladen werden/, empty: /Noch keine Konten/, caption: 'In ezSWM angelegte Benutzerkonten' }
+  en: { users: 'Users', headers: ['Username', 'Display name', 'Role', 'Sign-in method', 'Created', 'Actions'], settings: 'Settings', local: /^Local account$/, oidc: /^OpenID Connect$/, retry: /^Try again$/, loading: /Loading accounts/, error: /Users could not be loaded/, empty: /No accounts yet/, caption: 'Provisioned ezSWM user accounts' },
+  de: { users: 'Benutzer', headers: ['Benutzername', 'Anzeigename', 'Rolle', 'Anmeldemethode', 'Erstellt am', 'Aktionen'], settings: 'Einstellungen', local: /^Lokales Konto$/, oidc: /^OpenID Connect$/, retry: /^Erneut versuchen$/, loading: /Konten werden geladen/, error: /Benutzer konnten nicht geladen werden/, empty: /Noch keine Konten/, caption: 'In ezSWM angelegte Benutzerkonten' }
 } as const
 type Lang = keyof typeof T
 
@@ -111,15 +111,15 @@ test.describe('Users overview (admin, mocked GET /api/users)', () => {
     await expect(page.locator('h1').first()).toHaveText(T[lang].users)
   }
 
-  test('lists local and OIDC users with username, display name, role and provider only', async ({ page }) => {
+  test('lists local and OIDC users in six columns (username, display name, role, sign-in method, created, actions)', async ({ page }) => {
     await open(page)
     for (const u of USERS) await expect(cell(page, u.username)).toBeVisible()
-    // ONE table, four labelled columns, in this order.
+    // ONE table, six labelled columns, in this order.
     await expect(page.getByRole('table')).toHaveCount(1)
     const headers = page.getByRole('columnheader')
-    await expect(headers).toHaveCount(4)
-    await expect(headers).toHaveText(['Username', 'Display name', 'Role', 'Sign-in method'])
-    // Each row: row header = username, then exactly three cells = display name, role, sign-in method.
+    await expect(headers).toHaveCount(6)
+    await expect(headers).toHaveText(T.en.headers)
+    // Each row: row header = username, then exactly five cells = display name, role, sign-in method, created, actions.
     for (const [username, display, role, method] of [
       ['alice.local', 'Alice Local', 'Admin', T.en.local],
       ['olivia_oidc', 'Olivia OIDC', 'Admin', T.en.oidc],
@@ -128,12 +128,13 @@ test.describe('Users overview (admin, mocked GET /api/users)', () => {
       const r = rowOf(page, username)
       await expect(r.getByRole('rowheader')).toHaveText(username)
       const cells = r.getByRole('cell')
-      await expect(cells).toHaveCount(3)
+      await expect(cells).toHaveCount(5)
       await expect(cells.nth(0)).toHaveText(display)
       await expect(cells.nth(1)).toHaveText(role)
       await expect(cells.nth(2)).toHaveText(method)
+      await expect(cells.nth(3)).not.toBeEmpty()
     }
-    // the literal-HTML display name row still shows exactly the four values
+    // the literal-HTML display name row is still rendered as one body row
     await expect(page.locator('tbody tr')).toHaveCount(USERS.length)
   })
 
@@ -153,13 +154,22 @@ test.describe('Users overview (admin, mocked GET /api/users)', () => {
     expect(await page.evaluate(() => (window as unknown as { __xss?: number }).__xss)).toBeUndefined()
   })
 
-  test('is read-only: no create/edit/delete/password controls and no mutating request', async ({ page }) => {
+  test('idle overview: management buttons exist (local rows editable, OIDC rows provider-managed), no form open, no non-GET request', async ({ page }) => {
     const req = trackRequests(page)
     await open(page)
     await expect(cell(page, 'alice.local')).toBeVisible()
     const main = page.locator('main')
-    await expect(main.getByRole('button', { name: /add|create|new|edit|delete|remove|password|invite|hinzufügen|erstellen|neu|bearbeiten|löschen|entfernen|passwort|einladen/i })).toHaveCount(0)
-    await expect(main.locator('input:not([type="search"]), textarea, select, form')).toHaveCount(0)
+    await expect(main.getByRole('button', { name: 'Create account' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Edit account for alice.local' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Delete account alice.local' })).toBeVisible()
+    // OIDC rows: no edit, provider label instead, delete still offered.
+    const oidc = rowOf(page, 'olivia_oidc')
+    await expect(oidc.getByRole('button', { name: /^Edit account/ })).toHaveCount(0)
+    await expect(oidc.getByText('Provider-managed role')).toBeVisible()
+    await expect(oidc.getByRole('button', { name: 'Delete account olivia_oidc' })).toBeVisible()
+    // No dialog/form is open and nothing links to per-user pages.
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await expect(main.locator('input, textarea, select, form')).toHaveCount(0)
     await expect(main.locator('a[href^="/users/"]')).toHaveCount(0)
     expect(req.mutating).toEqual([])
     expect(req.usersReads.every(r => r === 'GET /api/users')).toBe(true)
@@ -262,8 +272,8 @@ test.describe('Users overview (admin, mocked GET /api/users)', () => {
         for (const c of [longRow.getByRole('rowheader'), longRow.getByRole('cell').first()]) {
           expect(await c.evaluate(el => el.scrollWidth <= el.clientWidth + 1), 'long value wraps inside its cell').toBe(true)
         }
-        // Geometry: at 320 the card scroller is ~270px wide while the single table keeps its 36rem (576px) minimum with four
-        // equal columns (144px each), so the LAST TWO full cell boxes (288px) can never both fit inside it at once.
+        // Geometry: at 320 the card scroller is ~270px wide while the single table keeps its 56rem (896px) minimum with six
+        // columns, so the role and sign-in method cells can never both sit inside it at once.
         // Contract: every value is reachable through the local scroll region, ONE AT A TIME. Scroll each actual label
         // (the read-only badge text) into view and require that label to sit fully inside the scroller viewport.
         await region.evaluate((el) => { el.scrollLeft = 0 })
@@ -348,7 +358,8 @@ test.describe('Users overview visual consistency with Switches/Subnets (referenc
               const probes = { title: mk('h1', ref.title), card: mk('div', ref.card), header: mk('div', ref.header), root: mk('div', ref.root) }
               const text = ['font-size', 'font-weight', 'line-height', 'letter-spacing', 'color']
               const box = ['border-top-width', 'border-top-style', 'border-top-color', 'border-top-left-radius', 'background-color']
-              const head = ['font-size', 'text-transform', 'letter-spacing', 'color', 'padding-left', 'padding-right', 'padding-top', 'padding-bottom']
+              // `color` is intentionally not compared: the Users header uses the semantic `text-muted` token, the reference list `text-gray-500`.
+              const head = ['font-size', 'text-transform', 'letter-spacing', 'padding-left', 'padding-right', 'padding-top', 'padding-bottom']
               const rootEl = root as HTMLElement | null
               const rb = rootEl?.getBoundingClientRect()
               const rcs = rootEl ? getComputedStyle(rootEl) : null
@@ -361,7 +372,7 @@ test.describe('Users overview visual consistency with Switches/Subnets (referenc
                 header: [pick(th, head), pick(probes.header, head)],
                 rootPad: [rcs ? pick(rootEl!, ['padding-left', 'padding-top']) : null, pick(probes.root, ['padding-left', 'padding-top'])],
                 span: rb && rcs ? { cardL: cb.x, cardR: cb.right, contentL: rb.x + parseFloat(rcs.paddingLeft), contentR: rb.right - parseFloat(rcs.paddingRight) } : null,
-                table: { width: table.getBoundingClientRect().width, clientWidth: card.clientWidth, minWidth: 36 * parseFloat(getComputedStyle(document.documentElement).fontSize) }
+                table: { width: table.getBoundingClientRect().width, clientWidth: card.clientWidth, minWidth: 56 * parseFloat(getComputedStyle(document.documentElement).fontSize) }
               }
             } finally {
               document.querySelectorAll('[data-ref-probe]').forEach(e => e.remove())
@@ -378,7 +389,7 @@ test.describe('Users overview visual consistency with Switches/Subnets (referenc
           expect(Math.abs(m.span!.cardR - m.span!.contentR), 'card ends at the content right edge').toBeLessThanOrEqual(2)
           // Table: fills the card; never narrower than its own min width (scrolls inside the card on 320).
           expect(m.table.width, 'table fills the card scroller').toBeGreaterThanOrEqual(m.table.clientWidth - 1)
-          expect(m.table.width, 'table keeps its 36rem minimum').toBeGreaterThanOrEqual(m.table.minWidth - 1)
+          expect(m.table.width, 'table keeps its 56rem minimum').toBeGreaterThanOrEqual(m.table.minWidth - 1)
           expect(await page.locator('[data-ref-probe]').count(), 'probes removed').toBe(0)
           expect(await noPageOverflow(page), 'page scrolls horizontally').toBe(true)
 

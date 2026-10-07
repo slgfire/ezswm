@@ -14,6 +14,7 @@ export function usePublicToken(
   switchIdOrPath: Ref<string> | string | (() => string),
   siteId?: Ref<string> | string
 ) {
+  const { canEditInfrastructure } = useAuth()
   // Resolve the base API path
   const basePath = typeof switchIdOrPath === 'function'
     ? switchIdOrPath
@@ -43,6 +44,7 @@ export function usePublicToken(
   }
 
   async function createToken() {
+    if (!canEditInfrastructure.value) throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
     loading.value = true
     try {
       const data = await $fetch<PublicToken>(basePath(), {
@@ -57,6 +59,7 @@ export function usePublicToken(
   }
 
   async function revokeToken() {
+    if (!canEditInfrastructure.value) throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
     loading.value = true
     try {
       await $fetch(basePath(), {

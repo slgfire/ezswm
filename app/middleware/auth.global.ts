@@ -1,8 +1,11 @@
+import { isPublicAuthPath } from '../utils/permissions'
+
 export default defineNuxtRouteMiddleware(async (to) => {
   // Public routes — no auth required
   if (to.path.startsWith('/p/')) return
 
-  const { user, fetchUser, checkSetup, setupCompleted, sitesInitialized } = useAuth()
+  const nuxtApp = useNuxtApp()
+  const { user, authResolved, fetchUser, checkSetup, setupCompleted, sitesInitialized } = useAuth()
 
   // Fetch setup status on first load
   if (setupCompleted.value === null || sitesInitialized.value === null) {
@@ -21,18 +24,27 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return
   }
 
-  // Try to fetch the current user if not loaded
-  if (!user.value) {
+  // Resolve the current user. First resolution waits; afterwards at most one
+  // single-flight background refresh per protected client navigation keeps
+  // the role fresh without blocking and without clearing the last user on
+  // transient errors.
+  if (!user.value || !authResolved.value) {
     await fetchUser()
+  } else if (import.meta.client && !nuxtApp.isHydrating && !isPublicAuthPath(to.path)) {
+    void fetchUser().then((u) => {
+      if (!u) void navigateTo('/login')
+    })
   }
 
-  // Apply user's language preference
-  if (user.value?.language) {
+  // Apply user's language preference. useI18n() is component-setup-only and
+  // throws after the awaits above, so use the global composer captured via
+  // nuxtApp (valid across awaits; wrapped in the Nuxt context).
+  const language = user.value?.language
+  if ((language === 'en' || language === 'de') && nuxtApp.$i18n.locale.value !== language) {
     try {
-      const { setLocale } = useI18n()
-      await setLocale(user.value.language as 'en' | 'de')
-    } catch {
-      // useI18n may not be available during SSR
+      await nuxtApp.runWithContext(() => nuxtApp.$i18n.setLocale(language))
+    } catch (error) {
+      console.warn('[auth] Could not apply the stored language preference', error)
     }
   }
 

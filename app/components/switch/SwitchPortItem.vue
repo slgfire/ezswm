@@ -2,6 +2,9 @@
   <div
     ref="portEl"
     class="port-glow group relative flex flex-col items-center justify-center font-mono transition-all"
+    :role="publicMode ? undefined : 'button'"
+    :tabindex="publicMode ? undefined : 0"
+    :aria-label="`${port.label || `Port ${port.unit}/${port.index}`}: ${port.status}${port.connected_device ? `, connected to ${port.connected_device}` : ''}`"
     :class="[
       publicMode ? 'cursor-default' : 'cursor-pointer',
       portClasses,
@@ -14,6 +17,8 @@
     :style="portStyle"
     @mouseenter="onMouseEnter"
     @mouseleave="hovered = false"
+    @click="onNativeClick"
+    @keydown="onKeyboardActivate"
   >
     <span class="relative z-10 text-xs font-semibold leading-none">{{ port.index }}</span>
     <span
@@ -136,6 +141,8 @@ const props = defineProps<{
   publicMode?: boolean
 }>()
 
+const emit = defineEmits<{ click: [event: MouseEvent] }>()
+
 const hovered = ref(false)
 const portEl = ref<HTMLElement | null>(null)
 const tooltipPos = reactive({ top: 0, left: 0 })
@@ -153,6 +160,17 @@ function onMouseEnter() {
     tooltipPos.left = rect.left
   }
   hovered.value = true
+}
+
+function onNativeClick(event: MouseEvent) {
+  if (props.publicMode) return
+  emit('click', event)
+}
+
+function onKeyboardActivate(event: KeyboardEvent) {
+  if (props.publicMode || (event.key !== 'Enter' && event.key !== ' ')) return
+  event.preventDefault()
+  emit('click', new MouseEvent('click', { ctrlKey: event.ctrlKey, metaKey: event.metaKey, bubbles: true }))
 }
 const isTrunk = computed(() => props.port.tagged_vlans && props.port.tagged_vlans.length > 0)
 const isQsfp = computed(() => props.port.type === 'qsfp')

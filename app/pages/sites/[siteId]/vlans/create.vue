@@ -8,7 +8,15 @@
       </div>
     </div>
 
-    <UForm :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit.prevent="onSubmit">
+    <div v-if="!authResolved" class="flex justify-center py-12" role="status" aria-live="polite">
+      <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-muted" />
+    </div>
+    <div v-else-if="!canEditInfrastructure" class="space-y-4">
+      <SharedViewOnlyNotice />
+      <UButton color="neutral" variant="subtle" :to="`/sites/${siteId}/vlans`">{{ $t('common.back') }}</UButton>
+    </div>
+
+    <UForm v-else :state="form" :validate="validate" :validate-on="['blur', 'change']" novalidate @submit.prevent="onSubmit">
       <div class="space-y-6">
         <div class="list-container rounded-lg bg-default p-5">
           <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-muted">VLAN</h2>
@@ -58,13 +66,35 @@
 <script setup lang="ts">
 import type { VLAN } from '~~/types/vlan'
 
+definePageMeta({
+  middleware: [async (to) => {
+    const auth = useAuth()
+    if (!auth.authResolved.value) await auth.fetchUser()
+    if (!auth.canEditInfrastructure.value) {
+      return navigateTo({
+        path: `/sites/${to.params.siteId}/vlans`,
+        query: { access: 'readonly' }
+      })
+    }
+  }]
+})
+
 const route = useRoute()
 const siteId = computed(() => route.params.siteId as string)
 const { t } = useI18n()
 useHead({ title: t('vlans.create') })
 const toast = useToast()
 const router = useRouter()
+const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 const { create } = useVlans()
+let permissionGeneration = 0
+let accessChangeNoticeShown = false
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  toast.add({ title: t('permissions.accessChanged'), color: 'warning' })
+}
 
 const submitting = ref(false)
 
@@ -86,15 +116,22 @@ const { clearDirty } = useUnsavedChanges(form)
 
 // Try to fetch suggested color on mount
 onMounted(async () => {
+  if (!authResolved.value || !canEditInfrastructure.value) return
+  const generation = permissionGeneration
   try {
     const suggestion = await $fetch<{ color?: string }>('/api/vlans/suggest-color')
-    if (suggestion?.color) {
+    if (generation === permissionGeneration && canEditInfrastructure.value && suggestion?.color) {
       form.value.color = suggestion.color
     }
-  } catch {
+  } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') noticeAccessChanged()
+    if (access === 'demoted' || access === 'already-handled') return
     // Use default color
   }
+  if (generation !== permissionGeneration || !canEditInfrastructure.value) return
   await nextTick()
+  if (generation !== permissionGeneration || !canEditInfrastructure.value) return
   clearDirty()
 })
 
@@ -113,6 +150,8 @@ function validate(state: typeof form.value) {
 }
 
 async function onSubmit() {
+  if (!authResolved.value || !canEditInfrastructure.value) return
+  const generation = permissionGeneration
   submitting.value = true
   let result: unknown
   try {
@@ -128,15 +167,40 @@ async function onSubmit() {
       body.site_id = siteId.value
     }
     result = await create(body)
+    if (generation !== permissionGeneration || !canEditInfrastructure.value) return
     clearDirty()
     toast.add({ title: t('vlans.messages.created'), color: 'success' })
   } catch (err: unknown) {
+    const access = await handleInfrastructureForbidden(err)
+    if (access === 'demoted') {
+      noticeAccessChanged()
+      return
+    }
+    if (access === 'already-handled') return
     const error = err as { data?: { message?: string } }
     toast.add({ title: error?.data?.message || t('errors.serverError'), color: 'error' })
     return
   } finally {
     submitting.value = false
   }
-  await router.push(`/sites/${siteId.value}/vlans/${(result as VLAN).id}`)
+  if (generation === permissionGeneration && canEditInfrastructure.value) {
+    await router.push(`/sites/${siteId.value}/vlans/${(result as VLAN).id}`)
+  }
 }
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (!wasEditable || canEdit || !authResolved.value) return
+  permissionGeneration++
+  form.value = {
+    vlan_id: null,
+    name: '',
+    description: '',
+    status: 'active',
+    routing_device: '',
+    color: '#3498DB'
+  }
+  // Discard revoked draft state without opening the unsaved-changes flow.
+  clearDirty()
+  void navigateTo({ path: `/sites/${siteId.value}/vlans`, query: { access: 'readonly' } })
+}, { flush: 'sync' })
 </script>
