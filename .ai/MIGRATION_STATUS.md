@@ -3,6 +3,16 @@
 ## Latest Stage
 
 Date: 2026-10-07
+Stage: CI correction for PR #295 (branch `fix/viewer-readonly-ui`, version 0.41.0 still prepared) — **LOCAL FIX VERIFIED; correction commit/push pending; NOT released**
+Cause: the pull-request CI job `test` (run 37593537434, head `d629828`) failed once: `tests/dockerBuildContext.test.ts` > "keeps the documented example, with negations AFTER every exclusion" — `AssertionError: expected 10 to be greater than 12`, 1 failed / 1040 passed. An earlier branch commit had added `.slim/` after the `!.env.example` exceptions in `.dockerignore`. Earlier local checks on this branch were scoped and never ran the whole unit suite.
+Fix: the existing `.slim/` line was moved above `.env` (after `.git`) so both negations are the last rules; the same 13 patterns remain, each once. The ignore semantics are unchanged: `.slim/` and the `.env*` files stay excluded and `.env.example` stays preserved. Tests, app code, docs guides, package version and lockfile are unchanged.
+Verification (local, Node 22.23.2, pnpm 11.0.9): `pnpm test tests/dockerBuildContext.test.ts` — 1 file / 3 tests passed (8 s); full `pnpm test` once — 72 files / 1041 tests passed, 0 failed (92 s). No new Docker build was run for this reorder, and CI is not yet green: the earlier failure stays recorded here as history and CI must be re-run on the pushed fix.
+
+---
+
+## Previous Stage (historical)
+
+Date: 2026-10-07
 Stage: Mobile dashboard KPI layout (branch `fix/viewer-readonly-ui`, version 0.41.0 still prepared) — **LOCAL IMPLEMENTATION + SCOPED CHECKS COMPLETE; PR PREPARATION APPROVED, NOT released**
 Scope (approved): on phones and compact widths below the `sm` breakpoint the four KPI cards at the top of the site dashboard (`app/pages/sites/[siteId]/index.vue`) are shown as a 2×2 grid; tablet and desktop layouts and the full-width dense panels stay unchanged. Documentation is included in the EN/DE 0.41.0 changelogs and the Dashboard Overview section of both user guides; implementation and verification are tracked separately below.
 Implemented: only the four KPI cards were changed to a two-column phone grid, with compact padding, vertically arranged contents, 36px icons, 20px counters and 12px labels. At `sm` and above, the previous two/four-column breakpoints, spacing, horizontal contents, icon sizes, default icon shrink behavior and typography are restored. Other widgets, links, labels, counters, authorization and backend code were not changed. Targeted page ESLint and whitespace checks passed.
