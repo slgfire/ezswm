@@ -4,7 +4,12 @@ import { hashPassword } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const validated = createUserSchema.parse(body)
+  const parsed = createUserSchema.safeParse(body)
+  if (!parsed.success) {
+    // Generic, non-secret message: never echo the submitted body, password or Zod issues.
+    throw createError({ statusCode: 400, statusMessage: 'Invalid user data' })
+  }
+  const validated = parsed.data
 
   const hashedPassword = await hashPassword(validated.password)
 

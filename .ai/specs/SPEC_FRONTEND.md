@@ -67,7 +67,7 @@ Import/Export
 Backup
 ─────────────────
 Settings
-Users (admin only)
+Users (admin only: create/edit/delete)
 ```
 
 ### Behavior
@@ -290,7 +290,12 @@ Tabs: General | Account (admin settings and Users are admin only; viewers get Ac
 - Language selection (EN/DE)
 
 #### Users (admin only)
-- Read-only list of provisioned users (username, display name, role, sign-in method); no create/edit/delete controls in the UI
+- List of provisioned users (username, display name, role, sign-in method, created date). The created date helps distinguish duplicate display names and exposes no provider identity (no issuer/subject is rendered)
+- Admin: create local account (role defaults to Viewer); edit local display name, role and language (username immutable); delete any other account after confirmation
+- Own-account delete is blocked in the UI; the last local emergency admin cannot be deleted or demoted (backend 409)
+- OIDC accounts: no edit affordance (the UI never sends a PUT for them); managed by the identity provider, roles follow provider mapping; delete stays possible and warns that access at the identity provider is not revoked and the account may be recreated at the next permitted SSO login
+- Activity history of a deleted account is kept; author attribution is removed (null author)
+- Viewers: no Users nav entry, list, direct route or admin user list/management API access (own-profile PUT unaffected) (default auth gates unchanged)
 
 ### 3.18 Layout Templates (`/layout-templates`)
 

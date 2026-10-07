@@ -2,9 +2,17 @@
 
 ---
 
-## [0.40.2] — 2026-10-05
+## [0.41.0] — 2026-10-07
+
+### Hinzugefügt
+- Benutzer: Admins können Konten auf der Seite **Benutzer** verwalten: ein lokales Konto anlegen (die Rolle ist standardmäßig Viewer), Anzeigename, Rolle und Sprache eines lokalen Kontos bearbeiten (der Benutzername ist nicht änderbar) und jedes andere Konto nach Bestätigung löschen. Das eigene Konto kann nicht gelöscht werden, und der letzte lokale Notfall-Admin kann weder entfernt noch herabgestuft werden.
+- SSO-Konten werden vom Identity-Provider verwaltet und können auf dieser Seite nicht bearbeitet werden; ihre Rollen folgen der Provider-Zuordnung. Löschen bleibt mit einer Warnung möglich: Es widerruft den Zugriff beim Identity-Provider nicht, und das Konto kann bei der nächsten erlaubten SSO-Anmeldung neu angelegt werden. Beim Löschen eines Kontos bleibt sein Aktivitätsverlauf erhalten, die Autorenzuordnung wird entfernt.
+- Eine Spalte mit dem Erstellungsdatum hilft, Konten mit gleichem Anzeigenamen zu unterscheiden, ohne die Provider-Identität offenzulegen. Viewer haben keinen Zugriff auf die Admin-Benutzerliste oder die Verwaltungs-API; ihre eigenen Profileinstellungen bleiben unverändert.
 
 ### Behoben
+- Benutzer: Das Anlegen eines Kontos mit einer ungültigen Anfrage liefert jetzt eine allgemeine Validierungsfehlermeldung (HTTP 400) statt eines Serverfehlers.
+- Benutzer: Die Optionen für Rolle und Sprache in den Dialogen zum Anlegen und Bearbeiten öffnen sich jetzt über dem Dialog und lassen sich auswählen.
+- Login: das zusätzliche Netzwerk-Symbol über dem Titel wurde entfernt; das ezSWM-Logo bleibt erhalten.
 - Rollen: Wird ein Speichern wegen einer geänderten Rolle abgelehnt (403), startet die App nach dieser Ablehnung eine neue Rollenprüfung, statt eine ältere, noch laufende Rollenanfrage wiederzuverwenden. Mehrere gleichzeitige Ablehnungen teilen sich diese eine Prüfung und zeigen nur einen Hinweis. Die ältere Anfrage läuft weiter, ihre Antwort wird aber ignoriert, und An- oder Abmelden während einer Prüfung wird berücksichtigt. Eine abgelehnte Änderung wird nie wiederholt. Netzwerkfehler oder vorübergehende Serverfehler lassen die zuletzt bekannte Rolle bestehen; eine abgelaufene oder ungültige Sitzung beendet die Sitzung wie bisher.
 - Topologie: Knotenpositionen werden jetzt über die Switch-ID statt über den sichtbaren Switch-Namen gespeichert und wiederhergestellt. Zwei Switches, deren Namen im Graphen gleich aussehen, weil die Beschriftung gekürzt wird (zum Beispiel derselbe lange Anfang), überschreiben ihre Positionen beim Ziehen nicht mehr gegenseitig; jedes Ziehen speichert die Positionen aller Knoten, und die Positionen bleiben bei aufeinanderfolgenden Verschiebungen und beim Neuladen stabil. Darstellung, Ziehen, Berechtigungen, „Layout zurücksetzen“ und Export sind unverändert.
 - Layout-Vorlagen: Beim Speichern einer Vorlage im Editor bleiben die vorhandenen Block-IDs erhalten, wenn du Blöcke bearbeitest, umsortierst oder verschiebst; ein neu hinzugefügter Block erhält eine neue ID. Block-IDs älterer Vorlagen (beliebiger nicht leerer Text) werden akzeptiert. Hat sich die Vorlage seit dem Laden der Seite geändert (eine Block-ID existiert nicht mehr oder gehört zu einer anderen Vorlage), wird das Speichern mit dem Hinweis zum Neuladen abgelehnt; doppelte Block-IDs in einer Anfrage werden abgelehnt. Clients, die keine oder leere Block-IDs senden, erhalten wie bisher ausschließlich neue IDs. Enthält eine Vorlage bereits doppelte gespeicherte Block-IDs, wird ein Speichern mit Block-IDs mit einem Fehler abgelehnt (es wird nichts automatisch repariert); das Speichern nur von Name oder Beschreibung (ohne Layout) ist nicht betroffen. Beim Erstellen, Importieren und Duplizieren von Vorlagen werden weiterhin neue IDs vergeben.
@@ -25,6 +33,7 @@
 - Das Öffnen eines Switches, Standorts oder Netzwerks über den UUID-Link leitet jetzt auch beim serverseitigen Rendern auf die Slug-URL weiter (das Sitzungs-Cookie wird weitergegeben); das behebt eine Hydration-Abweichung in der Breadcrumb beim Switch-UUID-Link.
 
 ### Geändert
+- Standort-Dashboard: Auf Smartphones und kompakten Breiten (bis zum kleinen Breakpoint) werden die vier KPI-Karten oben jetzt in zwei Spalten (2×2) statt in einer Spalte angezeigt. Tablet- und Desktop-Layout sowie die Panels in voller Breite bleiben unverändert.
 - Dokumentation: Die Benutzerhandbücher (EN/DE) beschreiben die Lesezugriff-Oberfläche der Switch-Seiten und ihre aktuellen Grenzen; veraltete Formulierungen („künftige Viewer-Rolle / alle Benutzer sind Admin") in Architektur und Specs wurden korrigiert. Server-Berechtigungen und Exporte (die öffentliche Tokens enthalten können) sind unverändert.
 
 ## [0.40.1] — 2026-10-05

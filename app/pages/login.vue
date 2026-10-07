@@ -4,9 +4,6 @@
       <UCard class="w-full">
         <template #header>
           <div class="text-center">
-            <div class="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary-500/10 text-primary-500 ring-1 ring-primary-500/20">
-              <UIcon name="i-lucide-network" class="size-6" />
-            </div>
             <h1 class="font-display text-2xl font-bold tracking-tight">{{ $t('auth.loginTitle') }}</h1>
             <p class="mt-1 text-sm text-muted">{{ $t('auth.loginDescription') }}</p>
           </div>

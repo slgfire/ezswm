@@ -951,7 +951,42 @@
     "loadFailedDescription": "The account list could not be loaded. Try again.",
     "retry": "Try again",
     "emptyTitle": "No accounts yet",
-    "emptyDescription": "No local or OpenID Connect accounts have been provisioned in ezSWM."
+    "emptyDescription": "No local or OpenID Connect accounts have been provisioned in ezSWM.",
+    "management": {
+      "actions": "Actions",
+      "createdAt": "Created",
+      "createAccount": "Create account",
+      "editAccount": "Edit account",
+      "editAccountFor": "Edit account for {username}",
+      "deleteAccount": "Delete account",
+      "deleteAccountFor": "Delete account {username}",
+      "providerManaged": "Provider-managed role",
+      "password": "Password",
+      "language": "Language",
+      "english": "English",
+      "german": "German",
+      "accessLostTitle": "User management is no longer available",
+      "accessLostDescription": "Your administrator access has changed. No user accounts are shown on this page.",
+      "cannotDeleteSelf": "You cannot delete your own account.",
+      "deleteTitle": "Delete account?",
+      "deleteIdentity": "Delete {displayName} ({username})?",
+      "historyWarning": "The account's activity history will remain, but its author attribution will be removed.",
+      "oidcDeleteWarning": "This does not revoke access at the identity provider. The account may be recreated at the next permitted SSO sign-in.",
+      "validation": {
+        "usernameLength": "Username must be between 3 and 50 characters.",
+        "usernameFormat": "Use only letters, numbers, and underscores in the username.",
+        "displayNameLength": "Display name must be between 1 and 100 characters.",
+        "passwordLength": "Password must be at least 8 characters."
+      },
+      "validationRejected": "The submitted account details are invalid. Check the fields and try again.",
+      "usernameExists": "That username is already in use.",
+      "lastLocalAdmin": "The last local administrator cannot be removed or changed to Viewer.",
+      "targetGone": "That account no longer exists. The account list has been refreshed.",
+      "created": "Account created successfully.",
+      "updated": "Account updated successfully.",
+      "deleted": "Account deleted successfully.",
+      "roleChanged": "Your role was changed. User management is no longer available."
+    }
   },
   "backup": {
     "title": "Backup & Restore",

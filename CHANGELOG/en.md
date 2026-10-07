@@ -2,9 +2,17 @@
 
 ---
 
-## [0.40.2] — 2026-10-05
+## [0.41.0] — 2026-10-07
+
+### Added
+- Users: admins can manage accounts on the **Users** page: create a local account (the role defaults to Viewer), edit a local account's display name, role and language (the username cannot be changed), and delete any other account after confirmation. You cannot delete your own account, and the last local emergency admin cannot be removed or demoted.
+- SSO accounts are managed by the identity provider and cannot be edited on this page; their roles follow provider mapping. Deletion remains possible with a warning: it does not revoke access at the identity provider, and the account may be recreated at the next permitted SSO sign-in. Deleting an account keeps its activity history but removes the author attribution.
+- A created-date column helps tell accounts with the same display name apart without exposing provider identity. Viewers cannot access the admin user list or management API; their own profile settings are unchanged.
 
 ### Fixed
+- Users: creating an account with an invalid request now returns a generic validation error (HTTP 400) instead of a server error.
+- Users: the Role and Language options in the create and edit dialogs now open above the dialog and can be selected.
+- Login: removed the extra network icon above the title; the ezSWM logo is kept.
 - Roles: when a save is rejected because your role changed (403), the app now starts one fresh role check after that rejection instead of reusing an older role request that may still be running. Several rejections at the same moment share that one check and show a single notice. The older request keeps running but its answer is ignored, and logging out or in while a check is running is respected. A rejected change is never retried. Network errors or temporary server errors keep the last known role; an expired or invalid session still ends the session as before.
 - Topology: node positions are now saved and restored by the switch ID instead of the visible switch name. Two switches whose names look identical in the graph because the label is shortened (for example the same long prefix) no longer overwrite each other's position when you drag them; each drag saves the positions of all nodes, and positions stay stable across successive moves and reloads. Appearance, dragging, permissions, Reset layout and export are unchanged.
 - Layout templates: saving a template in the editor now keeps the existing block IDs when you edit, reorder or move blocks; a newly added block gets a new ID. Block IDs from older templates (any non-empty text) are accepted. If the template changed since the page was loaded (a block ID that no longer exists or belongs to another template), the save is rejected with a message to reload; duplicate block IDs in a request are rejected. Clients that send no block IDs, or empty ones, still get all-new IDs as before. If a template already contains duplicate stored block IDs, a save that sends block IDs is rejected with an error (nothing is repaired automatically); saving only name or description (no layout) is unaffected. Creating, importing and duplicating templates still assign new IDs.
@@ -25,6 +33,7 @@
 - Opening a switch, site or network by its UUID link now redirects to the slug URL during server rendering as well (the session cookie is forwarded), which removes a breadcrumb hydration mismatch on the switch UUID link.
 
 ### Changed
+- Site dashboard: on phones and compact widths (up to the small breakpoint) the four KPI cards at the top now show in two columns (2×2) instead of one column. Tablet and desktop layouts and the full-width panels are unchanged.
 - Documentation: user guides (EN/DE) describe the view-only Switch interface and its current limits; stale "future Viewer role / all users are admin" wording in the architecture and specs was corrected. Server permissions and exports (which can include public tokens) are unchanged.
 
 ## [0.40.1] — 2026-10-05

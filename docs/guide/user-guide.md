@@ -23,6 +23,8 @@ After setup, you are redirected to the login screen.
 
 After logging in, the dashboard provides a summary of your infrastructure: total switches, VLANs, subnets, and IP utilization. The sidebar on the left gives access to all sections. The header bar contains global search, a theme toggle (dark/light), language selector, and user menu.
 
+On phones, the four KPI cards at the top of the dashboard appear in two columns (2×2). Larger panels retain their full width on phones; tablet and desktop layouts are unchanged.
+
 The interface uses neutral surfaces for layout and decoration. Color remains where it carries information: VLANs keep their assigned colors, while port states and warnings retain their status cues, such as green for up, amber for warnings, and red for down or errors.
 
 ![Dashboard — synthetic example, demo data](/images/screenshot-dashboard-synthetic-current.png)
@@ -728,9 +730,15 @@ All meaningful security changes (issuer, client, secret, scopes, mapping, enabli
 - **Settings and Data Management:** viewers see only the Account tab and the Export tab (ordinary exports and the import-template download); the admin tabs (General, Authentication, Backup & Restore, Import) are admin-only. If an admin loses the role while those pages are open, the next rejected admin request refreshes the role once (no retry), shows a single notice, closes the admin dialogs, drops the admin-only state (such as a selected backup or import file or OIDC secret fields) and falls back to Account or Export; late file or OIDC responses are ignored, and restore or import requests that have not started yet are blocked once the interface confirms the role loss. Requests that were already sent are not cancelled. Your own unsaved account and password edits are kept and still protected by the leave confirmation. Backup and restore remain admin-only, and exports (which can include public access tokens) are unchanged. Saving your own profile updates the header name and language after a successful session refresh.
 - Permissions are enforced by the server and are unchanged by this interface work. After a role change the interface may keep the old role until the next navigation or reload; when a save is rejected because of the role change, the app checks your role again once and, if that check completes, switches to read-only (network errors or temporary server errors keep the last known role, and an expired or invalid session still ends the session as before). If an admin is demoted while a port editor is open, the next save is rejected by the server once (no automatic retry); after a successful role refresh the editor turns read-only with a single notice, and nothing is saved.
 
-### Users (admin, read-only)
+### Users (admin)
 
-Admins see a read-only **Users** page in the sidebar with four fields per account: username, display name, role, and sign-in method (local or OpenID Connect). It lists provisioned ezSWM accounts only — it is not a directory of your identity provider — and has no create, edit, delete or password-reset controls. (The underlying user API still supports admin CRUD; the page does not expose it.)
+Admins see a **Users** page in the sidebar listing provisioned ezSWM accounts: username, display name, role, sign-in method (local or OpenID Connect) and creation date. The creation date helps tell accounts with the same display name apart; no provider identity (issuer or subject) is shown. The page lists ezSWM accounts only — it is not a directory of your identity provider. Viewers do not see the Users entry and cannot access the admin user list or management API (their own profile settings are unaffected).
+
+**Create a Viewer (or other local account):** click **Create account**, enter username (3–50 letters, numbers, underscores), display name, a password of at least 8 characters and a language. The role defaults to **Viewer**; choose Admin only when needed.
+
+**Edit an account:** use the edit action on a row. For local accounts you can change display name, role and language; the username cannot be changed. SSO (OpenID Connect) accounts are managed by the identity provider and cannot be edited on this page; their roles follow provider mapping.
+
+**Delete an account:** use the delete action and confirm. You cannot delete your own account, and the last local emergency admin cannot be deleted or demoted to Viewer (the server rejects it with 409). Deleting an SSO account does not revoke access at the identity provider; the account may be created again at the next permitted SSO sign-in. Deleting an account keeps its activity history but removes the author attribution.
 
 ### Password Change
 
