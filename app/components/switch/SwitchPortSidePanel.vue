@@ -253,7 +253,7 @@
               />
             </UTooltip>
           </UDropdownMenu>
-          <UButton :disabled="!baselineReady" @click="onSaveClick">{{ $t('common.save') }}</UButton>
+          <UButton :loading="statusPromptLoading || statusPromptSubmitting" :disabled="!baselineReady || statusPromptLoading || statusPromptSubmitting" @click="onSaveClick">{{ $t('common.save') }}</UButton>
         </div>
         <div class="flex items-center gap-2">
           <UButton
@@ -289,6 +289,32 @@
       :label="$t('switches.ports.resetCounterpart', { switch: resetTarget.peerSwitchName, port: resetTarget.peerPortLabel })"
       class="mt-4"
     />
+  </SharedConfirmDialog>
+
+  <SharedConfirmDialog
+    v-if="isOpen && !readonly && canEditInfrastructure && statusPromptContext"
+    v-model="showStatusPrompt"
+    :title="$t('switches.ports.reviewConnectedStatusesTitle')"
+    :message="statusPromptMessage"
+    :confirm-label="$t(setLocalUp || setPeerUp ? 'switches.ports.saveWithStatusChanges' : 'switches.ports.saveWithoutStatusChanges')"
+    :loading="statusPromptSubmitting"
+    @confirm="confirmStatusPrompt"
+  >
+    <div class="mt-4 space-y-3">
+      <UCheckbox
+        v-if="statusPromptContext.localStatus === 'down'"
+        v-model="setLocalUp"
+        :disabled="statusPromptSubmitting"
+        :label="$t('switches.ports.setLocalPortUp', { switch: statusPromptContext.localSwitchName, port: statusPromptContext.localPortLabel })"
+      />
+      <UCheckbox
+        v-if="statusPromptContext.peerStatus === 'down'"
+        v-model="setPeerUp"
+        :disabled="statusPromptSubmitting"
+        :label="$t('switches.ports.setPeerPortUp', { switch: statusPromptContext.peerSwitchName, port: statusPromptContext.peerPortLabel })"
+      />
+      <p class="text-xs text-muted">{{ $t('switches.ports.statusPromptCancelHint') }}</p>
+    </div>
   </SharedConfirmDialog>
 </template>
 
@@ -356,6 +382,32 @@ type ResetCounterpartTarget = ResetContext & {
   peerPortLabel?: string
 }
 
+type StatusPromptContext = {
+  state: SaveState
+  stateKey: string
+  sourceSwitchRouteId: string
+  sourceSwitchUuid: string
+  sourcePortId: string
+  sourceLagGroupId: string | null
+  sourceUpdatedAt: string
+  siteId: string
+  peerSwitchId: string
+  peerPortId: string
+  peerSwitchUpdatedAt: string
+  localSwitchName: string
+  localPortLabel: string
+  peerSwitchName: string
+  peerPortLabel: string
+  localStatus: 'up' | 'down'
+  peerStatus: 'up' | 'down'
+}
+
+type StatusPromptSubmission = {
+  context: StatusPromptContext
+  setLocalUp: boolean
+  setPeerUp: boolean
+}
+
 const resetTarget = ref<ResetCounterpartTarget | null>(null)
 const resetCounterpart = ref(false)
 const resetCounterpartAvailable = ref(false)
@@ -363,6 +415,27 @@ const showResetDialog = ref(false)
 const resetTargetLoading = ref(false)
 const resetSubmitting = ref(false)
 let resetGeneration = 0
+
+const statusPromptContext = ref<StatusPromptContext | null>(null)
+const showStatusPrompt = ref(false)
+const statusPromptLoading = ref(false)
+const statusPromptSubmitting = ref(false)
+const setLocalUp = ref(false)
+const setPeerUp = ref(false)
+let statusPromptGeneration = 0
+
+const statusPromptMessage = computed(() => {
+  const context = statusPromptContext.value
+  if (!context) return ''
+  return t('switches.ports.reviewConnectedStatuses', {
+    localSwitch: context.localSwitchName,
+    localPort: context.localPortLabel,
+    localStatus: t(context.localStatus === 'up' ? 'legend.up' : 'legend.down'),
+    peerSwitch: context.peerSwitchName,
+    peerPort: context.peerPortLabel,
+    peerStatus: t(context.peerStatus === 'up' ? 'legend.up' : 'legend.down')
+  })
+})
 
 const currentLagGroupId = () => props.lagGroup?.id || props.port?.lag_group_id || null
 const isLagMember = computed(() => !!currentLagGroupId())
@@ -501,6 +574,18 @@ function liveState(): SaveState {
     selectedSwitchId: selectedSwitchId.value,
     selectedPortId: selectedPortId.value
   }
+}
+
+function cloneSaveState(state: SaveState): SaveState {
+  return {
+    ...state,
+    form: { ...state.form },
+    selectedTaggedVlans: [...state.selectedTaggedVlans]
+  }
+}
+
+function saveStateKey(state: SaveState): string {
+  return JSON.stringify(state)
 }
 // Guard view of the live state: a switch link whose selection is still unresolved (options not loaded yet)
 // is represented by its pending IDs, so a freshly opened untouched session equals its frozen seed.
@@ -780,8 +865,6 @@ let optionsReady: Promise<unknown> = Promise.resolve()
 function stateSignature(st: SaveState): string {
   return [st.connectionMode, st.selectedSwitchId, st.selectedPortId, st.selectedAllocationId].join('|')
 }
-const connectionSignature = () => stateSignature(liveState())
-
 function invalidateBaseline(): number {
   baseline.value = null
   return ++baselineEpoch
@@ -964,13 +1047,163 @@ watch(selectedSwitchId, (newVal, oldVal) => { if (oldVal && newVal !== oldVal) s
 const showSetUpPrompt = ref(false)
 
 watch(() => props.readonly, (readOnly, wasEditable) => {
-  if (readOnly && wasEditable === false) showSetUpPrompt.value = false
+  if (readOnly && wasEditable === false) {
+    showSetUpPrompt.value = false
+    clearStatusPrompt()
+  }
 })
+
+function clearStatusPrompt() {
+  statusPromptGeneration++
+  statusPromptLoading.value = false
+  statusPromptSubmitting.value = false
+  statusPromptContext.value = null
+  showStatusPrompt.value = false
+  setLocalUp.value = false
+  setPeerUp.value = false
+}
+
+function statusPromptContextIsCurrent(context: StatusPromptContext): boolean {
+  return isOpen.value === true && !props.readonly && canEditInfrastructure.value &&
+    props.switchId === context.sourceSwitchRouteId &&
+    (props.currentSwitchUuid || '') === context.sourceSwitchUuid &&
+    props.port?.id === context.sourcePortId &&
+    currentLagGroupId() === context.sourceLagGroupId &&
+    props.switchUpdatedAt === context.sourceUpdatedAt &&
+    String(route.params.siteId || '') === context.siteId &&
+    connectionMode.value === 'switch' &&
+    selectedSwitchId.value === context.peerSwitchId &&
+    selectedPortId.value === context.peerPortId &&
+    saveStateKey(liveState()) === context.stateKey
+}
+
+watch(showStatusPrompt, (open) => {
+  if (!open && statusPromptSubmitting.value) {
+    showStatusPrompt.value = true
+    return
+  }
+  if (!open && !statusPromptSubmitting.value && statusPromptContext.value) clearStatusPrompt()
+}, { flush: 'sync' })
+
+watch([
+  () => isOpen.value,
+  () => props.port?.id,
+  () => props.port?.lag_group_id,
+  () => props.lagGroup?.id,
+  () => props.switchId,
+  () => props.currentSwitchUuid,
+  () => props.switchUpdatedAt,
+  () => route.params.siteId,
+  () => props.readonly,
+  canEditInfrastructure,
+  () => saveStateKey(liveState())
+], clearStatusPrompt, { flush: 'sync' })
+
+function localPortLabel(port: Port): string {
+  return port.label || `${port.unit}/${port.index}`
+}
+
+function canShowStatusPromptPeer(port: Port, context: StatusPromptContext): boolean {
+  const exactReciprocal = port.connected_device_id === context.sourceSwitchUuid && port.connected_port_id === context.sourcePortId
+  const free = !port.connected_device_id && !port.connected_port_id && !port.connected_allocation_id && !port.connected_device && !port.connected_port
+  return port.type !== 'console' && port.port_mode === 'access' && !port.lag_group_id && !port.connected_allocation_id && (free || exactReciprocal)
+}
 
 async function onSaveClick() {
   if (props.readonly || !canEditInfrastructure.value) return
+  showSetUpPrompt.value = false
+
+  const state = cloneSaveState(liveState())
+  const sourcePort = props.port
+  const sourceUuid = props.currentSwitchUuid || ''
+  const peerSwitchId = state.selectedSwitchId
+  const peerPortId = state.selectedPortId
+  const sourceStatus = state.form.status
+  const mayCheckPeerStatus = state.connectionMode === 'switch' && !!sourcePort && !!sourceUuid &&
+    !!props.switchUpdatedAt && !!peerSwitchId && !!peerPortId &&
+    sourcePort.type !== 'console' &&
+    state.form.port_mode === 'access' && !isLagMember.value &&
+    (sourceStatus === 'up' || sourceStatus === 'down')
+
+  if (mayCheckPeerStatus) {
+    const generation = ++statusPromptGeneration
+    const context: StatusPromptContext = {
+      state,
+      stateKey: saveStateKey(state),
+      sourceSwitchRouteId: props.switchId,
+      sourceSwitchUuid: sourceUuid,
+      sourcePortId: sourcePort!.id,
+      sourceLagGroupId: currentLagGroupId(),
+      sourceUpdatedAt: props.switchUpdatedAt!,
+      siteId: String(route.params.siteId || ''),
+      peerSwitchId,
+      peerPortId,
+      peerSwitchUpdatedAt: '',
+      localSwitchName: props.switchId,
+      localPortLabel: localPortLabel(sourcePort!),
+      peerSwitchName: '',
+      peerPortLabel: '',
+      localStatus: sourceStatus as 'up' | 'down',
+      peerStatus: 'down'
+    }
+    statusPromptLoading.value = true
+    try {
+      const peerSwitch = await apiFetch<Switch>(`/api/switches/${peerSwitchId}`, { params: siteParams.value })
+      if (generation !== statusPromptGeneration || !statusPromptContextIsCurrent(context)) return
+      const peerPort = peerSwitch.id === peerSwitchId ? peerSwitch.ports?.find(port => port.id === peerPortId) : undefined
+      if (peerPort && typeof peerSwitch.updated_at === 'string' &&
+        canShowStatusPromptPeer(peerPort, context) &&
+        (peerPort.status === 'up' || peerPort.status === 'down')) {
+        const localSwitch = allSwitches.value.find(sw => sw.id === sourceUuid)
+        const promptContext: StatusPromptContext = {
+          ...context,
+          peerSwitchUpdatedAt: peerSwitch.updated_at,
+          localSwitchName: localSwitch?.name || props.switchId,
+          peerSwitchName: peerSwitch.name,
+          peerPortLabel: localPortLabel(peerPort),
+          peerStatus: peerPort.status
+        }
+        if (promptContext.localStatus === 'down' || promptContext.peerStatus === 'down') {
+          statusPromptContext.value = promptContext
+          setLocalUp.value = false
+          setPeerUp.value = false
+          showStatusPrompt.value = true
+          return
+        }
+      }
+    } catch (error: unknown) {
+      if (generation !== statusPromptGeneration || !statusPromptContextIsCurrent(context)) return
+      const access = await handleInfrastructureForbidden(error)
+      if (access === 'demoted') emit('access-changed')
+      if (access === 'demoted' || access === 'already-handled') return
+      // Unknown peer state does not imply Down; retain the existing local-only prompt/save path.
+    } finally {
+      if (generation === statusPromptGeneration) statusPromptLoading.value = false
+    }
+    if (generation !== statusPromptGeneration || !statusPromptContextIsCurrent(context)) return
+  }
+
   if (connectionMode.value === 'switch' && selectedSwitchId.value && selectedPortId.value && form.status === 'down') { showSetUpPrompt.value = true; return }
   await save()
+}
+
+async function confirmStatusPrompt() {
+  const context = statusPromptContext.value
+  if (!context || statusPromptSubmitting.value) return
+  const submission: StatusPromptSubmission = {
+    context,
+    setLocalUp: setLocalUp.value,
+    setPeerUp: setPeerUp.value
+  }
+  if (!statusPromptContextIsCurrent(context) ||
+    (submission.setLocalUp && context.localStatus !== 'down') ||
+    (submission.setPeerUp && context.peerStatus !== 'down')) {
+    clearStatusPrompt()
+    return
+  }
+  statusPromptSubmitting.value = true
+  await save(context.state, submission)
+  if (statusPromptContext.value === context) statusPromptSubmitting.value = false
 }
 
 // Current save candidate: everything the panel could write, after VLAN/connection coupling.
@@ -1009,27 +1242,48 @@ function buildSaveBody(st: SaveState = liveState()): Record<string, unknown> {
   return body
 }
 
-async function save() {
+async function save(state: SaveState = liveState(), statusSubmission?: StatusPromptSubmission) {
   if (props.readonly || !canEditInfrastructure.value) return
   // Fail closed: without a settled baseline no (full) write is ever sent.
   const base = baseline.value
   if (!base || !props.port) return
-  const diff = buildPortSaveDiff(base.candidate, buildSaveBody(), { baselineSignature: base.signature, currentSignature: connectionSignature() })
-  if (!diff) {
+  if (statusSubmission && !statusPromptContextIsCurrent(statusSubmission.context)) {
+    clearStatusPrompt()
+    return
+  }
+  const candidateState = cloneSaveState(state)
+  if (statusSubmission?.setLocalUp) candidateState.form.status = 'up'
+  const diff = buildPortSaveDiff(base.candidate, buildSaveBody(candidateState), {
+    baselineSignature: base.signature,
+    currentSignature: stateSignature(candidateState)
+  })
+  const peerUpRequested = statusSubmission?.setPeerUp === true
+  if (!diff && !peerUpRequested) {
     // Nothing changed: no request, no concurrency/activity bump.
     showSetUpPrompt.value = false
+    if (statusSubmission) clearStatusPrompt()
     emit('saved'); isOpen.value = false
     return
   }
-  const body: Record<string, unknown> = { ...diff.body }
-  if (props.switchUpdatedAt) body.expected_updated_at = props.switchUpdatedAt
+  const body: Record<string, unknown> = { ...(diff?.body || {}) }
+  const sourceUpdatedAt = statusSubmission?.context.sourceUpdatedAt || props.switchUpdatedAt
+  if (sourceUpdatedAt) body.expected_updated_at = sourceUpdatedAt
+  if (peerUpRequested && statusSubmission) {
+    body.counterpart_status_up = true
+    body.expected_counterpart_port_id = statusSubmission.context.peerPortId
+    body.expected_counterpart_status = 'down'
+    body.expected_counterpart_switch_updated_at = statusSubmission.context.peerSwitchUpdatedAt
+  }
   try {
     const response = await $fetch<Record<string, unknown>>(
       `/api/switches/${props.switchId}/ports/${props.port!.id}`,
       buildSidePanelPortPutOptions(body, siteParams.value?.siteId)
     )
 
+    if (statusSubmission && !statusPromptContextIsCurrent(statusSubmission.context)) return
+
     if (!canEditInfrastructure.value || props.readonly) {
+      if (statusSubmission) clearStatusPrompt()
       emit('saved')
       return
     }
@@ -1041,7 +1295,7 @@ async function save() {
     }
 
     let lagSynced = false
-    if ((props.lagGroup?.port_ids?.length ?? 0) > 1) {
+    if (diff && (props.lagGroup?.port_ids?.length ?? 0) > 1) {
       if (!canEditInfrastructure.value || props.readonly) {
         emit('saved')
         return
@@ -1069,17 +1323,30 @@ async function save() {
       toast.add({ title: t('switches.ports.portUpdated'), color: 'success' })
     }
 
+    if (statusSubmission) clearStatusPrompt()
     emit('saved'); isOpen.value = false
   } catch (e: unknown) {
     const access = await handleInfrastructureForbidden(e)
     if (access === 'demoted') emit('access-changed')
     if (access === 'demoted' || access === 'already-handled') {
       showSetUpPrompt.value = false
+      if (statusSubmission) clearStatusPrompt()
+      emit('saved')
+      return
+    }
+    if (statusSubmission && !statusPromptContextIsCurrent(statusSubmission.context)) return
+    const errorData = e as { data?: { reason?: string; data?: { reason?: string } } }
+    const reason = errorData.data?.reason ?? errorData.data?.data?.reason
+    const errorStatus = (e as { statusCode?: number; status?: number })?.statusCode ?? (e as { status?: number })?.status
+    if (errorStatus === 409 && reason === 'counterpart_status_conflict') {
+      if (statusSubmission) clearStatusPrompt()
+      toast.add({ title: t('switches.ports.counterpartStatusConflict'), color: 'warning' })
       emit('saved')
       return
     }
     const messageKey = portConflictMessageKey(e, isLagMember.value ? 'lag' : 'port')
     if (messageKey) {
+      if (statusSubmission) clearStatusPrompt()
       toast.add({ title: t(messageKey), color: 'warning' })
       emit('saved')
       return

@@ -66,7 +66,13 @@ export const updatePortSchema = z.object({
   helper_label: z.string().max(100).nullable().optional(),
   show_in_helper_list: z.boolean().optional(),
   add_vlans_to_target_switch: z.boolean().optional(),
-  expected_updated_at: z.string().optional()
+  expected_updated_at: z.string().optional(),
+  counterpart_status_up: z.boolean().optional(),
+  expected_counterpart_port_id: z.string().min(1).optional(),
+  expected_counterpart_status: z.literal('down').optional(),
+  expected_counterpart_switch_updated_at: z.string().min(1).optional()
+}).refine(v => !v.counterpart_status_up || (v.expected_counterpart_port_id !== undefined && v.expected_counterpart_status !== undefined && v.expected_counterpart_switch_updated_at !== undefined), {
+  message: 'counterpart_status_up requires the expected counterpart port, status and switch version'
 })
 
 export const bulkUpdatePortsSchema = z.object({

@@ -6,6 +6,7 @@
 
 ### Added
 - Switch-port connections: when you reset a local Access port (not in a LAG) connected to its reciprocal Access counterpart, you can optionally also reset that counterpart. The option is unchecked by default and shows the target switch and port; checked, the counterpart is fully reset while its PoE, helper settings, port identity and the switch's VLAN list are kept. Trunk and LAG peers are not offered, by default the counterpart keeps its configuration, and LAG and bulk resets are unchanged.
+- Switch-port connections: when you save an Access connection between two known switch ports and both ends are currently down, a confirmation dialog offers two independent, unchecked options to bring the source port and/or the peer port up during the same Save. If only one end is down, only that end is offered; if both are up, no dialog appears. Saving without opting in changes no status, other edits are saved normally, and Continue editing writes nothing and keeps your draft. Disabled, unknown, free-text, Trunk and LAG ports are never brought up automatically.
 
 ### Fixed
 - Viewer role (Data Management): the **Data Management** entry is no longer shown in the sidebar for viewers, and a direct visit to `/data-management` shows no page content for them. If an admin loses the role while the page is open, its content is hidden. Profile and settings remain available. The server-side permissions for ordinary exports, import-template download and entity export are unchanged.

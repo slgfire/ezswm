@@ -29,8 +29,18 @@ export default defineEventHandler(async (event) => {
   // Extract override/concurrency fields before passing to port update
   const addVlansToTargetSwitch = parsed.add_vlans_to_target_switch
   const expectedUpdatedAt = parsed.expected_updated_at
+  const counterpartStatusUp = parsed.counterpart_status_up
+    ? {
+        expectedPortId: parsed.expected_counterpart_port_id!,
+        expectedStatus: 'down' as const,
+        expectedPeerSwitchUpdatedAt: parsed.expected_counterpart_switch_updated_at!
+      }
+    : undefined
   delete (parsed as Record<string, unknown>).add_vlans_to_target_switch
   delete (parsed as Record<string, unknown>).expected_updated_at
+  for (const key of ['counterpart_status_up', 'expected_counterpart_port_id', 'expected_counterpart_status', 'expected_counterpart_switch_updated_at']) {
+    delete (parsed as Record<string, unknown>)[key]
+  }
 
   // Build changes diff BEFORE normalization — so "clear to automatic" appears in activity as null
   // Build changes diff — only log fields that actually changed
@@ -62,7 +72,8 @@ export default defineEventHandler(async (event) => {
     parsed as Partial<Omit<Port, 'id' | 'unit' | 'index'>>,
     {
       expectedUpdatedAt,
-      siteVlanIds
+      siteVlanIds,
+      counterpartStatusUp
     }
   )
 

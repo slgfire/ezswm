@@ -969,7 +969,7 @@ export const switchRepository = {
     idOrSlug: string,
     portId: string,
     portData: Partial<Omit<Port, 'id' | 'unit' | 'index'>>,
-    options: { expectedUpdatedAt?: string; siteVlanIds?: number[] } = {}
+    options: { expectedUpdatedAt?: string; siteVlanIds?: number[]; counterpartStatusUp?: { expectedPortId: string; expectedStatus: 'down'; expectedPeerSwitchUpdatedAt: string } } = {}
   ): Promise<{ port: Port; updatedAt: string; vlansAddedToSwitch: number[] }> {
     // Accept either a UUID or a globally-unique slug; resolve to the real PK
     // before the transaction so the `where: { id }` clauses below match.
@@ -991,6 +991,36 @@ export const switchRepository = {
 
       const port = await tx.port.findUnique({ where: { id: portId } })
       if (!port || port.switch_id !== switchId) throw createError({ statusCode: 404, statusMessage: 'Port not found' })
+
+      // Optional counterpart status Up: validate the whole intent BEFORE any write (same transaction).
+      const csu = options.counterpartStatusUp
+      const counterpartConflict = (message: string) => createError({ statusCode: 409, message, data: { reason: 'counterpart_status_conflict' } })
+      const eligible = (p: { port_mode: string | null; lag_group_id: string | null; status: string; type: string }) =>
+        p.port_mode === 'access' && !p.lag_group_id && (p.status === 'up' || p.status === 'down') && p.type !== 'console'
+      let peerId: string | null = null
+      if (csu) {
+        const has = (k: string) => Object.prototype.hasOwnProperty.call(portData, k)
+        const effective = {
+          port_mode: has('port_mode') ? (portData.port_mode ?? null) : port.port_mode,
+          lag_group_id: has('lag_group_id') ? (portData.lag_group_id ?? null) : port.lag_group_id,
+          status: has('status') && portData.status ? portData.status : port.status,
+          type: port.type
+        }
+        if (!eligible(effective)) throw counterpartConflict('Counterpart status change requires an Access port that is not in a LAG')
+        const targetPortId = has('connected_port_id') ? portData.connected_port_id : port.connected_port_id
+        const targetDeviceId = has('connected_device_id') ? portData.connected_device_id : port.connected_device_id
+        if (!targetPortId || !targetDeviceId || targetPortId === port.id || targetPortId !== csu.expectedPortId) throw counterpartConflict('Counterpart changed since it was displayed')
+        const peer = await tx.port.findUnique({ where: { id: targetPortId } })
+        if (!peer || peer.switch_id !== targetDeviceId) throw counterpartConflict('Counterpart port is missing or belongs to another switch')
+        if (!eligible(peer)) throw counterpartConflict('Counterpart must be an Access port that is not in a LAG')
+        const free = !peer.connected_device_id && !peer.connected_port_id
+        const pointsBack = peer.connected_device_id === switchId && peer.connected_port_id === portId
+        if (!free && !pointsBack) throw counterpartConflict('Counterpart is connected elsewhere')
+        const peerSwitch = peer.switch_id === switchId ? sw : await tx.switch.findUnique({ where: { id: peer.switch_id } })
+        if (!peerSwitch) throw counterpartConflict('Counterpart switch is missing')
+        if (peer.status === 'down' && peerSwitch.updated_at !== csu.expectedPeerSwitchUpdatedAt) throw counterpartConflict('Counterpart switch was modified since it was displayed')
+        peerId = peer.id
+      }
 
       const requestedVlans: number[] = []
       if (portData.access_vlan) requestedVlans.push(portData.access_vlan)
@@ -1032,6 +1062,20 @@ export const switchRepository = {
       const updatedPort = await tx.port.update({ where: { id: portId }, data: localInput })
       if (linkTouched) {
         await reconcilePortLink(tx, { id: sw.id, name: sw.name }, port, updatedPort, portData, clearRequested, updatedAt)
+      }
+
+      if (csu && peerId) {
+        const freshSource = await tx.port.findUnique({ where: { id: portId } })
+        const freshPeer = await tx.port.findUnique({ where: { id: peerId } })
+        if (!freshSource || !freshPeer || !eligible(freshSource) || !eligible(freshPeer)
+          || freshSource.connected_port_id !== freshPeer.id || freshSource.connected_device_id !== freshPeer.switch_id
+          || freshPeer.connected_port_id !== freshSource.id || freshPeer.connected_device_id !== switchId) {
+          throw counterpartConflict('Counterpart link is not reciprocal')
+        }
+        if (freshPeer.status === 'down') {
+          await tx.port.update({ where: { id: freshPeer.id }, data: { status: 'up' } })
+          if (freshPeer.switch_id !== switchId) await tx.switch.update({ where: { id: freshPeer.switch_id }, data: { updated_at: updatedAt } })
+        }
       }
 
       return {
