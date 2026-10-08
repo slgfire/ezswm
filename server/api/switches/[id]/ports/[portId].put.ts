@@ -29,16 +29,18 @@ export default defineEventHandler(async (event) => {
   // Extract override/concurrency fields before passing to port update
   const addVlansToTargetSwitch = parsed.add_vlans_to_target_switch
   const expectedUpdatedAt = parsed.expected_updated_at
-  const counterpartStatusUp = parsed.counterpart_status_up
+  const counterpartTarget = parsed.counterpart_status_target ?? (parsed.counterpart_status_up === true ? 'up' as const : undefined)
+  const counterpartStatus = counterpartTarget
     ? {
+        targetStatus: counterpartTarget,
         expectedPortId: parsed.expected_counterpart_port_id!,
-        expectedStatus: 'down' as const,
+        expectedStatus: parsed.expected_counterpart_status!,
         expectedPeerSwitchUpdatedAt: parsed.expected_counterpart_switch_updated_at!
       }
     : undefined
   delete (parsed as Record<string, unknown>).add_vlans_to_target_switch
   delete (parsed as Record<string, unknown>).expected_updated_at
-  for (const key of ['counterpart_status_up', 'expected_counterpart_port_id', 'expected_counterpart_status', 'expected_counterpart_switch_updated_at']) {
+  for (const key of ['counterpart_status_up', 'counterpart_status_target', 'expected_counterpart_port_id', 'expected_counterpart_status', 'expected_counterpart_switch_updated_at']) {
     delete (parsed as Record<string, unknown>)[key]
   }
 
@@ -73,7 +75,7 @@ export default defineEventHandler(async (event) => {
     {
       expectedUpdatedAt,
       siteVlanIds,
-      counterpartStatusUp
+      counterpartStatus
     }
   )
 

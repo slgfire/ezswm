@@ -969,7 +969,7 @@ export const switchRepository = {
     idOrSlug: string,
     portId: string,
     portData: Partial<Omit<Port, 'id' | 'unit' | 'index'>>,
-    options: { expectedUpdatedAt?: string; siteVlanIds?: number[]; counterpartStatusUp?: { expectedPortId: string; expectedStatus: 'down'; expectedPeerSwitchUpdatedAt: string } } = {}
+    options: { expectedUpdatedAt?: string; siteVlanIds?: number[]; counterpartStatus?: { targetStatus: 'up' | 'down'; expectedPortId: string; expectedStatus: 'up' | 'down'; expectedPeerSwitchUpdatedAt: string } } = {}
   ): Promise<{ port: Port; updatedAt: string; vlansAddedToSwitch: number[] }> {
     // Accept either a UUID or a globally-unique slug; resolve to the real PK
     // before the transaction so the `where: { id }` clauses below match.
@@ -992,33 +992,47 @@ export const switchRepository = {
       const port = await tx.port.findUnique({ where: { id: portId } })
       if (!port || port.switch_id !== switchId) throw createError({ statusCode: 404, statusMessage: 'Port not found' })
 
-      // Optional counterpart status Up: validate the whole intent BEFORE any write (same transaction).
-      const csu = options.counterpartStatusUp
+      // Optional counterpart status intent (Up or Down): validate the whole intent BEFORE any write (same transaction).
+      const csu = options.counterpartStatus
       const counterpartConflict = (message: string) => createError({ statusCode: 409, message, data: { reason: 'counterpart_status_conflict' } })
-      const eligible = (p: { port_mode: string | null; lag_group_id: string | null; status: string; type: string }) =>
-        p.port_mode === 'access' && !p.lag_group_id && (p.status === 'up' || p.status === 'down') && p.type !== 'console'
+      type StatusPort = { port_mode: string | null; lag_group_id: string | null; status: string; type: string; access_vlan: number | null; native_vlan: number | null; tagged_vlans: string | number[] | null; connected_allocation_id: string | null }
+      const upDown = (p: { status: string }) => p.status === 'up' || p.status === 'down'
+      const emptyVlans = (v: string | number[] | null) => v == null || v === '' || v === '[]' || (Array.isArray(v) && v.length === 0)
+      const accessOk = (p: StatusPort) => p.port_mode === 'access' && !p.lag_group_id && upDown(p) && p.type !== 'console'
+      // Status-intent-only: an unconfigured ordinary network port (raw mode NULL, no VLAN config, no allocation).
+      const unsetOk = (p: StatusPort) => p.port_mode == null && !p.lag_group_id && upDown(p) && p.type !== 'console' && p.type !== 'management' &&
+        p.access_vlan == null && p.native_vlan == null && emptyVlans(p.tagged_vlans) && !p.connected_allocation_id
+      const eligible = (p: StatusPort) => accessOk(p) || unsetOk(p)
+      const empty = (v: string | null | undefined) => v == null || v === ''
       let peerId: string | null = null
       if (csu) {
         const has = (k: string) => Object.prototype.hasOwnProperty.call(portData, k)
-        const effective = {
+        const effective: StatusPort = {
           port_mode: has('port_mode') ? (portData.port_mode ?? null) : port.port_mode,
           lag_group_id: has('lag_group_id') ? (portData.lag_group_id ?? null) : port.lag_group_id,
           status: has('status') && portData.status ? portData.status : port.status,
-          type: port.type
+          type: port.type,
+          access_vlan: has('access_vlan') ? (portData.access_vlan ?? null) : port.access_vlan,
+          native_vlan: has('native_vlan') ? (portData.native_vlan ?? null) : port.native_vlan,
+          tagged_vlans: has('tagged_vlans') ? (portData.tagged_vlans ?? null) : port.tagged_vlans,
+          connected_allocation_id: has('connected_allocation_id') ? (portData.connected_allocation_id ?? null) : port.connected_allocation_id
         }
-        if (!eligible(effective)) throw counterpartConflict('Counterpart status change requires an Access port that is not in a LAG')
+        if (!eligible(effective)) throw counterpartConflict('Counterpart status change requires an ordinary port that is not in a LAG')
         const targetPortId = has('connected_port_id') ? portData.connected_port_id : port.connected_port_id
         const targetDeviceId = has('connected_device_id') ? portData.connected_device_id : port.connected_device_id
         if (!targetPortId || !targetDeviceId || targetPortId === port.id || targetPortId !== csu.expectedPortId) throw counterpartConflict('Counterpart changed since it was displayed')
         const peer = await tx.port.findUnique({ where: { id: targetPortId } })
         if (!peer || peer.switch_id !== targetDeviceId) throw counterpartConflict('Counterpart port is missing or belongs to another switch')
-        if (!eligible(peer)) throw counterpartConflict('Counterpart must be an Access port that is not in a LAG')
-        const free = !peer.connected_device_id && !peer.connected_port_id
+        if (!eligible(peer)) throw counterpartConflict('Counterpart must be an ordinary port that is not in a LAG')
+        const free = empty(peer.connected_device_id) && empty(peer.connected_port_id) && empty(peer.connected_device) && empty(peer.connected_port)
         const pointsBack = peer.connected_device_id === switchId && peer.connected_port_id === portId
         if (!free && !pointsBack) throw counterpartConflict('Counterpart is connected elsewhere')
         const peerSwitch = peer.switch_id === switchId ? sw : await tx.switch.findUnique({ where: { id: peer.switch_id } })
         if (!peerSwitch) throw counterpartConflict('Counterpart switch is missing')
-        if (peer.status === 'down' && peerSwitch.updated_at !== csu.expectedPeerSwitchUpdatedAt) throw counterpartConflict('Counterpart switch was modified since it was displayed')
+        if (peer.status !== csu.targetStatus) {
+          if (peer.status !== csu.expectedStatus) throw counterpartConflict('Counterpart status changed since it was displayed')
+          if (peerSwitch.updated_at !== csu.expectedPeerSwitchUpdatedAt) throw counterpartConflict('Counterpart switch was modified since it was displayed')
+        }
         peerId = peer.id
       }
 
@@ -1072,8 +1086,8 @@ export const switchRepository = {
           || freshPeer.connected_port_id !== freshSource.id || freshPeer.connected_device_id !== switchId) {
           throw counterpartConflict('Counterpart link is not reciprocal')
         }
-        if (freshPeer.status === 'down') {
-          await tx.port.update({ where: { id: freshPeer.id }, data: { status: 'up' } })
+        if (freshPeer.status !== csu.targetStatus) {
+          await tx.port.update({ where: { id: freshPeer.id }, data: { status: csu.targetStatus } })
           if (freshPeer.switch_id !== switchId) await tx.switch.update({ where: { id: freshPeer.switch_id }, data: { updated_at: updatedAt } })
         }
       }

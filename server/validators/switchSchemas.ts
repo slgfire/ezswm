@@ -68,11 +68,16 @@ export const updatePortSchema = z.object({
   add_vlans_to_target_switch: z.boolean().optional(),
   expected_updated_at: z.string().optional(),
   counterpart_status_up: z.boolean().optional(),
+  counterpart_status_target: z.enum(['up', 'down']).optional(),
   expected_counterpart_port_id: z.string().min(1).optional(),
-  expected_counterpart_status: z.literal('down').optional(),
+  expected_counterpart_status: z.enum(['up', 'down']).optional(),
   expected_counterpart_switch_updated_at: z.string().min(1).optional()
-}).refine(v => !v.counterpart_status_up || (v.expected_counterpart_port_id !== undefined && v.expected_counterpart_status !== undefined && v.expected_counterpart_switch_updated_at !== undefined), {
-  message: 'counterpart_status_up requires the expected counterpart port, status and switch version'
+}).superRefine((v, ctx) => {
+  const fail = (message: string) => ctx.addIssue({ code: 'custom', message })
+  const complete = v.expected_counterpart_port_id !== undefined && v.expected_counterpart_status !== undefined && v.expected_counterpart_switch_updated_at !== undefined
+  if (v.counterpart_status_up === true && v.counterpart_status_target !== undefined) fail('counterpart_status_up and counterpart_status_target cannot both be active')
+  if (v.counterpart_status_up === true && (!complete || v.expected_counterpart_status !== 'down')) fail('counterpart_status_up requires the expected counterpart port, a Down status and the switch version')
+  if (v.counterpart_status_target !== undefined && !complete) fail('counterpart_status_target requires the expected counterpart port, status and switch version')
 })
 
 export const bulkUpdatePortsSchema = z.object({

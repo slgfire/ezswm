@@ -203,7 +203,7 @@
         <USeparator />
 
         <UFormField :label="$t('lag.group')">
-          <div v-if="lagGroup || port.lag_group_id" class="flex flex-wrap items-center gap-2">
+          <div v-if="isLagMember" class="flex flex-wrap items-center gap-2">
             <UBadge color="info" variant="soft" size="sm">{{ lagGroup?.name || port.lag_group_id }}</UBadge>
             <span v-if="lagGroup?.remote_device" class="text-xs text-muted">→ {{ lagGroup.remote_device }}</span>
             <UButton
@@ -217,6 +217,9 @@
             </UButton>
           </div>
           <span v-else class="text-sm text-muted">{{ $t('common.none') }}</span>
+          <p v-if="isLagMember" id="port-reset-lag-hint" role="note" class="mt-2 rounded-md border border-error/30 bg-error/10 px-3 py-2 text-xs text-error">
+            {{ $t('lag.managePortInEditor') }}
+          </p>
         </UFormField>
       </div>
 
@@ -233,7 +236,7 @@
       <div v-if="readonly" class="flex w-full justify-end">
         <UButton variant="subtle" color="neutral" @click="() => { isOpen = false }">{{ $t('common.close') }}</UButton>
       </div>
-      <div v-else class="flex w-full items-center justify-between">
+      <div v-else class="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex items-center gap-2">
           <UButton variant="subtle" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
           <UDropdownMenu
@@ -255,19 +258,16 @@
           </UDropdownMenu>
           <UButton :loading="statusPromptLoading || statusPromptSubmitting" :disabled="!baselineReady || statusPromptLoading || statusPromptSubmitting" @click="onSaveClick">{{ $t('common.save') }}</UButton>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-2">
           <UButton
-            color="error"
-            variant="soft"
+            :color="isLagMember ? 'neutral' : 'error'"
+            :variant="isLagMember ? 'subtle' : 'soft'"
             icon="i-heroicons-arrow-path"
             :loading="resetTargetLoading"
             :disabled="isLagMember || resetTargetLoading || resetSubmitting"
             :aria-describedby="isLagMember ? 'port-reset-lag-hint' : undefined"
             @click="resetPort"
-          >{{ $t('switches.ports.resetPort') }}</UButton>
-          <span v-if="isLagMember" id="port-reset-lag-hint" role="note" class="max-w-44 text-xs text-muted">
-            {{ $t('lag.managePortInEditor') }}
-          </span>
+          ><span :class="{ 'line-through': isLagMember }">{{ $t('switches.ports.resetPort') }}</span></UButton>
         </div>
       </div>
     </template>
@@ -296,23 +296,25 @@
     v-model="showStatusPrompt"
     :title="$t('switches.ports.reviewConnectedStatusesTitle')"
     :message="statusPromptMessage"
-    :confirm-label="$t(setLocalUp || setPeerUp ? 'switches.ports.saveWithStatusChanges' : 'switches.ports.saveWithoutStatusChanges')"
+    :confirm-label="$t(statusPromptSaveLabel)"
     :loading="statusPromptSubmitting"
     @confirm="confirmStatusPrompt"
   >
     <div class="mt-4 space-y-3">
-      <UCheckbox
-        v-if="statusPromptContext.localStatus === 'down'"
-        v-model="setLocalUp"
-        :disabled="statusPromptSubmitting"
-        :label="$t('switches.ports.setLocalPortUp', { switch: statusPromptContext.localSwitchName, port: statusPromptContext.localPortLabel })"
-      />
-      <UCheckbox
-        v-if="statusPromptContext.peerStatus === 'down'"
-        v-model="setPeerUp"
-        :disabled="statusPromptSubmitting"
-        :label="$t('switches.ports.setPeerPortUp', { switch: statusPromptContext.peerSwitchName, port: statusPromptContext.peerPortLabel })"
-      />
+      <fieldset class="space-y-2">
+        <legend class="sr-only">{{ $t('switches.ports.pairStatusChoice') }}</legend>
+        <label v-for="option in statusPromptOptions" :key="option.value" class="flex items-start gap-2 text-sm">
+          <input
+            v-model="pairStatusChoice"
+            type="radio"
+            name="connected-port-status-choice"
+            :value="option.value"
+            :disabled="statusPromptSubmitting"
+            class="mt-1 accent-primary-500"
+          >
+          <span>{{ option.label }}</span>
+        </label>
+      </fieldset>
       <p class="text-xs text-muted">{{ $t('switches.ports.statusPromptCancelHint') }}</p>
     </div>
   </SharedConfirmDialog>
@@ -404,8 +406,7 @@ type StatusPromptContext = {
 
 type StatusPromptSubmission = {
   context: StatusPromptContext
-  setLocalUp: boolean
-  setPeerUp: boolean
+  targetStatus: 'up' | 'down' | null
 }
 
 const resetTarget = ref<ResetCounterpartTarget | null>(null)
@@ -420,8 +421,7 @@ const statusPromptContext = ref<StatusPromptContext | null>(null)
 const showStatusPrompt = ref(false)
 const statusPromptLoading = ref(false)
 const statusPromptSubmitting = ref(false)
-const setLocalUp = ref(false)
-const setPeerUp = ref(false)
+const pairStatusChoice = ref<'keep' | 'up' | 'down'>('keep')
 let statusPromptGeneration = 0
 
 const statusPromptMessage = computed(() => {
@@ -436,6 +436,29 @@ const statusPromptMessage = computed(() => {
     peerStatus: t(context.peerStatus === 'up' ? 'legend.up' : 'legend.down')
   })
 })
+const statusPromptOptions = computed(() => {
+  const context = statusPromptContext.value
+  if (!context) return []
+  const bothDown = context.localStatus === 'down' && context.peerStatus === 'down'
+  return [
+    {
+      value: 'keep' as const,
+      label: bothDown
+        ? t('switches.ports.keepBothDown')
+        : t('switches.ports.keepCurrentPairStatuses', {
+            localStatus: t(context.localStatus === 'up' ? 'legend.up' : 'legend.down'),
+            peerStatus: t(context.peerStatus === 'up' ? 'legend.up' : 'legend.down')
+          })
+    },
+    { value: 'up' as const, label: t('switches.ports.setBothPortsUp') },
+    ...(!bothDown ? [{ value: 'down' as const, label: t('switches.ports.setBothPortsDown') }] : [])
+  ]
+})
+const statusPromptSaveLabel = computed(() => pairStatusChoice.value === 'up'
+  ? 'switches.ports.savePairUp'
+  : pairStatusChoice.value === 'down'
+    ? 'switches.ports.savePairDown'
+    : 'switches.ports.savePairCurrentStatuses')
 
 const currentLagGroupId = () => props.lagGroup?.id || props.port?.lag_group_id || null
 const isLagMember = computed(() => !!currentLagGroupId())
@@ -1059,8 +1082,7 @@ function clearStatusPrompt() {
   statusPromptSubmitting.value = false
   statusPromptContext.value = null
   showStatusPrompt.value = false
-  setLocalUp.value = false
-  setPeerUp.value = false
+  pairStatusChoice.value = 'keep'
 }
 
 function statusPromptContextIsCurrent(context: StatusPromptContext): boolean {
@@ -1103,10 +1125,26 @@ function localPortLabel(port: Port): string {
   return port.label || `${port.unit}/${port.index}`
 }
 
+const NETWORK_CONNECTOR_PORT_TYPES = new Set<Port['type']>(['rj45', 'sfp', 'sfp+', 'qsfp'])
+
+function isNetworkConnectorPort(port: Port): boolean {
+  return NETWORK_CONNECTOR_PORT_TYPES.has(port.type)
+}
+
+function isPristineUnsetAccessPort(port: Port): boolean {
+  return port.port_mode == null && port.access_vlan == null && port.native_vlan == null &&
+    !(port.tagged_vlans?.length) && !port.connected_allocation_id && isNetworkConnectorPort(port)
+}
+
+function isEligibleStatusPromptSource(port: Port): boolean {
+  return isNetworkConnectorPort(port) && (port.port_mode === 'access' || isPristineUnsetAccessPort(port))
+}
+
 function canShowStatusPromptPeer(port: Port, context: StatusPromptContext): boolean {
   const exactReciprocal = port.connected_device_id === context.sourceSwitchUuid && port.connected_port_id === context.sourcePortId
   const free = !port.connected_device_id && !port.connected_port_id && !port.connected_allocation_id && !port.connected_device && !port.connected_port
-  return port.type !== 'console' && port.port_mode === 'access' && !port.lag_group_id && !port.connected_allocation_id && (free || exactReciprocal)
+  const accessPeer = port.port_mode === 'access' || isPristineUnsetAccessPort(port)
+  return isNetworkConnectorPort(port) && accessPeer && !port.lag_group_id && !port.connected_allocation_id && (free || exactReciprocal)
 }
 
 async function onSaveClick() {
@@ -1121,7 +1159,7 @@ async function onSaveClick() {
   const sourceStatus = state.form.status
   const mayCheckPeerStatus = state.connectionMode === 'switch' && !!sourcePort && !!sourceUuid &&
     !!props.switchUpdatedAt && !!peerSwitchId && !!peerPortId &&
-    sourcePort.type !== 'console' &&
+    isEligibleStatusPromptSource(sourcePort) &&
     state.form.port_mode === 'access' && !isLagMember.value &&
     (sourceStatus === 'up' || sourceStatus === 'down')
 
@@ -1165,8 +1203,7 @@ async function onSaveClick() {
         }
         if (promptContext.localStatus === 'down' || promptContext.peerStatus === 'down') {
           statusPromptContext.value = promptContext
-          setLocalUp.value = false
-          setPeerUp.value = false
+          pairStatusChoice.value = 'keep'
           showStatusPrompt.value = true
           return
         }
@@ -1192,12 +1229,10 @@ async function confirmStatusPrompt() {
   if (!context || statusPromptSubmitting.value) return
   const submission: StatusPromptSubmission = {
     context,
-    setLocalUp: setLocalUp.value,
-    setPeerUp: setPeerUp.value
+    targetStatus: pairStatusChoice.value === 'keep' ? null : pairStatusChoice.value
   }
   if (!statusPromptContextIsCurrent(context) ||
-    (submission.setLocalUp && context.localStatus !== 'down') ||
-    (submission.setPeerUp && context.peerStatus !== 'down')) {
+    !statusPromptOptions.value.some(option => option.value === pairStatusChoice.value)) {
     clearStatusPrompt()
     return
   }
@@ -1252,13 +1287,13 @@ async function save(state: SaveState = liveState(), statusSubmission?: StatusPro
     return
   }
   const candidateState = cloneSaveState(state)
-  if (statusSubmission?.setLocalUp) candidateState.form.status = 'up'
+  if (statusSubmission?.targetStatus) candidateState.form.status = statusSubmission.targetStatus
   const diff = buildPortSaveDiff(base.candidate, buildSaveBody(candidateState), {
     baselineSignature: base.signature,
     currentSignature: stateSignature(candidateState)
   })
-  const peerUpRequested = statusSubmission?.setPeerUp === true
-  if (!diff && !peerUpRequested) {
+  const peerStatusRequested = statusSubmission?.targetStatus != null
+  if (!diff && !peerStatusRequested) {
     // Nothing changed: no request, no concurrency/activity bump.
     showSetUpPrompt.value = false
     if (statusSubmission) clearStatusPrompt()
@@ -1268,10 +1303,10 @@ async function save(state: SaveState = liveState(), statusSubmission?: StatusPro
   const body: Record<string, unknown> = { ...(diff?.body || {}) }
   const sourceUpdatedAt = statusSubmission?.context.sourceUpdatedAt || props.switchUpdatedAt
   if (sourceUpdatedAt) body.expected_updated_at = sourceUpdatedAt
-  if (peerUpRequested && statusSubmission) {
-    body.counterpart_status_up = true
+  if (peerStatusRequested && statusSubmission) {
+    body.counterpart_status_target = statusSubmission.targetStatus
     body.expected_counterpart_port_id = statusSubmission.context.peerPortId
-    body.expected_counterpart_status = 'down'
+    body.expected_counterpart_status = statusSubmission.context.peerStatus
     body.expected_counterpart_switch_updated_at = statusSubmission.context.peerSwitchUpdatedAt
   }
   try {

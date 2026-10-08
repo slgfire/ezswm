@@ -222,4 +222,88 @@ describe('PUT port: optional counterpart status Up (Access, reciprocal)', () => 
     expect((await put(A, p, { status: 'up', ...(await opts(B, q)) }, viewer)).status).toBe(403)
     expect(await raw()).toBe(before)
   })
+
+  describe('status target (up/down) and unset ports', () => {
+    const tgt = async (y: Sw, q: string, target: 'up' | 'down', expectedStatus: 'up' | 'down', over: Record<string, unknown> = {}) =>
+      ({ counterpart_status_target: target, expected_counterpart_port_id: q, expected_counterpart_status: expectedStatus, expected_counterpart_switch_updated_at: await stamp(y), ...over })
+    const unset = { port_mode: null, access_vlan: null, native_vlan: null, tagged_vlans: '[]', speed: null, description: null }
+
+    it('every direction works with the target enum: Down->Up and Up->Down, same-target is a no-op even when stale', async () => {
+      const a = await pair(A, B, 'up', 'down')
+      expect((await put(A, a.p, { status: 'up', ...(await tgt(B, a.q, 'up', 'down')) })).status).toBe(200)
+      expect((await row(a.q)).status).toBe('up')
+      expect((await put(A, a.p, { status: 'up', ...(await tgt(B, a.q, 'down', 'up')) })).status).toBe(200)
+      expect((await row(a.q)).status).toBe('down')
+      const peerBefore = await row(a.q)
+      const noop = await put(A, a.p, { status: 'up', ...(await tgt(B, a.q, 'down', 'down', { expected_counterpart_switch_updated_at: 'stale' })) })
+      expect(noop.status).toBe(200)
+      expect(await row(a.q)).toEqual(peerBefore)
+    })
+
+    it('a changing peer needs the captured status and the captured peer-switch stamp, otherwise 409 with full rollback', async () => {
+      const a = await pair(A, B, 'up', 'up')
+      await expectConflict(A, a.p, { status: 'up', ...(await tgt(B, a.q, 'down', 'down')) })
+      await expectConflict(A, a.p, { status: 'up', ...(await tgt(B, a.q, 'down', 'up', { expected_counterpart_switch_updated_at: 'stale' })) })
+      expect((await row(a.q)).status).toBe('up')
+    })
+
+    it('legacy flag stays valid; conflicting aliases, an Up expectation with the legacy flag and a bad enum are 400; false plus the enum is active', async () => {
+      const a = await pair(A, B, 'up', 'down')
+      const before = await raw()
+      const base = await tgt(B, a.q, 'up', 'down')
+      for (const body of [{ ...base, counterpart_status_up: true }, { ...(await opts(B, a.q)), expected_counterpart_status: 'up' }, { ...base, counterpart_status_target: 'sideways' }, { counterpart_status_target: 'up' }]) {
+        expect((await put(A, a.p, { status: 'up', ...body })).status).toBe(400)
+      }
+      expect(await raw()).toBe(before)
+      expect((await put(A, a.p, { status: 'up', ...base, counterpart_status_up: false })).status).toBe(200)
+      expect((await row(a.q)).status).toBe('up')
+    })
+
+    it('a first link to a fresh unset peer with VLAN copy off keeps both ports unset and only the status changes', async () => {
+      const p = await mk(A.id, 1, { status: 'up' })
+      const q = await mk(B.id, 1, { status: 'down', ...unset })
+      const res = await put(A, p, { status: 'up', connected_device: B.name, connected_device_id: B.id, connected_port: '1/1', connected_port_id: q, add_vlans_to_target_switch: false, ...(await tgt(B, q, 'up', 'down')) })
+      expect(res.status).toBe(200)
+      expect(await row(q)).toMatchObject({ status: 'up', port_mode: null, access_vlan: null, native_vlan: null, tagged_vlans: '[]', connected_port_id: p })
+    })
+
+    it('a reciprocal unset pair supports peer-only intent and a reverse unset source, never inventing a mode or VLAN', async () => {
+      const a = await pair(A, B, 'up', 'down', { ...unset })
+      await prisma.port.update({ where: { id: a.p }, data: { port_mode: null } })
+      const res = await put(A, a.p, { ...(await tgt(B, a.q, 'up', 'down')) })
+      expect(res.status).toBe(200)
+      expect(await row(a.p)).toMatchObject({ port_mode: null, access_vlan: null, status: 'up' })
+      expect(await row(a.q)).toMatchObject({ port_mode: null, access_vlan: null, status: 'up' })
+      const r = await pair(A, B, 'up', 'up', { port_mode: 'access' })
+      await prisma.port.update({ where: { id: r.p }, data: { port_mode: null, access_vlan: null } })
+      const rev = await put(A, r.p, { ...(await tgt(B, r.q, 'down', 'up')) })
+      expect(rev.status).toBe(200)
+      expect(await row(r.p)).toMatchObject({ port_mode: null, access_vlan: null })
+      expect((await row(r.q)).status).toBe('down')
+    })
+
+    it('partially configured, unknown or non-ordinary ports and unsafe peers are 409 with zero raw writes', async () => {
+      for (const patch of [{ access_vlan: 20 }, { native_vlan: 30 }, { tagged_vlans: '[10]' }, { port_mode: 'trunk' }, { status: 'disabled' }, { type: 'management' }, { type: 'console' }, { status: 'bogus' }] as const) {
+        await resetDb(); admin = asCookie(tokenFor(await seedLocalUser(prisma, { username: 'root', role: 'admin' })))
+        siteId = (await seedSite(prisma, { slug: 'cps' })).id
+        A = { ...(await seedSwitch(prisma, { site_id: siteId, name: 'SWA', slug: 'swa' })), name: 'SWA' }
+        B = { ...(await seedSwitch(prisma, { site_id: siteId, name: 'SWB', slug: 'swb' })), name: 'SWB' }
+        const a = await pair(A, B, 'up', 'down', { ...unset })
+        await prisma.port.update({ where: { id: a.p }, data: { port_mode: null } })
+        await prisma.port.update({ where: { id: a.q }, data: patch as never })
+        await expectConflict(A, a.p, { ...(await tgt(B, a.q, 'up', 'down')) })
+      }
+      const a = await pair(A, B, 'up', 'down')
+      await prisma.port.update({ where: { id: a.q }, data: { connected_device_id: null, connected_port_id: null, connected_device: 'free text', connected_port: null } })
+      await expectConflict(A, a.p, { status: 'up', ...(await tgt(B, a.q, 'up', 'down')) })
+    })
+
+    it('PoE, helpers, description, MAC, speed and an empty tagged list are unchanged except the selected statuses', async () => {
+      const a = await pair(A, B, 'up', 'down')
+      const srcBefore = await row(a.p); const peerBefore = await row(a.q)
+      expect((await put(A, a.p, { status: 'up', ...(await tgt(B, a.q, 'up', 'down')) })).status).toBe(200)
+      expect(await row(a.p)).toEqual(srcBefore)
+      expect(await row(a.q)).toEqual({ ...peerBefore, status: 'up' })
+    })
+  })
 })
