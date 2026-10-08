@@ -270,6 +270,7 @@ import { buildLagPortOptions, removeLagPort } from '~/utils/lagPortOptions'
 import { selectedPortsTrigger } from '~/utils/lagSelectedPortsLabel'
 import { onLocalPortsChange as updateLocalPorts, removePortFromSelection as removeSelectedPort } from '~/utils/lagPortSelection'
 import { buildDuplicateManualConnectedPorts, buildLocalPortConnectionUpdateBody, getLagDuplicatePrefill, shouldUpdateLocalPortConnectionsForSubmit } from '~/utils/lagDuplicatePrefill'
+import { portConflictMessageKey } from '~/utils/portConflictMessage'
 
 const props = defineProps<{
   switchId: string
@@ -632,12 +633,13 @@ async function onSubmit() {
       isOpen.value = false
       return
     }
-    const err = e as { statusCode?: number; data?: { message?: string } }
-    if (err.statusCode === 409) {
-      toast.add({ title: 'Switch was modified. Please try again.', color: 'warning' })
+    const messageKey = portConflictMessageKey(e, 'lag')
+    if (messageKey) {
+      toast.add({ title: t(messageKey), color: 'warning' })
       emit('saved')
       return
     }
+    const err = e as { statusCode?: number; data?: { message?: string } }
     toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
   } finally {
     saving.value = false

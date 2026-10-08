@@ -838,6 +838,15 @@ export const switchRepository = {
         throw createError({ statusCode: 404, message: 'Port not found' })
       }
 
+      // LAG members are managed through the LAG editor only; never reset (or auto-detach) them directly.
+      if (oldPort.lag_group_id) {
+        throw createError({
+          statusCode: 409,
+          message: 'LAG member ports must be managed through the LAG editor',
+          data: { reason: 'lag_member_reset_forbidden' }
+        })
+      }
+
       const updatedAt = new Date().toISOString()
 
       if (options.resetCounterpart) {

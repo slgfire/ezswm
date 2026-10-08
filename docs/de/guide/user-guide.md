@@ -211,6 +211,8 @@ Setzt du einen lokalen Access-Port (ohne LAG) zurück, der mit seinem wechselsei
 
 Das Zurücksetzen eines Ports (einzeln oder mehrere) löscht seine Einstellungen und entfernt die Verbindung auf **beiden** Seiten. Standardmäßig behält der verknüpfte Port seine eigene Konfiguration -- nur die Verbindung wird entfernt (der optionale Gegenport-Reset oben gilt nur für das Zurücksetzen eines einzelnen Access-Ports; Massen-Resets bleiben lokal).
 
+Ein LAG-Mitgliedsport kann nicht direkt zurückgesetzt werden. Verwalte seine Mitgliedschaft und Gegenstellen-Zuordnung im LAG-Editor; eine LAG braucht mindestens zwei Mitglieder. Würde das Entfernen eines Mitglieds weniger als zwei übrig lassen, wähle einen Ersatzport oder nutze den ausdrücklichen Dialog **LAG löschen** mit seinen optionalen Auswahlmöglichkeiten für Mitglieds-Reset und Remote-Spiegel. Eine LAG wird nie automatisch aufgelöst. Normale Port-Resets sowie Beschreibung, PoE und Helfer-Einstellungen jedes Ports bleiben unverändert. Bereits inkonsistente Spiegel-LAGs müssen manuell geprüft werden; sie werden nicht automatisch repariert.
+
 > Bestätigungen (Ports zurücksetzen, LAG-Verbindungen überschreiben, Seite mit ungespeicherten Änderungen verlassen) nutzen In-App-Dialoge statt nativer Browser-Popups.
 
 ### Nebenläufigkeit und Konflikt-Refresh

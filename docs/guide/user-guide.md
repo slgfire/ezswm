@@ -211,6 +211,8 @@ When you reset a local Access port (not in a LAG) that is connected to its recip
 
 Resetting a port (single or bulk) clears its settings and removes the connection on **both** ends. By default the linked port keeps its own configuration -- only the link is removed (the optional counterpart reset above applies only to a single Access port reset; bulk resets stay local-only).
 
+A port that is a member of a LAG cannot be reset directly. Manage its membership and peer mapping in the LAG editor; a LAG needs at least two members. If removing a member would leave fewer than two, select a replacement or use the explicit **Delete LAG** dialog, with its optional member-reset and remote-mirror choices. A LAG is never dissolved automatically. Ordinary port resets and each port's description, PoE and helper settings are unaffected. Already inconsistent mirror LAGs require manual review; they are not repaired automatically.
+
 > Confirmations (resetting ports, overwriting LAG connections, leaving a page with unsaved changes) use in-app dialogs rather than native browser popups.
 
 ### Concurrency and conflict refresh

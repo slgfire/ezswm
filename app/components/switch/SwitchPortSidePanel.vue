@@ -203,16 +203,17 @@
         <USeparator />
 
         <UFormField :label="$t('lag.group')">
-          <div v-if="lagGroup" class="flex items-center gap-2">
-            <UBadge color="info" variant="soft" size="sm">{{ lagGroup.name }}</UBadge>
-            <span v-if="lagGroup.remote_device" class="text-xs text-muted">→ {{ lagGroup.remote_device }}</span>
+          <div v-if="lagGroup || port.lag_group_id" class="flex flex-wrap items-center gap-2">
+            <UBadge color="info" variant="soft" size="sm">{{ lagGroup?.name || port.lag_group_id }}</UBadge>
+            <span v-if="lagGroup?.remote_device" class="text-xs text-muted">→ {{ lagGroup.remote_device }}</span>
             <UButton
               size="xs"
               variant="ghost"
-              color="error"
-              @click="onRemoveFromLag"
+              color="primary"
+              :disabled="readonly || !canEditInfrastructure"
+              @click="onEditLag"
             >
-              {{ $t('lag.removeFromLag') }}
+              {{ $t('lag.edit') }}
             </UButton>
           </div>
           <span v-else class="text-sm text-muted">{{ $t('common.none') }}</span>
@@ -254,7 +255,20 @@
           </UDropdownMenu>
           <UButton :disabled="!baselineReady" @click="onSaveClick">{{ $t('common.save') }}</UButton>
         </div>
-        <UButton color="error" variant="soft" icon="i-heroicons-arrow-path" :loading="resetTargetLoading" :disabled="resetTargetLoading || resetSubmitting" @click="resetPort">{{ $t('switches.ports.resetPort') }}</UButton>
+        <div class="flex items-center gap-2">
+          <UButton
+            color="error"
+            variant="soft"
+            icon="i-heroicons-arrow-path"
+            :loading="resetTargetLoading"
+            :disabled="isLagMember || resetTargetLoading || resetSubmitting"
+            :aria-describedby="isLagMember ? 'port-reset-lag-hint' : undefined"
+            @click="resetPort"
+          >{{ $t('switches.ports.resetPort') }}</UButton>
+          <span v-if="isLagMember" id="port-reset-lag-hint" role="note" class="max-w-44 text-xs text-muted">
+            {{ $t('lag.managePortInEditor') }}
+          </span>
+        </div>
       </div>
     </template>
   </USlideover>
@@ -269,6 +283,7 @@
     @confirm="confirmResetPort"
   >
     <UCheckbox
+      v-if="resetCounterpartAvailable"
       v-model="resetCounterpart"
       :disabled="resetSubmitting"
       :label="$t('switches.ports.resetCounterpart', { switch: resetTarget.peerSwitchName, port: resetTarget.peerPortLabel })"
@@ -286,6 +301,7 @@ import type { IPAllocation } from '~~/types/ipAllocation'
 import type { LAGGroup } from '~~/types/lagGroup'
 import type { LayoutUnit } from '~~/types/layoutTemplate'
 import { buildCopyConnectionState, buildLagSyncFields, buildPortSaveDiff, buildSidePanelPortPutOptions } from '~/utils/sidePanelPortRequests'
+import { portConflictMessageKey } from '~/utils/portConflictMessage'
 
 const props = withDefaults(defineProps<{
   port: Port | null
@@ -312,7 +328,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   saved: []
-  'remove-from-lag': [lagId: string, portId: string]
+  'edit-lag': [lagId: string]
   'access-changed': []
 }>()
 
@@ -320,7 +336,6 @@ const isOpen = defineModel<boolean>()
 const { t } = useI18n()
 const toast = useToast()
 const { canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
-const { confirm } = useConfirm()
 const { apiFetch } = useApiFetch()
 const route = useRoute()
 const speeds = ['100M', '1G', '2.5G', '10G', '40G', '100G']
@@ -331,21 +346,26 @@ type ResetContext = {
   switchUuid: string
   siteId: string
   portId: string
+  lagGroupId: string | null
   peerSwitchId?: string
   peerPortId?: string
 }
 
 type ResetCounterpartTarget = ResetContext & {
-  peerSwitchName: string
-  peerPortLabel: string
+  peerSwitchName?: string
+  peerPortLabel?: string
 }
 
 const resetTarget = ref<ResetCounterpartTarget | null>(null)
 const resetCounterpart = ref(false)
+const resetCounterpartAvailable = ref(false)
 const showResetDialog = ref(false)
 const resetTargetLoading = ref(false)
 const resetSubmitting = ref(false)
 let resetGeneration = 0
+
+const currentLagGroupId = () => props.lagGroup?.id || props.port?.lag_group_id || null
+const isLagMember = computed(() => !!currentLagGroupId())
 
 const portModeOptions = computed(() => [
   { label: t('switches.ports.modeAccess'), value: 'access' },
@@ -1058,19 +1078,21 @@ async function save() {
       emit('saved')
       return
     }
-    const err = e as { statusCode?: number; data?: { message?: string } }
-    if (err.statusCode === 409) {
-      toast.add({ title: 'Switch was modified. Please try again.', color: 'warning' })
+    const messageKey = portConflictMessageKey(e, isLagMember.value ? 'lag' : 'port')
+    if (messageKey) {
+      toast.add({ title: t(messageKey), color: 'warning' })
       emit('saved')
       return
     }
+    const err = e as { statusCode?: number; data?: { message?: string } }
     toast.add({ title: err.data?.message || 'Failed', color: 'error' })
   }
 }
 
-function onRemoveFromLag() {
-  if (props.readonly || !canEditInfrastructure.value || !props.lagGroup || !props.port) return
-  emit('remove-from-lag', props.lagGroup.id, props.port!.id)
+function onEditLag() {
+  if (props.readonly || !canEditInfrastructure.value || !props.port) return
+  const lagId = props.lagGroup?.id || props.port.lag_group_id
+  if (lagId) emit('edit-lag', lagId)
 }
 
 // Compact footer picker: prefill selected config from another same-switch port.
@@ -1120,6 +1142,7 @@ function captureResetContext(): ResetContext | null {
     switchUuid: props.currentSwitchUuid || '',
     siteId: String(route.params.siteId || ''),
     portId: port.id,
+    lagGroupId: currentLagGroupId(),
     peerSwitchId: port.connected_device_id,
     peerPortId: port.connected_port_id
   }
@@ -1131,6 +1154,7 @@ function resetContextIsCurrent(context: ResetContext): boolean {
     (props.currentSwitchUuid || '') === context.switchUuid &&
     String(route.params.siteId || '') === context.siteId &&
     props.port?.id === context.portId &&
+    currentLagGroupId() === context.lagGroupId &&
     props.port.connected_device_id === context.peerSwitchId &&
     props.port.connected_port_id === context.peerPortId
 }
@@ -1163,6 +1187,7 @@ function clearResetConfirmation() {
   resetSubmitting.value = false
   showResetDialog.value = false
   resetCounterpart.value = false
+  resetCounterpartAvailable.value = false
   resetTarget.value = null
 }
 
@@ -1193,7 +1218,7 @@ watch([
 onBeforeUnmount(clearResetConfirmation)
 
 async function resetPort() {
-  if (props.readonly || !canEditInfrastructure.value || !props.port || resetTargetLoading.value || resetSubmitting.value) return
+  if (props.readonly || !canEditInfrastructure.value || !props.port || isLagMember.value || resetTargetLoading.value || resetSubmitting.value) return
   const context = captureResetContext()
   if (!context) return
   const generation = ++resetGeneration
@@ -1218,6 +1243,7 @@ async function resetPort() {
           peerSwitchName: peerSwitch.name,
           peerPortLabel: peerPort.label || `${peerPort.unit}/${peerPort.index}`
         }
+        resetCounterpartAvailable.value = true
         showResetDialog.value = true
         return
       }
@@ -1233,15 +1259,12 @@ async function resetPort() {
     if (generation !== resetGeneration || !resetContextIsCurrent(context)) return
   }
 
-  // Keep the existing confirmation and bodyless local DELETE when no exact,
-  // eligible reciprocal Access port can be verified.
-  const ok = await confirm({
-    title: t('switches.ports.confirmBulkResetTitle'),
-    message: t('switches.ports.confirmReset'),
-    confirmLabel: t('switches.ports.reset')
-  })
-  if (!ok || generation !== resetGeneration || !resetContextIsCurrent(context)) return
-  await submitPortReset(context, false, generation)
+  // Use the same dismissible dialog for local-only resets so a newly detected
+  // LAG membership can invalidate and close the pending confirmation.
+  if (generation !== resetGeneration || !resetContextIsCurrent(context) || isLagMember.value) return
+  resetTarget.value = context
+  resetCounterpartAvailable.value = false
+  showResetDialog.value = true
 }
 
 async function confirmResetPort() {
@@ -1249,7 +1272,7 @@ async function confirmResetPort() {
   if (!target || resetSubmitting.value) return
   const generation = resetGeneration
   const resetCounterpartPort = resetCounterpart.value
-  if (!resetContextIsCurrent(target) || (resetCounterpartPort && !canOfferCounterpartReset(props.port, target))) {
+  if (!resetContextIsCurrent(target) || isLagMember.value || (resetCounterpartPort && !canOfferCounterpartReset(props.port, target))) {
     if (resetCounterpartPort) toast.add({ title: t('switches.ports.resetCounterpartChanged'), color: 'warning' })
     clearResetConfirmation()
     return
@@ -1259,7 +1282,7 @@ async function confirmResetPort() {
 }
 
 async function submitPortReset(context: ResetContext, resetCounterpartPort: boolean, generation: number) {
-  if (generation !== resetGeneration || !resetContextIsCurrent(context) || (resetCounterpartPort && !canOfferCounterpartReset(props.port, context))) {
+  if (generation !== resetGeneration || !resetContextIsCurrent(context) || isLagMember.value || (resetCounterpartPort && !canOfferCounterpartReset(props.port, context))) {
     clearResetConfirmation()
     if (resetCounterpartPort) toast.add({ title: t('switches.ports.resetCounterpartChanged'), color: 'warning' })
     return
@@ -1281,9 +1304,16 @@ async function submitPortReset(context: ResetContext, resetCounterpartPort: bool
     }
     if (generation !== resetGeneration || !resetContextIsCurrent(context)) return
     const status = (error as { statusCode?: number; status?: number })?.statusCode ?? (error as { status?: number })?.status
-    if (resetCounterpartPort && status === 409) {
+    if (status === 409) {
       clearResetConfirmation()
-      toast.add({ title: t('switches.ports.resetCounterpartChanged'), color: 'warning' })
+      const messageKey = portConflictMessageKey(error, 'port')
+      if (messageKey === 'lag.memberResetForbidden' || messageKey === 'switches.ports.switchModified') {
+        toast.add({ title: t(messageKey), color: 'warning' })
+      } else if (resetCounterpartPort) {
+        toast.add({ title: t('switches.ports.resetCounterpartChanged'), color: 'warning' })
+      } else {
+        toast.add({ title: t(messageKey || 'switches.ports.assignmentConflict'), color: 'warning' })
+      }
       return
     }
     clearResetConfirmation()

@@ -11,6 +11,7 @@
 - Viewer role (Data Management): the **Data Management** entry is no longer shown in the sidebar for viewers, and a direct visit to `/data-management` shows no page content for them. If an admin loses the role while the page is open, its content is hidden. Profile and settings remain available. The server-side permissions for ordinary exports, import-template download and entity export are unchanged.
 - Viewer role (QR codes): viewers can now view the existing public-access QR code of a switch or patch panel and copy the link, download it as SVG or PNG, or scan it with an external phone camera. When no valid link exists (missing or revoked) a neutral notice is shown. Viewers still cannot create, regenerate or revoke links; admin controls are unchanged. The public URLs (`/p/<token>`, `/p/pp/<token>`) are unchanged, and the Patch Panels module toggle is still enforced.
 - Switch-port connections (Issue #289): saving a reciprocal Switch-port **Access** connection now creates the peer link independently of the optional VLAN copy, and the overwrite warning now compares against the correct counterpart port, so the false "overwrite" warning for an already-correct counterpart no longer appears. Choosing a different, occupied peer still shows the overwrite warning. No schema, dependency, token or authentication changes.
+- LAG member ports cannot be reset individually. Manage membership and peer mapping in the LAG editor instead; rejected resets leave both switches unchanged. LAG deletion and bulk reset behavior are unchanged.
 
 ## [0.41.0] — 2026-10-07
 
