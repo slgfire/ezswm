@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isAuthLoading || !user" class="flex min-h-48 items-center justify-center p-6" role="status" aria-live="polite">
+  <div v-if="isAuthLoading || !user || !canEditInfrastructure" class="flex min-h-48 items-center justify-center p-6" role="status" aria-live="polite">
     <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-muted" aria-hidden="true" />
     <span class="sr-only">{{ $t('common.loading') }}</span>
   </div>
@@ -253,6 +253,7 @@
 const toast = useToast()
 const { t } = useI18n()
 const { user, authResolved, isAuthLoading, isViewer, canEditInfrastructure, fetchUser, handleInfrastructureForbidden } = useAuth()
+definePageMeta({ middleware: 'admin' })
 useHead({ title: t('dataManagement.title') })
 
 const MAX_IMPORT_SIZE = 5 * 1024 * 1024 // 5MB
@@ -559,8 +560,8 @@ watch(canEditInfrastructure, (canEdit) => {
   importPreview.value = null
   importParsedData.value = null
   importResults.value = null
-  if (activeTab.value !== 'export') activeTab.value = 'export'
-})
+  if (authResolved.value) void navigateTo('/')
+}, { flush: 'sync' })
 
 onMounted(async () => {
   if (!authResolved.value) await fetchUser()

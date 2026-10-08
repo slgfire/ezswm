@@ -42,7 +42,7 @@
 
         <!-- Group B: Actions -->
         <SwitchPublicAccess
-          v-if="canEditInfrastructure"
+          v-if="authResolved && user"
           :switch-id="item?.id || id"
           :site-id="siteId"
           :switch-name="item.name"
@@ -243,6 +243,7 @@
       :port="selectedPort!"
       :ports="item?.ports || []"
       :switch-id="id"
+      :current-switch-uuid="item?.id"
       :configured-vlans="item?.configured_vlans || []"
       :switch-updated-at="item?.updated_at"
       :lag-group="selectedPort ? lagByPortId.get(selectedPort.id) : undefined"
@@ -471,7 +472,7 @@ const { t } = useI18n()
 const formatActivity = (entry: ActivityEntry) => _formatActivitySummary(entry, t, true)
 const relTime = (ts: string) => _relativeTime(ts, t)
 const toast = useToast()
-const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
+const { authResolved, user, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 let accessChangeNoticeShown = false
 
 function noticeAccessChanged() {

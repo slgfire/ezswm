@@ -78,13 +78,11 @@ const { updateAvailable, load } = useVersionCheck()
 onMounted(() => load())
 
 const route = useRoute()
-const { user } = useAuth()
+const { isAdmin } = useAuth()
 const { currentSiteId } = useCurrentSite()
 const { settings, fetch: fetchSettings } = useSettings()
 onMounted(() => { if (!settings.value) fetchSettings() })
 const patchPanelsEnabled = computed(() => settings.value?.patch_panels_enabled ?? false)
-const isAdmin = computed(() => user.value?.role === 'admin')
-
 const sitePrefix = computed(() => `/sites/${currentSiteId.value}`)
 
 const navSections = computed(() => [
@@ -114,7 +112,7 @@ const navSections = computed(() => [
     divider: true,
     items: [
       { to: '/layout-templates', icon: 'i-heroicons-rectangle-group', label: 'nav.layoutTemplates' },
-      { to: '/data-management', icon: 'i-heroicons-circle-stack', label: 'nav.dataManagement' }
+      ...(isAdmin.value ? [{ to: '/data-management', icon: 'i-heroicons-circle-stack', label: 'nav.dataManagement' }] : [])
     ]
   },
   {

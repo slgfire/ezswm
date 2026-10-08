@@ -2,6 +2,16 @@
 
 ---
 
+## [0.42.0] — 2026-10-07
+
+### Hinzugefügt
+- Switch-Port-Verbindungen: Beim Zurücksetzen eines lokalen Access-Ports (ohne LAG), der mit seinem wechselseitigen Access-Gegenport verbunden ist, kannst du optional auch den Gegenport zurücksetzen. Die Option ist standardmäßig nicht angehakt und zeigt Ziel-Switch und Port; angehakt wird der Gegenport vollständig zurückgesetzt, behält aber PoE, Helfer-Einstellungen, Port-Identität und die VLAN-Liste des Switches. Trunk- und LAG-Gegenstellen werden nicht angeboten, standardmäßig behält der Gegenport seine Konfiguration, und LAG- und Massen-Resets bleiben unverändert.
+
+### Behoben
+- Viewer-Rolle (Datenverwaltung): Der Eintrag **Datenverwaltung** wird Viewern nicht mehr in der Seitenleiste angezeigt, und ein direkter Aufruf von `/data-management` zeigt ihnen keinen Seiteninhalt. Verliert ein Admin die Rolle, während die Seite geöffnet ist, wird der Inhalt ausgeblendet. Profil und Einstellungen bleiben verfügbar. Die serverseitigen Berechtigungen für normale Exporte, den Import-Vorlagen-Download und den Entitätsexport sind unverändert.
+- Viewer-Rolle (QR-Codes): Viewer können den vorhandenen öffentlichen QR-Code eines Switches oder Patchpanels jetzt ansehen, den Link kopieren, als SVG oder PNG herunterladen oder mit einer externen Handy-Kamera scannen. Existiert kein gültiger Link (fehlend oder widerrufen), erscheint ein neutraler Hinweis. Viewer können Links weiterhin nicht erstellen, neu erzeugen oder widerrufen; Admin-Bedienelemente sind unverändert. Die öffentlichen URLs (`/p/<token>`, `/p/pp/<token>`) sind unverändert, und der Schalter des Patchpanel-Moduls gilt weiterhin.
+- Switch-Port-Verbindungen (Issue #289): Das Speichern einer wechselseitigen Switch-Port-**Access**-Verbindung legt die Gegenstelle jetzt unabhängig von der optionalen VLAN-Kopie an, und die Überschreiben-Warnung vergleicht jetzt mit dem richtigen Gegenport, sodass die fälschliche „Überschreiben“-Warnung bei einer bereits korrekten Gegenstelle nicht mehr erscheint. Wählst du einen anderen, belegten Gegenport, erscheint weiterhin die Überschreiben-Warnung. Keine Änderungen an Schema, Abhängigkeiten, Token oder Authentifizierung.
+
 ## [0.41.0] — 2026-10-07
 
 ### Hinzugefügt

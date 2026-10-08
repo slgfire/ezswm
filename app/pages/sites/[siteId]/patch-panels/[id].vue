@@ -9,14 +9,14 @@
           <p class="mt-1 text-sm text-muted">{{ $t('patchPanels.detailDescription') }}</p>
         </div>
       </div>
-      <div v-if="panel && canEditInfrastructure" class="flex items-center gap-1">
+      <div v-if="panel && authResolved && user" class="flex items-center gap-1">
         <PatchPanelPublicAccess
           :panel-id="panel.id"
           :site-id="siteId"
           :panel-name="panel.name"
         />
-        <UButton icon="i-heroicons-pencil" variant="ghost" color="primary" size="sm" :title="$t('common.edit')" @click="startEdit()" />
-        <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="openDeleteDialog()" />
+        <UButton v-if="canEditInfrastructure" icon="i-heroicons-pencil" variant="ghost" color="primary" size="sm" :title="$t('common.edit')" @click="startEdit()" />
+        <UButton v-if="canEditInfrastructure" icon="i-heroicons-trash" variant="ghost" color="error" size="sm" :title="$t('common.delete')" @click="openDeleteDialog()" />
       </div>
     </div>
 
@@ -312,7 +312,7 @@ import type { PatchPanelSocket } from '~~/types/patchPanel'
 
 const { t } = useI18n()
 const toast = useToast()
-const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
+const { authResolved, user, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 const route = useRoute()
 const router = useRouter()
 const siteId = computed(() => route.params.siteId as string)

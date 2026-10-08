@@ -128,3 +128,11 @@ export const configuredVlansSchema = z.discriminatedUnion('action', [
   configuredVlansRemoveSchema,
   configuredVlansRemoveConfirmedSchema
 ])
+
+// Optional DELETE body for a port reset. A missing body keeps the legacy behaviour (reset only this port).
+export const resetPortSchema = z.object({
+  reset_counterpart: z.boolean().optional().default(false),
+  expected_counterpart_port_id: z.string().min(1).optional()
+}).strict().refine(v => !v.reset_counterpart || v.expected_counterpart_port_id !== undefined, {
+  message: 'expected_counterpart_port_id is required when reset_counterpart is true'
+})

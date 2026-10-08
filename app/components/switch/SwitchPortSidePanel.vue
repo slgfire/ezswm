@@ -254,10 +254,27 @@
           </UDropdownMenu>
           <UButton :disabled="!baselineReady" @click="onSaveClick">{{ $t('common.save') }}</UButton>
         </div>
-        <UButton color="error" variant="soft" icon="i-heroicons-arrow-path" @click="resetPort">{{ $t('switches.ports.resetPort') }}</UButton>
+        <UButton color="error" variant="soft" icon="i-heroicons-arrow-path" :loading="resetTargetLoading" :disabled="resetTargetLoading || resetSubmitting" @click="resetPort">{{ $t('switches.ports.resetPort') }}</UButton>
       </div>
     </template>
   </USlideover>
+
+  <SharedConfirmDialog
+    v-if="isOpen && !readonly && canEditInfrastructure && resetTarget"
+    v-model="showResetDialog"
+    :title="$t('switches.ports.confirmBulkResetTitle')"
+    :message="$t('switches.ports.confirmReset')"
+    :confirm-label="$t('switches.ports.reset')"
+    :loading="resetSubmitting"
+    @confirm="confirmResetPort"
+  >
+    <UCheckbox
+      v-model="resetCounterpart"
+      :disabled="resetSubmitting"
+      :label="$t('switches.ports.resetCounterpart', { switch: resetTarget.peerSwitchName, port: resetTarget.peerPortLabel })"
+      class="mt-4"
+    />
+  </SharedConfirmDialog>
 </template>
 
 <script setup lang="ts">
@@ -273,6 +290,7 @@ import { buildCopyConnectionState, buildLagSyncFields, buildPortSaveDiff, buildS
 const props = withDefaults(defineProps<{
   port: Port | null
   switchId: string
+  currentSwitchUuid?: string
   lagGroup?: LAGGroup
   configuredVlans?: number[]
   switchUpdatedAt?: string
@@ -285,6 +303,7 @@ const props = withDefaults(defineProps<{
   lagGroup: undefined,
   configuredVlans: () => [],
   switchUpdatedAt: undefined,
+  currentSwitchUuid: undefined,
   templateUnits: () => [],
   ports: () => [],
   vlans: () => [],
@@ -306,6 +325,27 @@ const { apiFetch } = useApiFetch()
 const route = useRoute()
 const speeds = ['100M', '1G', '2.5G', '10G', '40G', '100G']
 const siteParams = computed(() => route.params.siteId && route.params.siteId !== 'all' ? { siteId: route.params.siteId as string } : undefined)
+
+type ResetContext = {
+  switchRouteId: string
+  switchUuid: string
+  siteId: string
+  portId: string
+  peerSwitchId?: string
+  peerPortId?: string
+}
+
+type ResetCounterpartTarget = ResetContext & {
+  peerSwitchName: string
+  peerPortLabel: string
+}
+
+const resetTarget = ref<ResetCounterpartTarget | null>(null)
+const resetCounterpart = ref(false)
+const showResetDialog = ref(false)
+const resetTargetLoading = ref(false)
+const resetSubmitting = ref(false)
+let resetGeneration = 0
 
 const portModeOptions = computed(() => [
   { label: t('switches.ports.modeAccess'), value: 'access' },
@@ -570,10 +610,10 @@ const remotePortSearchOptions = computed(() => {
   if (!sw?.ports) return []
   return [
     { label: '—', value: '', connected: '' },
-    ...sw.ports.filter((p: Port) => !(selectedSwitchId.value === props.switchId && p.id === props.port?.id))
+    ...sw.ports.filter((p: Port) => !(props.currentSwitchUuid && selectedSwitchId.value === props.currentSwitchUuid && p.id === props.port?.id))
       .map((p: Port) => {
         const label = p.label || `${p.unit}/${p.index}`
-        const connected = (p.connected_device_id && !(p.connected_device_id === props.switchId && p.connected_port_id === props.port?.id))
+        const connected = (p.connected_device_id && !(props.currentSwitchUuid && p.connected_device_id === props.currentSwitchUuid && p.connected_port_id === props.port?.id))
           ? `→ ${p.connected_device}`
           : p.connected_allocation_id
             ? `→ ${p.connected_device || 'Device'}`
@@ -600,7 +640,7 @@ const portConflict = computed(() => {
     return { device: port.connected_device || 'Device', port: port.connected_port || '' }
   }
   if (!port?.connected_device_id) return null
-  if (port.connected_device_id === props.switchId && port.connected_port_id === props.port?.id) return null
+  if (props.currentSwitchUuid && port.connected_device_id === props.currentSwitchUuid && port.connected_port_id === props.port?.id) return null
   return { device: port.connected_device || 'Unknown', port: port.connected_port || 'Unknown port' }
 })
 
@@ -1072,25 +1112,185 @@ const sourceMenuItems = computed(() =>
   sourcePortOptions.value.map(o => ({ label: o.label, onSelect: () => applyCopyFromPort(o.value) }))
 )
 
+function captureResetContext(): ResetContext | null {
+  const port = props.port
+  if (!port) return null
+  return {
+    switchRouteId: props.switchId,
+    switchUuid: props.currentSwitchUuid || '',
+    siteId: String(route.params.siteId || ''),
+    portId: port.id,
+    peerSwitchId: port.connected_device_id,
+    peerPortId: port.connected_port_id
+  }
+}
+
+function resetContextIsCurrent(context: ResetContext): boolean {
+  return !props.readonly && canEditInfrastructure.value &&
+    props.switchId === context.switchRouteId &&
+    (props.currentSwitchUuid || '') === context.switchUuid &&
+    String(route.params.siteId || '') === context.siteId &&
+    props.port?.id === context.portId &&
+    props.port.connected_device_id === context.peerSwitchId &&
+    props.port.connected_port_id === context.peerPortId
+}
+
+function isEligibleAccessPort(port: Port | undefined) {
+  return !!port && port.port_mode === 'access' && !port.lag_group_id
+}
+
+function canOfferCounterpartReset(port: Port | null, context: ResetContext) {
+  return !!context.switchUuid && !!context.peerSwitchId && !!context.peerPortId &&
+    !props.lagGroup && isEligibleAccessPort(port || undefined)
+}
+
+function resetRequestOptions(context: ResetContext, resetCounterpartPort: boolean) {
+  const query = context.siteId && context.siteId !== 'all' ? `?siteId=${encodeURIComponent(context.siteId)}` : ''
+  const url = `/api/switches/${context.switchRouteId}/ports/${context.portId}${query}`
+  if (!resetCounterpartPort) return { url, options: { method: 'DELETE' as const } }
+  return {
+    url,
+    options: {
+      method: 'DELETE' as const,
+      body: { reset_counterpart: true, expected_counterpart_port_id: context.peerPortId }
+    }
+  }
+}
+
+function clearResetConfirmation() {
+  resetGeneration++
+  resetTargetLoading.value = false
+  resetSubmitting.value = false
+  showResetDialog.value = false
+  resetCounterpart.value = false
+  resetTarget.value = null
+}
+
+watch(showResetDialog, (open) => {
+  if (!open && !resetSubmitting.value) clearResetConfirmation()
+})
+
+watch(isOpen, (open) => {
+  if (!open) clearResetConfirmation()
+}, { flush: 'sync' })
+
+watch([
+  () => props.port?.id,
+  () => props.port?.port_mode,
+  () => props.port?.tagged_vlans,
+  () => props.port?.lag_group_id,
+  () => props.port?.connected_allocation_id,
+  () => props.port?.connected_device_id,
+  () => props.port?.connected_port_id,
+  () => props.lagGroup?.id,
+  () => props.currentSwitchUuid,
+  () => props.switchId,
+  () => props.readonly,
+  () => route.params.siteId,
+  canEditInfrastructure
+], clearResetConfirmation, { flush: 'sync' })
+
+onBeforeUnmount(clearResetConfirmation)
+
 async function resetPort() {
-  if (props.readonly || !canEditInfrastructure.value) return
+  if (props.readonly || !canEditInfrastructure.value || !props.port || resetTargetLoading.value || resetSubmitting.value) return
+  const context = captureResetContext()
+  if (!context) return
+  const generation = ++resetGeneration
+  resetCounterpart.value = false
+  resetTarget.value = null
+
+  if (canOfferCounterpartReset(props.port, context)) {
+    resetTargetLoading.value = true
+    try {
+      const params = context.siteId && context.siteId !== 'all' ? { siteId: context.siteId } : undefined
+      const peerSwitch = await apiFetch<Switch>(`/api/switches/${context.peerSwitchId}`, { params })
+      if (generation !== resetGeneration || !resetContextIsCurrent(context)) return
+      const peerPort = peerSwitch.id === context.peerSwitchId
+        ? peerSwitch.ports?.find(port => port.id === context.peerPortId)
+        : undefined
+      if (
+        peerPort && peerPort.connected_device_id === context.switchUuid && peerPort.connected_port_id === context.portId &&
+        isEligibleAccessPort(peerPort)
+      ) {
+        resetTarget.value = {
+          ...context,
+          peerSwitchName: peerSwitch.name,
+          peerPortLabel: peerPort.label || `${peerPort.unit}/${peerPort.index}`
+        }
+        showResetDialog.value = true
+        return
+      }
+    } catch (error: unknown) {
+      if (generation !== resetGeneration || !resetContextIsCurrent(context)) return
+      const access = await handleInfrastructureForbidden(error)
+      if (access === 'demoted') emit('access-changed')
+      if (access === 'demoted' || access === 'already-handled') return
+      // An unavailable peer hides the option; the existing local-only reset remains available.
+    } finally {
+      if (generation === resetGeneration) resetTargetLoading.value = false
+    }
+    if (generation !== resetGeneration || !resetContextIsCurrent(context)) return
+  }
+
+  // Keep the existing confirmation and bodyless local DELETE when no exact,
+  // eligible reciprocal Access port can be verified.
   const ok = await confirm({
     title: t('switches.ports.confirmBulkResetTitle'),
     message: t('switches.ports.confirmReset'),
     confirmLabel: t('switches.ports.reset')
   })
-  if (!ok || props.readonly || !canEditInfrastructure.value) return
+  if (!ok || generation !== resetGeneration || !resetContextIsCurrent(context)) return
+  await submitPortReset(context, false, generation)
+}
+
+async function confirmResetPort() {
+  const target = resetTarget.value
+  if (!target || resetSubmitting.value) return
+  const generation = resetGeneration
+  const resetCounterpartPort = resetCounterpart.value
+  if (!resetContextIsCurrent(target) || (resetCounterpartPort && !canOfferCounterpartReset(props.port, target))) {
+    if (resetCounterpartPort) toast.add({ title: t('switches.ports.resetCounterpartChanged'), color: 'warning' })
+    clearResetConfirmation()
+    return
+  }
+  resetSubmitting.value = true
+  await submitPortReset(target, resetCounterpartPort, generation)
+}
+
+async function submitPortReset(context: ResetContext, resetCounterpartPort: boolean, generation: number) {
+  if (generation !== resetGeneration || !resetContextIsCurrent(context) || (resetCounterpartPort && !canOfferCounterpartReset(props.port, context))) {
+    clearResetConfirmation()
+    if (resetCounterpartPort) toast.add({ title: t('switches.ports.resetCounterpartChanged'), color: 'warning' })
+    return
+  }
   try {
-    const siteId = useRoute().params.siteId as string
-    const query = siteId && siteId !== 'all' ? `?siteId=${encodeURIComponent(siteId)}` : ''
-    await ($fetch as typeof globalThis.fetch)(`/api/switches/${props.switchId}/ports/${props.port!.id}${query}`, { method: 'DELETE' })
-    toast.add({ title: t('switches.ports.portReset'), color: 'success' }); emit('saved'); isOpen.value = false
-  } catch (e: unknown) {
-    const access = await handleInfrastructureForbidden(e)
+    const { url, options } = resetRequestOptions(context, resetCounterpartPort)
+    await ($fetch as unknown as (request: string, options: { method: 'DELETE'; body?: Record<string, unknown> }) => Promise<unknown>)(url, options)
+    if (generation !== resetGeneration || !resetContextIsCurrent(context)) return
+    clearResetConfirmation()
+    toast.add({ title: t('switches.ports.portReset'), color: 'success' })
+    emit('saved')
+    isOpen.value = false
+  } catch (error: unknown) {
+    const access = await handleInfrastructureForbidden(error)
     if (access === 'demoted') emit('access-changed')
-    if (access === 'demoted' || access === 'already-handled') return
-    const err = e as { data?: { message?: string } }
-    toast.add({ title: err.data?.message || 'Reset failed', color: 'error' })
+    if (access === 'demoted' || access === 'already-handled') {
+      clearResetConfirmation()
+      return
+    }
+    if (generation !== resetGeneration || !resetContextIsCurrent(context)) return
+    const status = (error as { statusCode?: number; status?: number })?.statusCode ?? (error as { status?: number })?.status
+    if (resetCounterpartPort && status === 409) {
+      clearResetConfirmation()
+      toast.add({ title: t('switches.ports.resetCounterpartChanged'), color: 'warning' })
+      return
+    }
+    clearResetConfirmation()
+    const message = (error as { data?: { message?: string } })?.data?.message
+    toast.add({ title: message || 'Reset failed', color: 'error' })
+  } finally {
+    if (generation === resetGeneration) resetSubmitting.value = false
   }
 }
 </script>

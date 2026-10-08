@@ -313,6 +313,8 @@
       "portUpdated": "Port updated",
       "portReset": "Port reset to defaults",
       "resetPort": "Reset Port",
+      "resetCounterpart": "Also reset {switch} port {port} to defaults (clears VLANs, status, and configuration)",
+      "resetCounterpartChanged": "The connection changed before reset. Reload the port and try again.",
       "setToUp": "Yes, set to up",
       "keepDown": "No, keep down",
       "portDownPrompt": "This port is currently \"down\". Set it to \"up\" since you are connecting it?",

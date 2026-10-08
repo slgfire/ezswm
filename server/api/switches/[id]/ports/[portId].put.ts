@@ -93,12 +93,7 @@ export default defineEventHandler(async (event) => {
       // 2. Sync VLAN config + back-link to the connected port on the target switch
       if (connectedPortId && portMode) {
         const targetPortUpdate: Partial<Omit<Port, 'id' | 'unit' | 'index'>> = {
-          port_mode: portMode as Port['port_mode'],
-          // Set bidirectional connection back to source
-          connected_device: existing.name,
-          connected_device_id: existing.id,
-          connected_port: oldPort?.label || portId,
-          connected_port_id: portId
+          port_mode: portMode as Port['port_mode']
         }
         if (portMode === 'access') {
           targetPortUpdate.access_vlan = accessVlan ?? undefined

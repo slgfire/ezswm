@@ -157,6 +157,7 @@ Two main sections:
 - Edit port details inline
 - VLAN selection (native + tagged)
 - Connected device (freetext or switch reference dropdown)
+- Reset of a local Access non-LAG port connected to the exact reciprocal Access non-LAG peer shows an optional checkbox (default unchecked) naming the target switch and port; unchecked resets only the local port and severs the link on both ends, checked also fully resets the counterpart (status down; speed/mode/VLANs/link/allocation/description/MAC cleared; port identity, PoE, helpers and the switch's configured VLAN list kept). Trunk/LAG peers are never offered. Request fields `reset_counterpart` + `expected_counterpart_port_id` (strict, optional). LAG and bulk flows unchanged (prepared 0.42.0).
 - LAG group assignment
 - Save/cancel actions
 
@@ -251,6 +252,9 @@ Three sections:
 - Real-time calculation as user types
 
 ### 3.15 Import/Export (`/import-export`)
+
+- Data Management (`/data-management`, standalone route) is admin-only in the UI prepared 0.42.0: the sidebar entry is hidden for viewers, a direct visit renders no page content, and content is hidden if the role is lost while open (profile/settings unaffected). Backend policy is unchanged: ordinary GET `/api/data/export`, `/api/data/template` and `/api/export/entity` stay viewer-allowed.
+- Public QR (switch and patch panel drawers): viewers see the existing QR code, copy the link and download SVG/PNG (external phone scan; no built-in camera scanner); missing or revoked links show a neutral notice and viewers never create, regenerate or revoke tokens (admin controls unchanged). URLs `/p/<token>` and `/p/pp/<token>` are stable; the Patch Panels module toggle is still enforced.
 
 - Tab-based UI: Import | Export
 
