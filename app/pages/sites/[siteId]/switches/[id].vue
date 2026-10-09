@@ -42,7 +42,7 @@
 
         <!-- Group B: Actions -->
         <SwitchPublicAccess
-          v-if="canEditInfrastructure"
+          v-if="authResolved && user"
           :switch-id="item?.id || id"
           :site-id="siteId"
           :switch-name="item.name"
@@ -243,6 +243,7 @@
       :port="selectedPort!"
       :ports="item?.ports || []"
       :switch-id="id"
+      :current-switch-uuid="item?.id"
       :configured-vlans="item?.configured_vlans || []"
       :switch-updated-at="item?.updated_at"
       :lag-group="selectedPort ? lagByPortId.get(selectedPort.id) : undefined"
@@ -250,7 +251,7 @@
       :vlans="vlans"
       :readonly="!canEditInfrastructure"
       @saved="fetchSwitch"
-      @remove-from-lag="onRemovePortFromLag"
+      @edit-lag="onEditLagFromPort"
       @access-changed="noticeAccessChanged"
     />
 
@@ -462,7 +463,6 @@ import type { Port } from '~~/types/port'
 import type { Switch } from '~~/types/switch'
 import { getLagEligibleSelectedPortIds } from '~/utils/lagPortOptions'
 import type { LAGGroup } from '~~/types/lagGroup'
-import { routeLagMemberRemoval } from '~/utils/lagMemberRemoval'
 import type { ActivityEntry } from '~~/types/activity'
 import { formatActivitySummary as _formatActivitySummary } from '~/utils/activityFormat'
 import { relativeTime as _relativeTime } from '~/utils/timeFormat'
@@ -471,7 +471,7 @@ const { t } = useI18n()
 const formatActivity = (entry: ActivityEntry) => _formatActivitySummary(entry, t, true)
 const relTime = (ts: string) => _relativeTime(ts, t)
 const toast = useToast()
-const { authResolved, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
+const { authResolved, user, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 let accessChangeNoticeShown = false
 
 function noticeAccessChanged() {
@@ -507,7 +507,7 @@ useHead({ title: computed(() => item.value?.name || t('switches.title')) })
 const { duplicate } = useSwitches()
 const { items: templates, fetch: fetchTemplates } = useLayoutTemplates()
 const { items: vlans, fetch: fetchVlans } = useVlans()
-const { items: lagGroups, fetch: fetchLags, lagById, lagByPortId, update: updateLag, remove: removeLag } = useLagGroups(id, siteId)
+const { items: lagGroups, fetch: fetchLags, lagById, lagByPortId, remove: removeLag } = useLagGroups(id, siteId)
 
 // Global switch-groups toggle: while disabled the switch save body must not
 // carry group_id (the groups API is 404-gated). Default ON until settings
@@ -743,34 +743,24 @@ async function onLagSaved() {
   await fetchLags()
 }
 
-async function onRemovePortFromLag(lagId: string, portId: string) {
+async function onEditLagFromPort(lagId: string) {
   if (!canEditInfrastructure.value) return
-  const lag = lagById.value.get(lagId)
-  if (!lag) return
-  try {
-    const newPortIds = lag.port_ids.filter(pid => pid !== portId)
-
-    if (lag.remote_device_id) {
-      routeLagMemberRemoval(lag, portId, (value, removePortId) => { void lagSlideoverRef.value?.openEdit(value, removePortId) }, () => {})
+  let lag = lagById.value.get(lagId)
+  if (!lag) {
+    try {
+      await fetchLags()
+    } catch {
+      toast.add({ title: t('lag.groupUnavailable'), color: 'warning' })
       return
     }
-    if (newPortIds.length < 2) {
-      onDeleteLagClick(lag)
-      return
-    } else {
-      // Remove port from local LAG
-      if (!canEditInfrastructure.value) return
-      await updateLag(lagId, { port_ids: newPortIds })
-
-       toast.add({ title: t('lag.messages.portRemoved'), color: 'success' })
-    }
-    await fetchSwitch()
-    await fetchLags()
-  } catch (e: unknown) {
-    if (await handleMutationError(e)) return
-    const err = e as { data?: { message?: string } }
-    toast.add({ title: err?.data?.message || t('errors.serverError'), color: 'error' })
+    lag = lagById.value.get(lagId)
   }
+  if (!canEditInfrastructure.value) return
+  if (!lag) {
+    toast.add({ title: t('lag.groupUnavailable'), color: 'warning' })
+    return
+  }
+  await lagSlideoverRef.value?.openEdit(lag)
 }
 
 watch(canEditInfrastructure, (canEdit, wasEditable) => {

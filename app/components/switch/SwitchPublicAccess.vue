@@ -1,6 +1,6 @@
 <template>
   <!-- Trigger button (placed in header by parent) -->
-  <UTooltip :text="$t('public.admin.title')">
+  <UTooltip v-if="authResolved && user" :text="$t('public.admin.title')">
     <UButton
       icon="i-heroicons-qr-code"
       variant="ghost"
@@ -12,7 +12,7 @@
   </UTooltip>
 
   <!-- Slideover drawer -->
-  <USlideover v-model:open="drawerOpen" :title="$t('public.admin.title')" :description="$t('public.admin.linkLabel')">
+  <USlideover v-if="authResolved && user" :open="drawerOpen" :title="$t('public.admin.title')" :description="$t('public.admin.linkLabel')" @update:open="onDrawerOpenChange">
     <template #body>
       <div class="space-y-6">
         <!-- Loading -->
@@ -25,9 +25,10 @@
           <div class="rounded-lg border border-dashed border-accented p-6 text-center">
             <UIcon name="i-heroicons-qr-code" class="mx-auto mb-3 h-10 w-10 text-muted" />
             <p class="text-sm text-muted">{{ $t('public.admin.linkLabel') }}</p>
-            <UButton class="mt-4" color="primary" icon="i-heroicons-qr-code" :loading="loading" @click="handleGenerate">
+            <UButton v-if="canEditInfrastructure" class="mt-4" color="primary" icon="i-heroicons-qr-code" :loading="loading" @click="handleGenerate">
               {{ $t('public.admin.generate') }}
             </UButton>
+            <p v-else class="mt-4 text-sm text-muted">{{ $t('permissions.qrUnavailable') }}</p>
           </div>
         </div>
 
@@ -35,8 +36,9 @@
         <div v-else-if="token.revoked_at" class="space-y-4 py-4">
           <div class="rounded-lg border border-dashed border-amber-600/40 p-6 text-center">
             <UIcon name="i-heroicons-exclamation-triangle" class="mx-auto mb-3 h-10 w-10 text-amber-500" />
-            <p class="text-sm text-amber-400">{{ $t('public.admin.revoked', { date: new Date(token.revoked_at).toLocaleString() }) }}</p>
-            <UButton class="mt-4" color="primary" icon="i-heroicons-qr-code" :loading="loading" @click="handleGenerate">
+            <p v-if="canEditInfrastructure" class="text-sm text-amber-400">{{ $t('public.admin.revoked', { date: new Date(token.revoked_at).toLocaleString() }) }}</p>
+            <p v-else class="text-sm text-muted">{{ $t('permissions.qrUnavailable') }}</p>
+            <UButton v-if="canEditInfrastructure" class="mt-4" color="primary" icon="i-heroicons-qr-code" :loading="loading" @click="handleGenerate">
               {{ $t('public.admin.generateNew') }}
             </UButton>
           </div>
@@ -90,7 +92,7 @@
             <UButton block size="sm" color="neutral" variant="soft" icon="i-heroicons-printer" @click="handlePrintSticker">
               {{ $t('public.admin.printSticker') }}
             </UButton>
-            <UButton block size="sm" color="error" variant="soft" icon="i-heroicons-x-mark" @click="void (showRevokeConfirm = true)">
+            <UButton v-if="canEditInfrastructure" block size="sm" color="error" variant="soft" icon="i-heroicons-x-mark" @click="void (showRevokeConfirm = true)">
               {{ $t('public.admin.revoke') }}
             </UButton>
           </div>
@@ -100,6 +102,7 @@
   </USlideover>
 
   <SharedConfirmDialog
+    v-if="authResolved && canEditInfrastructure"
     v-model="showRevokeConfirm"
     :title="$t('public.admin.revoke')"
     :message="$t('public.admin.revokeConfirm')"
@@ -109,6 +112,7 @@
 
 <script setup lang="ts">
 import QRCode from 'qrcode'
+import type { PublicToken } from '~~/types/publicToken'
 
 const props = defineProps<{
   switchId: string
@@ -119,15 +123,51 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const toast = useToast()
-const { canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
+const { authResolved, user, canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
 
 const drawerOpen = ref(false)
 const showRevokeConfirm = ref(false)
 const qrCanvas = ref<HTMLCanvasElement | null>(null)
 
-const { token, loading, fetchToken, createToken, revokeToken } = usePublicToken(props.switchId, toRef(() => props.siteId ?? ''))
+const { token, loading } = usePublicToken(props.switchId, toRef(() => props.siteId ?? ''))
 
 const emit = defineEmits<{ 'access-changed': [] }>()
+
+let readGeneration = 0
+let permissionGeneration = 0
+let operationGeneration = 0
+let accessChangeNoticeShown = false
+
+function tokenPath(switchId: string) {
+  return `/api/switches/${switchId}/public-token`
+}
+
+function tokenQuery(siteId: string | undefined) {
+  return siteId ? { siteId } : undefined
+}
+
+function isCurrentRead(request: number, switchId: string, siteId: string | undefined, userId: string) {
+  return request === readGeneration && authResolved.value && !!user.value && user.value.id === userId &&
+    drawerOpen.value && props.switchId === switchId && (props.siteId ?? '') === (siteId ?? '')
+}
+
+function isCurrentOperation(operation: number, permission: number, switchId: string, siteId: string | undefined) {
+  return authResolved.value && !!user.value && canEditInfrastructure.value && drawerOpen.value &&
+    operation === operationGeneration && permission === permissionGeneration &&
+    props.switchId === switchId && (props.siteId ?? '') === (siteId ?? '')
+}
+
+function clearQrCanvas() {
+  const canvas = qrCanvas.value
+  if (!canvas) return
+  canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
+}
+
+function noticeAccessChanged() {
+  if (accessChangeNoticeShown) return
+  accessChangeNoticeShown = true
+  emit('access-changed')
+}
 
 const publicUrl = computed(() => {
   if (!token.value) return ''
@@ -138,23 +178,65 @@ const publicUrl = computed(() => {
 })
 
 function openDrawer() {
-  if (!canEditInfrastructure.value) return
+  if (!authResolved.value || !user.value) return
   drawerOpen.value = true
   if (token.value === null && !loading.value) {
-    fetchToken()
+    void fetchTokenForDrawer()
+  }
+}
+
+function onDrawerOpenChange(open: boolean) {
+  if (open) {
+    openDrawer()
+    return
+  }
+  drawerOpen.value = false
+  readGeneration++
+  operationGeneration++
+  showRevokeConfirm.value = false
+  loading.value = false
+  clearQrCanvas()
+}
+
+async function fetchTokenForDrawer() {
+  if (!authResolved.value || !user.value || !drawerOpen.value) return
+  const request = ++readGeneration
+  const switchId = props.switchId
+  const siteId = props.siteId
+  const userId = user.value.id
+  loading.value = true
+  try {
+    const data = await $fetch<PublicToken>(tokenPath(switchId), { query: tokenQuery(siteId) })
+    if (isCurrentRead(request, switchId, siteId, userId)) token.value = data
+  } catch (error: unknown) {
+    const status = (error as { statusCode?: number; status?: number })?.statusCode ?? (error as { status?: number })?.status
+    if (isCurrentRead(request, switchId, siteId, userId) && status === 404) token.value = null
+    if (status !== 404) {
+      const access = await handleInfrastructureForbidden(error)
+      if (access === 'demoted') noticeAccessChanged()
+      if (isCurrentRead(request, switchId, siteId, userId)) token.value = null
+    }
+  } finally {
+    if (request === readGeneration) loading.value = false
   }
 }
 
 // Render QR code when token becomes available and canvas is mounted
 watch([token, qrCanvas], async ([tok, canvas]) => {
-  if (tok && !tok.revoked_at && canvas) {
+  const request = readGeneration
+  const switchId = props.switchId
+  const siteId = props.siteId
+  const userId = user.value?.id
+  if (tok && !tok.revoked_at && canvas && authResolved.value && userId && drawerOpen.value) {
     await nextTick()
+    if (!userId || !isCurrentRead(request, switchId, siteId, userId) || token.value !== tok || !canvas.isConnected) return
     try {
       await QRCode.toCanvas(canvas, publicUrl.value, {
         width: 180,
         margin: 1,
         color: { dark: '#000000', light: '#ffffff' }
       })
+      if (!isCurrentRead(request, switchId, siteId, userId) || token.value !== tok) clearQrCanvas()
     } catch {
       // QR render failed silently
     }
@@ -162,36 +244,66 @@ watch([token, qrCanvas], async ([tok, canvas]) => {
 })
 
 async function handleGenerate() {
-  if (!canEditInfrastructure.value) return
+  if (!authResolved.value || !user.value || !canEditInfrastructure.value || !drawerOpen.value) return
+  const permission = permissionGeneration
+  const switchId = props.switchId
+  const siteId = props.siteId
+  const operation = ++operationGeneration
+  readGeneration++
+  loading.value = true
   try {
-    await createToken()
+    const data = await $fetch<PublicToken>(tokenPath(switchId), { method: 'POST', query: tokenQuery(siteId) })
+    if (!isCurrentOperation(operation, permission, switchId, siteId)) return
+    token.value = data
     toast.add({ title: t('public.admin.generated'), color: 'success' })
   } catch (error: unknown) {
     const access = await handleInfrastructureForbidden(error)
     if (access === 'demoted') emit('access-changed')
     if (access === 'demoted' || access === 'already-handled') return
-    toast.add({ title: t('public.admin.generateFailed'), color: 'error' })
+    if (isCurrentOperation(operation, permission, switchId, siteId)) toast.add({ title: t('public.admin.generateFailed'), color: 'error' })
+  } finally {
+    if (operation === operationGeneration || !canEditInfrastructure.value) loading.value = false
   }
 }
 
 async function handleRevoke() {
-  if (!canEditInfrastructure.value) {
+  if (!authResolved.value || !user.value || !canEditInfrastructure.value || !drawerOpen.value || !showRevokeConfirm.value) {
     showRevokeConfirm.value = false
     return
   }
+  const permission = permissionGeneration
+  const switchId = props.switchId
+  const siteId = props.siteId
+  const previousToken = token.value
+  const operation = ++operationGeneration
+  readGeneration++
   showRevokeConfirm.value = false
+  loading.value = true
   try {
-    await revokeToken()
+    await $fetch(tokenPath(switchId), { method: 'DELETE', query: tokenQuery(siteId) })
+    if (!isCurrentOperation(operation, permission, switchId, siteId)) {
+      if (token.value === previousToken && props.switchId === switchId && (props.siteId ?? '') === (siteId ?? '')) token.value = null
+      return
+    }
     toast.add({ title: t('public.admin.revokedSuccess'), color: 'success' })
+    await fetchTokenForDrawer()
   } catch (error: unknown) {
     const access = await handleInfrastructureForbidden(error)
     if (access === 'demoted') emit('access-changed')
     if (access === 'demoted' || access === 'already-handled') return
-    toast.add({ title: t('public.admin.revokeFailed'), color: 'error' })
+    if (isCurrentOperation(operation, permission, switchId, siteId)) toast.add({ title: t('public.admin.revokeFailed'), color: 'error' })
+  } finally {
+    if (operation === operationGeneration || !canEditInfrastructure.value) loading.value = false
   }
 }
 
 async function handleCopy() {
+  if (!authResolved.value || !user.value || !drawerOpen.value || !token.value || token.value.revoked_at) return
+  const tok = token.value
+  const switchId = props.switchId
+  const siteId = props.siteId
+  const userId = user.value.id
+  const request = readGeneration
   const text = publicUrl.value
   let copied = false
 
@@ -199,12 +311,14 @@ async function handleCopy() {
   if (navigator.clipboard) {
     try {
       await navigator.clipboard.writeText(text)
+      if (!isCurrentRead(request, switchId, siteId, userId) || token.value !== tok) return
       copied = true
     } catch { /* fall through */ }
   }
 
   // Fallback: textarea + execCommand (desktop HTTP, older browsers)
   if (!copied) {
+    if (!isCurrentRead(request, switchId, siteId, userId) || token.value !== tok) return
     try {
       const el = document.createElement('textarea')
       el.value = text
@@ -221,6 +335,8 @@ async function handleCopy() {
     } catch { /* fall through */ }
   }
 
+  if (!isCurrentRead(request, switchId, siteId, userId) || token.value !== tok) return
+
   // Last resort: the link is shown in the panel, so just flag the failure.
   if (!copied) {
     toast.add({ title: t('public.admin.copyFailed'), color: 'error' })
@@ -231,13 +347,19 @@ async function handleCopy() {
 }
 
 async function handleDownloadSvg() {
-  if (!token.value) return
+  if (!authResolved.value || !user.value || !drawerOpen.value || !token.value || token.value.revoked_at) return
+  const tok = token.value
+  const switchId = props.switchId
+  const siteId = props.siteId
+  const userId = user.value.id
+  const request = readGeneration
   try {
     const svg = await QRCode.toString(publicUrl.value, {
       type: 'svg',
       margin: 1,
       color: { dark: '#000000', light: '#ffffff' }
     })
+    if (!isCurrentRead(request, switchId, siteId, userId) || token.value !== tok) return
     const blob = new Blob([svg], { type: 'image/svg+xml' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -251,13 +373,19 @@ async function handleDownloadSvg() {
 }
 
 async function handleDownloadPng() {
-  if (!token.value) return
+  if (!authResolved.value || !user.value || !drawerOpen.value || !token.value || token.value.revoked_at) return
+  const tok = token.value
+  const switchId = props.switchId
+  const siteId = props.siteId
+  const userId = user.value.id
+  const request = readGeneration
   try {
     const dataUrl = await QRCode.toDataURL(publicUrl.value, {
       width: 512,
       margin: 2,
       color: { dark: '#000000', light: '#ffffff' }
     })
+    if (!isCurrentRead(request, switchId, siteId, userId) || token.value !== tok) return
     const a = document.createElement('a')
     a.href = dataUrl
     a.download = `qr-${props.switchName.replace(/\s+/g, '-')}.png`
@@ -268,10 +396,42 @@ async function handleDownloadPng() {
 }
 
 function handlePrintSticker() {
-  if (!token.value) return
+  if (!authResolved.value || !user.value || !drawerOpen.value || !token.value || token.value.revoked_at) return
   // Use the same qr-print page as bulk print for consistent output
   const route = useRoute()
   const siteId = route.params.siteId || 'all'
   window.open(`/sites/${siteId}/switches/qr-print?ids=${props.switchId}`, '_blank')
 }
+
+watch(canEditInfrastructure, (canEdit, wasEditable) => {
+  if (canEdit === wasEditable) return
+  permissionGeneration++
+  operationGeneration++
+  showRevokeConfirm.value = false
+  if (!canEdit) loading.value = false
+  if (canEdit) accessChangeNoticeShown = false
+}, { flush: 'sync' })
+
+watch([authResolved, user], ([resolved, currentUser]) => {
+  if (resolved && currentUser) return
+  readGeneration++
+  permissionGeneration++
+  operationGeneration++
+  drawerOpen.value = false
+  showRevokeConfirm.value = false
+  token.value = null
+  loading.value = false
+  clearQrCanvas()
+}, { flush: 'sync' })
+
+watch(() => `${props.switchId}\u0000${props.siteId ?? ''}`, () => {
+  readGeneration++
+  permissionGeneration++
+  operationGeneration++
+  showRevokeConfirm.value = false
+  token.value = null
+  loading.value = false
+  clearQrCanvas()
+  if (drawerOpen.value && authResolved.value && user.value) void fetchTokenForDrawer()
+}, { flush: 'sync' })
 </script>

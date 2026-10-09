@@ -2,6 +2,22 @@
 
 ---
 
+## [0.42.0] — 2026-10-07
+
+### Hinzugefügt
+- Switch-Port-Verbindungen: Beim Zurücksetzen eines lokalen Access-Ports (ohne LAG), der mit seinem wechselseitigen Access-Gegenport verbunden ist, kannst du optional auch den Gegenport zurücksetzen. Die Option ist standardmäßig nicht angehakt und zeigt Ziel-Switch und Port; angehakt wird der Gegenport vollständig zurückgesetzt, behält aber PoE, Helfer-Einstellungen, Port-Identität und die VLAN-Liste des Switches. Trunk- und LAG-Gegenstellen werden nicht angeboten, standardmäßig behält der Gegenport seine Konfiguration, und LAG- und Massen-Resets bleiben unverändert.
+- Switch-Port-Verbindungen: Beim Speichern einer Access-Verbindung zwischen zwei bekannten Switch-Ports mit unterschiedlichem Status (einer up, einer down) bietet ein Bestätigungsdialog an, beide anzugleichen. Die Option ist standardmäßig nicht ausgewählt; ein normales Speichern übernimmt daher genau die Status-, Verbindungs- und VLAN-Änderungen deines Entwurfs, und Abbrechen schreibt nichts und behält den Entwurf. Sind beide Enden down, bietet der Dialog weiterhin optional an, beide auf up zu setzen; sind beide up, erscheint kein Dialog. Eine neue, noch nicht konfigurierte Gegenstelle kann ihren bekannten Status übernehmen, ohne in einen Modus oder ein VLAN gezwungen zu werden; die bestehende optionale Access-/VLAN-Synchronisierung bleibt unverändert. Trunk-, LAG-, unbekannte und deaktivierte Ports werden nie automatisch geändert, und diese reinen Statusänderungen setzen nichts zurück und erhalten übrige Einstellungen.
+- Öffentliche Switch-Ansicht (QR-Scan): Auf Smartphones wird die schreibgeschützte Portübersicht jetzt horizontal über der unveränderten Portliste angezeigt. Die bestehenden öffentlichen URLs, Daten und Token sind unverändert, und Desktop-Layout und Portliste sind unverändert.
+
+### Geändert
+- Die Fußzeilen von LAG-Mitgliedsports sind auf Smartphones besser lesbar, mit einer abgeblendeten, deaktivierten Schaltfläche **Zurücksetzen** und durchgestrichener Beschriftung. Ein roter Hinweis unter **LAG-Gruppe** erklärt die Verwaltung der Portzuweisungen im LAG-Editor; **LAG bearbeiten** bleibt verfügbar.
+
+### Behoben
+- Viewer-Rolle (Datenverwaltung): Der Eintrag **Datenverwaltung** wird Viewern nicht mehr in der Seitenleiste angezeigt, und ein direkter Aufruf von `/data-management` zeigt ihnen keinen Seiteninhalt. Verliert ein Admin die Rolle, während die Seite geöffnet ist, wird der Inhalt ausgeblendet. Profil und Einstellungen bleiben verfügbar. Die serverseitigen Berechtigungen für normale Exporte, den Import-Vorlagen-Download und den Entitätsexport sind unverändert.
+- Viewer-Rolle (QR-Codes): Viewer können den vorhandenen öffentlichen QR-Code eines Switches oder Patchpanels jetzt ansehen, den Link kopieren, als SVG oder PNG herunterladen oder mit einer externen Handy-Kamera scannen. Existiert kein gültiger Link (fehlend oder widerrufen), erscheint ein neutraler Hinweis. Viewer können Links weiterhin nicht erstellen, neu erzeugen oder widerrufen; Admin-Bedienelemente sind unverändert. Die öffentlichen URLs (`/p/<token>`, `/p/pp/<token>`) sind unverändert, und der Schalter des Patchpanel-Moduls gilt weiterhin.
+- Switch-Port-Verbindungen (Issue #289): Das Speichern einer wechselseitigen Switch-Port-**Access**-Verbindung legt die Gegenstelle jetzt unabhängig von der optionalen VLAN-Kopie an, und die Überschreiben-Warnung vergleicht jetzt mit dem richtigen Gegenport, sodass die fälschliche „Überschreiben“-Warnung bei einer bereits korrekten Gegenstelle nicht mehr erscheint. Wählst du einen anderen, belegten Gegenport, erscheint weiterhin die Überschreiben-Warnung. Keine Änderungen an Schema, Abhängigkeiten, Token oder Authentifizierung.
+- LAG-Mitgliedsports können nicht einzeln zurückgesetzt werden. Verwalte Mitgliedschaft und Gegenstellen-Zuordnung stattdessen im LAG-Editor; abgelehnte Resets lassen beide Switches unverändert. Das Löschen von LAGs und Massen-Resets bleiben unverändert.
+
 ## [0.41.0] — 2026-10-07
 
 ### Hinzugefügt

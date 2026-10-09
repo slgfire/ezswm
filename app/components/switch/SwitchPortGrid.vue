@@ -81,6 +81,7 @@
                   :selected="selectedPorts.includes(port.id)"
                   :lag-group="lagByPortId?.get(port.id)"
                   :dimmed="isDimmed(port.id)"
+                  :public-mode="publicMode"
                   :print-mode="printMode"
                   @click="onPortClick($event, port.id)"
                 />
@@ -96,7 +97,8 @@
                 :selected="selectedPorts.includes(port.id)"
                 :lag-group="lagByPortId?.get(port.id)"
                 :dimmed="isDimmed(port.id)"
-                  :print-mode="printMode"
+                :public-mode="publicMode"
+                :print-mode="printMode"
                 @click="onPortClick($event, port.id)"
               />
             </div>
@@ -107,7 +109,7 @@
     </template>
 
     <!-- Fallback flat grid -->
-    <div v-else class="flex flex-wrap gap-2">
+    <div v-else :class="publicMode ? 'flex w-max flex-nowrap gap-2 lg:w-auto lg:flex-wrap' : 'flex flex-wrap gap-2'">
       <SwitchPortItem
         v-for="port in ports"
         :key="port.id"
@@ -116,7 +118,8 @@
         :selected="selectedPorts.includes(port.id)"
         :lag-group="lagByPortId?.get(port.id)"
         :dimmed="isDimmed(port.id)"
-                  :print-mode="printMode"
+        :public-mode="publicMode"
+        :print-mode="printMode"
         @click="onPortClick($event, port.id)"
       />
     </div>

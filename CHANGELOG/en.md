@@ -2,6 +2,22 @@
 
 ---
 
+## [0.42.0] — 2026-10-07
+
+### Added
+- Switch-port connections: when you reset a local Access port (not in a LAG) connected to its reciprocal Access counterpart, you can optionally also reset that counterpart. The option is unchecked by default and shows the target switch and port; checked, the counterpart is fully reset while its PoE, helper settings, port identity and the switch's VLAN list are kept. Trunk and LAG peers are not offered, by default the counterpart keeps its configuration, and LAG and bulk resets are unchanged.
+- Switch-port connections: when you save an Access connection between two known switch ports and their statuses differ (one up, one down), a confirmation dialog offers to align them. It is not selected by default, so a normal save keeps exactly the status, link and VLAN changes in your draft; Cancel writes nothing and keeps the draft. If both ends are down, the dialog still offers to bring both up (optional); if both are up, no dialog appears. A new, not-yet-configured peer can take its known status without being forced into a mode or VLAN, and the existing optional Access/VLAN sync is unchanged. Trunk, LAG, unknown and disabled ports are never changed automatically, and these status-only updates reset nothing and keep other settings.
+- Public switch view (QR scan): on phones the read-only port map is now shown horizontally above the unchanged port list. The existing public URLs, data and tokens are unchanged, and the desktop layout and port list are unchanged.
+
+### Changed
+- LAG-member port footers are easier to read on phones, with a subdued disabled Reset button and a struck-through label. A red notice under **LAG Group** explains that assignments are managed in the LAG editor; **Edit LAG** remains available.
+
+### Fixed
+- Viewer role (Data Management): the **Data Management** entry is no longer shown in the sidebar for viewers, and a direct visit to `/data-management` shows no page content for them. If an admin loses the role while the page is open, its content is hidden. Profile and settings remain available. The server-side permissions for ordinary exports, import-template download and entity export are unchanged.
+- Viewer role (QR codes): viewers can now view the existing public-access QR code of a switch or patch panel and copy the link, download it as SVG or PNG, or scan it with an external phone camera. When no valid link exists (missing or revoked) a neutral notice is shown. Viewers still cannot create, regenerate or revoke links; admin controls are unchanged. The public URLs (`/p/<token>`, `/p/pp/<token>`) are unchanged, and the Patch Panels module toggle is still enforced.
+- Switch-port connections (Issue #289): saving a reciprocal Switch-port **Access** connection now creates the peer link independently of the optional VLAN copy, and the overwrite warning now compares against the correct counterpart port, so the false "overwrite" warning for an already-correct counterpart no longer appears. Choosing a different, occupied peer still shows the overwrite warning. No schema, dependency, token or authentication changes.
+- LAG member ports cannot be reset individually. Manage membership and peer mapping in the LAG editor instead; rejected resets leave both switches unchanged. LAG deletion and bulk reset behavior are unchanged.
+
 ## [0.41.0] — 2026-10-07
 
 ### Added

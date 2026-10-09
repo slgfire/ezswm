@@ -203,19 +203,23 @@
         <USeparator />
 
         <UFormField :label="$t('lag.group')">
-          <div v-if="lagGroup" class="flex items-center gap-2">
-            <UBadge color="info" variant="soft" size="sm">{{ lagGroup.name }}</UBadge>
-            <span v-if="lagGroup.remote_device" class="text-xs text-muted">→ {{ lagGroup.remote_device }}</span>
+          <div v-if="isLagMember" class="flex flex-wrap items-center gap-2">
+            <UBadge color="info" variant="soft" size="sm">{{ lagGroup?.name || port.lag_group_id }}</UBadge>
+            <span v-if="lagGroup?.remote_device" class="text-xs text-muted">→ {{ lagGroup.remote_device }}</span>
             <UButton
               size="xs"
               variant="ghost"
-              color="error"
-              @click="onRemoveFromLag"
+              color="primary"
+              :disabled="readonly || !canEditInfrastructure"
+              @click="onEditLag"
             >
-              {{ $t('lag.removeFromLag') }}
+              {{ $t('lag.edit') }}
             </UButton>
           </div>
           <span v-else class="text-sm text-muted">{{ $t('common.none') }}</span>
+          <p v-if="isLagMember" id="port-reset-lag-hint" role="note" class="mt-2 rounded-md border border-error/30 bg-error/10 px-3 py-2 text-xs text-error">
+            {{ $t('lag.managePortInEditor') }}
+          </p>
         </UFormField>
       </div>
 
@@ -232,7 +236,7 @@
       <div v-if="readonly" class="flex w-full justify-end">
         <UButton variant="subtle" color="neutral" @click="() => { isOpen = false }">{{ $t('common.close') }}</UButton>
       </div>
-      <div v-else class="flex w-full items-center justify-between">
+      <div v-else class="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex items-center gap-2">
           <UButton variant="subtle" color="neutral" @click="requestClose">{{ $t('common.cancel') }}</UButton>
           <UDropdownMenu
@@ -252,12 +256,68 @@
               />
             </UTooltip>
           </UDropdownMenu>
-          <UButton :disabled="!baselineReady" @click="onSaveClick">{{ $t('common.save') }}</UButton>
+          <UButton :loading="statusPromptLoading || statusPromptSubmitting" :disabled="!baselineReady || statusPromptLoading || statusPromptSubmitting" @click="onSaveClick">{{ $t('common.save') }}</UButton>
         </div>
-        <UButton color="error" variant="soft" icon="i-heroicons-arrow-path" @click="resetPort">{{ $t('switches.ports.resetPort') }}</UButton>
+        <div class="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-2">
+          <UButton
+            :color="isLagMember ? 'neutral' : 'error'"
+            :variant="isLagMember ? 'subtle' : 'soft'"
+            icon="i-heroicons-arrow-path"
+            :loading="resetTargetLoading"
+            :disabled="isLagMember || resetTargetLoading || resetSubmitting"
+            :aria-describedby="isLagMember ? 'port-reset-lag-hint' : undefined"
+            @click="resetPort"
+          ><span :class="{ 'line-through': isLagMember }">{{ $t('switches.ports.resetPort') }}</span></UButton>
+        </div>
       </div>
     </template>
   </USlideover>
+
+  <SharedConfirmDialog
+    v-if="isOpen && !readonly && canEditInfrastructure && resetTarget"
+    v-model="showResetDialog"
+    :title="$t('switches.ports.confirmBulkResetTitle')"
+    :message="$t('switches.ports.confirmReset')"
+    :confirm-label="$t('switches.ports.reset')"
+    :loading="resetSubmitting"
+    @confirm="confirmResetPort"
+  >
+    <UCheckbox
+      v-if="resetCounterpartAvailable"
+      v-model="resetCounterpart"
+      :disabled="resetSubmitting"
+      :label="$t('switches.ports.resetCounterpart', { switch: resetTarget.peerSwitchName, port: resetTarget.peerPortLabel })"
+      class="mt-4"
+    />
+  </SharedConfirmDialog>
+
+  <SharedConfirmDialog
+    v-if="isOpen && !readonly && canEditInfrastructure && statusPromptContext"
+    v-model="showStatusPrompt"
+    :title="$t('switches.ports.reviewConnectedStatusesTitle')"
+    :message="statusPromptMessage"
+    :confirm-label="$t(statusPromptSaveLabel)"
+    :loading="statusPromptSubmitting"
+    @confirm="confirmStatusPrompt"
+  >
+    <div class="mt-4 space-y-3">
+      <fieldset class="space-y-2">
+        <legend class="sr-only">{{ $t('switches.ports.pairStatusChoice') }}</legend>
+        <label v-for="option in statusPromptOptions" :key="option.value" class="flex items-start gap-2 text-sm">
+          <input
+            v-model="pairStatusChoice"
+            type="radio"
+            name="connected-port-status-choice"
+            :value="option.value"
+            :disabled="statusPromptSubmitting"
+            class="mt-1 accent-primary-500"
+          >
+          <span>{{ option.label }}</span>
+        </label>
+      </fieldset>
+      <p class="text-xs text-muted">{{ $t('switches.ports.statusPromptCancelHint') }}</p>
+    </div>
+  </SharedConfirmDialog>
 </template>
 
 <script setup lang="ts">
@@ -269,10 +329,12 @@ import type { IPAllocation } from '~~/types/ipAllocation'
 import type { LAGGroup } from '~~/types/lagGroup'
 import type { LayoutUnit } from '~~/types/layoutTemplate'
 import { buildCopyConnectionState, buildLagSyncFields, buildPortSaveDiff, buildSidePanelPortPutOptions } from '~/utils/sidePanelPortRequests'
+import { portConflictMessageKey } from '~/utils/portConflictMessage'
 
 const props = withDefaults(defineProps<{
   port: Port | null
   switchId: string
+  currentSwitchUuid?: string
   lagGroup?: LAGGroup
   configuredVlans?: number[]
   switchUpdatedAt?: string
@@ -285,6 +347,7 @@ const props = withDefaults(defineProps<{
   lagGroup: undefined,
   configuredVlans: () => [],
   switchUpdatedAt: undefined,
+  currentSwitchUuid: undefined,
   templateUnits: () => [],
   ports: () => [],
   vlans: () => [],
@@ -293,7 +356,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   saved: []
-  'remove-from-lag': [lagId: string, portId: string]
+  'edit-lag': [lagId: string]
   'access-changed': []
 }>()
 
@@ -301,11 +364,104 @@ const isOpen = defineModel<boolean>()
 const { t } = useI18n()
 const toast = useToast()
 const { canEditInfrastructure, handleInfrastructureForbidden } = useAuth()
-const { confirm } = useConfirm()
 const { apiFetch } = useApiFetch()
 const route = useRoute()
 const speeds = ['100M', '1G', '2.5G', '10G', '40G', '100G']
 const siteParams = computed(() => route.params.siteId && route.params.siteId !== 'all' ? { siteId: route.params.siteId as string } : undefined)
+
+type ResetContext = {
+  switchRouteId: string
+  switchUuid: string
+  siteId: string
+  portId: string
+  lagGroupId: string | null
+  peerSwitchId?: string
+  peerPortId?: string
+}
+
+type ResetCounterpartTarget = ResetContext & {
+  peerSwitchName?: string
+  peerPortLabel?: string
+}
+
+type StatusPromptContext = {
+  state: SaveState
+  stateKey: string
+  sourceSwitchRouteId: string
+  sourceSwitchUuid: string
+  sourcePortId: string
+  sourceLagGroupId: string | null
+  sourceUpdatedAt: string
+  siteId: string
+  peerSwitchId: string
+  peerPortId: string
+  peerSwitchUpdatedAt: string
+  localSwitchName: string
+  localPortLabel: string
+  peerSwitchName: string
+  peerPortLabel: string
+  localStatus: 'up' | 'down'
+  peerStatus: 'up' | 'down'
+}
+
+type StatusPromptSubmission = {
+  context: StatusPromptContext
+  targetStatus: 'up' | 'down' | null
+}
+
+const resetTarget = ref<ResetCounterpartTarget | null>(null)
+const resetCounterpart = ref(false)
+const resetCounterpartAvailable = ref(false)
+const showResetDialog = ref(false)
+const resetTargetLoading = ref(false)
+const resetSubmitting = ref(false)
+let resetGeneration = 0
+
+const statusPromptContext = ref<StatusPromptContext | null>(null)
+const showStatusPrompt = ref(false)
+const statusPromptLoading = ref(false)
+const statusPromptSubmitting = ref(false)
+const pairStatusChoice = ref<'keep' | 'up' | 'down'>('keep')
+let statusPromptGeneration = 0
+
+const statusPromptMessage = computed(() => {
+  const context = statusPromptContext.value
+  if (!context) return ''
+  return t('switches.ports.reviewConnectedStatuses', {
+    localSwitch: context.localSwitchName,
+    localPort: context.localPortLabel,
+    localStatus: t(context.localStatus === 'up' ? 'legend.up' : 'legend.down'),
+    peerSwitch: context.peerSwitchName,
+    peerPort: context.peerPortLabel,
+    peerStatus: t(context.peerStatus === 'up' ? 'legend.up' : 'legend.down')
+  })
+})
+const statusPromptOptions = computed(() => {
+  const context = statusPromptContext.value
+  if (!context) return []
+  const bothDown = context.localStatus === 'down' && context.peerStatus === 'down'
+  return [
+    {
+      value: 'keep' as const,
+      label: bothDown
+        ? t('switches.ports.keepBothDown')
+        : t('switches.ports.keepCurrentPairStatuses', {
+            localStatus: t(context.localStatus === 'up' ? 'legend.up' : 'legend.down'),
+            peerStatus: t(context.peerStatus === 'up' ? 'legend.up' : 'legend.down')
+          })
+    },
+    { value: 'up' as const, label: t('switches.ports.setBothPortsUp') },
+    ...(!bothDown ? [{ value: 'down' as const, label: t('switches.ports.setBothPortsDown') }] : [])
+  ]
+})
+const statusPromptSaveLabel = computed(() => pairStatusChoice.value === 'up'
+  ? 'switches.ports.savePairUp'
+  : pairStatusChoice.value === 'down'
+    ? 'switches.ports.savePairDown'
+    : 'switches.ports.savePairCurrentStatuses')
+
+const currentLagGroupId = () => props.lagGroup?.id || props.port?.lag_group_id || null
+const isLagMember = computed(() => !!currentLagGroupId())
 
 const portModeOptions = computed(() => [
   { label: t('switches.ports.modeAccess'), value: 'access' },
@@ -442,6 +598,18 @@ function liveState(): SaveState {
     selectedPortId: selectedPortId.value
   }
 }
+
+function cloneSaveState(state: SaveState): SaveState {
+  return {
+    ...state,
+    form: { ...state.form },
+    selectedTaggedVlans: [...state.selectedTaggedVlans]
+  }
+}
+
+function saveStateKey(state: SaveState): string {
+  return JSON.stringify(state)
+}
 // Guard view of the live state: a switch link whose selection is still unresolved (options not loaded yet)
 // is represented by its pending IDs, so a freshly opened untouched session equals its frozen seed.
 function guardState(): SaveState {
@@ -570,10 +738,10 @@ const remotePortSearchOptions = computed(() => {
   if (!sw?.ports) return []
   return [
     { label: '—', value: '', connected: '' },
-    ...sw.ports.filter((p: Port) => !(selectedSwitchId.value === props.switchId && p.id === props.port?.id))
+    ...sw.ports.filter((p: Port) => !(props.currentSwitchUuid && selectedSwitchId.value === props.currentSwitchUuid && p.id === props.port?.id))
       .map((p: Port) => {
         const label = p.label || `${p.unit}/${p.index}`
-        const connected = (p.connected_device_id && !(p.connected_device_id === props.switchId && p.connected_port_id === props.port?.id))
+        const connected = (p.connected_device_id && !(props.currentSwitchUuid && p.connected_device_id === props.currentSwitchUuid && p.connected_port_id === props.port?.id))
           ? `→ ${p.connected_device}`
           : p.connected_allocation_id
             ? `→ ${p.connected_device || 'Device'}`
@@ -600,7 +768,7 @@ const portConflict = computed(() => {
     return { device: port.connected_device || 'Device', port: port.connected_port || '' }
   }
   if (!port?.connected_device_id) return null
-  if (port.connected_device_id === props.switchId && port.connected_port_id === props.port?.id) return null
+  if (props.currentSwitchUuid && port.connected_device_id === props.currentSwitchUuid && port.connected_port_id === props.port?.id) return null
   return { device: port.connected_device || 'Unknown', port: port.connected_port || 'Unknown port' }
 })
 
@@ -720,8 +888,6 @@ let optionsReady: Promise<unknown> = Promise.resolve()
 function stateSignature(st: SaveState): string {
   return [st.connectionMode, st.selectedSwitchId, st.selectedPortId, st.selectedAllocationId].join('|')
 }
-const connectionSignature = () => stateSignature(liveState())
-
 function invalidateBaseline(): number {
   baseline.value = null
   return ++baselineEpoch
@@ -904,13 +1070,175 @@ watch(selectedSwitchId, (newVal, oldVal) => { if (oldVal && newVal !== oldVal) s
 const showSetUpPrompt = ref(false)
 
 watch(() => props.readonly, (readOnly, wasEditable) => {
-  if (readOnly && wasEditable === false) showSetUpPrompt.value = false
+  if (readOnly && wasEditable === false) {
+    showSetUpPrompt.value = false
+    clearStatusPrompt()
+  }
 })
+
+function clearStatusPrompt() {
+  statusPromptGeneration++
+  statusPromptLoading.value = false
+  statusPromptSubmitting.value = false
+  statusPromptContext.value = null
+  showStatusPrompt.value = false
+  pairStatusChoice.value = 'keep'
+}
+
+function statusPromptContextIsCurrent(context: StatusPromptContext): boolean {
+  return isOpen.value === true && !props.readonly && canEditInfrastructure.value &&
+    props.switchId === context.sourceSwitchRouteId &&
+    (props.currentSwitchUuid || '') === context.sourceSwitchUuid &&
+    props.port?.id === context.sourcePortId &&
+    currentLagGroupId() === context.sourceLagGroupId &&
+    props.switchUpdatedAt === context.sourceUpdatedAt &&
+    String(route.params.siteId || '') === context.siteId &&
+    connectionMode.value === 'switch' &&
+    selectedSwitchId.value === context.peerSwitchId &&
+    selectedPortId.value === context.peerPortId &&
+    saveStateKey(liveState()) === context.stateKey
+}
+
+watch(showStatusPrompt, (open) => {
+  if (!open && statusPromptSubmitting.value) {
+    showStatusPrompt.value = true
+    return
+  }
+  if (!open && !statusPromptSubmitting.value && statusPromptContext.value) clearStatusPrompt()
+}, { flush: 'sync' })
+
+watch([
+  () => isOpen.value,
+  () => props.port?.id,
+  () => props.port?.lag_group_id,
+  () => props.lagGroup?.id,
+  () => props.switchId,
+  () => props.currentSwitchUuid,
+  () => props.switchUpdatedAt,
+  () => route.params.siteId,
+  () => props.readonly,
+  canEditInfrastructure,
+  () => saveStateKey(liveState())
+], clearStatusPrompt, { flush: 'sync' })
+
+function localPortLabel(port: Port): string {
+  return port.label || `${port.unit}/${port.index}`
+}
+
+const NETWORK_CONNECTOR_PORT_TYPES = new Set<Port['type']>(['rj45', 'sfp', 'sfp+', 'qsfp'])
+
+function isNetworkConnectorPort(port: Port): boolean {
+  return NETWORK_CONNECTOR_PORT_TYPES.has(port.type)
+}
+
+function isPristineUnsetAccessPort(port: Port): boolean {
+  return port.port_mode == null && port.access_vlan == null && port.native_vlan == null &&
+    !(port.tagged_vlans?.length) && !port.connected_allocation_id && isNetworkConnectorPort(port)
+}
+
+function isEligibleStatusPromptSource(port: Port): boolean {
+  return isNetworkConnectorPort(port) && (port.port_mode === 'access' || isPristineUnsetAccessPort(port))
+}
+
+function canShowStatusPromptPeer(port: Port, context: StatusPromptContext): boolean {
+  const exactReciprocal = port.connected_device_id === context.sourceSwitchUuid && port.connected_port_id === context.sourcePortId
+  const free = !port.connected_device_id && !port.connected_port_id && !port.connected_allocation_id && !port.connected_device && !port.connected_port
+  const accessPeer = port.port_mode === 'access' || isPristineUnsetAccessPort(port)
+  return isNetworkConnectorPort(port) && accessPeer && !port.lag_group_id && !port.connected_allocation_id && (free || exactReciprocal)
+}
 
 async function onSaveClick() {
   if (props.readonly || !canEditInfrastructure.value) return
+  showSetUpPrompt.value = false
+
+  const state = cloneSaveState(liveState())
+  const sourcePort = props.port
+  const sourceUuid = props.currentSwitchUuid || ''
+  const peerSwitchId = state.selectedSwitchId
+  const peerPortId = state.selectedPortId
+  const sourceStatus = state.form.status
+  const mayCheckPeerStatus = state.connectionMode === 'switch' && !!sourcePort && !!sourceUuid &&
+    !!props.switchUpdatedAt && !!peerSwitchId && !!peerPortId &&
+    isEligibleStatusPromptSource(sourcePort) &&
+    state.form.port_mode === 'access' && !isLagMember.value &&
+    (sourceStatus === 'up' || sourceStatus === 'down')
+
+  if (mayCheckPeerStatus) {
+    const generation = ++statusPromptGeneration
+    const context: StatusPromptContext = {
+      state,
+      stateKey: saveStateKey(state),
+      sourceSwitchRouteId: props.switchId,
+      sourceSwitchUuid: sourceUuid,
+      sourcePortId: sourcePort!.id,
+      sourceLagGroupId: currentLagGroupId(),
+      sourceUpdatedAt: props.switchUpdatedAt!,
+      siteId: String(route.params.siteId || ''),
+      peerSwitchId,
+      peerPortId,
+      peerSwitchUpdatedAt: '',
+      localSwitchName: props.switchId,
+      localPortLabel: localPortLabel(sourcePort!),
+      peerSwitchName: '',
+      peerPortLabel: '',
+      localStatus: sourceStatus as 'up' | 'down',
+      peerStatus: 'down'
+    }
+    statusPromptLoading.value = true
+    try {
+      const peerSwitch = await apiFetch<Switch>(`/api/switches/${peerSwitchId}`, { params: siteParams.value })
+      if (generation !== statusPromptGeneration || !statusPromptContextIsCurrent(context)) return
+      const peerPort = peerSwitch.id === peerSwitchId ? peerSwitch.ports?.find(port => port.id === peerPortId) : undefined
+      if (peerPort && typeof peerSwitch.updated_at === 'string' &&
+        canShowStatusPromptPeer(peerPort, context) &&
+        (peerPort.status === 'up' || peerPort.status === 'down')) {
+        const localSwitch = allSwitches.value.find(sw => sw.id === sourceUuid)
+        const promptContext: StatusPromptContext = {
+          ...context,
+          peerSwitchUpdatedAt: peerSwitch.updated_at,
+          localSwitchName: localSwitch?.name || props.switchId,
+          peerSwitchName: peerSwitch.name,
+          peerPortLabel: localPortLabel(peerPort),
+          peerStatus: peerPort.status
+        }
+        if (promptContext.localStatus === 'down' || promptContext.peerStatus === 'down') {
+          statusPromptContext.value = promptContext
+          pairStatusChoice.value = 'keep'
+          showStatusPrompt.value = true
+          return
+        }
+      }
+    } catch (error: unknown) {
+      if (generation !== statusPromptGeneration || !statusPromptContextIsCurrent(context)) return
+      const access = await handleInfrastructureForbidden(error)
+      if (access === 'demoted') emit('access-changed')
+      if (access === 'demoted' || access === 'already-handled') return
+      // Unknown peer state does not imply Down; retain the existing local-only prompt/save path.
+    } finally {
+      if (generation === statusPromptGeneration) statusPromptLoading.value = false
+    }
+    if (generation !== statusPromptGeneration || !statusPromptContextIsCurrent(context)) return
+  }
+
   if (connectionMode.value === 'switch' && selectedSwitchId.value && selectedPortId.value && form.status === 'down') { showSetUpPrompt.value = true; return }
   await save()
+}
+
+async function confirmStatusPrompt() {
+  const context = statusPromptContext.value
+  if (!context || statusPromptSubmitting.value) return
+  const submission: StatusPromptSubmission = {
+    context,
+    targetStatus: pairStatusChoice.value === 'keep' ? null : pairStatusChoice.value
+  }
+  if (!statusPromptContextIsCurrent(context) ||
+    !statusPromptOptions.value.some(option => option.value === pairStatusChoice.value)) {
+    clearStatusPrompt()
+    return
+  }
+  statusPromptSubmitting.value = true
+  await save(context.state, submission)
+  if (statusPromptContext.value === context) statusPromptSubmitting.value = false
 }
 
 // Current save candidate: everything the panel could write, after VLAN/connection coupling.
@@ -949,27 +1277,48 @@ function buildSaveBody(st: SaveState = liveState()): Record<string, unknown> {
   return body
 }
 
-async function save() {
+async function save(state: SaveState = liveState(), statusSubmission?: StatusPromptSubmission) {
   if (props.readonly || !canEditInfrastructure.value) return
   // Fail closed: without a settled baseline no (full) write is ever sent.
   const base = baseline.value
   if (!base || !props.port) return
-  const diff = buildPortSaveDiff(base.candidate, buildSaveBody(), { baselineSignature: base.signature, currentSignature: connectionSignature() })
-  if (!diff) {
+  if (statusSubmission && !statusPromptContextIsCurrent(statusSubmission.context)) {
+    clearStatusPrompt()
+    return
+  }
+  const candidateState = cloneSaveState(state)
+  if (statusSubmission?.targetStatus) candidateState.form.status = statusSubmission.targetStatus
+  const diff = buildPortSaveDiff(base.candidate, buildSaveBody(candidateState), {
+    baselineSignature: base.signature,
+    currentSignature: stateSignature(candidateState)
+  })
+  const peerStatusRequested = statusSubmission?.targetStatus != null
+  if (!diff && !peerStatusRequested) {
     // Nothing changed: no request, no concurrency/activity bump.
     showSetUpPrompt.value = false
+    if (statusSubmission) clearStatusPrompt()
     emit('saved'); isOpen.value = false
     return
   }
-  const body: Record<string, unknown> = { ...diff.body }
-  if (props.switchUpdatedAt) body.expected_updated_at = props.switchUpdatedAt
+  const body: Record<string, unknown> = { ...(diff?.body || {}) }
+  const sourceUpdatedAt = statusSubmission?.context.sourceUpdatedAt || props.switchUpdatedAt
+  if (sourceUpdatedAt) body.expected_updated_at = sourceUpdatedAt
+  if (peerStatusRequested && statusSubmission) {
+    body.counterpart_status_target = statusSubmission.targetStatus
+    body.expected_counterpart_port_id = statusSubmission.context.peerPortId
+    body.expected_counterpart_status = statusSubmission.context.peerStatus
+    body.expected_counterpart_switch_updated_at = statusSubmission.context.peerSwitchUpdatedAt
+  }
   try {
     const response = await $fetch<Record<string, unknown>>(
       `/api/switches/${props.switchId}/ports/${props.port!.id}`,
       buildSidePanelPortPutOptions(body, siteParams.value?.siteId)
     )
 
+    if (statusSubmission && !statusPromptContextIsCurrent(statusSubmission.context)) return
+
     if (!canEditInfrastructure.value || props.readonly) {
+      if (statusSubmission) clearStatusPrompt()
       emit('saved')
       return
     }
@@ -981,7 +1330,7 @@ async function save() {
     }
 
     let lagSynced = false
-    if ((props.lagGroup?.port_ids?.length ?? 0) > 1) {
+    if (diff && (props.lagGroup?.port_ids?.length ?? 0) > 1) {
       if (!canEditInfrastructure.value || props.readonly) {
         emit('saved')
         return
@@ -1009,28 +1358,43 @@ async function save() {
       toast.add({ title: t('switches.ports.portUpdated'), color: 'success' })
     }
 
+    if (statusSubmission) clearStatusPrompt()
     emit('saved'); isOpen.value = false
   } catch (e: unknown) {
     const access = await handleInfrastructureForbidden(e)
     if (access === 'demoted') emit('access-changed')
     if (access === 'demoted' || access === 'already-handled') {
       showSetUpPrompt.value = false
+      if (statusSubmission) clearStatusPrompt()
+      emit('saved')
+      return
+    }
+    if (statusSubmission && !statusPromptContextIsCurrent(statusSubmission.context)) return
+    const errorData = e as { data?: { reason?: string; data?: { reason?: string } } }
+    const reason = errorData.data?.reason ?? errorData.data?.data?.reason
+    const errorStatus = (e as { statusCode?: number; status?: number })?.statusCode ?? (e as { status?: number })?.status
+    if (errorStatus === 409 && reason === 'counterpart_status_conflict') {
+      if (statusSubmission) clearStatusPrompt()
+      toast.add({ title: t('switches.ports.counterpartStatusConflict'), color: 'warning' })
+      emit('saved')
+      return
+    }
+    const messageKey = portConflictMessageKey(e, isLagMember.value ? 'lag' : 'port')
+    if (messageKey) {
+      if (statusSubmission) clearStatusPrompt()
+      toast.add({ title: t(messageKey), color: 'warning' })
       emit('saved')
       return
     }
     const err = e as { statusCode?: number; data?: { message?: string } }
-    if (err.statusCode === 409) {
-      toast.add({ title: 'Switch was modified. Please try again.', color: 'warning' })
-      emit('saved')
-      return
-    }
     toast.add({ title: err.data?.message || 'Failed', color: 'error' })
   }
 }
 
-function onRemoveFromLag() {
-  if (props.readonly || !canEditInfrastructure.value || !props.lagGroup || !props.port) return
-  emit('remove-from-lag', props.lagGroup.id, props.port!.id)
+function onEditLag() {
+  if (props.readonly || !canEditInfrastructure.value || !props.port) return
+  const lagId = props.lagGroup?.id || props.port.lag_group_id
+  if (lagId) emit('edit-lag', lagId)
 }
 
 // Compact footer picker: prefill selected config from another same-switch port.
@@ -1072,25 +1436,193 @@ const sourceMenuItems = computed(() =>
   sourcePortOptions.value.map(o => ({ label: o.label, onSelect: () => applyCopyFromPort(o.value) }))
 )
 
+function captureResetContext(): ResetContext | null {
+  const port = props.port
+  if (!port) return null
+  return {
+    switchRouteId: props.switchId,
+    switchUuid: props.currentSwitchUuid || '',
+    siteId: String(route.params.siteId || ''),
+    portId: port.id,
+    lagGroupId: currentLagGroupId(),
+    peerSwitchId: port.connected_device_id,
+    peerPortId: port.connected_port_id
+  }
+}
+
+function resetContextIsCurrent(context: ResetContext): boolean {
+  return !props.readonly && canEditInfrastructure.value &&
+    props.switchId === context.switchRouteId &&
+    (props.currentSwitchUuid || '') === context.switchUuid &&
+    String(route.params.siteId || '') === context.siteId &&
+    props.port?.id === context.portId &&
+    currentLagGroupId() === context.lagGroupId &&
+    props.port.connected_device_id === context.peerSwitchId &&
+    props.port.connected_port_id === context.peerPortId
+}
+
+function isEligibleAccessPort(port: Port | undefined) {
+  return !!port && port.port_mode === 'access' && !port.lag_group_id
+}
+
+function canOfferCounterpartReset(port: Port | null, context: ResetContext) {
+  return !!context.switchUuid && !!context.peerSwitchId && !!context.peerPortId &&
+    !props.lagGroup && isEligibleAccessPort(port || undefined)
+}
+
+function resetRequestOptions(context: ResetContext, resetCounterpartPort: boolean) {
+  const query = context.siteId && context.siteId !== 'all' ? `?siteId=${encodeURIComponent(context.siteId)}` : ''
+  const url = `/api/switches/${context.switchRouteId}/ports/${context.portId}${query}`
+  if (!resetCounterpartPort) return { url, options: { method: 'DELETE' as const } }
+  return {
+    url,
+    options: {
+      method: 'DELETE' as const,
+      body: { reset_counterpart: true, expected_counterpart_port_id: context.peerPortId }
+    }
+  }
+}
+
+function clearResetConfirmation() {
+  resetGeneration++
+  resetTargetLoading.value = false
+  resetSubmitting.value = false
+  showResetDialog.value = false
+  resetCounterpart.value = false
+  resetCounterpartAvailable.value = false
+  resetTarget.value = null
+}
+
+watch(showResetDialog, (open) => {
+  if (!open && !resetSubmitting.value) clearResetConfirmation()
+})
+
+watch(isOpen, (open) => {
+  if (!open) clearResetConfirmation()
+}, { flush: 'sync' })
+
+watch([
+  () => props.port?.id,
+  () => props.port?.port_mode,
+  () => props.port?.tagged_vlans,
+  () => props.port?.lag_group_id,
+  () => props.port?.connected_allocation_id,
+  () => props.port?.connected_device_id,
+  () => props.port?.connected_port_id,
+  () => props.lagGroup?.id,
+  () => props.currentSwitchUuid,
+  () => props.switchId,
+  () => props.readonly,
+  () => route.params.siteId,
+  canEditInfrastructure
+], clearResetConfirmation, { flush: 'sync' })
+
+onBeforeUnmount(clearResetConfirmation)
+
 async function resetPort() {
-  if (props.readonly || !canEditInfrastructure.value) return
-  const ok = await confirm({
-    title: t('switches.ports.confirmBulkResetTitle'),
-    message: t('switches.ports.confirmReset'),
-    confirmLabel: t('switches.ports.reset')
-  })
-  if (!ok || props.readonly || !canEditInfrastructure.value) return
+  if (props.readonly || !canEditInfrastructure.value || !props.port || isLagMember.value || resetTargetLoading.value || resetSubmitting.value) return
+  const context = captureResetContext()
+  if (!context) return
+  const generation = ++resetGeneration
+  resetCounterpart.value = false
+  resetTarget.value = null
+
+  if (canOfferCounterpartReset(props.port, context)) {
+    resetTargetLoading.value = true
+    try {
+      const params = context.siteId && context.siteId !== 'all' ? { siteId: context.siteId } : undefined
+      const peerSwitch = await apiFetch<Switch>(`/api/switches/${context.peerSwitchId}`, { params })
+      if (generation !== resetGeneration || !resetContextIsCurrent(context)) return
+      const peerPort = peerSwitch.id === context.peerSwitchId
+        ? peerSwitch.ports?.find(port => port.id === context.peerPortId)
+        : undefined
+      if (
+        peerPort && peerPort.connected_device_id === context.switchUuid && peerPort.connected_port_id === context.portId &&
+        isEligibleAccessPort(peerPort)
+      ) {
+        resetTarget.value = {
+          ...context,
+          peerSwitchName: peerSwitch.name,
+          peerPortLabel: peerPort.label || `${peerPort.unit}/${peerPort.index}`
+        }
+        resetCounterpartAvailable.value = true
+        showResetDialog.value = true
+        return
+      }
+    } catch (error: unknown) {
+      if (generation !== resetGeneration || !resetContextIsCurrent(context)) return
+      const access = await handleInfrastructureForbidden(error)
+      if (access === 'demoted') emit('access-changed')
+      if (access === 'demoted' || access === 'already-handled') return
+      // An unavailable peer hides the option; the existing local-only reset remains available.
+    } finally {
+      if (generation === resetGeneration) resetTargetLoading.value = false
+    }
+    if (generation !== resetGeneration || !resetContextIsCurrent(context)) return
+  }
+
+  // Use the same dismissible dialog for local-only resets so a newly detected
+  // LAG membership can invalidate and close the pending confirmation.
+  if (generation !== resetGeneration || !resetContextIsCurrent(context) || isLagMember.value) return
+  resetTarget.value = context
+  resetCounterpartAvailable.value = false
+  showResetDialog.value = true
+}
+
+async function confirmResetPort() {
+  const target = resetTarget.value
+  if (!target || resetSubmitting.value) return
+  const generation = resetGeneration
+  const resetCounterpartPort = resetCounterpart.value
+  if (!resetContextIsCurrent(target) || isLagMember.value || (resetCounterpartPort && !canOfferCounterpartReset(props.port, target))) {
+    if (resetCounterpartPort) toast.add({ title: t('switches.ports.resetCounterpartChanged'), color: 'warning' })
+    clearResetConfirmation()
+    return
+  }
+  resetSubmitting.value = true
+  await submitPortReset(target, resetCounterpartPort, generation)
+}
+
+async function submitPortReset(context: ResetContext, resetCounterpartPort: boolean, generation: number) {
+  if (generation !== resetGeneration || !resetContextIsCurrent(context) || isLagMember.value || (resetCounterpartPort && !canOfferCounterpartReset(props.port, context))) {
+    clearResetConfirmation()
+    if (resetCounterpartPort) toast.add({ title: t('switches.ports.resetCounterpartChanged'), color: 'warning' })
+    return
+  }
   try {
-    const siteId = useRoute().params.siteId as string
-    const query = siteId && siteId !== 'all' ? `?siteId=${encodeURIComponent(siteId)}` : ''
-    await ($fetch as typeof globalThis.fetch)(`/api/switches/${props.switchId}/ports/${props.port!.id}${query}`, { method: 'DELETE' })
-    toast.add({ title: t('switches.ports.portReset'), color: 'success' }); emit('saved'); isOpen.value = false
-  } catch (e: unknown) {
-    const access = await handleInfrastructureForbidden(e)
+    const { url, options } = resetRequestOptions(context, resetCounterpartPort)
+    await ($fetch as unknown as (request: string, options: { method: 'DELETE'; body?: Record<string, unknown> }) => Promise<unknown>)(url, options)
+    if (generation !== resetGeneration || !resetContextIsCurrent(context)) return
+    clearResetConfirmation()
+    toast.add({ title: t('switches.ports.portReset'), color: 'success' })
+    emit('saved')
+    isOpen.value = false
+  } catch (error: unknown) {
+    const access = await handleInfrastructureForbidden(error)
     if (access === 'demoted') emit('access-changed')
-    if (access === 'demoted' || access === 'already-handled') return
-    const err = e as { data?: { message?: string } }
-    toast.add({ title: err.data?.message || 'Reset failed', color: 'error' })
+    if (access === 'demoted' || access === 'already-handled') {
+      clearResetConfirmation()
+      return
+    }
+    if (generation !== resetGeneration || !resetContextIsCurrent(context)) return
+    const status = (error as { statusCode?: number; status?: number })?.statusCode ?? (error as { status?: number })?.status
+    if (status === 409) {
+      clearResetConfirmation()
+      const messageKey = portConflictMessageKey(error, 'port')
+      if (messageKey === 'lag.memberResetForbidden' || messageKey === 'switches.ports.switchModified') {
+        toast.add({ title: t(messageKey), color: 'warning' })
+      } else if (resetCounterpartPort) {
+        toast.add({ title: t('switches.ports.resetCounterpartChanged'), color: 'warning' })
+      } else {
+        toast.add({ title: t(messageKey || 'switches.ports.assignmentConflict'), color: 'warning' })
+      }
+      return
+    }
+    clearResetConfirmation()
+    const message = (error as { data?: { message?: string } })?.data?.message
+    toast.add({ title: message || 'Reset failed', color: 'error' })
+  } finally {
+    if (generation === resetGeneration) resetSubmitting.value = false
   }
 }
 </script>

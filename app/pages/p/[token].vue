@@ -30,8 +30,8 @@
         </p>
       </div>
 
-      <!-- Port Grid: desktop only (lg+, too cramped on tablets) -->
-      <div class="hidden lg:block overflow-x-auto">
+      <!-- Read-only port map: horizontally scrollable above the public port list. -->
+      <div class="w-full overflow-x-auto overscroll-x-contain">
         <SwitchPortGrid
           :ports="data.ports"
         :units="data.units"
