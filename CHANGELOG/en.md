@@ -7,6 +7,9 @@
 ### Added
 - Custom device types (Issue #301): administrators can add named device types for IP allocations, rename them and deactivate them. The nine built-in types remain immutable and always available, but administrators can disable and re-enable them for new assignments in the settings. An unused custom type can be permanently deleted; a type still referenced by an allocation is refused with a usage count, so existing allocations never lose their category. Deactivating or disabling a type keeps existing allocations readable and editable, while new assignments are blocked. Names are trimmed, 1–100 characters and unique case-insensitively, and built-in names stay reserved. Custom types are stored by a stable ID, so renames never touch existing allocations. Viewers can read the list. Backups and inventory exports include custom types and the disabled built-in list; older backups restore both as empty lists.
 
+### Changed
+- Sidebar (Issue #305): the site selector uses less vertical space, keeping the sidebar compact on smaller screens. Existing actions and behavior are unchanged.
+
 ## [0.43.0] — 2026-10-19
 
 ### Added

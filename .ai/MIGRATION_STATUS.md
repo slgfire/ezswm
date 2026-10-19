@@ -2,6 +2,15 @@
 
 ## Latest Stage
 
+### Issue #305 — compact site switcher spacing
+
+Date: 2026-10-19
+Stage: Small sidebar correction for the existing PR #304 (`feat/custom-device-types`, version 0.44.0).
+
+Scope: Reduced the site switcher's vertical padding from `py-2` to `py-1`. No navigation behavior, text or accessible control changed.
+
+Verification: Reviewed the Issue #305 screenshot (336×146): its first site-switcher control is compact between the logo row and navigation, matching the `SiteSwitcher.vue` wrapper targeted by the reported selector. Fresh `nuxt prepare`, `pnpm typecheck`, and scoped ESLint passed; a fresh production build passed with the existing non-blocking large-chunk warning. An isolated Chromium run against that fresh 0.44.0 build used a private database, applied all 14 migrations, and reported `database_ok: true`; the focused navigation regression passed and verified 4px top/bottom padding. Evidence: `/tmp/opencode/ezswm-ui-305-306-prod-nx3h0k7k/`. An earlier isolated dev attempt stopped before auth/browser because its health response was empty/non-JSON; its process was terminated. The unrelated `localhost:3000/api/health` probe returned 404. No staging runtime or data was touched.
+
 ### Issue #301 follow-up — disabled built-in categories and safe custom deletion (verified final, uncommitted)
 
 Date: 2026-10-19

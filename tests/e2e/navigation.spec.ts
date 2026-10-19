@@ -1,6 +1,14 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Navigation', () => {
+  test('site switcher uses compact sidebar spacing', async ({ page }) => {
+    await page.goto('/')
+    await page.waitForURL(/^[^?#]*\/sites\/[^/]+$/)
+    const siteSwitcher = page.getByRole('complementary', { name: 'Sidebar navigation' }).locator('div.border-b').first()
+    await expect(siteSwitcher).toHaveCSS('padding-top', '4px')
+    await expect(siteSwitcher).toHaveCSS('padding-bottom', '4px')
+  })
+
   test('dashboard loads', async ({ page }) => {
     await page.goto('/')
     await page.waitForTimeout(1000)

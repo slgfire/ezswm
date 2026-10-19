@@ -1,5 +1,5 @@
 <template>
-  <div class="border-b border-default px-3 py-2">
+  <div class="border-b border-default px-3 py-1">
     <USelectMenu
       v-model="selectedSiteId"
       :items="siteOptions"

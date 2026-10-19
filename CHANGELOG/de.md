@@ -7,6 +7,9 @@
 ### Hinzugefügt
 - Eigene Gerätetypen (Issue #301): Administratoren können benannte Gerätetypen für IP-Zuweisungen anlegen, umbenennen und deaktivieren. Die neun eingebauten Typen bleiben unveränderlich und immer verfügbar, können in den Einstellungen aber für neue Zuweisungen deaktiviert und wieder aktiviert werden. Ein unbenutzter eigener Typ kann endgültig gelöscht werden; wird er noch von einer Zuweisung verwendet, wird das Löschen mit einer Nutzungsanzahl abgelehnt, damit bestehende Zuweisungen ihre Kategorie nie verlieren. Ein deaktivierter eigener Typ oder deaktivierter eingebauter Typ bleibt für bestehende Zuweisungen lesbar und bearbeitbar, neue Zuweisungen werden blockiert. Namen werden getrimmt, sind 1–100 Zeichen lang und ohne Beachtung der Groß-/Kleinschreibung eindeutig; eingebaute Namen bleiben reserviert. Eigene Typen werden über eine stabile ID gespeichert, Umbenennungen ändern bestehende Zuweisungen daher nicht. Viewer können die Liste lesen. Backups und Inventar-Exporte enthalten eigene Typen und die deaktivierten eingebauten Typen; ältere Backups stellen beides als leere Liste wieder her.
 
+### Geändert
+- Seitenleiste (Issue #305): Der Standortwähler braucht vertikal weniger Platz, damit die Seitenleiste auf kleineren Bildschirmen kompakt bleibt. Aktionen und Verhalten bleiben unverändert.
+
 ## [0.43.0] — 2026-10-19
 
 ### Hinzugefügt
