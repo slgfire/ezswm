@@ -54,7 +54,7 @@
         </div>
         <div>
           <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('networks.allocations.fields.deviceType') }}</dt>
-          <dd class="mt-1 text-sm text-highlighted">{{ editTarget.device_type ? $t(`networks.allocations.deviceTypes.${editTarget.device_type}`) : '-' }}</dd>
+          <dd class="mt-1 text-sm text-highlighted">{{ deviceTypeLabel(editTarget.device_type) }}</dd>
         </div>
         <div>
           <dt class="text-[10px] font-medium uppercase tracking-wider text-muted">{{ $t('networks.allocations.fields.status') }}</dt>
@@ -159,6 +159,11 @@ const openModel = computed({
 })
 
 const readonly = computed(() => props.readonly === true)
+
+function deviceTypeLabel(value?: string | null) {
+  if (!value) return '-'
+  return props.deviceTypeOptions.find(option => option.value === value)?.label ?? value
+}
 
 const modeModel = computed({
   get: () => props.mode,

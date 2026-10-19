@@ -578,6 +578,8 @@ Click **Add** to open the add/edit sidepanel. Each allocation records:
 - **MAC Address** -- shown as secondary info in the row
 - **Description** -- shown as secondary info in the row
 
+Admins can add, rename, deactivate, or reactivate custom categories under **Settings → General → IP allocation categories**. The nine built-in categories stay available and translated. Active custom categories can be selected for new assignments; inactive or older unknown values remain visible on existing allocations and in filters. Custom names are shown as entered, without translation. These categories describe IP allocations only; they do not classify switches or other inventory.
+
 ### IP Ranges
 
 IP ranges designate blocks of addresses for specific purposes:

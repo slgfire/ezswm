@@ -64,6 +64,95 @@
               <UButton type="submit" :loading="savingGeneral" icon="i-heroicons-check">{{ $t('common.save') }}</UButton>
             </div>
           </form>
+
+          <details class="group rounded-xl border border-default bg-default">
+            <summary
+              :aria-label="$t('settings.general.deviceTypesTitle')"
+              class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-xl p-4 sm:p-5"
+            >
+              <div class="min-w-0">
+                <span role="heading" aria-level="3" class="text-sm font-semibold">{{ $t('settings.general.deviceTypesTitle') }}</span>
+                <p class="mt-1 text-xs text-muted">{{ $t('settings.general.deviceTypesDescription') }}</p>
+              </div>
+              <UIcon name="i-heroicons-chevron-down" class="size-4 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden="true" />
+            </summary>
+            <div class="space-y-4 border-t border-default px-4 py-4 sm:px-6">
+              <div v-if="deviceTypesLoadError" class="space-y-2">
+                <UAlert color="error" variant="subtle" icon="i-lucide-circle-alert" :title="$t('settings.general.deviceTypesLoadFailed')" />
+                <UButton size="xs" variant="ghost" color="neutral" :loading="loadingDeviceTypes" @click="retryDeviceTypes">
+                  {{ $t('common.retry') }}
+                </UButton>
+              </div>
+              <div v-else-if="loadingDeviceTypes" class="flex items-center gap-3 py-2 text-sm text-muted" role="status" aria-live="polite">
+                <UIcon name="i-lucide-loader-circle" class="size-4 animate-spin" aria-hidden="true" />
+                {{ $t('common.loading') }}
+              </div>
+              <template v-else>
+                <form class="flex flex-col gap-3 sm:flex-row sm:items-end" @submit.prevent="createDeviceType">
+                  <UFormField :label="$t('settings.general.deviceTypeName')" class="min-w-0 flex-1">
+                    <UInput v-model="newDeviceTypeName" :aria-label="$t('settings.general.deviceTypeName')" required class="w-full" />
+                  </UFormField>
+                  <UButton
+                    type="submit"
+                    icon="i-heroicons-plus"
+                    :loading="deviceTypeMutation === 'create'"
+                    :disabled="!!deviceTypeMutation || !newDeviceTypeName.trim()"
+                  >
+                    {{ $t('settings.general.deviceTypeAdd') }}
+                  </UButton>
+                </form>
+
+                <p v-if="customDeviceTypes.length === 0" class="py-2 text-sm text-muted">{{ $t('settings.general.deviceTypesEmpty') }}</p>
+                <ul v-else class="divide-y divide-default">
+                  <li v-for="type in customDeviceTypes" :key="type.id" class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex min-w-0 flex-1 items-center gap-2">
+                      <UInput
+                        v-if="editingDeviceTypeId === type.id"
+                        v-model="editingDeviceTypeName"
+                        :aria-label="$t('settings.general.deviceTypeName')"
+                        class="w-full max-w-sm"
+                        @keydown.esc.prevent="cancelDeviceTypeEdit"
+                      />
+                      <span v-else class="truncate text-sm font-medium text-highlighted">{{ type.name }}</span>
+                      <UBadge :color="type.active ? 'success' : 'neutral'" variant="subtle" size="sm">
+                        {{ type.active ? $t('common.active') : $t('common.inactive') }}
+                      </UBadge>
+                    </div>
+                    <div class="flex shrink-0 flex-wrap items-center gap-2">
+                      <template v-if="editingDeviceTypeId === type.id">
+                        <UButton
+                          size="xs"
+                          :loading="deviceTypeMutation === type.id"
+                          :disabled="!!deviceTypeMutation || !editingDeviceTypeName.trim() || editingDeviceTypeName.trim() === type.name"
+                          @click="saveDeviceTypeName(type)"
+                        >
+                          {{ $t('common.save') }}
+                        </UButton>
+                        <UButton size="xs" variant="ghost" color="neutral" :disabled="!!deviceTypeMutation" @click="cancelDeviceTypeEdit">
+                          {{ $t('common.cancel') }}
+                        </UButton>
+                      </template>
+                      <template v-else>
+                        <UButton size="xs" variant="ghost" color="neutral" :disabled="!!deviceTypeMutation" @click="editDeviceType(type)">
+                          {{ $t('settings.general.deviceTypeRename') }}
+                        </UButton>
+                        <UButton
+                          size="xs"
+                          variant="subtle"
+                          :color="type.active ? 'warning' : 'success'"
+                          :loading="deviceTypeMutation === type.id"
+                          :disabled="!!deviceTypeMutation"
+                          @click="toggleDeviceType(type)"
+                        >
+                          {{ type.active ? $t('settings.general.deviceTypeDeactivate') : $t('settings.general.deviceTypeActivate') }}
+                        </UButton>
+                      </template>
+                    </div>
+                  </li>
+                </ul>
+              </template>
+            </div>
+          </details>
         </div>
       </template>
 
@@ -469,6 +558,7 @@
 <script setup lang="ts">
 import type { OidcCheckResultDto, OidcConfigDto } from '../../types/oidc'
 import type { Site } from '~~/types/site'
+import type { CustomDeviceType } from '~~/types/ipAllocation'
 
 const AUTOMATIC_SITE = '_automatic'
 
@@ -480,6 +570,14 @@ const { settings, fetch: fetchSettings, update: updateSettings } = useSettings()
 const { update: updateUser, changePassword: changePasswordApi } = useUsers()
 const { getConfig, saveConfig: saveOidcConfig, checkSavedConfig } = useOidc()
 const { apiFetch } = useApiFetch()
+const {
+  items: customDeviceTypes,
+  loading: loadingDeviceTypes,
+  loadError: deviceTypesLoadError,
+  fetch: fetchDeviceTypes,
+  create: createCustomDeviceType,
+  update: updateCustomDeviceType
+} = useDeviceTypes()
 
 const savingGeneral = ref(false)
 const savingProfile = ref(false)
@@ -616,6 +714,92 @@ const accountForm = reactive({
   language: 'en',
   start_site_id: AUTOMATIC_SITE as string
 })
+
+const newDeviceTypeName = ref('')
+const editingDeviceTypeId = ref<string | null>(null)
+const editingDeviceTypeName = ref('')
+const deviceTypeMutation = ref<string | null>(null)
+const deviceTypeEditIsDirty = computed(() => {
+  const original = customDeviceTypes.value.find(type => type.id === editingDeviceTypeId.value)?.name
+  return original !== undefined && editingDeviceTypeName.value !== original
+})
+const deviceTypeDraft = computed(() => ({
+  createName: newDeviceTypeName.value,
+  editId: deviceTypeEditIsDirty.value ? editingDeviceTypeId.value : '',
+  editName: deviceTypeEditIsDirty.value ? editingDeviceTypeName.value : ''
+}))
+const { clearDirty: clearDeviceTypeDraft } = useUnsavedChanges(deviceTypeDraft)
+
+function editDeviceType(type: CustomDeviceType) {
+  if (!canEditInfrastructure.value || deviceTypesLoadError.value || deviceTypeMutation.value) return
+  editingDeviceTypeId.value = type.id
+  editingDeviceTypeName.value = type.name
+}
+
+function cancelDeviceTypeEdit() {
+  editingDeviceTypeId.value = null
+  editingDeviceTypeName.value = ''
+}
+
+async function handleDeviceTypeMutationError(error: unknown, generation: number) {
+  if (await handleAdminError(error, generation)) return
+  toast.add({ title: t('errors.serverError'), color: 'error' })
+}
+
+function retryDeviceTypes() {
+  void fetchDeviceTypes()
+}
+
+async function createDeviceType() {
+  const name = newDeviceTypeName.value.trim()
+  if (!canEditInfrastructure.value || !name || deviceTypesLoadError.value || deviceTypeMutation.value) return
+  const generation = adminGeneration
+  deviceTypeMutation.value = 'create'
+  try {
+    await createCustomDeviceType(name)
+    if (!adminCurrent(generation)) return
+    newDeviceTypeName.value = ''
+    clearDeviceTypeDraft()
+    toast.add({ title: t('settings.general.deviceTypeCreated'), color: 'success' })
+  } catch (error) {
+    await handleDeviceTypeMutationError(error, generation)
+  } finally {
+    deviceTypeMutation.value = null
+  }
+}
+
+async function saveDeviceTypeName(type: CustomDeviceType) {
+  const name = editingDeviceTypeName.value.trim()
+  if (!canEditInfrastructure.value || !name || name === type.name || deviceTypesLoadError.value || deviceTypeMutation.value) return
+  const generation = adminGeneration
+  deviceTypeMutation.value = type.id
+  try {
+    await updateCustomDeviceType(type.id, { name })
+    if (!adminCurrent(generation)) return
+    cancelDeviceTypeEdit()
+    clearDeviceTypeDraft()
+    toast.add({ title: t('settings.general.deviceTypeUpdated'), color: 'success' })
+  } catch (error) {
+    await handleDeviceTypeMutationError(error, generation)
+  } finally {
+    deviceTypeMutation.value = null
+  }
+}
+
+async function toggleDeviceType(type: CustomDeviceType) {
+  if (!canEditInfrastructure.value || deviceTypesLoadError.value || deviceTypeMutation.value) return
+  const generation = adminGeneration
+  deviceTypeMutation.value = type.id
+  try {
+    await updateCustomDeviceType(type.id, { active: !type.active })
+    if (!adminCurrent(generation)) return
+    toast.add({ title: t('settings.general.deviceTypeUpdated'), color: 'success' })
+  } catch (error) {
+    await handleDeviceTypeMutationError(error, generation)
+  } finally {
+    deviceTypeMutation.value = null
+  }
+}
 
 const sites = ref<Site[]>([])
 const loadingStartSites = ref(true)
@@ -1031,6 +1215,8 @@ onMounted(async () => {
       generalForm.patch_panels_enabled = settings.value.patch_panels_enabled ?? false
       generalForm.switch_groups_enabled = settings.value.switch_groups_enabled ?? true
     }
+    await fetchDeviceTypes()
+    if (mountStale()) return settleIfUntouched()
   }
   if (user.value) {
     assignAccount()

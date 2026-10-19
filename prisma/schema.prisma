@@ -406,3 +406,11 @@ model AppSettings {
   patch_panels_enabled Boolean @default(false)
   switch_groups_enabled Boolean @default(true)
 }
+
+/// Custom device types for IP allocations (Issue #301). The id is the stable,
+/// immutable key stored in IpAllocation.device_type; no delete API exists.
+model CustomDeviceType {
+  id     String  @id
+  name   String  @unique
+  active Boolean @default(true)
+}

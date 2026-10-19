@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { prisma } from '../db/client'
 import type { IPAllocation } from '../../types/ipAllocation'
 import { isValidIPv4, isIPInSubnet, isUsableHostIP, isValidMacAddress, subnetRangeError, parseSubnet, ipToLong } from '../utils/ipv4'
+import { assertDeviceTypeAssignable } from './customDeviceTypeRepository'
 
 interface AllocationRow {
   id: string
@@ -60,7 +61,11 @@ export const ipAllocationRepository = {
     return row ? rowToAllocation(row) : null
   },
 
-  async create(networkId: string, data: Omit<IPAllocation, 'id' | 'network_id' | 'created_at' | 'updated_at'>): Promise<IPAllocation> {
+  async create(
+    networkId: string,
+    data: Omit<IPAllocation, 'id' | 'network_id' | 'created_at' | 'updated_at'>,
+    options: { allowLegacyDeviceType?: boolean } = {}
+  ): Promise<IPAllocation> {
     const network = await prisma.network.findUnique({ where: { id: networkId } })
     if (!network) {
       throw createError({ statusCode: 404, message: 'Network not found' })
@@ -86,6 +91,10 @@ export const ipAllocationRepository = {
     }
 
     await assertDhcpRangeFree(networkId, data.ip_address)
+
+    if (data.device_type) {
+      await assertDeviceTypeAssignable(data.device_type, { allowLegacy: options.allowLegacyDeviceType })
+    }
 
     const clash = await prisma.ipAllocation.findFirst({ where: { ip_address: data.ip_address } })
     if (clash) {
@@ -179,6 +188,12 @@ export const ipAllocationRepository = {
 
     if (data.mac_address && !isValidMacAddress(data.mac_address)) {
       throw createError({ statusCode: 400, message: 'Invalid MAC address format' })
+    }
+
+    // A resubmitted unchanged value is always accepted (it may be inactive or a
+    // legacy raw string); anything else must be builtin or an active custom id.
+    if (data.device_type !== undefined && data.device_type !== null && data.device_type !== current.device_type) {
+      await assertDeviceTypeAssignable(data.device_type)
     }
 
     const row = await prisma.ipAllocation.update({

@@ -65,7 +65,7 @@
           </template>
 
           <template #device_type-cell="{ row }">
-            {{ optionLabel(deviceTypeOptions, row.original.device_type) }}
+            {{ deviceTypeDisplay(row.original.device_type) }}
           </template>
 
           <template #status-cell="{ row }">
@@ -93,7 +93,7 @@
       :readonly="formReadonly"
       :networks="networks"
       :vlans="vlans"
-      :device-type-options="deviceTypeOptions"
+      :device-type-options="formDeviceTypeOptions"
       :alloc-status-options="allocStatusOptions"
       :error="formError"
       :saving="saving"
@@ -194,6 +194,7 @@ import type { TableColumn, TableRow } from '@nuxt/ui'
 import type { IPAllocation, IpAllocationEnriched } from '~~/types/ipAllocation'
 import type { Network } from '~~/types/network'
 import type { VLAN } from '~~/types/vlan'
+import { deviceTypeFilterOptions as buildDeviceTypeFilterOptions, deviceTypeLabel, deviceTypeOptions as buildDeviceTypeOptions } from '~~/app/utils/deviceTypes'
 
 interface NetworkMoveCandidate {
   id: string
@@ -243,6 +244,7 @@ function noticeAccessChanged() {
 const { items, fetch: fetchAllocations, create, update, remove } = useSiteIpAllocations()
 const { items: networks, fetch: fetchNetworks } = useNetworks()
 const { items: vlans, fetch: fetchVlans } = useVlans()
+const { items: customDeviceTypes, fetch: fetchDeviceTypes } = useDeviceTypes()
 
 const UButton = resolveComponent('UButton')
 
@@ -250,17 +252,13 @@ const pageLoading = ref(true)
 const siteParams = computed(() => (siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {}))
 
 // --- Options (shared by form, filters and cell labels) ---
-const deviceTypeOptions = computed(() => [
-  { label: t('networks.allocations.deviceTypes.server'), value: 'server' },
-  { label: t('networks.allocations.deviceTypes.switch'), value: 'switch' },
-  { label: t('networks.allocations.deviceTypes.router'), value: 'router' },
-  { label: t('networks.allocations.deviceTypes.firewall'), value: 'firewall' },
-  { label: t('networks.allocations.deviceTypes.printer'), value: 'printer' },
-  { label: t('networks.allocations.deviceTypes.phone'), value: 'phone' },
-  { label: t('networks.allocations.deviceTypes.ap'), value: 'ap' },
-  { label: t('networks.allocations.deviceTypes.camera'), value: 'camera' },
-  { label: t('networks.allocations.deviceTypes.other'), value: 'other' }
-])
+const translateBuiltinDeviceType = (key: string) => t(`networks.allocations.deviceTypes.${key}`)
+const formDeviceTypeOptions = computed(() => buildDeviceTypeOptions(
+  customDeviceTypes.value,
+  translateBuiltinDeviceType,
+  editTarget.value?.device_type
+))
+const deviceTypeDisplay = (value?: string | null) => deviceTypeLabel(value, customDeviceTypes.value, translateBuiltinDeviceType)
 const allocStatusOptions = computed(() => [
   { label: t('common.active'), value: 'active' },
   { label: t('networks.allocations.statuses.reserved'), value: 'reserved' },
@@ -333,7 +331,12 @@ const vlanFilterOptions = computed(() => {
   return options
 })
 const statusFilterOptions = computed(() => [{ label: t('ipAddresses.filters.allStatuses'), value: 'all' }, ...allocStatusOptions.value])
-const deviceTypeFilterOptions = computed(() => [{ label: t('ipAddresses.filters.allDeviceTypes'), value: 'all' }, ...deviceTypeOptions.value])
+const deviceTypeFilterOptions = computed(() => buildDeviceTypeFilterOptions(
+  customDeviceTypes.value,
+  items.value.map(item => item.device_type),
+  translateBuiltinDeviceType,
+  t('ipAddresses.filters.allDeviceTypes')
+))
 
 const filteredData = computed(() => {
   let result = items.value
@@ -697,7 +700,8 @@ onMounted(async () => {
   await Promise.all([
     fetchAllocations(siteId.value),
     fetchNetworks(siteParams.value),
-    fetchVlans(siteParams.value)
+    fetchVlans(siteParams.value),
+    fetchDeviceTypes()
   ])
   pageLoading.value = false
 })

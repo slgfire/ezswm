@@ -802,7 +802,18 @@
       "patchPanelsEnabled": "Enable Patch Panels",
       "patchPanelsEnabledHint": "Show patch panel management in navigation and search.",
       "switchGroupsEnabled": "Enable Switch Groups",
-      "switchGroupsEnabledHint": "When disabled, switch group management, grouping views, and assignment menus are hidden. Existing groups and assignments are preserved and reappear when re-enabled."
+      "switchGroupsEnabledHint": "When disabled, switch group management, grouping views, and assignment menus are hidden. Existing groups and assignments are preserved and reappear when re-enabled.",
+      "deviceTypesTitle": "IP allocation categories",
+      "deviceTypesDescription": "Custom labels for IP allocations only; they do not classify switches or other inventory.",
+      "deviceTypeName": "Category name",
+      "deviceTypeAdd": "Add category",
+      "deviceTypesEmpty": "No custom IP allocation categories yet.",
+      "deviceTypesLoadFailed": "Custom categories could not be loaded. Existing categories were kept.",
+      "deviceTypeCreated": "Category added.",
+      "deviceTypeUpdated": "Category updated.",
+      "deviceTypeRename": "Rename",
+      "deviceTypeActivate": "Activate",
+      "deviceTypeDeactivate": "Deactivate"
     },
     "account": {
       "title": "Account",

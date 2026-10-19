@@ -6,7 +6,7 @@ import { prisma } from '../../db/client'
 export default defineEventHandler(async (event) => {
   const [
     sites, switches, switchGroups, ports, vlans, networks, ipAllocations, ipRanges,
-    layoutTemplates, lagGroups, activity, settings, publicTokens, topologyLayouts
+    layoutTemplates, lagGroups, activity, settings, publicTokens, topologyLayouts, customDeviceTypes
   ] = await Promise.all([
     prisma.site.findMany(),
     prisma.switch.findMany(),
@@ -21,7 +21,8 @@ export default defineEventHandler(async (event) => {
     prisma.activityEntry.findMany({ orderBy: { timestamp: 'desc' } }),
     prisma.appSettings.findMany(),
     prisma.publicToken.findMany(),
-    prisma.topologyLayout.findMany()
+    prisma.topologyLayout.findMany(),
+    prisma.customDeviceType.findMany({ orderBy: { name: 'asc' } })
   ])
 
   setHeader(event, 'Content-Type', 'application/json')
@@ -32,7 +33,7 @@ export default defineEventHandler(async (event) => {
     schema: 'sqlite-v1',
     data: {
       sites, switches, switchGroups, ports, vlans, networks, ipAllocations, ipRanges,
-      layoutTemplates, lagGroups, activity, settings, publicTokens, topologyLayouts
+      layoutTemplates, lagGroups, activity, settings, publicTokens, topologyLayouts, customDeviceTypes
     }
   }
 })

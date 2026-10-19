@@ -81,7 +81,7 @@
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="text-sm font-medium text-highlighted">{{ (row.data as IPAllocation).hostname || (row.data as IPAllocation).ip_address }}</span>
-                  <UBadge v-if="(row.data as IPAllocation).device_type" variant="subtle" color="neutral" size="sm">{{ $t(`networks.allocations.deviceTypes.${(row.data as IPAllocation).device_type}`) }}</UBadge>
+                  <UBadge v-if="(row.data as IPAllocation).device_type" variant="subtle" color="neutral" size="sm">{{ deviceTypeDisplay((row.data as IPAllocation).device_type) }}</UBadge>
                   <UBadge :color="(row.data as IPAllocation).status === 'active' ? 'success' : (row.data as IPAllocation).status === 'reserved' ? 'warning' : 'neutral'" variant="subtle" size="sm">{{ $t(`networks.allocations.statuses.${(row.data as IPAllocation).status}`) }}</UBadge>
                 </div>
                 <div v-if="(row.data as IPAllocation).description || (row.data as IPAllocation).mac_address" class="mt-0.5 flex items-center gap-3 text-[11px] text-muted">
@@ -276,6 +276,7 @@
 import type { Network } from '~~/types/network'
 import type { IPAllocation, AllocationStatus, DeviceType } from '~~/types/ipAllocation'
 import type { IPRange, RangeType } from '~~/types/ipRange'
+import { deviceTypeLabel, deviceTypeOptions as buildDeviceTypeOptions } from '~~/app/utils/deviceTypes'
 
 const { t } = useI18n()
 const toast = useToast()
@@ -288,6 +289,7 @@ const { update: updateNetwork, remove: removeNetwork } = useNetworks()
 const { items: vlans, fetch: fetchVlans } = useVlans()
 const { items: allocations, fetch: fetchAllocations, create: createAllocation, update: updateAllocation, remove: removeAllocation } = useIpAllocations(networkId)
 const { items: ranges, fetch: fetchRanges, create: createRange, update: updateRange, remove: removeRange } = useIpRanges(networkId)
+const { items: customDeviceTypes, fetch: fetchDeviceTypes } = useDeviceTypes()
 
 const pageLoading = ref(true)
 const network = ref<Network | null>(null)
@@ -437,17 +439,13 @@ const associatedVlan = computed(() => {
   return vlans.value.find((v) => v.id === network.value!.vlan_id) ?? null
 })
 
-const deviceTypeOptions = computed(() => [
-  { label: t('networks.allocations.deviceTypes.server'), value: 'server' },
-  { label: t('networks.allocations.deviceTypes.switch'), value: 'switch' },
-  { label: t('networks.allocations.deviceTypes.router'), value: 'router' },
-  { label: t('networks.allocations.deviceTypes.firewall'), value: 'firewall' },
-  { label: t('networks.allocations.deviceTypes.printer'), value: 'printer' },
-  { label: t('networks.allocations.deviceTypes.phone'), value: 'phone' },
-  { label: t('networks.allocations.deviceTypes.ap'), value: 'ap' },
-  { label: t('networks.allocations.deviceTypes.camera'), value: 'camera' },
-  { label: t('networks.allocations.deviceTypes.other'), value: 'other' }
-])
+const translateBuiltinDeviceType = (key: string) => t(`networks.allocations.deviceTypes.${key}`)
+const deviceTypeOptions = computed(() => buildDeviceTypeOptions(
+  customDeviceTypes.value,
+  translateBuiltinDeviceType,
+  editAllocTarget.value?.device_type
+))
+const deviceTypeDisplay = (value?: string | null) => deviceTypeLabel(value, customDeviceTypes.value, translateBuiltinDeviceType)
 const allocStatusOptions = computed(() => [
   { label: t('common.active'), value: 'active' },
   { label: t('networks.allocations.statuses.reserved'), value: 'reserved' },
@@ -968,5 +966,5 @@ watch(canEditInfrastructure, (canEdit, wasEditable) => {
 
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 
-onMounted(async () => { await Promise.all([loadNetwork(), fetchVlans(siteParams.value), fetchAllocations(), fetchRanges()]) })
+onMounted(async () => { await Promise.all([loadNetwork(), fetchVlans(siteParams.value), fetchAllocations(), fetchRanges(), fetchDeviceTypes()]) })
 </script>

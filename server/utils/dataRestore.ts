@@ -24,6 +24,7 @@ const REVERSE_FK_DELETE_ORDER = [
   'patchPanelToken',
   'patchPanelSocket',
   'patchPanel',
+  'customDeviceType',
   'site'
 ] as const
 
@@ -47,6 +48,7 @@ const FK_INSERT_ORDER = [
   ['ports', 'port'],
   ['publicTokens', 'publicToken'],
   ['topologyLayouts', 'topologyLayout'],
+  ['customDeviceTypes', 'customDeviceType'],
   ['activity', 'activityEntry']
 ] as const
 
@@ -171,6 +173,32 @@ function normalizeOidcConfig(rows: unknown[] | undefined): Record<string, unknow
   return out
 }
 
+/**
+ * Custom device types (Issue #301). Missing key = legacy backup, restored as an
+ * empty list. Rows are structural only: stable UUID id, trimmed 1..100 name and
+ * a boolean `active`. Names must be unique case-insensitively.
+ */
+function normalizeCustomDeviceTypes(rows: unknown[] | undefined): Record<string, unknown>[] {
+  if (rows === undefined) return []
+  if (!Array.isArray(rows)) bad('Backup customDeviceTypes must be an array.')
+  const out: Record<string, unknown>[] = []
+  const names = new Set<string>()
+  rows.forEach((raw, i) => {
+    if (!raw || typeof raw !== 'object') bad(`Row ${i} of customDeviceType: expected an object.`)
+    const r = raw as Record<string, unknown>
+    if (typeof r.id !== 'string' || !UUID_RE.test(r.id)) bad(`Row ${i} of customDeviceType: id must be a UUID.`)
+    if (typeof r.name !== 'string') bad(`Row ${i} of customDeviceType: name must be a string.`)
+    const name = r.name.trim()
+    if (name.length < 1 || name.length > 100) bad(`Row ${i} of customDeviceType: name must be 1..100 characters.`)
+    const lower = name.toLowerCase()
+    if (names.has(lower)) bad(`Row ${i} of customDeviceType: duplicate name.`)
+    names.add(lower)
+    if (r.active !== undefined && typeof r.active !== 'boolean') bad(`Row ${i} of customDeviceType: active must be a boolean.`)
+    out.push({ id: r.id, name, active: r.active === undefined ? true : r.active })
+  })
+  return out
+}
+
 const PATCH_PANEL_KEYS = ['patchPanels', 'patchPanelSockets', 'patchPanelTokens'] as const
 
 /**
@@ -231,6 +259,7 @@ export async function restoreAll(prisma: PrismaClient, payload: unknown, options
   const { data } = validatePayload(payload)
   const users = normalizeUsers(data.users)
   const oidcConfig = normalizeOidcConfig(data.oidcConfig)
+  data.customDeviceTypes = normalizeCustomDeviceTypes(data.customDeviceTypes)
   const includesPatchPanels = hasPatchPanelData(data)
 
   // ID validation pass — fail fast before we touch the DB.

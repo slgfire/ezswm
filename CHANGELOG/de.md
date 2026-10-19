@@ -2,6 +2,11 @@
 
 ---
 
+## [0.44.0] — 2026-10-19
+
+### Hinzugefügt
+- Eigene Gerätetypen (Issue #301): Administratoren können benannte Gerätetypen für IP-Zuweisungen anlegen, umbenennen und deaktivieren; Löschen wird nicht angeboten. Die neun eingebauten Typen bleiben unveränderlich und immer verfügbar, und ein deaktivierter eigener Typ bleibt für bestehende Zuweisungen lesbar, kann aber nicht neu zugewiesen werden. Namen werden getrimmt, sind 1–100 Zeichen lang und ohne Beachtung der Groß-/Kleinschreibung eindeutig; eingebaute Namen bleiben reserviert. Eigene Typen werden über eine stabile ID gespeichert, Umbenennungen ändern bestehende Zuweisungen daher nicht. Viewer können die Liste lesen. Backups und Inventar-Exporte enthalten eigene Typen; ältere Backups stellen sie als leere Liste wieder her.
+
 ## [0.43.0] — 2026-10-19
 
 ### Hinzugefügt

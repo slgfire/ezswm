@@ -194,10 +194,10 @@ async function importAllocations(rows: Record<string, unknown>[]): Promise<Impor
         ip_address: String(row.ip_address),
         hostname: row.hostname ? String(row.hostname) : undefined,
         mac_address: row.mac_address ? String(row.mac_address) : undefined,
-        device_type: row.device_type as 'server' | 'switch' | 'router' | 'firewall' | 'printer' | 'phone' | 'ap' | 'camera' | 'other' | undefined,
+        device_type: row.device_type ? String(row.device_type) : undefined,
         description: row.description ? String(row.description) : undefined,
         status: (row.status as 'active' | 'reserved' | 'inactive') ?? 'active'
-      })
+      }, { allowLegacyDeviceType: true })
       result.imported++
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)

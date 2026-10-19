@@ -578,6 +578,8 @@ Klicke auf **Hinzufügen**, um das Hinzufügen/Bearbeiten-Sidepanel zu öffnen. 
 - **MAC-Adresse** -- als sekundäre Info in der Zeile angezeigt
 - **Beschreibung** -- als sekundäre Info in der Zeile angezeigt
 
+Admins können unter **Einstellungen → Allgemein → Kategorien für IP-Zuweisungen** eigene Kategorien hinzufügen, umbenennen, deaktivieren oder wieder aktivieren. Die neun integrierten Kategorien bleiben verfügbar und werden übersetzt. Aktive eigene Kategorien lassen sich neuen Zuweisungen zuordnen; inaktive oder ältere unbekannte Werte bleiben bei bestehenden Zuweisungen und in Filtern sichtbar. Eigene Namen werden unverändert angezeigt und nicht übersetzt. Diese Kategorien beschreiben ausschließlich IP-Zuweisungen; sie klassifizieren keine Switches oder anderen Inventarobjekte.
+
 ### IP-Bereiche
 
 IP-Bereiche kennzeichnen Adressblöcke für bestimmte Zwecke:

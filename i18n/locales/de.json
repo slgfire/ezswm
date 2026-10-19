@@ -802,7 +802,18 @@
       "patchPanelsEnabled": "Patchfelder aktivieren",
       "patchPanelsEnabledHint": "Patchfeld-Verwaltung in Navigation und Suche anzeigen.",
       "switchGroupsEnabled": "Switch-Gruppen aktivieren",
-      "switchGroupsEnabledHint": "Wenn deaktiviert, werden Switch-Gruppen-Verwaltung, Gruppierungsansichten und Zuweisungsmenüs ausgeblendet. Bestehende Gruppen und Zuweisungen bleiben erhalten und erscheinen wieder beim erneuten Aktivieren."
+      "switchGroupsEnabledHint": "Wenn deaktiviert, werden Switch-Gruppen-Verwaltung, Gruppierungsansichten und Zuweisungsmenüs ausgeblendet. Bestehende Gruppen und Zuweisungen bleiben erhalten und erscheinen wieder beim erneuten Aktivieren.",
+      "deviceTypesTitle": "Kategorien für IP-Zuweisungen",
+      "deviceTypesDescription": "Eigene Labels gelten nur für IP-Zuweisungen; sie klassifizieren keine Switches oder anderen Inventarobjekte.",
+      "deviceTypeName": "Kategoriename",
+      "deviceTypeAdd": "Kategorie hinzufügen",
+      "deviceTypesEmpty": "Noch keine eigenen Kategorien für IP-Zuweisungen.",
+      "deviceTypesLoadFailed": "Eigene Kategorien konnten nicht geladen werden. Vorhandene Kategorien bleiben erhalten.",
+      "deviceTypeCreated": "Kategorie hinzugefügt.",
+      "deviceTypeUpdated": "Kategorie aktualisiert.",
+      "deviceTypeRename": "Umbenennen",
+      "deviceTypeActivate": "Aktivieren",
+      "deviceTypeDeactivate": "Deaktivieren"
     },
     "account": {
       "title": "Konto",
