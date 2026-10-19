@@ -2,6 +2,11 @@
 
 ---
 
+## [0.42.1] — 2026-10-19
+
+### Behoben
+- Löschen von IP-Zuweisungen (Issue #297): entfernt nur die Zuweisungsverweise an verbundenen Ports und erhält wechselseitige Switch-Port-Verbindungen, Anzeigenamen und übrige Porteinstellungen. Das gilt auch für Ports, denen ein partielles API-Update eine Zuweisung hinzugefügt hat, ohne die Gegenstellenverbindung zu ersetzen.
+
 ## [0.42.0] — 2026-10-07
 
 ### Hinzugefügt

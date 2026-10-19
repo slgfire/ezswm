@@ -1,5 +1,4 @@
 import { ipAllocationRepository } from '../../../../repositories/ipAllocationRepository'
-import { switchRepository } from '../../../../repositories/switchRepository'
 import { activityRepository } from '../../../../repositories/activityRepository'
 
 export default defineEventHandler(async (event) => {
@@ -15,19 +14,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'IP allocation not found' })
   }
 
-  // Clear connected_allocation_id on all ports referencing this allocation
-  // Keep connected_device string as fallback display
-  const allSwitches = await switchRepository.list()
-  for (const sw of allSwitches) {
-    for (const port of sw.ports) {
-      if (port.connected_allocation_id === allocId) {
-        try {
-          await switchRepository.updatePort(sw.id, port.id, { connected_allocation_id: undefined })
-        } catch { /* best-effort cleanup */ }
-      }
-    }
-  }
-
+  // The allocation FK clears port references via ON DELETE SET NULL without changing peer links.
   await ipAllocationRepository.delete(allocId)
 
   await activityRepository.log({

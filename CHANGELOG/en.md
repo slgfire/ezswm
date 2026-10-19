@@ -2,6 +2,11 @@
 
 ---
 
+## [0.42.1] — 2026-10-19
+
+### Fixed
+- IP allocation deletion (Issue #297): clears only the allocation references on linked ports, preserving reciprocal switch-port connections, display labels and other port settings. This also covers ports given an allocation through a partial API update while retaining a peer link.
+
 ## [0.42.0] — 2026-10-07
 
 ### Added

@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { PrismaClient } from '@prisma/client'
 import { randomUUID } from 'node:crypto'
 
-import { createTestPrisma, seedSite, seedSwitch } from './testHelpers'
+import { createTestPrisma, seedNetwork, seedSite, seedSwitch } from './testHelpers'
 import { asCookie, installH3Globals, makeEvent, seedLocalUser, tokenFor } from './helpers/h3Harness'
 
 type Handler = (event: unknown) => unknown
@@ -123,6 +123,48 @@ describe('port connection routes: reciprocal peer behaviour', () => {
     expect(res.status).toBe(200)
     expect(await view(p3)).toEqual({ ...before.source, description: 'changed' })
     expect(await view(p1)).toEqual(before.peer)
+  })
+
+  it('allocation deletion clears only allocation references and preserves both peer endpoints (#297)', async () => {
+    const sw = await prisma.switch.findUniqueOrThrow({ where: { id: sw1.id } })
+    const network = await seedNetwork(prisma, { site_id: sw.site_id })
+    const allocId = randomUUID()
+    const otherAllocId = randomUUID()
+    const now = new Date().toISOString()
+    await prisma.ipAllocation.createMany({ data: [allocId, otherAllocId].map((id, i) => ({
+      id, network_id: network.id, ip_address: `10.0.1.${10 + i}`, status: 'allocated', created_at: now, updated_at: now
+    })) })
+    const plainPort = await seedPort(sw1.id, '1/5', 5)
+    const unrelatedPort = await seedPort(sw3.id, '1/6', 6)
+
+    const connected = await putPort(sw1.id, p1, connectBody(sw3, 'SW03', '1/4', p3))
+    expect(connected.error).toBeUndefined()
+    expect(await view(p3)).toMatchObject({ deviceId: sw1.id, portId: p1 })
+    // A partial API update can add an allocation without replacing the existing peer link.
+    for (const [switchId, portId, allocationId] of [
+      [sw1.id, p1, allocId], [sw1.id, plainPort, allocId], [sw3.id, unrelatedPort, otherAllocId]
+    ] as const) {
+      const result = await putPort(switchId, portId, { connected_allocation_id: allocationId })
+      expect(result.error).toBeUndefined()
+    }
+    const before = await prisma.port.findMany({ orderBy: { id: 'asc' } })
+    expect(before.find(p => p.id === p1)).toMatchObject({
+      connected_allocation_id: allocId, connected_device_id: sw3.id, connected_port_id: p3
+    })
+
+    const event = makeEvent({ method: 'DELETE', path: `/api/networks/${network.id}/allocations/${allocId}`, cookies })
+    event.context.params = { id: network.id, allocId }
+    const { default: middleware } = await import('../server/middleware/auth')
+    await (middleware as Handler)(event)
+    const { default: removeAllocation } = await import('../server/api/networks/[id]/allocations/[allocId].delete')
+    expect(await (removeAllocation as Handler)(event)).toBeNull()
+
+    expect(await prisma.ipAllocation.findUnique({ where: { id: allocId } })).toBeNull()
+    expect(await prisma.ipAllocation.findUnique({ where: { id: otherAllocId } })).not.toBeNull()
+    expect(await prisma.port.findMany({ orderBy: { id: 'asc' } })).toEqual(before.map(p => ({
+      ...p, connected_allocation_id: p.connected_allocation_id === allocId ? null : p.connected_allocation_id
+    })))
+    expect(await prisma.activityEntry.findFirst({ where: { entity_id: allocId, action: 'delete' } })).not.toBeNull()
   })
 
   it('disconnect clears both sides completely', async () => {
