@@ -84,7 +84,7 @@
             :description="$t('settings.categories.settingsLoadHint')"
           >
             <template #actions>
-              <UButton size="xs" color="neutral" variant="ghost" :loading="loadingCategorySettings" @click="loadCategorySettings">
+              <UButton size="xs" color="neutral" variant="ghost" :loading="loadingCategorySettings" @click="() => loadCategorySettings()">
                 {{ $t('common.retry') }}
               </UButton>
             </template>
