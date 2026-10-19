@@ -5,14 +5,23 @@
 </template>
 
 <script setup lang="ts">
+import type { Site } from '~~/types/site'
+import { getLastVisitedSiteId, resolveStartSite } from '../utils/startSite'
+
 definePageMeta({ layout: false })
+const { user } = useAuth()
 
 onMounted(async () => {
   try {
-    const res = await $fetch<{ data?: { id: string }[] } | { id: string }[]>('/api/sites')
+    const res = await $fetch<{ data?: Site[] } | Site[]>('/api/sites')
     const sites = ('data' in res && Array.isArray(res.data)) ? res.data : Array.isArray(res) ? res : []
-    if (sites.length > 0) {
-      await navigateTo(`/sites/${sites[0]!.id}`, { replace: true })
+    const site = resolveStartSite(
+      sites,
+      user.value?.start_site_id,
+      getLastVisitedSiteId(user.value?.id)
+    )
+    if (site) {
+      await navigateTo(`/sites/${site.slug || site.id}`, { replace: true })
     } else {
       await navigateTo('/sites', { replace: true })
     }

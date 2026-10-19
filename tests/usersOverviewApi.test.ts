@@ -15,7 +15,7 @@ const FAKE_HASH = '$2a$10$abcdefghijklmnopqrstuuWJ3xv0q9Z0g5l2H0zPq3n3e0dF5v1a2'
 /** Every field the read-only overview list may carry; password_hash must never be among them. */
 const SAFE_KEYS = [
   'id', 'username', 'display_name', 'role', 'language', 'is_setup_user', 'created_at', 'updated_at',
-  'auth_provider', 'oidc_issuer', 'oidc_subject', 'oidc_session_version'
+  'auth_provider', 'oidc_issuer', 'oidc_subject', 'oidc_session_version', 'start_site_id'
 ].sort()
 
 interface Row { id: string, username: string, display_name: string, role: string, auth_provider: string }

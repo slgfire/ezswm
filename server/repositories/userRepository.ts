@@ -17,6 +17,7 @@ interface UserRow {
   oidc_issuer: string | null
   oidc_subject: string | null
   oidc_session_version: number
+  start_site_id: string | null
 }
 
 function rowToUser(row: UserRow): User {
@@ -33,7 +34,8 @@ function rowToUser(row: UserRow): User {
     auth_provider: row.auth_provider === 'oidc' ? 'oidc' : 'local',
     oidc_issuer: row.oidc_issuer,
     oidc_subject: row.oidc_subject,
-    oidc_session_version: row.oidc_session_version
+    oidc_session_version: row.oidc_session_version,
+    start_site_id: row.start_site_id
   }
 }
 
@@ -41,10 +43,10 @@ function rowToUser(row: UserRow): User {
 export type CreateLocalUserInput = Pick<User, 'username' | 'display_name' | 'role' | 'language' | 'is_setup_user'> & { password_hash: string }
 
 /** Fields a manual update may touch. OIDC identity fields/versions are never updatable here. */
-export type UserUpdate = Partial<Pick<User, 'username' | 'display_name' | 'password_hash' | 'role' | 'language' | 'is_setup_user'>>
+export type UserUpdate = Partial<Pick<User, 'username' | 'display_name' | 'password_hash' | 'role' | 'language' | 'is_setup_user' | 'start_site_id'>>
 
 /** Self-service profile fields; allowed for every account type including OIDC. */
-export type UserProfileUpdate = Partial<Pick<User, 'display_name' | 'language'>>
+export type UserProfileUpdate = Partial<Pick<User, 'display_name' | 'language' | 'start_site_id'>>
 
 const OIDC_LOCKED_FIELDS = ['username', 'password_hash', 'role', 'is_setup_user'] as const
 
@@ -71,6 +73,15 @@ async function countOtherLocalAdmins(tx: Tx, excludeId: string): Promise<number>
 
 function isLocalAdmin(row: UserRow): boolean {
   return row.auth_provider === 'local' && row.role === 'admin' && row.password_hash !== null
+}
+
+/** A preferred start site must exist; `null` clears the preference. Checked inside the update transaction. */
+async function assertStartSiteExists(tx: Tx, startSiteId: string | null | undefined): Promise<void> {
+  if (startSiteId === undefined || startSiteId === null) return
+  const site = await tx.site.findUnique({ where: { id: startSiteId } })
+  if (!site) {
+    throw createError({ statusCode: 400, message: 'Unknown start site' })
+  }
 }
 
 export interface ProvisionOidcUserInput {
@@ -155,6 +166,8 @@ export const userRepository = {
         }
       }
 
+      await assertStartSiteExists(tx, data.start_site_id)
+
       const patch: UserUpdate = {}
       for (const key of Object.keys(data) as (keyof UserUpdate)[]) {
         if (data[key] !== undefined) (patch as Record<string, unknown>)[key] = data[key]
@@ -167,20 +180,24 @@ export const userRepository = {
     })
   },
 
-  /** Self-service profile update (display_name/language) – valid for OIDC users too. */
+  /** Self-service profile update (display_name/language/start_site_id) – valid for OIDC users too. */
   async updateProfile(id: string, data: UserProfileUpdate): Promise<User> {
-    const existing = await prisma.user.findUnique({ where: { id } })
-    if (!existing) {
-      throw createError({ statusCode: 404, message: 'User not found' })
-    }
-    const patch: UserProfileUpdate = {}
-    if (data.display_name !== undefined) patch.display_name = data.display_name
-    if (data.language !== undefined) patch.language = data.language
-    const row = await prisma.user.update({
-      where: { id },
-      data: { ...patch, updated_at: new Date().toISOString() }
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.user.findUnique({ where: { id } })
+      if (!existing) {
+        throw createError({ statusCode: 404, message: 'User not found' })
+      }
+      await assertStartSiteExists(tx, data.start_site_id)
+      const patch: UserProfileUpdate = {}
+      if (data.display_name !== undefined) patch.display_name = data.display_name
+      if (data.language !== undefined) patch.language = data.language
+      if (data.start_site_id !== undefined) patch.start_site_id = data.start_site_id
+      const row = await tx.user.update({
+        where: { id },
+        data: { ...patch, updated_at: new Date().toISOString() }
+      })
+      return rowToUser(row)
     })
-    return rowToUser(row)
   },
 
   /**

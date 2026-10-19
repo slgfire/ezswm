@@ -4,6 +4,7 @@
       v-model="selectedSiteId"
       :items="siteOptions"
       value-key="value"
+      :aria-label="$t('sites.switchSite')"
       :search-input="false"
       size="sm"
       class="w-full"
@@ -14,14 +15,18 @@
 
 <script setup lang="ts">
 import type { Site } from '~~/types/site'
+import { getLastVisitedSiteId, rememberLastVisitedSite, resolveStartSite } from '../../utils/startSite'
 
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
+const { user } = useAuth()
 const { setSite } = useCurrentSite()
 
 const sites = ref<Site[]>([])
 const selectedSiteId = ref('all')
+let sitesLoaded = false
+let siteLoadFailed = false
 
 // URLs use the slug. Dropdown values follow the same convention so router.push
 // in onSiteChange lands on the slug URL straight away.
@@ -57,41 +62,72 @@ function onSiteChange(value: string) {
   }
 }
 
+function applyStartSiteFallback() {
+  if (!sitesLoaded) return
+
+  const site = resolveStartSite(
+    sites.value,
+    user.value?.start_site_id,
+    getLastVisitedSiteId(user.value?.id)
+  )
+  if (!site) {
+    selectedSiteId.value = 'all'
+    setSite('all', undefined)
+    return
+  }
+
+  const urlId = urlIdForSite(site)
+  selectedSiteId.value = urlId
+  setSite(urlId, site)
+}
+
+function applyRouteSite(param: unknown, recordVisit = true) {
+  if (!sitesLoaded) return
+
+  if (typeof param === 'string' && param && param !== 'all') {
+    const site = findSite(param)
+    if (site) {
+      const urlId = urlIdForSite(site)
+      selectedSiteId.value = urlId
+      setSite(urlId, site)
+      if (recordVisit) rememberLastVisitedSite(user.value?.id, site.id)
+    } else if (siteLoadFailed) {
+      // Keep the existing URL context when the site list itself could not load.
+      selectedSiteId.value = param
+      setSite(param, undefined)
+    } else {
+      applyStartSiteFallback()
+    }
+    return
+  }
+
+  if (param === 'all') {
+    selectedSiteId.value = 'all'
+    setSite('all', undefined)
+    return
+  }
+
+  applyStartSiteFallback()
+}
+
 async function loadSites() {
+  const userIdAtLoad = user.value?.id
   try {
     const res = await $fetch<{ data?: Site[] } | Site[]>('/api/sites')
     sites.value = (Array.isArray(res) ? res : res?.data) || []
+    siteLoadFailed = false
   } catch {
     sites.value = []
+    siteLoadFailed = true
   }
-
-  // Set current site from URL. The URL may carry either the UUID (legacy
-  // bookmark) or the slug (new canonical form).
-  const param = route.params.siteId as string
-  if (param && param !== 'all') {
-    const site = findSite(param)
-    const urlId = site ? urlIdForSite(site) : param
-    selectedSiteId.value = urlId
-    setSite(urlId, site || undefined)
-  } else if (param === 'all') {
-    selectedSiteId.value = 'all'
-    setSite('all', undefined)
-  } else if (sites.value.length > 0) {
-    // Not on a site page — default to first site
-    const first = sites.value[0]!
-    const urlId = urlIdForSite(first)
-    selectedSiteId.value = urlId
-    setSite(urlId, first)
-  }
+  sitesLoaded = true
+  applyRouteSite(route.params.siteId, userIdAtLoad === user.value?.id)
 }
 
-watch(() => route.params.siteId, (param) => {
-  if (param && typeof param === 'string') {
-    const site = findSite(param)
-    const urlId = site ? urlIdForSite(site) : param
-    selectedSiteId.value = urlId
-    setSite(urlId, site || undefined)
-  }
+watch(() => route.params.siteId, param => applyRouteSite(param))
+
+watch(() => [user.value?.id, user.value?.start_site_id], () => {
+  if (!route.params.siteId) applyStartSiteFallback()
 })
 
 onMounted(() => {

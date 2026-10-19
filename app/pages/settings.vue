@@ -10,7 +10,7 @@
       </div>
     </div>
 
-    <UTabs v-model="activeTab" :items="tabs" variant="link" color="neutral">
+    <UTabs v-model="activeTab" :items="tabs" variant="link" color="neutral" @update:model-value="activeTabTouched = true">
       <template #general>
         <div v-if="canEditInfrastructure" class="mt-4 space-y-6">
           <div>
@@ -90,6 +90,18 @@
                 </UFormField>
                 <UFormField :label="$t('settings.account.language')">
                   <USelect v-model="accountForm.language" :items="languageOptions" class="w-full" />
+                </UFormField>
+                <UFormField :label="$t('settings.account.startSite')">
+                  <USelect
+                    v-model="accountForm.start_site_id"
+                    :items="startSiteOptions"
+                    :disabled="loadingStartSites"
+                    :aria-label="$t('settings.account.startSite')"
+                    class="w-full"
+                  />
+                  <p v-if="startSiteLoadFailed" class="mt-1 text-xs text-warning" role="status">
+                    {{ $t('settings.account.startSiteLoadFailed') }}
+                  </p>
                 </UFormField>
                 <div class="pt-2">
                   <UButton type="submit" :loading="savingProfile" icon="i-heroicons-check">
@@ -456,6 +468,9 @@
 
 <script setup lang="ts">
 import type { OidcCheckResultDto, OidcConfigDto } from '../../types/oidc'
+import type { Site } from '~~/types/site'
+
+const AUTOMATIC_SITE = '_automatic'
 
 const toast = useToast()
 const { t, setLocale } = useI18n()
@@ -464,6 +479,7 @@ const { user, authResolved, isAuthLoading, canEditInfrastructure, fetchUser, han
 const { settings, fetch: fetchSettings, update: updateSettings } = useSettings()
 const { update: updateUser, changePassword: changePasswordApi } = useUsers()
 const { getConfig, saveConfig: saveOidcConfig, checkSavedConfig } = useOidc()
+const { apiFetch } = useApiFetch()
 
 const savingGeneral = ref(false)
 const savingProfile = ref(false)
@@ -477,6 +493,7 @@ const oidcConfig = ref<OidcConfigDto | null>(null)
 const checkResult = ref<OidcCheckResultDto | null>(null)
 const oidcBaseline = ref('')
 const activeTab = ref<'general' | 'account' | 'authentication'>(canEditInfrastructure.value ? 'general' : 'account')
+const activeTabTouched = ref(false)
 
 interface OidcFormState {
   enabled: boolean
@@ -596,7 +613,30 @@ const generalForm = reactive({
 
 const accountForm = reactive({
   display_name: '',
-  language: 'en'
+  language: 'en',
+  start_site_id: AUTOMATIC_SITE as string
+})
+
+const sites = ref<Site[]>([])
+const loadingStartSites = ref(true)
+const startSiteLoadFailed = ref(false)
+const startSiteLoadComplete = ref(false)
+const initialStartSiteSelection = ref<string>(AUTOMATIC_SITE)
+const startSiteOptions = computed(() => {
+  const options = [
+    { label: t('settings.account.startSiteAutomatic'), value: AUTOMATIC_SITE },
+    ...sites.value.map(site => ({ label: site.name, value: site.id }))
+  ]
+  const selected = accountForm.start_site_id
+  if (selected !== AUTOMATIC_SITE && !sites.value.some(site => site.id === selected)) {
+    options.push({
+      label: startSiteLoadComplete.value
+        ? t('settings.account.startSiteUnavailable')
+        : t('settings.account.startSiteLoading'),
+      value: selected
+    })
+  }
+  return options
 })
 
 const passwordForm = reactive({
@@ -713,25 +753,64 @@ async function saveGeneral() {
   }
 }
 
+async function loadStartSites() {
+  loadingStartSites.value = true
+  startSiteLoadFailed.value = false
+  try {
+    const response = await apiFetch<{ data?: Site[] } | Site[]>('/api/sites')
+    sites.value = (Array.isArray(response) ? response : response?.data) || []
+    if (accountForm.start_site_id !== AUTOMATIC_SITE && !sites.value.some(site => site.id === accountForm.start_site_id)) {
+      accountForm.start_site_id = AUTOMATIC_SITE
+    }
+  } catch {
+    // Keep the stored ID in the form so saving another profile field cannot clear it.
+    startSiteLoadFailed.value = true
+  } finally {
+    loadingStartSites.value = false
+    startSiteLoadComplete.value = true
+    initialStartSiteSelection.value = accountForm.start_site_id
+  }
+}
+
 async function saveAccount() {
   if (!user.value) return
   // Capture what is submitted before any await so later input edits cannot change the comparison.
   const userId = user.value.id
   const displayName = accountForm.display_name
   const language = accountForm.language as 'en' | 'de'
+  const submittedStartSite = accountForm.start_site_id
+  const startSiteId = submittedStartSite === AUTOMATIC_SITE ? null : submittedStartSite
+  const saveStartSite = (startSiteLoadComplete.value && !startSiteLoadFailed.value)
+    || submittedStartSite !== initialStartSiteSelection.value
   savingProfile.value = true
   try {
-    await updateUser(userId, { display_name: displayName, language })
+    await updateUser(userId, {
+      display_name: displayName,
+      language,
+      ...(saveStartSite ? { start_site_id: startSiteId } : {})
+    })
     await setLocale(language)
     // The auth user is read-only here; refresh it from the server (single-flight GET, not a PUT retry).
     let refreshed = await fetchUser()
     // fetchUser may have joined a refresh that started before the save and returned the old profile.
     // That request has finished by now, so at most one fresh refresh can pick up the saved profile.
-    if (refreshed && refreshed.id === userId && (refreshed.display_name !== displayName || refreshed.language !== language)) {
+    if (refreshed && refreshed.id === userId && (
+      refreshed.display_name !== displayName
+      || refreshed.language !== language
+      || (saveStartSite && refreshed.start_site_id !== startSiteId)
+    )) {
       refreshed = await fetchUser()
     }
     // Session ended or the identity changed meanwhile: do not report success for this profile.
     if (!refreshed || refreshed.id !== userId) return
+    if (accountForm.start_site_id === submittedStartSite) {
+      const refreshedStartSite = refreshed.start_site_id
+      accountForm.start_site_id = refreshedStartSite
+        && (startSiteLoadFailed.value || !startSiteLoadComplete.value || sites.value.some(site => site.id === refreshedStartSite))
+        ? refreshedStartSite
+        : AUTOMATIC_SITE
+      initialStartSiteSelection.value = accountForm.start_site_id
+    }
     clearDirty()
     toast.add({ title: t('settings.messages.profileUpdated'), color: 'success' })
   } catch {
@@ -917,11 +996,17 @@ onMounted(async () => {
   const mountAdmin = canEditInfrastructure.value
   const mountStale = () => mountGen !== adminGeneration || (mountAdmin && !canEditInfrastructure.value)
 
-  let assigned: { display_name: string, language: string } | null = null
+  let assigned: { display_name: string, language: string, start_site_id: string } | null = null
   const assignAccount = () => {
-    assigned = { display_name: user.value?.display_name || '', language: user.value?.language || 'en' }
+    assigned = {
+      display_name: user.value?.display_name || '',
+      language: user.value?.language || 'en',
+      start_site_id: user.value?.start_site_id ?? AUTOMATIC_SITE
+    }
     accountForm.display_name = assigned.display_name
     accountForm.language = assigned.language
+    accountForm.start_site_id = assigned.start_site_id
+    initialStartSiteSelection.value = assigned.start_site_id
   }
   // When stale, finish the personal initial state only if the user has not touched it
   // (nothing to lose), otherwise leave the form and the dirty snapshot as they are.
@@ -929,7 +1014,9 @@ onMounted(async () => {
     const noPasswords = !passwordForm.current_password && !passwordForm.new_password && !passwordForm.confirm_password
     const untouched = noPasswords && (assigned
       ? accountForm.display_name === assigned.display_name && accountForm.language === assigned.language
-      : accountForm.display_name === '' && accountForm.language === 'en')
+        && accountForm.start_site_id === initialStartSiteSelection.value
+      : accountForm.display_name === '' && accountForm.language === 'en'
+        && accountForm.start_site_id === initialStartSiteSelection.value)
     if (!untouched) return
     if (!assigned) assignAccount()
     clearDirty()
@@ -945,10 +1032,13 @@ onMounted(async () => {
       generalForm.switch_groups_enabled = settings.value.switch_groups_enabled ?? true
     }
   }
-  if (user.value) assignAccount()
+  if (user.value) {
+    assignAccount()
+    await loadStartSites()
+  }
   await loadOidcConfig()
   if (mountStale()) return settleIfUntouched()
-  activeTab.value = canEditInfrastructure.value ? 'general' : 'account'
+  if (!activeTabTouched.value) activeTab.value = canEditInfrastructure.value ? 'general' : 'account'
   await nextTick()
   if (mountStale()) return settleIfUntouched()
   clearDirty()

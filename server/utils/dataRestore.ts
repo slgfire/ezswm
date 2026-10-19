@@ -27,11 +27,12 @@ const REVERSE_FK_DELETE_ORDER = [
   'site'
 ] as const
 
-// Forward (parent → child) order for inserts.
+// Forward (parent → child) order for inserts. Sites come before users because a
+// user may reference its preferred start site.
 const FK_INSERT_ORDER = [
-  ['users', 'user'],
   ['settings', 'appSettings'],
   ['sites', 'site'],
+  ['users', 'user'],
   ['patchPanels', 'patchPanel'],
   ['patchPanelSockets', 'patchPanelSocket'],
   ['patchPanelTokens', 'patchPanelToken'],
@@ -64,7 +65,8 @@ export interface RestoreResult {
 
 const USER_COLUMNS = [
   'id', 'username', 'display_name', 'password_hash', 'role', 'language', 'is_setup_user',
-  'created_at', 'updated_at', 'auth_provider', 'oidc_issuer', 'oidc_subject', 'oidc_session_version'
+  'created_at', 'updated_at', 'auth_provider', 'oidc_issuer', 'oidc_subject', 'oidc_session_version',
+  'start_site_id'
 ] as const
 
 function bad(message: string): never {
@@ -97,6 +99,11 @@ function normalizeUsers(rows: unknown[] | undefined): Record<string, unknown>[] 
     const subject = r.oidc_subject === undefined ? null : r.oidc_subject
     const version = r.oidc_session_version === undefined || r.oidc_session_version === null ? 0 : r.oidc_session_version
     if (typeof version !== 'number' || !Number.isInteger(version) || version < 0) bad(`Row ${i} of user: invalid oidc_session_version.`)
+    // Legacy backups have no start site; the FK itself rejects unknown site IDs.
+    const startSiteId = r.start_site_id === undefined ? null : r.start_site_id
+    if (startSiteId !== null && (typeof startSiteId !== 'string' || !UUID_RE.test(startSiteId))) {
+      bad(`Row ${i} of user: start_site_id must be a UUID or null.`)
+    }
 
     if (provider === 'local') {
       if (!nonEmptyString(hash)) bad(`Row ${i} of user: local users require a password_hash.`)
@@ -117,6 +124,7 @@ function normalizeUsers(rows: unknown[] | undefined): Record<string, unknown>[] 
     row.oidc_issuer = issuer
     row.oidc_subject = subject
     row.oidc_session_version = version
+    row.start_site_id = startSiteId
     out.push(row)
   })
   if (localAdmins === 0) {

@@ -29,6 +29,7 @@ model Site {
   networks Network[]
   patch_panels PatchPanel[]
   topology TopologyLayout?
+  users User[]
 }
 
 model PatchPanel {
@@ -313,9 +314,14 @@ model User {
   oidc_subject         String?
   oidc_session_version Int     @default(0) // bumped on post-validation access denial to invalidate older OIDC JWTs
 
+  // Preferred start site; null = Automatic (first site by name).
+  start_site_id String?
+  start_site    Site?   @relation(fields: [start_site_id], references: [id], onDelete: SetNull)
+
   activities ActivityEntry[]
 
   @@unique([oidc_issuer, oidc_subject])
+  @@index([start_site_id])
 }
 
 // ---------------------------------------------------------------------------
