@@ -125,6 +125,11 @@ test('start site selection, automatic fallback, deletion, and explicit site rout
   watchErrors(page, errors)
 
   let profile: Profile | undefined
+  let profileWrites = 0
+  page.on('request', request => {
+    if (profile && request.method() === 'PUT'
+      && new URL(request.url()).pathname === `/api/users/${profile.id}`) profileWrites++
+  })
   const createdSites: Site[] = []
   try {
     profile = await getProfile(request)
@@ -143,6 +148,7 @@ test('start site selection, automatic fallback, deletion, and explicit site rout
     const automaticSite = sitesBefore[0]!
 
     await openAccount(page, 'admin')
+    await page.evaluate(userId => localStorage.removeItem(`ezswm:last-visited-site:${userId}`), profile.id)
     await chooseStartSite(page, AUTOMATIC)
     const automaticBody = await saveStartSite(page, profile.id)
     expect(automaticBody).toMatchObject({ start_site_id: null })
@@ -151,13 +157,36 @@ test('start site selection, automatic fallback, deletion, and explicit site rout
     await page.goto('/')
     await page.waitForURL(url => url.pathname === `/sites/${automaticSite.slug}`)
 
+    // A valid explicit site route wins, records this browser's visit, and survives a reload.
+    await page.goto(`/sites/${otherSite.slug}/switches`)
+    await page.waitForURL(url => url.pathname === `/sites/${otherSite.slug}/switches`)
+    // SSR already matches the URL; wait until SiteSwitcher has loaded sites and recorded the visit.
+    await expect(page.getByRole('button', { name: SITE_SWITCHER_LABEL })).toContainText(otherSite.name, { timeout: 30000 })
+    await page.goto('/')
+    await page.waitForURL(url => url.pathname === `/sites/${otherSite.slug}`)
+    await page.reload()
+    await expect(page).toHaveURL(new RegExp(`/sites/${otherSite.slug}$`))
+    await page.goto('/')
+    await page.waitForURL(url => url.pathname === `/sites/${otherSite.slug}`)
+
+    // A new page in the same browser profile reads the durable local history too.
+    const reopenedPage = await page.context().newPage()
+    watchErrors(reopenedPage, errors)
+    await reopenedPage.goto('/')
+    await reopenedPage.waitForURL(url => url.pathname === `/sites/${otherSite.slug}`)
+    await reopenedPage.close()
+    expect(profileWrites, 'navigation must not write the account preference').toBe(1)
+
+    await page.goto('/settings')
+    const switcher = page.getByRole('button', { name: SITE_SWITCHER_LABEL })
+    await expect(switcher).toContainText(otherSite.name)
     await openAccount(page, 'admin')
     await chooseStartSite(page, chosenSite.name)
     const fixedBody = await saveStartSite(page, profile.id)
     expect(fixedBody).toMatchObject({ start_site_id: chosenSite.id })
     expect((await getProfile(request)).start_site_id).toBe(chosenSite.id)
 
-    const switcher = page.getByRole('button', { name: SITE_SWITCHER_LABEL })
+    await page.goto('/settings')
     await expect(switcher).toContainText(chosenSite.name)
     await switcher.click()
     await page.getByRole('option', { name: otherSite.name, exact: true }).click()
@@ -169,8 +198,13 @@ test('start site selection, automatic fallback, deletion, and explicit site rout
     await expect(page.getByRole('dialog')).toHaveCount(0)
     await expect(switcher).toContainText(chosenSite.name)
 
+    await page.goto(`/sites/${otherSite.slug}/switches`)
+    await page.waitForURL(url => url.pathname === `/sites/${otherSite.slug}/switches`)
+    await expect(switcher).toContainText(otherSite.name)
     await page.goto('/')
     await page.waitForURL(url => url.pathname === `/sites/${chosenSite.slug}`)
+    await expect(switcher).toContainText(chosenSite.name)
+    expect(profileWrites, 'site navigation must not write the account preference').toBe(2)
     await page.reload()
     await expect(page).toHaveURL(new RegExp(`/sites/${chosenSite.slug}$`))
     expect((await getProfile(request)).start_site_id).toBe(chosenSite.id)

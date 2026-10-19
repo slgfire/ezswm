@@ -5,7 +5,7 @@
 ## [0.43.0] — 2026-10-19
 
 ### Added
-- Start site (Issue #298): each user can choose a preferred site that the app opens first. The preference is optional and defaults to Automatic (the first site by name). Admins can set it for any account; viewers can set it for their own profile, next to display name and language. An unknown or malformed site is rejected with a validation error and nothing is saved, and deleting a site resets the affected users to Automatic without touching their other settings. Backups include the preference: current backups round-trip it, older backups without the field restore as Automatic, and a backup that references a missing site is rejected as a whole.
+- Start site (Issue #298): each user can choose a preferred site that the app opens first. The preference is optional and defaults to Automatic (the last site visited in this browser for that account, then the first site by name). Admins can set it for any account; viewers can set it for their own profile, next to display name and language. A fixed preference always wins, while opening another valid site directly still works and updates only that browser's per-account history. An unknown or malformed site is rejected with a validation error and nothing is saved, and deleting a site resets the affected users to Automatic without touching their other settings. Backups include the preference: current backups round-trip it, older backups without the field restore as Automatic, and a backup that references a missing site is rejected as a whole.
 
 ## [0.42.1] — 2026-10-19
 

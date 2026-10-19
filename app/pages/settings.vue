@@ -91,7 +91,7 @@
                 <UFormField :label="$t('settings.account.language')">
                   <USelect v-model="accountForm.language" :items="languageOptions" class="w-full" />
                 </UFormField>
-                <UFormField :label="$t('settings.account.startSite')" :hint="$t('settings.account.startSiteHint')">
+                <UFormField :label="$t('settings.account.startSite')">
                   <USelect
                     v-model="accountForm.start_site_id"
                     :items="startSiteOptions"

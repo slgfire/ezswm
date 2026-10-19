@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import type { Site } from '~~/types/site'
-import { resolveStartSite } from '../../utils/startSite'
+import { getLastVisitedSiteId, rememberLastVisitedSite, resolveStartSite } from '../../utils/startSite'
 
 const router = useRouter()
 const route = useRoute()
@@ -25,6 +25,8 @@ const { setSite } = useCurrentSite()
 
 const sites = ref<Site[]>([])
 const selectedSiteId = ref('all')
+let sitesLoaded = false
+let siteLoadFailed = false
 
 // URLs use the slug. Dropdown values follow the same convention so router.push
 // in onSiteChange lands on the slug URL straight away.
@@ -61,7 +63,13 @@ function onSiteChange(value: string) {
 }
 
 function applyStartSiteFallback() {
-  const site = resolveStartSite(sites.value, user.value?.start_site_id)
+  if (!sitesLoaded) return
+
+  const site = resolveStartSite(
+    sites.value,
+    user.value?.start_site_id,
+    getLastVisitedSiteId(user.value?.id)
+  )
   if (!site) {
     selectedSiteId.value = 'all'
     setSite('all', undefined)
@@ -73,38 +81,52 @@ function applyStartSiteFallback() {
   setSite(urlId, site)
 }
 
+function applyRouteSite(param: unknown, recordVisit = true) {
+  if (!sitesLoaded) return
+
+  if (typeof param === 'string' && param && param !== 'all') {
+    const site = findSite(param)
+    if (site) {
+      const urlId = urlIdForSite(site)
+      selectedSiteId.value = urlId
+      setSite(urlId, site)
+      if (recordVisit) rememberLastVisitedSite(user.value?.id, site.id)
+    } else if (siteLoadFailed) {
+      // Keep the existing URL context when the site list itself could not load.
+      selectedSiteId.value = param
+      setSite(param, undefined)
+    } else {
+      applyStartSiteFallback()
+    }
+    return
+  }
+
+  if (param === 'all') {
+    selectedSiteId.value = 'all'
+    setSite('all', undefined)
+    return
+  }
+
+  applyStartSiteFallback()
+}
+
 async function loadSites() {
+  const userIdAtLoad = user.value?.id
   try {
     const res = await $fetch<{ data?: Site[] } | Site[]>('/api/sites')
     sites.value = (Array.isArray(res) ? res : res?.data) || []
+    siteLoadFailed = false
   } catch {
     sites.value = []
+    siteLoadFailed = true
   }
-
-  // Set current site from URL. The URL may carry either the UUID (legacy
-  // bookmark) or the slug (new canonical form).
-  const param = route.params.siteId as string
-  if (param && param !== 'all') {
-    const site = findSite(param)
-    const urlId = site ? urlIdForSite(site) : param
-    selectedSiteId.value = urlId
-    setSite(urlId, site || undefined)
-  } else if (param === 'all') {
-    selectedSiteId.value = 'all'
-    setSite('all', undefined)
-  } else applyStartSiteFallback()
+  sitesLoaded = true
+  applyRouteSite(route.params.siteId, userIdAtLoad === user.value?.id)
 }
 
-watch(() => route.params.siteId, (param) => {
-  if (param && typeof param === 'string') {
-    const site = findSite(param)
-    const urlId = site ? urlIdForSite(site) : param
-    selectedSiteId.value = urlId
-    setSite(urlId, site || undefined)
-  } else applyStartSiteFallback()
-})
+watch(() => route.params.siteId, param => applyRouteSite(param))
 
-watch(() => user.value?.start_site_id, () => {
+watch(() => [user.value?.id, user.value?.start_site_id], () => {
   if (!route.params.siteId) applyStartSiteFallback()
 })
 

@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 import type { Site } from '~~/types/site'
-import { resolveStartSite } from '../utils/startSite'
+import { getLastVisitedSiteId, resolveStartSite } from '../utils/startSite'
 
 definePageMeta({ layout: false })
 const { user } = useAuth()
@@ -15,7 +15,11 @@ onMounted(async () => {
   try {
     const res = await $fetch<{ data?: Site[] } | Site[]>('/api/sites')
     const sites = ('data' in res && Array.isArray(res.data)) ? res.data : Array.isArray(res) ? res : []
-    const site = resolveStartSite(sites, user.value?.start_site_id)
+    const site = resolveStartSite(
+      sites,
+      user.value?.start_site_id,
+      getLastVisitedSiteId(user.value?.id)
+    )
     if (site) {
       await navigateTo(`/sites/${site.slug || site.id}`, { replace: true })
     } else {

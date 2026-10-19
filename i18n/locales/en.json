@@ -813,7 +813,6 @@
       "displayName": "Display Name",
       "language": "Language",
       "startSite": "Start site",
-      "startSiteHint": "Choose the site opened from the dashboard. Automatic uses the alphabetically first site; deleted sites return to Automatic.",
       "startSiteAutomatic": "Automatic",
       "startSiteLoading": "Loading saved site…",
       "startSiteUnavailable": "Saved site (could not be checked)",

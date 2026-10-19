@@ -688,7 +688,7 @@ The ezSWM logo is shown on the login page and in the sidebar, with light and dar
 
 ### Account Settings
 
-Change your display name and preferred language (English or German). Under **Settings → Account → Profile**, choose a **Start site** for your account, or **Automatic** to open the alphabetically first site. If the selected site is deleted, ezSWM falls back to the first available site. Local accounts can also change their local password here. For SSO accounts the page shows a notice that the password is managed by your identity provider.
+Change your display name and preferred language (English or German). Under **Settings → Account → Profile**, choose a **Start site** for your account, or **Automatic** to open the last site you visited in this browser for this account. If there is no saved visit, or that site was deleted, ezSWM opens the first site by name. This browser history is separate for each account and does not change the saved preference. A fixed start site always takes priority, including when you open another site directly. Local accounts can also change their local password here. For SSO accounts the page shows a notice that the password is managed by your identity provider.
 
 ### Authentication (OIDC / SSO)
 

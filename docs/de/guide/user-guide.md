@@ -690,7 +690,7 @@ Das ezSWM-Logo wird auf der Login-Seite und in der Seitenleiste angezeigt, mit h
 
 ### Kontoeinstellungen
 
-Ändere deinen Anzeigenamen und deine bevorzugte Sprache (Englisch oder Deutsch). Unter **Einstellungen → Konto → Profil** kannst du für dein Konto einen **Startstandort** festlegen oder **Automatisch** wählen, um den alphabetisch ersten Standort zu öffnen. Wird der gewählte Standort gelöscht, wechselt ezSWM zum ersten verfügbaren Standort. Lokale Konten können hier auch das lokale Passwort ändern. Bei SSO-Konten zeigt die Seite den Hinweis, dass das Passwort vom Identity-Provider verwaltet wird.
+Ändere deinen Anzeigenamen und deine bevorzugte Sprache (Englisch oder Deutsch). Unter **Einstellungen → Konto → Profil** kannst du für dein Konto einen **Startstandort** festlegen oder **Automatisch** wählen, um den zuletzt in diesem Browser mit diesem Konto besuchten Standort zu öffnen. Gibt es noch keinen gespeicherten Besuch oder wurde dieser Standort gelöscht, öffnet ezSWM den ersten Standort nach Namen. Der Browserverlauf ist pro Konto getrennt und ändert die gespeicherte Einstellung nicht. Ein fester Startstandort hat immer Vorrang, auch wenn du einen anderen Standort direkt öffnest. Lokale Konten können hier auch das lokale Passwort ändern. Bei SSO-Konten zeigt die Seite den Hinweis, dass das Passwort vom Identity-Provider verwaltet wird.
 
 ### Authentifizierung (OIDC / SSO)
 
