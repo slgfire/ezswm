@@ -98,7 +98,8 @@
 
         <div class="grid grid-cols-2 gap-3">
           <UFormField :label="$t('ipAddresses.fields.deviceType')">
-            <USelect v-model="form.device_type" :items="deviceTypeOptions" placeholder="-" class="w-full" />
+            <USelect v-model="form.device_type" :items="deviceTypeOptions" :disabled="!deviceTypesReady" placeholder="-" class="w-full" />
+            <p v-if="!deviceTypesReady" class="mt-1 text-xs text-muted">{{ $t('settings.categories.selectionUnavailable') }}</p>
           </UFormField>
           <UFormField :label="$t('ipAddresses.fields.status')">
             <USelect v-model="form.status" :items="allocStatusOptions" class="w-full" />
@@ -149,6 +150,7 @@ const props = withDefaults(defineProps<{
   networks: Network[]
   vlans: VLAN[]
   deviceTypeOptions: { label: string; value: string }[]
+  deviceTypesReady: boolean
   allocStatusOptions: { label: string; value: string }[]
   error: string
   saving: boolean

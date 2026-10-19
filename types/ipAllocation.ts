@@ -20,6 +20,8 @@ export interface CustomDeviceType {
   id: string
   name: string
   active: boolean
+  /** Current IpAllocation.device_type references (server list/get responses). */
+  usage_count?: number
 }
 export type AllocationStatus = 'active' | 'reserved' | 'inactive'
 

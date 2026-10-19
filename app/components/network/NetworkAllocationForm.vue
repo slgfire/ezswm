@@ -80,7 +80,8 @@
         </UFormField>
         <div class="grid grid-cols-2 gap-3">
           <UFormField :label="$t('networks.allocations.fields.deviceType')">
-            <USelect v-model="allocForm.device_type" :items="deviceTypeOptions" placeholder="-" class="w-full" />
+            <USelect v-model="allocForm.device_type" :items="deviceTypeOptions" :disabled="!deviceTypesReady" placeholder="-" class="w-full" />
+            <p v-if="!deviceTypesReady" class="mt-1 text-xs text-muted">{{ $t('settings.categories.selectionUnavailable') }}</p>
           </UFormField>
           <UFormField :label="$t('networks.allocations.fields.status')">
             <USelect v-model="allocForm.status" :items="allocStatusOptions" class="w-full" />
@@ -137,6 +138,7 @@ const props = defineProps<{
   saving: boolean
   isSpecialNet: boolean
   deviceTypeOptions: { label: string; value: string }[]
+  deviceTypesReady: boolean
   allocStatusOptions: { label: string; value: string }[]
   rangeTypeOptions: { label: string; value: string }[]
 }>()

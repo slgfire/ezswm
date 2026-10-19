@@ -405,6 +405,7 @@ model AppSettings {
   sites_initialized   Boolean @default(false)
   patch_panels_enabled Boolean @default(false)
   switch_groups_enabled Boolean @default(true)
+  disabled_builtin_device_types String @default("[]") // JSON array of builtin device-type keys
 }
 
 /// Custom device types for IP allocations (Issue #301). The id is the stable,

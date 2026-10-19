@@ -35,5 +35,11 @@ export function useDeviceTypes() {
     return type
   }
 
-  return { items, loading, loadError, fetch, create, update }
+  async function remove(id: string) {
+    await apiFetch<unknown>(`/api/device-types/${id}`, { method: 'DELETE' })
+    items.value = items.value.filter(item => item.id !== id)
+    loadError.value = false
+  }
+
+  return { items, loading, loadError, fetch, create, update, remove }
 }

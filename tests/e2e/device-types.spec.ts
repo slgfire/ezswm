@@ -13,12 +13,17 @@ interface Allocation { id: string, device_type?: string, hostname?: string }
 interface CustomDeviceType { id: string, name: string, active: boolean }
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]'])
-const TITLE = /^(IP allocation categories|Kategorien für IP-Zuweisungen)$/
+const TAB = /^(Categories|Kategorien)$/
+const BUILT_IN_GROUP = /^(Built-in categories|Integrierte Kategorien)$/
+const CUSTOM_GROUP = /^(Custom categories|Eigene Kategorien)$/
+const SERVER_DISABLE = /^(Disable Server for new assignments|Kategorie Server für neue Zuweisungen deaktivieren)$/
+const SERVER_ENABLE = /^(Enable Server for new assignments|Kategorie Server für neue Zuweisungen aktivieren)$/
 const CATEGORY_NAME = /^(Category name|Kategoriename)$/
 const ADD_CATEGORY = /^(Add category|Kategorie hinzufügen)$/
 const RENAME = /^(Rename|Umbenennen)$/
 const DEACTIVATE = /^(Deactivate|Deaktivieren)$/
 const SAVE = /^(Save|Speichern)$/
+const DELETE = /^(Delete|Löschen)$/
 const USERNAME = `device_types_${randomUUID().replaceAll('-', '').slice(0, 12)}`
 const PASSWORD = `Device-type-${randomUUID()}`
 
@@ -35,6 +40,10 @@ function watchErrors(page: Page, errors: string[]) {
   })
 }
 
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 test('admins manage IP allocation categories and viewers cannot manage them', async ({ page, request, browser }) => {
   test.setTimeout(120000)
   assertLocalTarget()
@@ -46,6 +55,7 @@ test('admins manage IP allocation categories and viewers cannot manage them', as
   let viewerContext: BrowserContext | undefined
   let site: Site | undefined
   let customType: CustomDeviceType | undefined
+  let unusedType: CustomDeviceType | undefined
 
   try {
     const me = await request.get('/api/auth/me')
@@ -71,13 +81,57 @@ test('admins manage IP allocation categories and viewers cannot manage them', as
     const typesReady = page.waitForResponse(response =>
       response.request().method() === 'GET' && new URL(response.url()).pathname === '/api/device-types'
     )
+    const settingsReady = page.waitForResponse(response =>
+      response.request().method() === 'GET' && new URL(response.url()).pathname === '/api/settings'
+    )
     const oidcReady = page.waitForResponse(response =>
       response.request().method() === 'GET' && new URL(response.url()).pathname === '/api/auth/oidc/config'
     )
     await page.goto('/settings')
     expect((await typesReady).ok(), 'Settings mounted device-type list request').toBe(true)
+    expect((await settingsReady).ok(), 'Settings loaded category settings').toBe(true)
     expect((await oidcReady).ok(), 'Settings mounted admin OIDC request').toBe(true)
-    await page.getByText(TITLE, { exact: true }).click()
+    await page.getByRole('tab', { name: TAB }).click()
+    await expect(page.getByRole('heading', { name: BUILT_IN_GROUP })).toBeVisible()
+    await expect(page.getByRole('heading', { name: CUSTOM_GROUP })).toBeVisible()
+
+    let builtinSave = page.waitForResponse(response =>
+      response.request().method() === 'PUT' && new URL(response.url()).pathname === '/api/settings'
+    )
+    await page.getByRole('switch', { name: SERVER_DISABLE }).click()
+    let builtinResponse = await builtinSave
+    expect(builtinResponse.ok()).toBe(true)
+    expect(builtinResponse.request().postDataJSON()).toEqual({ disabled_builtin_device_types: ['server'] })
+    expect(await builtinResponse.json()).toMatchObject({ disabled_builtin_device_types: ['server'] })
+
+    builtinSave = page.waitForResponse(response =>
+      response.request().method() === 'PUT' && new URL(response.url()).pathname === '/api/settings'
+    )
+    await page.getByRole('switch', { name: SERVER_ENABLE }).click()
+    builtinResponse = await builtinSave
+    expect(builtinResponse.ok()).toBe(true)
+    expect(builtinResponse.request().postDataJSON()).toEqual({ disabled_builtin_device_types: [] })
+
+    const unusedName = `Unused ${randomUUID()}`
+    await page.getByRole('textbox', { name: CATEGORY_NAME }).fill(unusedName)
+    const unusedCreateRequest = page.waitForResponse(response =>
+      response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/device-types'
+    )
+    await page.getByRole('button', { name: ADD_CATEGORY }).click()
+    const unusedCreateResponse = await unusedCreateRequest
+    expect(unusedCreateResponse.status()).toBe(201)
+    unusedType = await unusedCreateResponse.json() as CustomDeviceType
+    const unusedRow = page.locator('li').filter({ hasText: unusedName })
+    await unusedRow.getByRole('button', { name: new RegExp(`^(Delete ${escapeRegex(unusedName)}|${escapeRegex(unusedName)} löschen)$`) }).click()
+    const deleteDialog = page.getByRole('dialog')
+    await expect(deleteDialog).toBeVisible()
+    const unusedDeleteRequest = page.waitForResponse(response =>
+      response.request().method() === 'DELETE' && new URL(response.url()).pathname === `/api/device-types/${unusedType!.id}`
+    )
+    await deleteDialog.getByRole('button', { name: DELETE }).click()
+    expect((await unusedDeleteRequest).status()).toBe(204)
+    await expect(unusedRow).toHaveCount(0)
+    unusedType = undefined
 
     const originalName = `Room device ${suffix}`
     const renamedName = `Console equipment ${suffix}`
@@ -120,7 +174,25 @@ test('admins manage IP allocation categories and viewers cannot manage them', as
     const allocation = await allocationResponse.json() as Allocation
     expect(allocation.device_type).toBe(customType.id)
 
+    const refreshedTypesReady = page.waitForResponse(response =>
+      response.request().method() === 'GET' && new URL(response.url()).pathname === '/api/device-types'
+    )
+    const refreshedSettingsReady = page.waitForResponse(response =>
+      response.request().method() === 'GET' && new URL(response.url()).pathname === '/api/settings'
+    )
+    const refreshedOidcReady = page.waitForResponse(response =>
+      response.request().method() === 'GET' && new URL(response.url()).pathname === '/api/auth/oidc/config'
+    )
+    await page.reload()
+    expect((await refreshedTypesReady).ok()).toBe(true)
+    expect((await refreshedSettingsReady).ok()).toBe(true)
+    expect((await refreshedOidcReady).ok()).toBe(true)
+    await page.getByRole('tab', { name: TAB }).click()
     row = page.locator('li').filter({ hasText: renamedName })
+    await expect(row.getByText(/^(Uses: 1|Verwendungen: 1)$/)).toBeVisible()
+    await expect(row.getByRole('button', { name: new RegExp(`^(Delete ${escapeRegex(renamedName)}|${escapeRegex(renamedName)} löschen)$`) })).toBeDisabled()
+    await expect(row.getByText(/(Existing assignments use this category|Bestehende Zuweisungen verwenden diese Kategorie)/)).toBeVisible()
+
     const deactivateRequest = page.waitForResponse(response =>
       response.request().method() === 'PUT' && new URL(response.url()).pathname === `/api/device-types/${customType!.id}`
     )
@@ -167,7 +239,7 @@ test('admins manage IP allocation categories and viewers cannot manage them', as
     await viewerPage.waitForURL(url => url.pathname.startsWith('/sites/'))
     await viewerPage.goto('/settings')
     await expect(viewerPage.getByRole('tab', { name: /^(General|Allgemein)$/ })).toHaveCount(0)
-    await expect(viewerPage.getByText(TITLE, { exact: true })).toHaveCount(0)
+    await expect(viewerPage.getByRole('tab', { name: TAB })).toHaveCount(0)
 
     const viewerApi = viewerContext.request
     const viewerTypes = await viewerApi.get('/api/device-types')
@@ -183,9 +255,18 @@ test('admins manage IP allocation categories and viewers cannot manage them', as
       const deleted = await request.delete(`/api/users/${viewer.id}`)
       expect([204, 404]).toContain(deleted.status())
     }
+    if (unusedType) {
+      const deleted = await request.delete(`/api/device-types/${unusedType.id}`)
+      expect([204, 404]).toContain(deleted.status())
+    }
     if (customType) {
-      const deactivated = await request.put(`/api/device-types/${customType.id}`, { data: { active: false } })
-      expect(deactivated.ok(), 'leave only an inactive synthetic category').toBe(true)
+      const deleted = await request.delete(`/api/device-types/${customType.id}`)
+      if (deleted.status() === 409) {
+        const deactivated = await request.put(`/api/device-types/${customType.id}`, { data: { active: false } })
+        expect(deactivated.ok(), 'leave only an inactive synthetic category if cleanup cannot clear its allocation').toBe(true)
+      } else {
+        expect([204, 404]).toContain(deleted.status())
+      }
     }
     if (site) {
       const deleted = await request.delete(`/api/sites/${site.id}`)

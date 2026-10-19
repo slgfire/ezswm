@@ -18,6 +18,7 @@ export interface FakeEvent {
   context: { params?: Record<string, string>, auth?: unknown }
   https: boolean
   // outputs
+  responseStatus?: number
   setCookies: Array<{ name: string, value: string, options: Record<string, unknown> }>
   deletedCookies: string[]
   redirect?: { location: string, status: number }
@@ -67,6 +68,7 @@ export function installH3Globals(): void {
     return location
   }
   g.setHeader = (e: unknown, name: string, value: string) => { ev(e).responseHeaders[name.toLowerCase()] = value }
+  g.setResponseStatus = (e: unknown, status: number) => { ev(e).responseStatus = status }
   g.getQuery = (e: unknown) => {
     const q = new URL(ev(e).path, 'http://q.invalid').searchParams
     const out: Record<string, string | string[]> = {}
@@ -121,6 +123,7 @@ const ROUTES: Array<{ method: string, re: RegExp, load: () => Promise<{ default:
   { method: 'GET', re: /^\/api\/device-types$/, load: () => import('../../server/api/device-types/index.get') },
   { method: 'POST', re: /^\/api\/device-types$/, load: () => import('../../server/api/device-types/index.post') },
   { method: 'PUT', re: /^\/api\/device-types\/([^/]+)$/, params: ['id'], load: () => import('../../server/api/device-types/[id].put') },
+  { method: 'DELETE', re: /^\/api\/device-types\/([^/]+)$/, params: ['id'], load: () => import('../../server/api/device-types/[id].delete') },
   { method: 'GET', re: /^\/api\/settings$/, load: () => import('../../server/api/settings/index.get') },
   { method: 'PUT', re: /^\/api\/settings$/, load: () => import('../../server/api/settings/index.put') },
   { method: 'GET', re: /^\/api\/sites$/, load: () => import('../../server/api/sites/index.get') },
@@ -144,6 +147,7 @@ export async function dispatch(input: DispatchInput): Promise<DispatchResult> {
     result.redirect = event.redirect
     result.headers = event.responseHeaders
     result.auth = event.context.auth as DispatchResult['auth']
+    if (event.responseStatus !== undefined) result.status = event.responseStatus
     if (event.redirect) result.status = event.redirect.status
     return result
   }

@@ -94,6 +94,7 @@
       :networks="networks"
       :vlans="vlans"
       :device-type-options="formDeviceTypeOptions"
+      :device-types-ready="!!settings"
       :alloc-status-options="allocStatusOptions"
       :error="formError"
       :saving="saving"
@@ -245,6 +246,7 @@ const { items, fetch: fetchAllocations, create, update, remove } = useSiteIpAllo
 const { items: networks, fetch: fetchNetworks } = useNetworks()
 const { items: vlans, fetch: fetchVlans } = useVlans()
 const { items: customDeviceTypes, fetch: fetchDeviceTypes } = useDeviceTypes()
+const { settings, fetch: fetchSettings } = useSettings()
 
 const UButton = resolveComponent('UButton')
 
@@ -256,7 +258,8 @@ const translateBuiltinDeviceType = (key: string) => t(`networks.allocations.devi
 const formDeviceTypeOptions = computed(() => buildDeviceTypeOptions(
   customDeviceTypes.value,
   translateBuiltinDeviceType,
-  editTarget.value?.device_type
+  editTarget.value?.device_type,
+  settings.value?.disabled_builtin_device_types ?? []
 ))
 const deviceTypeDisplay = (value?: string | null) => deviceTypeLabel(value, customDeviceTypes.value, translateBuiltinDeviceType)
 const allocStatusOptions = computed(() => [
@@ -701,7 +704,8 @@ onMounted(async () => {
     fetchAllocations(siteId.value),
     fetchNetworks(siteParams.value),
     fetchVlans(siteParams.value),
-    fetchDeviceTypes()
+    fetchDeviceTypes(),
+    fetchSettings().catch(() => {})
   ])
   pageLoading.value = false
 })

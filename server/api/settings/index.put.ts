@@ -3,6 +3,9 @@ import { updateSettingsSchema } from '../../validators/settingsSchemas'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const validated = updateSettingsSchema.parse(body)
-  return await settingsRepository.update(validated)
+  const parsed = updateSettingsSchema.safeParse(body)
+  if (!parsed.success) {
+    throw createError({ statusCode: 400, message: 'Invalid settings data' })
+  }
+  return await settingsRepository.update(parsed.data)
 })

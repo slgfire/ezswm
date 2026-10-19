@@ -43,14 +43,14 @@ describe('custom device types (Issue #301)', () => {
 
   it('admin creates a trimmed custom type; viewers can read the list', async () => {
     const created = await dispatch({ method: 'POST', path: '/api/device-types', cookies: admin, body: { name: '  Game console  ' } })
-    expect(created.status).toBe(200)
+    expect(created.status).toBe(201)
     const body = created.body as { id: string, name: string, active: boolean }
     expect(body.name).toBe('Game console')
     expect(body.active).toBe(true)
 
     const list = await dispatch({ method: 'GET', path: '/api/device-types', cookies: viewer })
     expect(list.status).toBe(200)
-    expect(list.body).toEqual([{ id: body.id, name: 'Game console', active: true }])
+    expect(list.body).toEqual([{ id: body.id, name: 'Game console', active: true, usage_count: 0 }])
   })
 
   it('rejects viewer writes with 403', async () => {
@@ -59,6 +59,13 @@ describe('custom device types (Issue #301)', () => {
     const id = (await customDeviceTypeRepository.create('Existing')).id
     const put = await dispatch({ method: 'PUT', path: `/api/device-types/${id}`, cookies: viewer, body: { active: false } })
     expect(put.status).toBe(403)
+    const settingsPut = await dispatch({
+      method: 'PUT',
+      path: '/api/settings',
+      cookies: viewer,
+      body: { disabled_builtin_device_types: ['phone'] }
+    })
+    expect(settingsPut.status).toBe(403)
   })
 
   it('rejects duplicate names case-insensitively and reserved builtin names', async () => {
@@ -88,6 +95,116 @@ describe('custom device types (Issue #301)', () => {
     expect((list.body as Array<{ id: string, active: boolean }>).find(t => t.id === a.id)?.active).toBe(false)
     const on = await dispatch({ method: 'PUT', path: `/api/device-types/${a.id}`, cookies: admin, body: { active: true } })
     expect((on.body as { active: boolean }).active).toBe(true)
+  })
+
+  it('keeps disabled builtin types in settings; omission preserves, invalid keys 400', async () => {
+    const disabled = await dispatch({
+      method: 'PUT',
+      path: '/api/settings',
+      cookies: admin,
+      body: { disabled_builtin_device_types: ['phone', 'camera'] }
+    })
+    expect(disabled.status).toBe(200)
+    expect((disabled.body as { disabled_builtin_device_types: string[] }).disabled_builtin_device_types)
+      .toEqual(['phone', 'camera'])
+
+    const get = await dispatch({ method: 'GET', path: '/api/settings', cookies: viewer })
+    expect((get.body as { disabled_builtin_device_types: string[] }).disabled_builtin_device_types)
+      .toEqual(['phone', 'camera'])
+
+    // Saving General settings without the field must not reset the list.
+    await dispatch({ method: 'PUT', path: '/api/settings', cookies: admin, body: { app_name: 'ezSWM 2' } })
+    const after = await dispatch({ method: 'GET', path: '/api/settings', cookies: viewer })
+    expect((after.body as { disabled_builtin_device_types: string[] }).disabled_builtin_device_types)
+      .toEqual(['phone', 'camera'])
+
+    const unknown = await dispatch({
+      method: 'PUT',
+      path: '/api/settings',
+      cookies: admin,
+      body: { disabled_builtin_device_types: ['mainframe'] }
+    })
+    expect(unknown.status).toBe(400)
+    const duplicate = await dispatch({
+      method: 'PUT',
+      path: '/api/settings',
+      cookies: admin,
+      body: { disabled_builtin_device_types: ['phone', 'phone'] }
+    })
+    expect(duplicate.status).toBe(400)
+  })
+
+  it('blocks new assignments of disabled builtins but keeps unchanged/legacy values', async () => {
+    await ipAllocationRepository.create(networkId, { ip_address: '10.9.0.40', status: 'active', device_type: 'phone' })
+    await ipAllocationRepository.create(networkId, { ip_address: '10.9.0.42', status: 'active', device_type: 'router' })
+
+    await dispatch({ method: 'PUT', path: '/api/settings', cookies: admin, body: { disabled_builtin_device_types: ['phone'] } })
+
+    await expect(ipAllocationRepository.create(networkId, { ip_address: '10.9.0.41', status: 'active', device_type: 'phone' }))
+      .rejects.toMatchObject({ statusCode: 400, message: expect.stringMatching(/disabled/) })
+
+    const existing = await prisma.ipAllocation.findFirstOrThrow({ where: { ip_address: '10.9.0.40' } })
+    const unchanged = await ipAllocationRepository.update(existing.id, { device_type: 'phone', hostname: 'kept' })
+    expect(unchanged.device_type).toBe('phone')
+
+    const other = await prisma.ipAllocation.findFirstOrThrow({ where: { ip_address: '10.9.0.42' } })
+    await expect(ipAllocationRepository.update(other.id, { device_type: 'phone' })).rejects.toMatchObject({ statusCode: 400 })
+
+    await dispatch({ method: 'PUT', path: '/api/settings', cookies: admin, body: { disabled_builtin_device_types: [] } })
+    await expect(ipAllocationRepository.create(networkId, { ip_address: '10.9.0.43', status: 'active', device_type: 'phone' }))
+      .resolves.toBeTruthy()
+  })
+
+  it('deletes an unused custom type, refuses referenced ones with usage count, and is admin-only', async () => {
+    const unused = await customDeviceTypeRepository.create('Unused')
+    const viewerDelete = await dispatch({ method: 'DELETE', path: `/api/device-types/${unused.id}`, cookies: viewer })
+    expect(viewerDelete.status).toBe(403)
+
+    const deleted = await dispatch({ method: 'DELETE', path: `/api/device-types/${unused.id}`, cookies: admin })
+    expect(deleted.status).toBe(204)
+    expect(await customDeviceTypeRepository.getById(unused.id)).toBeNull()
+    const activity = await prisma.activityEntry.findFirst({ where: { entity_type: 'device_type', entity_id: unused.id } })
+    expect(activity?.action).toBe('delete')
+
+    const unknown = await dispatch({ method: 'DELETE', path: `/api/device-types/${randomUUID()}`, cookies: admin })
+    expect(unknown.status).toBe(404)
+    const builtin = await dispatch({ method: 'DELETE', path: '/api/device-types/switch', cookies: admin })
+    expect(builtin.status).toBe(404)
+
+    const used = await customDeviceTypeRepository.create('In use')
+    await ipAllocationRepository.create(networkId, { ip_address: '10.9.0.50', status: 'active', device_type: used.id })
+    const list = await dispatch({ method: 'GET', path: '/api/device-types', cookies: viewer })
+    expect((list.body as Array<{ id: string, usage_count: number }>).find(t => t.id === used.id)?.usage_count).toBe(1)
+
+    const blocked = await dispatch({ method: 'DELETE', path: `/api/device-types/${used.id}`, cookies: admin })
+    expect(blocked.status).toBe(409)
+    expect(blocked.error?.data).toMatchObject({ code: 'DEVICE_TYPE_IN_USE', usage_count: 1 })
+    expect(await customDeviceTypeRepository.getById(used.id)).not.toBeNull()
+    expect(await prisma.ipAllocation.count({ where: { device_type: used.id } })).toBe(1)
+  })
+
+  it('keeps delete-vs-new-assignment atomic (no orphaned custom reference)', async () => {
+    const type = await customDeviceTypeRepository.create('Race')
+    const results = await Promise.allSettled([
+      ipAllocationRepository.create(networkId, { ip_address: '10.9.0.60', status: 'active', device_type: type.id }),
+      customDeviceTypeRepository.deleteUnused(type.id)
+    ])
+    const del = results[1]!
+
+    const stillThere = await customDeviceTypeRepository.getById(type.id)
+    const allocation = await prisma.ipAllocation.findFirst({ where: { ip_address: '10.9.0.60' } })
+
+    if (allocation?.device_type === type.id) {
+      // An allocation may only reference an existing category.
+      expect(stillThere).not.toBeNull()
+    }
+    if (del.status === 'fulfilled') {
+      expect(stillThere).toBeNull()
+      expect(allocation?.device_type).not.toBe(type.id)
+    } else {
+      // Losing delete leaves the category in place; assignment may still win.
+      expect(stillThere).not.toBeNull()
+    }
   })
 
   // ── Allocation assignment rules ──────────────────────────────────────────
@@ -174,6 +291,51 @@ describe('custom device types (Issue #301)', () => {
     const inventory = await dispatch({ method: 'GET', path: '/api/data/export', cookies: admin })
     expect((inventory.body as { data: { customDeviceTypes: unknown[] } }).data.customDeviceTypes)
       .toEqual([{ id: customId, name: 'Round trip', active: true }])
+  })
+
+  it('restores disabled builtin settings; legacy backups default to none; malformed rejects atomically', async () => {
+    const settingsRow = (extra: Record<string, unknown> = {}) => ({
+      id: 'singleton', app_name: 'ezSWM', app_logo_url: null, default_vlan: null,
+      default_port_status: 'down', port_speeds: JSON.stringify(['1G']),
+      setup_completed: true, sites_initialized: true, ...extra
+    })
+
+    await restoreAll(prisma, basePayload({
+      settings: [settingsRow({ disabled_builtin_device_types: JSON.stringify(['phone', 'camera']) })]
+    }))
+    const current = await dispatch({ method: 'GET', path: '/api/settings' })
+    expect((current.body as { disabled_builtin_device_types: string[] }).disabled_builtin_device_types)
+      .toEqual(['phone', 'camera'])
+
+    await restoreAll(prisma, basePayload())
+    const legacy = await dispatch({ method: 'GET', path: '/api/settings' })
+    expect((legacy.body as { disabled_builtin_device_types: string[] }).disabled_builtin_device_types).toEqual([])
+
+    await customDeviceTypeRepository.create('Survivor')
+    const beforeSites = await prisma.site.count()
+    await expect(restoreAll(prisma, basePayload({
+      settings: [settingsRow({ disabled_builtin_device_types: JSON.stringify(['mainframe']) })]
+    }))).rejects.toMatchObject({ statusCode: 400 })
+    expect(await prisma.site.count()).toBe(beforeSites)
+    expect(await prisma.customDeviceType.count()).toBe(1)
+  })
+
+  it('includes the disabled builtin list in backup and inventory exports', async () => {
+    await restoreAll(prisma, basePayload({
+      settings: [{
+        id: 'singleton', app_name: 'ezSWM', app_logo_url: null, default_vlan: null,
+        default_port_status: 'down', port_speeds: JSON.stringify(['1G']),
+        setup_completed: true, sites_initialized: true,
+        disabled_builtin_device_types: JSON.stringify(['printer'])
+      }]
+    }))
+    admin = asCookie(tokenFor(await prisma.user.findFirstOrThrow()))
+
+    for (const path of ['/api/backup/export', '/api/data/export']) {
+      const res = await dispatch({ method: 'GET', path, cookies: admin })
+      const settings = (res.body as { data: { settings: Array<Record<string, unknown>> } }).data.settings
+      expect(settings[0]?.disabled_builtin_device_types).toBe(JSON.stringify(['printer']))
+    }
   })
 
   it('restores a backup without the custom array as an empty list', async () => {

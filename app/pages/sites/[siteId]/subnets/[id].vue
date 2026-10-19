@@ -240,6 +240,7 @@
       :saving="addPanelMode === 'ip' ? creatingAlloc : creatingRange"
       :is-special-net="isSpecialNet"
       :device-type-options="deviceTypeOptions"
+      :device-types-ready="!!settings"
       :alloc-status-options="allocStatusOptions"
       :range-type-options="rangeTypeOptions"
       @update:open="handleAddOpenChange"
@@ -290,6 +291,7 @@ const { items: vlans, fetch: fetchVlans } = useVlans()
 const { items: allocations, fetch: fetchAllocations, create: createAllocation, update: updateAllocation, remove: removeAllocation } = useIpAllocations(networkId)
 const { items: ranges, fetch: fetchRanges, create: createRange, update: updateRange, remove: removeRange } = useIpRanges(networkId)
 const { items: customDeviceTypes, fetch: fetchDeviceTypes } = useDeviceTypes()
+const { settings, fetch: fetchSettings } = useSettings()
 
 const pageLoading = ref(true)
 const network = ref<Network | null>(null)
@@ -443,7 +445,8 @@ const translateBuiltinDeviceType = (key: string) => t(`networks.allocations.devi
 const deviceTypeOptions = computed(() => buildDeviceTypeOptions(
   customDeviceTypes.value,
   translateBuiltinDeviceType,
-  editAllocTarget.value?.device_type
+  editAllocTarget.value?.device_type,
+  settings.value?.disabled_builtin_device_types ?? []
 ))
 const deviceTypeDisplay = (value?: string | null) => deviceTypeLabel(value, customDeviceTypes.value, translateBuiltinDeviceType)
 const allocStatusOptions = computed(() => [
@@ -966,5 +969,7 @@ watch(canEditInfrastructure, (canEdit, wasEditable) => {
 
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 
-onMounted(async () => { await Promise.all([loadNetwork(), fetchVlans(siteParams.value), fetchAllocations(), fetchRanges(), fetchDeviceTypes()]) })
+onMounted(async () => {
+  await Promise.all([loadNetwork(), fetchVlans(siteParams.value), fetchAllocations(), fetchRanges(), fetchDeviceTypes(), fetchSettings().catch(() => {})])
+})
 </script>

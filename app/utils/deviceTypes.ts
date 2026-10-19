@@ -21,9 +21,10 @@ export function deviceTypeLabel(
 export function deviceTypeOptions(
   customTypes: readonly CustomDeviceType[],
   translateBuiltin: (key: string) => string,
-  currentValue?: string | null
+  currentValue?: string | null,
+  disabledBuiltins: readonly string[] = []
 ): DeviceTypeOption[] {
-  const options: DeviceTypeOption[] = BUILTIN_DEVICE_TYPES.map(value => ({
+  const options: DeviceTypeOption[] = BUILTIN_DEVICE_TYPES.filter(value => !disabledBuiltins.includes(value)).map(value => ({
     label: translateBuiltin(value),
     value
   }))
@@ -33,7 +34,10 @@ export function deviceTypeOptions(
   }
 
   if (currentValue && !options.some(option => option.value === currentValue)) {
-    options.push({ label: currentValue, value: currentValue })
+    options.push({
+      label: builtinTypes.has(currentValue) ? translateBuiltin(currentValue) : currentValue,
+      value: currentValue
+    })
   }
 
   return options

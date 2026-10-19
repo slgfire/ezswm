@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client'
 import { canDecryptOidcSecret } from './oidc/crypto'
 import { providerNameSchema } from '../validators/oidcSchemas'
+import { BUILTIN_DEVICE_TYPES } from '../../types/ipAllocation'
 
 // Tables that hold a singleton row (AppSettings), or that are root parents in
 // the FK graph. Everything else cascades from these.
@@ -135,6 +136,55 @@ function normalizeUsers(rows: unknown[] | undefined): Record<string, unknown>[] 
   return out
 }
 
+const SETTINGS_COLUMNS = [
+  'id', 'app_name', 'app_logo_url', 'default_vlan', 'default_port_status', 'port_speeds',
+  'setup_completed', 'sites_initialized', 'patch_panels_enabled', 'switch_groups_enabled',
+  'disabled_builtin_device_types'
+] as const
+
+const BUILTIN_DEVICE_TYPE_SET = new Set<string>(BUILTIN_DEVICE_TYPES)
+
+/**
+ * Settings (Issue #301): copy only known columns and normalize the disabled
+ * builtin list. Older backups without the field restore as "nothing disabled";
+ * malformed or duplicate/unknown keys reject the whole restore before any write.
+ */
+function normalizeSettings(rows: unknown[] | undefined): Record<string, unknown>[] | undefined {
+  if (rows === undefined) return undefined
+  if (!Array.isArray(rows)) bad('Backup settings must be an array.')
+  if (rows.length > 1) bad('Backup contains more than one settings row.')
+  if (rows.length === 0) return []
+
+  const raw = rows[0]
+  if (!raw || typeof raw !== 'object') bad('Invalid settings row.')
+  const src = raw as Record<string, unknown>
+  const out: Record<string, unknown> = {}
+  for (const col of SETTINGS_COLUMNS) if (src[col] !== undefined) out[col] = src[col]
+
+  if (out.disabled_builtin_device_types === undefined) {
+    out.disabled_builtin_device_types = '[]'
+  } else {
+    let parsed: unknown
+    try {
+      parsed = typeof out.disabled_builtin_device_types === 'string'
+        ? JSON.parse(out.disabled_builtin_device_types)
+        : out.disabled_builtin_device_types
+    } catch {
+      bad('Settings: disabled_builtin_device_types must be a JSON array of builtin device-type keys.')
+    }
+    if (
+      !Array.isArray(parsed)
+      || parsed.length > BUILTIN_DEVICE_TYPES.length
+      || parsed.some(v => typeof v !== 'string' || !BUILTIN_DEVICE_TYPE_SET.has(v))
+      || new Set(parsed).size !== parsed.length
+    ) {
+      bad('Settings: disabled_builtin_device_types must contain unique builtin device-type keys.')
+    }
+    out.disabled_builtin_device_types = JSON.stringify(parsed)
+  }
+  return [out]
+}
+
 const OIDC_CONFIG_COLUMNS = [
   'enabled', 'issuer', 'client_id', 'client_secret_ciphertext', 'scopes', 'groups_claim',
   'admin_groups', 'viewer_groups', 'allow_unmatched_viewer', 'allow_http_issuer', 'observed_groups', 'provider_name'
@@ -259,6 +309,7 @@ export async function restoreAll(prisma: PrismaClient, payload: unknown, options
   const { data } = validatePayload(payload)
   const users = normalizeUsers(data.users)
   const oidcConfig = normalizeOidcConfig(data.oidcConfig)
+  data.settings = normalizeSettings(data.settings)
   data.customDeviceTypes = normalizeCustomDeviceTypes(data.customDeviceTypes)
   const includesPatchPanels = hasPatchPanelData(data)
 

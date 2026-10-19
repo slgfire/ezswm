@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto'
+import type { Prisma, PrismaClient } from '@prisma/client'
 import { prisma } from '../db/client'
 import type { CustomDeviceType } from '../../types/ipAllocation'
 import { BUILTIN_DEVICE_TYPES } from '../../types/ipAllocation'
+import { parseDisabledBuiltinDeviceTypes } from '../../types/settings'
 
 interface CustomDeviceTypeRow {
   id: string
@@ -9,8 +11,22 @@ interface CustomDeviceTypeRow {
   active: boolean
 }
 
-function rowToCustomDeviceType(row: CustomDeviceTypeRow): CustomDeviceType {
-  return { id: row.id, name: row.name, active: row.active }
+type Db = PrismaClient | Prisma.TransactionClient
+
+function rowToCustomDeviceType(row: CustomDeviceTypeRow, usageCount = 0): CustomDeviceType {
+  return { id: row.id, name: row.name, active: row.active, usage_count: usageCount }
+}
+
+async function usageCount(db: Db, id: string): Promise<number> {
+  return db.ipAllocation.count({ where: { device_type: id } })
+}
+
+async function disabledBuiltinKeys(db: Db): Promise<Set<string>> {
+  const row = await db.appSettings.findUnique({
+    where: { id: 'singleton' },
+    select: { disabled_builtin_device_types: true }
+  })
+  return new Set(parseDisabledBuiltinDeviceTypes(row?.disabled_builtin_device_types))
 }
 
 export const CUSTOM_DEVICE_TYPE_NAME_MAX = 100
@@ -39,12 +55,20 @@ export const customDeviceTypeRepository = {
   /** All custom types, including inactive ones (settings needs to show them). */
   async list(): Promise<CustomDeviceType[]> {
     const rows = await prisma.customDeviceType.findMany({ orderBy: { name: 'asc' } })
-    return rows.map(rowToCustomDeviceType)
+    if (rows.length === 0) return []
+    // One grouped query instead of one count per row.
+    const counts = await prisma.ipAllocation.groupBy({
+      by: ['device_type'],
+      where: { device_type: { in: rows.map(r => r.id) } },
+      _count: { _all: true }
+    })
+    const byId = new Map(counts.map(c => [c.device_type, c._count._all]))
+    return rows.map(row => rowToCustomDeviceType(row, byId.get(row.id) ?? 0))
   },
 
   async getById(id: string): Promise<CustomDeviceType | null> {
     const row = await prisma.customDeviceType.findUnique({ where: { id } })
-    return row ? rowToCustomDeviceType(row) : null
+    return row ? rowToCustomDeviceType(row, await usageCount(prisma, id)) : null
   },
 
   async getByName(name: string): Promise<CustomDeviceType | null> {
@@ -77,7 +101,31 @@ export const customDeviceTypeRepository = {
         ...(data.active !== undefined ? { active: data.active } : {})
       }
     })
-    return rowToCustomDeviceType(row)
+    return rowToCustomDeviceType(row, await usageCount(prisma, id))
+  },
+
+  /**
+   * Hard-deletes a custom type only when no allocation currently references it.
+   * The count and delete share one transaction so an assignment cannot race the
+   * check. Unknown ids (including builtin keys) are 404.
+   */
+  async deleteUnused(id: string): Promise<CustomDeviceType> {
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.customDeviceType.findUnique({ where: { id } })
+      if (!existing) throw createError({ statusCode: 404, message: 'Device type not found' })
+
+      const count = await usageCount(tx, id)
+      if (count > 0) {
+        throw createError({
+          statusCode: 409,
+          message: `Device type "${existing.name}" is still used by ${count} allocation(s)`,
+          data: { code: 'DEVICE_TYPE_IN_USE', usage_count: count }
+        })
+      }
+
+      await tx.customDeviceType.delete({ where: { id } })
+      return rowToCustomDeviceType(existing)
+    })
   }
 }
 
@@ -87,9 +135,18 @@ export const customDeviceTypeRepository = {
  * `allowLegacy` is used only by the entity importer so re-importing rows that
  * carry a pre-existing raw value does not silently drop or rename it.
  */
-export async function assertDeviceTypeAssignable(value: string, options: { allowLegacy?: boolean } = {}): Promise<void> {
-  if ((BUILTIN_DEVICE_TYPES as readonly string[]).includes(value)) return
-  const found = await prisma.customDeviceType.findUnique({ where: { id: value } })
+export async function assertDeviceTypeAssignable(
+  value: string,
+  options: { allowLegacy?: boolean, client?: Db } = {}
+): Promise<void> {
+  const db = options.client ?? prisma
+  if ((BUILTIN_DEVICE_TYPES as readonly string[]).includes(value)) {
+    if ((await disabledBuiltinKeys(db)).has(value)) {
+      throw createError({ statusCode: 400, message: `Device type "${value}" is disabled and cannot be assigned` })
+    }
+    return
+  }
+  const found = await db.customDeviceType.findUnique({ where: { id: value } })
   if (found) {
     if (!found.active) {
       throw createError({ statusCode: 400, message: `Device type "${found.name}" is inactive and cannot be assigned` })
