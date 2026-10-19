@@ -4,6 +4,7 @@
       v-model="selectedSiteId"
       :items="siteOptions"
       value-key="value"
+      :aria-label="$t('sites.switchSite')"
       :search-input="false"
       size="sm"
       class="w-full"
@@ -14,10 +15,12 @@
 
 <script setup lang="ts">
 import type { Site } from '~~/types/site'
+import { resolveStartSite } from '../../utils/startSite'
 
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
+const { user } = useAuth()
 const { setSite } = useCurrentSite()
 
 const sites = ref<Site[]>([])
@@ -57,6 +60,19 @@ function onSiteChange(value: string) {
   }
 }
 
+function applyStartSiteFallback() {
+  const site = resolveStartSite(sites.value, user.value?.start_site_id)
+  if (!site) {
+    selectedSiteId.value = 'all'
+    setSite('all', undefined)
+    return
+  }
+
+  const urlId = urlIdForSite(site)
+  selectedSiteId.value = urlId
+  setSite(urlId, site)
+}
+
 async function loadSites() {
   try {
     const res = await $fetch<{ data?: Site[] } | Site[]>('/api/sites')
@@ -76,13 +92,7 @@ async function loadSites() {
   } else if (param === 'all') {
     selectedSiteId.value = 'all'
     setSite('all', undefined)
-  } else if (sites.value.length > 0) {
-    // Not on a site page — default to first site
-    const first = sites.value[0]!
-    const urlId = urlIdForSite(first)
-    selectedSiteId.value = urlId
-    setSite(urlId, first)
-  }
+  } else applyStartSiteFallback()
 }
 
 watch(() => route.params.siteId, (param) => {
@@ -91,7 +101,11 @@ watch(() => route.params.siteId, (param) => {
     const urlId = site ? urlIdForSite(site) : param
     selectedSiteId.value = urlId
     setSite(urlId, site || undefined)
-  }
+  } else applyStartSiteFallback()
+})
+
+watch(() => user.value?.start_site_id, () => {
+  if (!route.params.siteId) applyStartSiteFallback()
 })
 
 onMounted(() => {

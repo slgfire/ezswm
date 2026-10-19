@@ -17,6 +17,8 @@ export interface User {
   oidc_subject: string | null
   /** Bumped after a validated OIDC login is denied; invalidates older OIDC JWTs. */
   oidc_session_version: number
+  /** Preferred start site; `null` means Automatic. */
+  start_site_id: string | null
 }
 
 /** User as exposed to API clients (no password hash). */

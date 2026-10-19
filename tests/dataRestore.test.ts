@@ -217,6 +217,52 @@ describe('restoreAll', () => {
     expect(ungrouped?.group_id).toBeNull()
   })
 
+  it('restores the preferred start site and defaults legacy backups to Automatic', async () => {
+    const siteId = randomUUID()
+    const withPreference = { ...localAdmin(), start_site_id: siteId }
+    const legacy = { ...localAdmin(), id: randomUUID(), username: 'legacy' }
+
+    const result = await restoreAll(prisma, {
+      schema: 'sqlite-v1',
+      data: {
+        users: [withPreference, legacy],
+        settings: [{
+          id: 'singleton', app_name: 'ezSWM', app_logo_url: null, default_vlan: null,
+          default_port_status: 'down', port_speeds: JSON.stringify(['1G']),
+          setup_completed: true, sites_initialized: true
+        }],
+        sites: [{ id: siteId, slug: 'hq', name: 'HQ', description: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }]
+      }
+    })
+
+    expect(result.inserted.sites).toBe(1)
+    expect(result.inserted.users).toBe(2)
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: withPreference.id } })).start_site_id).toBe(siteId)
+    // A legacy row without the field restores as Automatic (null).
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: legacy.id } })).start_site_id).toBeNull()
+
+    // Deleting the site nulls the preference through the FK.
+    await prisma.site.delete({ where: { id: siteId } })
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: withPreference.id } })).start_site_id).toBeNull()
+  })
+
+  it('rejects a malformed or dangling start site reference before writing', async () => {
+    const keep = await prisma.site.create({ data: { id: randomUUID(), slug: 'keep', name: 'Keep', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } })
+
+    const malformed = { ...localAdmin(), start_site_id: 'not-a-uuid' }
+    await expect(restoreAll(prisma, { schema: 'sqlite-v1', data: { users: [malformed] } }))
+      .rejects.toMatchObject({ statusCode: 400 })
+    expect(await prisma.site.count()).toBe(1)
+    expect(await prisma.user.count()).toBe(0)
+
+    // UUID-shaped but unknown: validation passes, the FK insert fails, the whole restore rolls back.
+    const dangling = { ...localAdmin(), start_site_id: randomUUID() }
+    await expect(restoreAll(prisma, { schema: 'sqlite-v1', data: { users: [dangling], sites: [] } }))
+      .rejects.toThrow()
+    expect(await prisma.user.count()).toBe(0)
+    expect(await prisma.site.findUniqueOrThrow({ where: { id: keep.id } })).toBeTruthy()
+  })
+
   it('rolls back atomically on insert failure', async () => {
     // FK violation: network references a non-existent site_id, but UUID format is OK
     // so the pre-validation pass lets it through.

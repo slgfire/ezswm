@@ -26,16 +26,19 @@ export default defineEventHandler(async (event) => {
   if (auth.role === 'admin') {
     // Admins may edit role too; the repository refuses manual changes to OIDC-managed
     // fields (409) and demoting the last local administrator (409).
-    const validated = updateUserSchema.parse(body)
-    updated = await userRepository.update(id, validated)
+    const validated = updateUserSchema.safeParse(body)
+    if (!validated.success) {
+      throw createError({ statusCode: 400, message: 'Invalid user data' })
+    }
+    updated = await userRepository.update(id, validated.data)
   } else {
-    // Non-admins: self only (middleware enforces too) and strictly display_name/language.
+    // Non-admins: self only (middleware enforces too) and strictly profile fields.
     if (auth.userId !== id) {
       throw createError({ statusCode: 403, message: 'Insufficient permissions' })
     }
     const parsed = updateProfileSchema.safeParse(body)
     if (!parsed.success) {
-      throw createError({ statusCode: 400, message: 'Only display_name and language can be changed' })
+      throw createError({ statusCode: 400, message: 'Only display_name, language and start_site_id can be changed' })
     }
     updated = await userRepository.updateProfile(id, parsed.data)
   }

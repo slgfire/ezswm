@@ -111,6 +111,7 @@ const ROUTES: Array<{ method: string, re: RegExp, load: () => Promise<{ default:
   { method: 'PUT', re: /^\/api\/auth\/oidc\/config$/, load: () => import('../../server/api/auth/oidc/config.put') },
   { method: 'POST', re: /^\/api\/auth\/oidc\/check$/, load: () => import('../../server/api/auth/oidc/check.post') },
   { method: 'POST', re: /^\/api\/auth\/logout$/, load: () => import('../../server/api/auth/logout.post') },
+  { method: 'GET', re: /^\/api\/auth\/me$/, load: () => import('../../server/api/auth/me.get') },
   { method: 'GET', re: /^\/api\/users$/, load: () => import('../../server/api/users/index.get') },
   { method: 'POST', re: /^\/api\/users$/, load: () => import('../../server/api/users/index.post') },
   { method: 'GET', re: /^\/api\/users\/([^/]+)$/, params: ['id'], load: () => import('../../server/api/users/[id].get') },

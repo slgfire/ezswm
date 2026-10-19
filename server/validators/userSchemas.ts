@@ -11,13 +11,15 @@ export const createUserSchema = z.object({
 export const updateUserSchema = z.object({
   display_name: z.string().min(1).max(100).optional(),
   role: z.enum(['admin', 'viewer']).optional(),
-  language: z.enum(['en', 'de']).optional()
+  language: z.enum(['en', 'de']).optional(),
+  start_site_id: z.string().uuid().nullable().optional()
 })
 
 /** Self-service profile update for non-admins: ONLY these fields, anything else is a 400. */
 export const updateProfileSchema = z.object({
   display_name: z.string().min(1).max(100).optional(),
-  language: z.enum(['en', 'de']).optional()
+  language: z.enum(['en', 'de']).optional(),
+  start_site_id: z.string().uuid().nullable().optional()
 }).strict()
 
 export const changePasswordSchema = z.object({
