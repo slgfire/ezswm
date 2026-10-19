@@ -11,6 +11,15 @@ Scope: Reduced the site switcher's vertical padding from `py-2` to `py-1`. No na
 
 Verification: Reviewed the Issue #305 screenshot (336×146): its first site-switcher control is compact between the logo row and navigation, matching the `SiteSwitcher.vue` wrapper targeted by the reported selector. Fresh `nuxt prepare`, `pnpm typecheck`, and scoped ESLint passed; a fresh production build passed with the existing non-blocking large-chunk warning. An isolated Chromium run against that fresh 0.44.0 build used a private database, applied all 14 migrations, and reported `database_ok: true`; the focused navigation regression passed and verified 4px top/bottom padding. Evidence: `/tmp/opencode/ezswm-ui-305-306-prod-nx3h0k7k/`. An earlier isolated dev attempt stopped before auth/browser because its health response was empty/non-JSON; its process was terminated. The unrelated `localhost:3000/api/health` probe returned 404. No staging runtime or data was touched.
 
+### Issue #306 — switch-group header whitespace toggles expansion
+
+Date: 2026-10-19
+Stage: Small switch-list interaction correction for the existing PR #304 (`feat/custom-device-types`, version 0.44.0).
+
+Scope: Switch-group headers, including the ungrouped section, now toggle on clicks in their blank area via `@click.self`. The existing expand button remains the accessible keyboard control; the drag handle uses `@click.stop.prevent` so dragging never toggles the group. Added a focused Playwright regression for whitespace click, Enter/Space and drag behavior.
+
+Verification: Fresh `nuxt prepare`, `pnpm typecheck`, and scoped ESLint passed; a fresh production build passed. An isolated Chromium run against that fresh 0.44.0 build used a private database, applied all 14 migrations, and reported `database_ok: true`; both focused regressions passed (2/2, 6.4 s), including header whitespace/Enter/Space/drag behavior. Evidence: `/tmp/opencode/ezswm-ui-305-306-prod-nx3h0k7k/`. No staging runtime or data was touched.
+
 ### Issue #301 follow-up — disabled built-in categories and safe custom deletion (verified final, uncommitted)
 
 Date: 2026-10-19

@@ -298,7 +298,7 @@
       >
         <template #item="{ element: group }">
           <section class="overflow-hidden rounded-lg border border-default bg-default/40">
-            <header class="flex items-center gap-2 border-b border-default px-3 py-2.5">
+            <header class="flex items-center gap-2 border-b border-default px-3 py-2.5" @click.self="toggleGroupExpanded(group.id)">
               <UButton
                 v-if="canEditInfrastructure"
                 icon="i-tabler-grip-vertical"
@@ -307,7 +307,7 @@
                 color="neutral"
                 class="group-drag-handle cursor-grab active:cursor-grabbing"
                 :aria-label="$t('switches.groups.dragGroup')"
-                @click.prevent
+                @click.stop.prevent
               />
               <button
                 type="button"
@@ -389,7 +389,7 @@
            16px): the section is a sibling of the draggable container, so
            space-y never applies to it. -->
       <section v-if="ungroupedSwitches.length" class="mt-4 overflow-hidden rounded-lg border border-default bg-default/40">
-        <header class="flex items-center gap-2 border-b border-default px-3 py-2.5">
+        <header class="flex items-center gap-2 border-b border-default px-3 py-2.5" @click.self="toggleGroupExpanded('_ungrouped')">
           <button
             type="button"
             class="flex min-w-0 flex-1 items-center gap-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"

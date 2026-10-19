@@ -1,4 +1,5 @@
 import { test, expect, type APIRequestContext } from '@playwright/test'
+import { randomUUID } from 'node:crypto'
 
 interface SiteRow { id: string, route: string }
 interface Row { id: string, name: string, slug?: string }
@@ -73,6 +74,65 @@ test.describe.serial('Switch CRUD', () => {
     await page.goto(`/sites/${site.route}/switches`)
     await page.waitForTimeout(1000)
     await expect(page.locator('body')).toContainText('Core-Switch-01', { timeout: 5000 })
+  })
+
+  test('switch group header toggles from its whitespace and keeps keyboard/action controls', async ({ page, request }) => {
+    const site = await e2eSite(request)
+    const settingsResponse = await request.get('/api/settings')
+    expect(settingsResponse.ok()).toBe(true)
+    const settings = await settingsResponse.json() as { switch_groups_enabled?: boolean }
+    test.skip(settings.switch_groups_enabled === false, 'switch groups are disabled in this test database')
+
+    let switchId: string | undefined
+    let groupId: string | undefined
+
+    try {
+      const createdSwitch = await request.post('/api/switches', {
+        data: { site_id: site.id, name: `Header switch ${randomUUID()}` }
+      })
+      expect(createdSwitch.status()).toBe(201)
+      switchId = (await createdSwitch.json() as Row).id
+
+      const groupName = `Header ${randomUUID()}`
+      const createGroup = await request.post('/api/switch-groups', { data: { site_id: site.id, name: groupName } })
+      expect(createGroup.status()).toBe(201)
+      groupId = (await createGroup.json() as { id: string }).id
+
+      const assigned = await request.put(`/api/switches/${switchId}?siteId=${encodeURIComponent(site.id)}`, { data: { group_id: groupId } })
+      expect(assigned.ok()).toBe(true)
+      await page.addInitScript((key: string) => {
+        localStorage.setItem(key, JSON.stringify({ viewMode: 'grouped', expanded: [] }))
+      }, `ezswm-switch-groups:${site.route}`)
+      await page.goto(`/sites/${site.route}/switches`)
+
+      const toggle = page.getByRole('button', { name: new RegExp(`^${groupName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}: (Collapse group|Expand group|Gruppe einklappen|Gruppe ausklappen)$`) })
+      await expect(toggle).toBeVisible()
+      await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+      const section = page.locator('section').filter({ has: toggle })
+      const header = section.locator('header')
+      const headerBox = await header.boundingBox()
+      expect(headerBox).not.toBeNull()
+      await header.click({ position: { x: 2, y: Math.floor(headerBox!.height / 2) } })
+      await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+      await toggle.press('Enter')
+      await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+      await toggle.press('Space')
+      await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+      const dragHandle = header.getByRole('button', { name: /^(Drag to reorder groups|Ziehen, um Gruppen neu anzuordnen)$/ })
+      await dragHandle.click()
+      await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    } finally {
+      if (groupId) {
+        const deletedGroup = await request.delete(`/api/switch-groups/${groupId}?siteId=${encodeURIComponent(site.id)}`)
+        expect([204, 404]).toContain(deletedGroup.status())
+      }
+      if (switchId) {
+        const deletedSwitch = await request.delete(`/api/switches/${switchId}?siteId=${encodeURIComponent(site.id)}`)
+        expect([204, 404]).toContain(deletedSwitch.status())
+      }
+    }
   })
 
   test('switch detail shows info', async ({ page, request }) => {
