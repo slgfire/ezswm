@@ -2,6 +2,12 @@
 
 ---
 
+## [0.42.1] — 2026-10-19
+
+### Behoben
+- Löschen von IP-Zuweisungen (Issue #297): entfernt nur die Zuweisungsverweise an verbundenen Ports und erhält wechselseitige Switch-Port-Verbindungen, Anzeigenamen und übrige Porteinstellungen. Das gilt auch für Ports, denen ein partielles API-Update eine Zuweisung hinzugefügt hat, ohne die Gegenstellenverbindung zu ersetzen.
+- Gespeicherte VLAN- und Switch-Änderungen (Issue #299): Beim Schließen des Editors erscheint keine Warnung mehr für bereits gespeicherte Änderungen. Fehlgeschlagene Speichervorgänge und neue ungespeicherte Änderungen lösen weiterhin die Verwerfen-Warnung aus.
+
 ## [0.42.0] — 2026-10-07
 
 ### Hinzugefügt

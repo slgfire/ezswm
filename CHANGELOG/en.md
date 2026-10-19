@@ -2,6 +2,12 @@
 
 ---
 
+## [0.42.1] — 2026-10-19
+
+### Fixed
+- IP allocation deletion (Issue #297): clears only the allocation references on linked ports, preserving reciprocal switch-port connections, display labels and other port settings. This also covers ports given an allocation through a partial API update while retaining a peer link.
+- Saved VLAN and switch edits (Issue #299): closing the editor no longer warns about already-saved changes. Failed saves and new unsaved edits still trigger the discard warning.
+
 ## [0.42.0] — 2026-10-07
 
 ### Added

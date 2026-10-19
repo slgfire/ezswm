@@ -433,6 +433,7 @@ async function onSave() {
       color: editForm.value.color.toUpperCase()
     })
     if (generation !== permissionGeneration || !canEditInfrastructure.value) return
+    takeSnapshot()
     toast.add({ title: t('vlans.messages.updated'), color: 'success' })
     panelEditing.value = false
     await fetchVlans(siteParams.value)
