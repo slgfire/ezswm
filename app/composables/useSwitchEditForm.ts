@@ -248,6 +248,7 @@ export function useSwitchEditForm(
     saving.value = true
     try {
       await updateFn(body)
+      takeSnapshot()
       toast.add({ title: t('switches.messages.updated'), color: 'success' })
       showTemplateConfirm.value = false
       pendingSaveBody = null
