@@ -17,6 +17,14 @@
 
 ---
 
+## [0.46.0] — 2026-10-20
+
+### Hinzugefügt
+- API-Token-Grundlage für MCP-Anbindungen: Lokale Konten können unter Einstellungen → Konto eigene Tokens erstellen, auflisten und widerrufen, einschließlich gemeinsamem Widerruf und optionalem Ablaufdatum. Secrets werden einmal angezeigt und nur als SHA-256-Hash gespeichert; Token-Namen sind pro Konto eindeutig und jedes Konto kann höchstens zehn Tokens besitzen. Admins können Tokens anderer Benutzer über eigene, ausschließlich per JWT erreichbare API-Routen auflisten und widerrufen.
+- Token-Anfragen verwenden die aktuelle Datenbankrolle des Eigentümers und werden bei bereits protokollierten Aktionen entsprechend zugeordnet. Zugangsdaten-, Konto-, Backup- und Einstellungsänderungen sowie rohe Aktivitäts-/Export-/Importzugriffe und unsichere Löschoperationen sind für API-Tokens gesperrt; Viewer-Tokens bleiben lesend. Ungültige Authorization-Header fallen nicht mehr auf ein gültiges Sitzungscookie zurück. Exporte enthalten keine API-Tokens und jede vollständige Wiederherstellung widerruft alle vorhandenen API-Tokens. Passwortänderungen widerrufen Tokens nicht. Das MCP-Server-Paket sowie spätere geprüfte Datentransfer-, Undo- und Löschwerkzeuge gehören noch nicht zu dieser Phase.
+
+---
+
 ## [0.45.0] — 2026-10-22
 
 ### Hinzugefügt

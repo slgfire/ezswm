@@ -1,6 +1,6 @@
 import { layoutTemplateRepository } from '../../repositories/layoutTemplateRepository'
 import { updateLayoutTemplateSchema } from '../../validators/layoutTemplateSchemas'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 import type { LayoutTemplate } from '../../../types/layoutTemplate'
 
 export default defineEventHandler(async (event) => {
@@ -25,11 +25,10 @@ export default defineEventHandler(async (event) => {
 
   const updated = await layoutTemplateRepository.update(id, validated as Partial<Omit<LayoutTemplate, 'id' | 'created_at'>>)
 
-  await activityRepository.log({
+  await logActivity(event, {
     entity_type: 'layout_template',
     entity_id: id,
     action: 'update',
-    user_id: event.context.auth.userId,
     entity_name: updated.name,
     previous_state: existing as unknown as Record<string, unknown>,
   })

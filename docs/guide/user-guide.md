@@ -692,6 +692,16 @@ Switch Groups are also controlled in General Settings (default: enabled). Turnin
 
 The ezSWM logo is shown on the login page and in the sidebar, with light and dark variants following the active theme.
 
+### API tokens (local accounts)
+
+Under **Settings → Account → API tokens**, create a named token with an optional expiration date, copy its secret immediately, then dismiss it. The secret cannot be retrieved again; replace a lost token. Names are case-sensitive and unique within your account, with a maximum of ten tokens. The list shows creation, last-use and expiry dates, never the secret. Revoke one token or **Revoke all** to stop access. SSO accounts cannot use API tokens.
+
+Send the token only in an `Authorization: Bearer <token>` header over HTTPS, never in a URL or cookie. Treat it as a password: do not share it, commit it, or include it in logs. A token uses its owner's current role on every request; role changes apply immediately and deleting the user deletes their tokens. **Changing a password does not revoke tokens**; revoke them separately after a suspected leak.
+
+API tokens cannot manage accounts, credentials or backups, change settings, delete categories, read raw activity/dashboard history, or use the currently blocked import/export and delete routes. Existing logged writes include token attribution, but not every write is logged. Tokens are not restricted to the future MCP tool list: other REST documentation operations remain available according to role and the API-token policy. The MCP server itself is not shipped in this foundation stage.
+
+**Backups and restore:** JSON backups and data exports contain no API-token rows or hashes. Every full restore, including an older backup, revokes all existing API tokens; create replacements afterwards. These backups still contain other sensitive credentials and must be kept confidential. Raw filesystem/database copies and automatic pre-upgrade SQLite snapshots are different: they contain the database, including token hashes, and are sensitive.
+
 ### Account Settings
 
 Change your display name and preferred language (English or German). Under **Settings → Account → Profile**, choose a **Start site** for your account, or **Automatic** to open the last site you visited in this browser for this account. If there is no saved visit, or that site was deleted, ezSWM opens the first site by name. This browser history is separate for each account and does not change the saved preference. A fixed start site always takes priority, including when you open another site directly. Local accounts can also change their local password here. For SSO accounts the page shows a notice that the password is managed by your identity provider.

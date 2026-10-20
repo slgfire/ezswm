@@ -1,6 +1,8 @@
-import { getTokenFromEvent, verifyToken } from '../utils/auth'
-import { evaluateRolePolicy, normalizePolicyPath } from '../utils/requireAdmin'
+import { getCredentialFromEvent, verifyToken } from '../utils/auth'
+import { evaluateApiTokenPolicy, evaluateRolePolicy, normalizePolicyPath } from '../utils/requireAdmin'
 import { userRepository } from '../repositories/userRepository'
+import { apiTokenRepository } from '../repositories/apiTokenRepository'
+import { API_TOKEN_PREFIX } from '../../types/apiToken'
 import { oidcConfigRepository } from '../repositories/oidcConfigRepository'
 import { isOidcEffectivelyEnabled, isOidcSessionCurrent, readOidcRuntimeSettings } from '../utils/oidc/session'
 
@@ -37,10 +39,45 @@ export default defineEventHandler(async (event) => {
   // Allow GET /api/settings (for setup check; contains no secrets)
   if (path === '/api/settings' && method === 'GET') return
 
-  const token = getTokenFromEvent(event)
-  if (!token) {
+  const credential = getCredentialFromEvent(event)
+  if (credential.kind === 'none') {
     throw createError({ statusCode: 401, message: 'Authentication required' })
   }
+  // Malformed/non-Bearer Authorization header: no fallback to a cookie.
+  if (credential.kind === 'invalid') {
+    throw createError({ statusCode: 401, message: 'Invalid or expired token' })
+  }
+
+  if (credential.token.startsWith(API_TOKEN_PREFIX)) {
+    // API tokens are header-only; one in the session cookie is never valid.
+    if (credential.kind !== 'header') {
+      throw createError({ statusCode: 401, message: 'Invalid or expired token' })
+    }
+    const apiToken = await apiTokenRepository.authenticate(credential.token)
+    // Role + owner existence come from the DB per request; local accounts only (defensive).
+    const owner = apiToken ? await userRepository.getById(apiToken.user_id) : null
+    if (!apiToken || !owner || owner.auth_provider !== 'local') {
+      throw createError({ statusCode: 401, message: 'Invalid or expired token' })
+    }
+    if (
+      evaluateApiTokenPolicy({ method, path }) !== 'allow'
+      || evaluateRolePolicy({ role: owner.role, method, path, userId: owner.id }) !== 'allow'
+    ) {
+      throw createError({ statusCode: 403, message: 'Insufficient permissions' })
+    }
+    event.context.auth = {
+      userId: owner.id,
+      username: owner.username,
+      role: owner.role,
+      authProvider: owner.auth_provider,
+      authType: 'api_token',
+      apiTokenId: apiToken.id,
+      apiTokenName: apiToken.name
+    }
+    return
+  }
+
+  const token = credential.token
 
   let payload: ReturnType<typeof verifyToken>
   try {
@@ -78,6 +115,7 @@ export default defineEventHandler(async (event) => {
     userId: user.id,
     username: user.username,
     role: user.role,
-    authProvider: user.auth_provider
+    authProvider: user.auth_provider,
+    authType: 'jwt'
   }
 })

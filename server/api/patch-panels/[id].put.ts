@@ -1,6 +1,6 @@
 import { patchPanelRepository } from '../../repositories/patchPanelRepository'
 import { updatePatchPanelSchema } from '../../validators/patchPanelSchemas'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
 import { requirePatchPanelsEnabled } from '../../utils/requirePatchPanelsEnabled'
 
@@ -29,8 +29,7 @@ export default defineEventHandler(async (event) => {
   const parsed = updatePatchPanelSchema.parse(body)
   const updated = await patchPanelRepository.update(existing.id, parsed as { name?: string; description?: string | null; slug?: string }, siteUuid)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'update',
     entity_type: 'patch_panel',
     entity_id: existing.id,

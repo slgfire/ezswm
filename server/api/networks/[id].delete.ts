@@ -1,7 +1,7 @@
 import { networkRepository } from '../../repositories/networkRepository'
 import { ipAllocationRepository } from '../../repositories/ipAllocationRepository'
 import { ipRangeRepository } from '../../repositories/ipRangeRepository'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
 
 export default defineEventHandler(async (event) => {
@@ -27,8 +27,7 @@ export default defineEventHandler(async (event) => {
 
   await networkRepository.delete(existing.id)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'delete',
     entity_type: 'network',
     entity_id: existing.id,

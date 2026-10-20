@@ -17,6 +17,14 @@
 
 ---
 
+## [0.46.0] — 2026-10-20
+
+### Added
+- API-token foundation for MCP integrations: local accounts can create, list and revoke their own tokens in Settings → Account, including revoke-all and optional expiry. Secrets are shown once and stored only as SHA-256 hashes; token names are unique per account and each account is limited to ten tokens. Administrators can list and revoke another user's tokens through dedicated JWT-only API routes.
+- API-token requests use the owner's current database role and are attributed on existing logged activity routes. Credential, account, backup, settings-write, raw activity/export/import and unsafe delete operations are blocked for API tokens; viewer tokens remain read-only. Invalid Authorization headers no longer fall back to a valid session cookie. API tokens are excluded from exports and every full restore revokes all existing API tokens. Password changes do not revoke tokens. The MCP server package and later audited data-transfer, undo and delete tools are not included in this stage.
+
+---
+
 ## [0.45.0] — 2026-10-22
 
 ### Added

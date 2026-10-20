@@ -1,5 +1,5 @@
 import { ipAllocationRepository } from '../../../../repositories/ipAllocationRepository'
-import { activityRepository } from '../../../../repositories/activityRepository'
+import { logActivity } from '../../../../utils/activityLog'
 
 export default defineEventHandler(async (event) => {
   const allocId = event.context.params?.allocId
@@ -17,8 +17,7 @@ export default defineEventHandler(async (event) => {
   // The allocation FK clears port references via ON DELETE SET NULL without changing peer links.
   await ipAllocationRepository.delete(allocId)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'delete',
     entity_type: 'ip_allocation',
     entity_id: allocId,

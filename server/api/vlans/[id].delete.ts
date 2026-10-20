@@ -1,5 +1,5 @@
 import { vlanRepository } from '../../repositories/vlanRepository'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params?.id
@@ -18,8 +18,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'VLAN not found' })
   }
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'delete',
     entity_type: 'vlan',
     entity_id: id,

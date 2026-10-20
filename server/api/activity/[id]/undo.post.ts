@@ -1,5 +1,6 @@
 import { prisma } from '../../../db/client'
 import { activityRepository } from '../../../repositories/activityRepository'
+import { logActivity } from '../../../utils/activityLog'
 import { siteRepository } from '../../../repositories/siteRepository'
 import { vlanRepository } from '../../../repositories/vlanRepository'
 import { canonicalizeCIDR, isValidCIDR } from '../../../utils/ipv4'
@@ -204,8 +205,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Log the undo itself so it shows up in the audit trail.
-    await activityRepository.log({
-      user_id: event.context.auth.userId,
+    await logActivity(event, {
       action: 'update',
       entity_type,
       entity_id: entry.entity_id,

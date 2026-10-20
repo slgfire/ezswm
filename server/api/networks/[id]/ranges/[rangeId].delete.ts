@@ -1,5 +1,5 @@
 import { ipRangeRepository } from '../../../../repositories/ipRangeRepository'
-import { activityRepository } from '../../../../repositories/activityRepository'
+import { logActivity } from '../../../../utils/activityLog'
 
 export default defineEventHandler(async (event) => {
   const rangeId = event.context.params?.rangeId
@@ -16,8 +16,7 @@ export default defineEventHandler(async (event) => {
 
   await ipRangeRepository.delete(rangeId)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'delete',
     entity_type: 'ip_range',
     entity_id: rangeId,

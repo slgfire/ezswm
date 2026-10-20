@@ -321,6 +321,7 @@ model User {
   start_site    Site?   @relation(fields: [start_site_id], references: [id], onDelete: SetNull)
 
   activities ActivityEntry[]
+  api_tokens ApiToken[]
 
   @@unique([oidc_issuer, oidc_subject])
   @@index([start_site_id])
@@ -416,4 +417,21 @@ model CustomDeviceType {
   id     String  @id
   name   String  @unique
   active Boolean @default(true)
+}
+
+// Revocable API tokens (MCP/automation). Only the SHA-256 digest is stored; the
+// plaintext is shown once at creation. The 10-per-user limit is enforced by a DB
+// trigger (see migration) so concurrent creates cannot exceed it.
+model ApiToken {
+  id           String  @id
+  name         String
+  token_hash   String  @unique
+  user_id      String
+  user         User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  created_at   String
+  last_used_at String?
+  expires_at   String?
+
+  @@unique([user_id, name])
+  @@index([user_id])
 }

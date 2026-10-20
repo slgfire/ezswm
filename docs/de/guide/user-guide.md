@@ -694,6 +694,16 @@ Switch-Gruppen werden ebenfalls in den allgemeinen Einstellungen gesteuert (Stan
 
 Das ezSWM-Logo wird auf der Login-Seite und in der Seitenleiste angezeigt, mit hellen und dunklen Varianten passend zum aktiven Theme.
 
+### API-Tokens (lokale Konten)
+
+Unter **Einstellungen → Konto → API-Tokens** kannst du ein benanntes Token mit optionalem Ablaufdatum erstellen. Kopiere das Secret sofort und blende es anschließend aus. Es lässt sich nicht erneut abrufen; ersetze ein verlorenes Token. Namen sind innerhalb deines Kontos eindeutig und unterscheiden Groß-/Kleinschreibung. Pro Konto sind höchstens zehn Tokens erlaubt. Die Liste zeigt Erstellungs-, Nutzungs- und Ablaufdaten, niemals das Secret. Widerrufe einzelne Tokens oder **Alle widerrufen**, um den Zugriff zu beenden. SSO-Konten können keine API-Tokens verwenden.
+
+Sende das Token ausschließlich im Header `Authorization: Bearer <token>` über HTTPS, niemals in einer URL oder einem Cookie. Behandle es wie ein Passwort: nicht teilen, einchecken oder protokollieren. Jede Anfrage verwendet die aktuelle Rolle des Eigentümers; Rollenänderungen gelten sofort und das Löschen des Benutzers löscht seine Tokens. **Eine Passwortänderung widerruft Tokens nicht**; widerrufe sie bei Verdacht auf einen Verlust separat.
+
+API-Tokens dürfen keine Konten, Zugangsdaten oder Backups verwalten, Einstellungen ändern, Kategorien löschen, rohe Aktivitäts-/Dashboard-Verläufe lesen oder die derzeit gesperrten Import-/Export- und Löschrouten verwenden. Bereits protokollierte Änderungen erhalten eine Token-Zuordnung; nicht jede Änderung wird protokolliert. Tokens sind nicht auf die spätere MCP-Werkzeugliste begrenzt: Andere REST-Dokumentationsoperationen bleiben gemäß Rolle und Token-Richtlinie erreichbar. Der MCP-Server selbst ist in dieser Grundlagenphase noch nicht enthalten.
+
+**Backups und Wiederherstellung:** JSON-Backups und Datenexporte enthalten keine API-Token-Zeilen oder -Hashes. Jede vollständige Wiederherstellung, auch aus einem älteren Backup, widerruft alle vorhandenen API-Tokens; erstelle sie anschließend neu. Diese Backups enthalten weiterhin andere sensible Zugangsdaten und müssen vertraulich bleiben. Direkte Datei-/Datenbankkopien und automatische SQLite-Sicherungen vor Upgrades sind davon zu unterscheiden: Sie enthalten die Datenbank einschließlich Token-Hashes und sind sensibel.
+
 ### Kontoeinstellungen
 
 Ändere deinen Anzeigenamen und deine bevorzugte Sprache (Englisch oder Deutsch). Unter **Einstellungen → Konto → Profil** kannst du für dein Konto einen **Startstandort** festlegen oder **Automatisch** wählen, um den zuletzt in diesem Browser mit diesem Konto besuchten Standort zu öffnen. Gibt es noch keinen gespeicherten Besuch oder wurde dieser Standort gelöscht, öffnet ezSWM den ersten Standort nach Namen. Der Browserverlauf ist pro Konto getrennt und ändert die gespeicherte Einstellung nicht. Ein fester Startstandort hat immer Vorrang, auch wenn du einen anderen Standort direkt öffnest. Lokale Konten können hier auch das lokale Passwort ändern. Bei SSO-Konten zeigt die Seite den Hinweis, dass das Passwort vom Identity-Provider verwaltet wird.

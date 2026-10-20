@@ -45,7 +45,7 @@ export interface DispatchResult {
   headers: Record<string, string>
   error?: { statusCode?: number, message?: string, data?: unknown }
   /** `event.context.auth` as set by the middleware (undefined when public/denied). */
-  auth?: { userId: string, username: string, role: string, authProvider: string }
+  auth?: { userId: string, username: string, role: string, authProvider: string, authType: string, apiTokenId?: string, apiTokenName?: string }
 }
 
 type G = Record<string, unknown>
@@ -114,6 +114,12 @@ const ROUTES: Array<{ method: string, re: RegExp, load: () => Promise<{ default:
   { method: 'POST', re: /^\/api\/auth\/oidc\/check$/, load: () => import('../../server/api/auth/oidc/check.post') },
   { method: 'POST', re: /^\/api\/auth\/logout$/, load: () => import('../../server/api/auth/logout.post') },
   { method: 'GET', re: /^\/api\/auth\/me$/, load: () => import('../../server/api/auth/me.get') },
+  { method: 'GET', re: /^\/api\/auth\/tokens$/, load: () => import('../../server/api/auth/tokens/index.get') },
+  { method: 'POST', re: /^\/api\/auth\/tokens$/, load: () => import('../../server/api/auth/tokens/index.post') },
+  { method: 'DELETE', re: /^\/api\/auth\/tokens$/, load: () => import('../../server/api/auth/tokens/index.delete') },
+  { method: 'DELETE', re: /^\/api\/auth\/tokens\/([^/]+)$/, params: ['id'], load: () => import('../../server/api/auth/tokens/[id].delete') },
+  { method: 'GET', re: /^\/api\/users\/([^/]+)\/tokens$/, params: ['id'], load: () => import('../../server/api/users/[id]/tokens/index.get') },
+  { method: 'DELETE', re: /^\/api\/users\/([^/]+)\/tokens\/([^/]+)$/, params: ['id', 'tokenId'], load: () => import('../../server/api/users/[id]/tokens/[tokenId].delete') },
   { method: 'GET', re: /^\/api\/users$/, load: () => import('../../server/api/users/index.get') },
   { method: 'POST', re: /^\/api\/users$/, load: () => import('../../server/api/users/index.post') },
   { method: 'GET', re: /^\/api\/users\/([^/]+)$/, params: ['id'], load: () => import('../../server/api/users/[id].get') },

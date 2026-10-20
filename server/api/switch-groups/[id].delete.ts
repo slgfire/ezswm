@@ -1,5 +1,5 @@
 import { switchGroupRepository } from '../../repositories/switchGroupRepository'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
 import { requireSwitchGroupsEnabled } from '../../utils/requireSwitchGroupsEnabled'
 
@@ -27,8 +27,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Switch group not found' })
   }
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'delete',
     entity_type: 'switch_group',
     entity_id: existing.id,

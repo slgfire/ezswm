@@ -1,5 +1,5 @@
 import { lagGroupRepository } from '../../../../repositories/lagGroupRepository'
-import { activityRepository } from '../../../../repositories/activityRepository'
+import { logActivity } from '../../../../utils/activityLog'
 import { deleteLagGroupSchema } from '../../../../validators/lagGroupSchemas'
 import { resolveSwitchParam } from '../../../../utils/resolveSwitchParam'
 
@@ -22,8 +22,7 @@ export default defineEventHandler(async (event) => {
   const deleted = await lagGroupRepository.delete(lagId, parsed.data)
   if (!deleted) throw createError({ statusCode: 404, message: 'LAG group not found' })
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'delete',
     entity_type: 'lag_group',
     entity_id: group.id,

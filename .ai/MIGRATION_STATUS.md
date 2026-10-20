@@ -2,6 +2,19 @@
 
 ## Latest Stage
 
+### MCP Stage 1 — API-token foundation (v0.46.0)
+
+Date: 2026-10-21
+Stage: Implemented and locally verified on `feat/mcp-server`; uncommitted. This stage provides application-side authentication, not the standalone MCP package or its tools.
+
+Scope: additive `ApiToken` migration with hashed secrets, per-user unique names, atomic ten-token limit and cascading user deletion; local-account JWT self-service and explicit admin JWT token-management routes; once-only token display in the existing Account tab with EN/DE labels; optional expiry, revocation and revoke-all. Authentication preserves explicit credential provenance, reads current roles from the database and enforces the approved API-token route restrictions. Existing logged write routes use a shared attribution helper; previously unlogged writes remain unlogged. JSON exports exclude token rows/hashes, and full restore deletes all existing API tokens without restoring payload token rows. Password changes intentionally do not revoke tokens. Raw SQLite snapshots remain sensitive and can contain token hashes.
+
+Verification: 86 test files / 1,257 tests passed (`/tmp/opencode/mcp-stage1-unit-final.log`), as did final raw Nuxt typecheck, full ESLint and `git diff --check`. Independent OpenAI Luna static security review found no blocking issue in the checked Stage 1 scope; it is not a complete audit of every REST route. Production build and isolated development health passed. The first browser run found incorrect translation namespaces; those were corrected and a bilingual key-resolution regression added. A subsequent run found an incorrect test-only token-length expectation, corrected to the approved `ezswm_` plus 32-character random suffix. After explicit approval to resume, the original browser flow passed (1/1, 17.5 seconds), covering real local Admin/Viewer self-service in English/German and mocked OIDC UI gating; real OIDC token rejection is covered by backend tests. Evidence: `/tmp/opencode/mcp-stage1-browser-en-iwxr9gt8/`. The browser test asserts no unexpected page/console errors and disables screenshots/traces for secret handling.
+
+Docker: final isolated `compose.dev` no-cache build and runtime passed (`/tmp/opencode/mcp-stage1-docker-dg592shw/`). All 16 migrations applied; health reported version 0.46.0, `database_ok: true` and `/app/data`; UID/GID were 1000. Owned test containers/networks and development/browser processes were stopped; other running containers and shared staging data were unchanged.
+
+Limits and next gate: Chromium only, no Safari or physical-device test. API tokens retain the documented broad REST access outside explicit denials; there is no full tool-level allowlist at the API boundary. No MCP package, hosted transport, safe-delete contract, sanitized import/export or undo implementation is included. Those remain later stages. No commit, push, merge or deployment was performed for this stage.
+
 ### Scoped network and IP uniqueness fix (v0.45.1)
 
 Date: 2026-10-21 — implemented and verified locally; not committed or deployed.
