@@ -284,7 +284,6 @@
       "urlHelp": "Optionale HTTP(S)-Adresse. Wenn angegeben, überschreibt sie Protokoll und Management-IP.",
       "urlInvalid": "Gib eine HTTP- oder HTTPS-URL ohne Benutzername oder Passwort ein (maximal 2.048 Zeichen).",
       "open": "Management-Seite für {name} öffnen",
-      "openLink": "Management-Seite öffnen",
       "openDetails": "Switch-Details öffnen: {name}"
     },
     "messages": {

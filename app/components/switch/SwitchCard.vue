@@ -22,7 +22,7 @@
     </button>
 
     <!-- Hover actions -->
-    <div class="absolute right-2 top-2 z-30 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95 pointer-events-auto">
+    <div class="switch-card-actions absolute right-2 top-2 z-30 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-neutral-700/95">
       <UButton v-if="draggable && editable" icon="i-tabler-grip-horizontal" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="neutral" size="xs" @click.prevent />
       <UDropdownMenu
         v-if="groups && editable"
@@ -44,6 +44,17 @@
         </UTooltip>
       </UDropdownMenu>
       <UButton icon="i-heroicons-printer" variant="ghost" color="warning" size="xs" @click.prevent="emit('print', sw.id)" />
+      <UTooltip v-if="managementHref" :text="$t('switches.management.open', { name: sw.name })">
+        <a
+          :href="managementHref"
+          target="_blank"
+          rel="noopener noreferrer"
+          :aria-label="$t('switches.management.open', { name: sw.name })"
+          class="inline-flex h-7 w-7 items-center justify-center rounded text-success-500 transition-colors hover:bg-success/10 hover:text-success-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-success"
+        >
+          <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4" aria-hidden="true" />
+        </a>
+      </UTooltip>
       <UButton v-if="editable" icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="emit('duplicate', sw)" />
       <UButton v-if="editable" icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="emit('delete', sw)" />
     </div>
@@ -80,19 +91,9 @@
         <UIcon name="i-heroicons-map-pin" class="h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
         <span class="text-toned">{{ sw.location }}</span>
       </div>
-      <div v-if="sw.management_ip || managementHref" class="flex items-center gap-2">
+      <div v-if="sw.management_ip" class="flex items-center gap-2">
         <UIcon v-if="sw.management_ip" name="i-heroicons-globe-alt" class="h-3.5 w-3.5 flex-shrink-0 text-teal-400" />
         <span v-if="sw.management_ip" class="font-mono text-xs text-toned">{{ sw.management_ip }}</span>
-        <a
-          v-if="managementHref"
-          :href="managementHref"
-          target="_blank"
-          rel="noopener noreferrer"
-          :aria-label="$t('switches.management.open', { name: sw.name })"
-          class="relative z-30 ml-auto rounded text-primary-500 hover:text-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary pointer-events-auto"
-        >
-          <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4" aria-hidden="true" />
-        </a>
       </div>
     </div>
 
@@ -139,7 +140,7 @@
     </button>
 
     <!-- Hover actions -->
-    <div class="absolute right-2 top-2 z-30 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95 pointer-events-auto">
+    <div class="switch-card-actions absolute right-2 top-2 z-30 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-neutral-700/95">
       <UDropdownMenu
         v-if="groups && editable"
         :items="groupMenuItems"
@@ -160,6 +161,17 @@
         </UTooltip>
       </UDropdownMenu>
       <UButton icon="i-heroicons-printer" variant="ghost" color="warning" size="xs" @click.prevent="emit('print', sw.id)" />
+      <UTooltip v-if="managementHref" :text="$t('switches.management.open', { name: sw.name })">
+        <a
+          :href="managementHref"
+          target="_blank"
+          rel="noopener noreferrer"
+          :aria-label="$t('switches.management.open', { name: sw.name })"
+          class="inline-flex h-7 w-7 items-center justify-center rounded text-success-500 transition-colors hover:bg-success/10 hover:text-success-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-success"
+        >
+          <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4" aria-hidden="true" />
+        </a>
+      </UTooltip>
       <UButton v-if="editable" icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click.prevent="emit('duplicate', sw)" />
       <UButton v-if="editable" icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="emit('delete', sw)" />
     </div>
@@ -180,19 +192,9 @@
           <UIcon name="i-heroicons-map-pin" class="h-3 w-3" />
           {{ sw.location }}
         </span>
-        <span v-if="sw.management_ip || managementHref" class="flex items-center gap-1 font-mono">
+        <span v-if="sw.management_ip" class="flex items-center gap-1 font-mono">
           <UIcon v-if="sw.management_ip" name="i-heroicons-globe-alt" class="h-3 w-3" />
           <template v-if="sw.management_ip">{{ sw.management_ip }}</template>
-          <a
-            v-if="managementHref"
-            :href="managementHref"
-            target="_blank"
-            rel="noopener noreferrer"
-            :aria-label="$t('switches.management.open', { name: sw.name })"
-            class="relative z-30 ml-1 rounded text-primary-500 hover:text-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary pointer-events-auto"
-          >
-            <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4" aria-hidden="true" />
-          </a>
         </span>
         <UBadge v-for="tg in (sw.tags || [])" :key="tg" color="neutral" variant="soft" size="sm">
           {{ tg }}
@@ -293,3 +295,11 @@ const portStats = computed(() => {
 })
 
 </script>
+
+<style scoped>
+@media (hover: none) {
+  .switch-card-actions {
+    opacity: 1;
+  }
+}
+</style>

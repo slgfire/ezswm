@@ -1,59 +1,63 @@
 <template>
   <div class="-mt-2 list-container rounded-lg bg-default">
-    <button
-      class="flex w-full flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3 text-left cursor-pointer hover:bg-elevated/50 transition-colors rounded-lg"
-      :aria-expanded="props.showDetails"
-      :aria-label="$t(props.showDetails ? 'switches.infoBar.hideDetails' : 'switches.infoBar.showDetails')"
-      @click="emit('update:showDetails', !props.showDetails)"
-    >
-      <div v-if="item.model">
-        <div class="text-[10px] uppercase tracking-wider text-muted">{{ $t('switches.infoBar.model') }}</div>
-        <div class="text-sm font-semibold text-highlighted">{{ item.manufacturer ? `${item.manufacturer} ${item.model}` : item.model }}</div>
-      </div>
-      <div v-if="item.model && (item.location || item.management_ip)" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-      <div v-if="item.location">
-        <div class="text-[10px] uppercase tracking-wider text-muted">{{ $t('switches.infoBar.location') }}</div>
-        <div class="text-sm font-semibold text-highlighted">{{ item.location }}{{ item.rack_position ? ` / ${item.rack_position}` : '' }}</div>
-      </div>
-      <div v-if="item.location && item.management_ip" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-      <div v-if="item.management_ip">
-        <div class="text-[10px] uppercase tracking-wider text-muted">{{ $t('switches.infoBar.managementIp') }}</div>
-        <SharedCopyButton :value="item.management_ip!"><span class="font-mono text-sm font-bold text-highlighted">{{ item.management_ip }}</span></SharedCopyButton>
-      </div>
-      <div v-if="item.ports?.length" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-      <div v-if="item.ports?.length">
-        <div class="text-[10px] uppercase tracking-wider text-muted">{{ $t('switches.infoBar.ports') }}</div>
-        <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
-          {{ item.ports.length }}
-          <span class="flex items-center gap-1.5 text-xs font-normal">
-            <span v-if="portStats.up" class="flex items-center gap-0.5 text-green-500"><span class="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />{{ portStats.up }}</span>
-            <span v-if="portStats.down" class="flex items-center gap-0.5 text-gray-400"><span class="inline-block h-1.5 w-1.5 rounded-full bg-gray-400" />{{ portStats.down }}</span>
-            <span v-if="portStats.disabled" class="flex items-center gap-0.5 text-red-400"><span class="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />{{ portStats.disabled }}</span>
-          </span>
+    <div class="relative">
+      <button
+        type="button"
+        class="absolute inset-0 z-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+        :aria-expanded="props.showDetails"
+        :aria-label="$t(props.showDetails ? 'switches.infoBar.hideDetails' : 'switches.infoBar.showDetails')"
+        @click="emit('update:showDetails', !props.showDetails)"
+      />
+      <div class="relative z-10 flex w-full flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3 text-left pointer-events-none">
+        <div v-if="item.model">
+          <div class="text-[10px] uppercase tracking-wider text-muted">{{ $t('switches.infoBar.model') }}</div>
+          <div class="text-sm font-semibold text-highlighted">{{ item.manufacturer ? `${item.manufacturer} ${item.model}` : item.model }}</div>
+        </div>
+        <div v-if="item.model && (item.location || item.management_ip || managementHref)" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+        <div v-if="item.location">
+          <div class="text-[10px] uppercase tracking-wider text-muted">{{ $t('switches.infoBar.location') }}</div>
+          <div class="text-sm font-semibold text-highlighted">{{ item.location }}{{ item.rack_position ? ` / ${item.rack_position}` : '' }}</div>
+        </div>
+        <div v-if="item.location && (item.management_ip || managementHref)" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+        <div v-if="item.management_ip || managementHref">
+          <div class="text-[10px] uppercase tracking-wider text-muted">{{ $t(item.management_ip ? 'switches.infoBar.managementIp' : 'switches.management.url') }}</div>
+          <div class="flex items-center gap-2">
+            <SharedCopyButton v-if="item.management_ip" :value="item.management_ip" class="pointer-events-auto"><span class="font-mono text-sm font-bold text-highlighted">{{ item.management_ip }}</span></SharedCopyButton>
+            <UTooltip v-if="managementHref" :text="$t('switches.management.open', { name: item.name })">
+              <a
+                :href="managementHref"
+                target="_blank"
+                rel="noopener noreferrer"
+                :aria-label="$t('switches.management.open', { name: item.name })"
+                class="relative z-20 inline-flex h-6 w-6 items-center justify-center rounded text-success-500 transition-colors hover:bg-success/10 hover:text-success-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-success pointer-events-auto"
+              >
+                <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4" aria-hidden="true" />
+              </a>
+            </UTooltip>
+          </div>
+        </div>
+        <div v-if="item.ports?.length" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+        <div v-if="item.ports?.length">
+          <div class="text-[10px] uppercase tracking-wider text-muted">{{ $t('switches.infoBar.ports') }}</div>
+          <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
+            {{ item.ports.length }}
+            <span class="flex items-center gap-1.5 text-xs font-normal">
+              <span v-if="portStats.up" class="flex items-center gap-0.5 text-green-500"><span class="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />{{ portStats.up }}</span>
+              <span v-if="portStats.down" class="flex items-center gap-0.5 text-gray-400"><span class="inline-block h-1.5 w-1.5 rounded-full bg-gray-400" />{{ portStats.down }}</span>
+              <span v-if="portStats.disabled" class="flex items-center gap-0.5 text-red-400"><span class="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />{{ portStats.disabled }}</span>
+            </span>
+          </div>
+        </div>
+        <div v-if="currentTemplateName" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
+        <div v-if="currentTemplateName">
+          <div class="text-[10px] uppercase tracking-wider text-muted">{{ $t('switches.infoBar.template') }}</div>
+          <div class="text-sm text-toned">{{ currentTemplateName }}</div>
+        </div>
+        <div class="ml-auto flex items-center">
+          <UIcon name="i-heroicons-chevron-down" :class="['h-4 w-4 text-muted transition-transform duration-200', props.showDetails ? 'rotate-180' : '']" />
         </div>
       </div>
-      <div v-if="currentTemplateName" class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" />
-      <div v-if="currentTemplateName">
-        <div class="text-[10px] uppercase tracking-wider text-muted">{{ $t('switches.infoBar.template') }}</div>
-        <div class="text-sm text-toned">{{ currentTemplateName }}</div>
-      </div>
-      <!-- Expand/collapse chevron -->
-      <div class="ml-auto flex items-center">
-        <UIcon name="i-heroicons-chevron-down" :class="['h-4 w-4 text-muted transition-transform duration-200', props.showDetails ? 'rotate-180' : '']" />
-      </div>
-    </button>
-
-    <a
-      v-if="managementHref"
-      :href="managementHref"
-      target="_blank"
-      rel="noopener noreferrer"
-      :aria-label="$t('switches.management.open', { name: item.name })"
-      class="inline-flex items-center gap-1.5 px-5 pb-3 text-sm font-medium text-primary-500 hover:text-primary-400"
-    >
-      <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4" aria-hidden="true" />
-      {{ $t('switches.management.openLink') }}
-    </a>
+    </div>
 
     <!-- Expanded details (inline below info bar) -->
     <div v-show="props.showDetails" class="border-t border-default px-5 py-4">

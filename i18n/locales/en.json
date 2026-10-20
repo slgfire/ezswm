@@ -284,7 +284,6 @@
       "urlHelp": "Optional HTTP(S) address. When set, it overrides the protocol and Management IP.",
       "urlInvalid": "Enter an HTTP or HTTPS URL without a username or password (maximum 2,048 characters).",
       "open": "Open management page for {name}",
-      "openLink": "Open management page",
       "openDetails": "Open switch details: {name}"
     },
     "messages": {
