@@ -1,5 +1,7 @@
 import type { Port } from './port'
 
+export type ManagementProtocol = 'https' | 'http'
+
 export type SwitchRole = 'core' | 'distribution' | 'access' | 'management'
 
 export interface Switch {
@@ -13,6 +15,8 @@ export interface Switch {
   location?: string
   rack_position?: string
   management_ip?: string
+  management_protocol?: ManagementProtocol
+  management_url?: string
   firmware_version?: string
   layout_template_id?: string
   stack_size?: number

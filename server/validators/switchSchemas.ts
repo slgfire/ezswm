@@ -1,5 +1,24 @@
 import { z } from 'zod'
 
+export const managementProtocolSchema = z.enum(['https', 'http'])
+
+/**
+ * Optional management-link override. Stored exactly as entered (trimmed); only
+ * absolute http(s) URLs without credentials or control characters are accepted,
+ * so a stored value can never be a javascript:/data: link.
+ */
+export function isSafeManagementUrl(value: string): boolean {
+  if (value.length > 2048 || /\s/.test(value) || [...value].some(ch => ch.charCodeAt(0) < 32 || ch.charCodeAt(0) === 127)) return false
+  try {
+    const url = new URL(value)
+    return (url.protocol === 'http:' || url.protocol === 'https:') && url.hostname !== '' && url.username === '' && url.password === ''
+  } catch {
+    return false
+  }
+}
+
+export const managementUrlSchema = z.string().trim().refine(isSafeManagementUrl, 'Management URL must be an http(s) URL without credentials')
+
 export const createSwitchSchema = z.object({
   site_id: z.string().min(1),
   name: z.string().min(1).max(100),
@@ -9,6 +28,8 @@ export const createSwitchSchema = z.object({
   location: z.string().max(200).optional(),
   rack_position: z.string().max(50).optional(),
   management_ip: z.string().optional(),
+  management_protocol: managementProtocolSchema.optional(),
+  management_url: managementUrlSchema.nullish().transform(v => v ?? undefined),
   firmware_version: z.string().max(100).optional(),
   layout_template_id: z.string().optional(),
   stack_size: z.number().int().min(1).max(8).optional(),
@@ -28,6 +49,8 @@ export const updateSwitchSchema = z.object({
   location: z.string().max(200).optional().nullable(),
   rack_position: z.string().max(50).optional().nullable(),
   management_ip: z.string().optional().nullable(),
+  management_protocol: managementProtocolSchema.optional().nullable(),
+  management_url: managementUrlSchema.optional().nullable(),
   firmware_version: z.string().max(100).optional().nullable(),
   layout_template_id: z.string().optional().nullable(),
   stack_size: z.number().int().min(1).max(8).optional().nullable(),

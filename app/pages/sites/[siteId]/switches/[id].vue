@@ -288,6 +288,14 @@
             <UInput v-model="editForm.management_ip" class="w-full" />
           </UFormField>
 
+          <UFormField :label="$t('switches.management.protocol')" name="management_protocol" :help="$t('switches.management.protocolHelp')">
+            <USelect v-model="editForm.management_protocol" :items="managementProtocolOptions" class="w-full" />
+          </UFormField>
+
+          <UFormField :label="$t('switches.management.url')" name="management_url" :help="$t('switches.management.urlHelp')">
+            <UInput v-model="editForm.management_url" type="url" placeholder="https://192.0.2.10:8443/" class="w-full" />
+          </UFormField>
+
           <UFormField :label="$t('switches.fields.firmwareVersion')" name="firmware_version">
             <UInput v-model="editForm.firmware_version" class="w-full" />
           </UFormField>
@@ -550,6 +558,10 @@ function getPortLabel(portId: string): string {
 }
 
 const { editMode, saving, editFormRef, editTagInput, editForm, stackSizeOptions, editRoleOptions, templateOptions, openEditPanel, validateEdit, onSave, addEditTag, removeEditTag, requestCloseEdit, onEditOpenChange, showTemplateConfirm, removedPorts, removesAllPorts, pendingTemplateName, pendingStackOnlyChange, confirmTemplateChange } = useSwitchEditForm(item, templates, updateAndSyncRoute, fetchSwitch, { get groupsEnabled() { return switchGroupsEnabled.value } })
+const managementProtocolOptions = [
+  { label: 'HTTPS', value: 'https' as const },
+  { label: 'HTTP', value: 'http' as const }
+]
 
 const MAX_REMOVED_PORT_CHIPS = 24
 const templateConfirmTitle = computed(() => pendingStackOnlyChange.value

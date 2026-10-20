@@ -49,6 +49,12 @@
             <UFormField :label="$t('switches.fields.managementIp')" name="management_ip">
               <UInput v-model="form.management_ip" :placeholder="$t('switches.fields.managementIp')" class="w-full" />
             </UFormField>
+            <UFormField :label="$t('switches.management.protocol')" name="management_protocol" :help="$t('switches.management.protocolHelp')">
+              <USelect v-model="form.management_protocol" :items="managementProtocolOptions" class="w-full" />
+            </UFormField>
+            <UFormField :label="$t('switches.management.url')" name="management_url" :help="$t('switches.management.urlHelp')">
+              <UInput v-model="form.management_url" type="url" placeholder="https://192.0.2.10:8443/" class="w-full" />
+            </UFormField>
             <UFormField :label="$t('switches.fields.firmwareVersion')" name="firmware_version">
               <UInput v-model="form.firmware_version" :placeholder="$t('switches.fields.firmwareVersion')" class="w-full" />
             </UFormField>
@@ -126,6 +132,7 @@
 
 <script setup lang="ts">
 import type { LayoutTemplate } from '~~/types/layoutTemplate'
+import { isValidManagementUrlOverride } from '~~/app/utils/switchManagement'
 
 definePageMeta({
   middleware: [async (to) => {
@@ -163,6 +170,8 @@ const form = reactive({
   location: '',
   rack_position: '',
   management_ip: '',
+  management_protocol: 'https',
+  management_url: '',
   firmware_version: '',
   layout_template_id: '',
   role: '__none__',
@@ -178,6 +187,11 @@ const roleOptions = computed(() => [
   { label: t('switches.roles.access'), value: 'access' },
   { label: t('switches.roles.management'), value: 'management' }
 ])
+
+const managementProtocolOptions = [
+  { label: 'HTTPS', value: 'https' },
+  { label: 'HTTP', value: 'http' }
+]
 
 function addTag() {
   const tag = tagInput.value.trim()
@@ -236,6 +250,9 @@ function validate(state: typeof form): { name: string; message: string }[] {
   }
   if (state.management_ip?.trim() && !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(state.management_ip.trim())) {
     errors.push({ name: 'management_ip', message: t('networks.validation.managementIpFormat') })
+  }
+  if (state.management_url?.trim() && !isValidManagementUrlOverride(state.management_url)) {
+    errors.push({ name: 'management_url', message: t('switches.management.urlInvalid') })
   }
   return errors
 }

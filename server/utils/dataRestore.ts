@@ -2,6 +2,7 @@ import type { PrismaClient } from '@prisma/client'
 import { canDecryptOidcSecret } from './oidc/crypto'
 import { providerNameSchema } from '../validators/oidcSchemas'
 import { BUILTIN_DEVICE_TYPES } from '../../types/ipAllocation'
+import { isSafeManagementUrl } from '../validators/switchSchemas'
 
 // Tables that hold a singleton row (AppSettings), or that are root parents in
 // the FK graph. Everything else cascades from these.
@@ -249,6 +250,25 @@ function normalizeCustomDeviceTypes(rows: unknown[] | undefined): Record<string,
   return out
 }
 
+/**
+ * Switch management links (Issue #302). Older backups lack both fields and
+ * restore as HTTPS with no override. Present values are validated before any
+ * write so a tampered backup cannot persist a javascript:/credential link.
+ */
+function normalizeSwitchManagement(rows: unknown[] | undefined): void {
+  if (!Array.isArray(rows)) return
+  rows.forEach((raw, i) => {
+    if (!raw || typeof raw !== 'object') return // shape errors are rejected by the insert itself
+    const r = raw as Record<string, unknown>
+    if (r.management_protocol === undefined) r.management_protocol = 'https'
+    else if (r.management_protocol !== 'https' && r.management_protocol !== 'http') bad(`Row ${i} of switch: management_protocol must be "https" or "http".`)
+    if (r.management_url === undefined) r.management_url = null
+    else if (r.management_url !== null && (typeof r.management_url !== 'string' || !isSafeManagementUrl(r.management_url))) {
+      bad(`Row ${i} of switch: management_url must be null or an http(s) URL without credentials.`)
+    }
+  })
+}
+
 const PATCH_PANEL_KEYS = ['patchPanels', 'patchPanelSockets', 'patchPanelTokens'] as const
 
 /**
@@ -311,6 +331,7 @@ export async function restoreAll(prisma: PrismaClient, payload: unknown, options
   const oidcConfig = normalizeOidcConfig(data.oidcConfig)
   data.settings = normalizeSettings(data.settings)
   data.customDeviceTypes = normalizeCustomDeviceTypes(data.customDeviceTypes)
+  normalizeSwitchManagement(data.switches)
   const includesPatchPanels = hasPatchPanelData(data)
 
   // ID validation pass — fail fast before we touch the DB.

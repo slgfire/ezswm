@@ -8,6 +8,7 @@ import { ipAllocationRepository } from '../repositories/ipAllocationRepository'
 import { ipRangeRepository } from '../repositories/ipRangeRepository'
 import { layoutTemplateRepository } from '../repositories/layoutTemplateRepository'
 import { slugify, resolveSlugCollision } from './slugify'
+import { isSafeManagementUrl } from '../validators/switchSchemas'
 
 export type EntityType = 'switches' | 'vlans' | 'networks' | 'allocations' | 'ranges' | 'templates'
 
@@ -31,11 +32,36 @@ export interface ImportResult {
   errors: ImportError[]
 }
 
+function managementProtocol(entry: Record<string, unknown>): 'https' | 'http' | null {
+  const raw = entry.management_protocol
+  if (raw === undefined || raw === null || (typeof raw === 'string' && raw.trim() === '')) return 'https'
+  const value = typeof raw === 'string' ? raw.trim().toLowerCase() : raw
+  return value === 'https' || value === 'http' ? value : null
+}
+
+function managementUrl(entry: Record<string, unknown>): string | null {
+  const raw = entry.management_url
+  if (raw === undefined || raw === null) return null
+  const value = typeof raw === 'string' ? raw.trim() : String(raw)
+  return value === '' ? null : value
+}
+
 function validateRow(type: EntityType, entry: Record<string, unknown>, index: number): string | null {
   for (const field of REQUIRED_FIELDS[type]) {
     const value = entry[field]
     if (value === null || value === undefined || value === '') {
       return `Row ${index + 1}: missing required field "${field}"`
+    }
+  }
+
+  if (type === 'switches') {
+    // Blank/missing keeps the HTTPS default and no override (older exports and CSVs).
+    if (managementProtocol(entry) === null) {
+      return `Row ${index + 1}: management_protocol must be "https" or "http"`
+    }
+    const url = managementUrl(entry)
+    if (url !== null && !isSafeManagementUrl(url)) {
+      return `Row ${index + 1}: management_url must be an http(s) URL without credentials`
     }
   }
 
@@ -88,6 +114,8 @@ async function importSwitches(rows: Record<string, unknown>[]): Promise<ImportRe
           location: row.location ? String(row.location) : null,
           rack_position: row.rack_position ? String(row.rack_position) : null,
           management_ip: row.management_ip ? String(row.management_ip) : null,
+          management_protocol: managementProtocol(row) ?? 'https',
+          management_url: managementUrl(row),
           firmware_version: row.firmware_version ? String(row.firmware_version) : null,
           notes: row.notes ? String(row.notes) : null,
           tags: JSON.stringify(Array.isArray(row.tags) ? row.tags : []),

@@ -2,6 +2,13 @@
 
 ---
 
+## [0.45.0] — 2026-10-22
+
+### Hinzugefügt
+- Switch-Verwaltungslinks (Issue #302): Switches erhalten ein optionales `management_protocol` (`https` als Standard, oder `http`) und eine optionale `management_url` als Überschreibung (absolute http(s)-URL, getrimmt, max. 2048 Zeichen, keine eingebetteten Zugangsdaten). Wird ein Feld beim Aktualisieren weggelassen, bleibt es erhalten; `null` bei `management_url` entfernt die Überschreibung. Die Validierung von `management_ip` bleibt unverändert. Anlegen, Aktualisieren, Duplizieren, CSV/JSON-Import und -Export sowie Backups übernehmen beide Felder; ältere Backups und Importe ohne diese Felder werden als HTTPS ohne Überschreibung wiederhergestellt, unsichere Werte (z. B. `javascript:`-URLs, Zugangsdaten, unbekannte Protokolle) werden abgelehnt, bevor etwas geschrieben wird. Die Felder sind nicht durchsuchbar und erscheinen nicht in öffentlichen Patchpanel-/Token-Ansichten. Erstellen-/Bearbeiten-Formulare, Detailseite, Switch-Karten und Liste zeigen einen Verwaltungslink (öffnet in neuem Tab mit `noopener noreferrer`); in der Info-Leiste steht ein kompakter grüner Extern-Link-Pfeil direkt neben der Management-IP, und der Link in der Übersicht befindet sich jetzt in der oberen Aktionsleiste der Karte. Die Leiste ist per Tastaturfokus und Touch erreichbar; Viewer sehen den Verwaltungslink ohne Admin-Aktionen. Der Server kontaktiert kein Verwaltungsziel.
+
+---
+
 ## [0.44.0] — 2026-10-19
 
 ### Hinzugefügt

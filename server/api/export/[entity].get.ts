@@ -4,7 +4,7 @@ type EntityType = 'switches' | 'vlans' | 'networks' | 'allocations' | 'templates
 type ExportFormat = 'json' | 'csv'
 
 const CSV_HEADERS: Record<EntityType, string[]> = {
-  switches: ['id', 'site_id', 'name', 'model', 'manufacturer', 'serial_number', 'location', 'rack_position', 'management_ip', 'firmware_version', 'layout_template_id', 'notes', 'created_at', 'updated_at'],
+  switches: ['id', 'site_id', 'name', 'model', 'manufacturer', 'serial_number', 'location', 'rack_position', 'management_ip', 'management_protocol', 'management_url', 'firmware_version', 'layout_template_id', 'notes', 'created_at', 'updated_at'],
   vlans: ['id', 'site_id', 'vlan_id', 'name', 'description', 'status', 'routing_device', 'color', 'created_at', 'updated_at'],
   networks: ['id', 'site_id', 'name', 'vlan_id', 'subnet', 'gateway', 'dns_servers', 'description', 'created_at', 'updated_at'],
   allocations: ['id', 'network_id', 'ip_address', 'hostname', 'mac_address', 'device_type', 'description', 'status', 'created_at', 'updated_at'],
