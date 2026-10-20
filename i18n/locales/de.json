@@ -277,6 +277,16 @@
       "role": "Rolle",
       "tags": "Tags"
     },
+    "management": {
+      "protocol": "Management-Protokoll",
+      "protocolHelp": "Wird mit der Management-IP verwendet, sofern keine direkte Management-URL angegeben ist.",
+      "url": "Management-URL",
+      "urlHelp": "Optionale HTTP(S)-Adresse. Wenn angegeben, überschreibt sie Protokoll und Management-IP.",
+      "urlInvalid": "Gib eine HTTP- oder HTTPS-URL ohne Benutzername oder Passwort ein (maximal 2.048 Zeichen).",
+      "open": "Management-Seite für {name} öffnen",
+      "openLink": "Management-Seite öffnen",
+      "openDetails": "Switch-Details öffnen: {name}"
+    },
     "messages": {
       "created": "Switch erfolgreich erstellt",
       "updated": "Switch erfolgreich aktualisiert",
@@ -389,7 +399,9 @@
       "location": "Standort",
       "managementIp": "Management-IP",
       "ports": "Ports",
-      "template": "Vorlage"
+      "template": "Vorlage",
+      "showDetails": "Vollständige Switch-Details anzeigen",
+      "hideDetails": "Vollständige Switch-Details ausblenden"
     },
     "secondaryDetails": "Weitere Details",
     "detailsAction": "Details",

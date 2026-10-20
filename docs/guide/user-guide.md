@@ -136,6 +136,8 @@ Fields:
 - **Location** -- physical location, e.g., "Server Room A, Rack 3"
 - **Rack Position** -- position within the rack
 - **Management IP** -- must be a valid IPv4 address
+- **Management protocol** -- HTTP or HTTPS; defaults to HTTPS when opening the Management IP
+- **Management URL** -- optional direct HTTP(S) address (maximum 2,048 characters, without a username or password). This overrides the Management IP and protocol.
 - **Firmware Version** -- currently running firmware
 - **Layout Template** -- select a previously created template; this generates the port grid. If no template fits, click **Create New** next to the dropdown to open a quick-create modal. The modal has two tabs:
   - **Manual** -- fill in name, port count, and port type.
@@ -147,7 +149,7 @@ Fields:
 - **Tags** -- freeform tags; type and press Enter to add, click a tag to remove
 - **Notes** -- freetext
 
-When editing a switch, clearing optional text fields (for example Model, Manufacturer, Serial Number, Location, Rack Position, Management IP, Firmware Version, Notes) and saving now explicitly removes those stored values.
+When editing a switch, clearing optional text fields (for example Model, Manufacturer, Serial Number, Location, Rack Position, Management IP, Management URL, Firmware Version, Notes) and saving explicitly removes those stored values. Clearing Management URL restores the address derived from Management IP and protocol.
 
 When renaming a switch from its detail page, the browser URL now immediately updates to the switch's new slug. This keeps follow-up edits and switch sub-resource actions (ports, VLANs, LAGs, public token) on the correct route after a rename.
 
@@ -163,7 +165,7 @@ On a switch detail page, ports are rendered as a visual grid matching the layout
 
 Below the port grid, a **legend** summarizes all visual indicators: port status (up/down/disabled), port types (SFP/QSFP/Console/Mgmt), port mode (access/trunk), active VLANs with their colors, and LAG groups. A multi-select hint reminds you how to select multiple ports (Ctrl/Cmd + Click). The hint automatically hides when ports are selected.
 
-The **info bar** above the port grid shows key switch details (model, location, management IP, port count, template). Click the bar to expand the full detail panel with all switch fields inline.
+The **info bar** above the port grid shows key switch details (model, location, management IP, port count, template). Click the bar to expand the full detail panel with all switch fields inline. **Open management page** opens the saved Management URL, or the Management IP using its selected protocol, in a new tab. The same link appears on switch cards in both grid and list views for admins and viewers. Invalid or missing addresses are not linked; the public switch view does not expose management links.
 
 The top-right **action bar** provides quick access to:
 

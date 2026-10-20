@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildSwitchEditSaveBody, computeTemplateWarningRemovedPorts, resolveEffectiveTemplateId } from '../app/composables/useSwitchEditForm'
+import { getSwitchManagementHref, isValidManagementUrlOverride } from '../app/utils/switchManagement'
 import type { LayoutTemplate } from '../types/layoutTemplate'
 
 const templates: LayoutTemplate[] = [
@@ -66,6 +67,22 @@ describe('useSwitchEditForm destructive warning calculation', () => {
       notes: null,
       stack_size: 1,
       expected_updated_at: 'ts-1'
+    })
+  })
+
+  it('clears a blank management URL explicitly while preserving protocol', () => {
+    expect(buildSwitchEditSaveBody({
+      name: 'SW-1',
+      management_ip: '192.0.2.10',
+      management_protocol: 'http',
+      management_url: '',
+      layout_template_id: '',
+      tags: [],
+      stack_size: 1
+    })).toMatchObject({
+      management_ip: '192.0.2.10',
+      management_protocol: 'http',
+      management_url: null
     })
   })
 
@@ -186,4 +203,43 @@ describe('useSwitchEditForm destructive warning calculation', () => {
     })).toEqual({ removed: [], removesAll: false })
   })
 
+})
+
+describe('switch management links', () => {
+  it('uses the override before protocol and management IP', () => {
+    expect(getSwitchManagementHref({
+      management_ip: '192.0.2.10',
+      management_protocol: 'http',
+      management_url: 'https://switch.example:8443/ui'
+    })).toBe('https://switch.example:8443/ui')
+  })
+
+  it('defaults an existing management IP to HTTPS and supports HTTP', () => {
+    expect(getSwitchManagementHref({ management_ip: '192.0.2.10' })).toBe('https://192.0.2.10/')
+    expect(getSwitchManagementHref({ management_ip: '192.0.2.10', management_protocol: 'http' })).toBe('http://192.0.2.10/')
+  })
+
+  it('uses a valid bracketed IPv6 management address', () => {
+    expect(getSwitchManagementHref({ management_ip: '[2001:db8::10]', management_protocol: 'http' })).toBe('http://[2001:db8::10]/')
+  })
+
+  it('returns no link without a usable address or override', () => {
+    expect(getSwitchManagementHref({})).toBeNull()
+    expect(getSwitchManagementHref({ management_ip: '999.2.3.4' })).toBeNull()
+  })
+
+  it('falls back to the management IP when the override is explicitly cleared', () => {
+    expect(getSwitchManagementHref({ management_ip: '192.0.2.10', management_url: null })).toBe('https://192.0.2.10/')
+  })
+
+  it.each([
+    'javascript:alert(1)',
+    'ftp://switch.example',
+    'https://user:password@switch.example',
+    'https://switch example/',
+    'https://switch.example/' + 'x'.repeat(2048)
+  ])('rejects unsafe or invalid override %s', (management_url) => {
+    expect(isValidManagementUrlOverride(management_url)).toBe(false)
+    expect(getSwitchManagementHref({ management_ip: '192.0.2.10', management_url })).toBeNull()
+  })
 })

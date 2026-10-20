@@ -2,6 +2,8 @@
   <div class="-mt-2 list-container rounded-lg bg-default">
     <button
       class="flex w-full flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3 text-left cursor-pointer hover:bg-elevated/50 transition-colors rounded-lg"
+      :aria-expanded="props.showDetails"
+      :aria-label="$t(props.showDetails ? 'switches.infoBar.hideDetails' : 'switches.infoBar.showDetails')"
       @click="emit('update:showDetails', !props.showDetails)"
     >
       <div v-if="item.model">
@@ -40,6 +42,18 @@
         <UIcon name="i-heroicons-chevron-down" :class="['h-4 w-4 text-muted transition-transform duration-200', props.showDetails ? 'rotate-180' : '']" />
       </div>
     </button>
+
+    <a
+      v-if="managementHref"
+      :href="managementHref"
+      target="_blank"
+      rel="noopener noreferrer"
+      :aria-label="$t('switches.management.open', { name: item.name })"
+      class="inline-flex items-center gap-1.5 px-5 pb-3 text-sm font-medium text-primary-500 hover:text-primary-400"
+    >
+      <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4" aria-hidden="true" />
+      {{ $t('switches.management.openLink') }}
+    </a>
 
     <!-- Expanded details (inline below info bar) -->
     <div v-show="props.showDetails" class="border-t border-default px-5 py-4">
@@ -106,6 +120,7 @@
 
 <script setup lang="ts">
 import type { Switch } from '~~/types/switch'
+import { getSwitchManagementHref } from '~~/app/utils/switchManagement'
 
 const props = defineProps<{
   item: Switch
@@ -115,4 +130,5 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ 'update:showDetails': [value: boolean] }>()
+const managementHref = computed(() => getSwitchManagementHref(props.item))
 </script>

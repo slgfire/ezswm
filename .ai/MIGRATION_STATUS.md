@@ -2,6 +2,27 @@
 
 ## Latest Stage
 
+### Issue #302 — switch management links (v0.45.0)
+
+Date: 2026-10-20
+Stage: Implemented and locally verified on `feat/switch-management-links`, including production browser, Docker and isolated development-server checks. Prepared as a publication checkpoint; merge and deployment require separate approval.
+
+Scope: Migration `20261022120000_switch_management_links` (additive: `management_protocol` TEXT NOT NULL DEFAULT 'https', `management_url` TEXT NULL), Zod schemas (`https|http`; URL http(s), trimmed, ≤2048, no credentials/control chars; `null` clears, omission preserves), repository create/update/duplicate, entity import (blank/missing → defaults, unsafe rows rejected per row), backup restore (older backups default; tampered values rejected with 400 before any write), CSV export/templates. Public token view and global search unchanged. Version 0.44.0 → 0.45.0.
+
+Verification: `tests/switchManagementLink.test.ts` (22 tests, isolated migrated SQLite) passed. Fresh `prisma migrate deploy` applied all 15 migrations; a populated upgrade (14 migrations + legacy switch row, then the new SQL) yielded `https`/NULL; `prisma migrate diff` reported no schema drift. See final report for lint/typecheck results. No staging/shared data touched.
+
+Frontend: Switch create/edit forms expose protocol and optional URL override. Shared safe URL resolution supplies separate external links in detail and grid/list views without nesting interactive controls. EN/DE labels, user guides, edit-payload/helper tests and the CI browser regression are included.
+
+Final verification: raw `nuxt typecheck`, full ESLint, 83 test files / 1,163 tests and `pnpm build` passed. The initial browser runs exposed incorrect localized test selectors; only those selectors were corrected, with product files byte-identical. The original production browser regression then passed in English and German (1/1 each), covering create/update/clear, detail and grid/list links, keyboard navigation and viewer access, with captured console/page-error assertions passing. Evidence: `/tmp/opencode/ezswm-302-final/` and `/tmp/opencode/ezswm-302-final-{en-rax02o5j,de-8jqrsxz6}/`.
+
+Docker: isolated `compose.dev` no-cache build and runtime passed; all 15 migrations applied, health reported version 0.45.0 and `database_ok: true`, and the container ran as UID 1000. Its container/network were removed and other running containers stayed unchanged. Evidence: `/tmp/opencode/ezswm-302-docker-2oswwkpw/`.
+
+Development-check history: the initial `pnpm dev` attempt exited because another Nuxt development server already owned the shared `.nuxt` lock. That unrelated process was not stopped and the lock was not bypassed; evidence is `/tmp/opencode/ezswm-302-dev-zjo3m4_f/`. Safari and physical-device behavior were not checked. No management target was contacted, and no staging data, tunnel, commit, push or deployment was changed.
+
+A separately approved source-copy attempt stopped before migrations or dev startup: pnpm rejected the symlinked dependency directory with `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`. No modules were removed, no dev process started and original source hashes were unchanged. The copy's verified path is `/tmp/opencode/ezswm-302-devcopy-RDQzlo/` (an earlier report transcribed its suffix incorrectly).
+
+Final approved development check: direct installed Prisma and Nuxt binaries ran from that copy with a private database, explicit copy root and unused loopback port, without pnpm dependency verification or a lock bypass. All 15 migrations applied; health returned version 0.45.0 and `database_ok: true`. Nuxt used the copy's own `.nuxt`; its owned process group was stopped, foreign dev processes remained untouched and original source hashes were identical. Evidence: `migration2.log`, `dev2.log` and `health2.json` in the copy directory. A mistyped-path invocation exited before starting commands; the actual dev check ran once and passed.
+
 ### Subnet edit — clear VLAN association
 
 Date: 2026-10-20

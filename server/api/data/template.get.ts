@@ -1,7 +1,7 @@
 type EntityType = 'switches' | 'vlans' | 'networks' | 'allocations' | 'templates'
 
 const CSV_TEMPLATES: Record<EntityType, string> = {
-  switches: 'name,model,manufacturer,serial_number,location,rack_position,management_ip,firmware_version,notes',
+  switches: 'name,model,manufacturer,serial_number,location,rack_position,management_ip,management_protocol,management_url,firmware_version,notes',
   vlans: 'vlan_id,name,description,status,routing_device,color',
   networks: 'name,vlan_id,subnet,gateway,dns_servers,description',
   allocations: 'network_id,ip_address,hostname,mac_address,device_type,description,status',

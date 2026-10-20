@@ -91,6 +91,8 @@ model Switch {
   location           String?
   rack_position      String?
   management_ip      String?
+  management_protocol String @default("https") // "https" | "http"
+  management_url     String? // optional HTTP(S) override for the management link
   firmware_version   String?
   layout_template_id String?
   group_id           String?

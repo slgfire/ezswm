@@ -5,10 +5,15 @@
     class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
     :class="{ 'h-full': uniform }"
   >
+    <NuxtLink
+      :to="detailPath"
+      class="absolute inset-0 z-10 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+      :aria-label="$t('switches.management.openDetails', { name: sw.name })"
+    />
     <!-- Favorite star (top-left, always visible) -->
     <button
       v-if="editable"
-      class="absolute left-1.5 top-px z-10 transition-colors"
+      class="absolute left-1.5 top-px z-30 transition-colors pointer-events-auto"
       :class="sw.is_favorite ? 'text-amber-400' : 'text-muted hover:text-amber-400'"
       :title="sw.is_favorite ? $t('switches.unfavorite') : $t('switches.favorite')"
       @click.prevent="emit('favorite', sw)"
@@ -17,7 +22,7 @@
     </button>
 
     <!-- Hover actions -->
-    <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
+    <div class="absolute right-2 top-2 z-30 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95 pointer-events-auto">
       <UButton v-if="draggable && editable" icon="i-tabler-grip-horizontal" class="drag-handle cursor-grab active:cursor-grabbing" variant="ghost" color="neutral" size="xs" @click.prevent />
       <UDropdownMenu
         v-if="groups && editable"
@@ -44,6 +49,7 @@
     </div>
 
     <!-- Header: fixed-height zone so grouped rows align (name, subtitle, role, tags) -->
+    <div class="relative z-20 flex h-full flex-col pointer-events-none">
     <div class="h-[6.5rem] px-5 pt-4 pb-2">
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
@@ -74,9 +80,19 @@
         <UIcon name="i-heroicons-map-pin" class="h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
         <span class="text-toned">{{ sw.location }}</span>
       </div>
-      <div v-if="sw.management_ip" class="flex items-center gap-2">
-        <UIcon name="i-heroicons-globe-alt" class="h-3.5 w-3.5 flex-shrink-0 text-teal-400" />
-        <span class="font-mono text-xs text-toned">{{ sw.management_ip }}</span>
+      <div v-if="sw.management_ip || managementHref" class="flex items-center gap-2">
+        <UIcon v-if="sw.management_ip" name="i-heroicons-globe-alt" class="h-3.5 w-3.5 flex-shrink-0 text-teal-400" />
+        <span v-if="sw.management_ip" class="font-mono text-xs text-toned">{{ sw.management_ip }}</span>
+        <a
+          v-if="managementHref"
+          :href="managementHref"
+          target="_blank"
+          rel="noopener noreferrer"
+          :aria-label="$t('switches.management.open', { name: sw.name })"
+          class="relative z-30 ml-auto rounded text-primary-500 hover:text-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary pointer-events-auto"
+        >
+          <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4" aria-hidden="true" />
+        </a>
       </div>
     </div>
 
@@ -98,6 +114,7 @@
         </span>
       </div>
     </div>
+    </div>
   </div>
 
   <!-- List variant -->
@@ -105,10 +122,15 @@
     v-else
     class="stagger-item card-glow group relative flex items-center gap-4 rounded-lg bg-default px-5 py-3"
   >
+    <NuxtLink
+      :to="detailPath"
+      class="absolute inset-0 z-10 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+      :aria-label="$t('switches.management.openDetails', { name: sw.name })"
+    />
     <!-- Favorite star (list view) -->
     <button
       v-if="editable"
-      class="shrink-0 transition-colors"
+      class="relative z-30 shrink-0 transition-colors pointer-events-auto"
       :class="sw.is_favorite ? 'text-amber-400' : 'text-muted hover:text-amber-400'"
       :title="sw.is_favorite ? $t('switches.unfavorite') : $t('switches.favorite')"
       @click.prevent="emit('favorite', sw)"
@@ -117,7 +139,7 @@
     </button>
 
     <!-- Hover actions -->
-    <div class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95">
+    <div class="absolute right-2 top-2 z-30 flex items-center gap-1 rounded-md bg-white/95 px-2 py-1.5 opacity-0 shadow-md backdrop-blur transition-opacity group-hover:opacity-100 dark:bg-neutral-700/95 pointer-events-auto">
       <UDropdownMenu
         v-if="groups && editable"
         :items="groupMenuItems"
@@ -143,7 +165,7 @@
     </div>
 
     <!-- Info -->
-    <div class="min-w-0 flex-1">
+    <div class="relative z-20 min-w-0 flex-1 pointer-events-none">
       <div class="flex items-center gap-2">
         <h3 class="truncate font-semibold text-highlighted">{{ sw.name }}</h3>
         <UBadge v-if="sw.role" :color="roleColor(sw.role)" variant="subtle" size="sm">
@@ -158,9 +180,19 @@
           <UIcon name="i-heroicons-map-pin" class="h-3 w-3" />
           {{ sw.location }}
         </span>
-        <span v-if="sw.management_ip" class="flex items-center gap-1 font-mono">
-          <UIcon name="i-heroicons-globe-alt" class="h-3 w-3" />
-          {{ sw.management_ip }}
+        <span v-if="sw.management_ip || managementHref" class="flex items-center gap-1 font-mono">
+          <UIcon v-if="sw.management_ip" name="i-heroicons-globe-alt" class="h-3 w-3" />
+          <template v-if="sw.management_ip">{{ sw.management_ip }}</template>
+          <a
+            v-if="managementHref"
+            :href="managementHref"
+            target="_blank"
+            rel="noopener noreferrer"
+            :aria-label="$t('switches.management.open', { name: sw.name })"
+            class="relative z-30 ml-1 rounded text-primary-500 hover:text-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary pointer-events-auto"
+          >
+            <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4" aria-hidden="true" />
+          </a>
         </span>
         <UBadge v-for="tg in (sw.tags || [])" :key="tg" color="neutral" variant="soft" size="sm">
           {{ tg }}
@@ -169,7 +201,7 @@
     </div>
 
     <!-- Port Stats (right-aligned) -->
-    <div class="hidden shrink-0 text-right sm:block">
+    <div class="relative z-20 hidden shrink-0 text-right sm:block pointer-events-none">
       <span class="text-xs font-medium uppercase tracking-wider text-muted">{{ sw.ports?.length || 0 }} ports</span>
       <div class="mt-1 flex items-center justify-end gap-3 text-xs">
         <span v-if="portStats.up" class="flex items-center gap-1 text-green-500">
@@ -193,6 +225,7 @@
 import type { Switch } from '~~/types/switch'
 import type { SwitchGroup } from '~~/types/switchGroup'
 import type { DropdownMenuItem } from '@nuxt/ui'
+import { getSwitchManagementHref } from '~~/app/utils/switchManagement'
 
 const props = withDefaults(defineProps<{
   sw: Switch
@@ -221,6 +254,8 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const managementHref = computed(() => getSwitchManagementHref(props.sw))
+const detailPath = computed(() => `/sites/${props.siteId}/switches/${props.sw.slug || props.sw.id}`)
 
 const groupMenuItems = computed<DropdownMenuItem[]>(() => {
   if (!props.groups) return []

@@ -52,6 +52,8 @@ interface SwitchRow {
   location: string | null
   rack_position: string | null
   management_ip: string | null
+  management_protocol: string
+  management_url: string | null
   firmware_version: string | null
   layout_template_id: string | null
   group_id: string | null
@@ -108,6 +110,8 @@ function rowToSwitch(row: SwitchRow): Switch {
     location: row.location ?? undefined,
     rack_position: row.rack_position ?? undefined,
     management_ip: row.management_ip ?? undefined,
+    management_protocol: row.management_protocol === 'http' ? 'http' : 'https',
+    management_url: row.management_url ?? undefined,
     firmware_version: row.firmware_version ?? undefined,
     layout_template_id: row.layout_template_id ?? undefined,
     group_id: row.group_id ?? undefined,
@@ -538,6 +542,8 @@ export const switchRepository = {
           location: data.location ?? null,
           rack_position: data.rack_position ?? null,
           management_ip: data.management_ip ?? null,
+          management_protocol: data.management_protocol ?? 'https',
+          management_url: data.management_url ?? null,
           firmware_version: data.firmware_version ?? null,
           layout_template_id: data.layout_template_id ?? null,
           group_id: groupId,
@@ -659,6 +665,8 @@ export const switchRepository = {
           ...(data.location !== undefined ? { location: data.location ?? null } : {}),
           ...(data.rack_position !== undefined ? { rack_position: data.rack_position ?? null } : {}),
           ...(data.management_ip !== undefined ? { management_ip: data.management_ip ?? null } : {}),
+          ...(data.management_protocol !== undefined ? { management_protocol: data.management_protocol ?? 'https' } : {}),
+          ...(data.management_url !== undefined ? { management_url: data.management_url ?? null } : {}),
           ...(data.firmware_version !== undefined ? { firmware_version: data.firmware_version ?? null } : {}),
           ...(data.layout_template_id !== undefined ? { layout_template_id: data.layout_template_id ?? null } : {}),
           ...(data.group_id !== undefined || (data.site_id !== undefined && targetSiteId !== current.site_id) ? { group_id: groupId } : {}),
@@ -1241,6 +1249,8 @@ export const switchRepository = {
           location: original.location ?? null,
           rack_position: original.rack_position ?? null,
           management_ip: original.management_ip ?? null,
+          management_protocol: original.management_protocol,
+          management_url: original.management_url ?? null,
           firmware_version: original.firmware_version ?? null,
           layout_template_id: original.layout_template_id ?? null,
           group_id: original.group_id ?? null,

@@ -277,6 +277,16 @@
       "role": "Role",
       "tags": "Tags"
     },
+    "management": {
+      "protocol": "Management protocol",
+      "protocolHelp": "Used with the Management IP unless a direct Management URL is set.",
+      "url": "Management URL",
+      "urlHelp": "Optional HTTP(S) address. When set, it overrides the protocol and Management IP.",
+      "urlInvalid": "Enter an HTTP or HTTPS URL without a username or password (maximum 2,048 characters).",
+      "open": "Open management page for {name}",
+      "openLink": "Open management page",
+      "openDetails": "Open switch details: {name}"
+    },
     "messages": {
       "created": "Switch created successfully",
       "updated": "Switch updated successfully",
@@ -389,7 +399,9 @@
       "location": "Location",
       "managementIp": "Management IP",
       "ports": "Ports",
-      "template": "Template"
+      "template": "Template",
+      "showDetails": "Show full switch details",
+      "hideDetails": "Hide full switch details"
     },
     "secondaryDetails": "More details",
     "detailsAction": "Details",

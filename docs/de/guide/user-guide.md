@@ -136,6 +136,8 @@ Felder:
 - **Standort** -- physischer Standort, z.B. "Serverraum A, Rack 3"
 - **Rack-Position** -- Position innerhalb des Racks
 - **Management-IP** -- muss eine gültige IPv4-Adresse sein
+- **Management-Protokoll** -- HTTP oder HTTPS; beim Öffnen der Management-IP ist standardmäßig HTTPS eingestellt
+- **Management-URL** -- optionale direkte HTTP(S)-Adresse (maximal 2.048 Zeichen, ohne Benutzername oder Passwort). Sie hat Vorrang vor Management-IP und Protokoll.
 - **Firmware-Version** -- aktuell laufende Firmware
 - **Layout-Template** -- wähle ein zuvor erstelltes Template; dies generiert das Port-Raster. Falls kein passendes Template existiert, klicke auf **Neue erstellen** neben dem Dropdown — das Schnell-Modal bietet zwei Tabs:
   - **Manuell** -- Name, Port-Anzahl und Port-Typ manuell eingeben.
@@ -147,7 +149,7 @@ Felder:
 - **Tags** -- frei definierbare Tags; tippe und drücke Enter zum Hinzufügen, klicke auf einen Tag zum Entfernen
 - **Notizen** -- Freitext
 
-Beim Bearbeiten eines Switches entfernt das Leeren optionaler Textfelder (z. B. Modell, Hersteller, Seriennummer, Standort, Rack-Position, Management-IP, Firmware-Version, Notizen) beim Speichern jetzt die zuvor gespeicherten Werte explizit.
+Beim Bearbeiten eines Switches entfernt das Leeren optionaler Textfelder (z. B. Modell, Hersteller, Seriennummer, Standort, Rack-Position, Management-IP, Management-URL, Firmware-Version, Notizen) beim Speichern explizit die zuvor gespeicherten Werte. Wird die Management-URL geleert, wird die Adresse wieder aus Management-IP und Protokoll gebildet.
 
 Beim Umbenennen eines Switches auf der Detailseite wird die Browser-URL jetzt sofort auf den neuen Slug aktualisiert. Dadurch bleiben Folge-Bearbeitungen und Switch-Teilaktionen (Ports, VLANs, LAGs, Public-Token) nach dem Umbenennen auf der korrekten Route.
 
@@ -163,7 +165,7 @@ Auf der Switch-Detailseite werden Ports als visuelles Raster entsprechend dem La
 
 Unterhalb des Port-Rasters fasst eine **Legende** alle visuellen Indikatoren zusammen: Port-Status (aktiv/inaktiv/deaktiviert), Port-Typen (SFP/QSFP/Konsole/Mgmt), Port-Modus (Access/Trunk), aktive VLANs mit ihren Farben und LAG-Gruppen. Ein Mehrfachauswahl-Hinweis erinnert an die Port-Mehrfachauswahl (Strg/Cmd + Klick). Der Hinweis verschwindet automatisch, wenn Ports ausgewählt sind.
 
-Die **Info-Leiste** oberhalb des Port-Rasters zeigt die wichtigsten Switch-Details (Modell, Standort, Management-IP, Port-Anzahl, Template). Klicke auf die Leiste, um das vollständige Detail-Panel mit allen Switch-Feldern inline aufzuklappen.
+Die **Info-Leiste** oberhalb des Port-Rasters zeigt die wichtigsten Switch-Details (Modell, Standort, Management-IP, Port-Anzahl, Template). Klicke auf die Leiste, um das vollständige Detail-Panel mit allen Switch-Feldern inline aufzuklappen. **Management-Seite öffnen** öffnet die gespeicherte Management-URL oder die Management-IP mit dem ausgewählten Protokoll in einem neuen Tab. Derselbe Link erscheint in Karten- und Listenansicht für Admins und Viewer. Fehlende oder ungültige Adressen werden nicht verlinkt; die öffentliche Switch-Ansicht zeigt keine Management-Links.
 
 Die **Aktionsleiste** oben rechts bietet schnellen Zugriff auf:
 

@@ -1,5 +1,6 @@
 import type { Switch } from '~~/types/switch'
 import type { LayoutTemplate } from '~~/types/layoutTemplate'
+import { isValidManagementUrlOverride } from '../utils/switchManagement'
 
 type WarningPort = { id: string; unit: number; index: number; type: string; label?: string | null }
 
@@ -10,6 +11,7 @@ const clearableOptionalTextFields = new Set([
   'location',
   'rack_position',
   'management_ip',
+  'management_url',
   'firmware_version',
   'notes'
 ])
@@ -111,7 +113,7 @@ export function useSwitchEditForm(
 
   const editForm = reactive({
     name: '', model: '', manufacturer: '', serial_number: '',
-    location: '', rack_position: '', management_ip: '', firmware_version: '',
+    location: '', rack_position: '', management_ip: '', management_protocol: 'https' as 'https' | 'http', management_url: '', firmware_version: '',
     layout_template_id: '', group_id: '_ungrouped', role: '', tags: [] as string[], notes: '', stack_size: 1
   })
 
@@ -154,6 +156,8 @@ export function useSwitchEditForm(
     editForm.location = item.value.location || ''
     editForm.rack_position = item.value.rack_position || ''
     editForm.management_ip = item.value.management_ip || ''
+    editForm.management_protocol = item.value.management_protocol === 'http' ? 'http' : 'https'
+    editForm.management_url = item.value.management_url || ''
     editForm.firmware_version = item.value.firmware_version || ''
     editForm.layout_template_id = item.value.layout_template_id || ''
     editForm.group_id = item.value.group_id || '_ungrouped'
@@ -173,6 +177,9 @@ export function useSwitchEditForm(
     }
     if (state.management_ip?.trim() && !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(state.management_ip.trim())) {
       errors.push({ name: 'management_ip', message: t('networks.validation.managementIpFormat') })
+    }
+    if (state.management_url?.trim() && !isValidManagementUrlOverride(state.management_url)) {
+      errors.push({ name: 'management_url', message: t('switches.management.urlInvalid') })
     }
     return errors
   }

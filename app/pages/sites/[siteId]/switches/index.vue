@@ -266,8 +266,9 @@
           <div class="h-px flex-1 bg-default" />
         </div>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <NuxtLink v-for="sw in group.items" :key="sw.id" :to="`/sites/${siteId}/switches/${sw.slug || sw.id}`">
-            <SwitchCard
+          <SwitchCard
+              v-for="sw in group.items"
+              :key="sw.id"
               :sw="sw"
               :site-id="siteId"
               variant="grid"
@@ -279,7 +280,6 @@
               @delete="confirmDelete"
               @assign-group="assignSwitchToGroup"
             />
-          </NuxtLink>
         </div>
       </div>
     </template>
@@ -339,7 +339,6 @@
                   @end="saveGroupedSwitchOrder()"
                 >
                   <template #item="{ element: sw }">
-                    <NuxtLink :to="`/sites/${siteId}/switches/${sw.slug || sw.id}`" class="h-full">
                       <SwitchCard
                         :sw="sw"
                         :site-id="siteId"
@@ -354,7 +353,6 @@
                         @delete="confirmDelete"
                         @assign-group="assignSwitchToGroup"
                       />
-                    </NuxtLink>
                   </template>
                 </draggable>
                 <template #fallback>
@@ -364,8 +362,9 @@
                 </template>
               </ClientOnly>
               <div v-if="viewMode === 'list'" class="flex flex-col gap-2">
-                <NuxtLink v-for="sw in groupSwitchItems[group.id]" :key="sw.id" :to="`/sites/${siteId}/switches/${sw.slug || sw.id}`">
-                  <SwitchCard
+                <SwitchCard
+                    v-for="sw in groupSwitchItems[group.id]"
+                    :key="sw.id"
                     :sw="sw"
                     :site-id="siteId"
                     variant="list"
@@ -377,7 +376,6 @@
                     @delete="confirmDelete"
                     @assign-group="assignSwitchToGroup"
                   />
-                </NuxtLink>
               </div>
             </div>
           </section>
@@ -420,7 +418,6 @@
               @end="saveGroupedSwitchOrder()"
             >
               <template #item="{ element: sw }">
-                <NuxtLink :to="`/sites/${siteId}/switches/${sw.slug || sw.id}`" class="h-full">
                   <SwitchCard
                     :sw="sw"
                     :site-id="siteId"
@@ -435,7 +432,6 @@
                     @delete="confirmDelete"
                     @assign-group="assignSwitchToGroup"
                   />
-                </NuxtLink>
               </template>
             </draggable>
             <template #fallback>
@@ -445,8 +441,9 @@
             </template>
           </ClientOnly>
           <div v-if="viewMode === 'list'" class="flex flex-col gap-2">
-            <NuxtLink v-for="sw in ungroupedSwitches" :key="sw.id" :to="`/sites/${siteId}/switches/${sw.slug || sw.id}`">
-              <SwitchCard
+            <SwitchCard
+                v-for="sw in ungroupedSwitches"
+                :key="sw.id"
                 :sw="sw"
                 :site-id="siteId"
                 variant="list"
@@ -458,7 +455,6 @@
                 @delete="confirmDelete"
                 @assign-group="assignSwitchToGroup"
               />
-            </NuxtLink>
           </div>
         </div>
       </section>
@@ -482,7 +478,6 @@
         @end="saveFlatSortOrder"
       >
         <template #item="{ element: sw }">
-          <NuxtLink :to="`/sites/${siteId}/switches/${sw.slug || sw.id}`">
             <SwitchCard
               :sw="sw"
               :site-id="siteId"
@@ -496,7 +491,6 @@
               @delete="confirmDelete"
               @assign-group="assignSwitchToGroup"
             />
-          </NuxtLink>
         </template>
       </draggable>
       <template #fallback>
@@ -515,8 +509,9 @@
           <div class="h-px flex-1 bg-default" />
         </div>
         <div class="flex flex-col gap-2">
-          <NuxtLink v-for="sw in group.items" :key="sw.id" :to="`/sites/${siteId}/switches/${sw.slug || sw.id}`">
-            <SwitchCard
+          <SwitchCard
+              v-for="sw in group.items"
+              :key="sw.id"
               :sw="sw"
               :site-id="siteId"
               variant="list"
@@ -528,7 +523,6 @@
               @delete="confirmDelete"
               @assign-group="assignSwitchToGroup"
             />
-          </NuxtLink>
         </div>
       </div>
     </div>
