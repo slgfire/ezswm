@@ -11,6 +11,9 @@
 - Sidebar (Issue #305): the site selector uses less vertical space, keeping the sidebar compact on smaller screens. Existing actions and behavior are unchanged.
 - Switch groups (Issue #306): clicking anywhere in a group header—including its empty space—now expands or collapses the group. The existing expand button, keyboard controls and drag handle keep their behavior; dragging a group does not toggle it.
 
+### Fixed
+- Subnet editing: the VLAN selector now offers **No VLAN** and saves the cleared association without changing the subnet's other fields.
+
 ## [0.43.0] — 2026-10-19
 
 ### Added

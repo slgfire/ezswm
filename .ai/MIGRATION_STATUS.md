@@ -2,6 +2,15 @@
 
 ## Latest Stage
 
+### Subnet edit — clear VLAN association
+
+Date: 2026-10-20
+Stage: Small user-approved bug fix for the existing PR #304 (`feat/custom-device-types`, version 0.44.0).
+
+Scope: The subnet edit selector now has a translated **No VLAN / Kein VLAN** option using the `_none` sentinel; saving maps it to `null`. Existing VLAN selections and other subnet fields remain unchanged. The create form and backend were not changed.
+
+Verification: Read-only review confirmed `updateNetworkSchema` accepts `vlan_id: null`, the PUT route passes parsed data through, and `networkRepository.update` persists null and returns the network without a VLAN. The nullable-VLAN validator test passed (1/1), network repository tests passed (14/14), scoped ESLint passed, `pnpm typecheck` passed, and EN/DE labels were verified (`No VLAN` / `Kein VLAN`). A fresh `pnpm build` passed with the existing non-blocking large-chunk warning. The focused Playwright regression passed once against that production build and a fresh private SQLite database; it verified the null PUT, unchanged subnet fields, no-VLAN state after reload, and reassignment after reload, with no captured browser console or page errors. All 14 migrations applied; health reported version 0.44.0 and `database_ok: true`. Evidence: `/tmp/opencode/ezswm-subnet-vlan-1xje78am/`; owned loopback server was stopped. No Docker build/runtime was rerun and no staging runtime or shared data was touched.
+
 ### Issue #305 — compact site switcher spacing
 
 Date: 2026-10-19

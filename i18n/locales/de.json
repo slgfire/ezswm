@@ -486,6 +486,7 @@
       "gateway": "Gateway",
       "dnsServers": "DNS-Server",
       "vlan": "VLAN",
+      "noVlan": "Kein VLAN",
       "utilization": "Auslastung",
       "excludeFromUtilization": "Von Dashboard-Auslastung ausschließen"
     },

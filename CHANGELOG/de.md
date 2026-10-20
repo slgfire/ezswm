@@ -11,6 +11,9 @@
 - Seitenleiste (Issue #305): Der Standortwähler braucht vertikal weniger Platz, damit die Seitenleiste auf kleineren Bildschirmen kompakt bleibt. Aktionen und Verhalten bleiben unverändert.
 - Switch-Gruppen (Issue #306): Ein Klick auf eine beliebige Stelle des Gruppen-Headers – auch auf den freien Bereich – klappt die Gruppe jetzt auf oder zu. Die vorhandene Aufklapp-Schaltfläche, die Tastaturbedienung und der Ziehgriff behalten ihr Verhalten; das Ziehen einer Gruppe schaltet sie nicht um.
 
+### Behoben
+- Subnetz bearbeiten: Die VLAN-Auswahl bietet jetzt **Kein VLAN** an und speichert das Entfernen der Zuordnung, ohne die übrigen Subnetzfelder zu ändern.
+
 ## [0.43.0] — 2026-10-19
 
 ### Hinzugefügt

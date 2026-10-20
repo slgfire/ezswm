@@ -486,6 +486,7 @@
       "gateway": "Gateway",
       "dnsServers": "DNS Servers",
       "vlan": "VLAN",
+      "noVlan": "No VLAN",
       "utilization": "Utilization",
       "excludeFromUtilization": "Exclude from dashboard utilization"
     },

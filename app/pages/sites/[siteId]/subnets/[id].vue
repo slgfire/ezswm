@@ -144,7 +144,7 @@
             <UInput v-model="editDnsInput" placeholder="8.8.8.8, 8.8.4.4" class="w-full" />
           </UFormField>
           <UFormField :label="$t('networks.fields.vlan')" name="vlan_id">
-            <USelect v-model="editForm.vlan_id" :items="vlanOptions" placeholder="-" class="w-full" />
+            <USelect v-model="editForm.vlan_id" :items="vlanOptions" class="w-full" />
           </UFormField>
           <UFormField :label="$t('networks.fields.excludeFromUtilization')" name="exclude_from_utilization">
             <USwitch v-model="editForm.exclude_from_utilization" />
@@ -336,7 +336,7 @@ const savingRangeEdit = ref(false)
 
 const editAllocTarget = ref<IPAllocation | null>(null)
 
-const editForm = ref({ name: '', subnet: '', gateway: '', vlan_id: '', description: '', exclude_from_utilization: false })
+const editForm = ref({ name: '', subnet: '', gateway: '', vlan_id: '_none', description: '', exclude_from_utilization: false })
 const editDnsInput = ref('')
 const allocForm = ref({ ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' as AllocationStatus })
 const rangeForm = ref({ start_ip: '', end_ip: '', type: 'static' as RangeType, description: '' })
@@ -431,7 +431,9 @@ const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrid
 watch(network, (n) => { if (n?.name) breadcrumbOverrides.value[`/sites/${siteId.value}/subnets/${networkId}`] = n.name }, { immediate: true })
 
 const vlanOptions = computed(() => {
-  const opts: { label: string; value: string }[] = []
+  const opts: { label: string; value: string }[] = [
+    { label: t('networks.fields.noVlan'), value: '_none' }
+  ]
   vlans.value.forEach((v) => { opts.push({ label: `VLAN ${v.vlan_id} - ${v.name}`, value: v.id }) })
   return opts
 })
@@ -594,7 +596,7 @@ function startEdit() {
     name: network.value.name,
     subnet: network.value.subnet,
     gateway: network.value.gateway || '',
-    vlan_id: network.value.vlan_id || '',
+    vlan_id: network.value.vlan_id || '_none',
     description: network.value.description || '',
     exclude_from_utilization: network.value.exclude_from_utilization
   }
@@ -637,7 +639,7 @@ async function onSave() {
       subnet: editForm.value.subnet.trim(),
       gateway: editForm.value.gateway.trim() || undefined,
       dns_servers: dnsServers,
-      vlan_id: editForm.value.vlan_id || undefined,
+      vlan_id: editForm.value.vlan_id === '_none' ? null : editForm.value.vlan_id,
       description: editForm.value.description.trim() || undefined,
       exclude_from_utilization: editForm.value.exclude_from_utilization
     }, siteId.value)
@@ -934,7 +936,7 @@ watch(canEditInfrastructure, (canEdit, wasEditable) => {
   // A revoked editor is discarded without a dirty-close prompt. Keep existing
   // allocation/range selections open as read-only inspectors, not stale forms.
   editing.value = false
-  editForm.value = { name: '', subnet: '', gateway: '', vlan_id: '', description: '', exclude_from_utilization: false }
+  editForm.value = { name: '', subnet: '', gateway: '', vlan_id: '_none', description: '', exclude_from_utilization: false }
   editDnsInput.value = ''
   showDeleteDialog.value = false
   deleteNetworkTarget.value = null
