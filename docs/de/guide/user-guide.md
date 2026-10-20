@@ -578,6 +578,8 @@ Klicke auf **Hinzufügen**, um das Hinzufügen/Bearbeiten-Sidepanel zu öffnen. 
 - **MAC-Adresse** -- als sekundäre Info in der Zeile angezeigt
 - **Beschreibung** -- als sekundäre Info in der Zeile angezeigt
 
+Admins verwalten Kategorien unter **Einstellungen → Kategorien**. Änderungen gelten für alle Standorte und werden sofort gespeichert. Die neun integrierten Kategorien bleiben übersetzt und können weder umbenannt noch gelöscht werden. Beim Deaktivieren stehen sie für neue Zuweisungen nicht mehr zur Auswahl; bestehende Zuweisungen bleiben unverändert. Eigene Kategorien lassen sich hinzufügen, umbenennen, aktivieren oder deaktivieren. Eine eigene Kategorie kann nur gelöscht werden, wenn sie von keiner IP-Zuweisung verwendet wird; verwendete Kategorien zeigen ihre Anzahl und können stattdessen deaktiviert werden. Inaktive eigene Kategorien und ältere unbekannte Werte bleiben bei bestehenden Zuweisungen und in Filtern sichtbar. Eigene Namen werden genau wie eingegeben angezeigt und nicht übersetzt. Diese Kategorien beschreiben ausschließlich IP-Zuweisungen; sie klassifizieren keine Switches oder anderen Inventarobjekte.
+
 ### IP-Bereiche
 
 IP-Bereiche kennzeichnen Adressblöcke für bestimmte Zwecke:

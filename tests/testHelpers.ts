@@ -148,6 +148,7 @@ export async function createTestPrisma(): Promise<TestPrismaContext> {
       prisma.switchGroup.deleteMany(),
       prisma.layoutTemplate.deleteMany(),
       prisma.appSettings.deleteMany(),
+      prisma.customDeviceType.deleteMany(),
       prisma.user.deleteMany(),
       prisma.site.deleteMany()
     ])

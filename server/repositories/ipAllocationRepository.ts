@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { prisma } from '../db/client'
 import type { IPAllocation } from '../../types/ipAllocation'
 import { isValidIPv4, isIPInSubnet, isUsableHostIP, isValidMacAddress, subnetRangeError, parseSubnet, ipToLong } from '../utils/ipv4'
+import { assertDeviceTypeAssignable } from './customDeviceTypeRepository'
 
 interface AllocationRow {
   id: string
@@ -60,7 +61,11 @@ export const ipAllocationRepository = {
     return row ? rowToAllocation(row) : null
   },
 
-  async create(networkId: string, data: Omit<IPAllocation, 'id' | 'network_id' | 'created_at' | 'updated_at'>): Promise<IPAllocation> {
+  async create(
+    networkId: string,
+    data: Omit<IPAllocation, 'id' | 'network_id' | 'created_at' | 'updated_at'>,
+    options: { allowLegacyDeviceType?: boolean } = {}
+  ): Promise<IPAllocation> {
     const network = await prisma.network.findUnique({ where: { id: networkId } })
     if (!network) {
       throw createError({ statusCode: 404, message: 'Network not found' })
@@ -93,20 +98,30 @@ export const ipAllocationRepository = {
     }
 
     const now = new Date().toISOString()
-    const row = await prisma.ipAllocation.create({
-      data: {
-        id: randomUUID(),
-        network_id: networkId,
-        ip_address: data.ip_address,
-        hostname: data.hostname ?? null,
-        mac_address: data.mac_address ?? null,
-        device_type: data.device_type ?? null,
-        description: data.description ?? null,
-        status: data.status,
-        created_at: now,
-        updated_at: now
-      }
-    })
+    const allocationData = {
+      id: randomUUID(),
+      network_id: networkId,
+      ip_address: data.ip_address,
+      hostname: data.hostname ?? null,
+      mac_address: data.mac_address ?? null,
+      device_type: data.device_type ?? null,
+      description: data.description ?? null,
+      status: data.status,
+      created_at: now,
+      updated_at: now
+    }
+
+    // Category validation and the insert share one transaction so a concurrent
+    // custom-type delete cannot leave an allocation pointing at a missing type.
+    if (data.device_type) {
+      const row = await prisma.$transaction(async (tx) => {
+        await assertDeviceTypeAssignable(data.device_type!, { allowLegacy: options.allowLegacyDeviceType, client: tx })
+        return tx.ipAllocation.create({ data: allocationData })
+      })
+      return rowToAllocation(row)
+    }
+
+    const row = await prisma.ipAllocation.create({ data: allocationData })
     return rowToAllocation(row)
   },
 
@@ -181,19 +196,34 @@ export const ipAllocationRepository = {
       throw createError({ statusCode: 400, message: 'Invalid MAC address format' })
     }
 
-    const row = await prisma.ipAllocation.update({
-      where: { id },
-      data: {
-        ...(data.network_id !== undefined ? { network_id: data.network_id } : {}),
-        ...(data.ip_address !== undefined ? { ip_address: data.ip_address } : {}),
-        ...(data.hostname !== undefined ? { hostname: data.hostname ?? null } : {}),
-        ...(data.mac_address !== undefined ? { mac_address: data.mac_address ?? null } : {}),
-        ...(data.device_type !== undefined ? { device_type: data.device_type ?? null } : {}),
-        ...(data.description !== undefined ? { description: data.description ?? null } : {}),
-        ...(data.status !== undefined ? { status: data.status } : {}),
-        updated_at: new Date().toISOString()
-      }
-    })
+    // A resubmitted unchanged value is always accepted (it may be inactive or a
+    // legacy raw string); anything else must be builtin or an active custom id.
+    const updateData = {
+      ...(data.network_id !== undefined ? { network_id: data.network_id } : {}),
+      ...(data.ip_address !== undefined ? { ip_address: data.ip_address } : {}),
+      ...(data.hostname !== undefined ? { hostname: data.hostname ?? null } : {}),
+      ...(data.mac_address !== undefined ? { mac_address: data.mac_address ?? null } : {}),
+      ...(data.device_type !== undefined ? { device_type: data.device_type ?? null } : {}),
+      ...(data.description !== undefined ? { description: data.description ?? null } : {}),
+      ...(data.status !== undefined ? { status: data.status } : {}),
+      updated_at: new Date().toISOString()
+    }
+
+    // Validation and write share one transaction and the current value is
+    // re-read inside it, so a concurrent reassignment cannot make a stale
+    // "unchanged" value bypass category validation.
+    if (data.device_type !== undefined) {
+      const row = await prisma.$transaction(async (tx) => {
+        const fresh = await tx.ipAllocation.findUnique({ where: { id }, select: { device_type: true } })
+        if (data.device_type !== null && data.device_type !== fresh?.device_type) {
+          await assertDeviceTypeAssignable(data.device_type!, { client: tx })
+        }
+        return tx.ipAllocation.update({ where: { id }, data: updateData })
+      })
+      return rowToAllocation(row)
+    }
+
+    const row = await prisma.ipAllocation.update({ where: { id }, data: updateData })
     return rowToAllocation(row)
   },
 

@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const [
     sites, users, switches, switchGroups, ports, vlans, networks, ipAllocations, ipRanges,
     layoutTemplates, lagGroups, activity, settings, publicTokens, topologyLayouts, oidcConfig,
-    patchPanels, patchPanelSockets, patchPanelTokens
+    patchPanels, patchPanelSockets, patchPanelTokens, customDeviceTypes
   ] = await Promise.all([
     prisma.site.findMany(),
     prisma.user.findMany(),
@@ -28,7 +28,8 @@ export default defineEventHandler(async (event) => {
     prisma.patchPanel.findMany(),
     prisma.patchPanelSocket.findMany(),
     // Opaque public access tokens; the backup is admin-only.
-    prisma.patchPanelToken.findMany()
+    prisma.patchPanelToken.findMany(),
+    prisma.customDeviceType.findMany({ orderBy: { name: 'asc' } })
   ])
 
   const backup = {
@@ -38,7 +39,7 @@ export default defineEventHandler(async (event) => {
     data: {
       sites, users, switches, switchGroups, ports, vlans, networks, ipAllocations, ipRanges,
       layoutTemplates, lagGroups, activity, settings, publicTokens, topologyLayouts, oidcConfig,
-      patchPanels, patchPanelSockets, patchPanelTokens
+      patchPanels, patchPanelSockets, patchPanelTokens, customDeviceTypes
     }
   }
 

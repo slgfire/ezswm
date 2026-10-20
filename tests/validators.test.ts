@@ -1580,8 +1580,10 @@ describe('updateIpAllocationSchema', () => {
       expect(updateIpAllocationSchema.safeParse({ device_type: dt }).success, `device_type ${dt} should be valid`).toBe(true)
     }
   })
-  it('rejects invalid device_type', () => {
-    expect(updateIpAllocationSchema.safeParse({ device_type: 'unknown' }).success).toBe(false)
+  it('rejects structurally invalid device_type values', () => {
+    expect(updateIpAllocationSchema.safeParse({ device_type: '' }).success).toBe(false)
+    expect(updateIpAllocationSchema.safeParse({ device_type: 'x'.repeat(101) }).success).toBe(false)
+    expect(updateIpAllocationSchema.safeParse({ device_type: 42 }).success).toBe(false)
   })
   it('accepts valid status', () => {
     for (const s of ['active', 'reserved', 'inactive']) {

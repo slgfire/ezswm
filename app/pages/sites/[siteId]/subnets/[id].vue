@@ -81,7 +81,7 @@
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="text-sm font-medium text-highlighted">{{ (row.data as IPAllocation).hostname || (row.data as IPAllocation).ip_address }}</span>
-                  <UBadge v-if="(row.data as IPAllocation).device_type" variant="subtle" color="neutral" size="sm">{{ $t(`networks.allocations.deviceTypes.${(row.data as IPAllocation).device_type}`) }}</UBadge>
+                  <UBadge v-if="(row.data as IPAllocation).device_type" variant="subtle" color="neutral" size="sm">{{ deviceTypeDisplay((row.data as IPAllocation).device_type) }}</UBadge>
                   <UBadge :color="(row.data as IPAllocation).status === 'active' ? 'success' : (row.data as IPAllocation).status === 'reserved' ? 'warning' : 'neutral'" variant="subtle" size="sm">{{ $t(`networks.allocations.statuses.${(row.data as IPAllocation).status}`) }}</UBadge>
                 </div>
                 <div v-if="(row.data as IPAllocation).description || (row.data as IPAllocation).mac_address" class="mt-0.5 flex items-center gap-3 text-[11px] text-muted">
@@ -144,7 +144,7 @@
             <UInput v-model="editDnsInput" placeholder="8.8.8.8, 8.8.4.4" class="w-full" />
           </UFormField>
           <UFormField :label="$t('networks.fields.vlan')" name="vlan_id">
-            <USelect v-model="editForm.vlan_id" :items="vlanOptions" placeholder="-" class="w-full" />
+            <USelect v-model="editForm.vlan_id" :items="vlanOptions" class="w-full" />
           </UFormField>
           <UFormField :label="$t('networks.fields.excludeFromUtilization')" name="exclude_from_utilization">
             <USwitch v-model="editForm.exclude_from_utilization" />
@@ -240,6 +240,7 @@
       :saving="addPanelMode === 'ip' ? creatingAlloc : creatingRange"
       :is-special-net="isSpecialNet"
       :device-type-options="deviceTypeOptions"
+      :device-types-ready="!!settings"
       :alloc-status-options="allocStatusOptions"
       :range-type-options="rangeTypeOptions"
       @update:open="handleAddOpenChange"
@@ -276,6 +277,7 @@
 import type { Network } from '~~/types/network'
 import type { IPAllocation, AllocationStatus, DeviceType } from '~~/types/ipAllocation'
 import type { IPRange, RangeType } from '~~/types/ipRange'
+import { deviceTypeLabel, deviceTypeOptions as buildDeviceTypeOptions } from '~~/app/utils/deviceTypes'
 
 const { t } = useI18n()
 const toast = useToast()
@@ -288,6 +290,8 @@ const { update: updateNetwork, remove: removeNetwork } = useNetworks()
 const { items: vlans, fetch: fetchVlans } = useVlans()
 const { items: allocations, fetch: fetchAllocations, create: createAllocation, update: updateAllocation, remove: removeAllocation } = useIpAllocations(networkId)
 const { items: ranges, fetch: fetchRanges, create: createRange, update: updateRange, remove: removeRange } = useIpRanges(networkId)
+const { items: customDeviceTypes, fetch: fetchDeviceTypes } = useDeviceTypes()
+const { settings, fetch: fetchSettings } = useSettings()
 
 const pageLoading = ref(true)
 const network = ref<Network | null>(null)
@@ -332,7 +336,7 @@ const savingRangeEdit = ref(false)
 
 const editAllocTarget = ref<IPAllocation | null>(null)
 
-const editForm = ref({ name: '', subnet: '', gateway: '', vlan_id: '', description: '', exclude_from_utilization: false })
+const editForm = ref({ name: '', subnet: '', gateway: '', vlan_id: '_none', description: '', exclude_from_utilization: false })
 const editDnsInput = ref('')
 const allocForm = ref({ ip_address: '', hostname: '', mac_address: '', device_type: '', description: '', status: 'active' as AllocationStatus })
 const rangeForm = ref({ start_ip: '', end_ip: '', type: 'static' as RangeType, description: '' })
@@ -427,7 +431,9 @@ const breadcrumbOverrides = useState<Record<string, string>>('breadcrumb-overrid
 watch(network, (n) => { if (n?.name) breadcrumbOverrides.value[`/sites/${siteId.value}/subnets/${networkId}`] = n.name }, { immediate: true })
 
 const vlanOptions = computed(() => {
-  const opts: { label: string; value: string }[] = []
+  const opts: { label: string; value: string }[] = [
+    { label: t('networks.fields.noVlan'), value: '_none' }
+  ]
   vlans.value.forEach((v) => { opts.push({ label: `VLAN ${v.vlan_id} - ${v.name}`, value: v.id }) })
   return opts
 })
@@ -437,17 +443,14 @@ const associatedVlan = computed(() => {
   return vlans.value.find((v) => v.id === network.value!.vlan_id) ?? null
 })
 
-const deviceTypeOptions = computed(() => [
-  { label: t('networks.allocations.deviceTypes.server'), value: 'server' },
-  { label: t('networks.allocations.deviceTypes.switch'), value: 'switch' },
-  { label: t('networks.allocations.deviceTypes.router'), value: 'router' },
-  { label: t('networks.allocations.deviceTypes.firewall'), value: 'firewall' },
-  { label: t('networks.allocations.deviceTypes.printer'), value: 'printer' },
-  { label: t('networks.allocations.deviceTypes.phone'), value: 'phone' },
-  { label: t('networks.allocations.deviceTypes.ap'), value: 'ap' },
-  { label: t('networks.allocations.deviceTypes.camera'), value: 'camera' },
-  { label: t('networks.allocations.deviceTypes.other'), value: 'other' }
-])
+const translateBuiltinDeviceType = (key: string) => t(`networks.allocations.deviceTypes.${key}`)
+const deviceTypeOptions = computed(() => buildDeviceTypeOptions(
+  customDeviceTypes.value,
+  translateBuiltinDeviceType,
+  editAllocTarget.value?.device_type,
+  settings.value?.disabled_builtin_device_types ?? []
+))
+const deviceTypeDisplay = (value?: string | null) => deviceTypeLabel(value, customDeviceTypes.value, translateBuiltinDeviceType)
 const allocStatusOptions = computed(() => [
   { label: t('common.active'), value: 'active' },
   { label: t('networks.allocations.statuses.reserved'), value: 'reserved' },
@@ -593,7 +596,7 @@ function startEdit() {
     name: network.value.name,
     subnet: network.value.subnet,
     gateway: network.value.gateway || '',
-    vlan_id: network.value.vlan_id || '',
+    vlan_id: network.value.vlan_id || '_none',
     description: network.value.description || '',
     exclude_from_utilization: network.value.exclude_from_utilization
   }
@@ -636,7 +639,7 @@ async function onSave() {
       subnet: editForm.value.subnet.trim(),
       gateway: editForm.value.gateway.trim() || undefined,
       dns_servers: dnsServers,
-      vlan_id: editForm.value.vlan_id || undefined,
+      vlan_id: editForm.value.vlan_id === '_none' ? null : editForm.value.vlan_id,
       description: editForm.value.description.trim() || undefined,
       exclude_from_utilization: editForm.value.exclude_from_utilization
     }, siteId.value)
@@ -933,7 +936,7 @@ watch(canEditInfrastructure, (canEdit, wasEditable) => {
   // A revoked editor is discarded without a dirty-close prompt. Keep existing
   // allocation/range selections open as read-only inspectors, not stale forms.
   editing.value = false
-  editForm.value = { name: '', subnet: '', gateway: '', vlan_id: '', description: '', exclude_from_utilization: false }
+  editForm.value = { name: '', subnet: '', gateway: '', vlan_id: '_none', description: '', exclude_from_utilization: false }
   editDnsInput.value = ''
   showDeleteDialog.value = false
   deleteNetworkTarget.value = null
@@ -968,5 +971,7 @@ watch(canEditInfrastructure, (canEdit, wasEditable) => {
 
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 
-onMounted(async () => { await Promise.all([loadNetwork(), fetchVlans(siteParams.value), fetchAllocations(), fetchRanges()]) })
+onMounted(async () => {
+  await Promise.all([loadNetwork(), fetchVlans(siteParams.value), fetchAllocations(), fetchRanges(), fetchDeviceTypes(), fetchSettings().catch(() => {})])
+})
 </script>

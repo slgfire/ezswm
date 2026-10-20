@@ -72,4 +72,91 @@ test.describe('Network CRUD', () => {
     await expect(page.locator('main')).toContainText('Server-Net', { timeout: 5000 })
     await expect(page.locator('main')).toContainText('10.0.1.0/24')
   })
+
+  test('edit subnet can clear and reassign its VLAN', async ({ page, request }) => {
+    const site = await e2eSite(request)
+    const browserErrors: string[] = []
+    page.on('pageerror', error => browserErrors.push(error.message))
+    page.on('console', message => {
+      if (message.type() === 'error') browserErrors.push(message.text())
+    })
+    const vlansResponse = await request.get(`/api/vlans?site_id=${encodeURIComponent(site.id)}`)
+    expect(vlansResponse.ok()).toBe(true)
+    const vlansBody = await vlansResponse.json() as { data?: Array<{ vlan_id: number }> }
+    expect(Array.isArray(vlansBody.data)).toBe(true)
+    const usedIds = new Set(vlansBody.data!.map(v => v.vlan_id))
+    const vlanId = Array.from({ length: 4094 }, (_, index) => index + 1).find(id => !usedIds.has(id))
+    expect(vlanId, 'an unused VLAN ID is available in the E2E site').toBeDefined()
+
+    const vlanName = `Clear-VLAN-${Date.now()}`
+    const vlanResponse = await request.post('/api/vlans', {
+      data: { site_id: site.id, vlan_id: vlanId, name: vlanName, color: '#13579B' }
+    })
+    expect(vlanResponse.status()).toBe(201)
+    const vlan = await vlanResponse.json() as { id: string; vlan_id: number; name: string }
+
+    const networkName = `Clear-VLAN-Net-${Date.now()}`
+    let networkId: string | undefined
+    try {
+      const networkResponse = await request.post('/api/networks', {
+        data: {
+          site_id: site.id,
+          name: networkName,
+          subnet: '10.253.77.0/24',
+          gateway: '10.253.77.1',
+          dns_servers: ['1.1.1.1'],
+          description: 'Keep these subnet fields unchanged',
+          vlan_id: vlan.id
+        }
+      })
+      expect(networkResponse.status()).toBe(201)
+      const network = await networkResponse.json() as { id: string; slug: string }
+      networkId = network.id
+
+      await page.goto(`/sites/${site.route}/subnets/${network.slug}`)
+      await page.getByTitle('Edit').click()
+
+      const vlanSelect = page.getByRole('combobox', { name: 'VLAN' })
+      await vlanSelect.click()
+      await page.getByRole('option', { name: 'No VLAN', exact: true }).click()
+      const clearResponsePromise = page.waitForResponse(res => res.request().method() === 'PUT' && res.url().includes(`/api/networks/${network.slug}`))
+      await page.getByRole('button', { name: 'Save', exact: true }).click()
+      const clearResponse = await clearResponsePromise
+      expect(clearResponse.ok()).toBe(true)
+      expect(clearResponse.request().postDataJSON()).toMatchObject({ vlan_id: null })
+
+      await page.reload()
+      const clearedResponse = await request.get(`/api/networks/${networkId}?siteId=${encodeURIComponent(site.id)}`)
+      expect(clearedResponse.ok()).toBe(true)
+      const cleared = await clearedResponse.json() as Record<string, unknown>
+      expect(cleared.vlan_id ?? null).toBeNull()
+      expect(cleared).toMatchObject({
+        name: networkName,
+        subnet: '10.253.77.0/24',
+        gateway: '10.253.77.1',
+        dns_servers: ['1.1.1.1'],
+        description: 'Keep these subnet fields unchanged'
+      })
+
+      await page.getByTitle('Edit').click()
+      const noVlanSelect = page.getByRole('combobox', { name: 'VLAN' })
+      await expect(noVlanSelect).toContainText('No VLAN')
+      await noVlanSelect.click()
+      await page.getByRole('option', { name: `VLAN ${vlan.vlan_id} - ${vlan.name}`, exact: true }).click()
+      const assignResponsePromise = page.waitForResponse(res => res.request().method() === 'PUT' && res.url().includes(`/api/networks/${network.slug}`))
+      await page.getByRole('button', { name: 'Save', exact: true }).click()
+      const assignResponse = await assignResponsePromise
+      expect(assignResponse.ok()).toBe(true)
+      expect(assignResponse.request().postDataJSON()).toMatchObject({ vlan_id: vlan.id })
+
+      await page.reload()
+      const assignedResponse = await request.get(`/api/networks/${networkId}?siteId=${encodeURIComponent(site.id)}`)
+      expect(assignedResponse.ok()).toBe(true)
+      expect((await assignedResponse.json() as Record<string, unknown>).vlan_id).toBe(vlan.id)
+      expect(browserErrors).toEqual([])
+    } finally {
+      if (networkId) await request.delete(`/api/networks/${networkId}?siteId=${encodeURIComponent(site.id)}`)
+      await request.delete(`/api/vlans/${vlan.id}?siteId=${encodeURIComponent(site.id)}`)
+    }
+  })
 })

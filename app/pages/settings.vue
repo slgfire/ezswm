@@ -64,6 +64,181 @@
               <UButton type="submit" :loading="savingGeneral" icon="i-heroicons-check">{{ $t('common.save') }}</UButton>
             </div>
           </form>
+
+        </div>
+      </template>
+
+      <template #categories>
+        <div v-if="canEditInfrastructure" class="mt-4 space-y-6">
+          <div>
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-muted">{{ $t('settings.categories.title') }}</h2>
+            <p class="mt-2 max-w-3xl text-sm text-muted">{{ $t('settings.categories.description') }}</p>
+          </div>
+
+          <UAlert
+            v-if="categorySettingsLoadError"
+            color="warning"
+            variant="subtle"
+            icon="i-lucide-circle-alert"
+            :title="$t('settings.categories.settingsLoadFailed')"
+            :description="$t('settings.categories.settingsLoadHint')"
+          >
+            <template #actions>
+              <UButton size="xs" color="neutral" variant="ghost" :loading="loadingCategorySettings" @click="() => loadCategorySettings()">
+                {{ $t('common.retry') }}
+              </UButton>
+            </template>
+          </UAlert>
+
+          <section class="list-container rounded-xl border border-default bg-default p-4 sm:p-6">
+            <div class="mb-5 flex items-start gap-3">
+              <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-500/10 text-primary-500">
+                <UIcon name="i-lucide-tags" class="size-5" aria-hidden="true" />
+              </div>
+              <div>
+                <h3 class="text-base font-semibold">{{ $t('settings.categories.builtInTitle') }}</h3>
+                <p class="mt-1 text-xs text-muted">{{ $t('settings.categories.builtInHint') }}</p>
+              </div>
+            </div>
+            <div v-if="!settings" class="flex items-center gap-3 py-2 text-sm text-muted" role="status" aria-live="polite">
+              <UIcon v-if="loadingCategorySettings" name="i-lucide-loader-circle" class="size-4 animate-spin" aria-hidden="true" />
+              <span>{{ loadingCategorySettings ? $t('common.loading') : $t('settings.categories.builtInsUnavailable') }}</span>
+            </div>
+            <ul v-else class="divide-y divide-default">
+              <li v-for="type in BUILTIN_DEVICE_TYPES" :key="type" class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex min-w-0 items-center gap-2">
+                  <span class="text-sm font-medium text-highlighted">{{ $t(`networks.allocations.deviceTypes.${type}`) }}</span>
+                  <UBadge :color="isBuiltinEnabled(type) ? 'success' : 'neutral'" variant="subtle" size="sm">
+                    {{ isBuiltinEnabled(type) ? $t('settings.categories.available') : $t('settings.categories.unavailable') }}
+                  </UBadge>
+                </div>
+                <div class="flex shrink-0 items-center gap-3">
+                  <UIcon v-if="deviceTypeMutation === `builtin:${type}`" name="i-lucide-loader-circle" class="size-4 animate-spin text-muted" aria-hidden="true" />
+                  <USwitch
+                    :model-value="isBuiltinEnabled(type)"
+                    :aria-label="$t(isBuiltinEnabled(type) ? 'settings.categories.disableBuiltin' : 'settings.categories.enableBuiltin', { category: $t(`networks.allocations.deviceTypes.${type}`) })"
+                    :disabled="!!deviceTypeMutation || !settings"
+                    @update:model-value="setBuiltinEnabled(type, $event)"
+                  />
+                </div>
+              </li>
+            </ul>
+          </section>
+
+          <section class="list-container rounded-xl border border-default bg-default p-4 sm:p-6">
+            <div class="mb-5 flex items-start gap-3">
+              <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-elevated text-muted">
+                <UIcon name="i-lucide-tag" class="size-5" aria-hidden="true" />
+              </div>
+              <div>
+                <h3 class="text-base font-semibold">{{ $t('settings.categories.customTitle') }}</h3>
+                <p class="mt-1 text-xs text-muted">{{ $t('settings.categories.customHint') }}</p>
+              </div>
+            </div>
+
+            <div v-if="deviceTypesLoadError" class="space-y-2">
+              <UAlert color="error" variant="subtle" icon="i-lucide-circle-alert" :title="$t('settings.categories.customLoadFailed')" />
+              <UButton size="xs" variant="ghost" color="neutral" :loading="loadingDeviceTypes" @click="retryDeviceTypes">
+                {{ $t('common.retry') }}
+              </UButton>
+            </div>
+            <div v-else-if="loadingDeviceTypes" class="flex items-center gap-3 py-2 text-sm text-muted" role="status" aria-live="polite">
+              <UIcon name="i-lucide-loader-circle" class="size-4 animate-spin" aria-hidden="true" />
+              {{ $t('common.loading') }}
+            </div>
+            <template v-else>
+              <form class="flex flex-col gap-3 sm:flex-row sm:items-end" @submit.prevent="createDeviceType">
+                <UFormField :label="$t('settings.categories.name')" class="min-w-0 flex-1">
+                  <UInput v-model="newDeviceTypeName" :aria-label="$t('settings.categories.name')" required class="w-full" />
+                </UFormField>
+                <UButton
+                  type="submit"
+                  icon="i-heroicons-plus"
+                  :loading="deviceTypeMutation === 'create'"
+                  :disabled="!!deviceTypeMutation || !newDeviceTypeName.trim()"
+                >
+                  {{ $t('settings.categories.add') }}
+                </UButton>
+              </form>
+
+              <p v-if="customDeviceTypes.length === 0" class="py-3 text-sm text-muted">{{ $t('settings.categories.empty') }}</p>
+              <ul v-else class="mt-3 divide-y divide-default">
+                <li v-for="type in customDeviceTypes" :key="type.id" class="flex flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <UInput
+                        v-if="editingDeviceTypeId === type.id"
+                        v-model="editingDeviceTypeName"
+                        :aria-label="$t('settings.categories.name')"
+                        class="w-full max-w-sm"
+                        @keydown.esc.prevent="cancelDeviceTypeEdit"
+                      />
+                      <span v-else class="break-words text-sm font-medium text-highlighted">{{ type.name }}</span>
+                      <UBadge :color="type.active ? 'success' : 'neutral'" variant="subtle" size="sm">
+                        {{ type.active ? $t('common.active') : $t('common.inactive') }}
+                      </UBadge>
+                      <UBadge v-if="type.usage_count !== undefined" color="neutral" variant="subtle" size="sm">
+                        {{ $t('settings.categories.usageCount', { count: type.usage_count }) }}
+                      </UBadge>
+                    </div>
+                    <p v-if="type.usage_count === undefined" class="mt-1 text-xs text-warning">{{ $t('settings.categories.usageUnknown') }}</p>
+                    <p v-else-if="type.usage_count > 0" class="mt-1 text-xs text-muted">
+                      {{ $t(type.active ? 'settings.categories.inUseActive' : 'settings.categories.inUseInactive', { count: type.usage_count }) }}
+                    </p>
+                    <UAlert
+                      v-if="deviceTypeDeleteError?.id === type.id"
+                      class="mt-2"
+                      color="warning"
+                      variant="subtle"
+                      icon="i-lucide-circle-alert"
+                      :title="$t('settings.categories.deleteConflict', { count: deviceTypeDeleteError.count })"
+                      role="alert"
+                    />
+                  </div>
+                  <div class="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+                    <template v-if="editingDeviceTypeId === type.id">
+                      <UButton
+                        size="xs"
+                        :loading="deviceTypeMutation === type.id"
+                        :disabled="!!deviceTypeMutation || !editingDeviceTypeName.trim() || editingDeviceTypeName.trim() === type.name"
+                        @click="saveDeviceTypeName(type)"
+                      >
+                        {{ $t('common.save') }}
+                      </UButton>
+                      <UButton size="xs" variant="ghost" color="neutral" :disabled="!!deviceTypeMutation" @click="cancelDeviceTypeEdit">
+                        {{ $t('common.cancel') }}
+                      </UButton>
+                    </template>
+                    <template v-else>
+                      <UButton size="xs" variant="ghost" color="neutral" :disabled="!!deviceTypeMutation" @click="editDeviceType(type)">
+                        {{ $t('settings.categories.rename') }}
+                      </UButton>
+                      <UButton
+                        size="xs"
+                        variant="subtle"
+                        :color="type.active ? 'warning' : 'success'"
+                        :loading="deviceTypeMutation === type.id"
+                        :disabled="!!deviceTypeMutation"
+                        @click="toggleDeviceType(type)"
+                      >
+                        {{ type.active ? $t('settings.categories.deactivate') : $t('settings.categories.activate') }}
+                      </UButton>
+                      <UButton
+                        size="xs"
+                        variant="ghost"
+                        color="error"
+                        :aria-label="$t('settings.categories.deleteNamed', { category: type.name })"
+                        :disabled="!!deviceTypeMutation || type.usage_count === undefined || type.usage_count > 0 || deviceTypeDeleteError?.id === type.id"
+                        @click="confirmDeleteDeviceType(type)"
+                      >
+                        {{ $t('common.delete') }}
+                      </UButton>
+                    </template>
+                  </div>
+                </li>
+              </ul>
+            </template>
+          </section>
         </div>
       </template>
 
@@ -463,12 +638,22 @@
         </div>
       </template>
     </UTabs>
+    <SharedConfirmDialog
+      v-if="canEditInfrastructure"
+      v-model="showDeleteDeviceTypeDialog"
+      :title="$t('settings.categories.deleteTitle')"
+      :message="$t('settings.categories.confirmDelete', { category: deleteDeviceTypeTarget?.name || '' })"
+      :confirm-label="$t('common.delete')"
+      :loading="deviceTypeMutation === deleteDeviceTypeTarget?.id"
+      @confirm="deleteDeviceType"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import type { OidcCheckResultDto, OidcConfigDto } from '../../types/oidc'
 import type { Site } from '~~/types/site'
+import { BUILTIN_DEVICE_TYPES, type BuiltinDeviceType, type CustomDeviceType } from '~~/types/ipAllocation'
 
 const AUTOMATIC_SITE = '_automatic'
 
@@ -480,8 +665,19 @@ const { settings, fetch: fetchSettings, update: updateSettings } = useSettings()
 const { update: updateUser, changePassword: changePasswordApi } = useUsers()
 const { getConfig, saveConfig: saveOidcConfig, checkSavedConfig } = useOidc()
 const { apiFetch } = useApiFetch()
+const {
+  items: customDeviceTypes,
+  loading: loadingDeviceTypes,
+  loadError: deviceTypesLoadError,
+  fetch: fetchDeviceTypes,
+  create: createCustomDeviceType,
+  update: updateCustomDeviceType,
+  remove: removeCustomDeviceType
+} = useDeviceTypes()
 
 const savingGeneral = ref(false)
+const loadingCategorySettings = ref(false)
+const categorySettingsLoadError = ref(false)
 const savingProfile = ref(false)
 const savingPassword = ref(false)
 const loadingOidc = ref(false)
@@ -492,7 +688,7 @@ const oidcLoadError = ref(false)
 const oidcConfig = ref<OidcConfigDto | null>(null)
 const checkResult = ref<OidcCheckResultDto | null>(null)
 const oidcBaseline = ref('')
-const activeTab = ref<'general' | 'account' | 'authentication'>(canEditInfrastructure.value ? 'general' : 'account')
+const activeTab = ref<'general' | 'categories' | 'account' | 'authentication'>(canEditInfrastructure.value ? 'general' : 'account')
 const activeTabTouched = ref(false)
 
 interface OidcFormState {
@@ -579,8 +775,9 @@ const checkErrorMessage = computed(() => {
 })
 
 const tabs = computed(() => {
-  const items = [] as Array<{ label: string, value: 'general' | 'account' | 'authentication', slot: 'general' | 'account' | 'authentication' }>
+  const items = [] as Array<{ label: string, value: 'general' | 'categories' | 'account' | 'authentication', slot: 'general' | 'categories' | 'account' | 'authentication' }>
   if (canEditInfrastructure.value) items.push({ label: t('common.general'), value: 'general', slot: 'general' })
+  if (canEditInfrastructure.value) items.push({ label: t('settings.categories.tab'), value: 'categories', slot: 'categories' })
   items.push({ label: t('common.account'), value: 'account', slot: 'account' })
   if (canEditInfrastructure.value) items.push({ label: t('settings.oidc.tab'), value: 'authentication', slot: 'authentication' })
   return items
@@ -616,6 +813,176 @@ const accountForm = reactive({
   language: 'en',
   start_site_id: AUTOMATIC_SITE as string
 })
+
+const newDeviceTypeName = ref('')
+const editingDeviceTypeId = ref<string | null>(null)
+const editingDeviceTypeName = ref('')
+const deviceTypeMutation = ref<string | null>(null)
+const showDeleteDeviceTypeDialog = ref(false)
+const deleteDeviceTypeTarget = ref<CustomDeviceType | null>(null)
+const deviceTypeDeleteError = ref<{ id: string, count: number } | null>(null)
+const disabledBuiltinDeviceTypes = computed(() => settings.value?.disabled_builtin_device_types ?? [])
+const deviceTypeEditIsDirty = computed(() => {
+  const original = customDeviceTypes.value.find(type => type.id === editingDeviceTypeId.value)?.name
+  return original !== undefined && editingDeviceTypeName.value !== original
+})
+const deviceTypeDraft = computed(() => ({
+  createName: newDeviceTypeName.value,
+  editId: deviceTypeEditIsDirty.value ? editingDeviceTypeId.value : '',
+  editName: deviceTypeEditIsDirty.value ? editingDeviceTypeName.value : ''
+}))
+const { clearDirty: clearDeviceTypeDraft } = useUnsavedChanges(deviceTypeDraft)
+
+function editDeviceType(type: CustomDeviceType) {
+  if (!canEditInfrastructure.value || deviceTypesLoadError.value || deviceTypeMutation.value) return
+  editingDeviceTypeId.value = type.id
+  editingDeviceTypeName.value = type.name
+}
+
+function cancelDeviceTypeEdit() {
+  editingDeviceTypeId.value = null
+  editingDeviceTypeName.value = ''
+}
+
+function isBuiltinEnabled(type: BuiltinDeviceType) {
+  return !disabledBuiltinDeviceTypes.value.includes(type)
+}
+
+async function loadCategorySettings(updateGeneral = false) {
+  if (!canEditInfrastructure.value) return
+  const generation = adminGeneration
+  loadingCategorySettings.value = true
+  try {
+    await fetchSettings()
+    if (!adminCurrent(generation)) return
+    categorySettingsLoadError.value = false
+  } catch {
+    if (!adminCurrent(generation)) return
+    categorySettingsLoadError.value = true
+  } finally {
+    loadingCategorySettings.value = false
+  }
+  if (updateGeneral && settings.value && adminCurrent(generation)) {
+    generalForm.app_name = settings.value.app_name || 'ezSWM'
+    generalForm.default_port_status = settings.value.default_port_status || 'down'
+    generalForm.patch_panels_enabled = settings.value.patch_panels_enabled ?? false
+    generalForm.switch_groups_enabled = settings.value.switch_groups_enabled ?? true
+  }
+}
+
+async function setBuiltinEnabled(type: BuiltinDeviceType, enabled: boolean) {
+  if (!canEditInfrastructure.value || !settings.value || deviceTypeMutation.value) return
+  const generation = adminGeneration
+  const disabled = new Set(disabledBuiltinDeviceTypes.value)
+  if (enabled) disabled.delete(type)
+  else disabled.add(type)
+  deviceTypeMutation.value = `builtin:${type}`
+  try {
+    await updateSettings({ disabled_builtin_device_types: [...disabled] })
+    if (!adminCurrent(generation)) return
+    toast.add({ title: t('settings.categories.builtinUpdated'), color: 'success' })
+  } catch (error) {
+    await handleDeviceTypeMutationError(error, generation)
+  } finally {
+    deviceTypeMutation.value = null
+  }
+}
+
+async function handleDeviceTypeMutationError(error: unknown, generation: number) {
+  if (await handleAdminError(error, generation)) return
+  toast.add({ title: t('errors.serverError'), color: 'error' })
+}
+
+async function retryDeviceTypes() {
+  if (await fetchDeviceTypes()) deviceTypeDeleteError.value = null
+}
+
+async function createDeviceType() {
+  const name = newDeviceTypeName.value.trim()
+  if (!canEditInfrastructure.value || !name || deviceTypesLoadError.value || deviceTypeMutation.value) return
+  const generation = adminGeneration
+  deviceTypeMutation.value = 'create'
+  try {
+    await createCustomDeviceType(name)
+    if (!adminCurrent(generation)) return
+    newDeviceTypeName.value = ''
+    clearDeviceTypeDraft()
+    toast.add({ title: t('settings.categories.created'), color: 'success' })
+  } catch (error) {
+    await handleDeviceTypeMutationError(error, generation)
+  } finally {
+    deviceTypeMutation.value = null
+  }
+}
+
+async function saveDeviceTypeName(type: CustomDeviceType) {
+  const name = editingDeviceTypeName.value.trim()
+  if (!canEditInfrastructure.value || !name || name === type.name || deviceTypesLoadError.value || deviceTypeMutation.value) return
+  const generation = adminGeneration
+  deviceTypeMutation.value = type.id
+  try {
+    await updateCustomDeviceType(type.id, { name })
+    if (!adminCurrent(generation)) return
+    cancelDeviceTypeEdit()
+    clearDeviceTypeDraft()
+    toast.add({ title: t('settings.categories.updated'), color: 'success' })
+  } catch (error) {
+    await handleDeviceTypeMutationError(error, generation)
+  } finally {
+    deviceTypeMutation.value = null
+  }
+}
+
+async function toggleDeviceType(type: CustomDeviceType) {
+  if (!canEditInfrastructure.value || deviceTypesLoadError.value || deviceTypeMutation.value) return
+  const generation = adminGeneration
+  deviceTypeMutation.value = type.id
+  try {
+    await updateCustomDeviceType(type.id, { active: !type.active })
+    if (!adminCurrent(generation)) return
+    toast.add({ title: t('settings.categories.updated'), color: 'success' })
+  } catch (error) {
+    await handleDeviceTypeMutationError(error, generation)
+  } finally {
+    deviceTypeMutation.value = null
+  }
+}
+
+function confirmDeleteDeviceType(type: CustomDeviceType) {
+  if (!canEditInfrastructure.value || deviceTypesLoadError.value || deviceTypeMutation.value || type.usage_count !== 0) return
+  deviceTypeDeleteError.value = null
+  deleteDeviceTypeTarget.value = type
+  showDeleteDeviceTypeDialog.value = true
+}
+
+async function deleteDeviceType() {
+  const type = deleteDeviceTypeTarget.value
+  if (!canEditInfrastructure.value || !type || deviceTypeMutation.value || type.usage_count !== 0) return
+  const generation = adminGeneration
+  deviceTypeMutation.value = type.id
+  try {
+    await removeCustomDeviceType(type.id)
+    if (!adminCurrent(generation) || deleteDeviceTypeTarget.value?.id !== type.id) return
+    showDeleteDeviceTypeDialog.value = false
+    deleteDeviceTypeTarget.value = null
+    deviceTypeDeleteError.value = null
+    toast.add({ title: t('settings.categories.deleted'), color: 'success' })
+  } catch (error) {
+    if (await handleAdminError(error, generation)) return
+    if (!adminCurrent(generation) || deleteDeviceTypeTarget.value?.id !== type.id) return
+    const data = (error as { data?: { code?: string, usage_count?: number } })?.data
+    if (data?.code === 'DEVICE_TYPE_IN_USE') {
+      deviceTypeDeleteError.value = { id: type.id, count: data.usage_count ?? 1 }
+      showDeleteDeviceTypeDialog.value = false
+      deleteDeviceTypeTarget.value = null
+      await fetchDeviceTypes()
+      return
+    }
+    toast.add({ title: t('errors.serverError'), color: 'error' })
+  } finally {
+    deviceTypeMutation.value = null
+  }
+}
 
 const sites = ref<Site[]>([])
 const loadingStartSites = ref(true)
@@ -976,6 +1343,8 @@ watch(canEditInfrastructure, (canEdit) => {
   // Drop admin OIDC data and secrets without refetching. Personal (account/password) fields and
   // the dirty snapshot are intentionally left untouched so unsaved personal edits stay guarded.
   oidcConfig.value = null
+  showDeleteDeviceTypeDialog.value = false
+  deleteDeviceTypeTarget.value = null
   Object.assign(oidcForm, createDefaultOidcForm())
   oidcBaseline.value = serializeOidcForm()
   oidcLoaded.value = false
@@ -1023,14 +1392,10 @@ onMounted(async () => {
   }
 
   if (mountAdmin) {
-    await fetchSettings()
+    await loadCategorySettings(true)
     if (mountStale()) return settleIfUntouched()
-    if (settings.value) {
-      generalForm.app_name = settings.value.app_name || 'ezSWM'
-      generalForm.default_port_status = settings.value.default_port_status || 'down'
-      generalForm.patch_panels_enabled = settings.value.patch_panels_enabled ?? false
-      generalForm.switch_groups_enabled = settings.value.switch_groups_enabled ?? true
-    }
+    await fetchDeviceTypes()
+    if (mountStale()) return settleIfUntouched()
   }
   if (user.value) {
     assignAccount()

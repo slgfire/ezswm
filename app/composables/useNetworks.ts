@@ -27,7 +27,7 @@ export function useNetworks() {
   // Optional siteId disambiguates when the same subnet slug exists across
   // multiple sites (slugs are per-site unique, not globally). Callers on
   // /sites/<site>/subnets/<slug> should pass route.params.siteId.
-  async function update(id: string, body: Partial<Network>, siteId?: string) {
+  async function update(id: string, body: Omit<Partial<Network>, 'vlan_id'> & { vlan_id?: string | null }, siteId?: string) {
     return await apiFetch<Network>(`/api/networks/${id}`, { method: 'PUT', body, params: siteId ? { siteId } : undefined })
   }
 

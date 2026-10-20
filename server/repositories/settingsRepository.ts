@@ -1,6 +1,6 @@
 import { prisma } from '../db/client'
 import type { AppSettings } from '../../types/settings'
-import { DEFAULT_SETTINGS } from '../../types/settings'
+import { DEFAULT_SETTINGS, parseDisabledBuiltinDeviceTypes } from '../../types/settings'
 
 const SINGLETON_ID = 'singleton'
 
@@ -14,6 +14,7 @@ function rowToSettings(row: {
   sites_initialized: boolean
   patch_panels_enabled?: boolean
   switch_groups_enabled?: boolean
+  disabled_builtin_device_types?: string
 }): AppSettings {
   return {
     app_name: row.app_name,
@@ -24,7 +25,9 @@ function rowToSettings(row: {
     setup_completed: row.setup_completed,
     sites_initialized: row.sites_initialized,
     patch_panels_enabled: row.patch_panels_enabled ?? false,
-    switch_groups_enabled: row.switch_groups_enabled ?? true
+    switch_groups_enabled: row.switch_groups_enabled ?? true,
+    // Older rows/missing columns read as "nothing disabled".
+    disabled_builtin_device_types: parseDisabledBuiltinDeviceTypes(row.disabled_builtin_device_types)
   }
 }
 
@@ -50,7 +53,8 @@ export const settingsRepository = {
         setup_completed: merged.setup_completed,
         sites_initialized: merged.sites_initialized,
         patch_panels_enabled: merged.patch_panels_enabled,
-        switch_groups_enabled: merged.switch_groups_enabled
+        switch_groups_enabled: merged.switch_groups_enabled,
+        disabled_builtin_device_types: JSON.stringify(merged.disabled_builtin_device_types)
       },
       update: {
         app_name: merged.app_name,
@@ -61,7 +65,8 @@ export const settingsRepository = {
         setup_completed: merged.setup_completed,
         sites_initialized: merged.sites_initialized,
         patch_panels_enabled: merged.patch_panels_enabled,
-        switch_groups_enabled: merged.switch_groups_enabled
+        switch_groups_enabled: merged.switch_groups_enabled,
+        disabled_builtin_device_types: JSON.stringify(merged.disabled_builtin_device_types)
       }
     })
     return rowToSettings(row)

@@ -1,3 +1,5 @@
+import { BUILTIN_DEVICE_TYPES, type BuiltinDeviceType } from './ipAllocation'
+
 export interface AppSettings {
   app_name: string
   app_logo_url: string | null
@@ -8,6 +10,23 @@ export interface AppSettings {
   sites_initialized: boolean
   patch_panels_enabled: boolean
   switch_groups_enabled: boolean
+  /** Built-in device-type keys that cannot be newly assigned (Issue #301). */
+  disabled_builtin_device_types: BuiltinDeviceType[]
+}
+
+const BUILTIN_DEVICE_TYPE_SET = new Set<string>(BUILTIN_DEVICE_TYPES)
+
+/** Lenient read of the stored JSON column; unknown/malformed values are ignored. */
+export function parseDisabledBuiltinDeviceTypes(raw: string | null | undefined): BuiltinDeviceType[] {
+  try {
+    const parsed: unknown = JSON.parse(raw ?? '[]')
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(
+      (value): value is BuiltinDeviceType => typeof value === 'string' && BUILTIN_DEVICE_TYPE_SET.has(value)
+    )
+  } catch {
+    return []
+  }
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -19,5 +38,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   setup_completed: false,
   sites_initialized: false,
   patch_panels_enabled: false,
-  switch_groups_enabled: true
+  switch_groups_enabled: true,
+  disabled_builtin_device_types: []
 }
