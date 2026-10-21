@@ -44,7 +44,7 @@ docker compose -f compose.dev.yaml up --build -d
 |---|---|---|---|
 | `NUXT_JWT_SECRET` | Yes | (empty) | Secret key for JWT token signing. Use a long random string. |
 | `PORT` | No | `3000` | Port the application listens on. |
-| `DATA_DIR` | No | `/app/data` | Directory for JSON data storage. |
+| `DATA_DIR` | No | `/app/data` | Data directory (SQLite database `db.sqlite`, WAL files, pre-upgrade backups). `DATABASE_URL` points at the database file itself. |
 | `PUID` / `PGID` | No | `1000` / `1000` | UID/GID the container process runs as. Set `PUID=0 PGID=0` to run as root. |
 
 In Docker, environment variables that configure Nuxt runtime must use the `NUXT_` prefix (e.g., `NUXT_JWT_SECRET` instead of `JWT_SECRET`).
@@ -71,7 +71,7 @@ Both `PUID` and `PGID` are read from the environment by the compose file.
 
 ### Data Persistence
 
-The compose files bind-mount `./data` into the container at `/app/data`. All JSON state lives there. Back up by copying the directory.
+The compose files bind-mount `./data` into the container at `/app/data`. The embedded SQLite database (`db.sqlite`, plus WAL files) lives there; migrations are applied automatically on start. Back up with the in-app backup, or copy the directory only while the app is stopped (see [Backup](#backup)).
 
 If you prefer a Docker named volume instead, edit your compose file:
 
@@ -123,16 +123,22 @@ docker compose -f compose.dev.yaml up -d
 
 ### Built-in backup
 
-Use the **Data Management** section in the application settings to create and restore full backups through the UI.
+Use the **Data Management** section in the application settings to create and restore full backups through the UI. These are app-managed JSON exchange backups (`schema: "sqlite-v1"`), not the primary storage.
 
-### Manual backup
+### Manual (raw SQLite) backup
 
-The data directory contains all application state as JSON files. Copy it to create a backup:
+The data directory holds the live SQLite database (`db.sqlite`, plus `-wal`/`-shm` files while in use). Copy the **whole directory only while the app is stopped**, so the snapshot is consistent. Never copy it while the app is running.
 
 ```bash
-# Docker named volume
-docker cp $(docker compose ps -q ezswm):/app/data ./backup
+# Docker named volume (service `ezswm`)
+docker compose stop ezswm
+docker cp "$(docker compose ps -aq ezswm)":/app/data ./backup
+docker compose start ezswm
 
-# Bind mount
-cp -r ./data ./backup
+# Bind mount (./data)
+docker compose stop ezswm
+cp -a ./data ./backup
+docker compose start ezswm
 ```
+
+To restore a raw snapshot, stop the app, replace the whole data directory with the snapshot and start it again.

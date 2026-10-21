@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Changed
+- Documentation: the public landing pages (EN/DE), FAQ and installation notes now describe storage accurately: no external database server is required, data lives in an embedded SQLite database (via Prisma) in the data directory, and JSON is only used for backups and import/export (`schema: "sqlite-v1"`). Manual backup guidance now says to copy the whole data directory (`db.sqlite` plus any WAL/SHM files) only while the app is stopped, and the FAQ no longer suggests deleting `users.json` to recover a password.
+
 ---
 
 ## [0.45.0] — 2026-10-22
