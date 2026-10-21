@@ -2,6 +2,16 @@
 
 ## Latest Stage
 
+### Current app branding in VitePress docs (docs-only)
+
+Date: 2026-10-21
+
+Updated the shared English/German VitePress navigation, home hero and favicon to use the current app logo and icon. The nav and hero follow the active light/dark theme; the obsolete docs-only logo image was removed. No app code, version, dependencies or runtime changed.
+
+- Documentation assets are exact copies of `public/logo.svg`, `public/logo-dark.svg` and `public/favicon.svg`.
+- Matching EN/DE changelog entries are under `[Unreleased]`.
+- Validation: `pnpm docs:build` and `git diff --check` passed, and the copied assets match the app files byte-for-byte. The docs build reported a missing root `.nuxt/tsconfig.json` base-config warning and a large-chunk warning; no browser visual review was run.
+
 ### SQLite storage documentation correction (docs-only)
 
 Date: 2026-10-21
