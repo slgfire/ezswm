@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { prisma } from '../db/client'
 import type { IPAllocation } from '../../types/ipAllocation'
 import { isValidIPv4, isIPInSubnet, isUsableHostIP, isValidMacAddress, subnetRangeError, parseSubnet, ipToLong } from '../utils/ipv4'
+import { hasConflictToken } from './networkRepository'
 import { assertDeviceTypeAssignable } from './customDeviceTypeRepository'
 
 interface AllocationRow {
@@ -44,6 +45,19 @@ async function assertDhcpRangeFree(networkId: string, ip: string): Promise<void>
         message: `IP ${ip} is inside a DHCP dynamic range (${range.start_ip} - ${range.end_ip}). Static IPs cannot be assigned within dynamic DHCP ranges.`
       })
     }
+  }
+}
+
+function allocationConflictError(ip: string) {
+  return createError({ statusCode: 409, message: `IP address ${ip} is already allocated` })
+}
+
+async function mapAllocationConflict<T>(ip: string, fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn()
+  } catch (err) {
+    if (hasConflictToken(err, 'IP_ALLOCATION_CONFLICT')) throw allocationConflictError(ip)
+    throw err
   }
 }
 
@@ -92,7 +106,7 @@ export const ipAllocationRepository = {
 
     await assertDhcpRangeFree(networkId, data.ip_address)
 
-    const clash = await prisma.ipAllocation.findFirst({ where: { ip_address: data.ip_address } })
+    const clash = await prisma.ipAllocation.findFirst({ where: { network_id: networkId, ip_address: data.ip_address } })
     if (clash) {
       throw createError({ statusCode: 409, message: `IP address ${data.ip_address} is already allocated` })
     }
@@ -114,14 +128,14 @@ export const ipAllocationRepository = {
     // Category validation and the insert share one transaction so a concurrent
     // custom-type delete cannot leave an allocation pointing at a missing type.
     if (data.device_type) {
-      const row = await prisma.$transaction(async (tx) => {
+      const row = await mapAllocationConflict(data.ip_address, () => prisma.$transaction(async (tx) => {
         await assertDeviceTypeAssignable(data.device_type!, { allowLegacy: options.allowLegacyDeviceType, client: tx })
         return tx.ipAllocation.create({ data: allocationData })
-      })
+      }))
       return rowToAllocation(row)
     }
 
-    const row = await prisma.ipAllocation.create({ data: allocationData })
+    const row = await mapAllocationConflict(data.ip_address, () => prisma.ipAllocation.create({ data: allocationData }))
     return rowToAllocation(row)
   },
 
@@ -185,7 +199,7 @@ export const ipAllocationRepository = {
       await assertDhcpRangeFree(targetNetwork.id, nextIp)
 
       const clash = await prisma.ipAllocation.findFirst({
-        where: { ip_address: nextIp, NOT: { id } }
+        where: { network_id: targetNetworkId, ip_address: nextIp, NOT: { id } }
       })
       if (clash) {
         throw createError({ statusCode: 409, message: `IP address ${nextIp} is already allocated` })
@@ -213,17 +227,17 @@ export const ipAllocationRepository = {
     // re-read inside it, so a concurrent reassignment cannot make a stale
     // "unchanged" value bypass category validation.
     if (data.device_type !== undefined) {
-      const row = await prisma.$transaction(async (tx) => {
+      const row = await mapAllocationConflict(nextIp, () => prisma.$transaction(async (tx) => {
         const fresh = await tx.ipAllocation.findUnique({ where: { id }, select: { device_type: true } })
         if (data.device_type !== null && data.device_type !== fresh?.device_type) {
           await assertDeviceTypeAssignable(data.device_type!, { client: tx })
         }
         return tx.ipAllocation.update({ where: { id }, data: updateData })
-      })
+      }))
       return rowToAllocation(row)
     }
 
-    const row = await prisma.ipAllocation.update({ where: { id }, data: updateData })
+    const row = await mapAllocationConflict(nextIp, () => prisma.ipAllocation.update({ where: { id }, data: updateData }))
     return rowToAllocation(row)
   },
 

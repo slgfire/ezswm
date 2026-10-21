@@ -6,6 +6,17 @@
 
 ---
 
+## [0.45.1] — 2026-10-21
+
+### Fixed
+- Scoped network uniqueness: a subnet and its host IPs may now be reused in a different site, a different VLAN, or tagged vs. untagged (for example `10.18.111.0/24` with `10.18.111.1`). Previously any repeated IP was rejected. A network is now unique only by canonical IPv4 CIDR (host bits cleared, so `10.0.0.5/24` equals `10.0.0.0/24`) within the same site and VLAN; untagged networks share one scope per site. A host IP is unique only within its own network. Different, overlapping CIDRs are allowed. Duplicates are rejected with HTTP 409 (create, update, allocation move, activity undo); existing duplicates are kept untouched (no cleanup, backfill or startup failure), and updates that do not change the key still work.
+- Deleting a VLAN returns 409 with code `VLAN_NETWORK_SUBNET_CONFLICT` (VLAN and networks left unchanged) when untagging its networks would duplicate an untagged subnet in the same site. Unknown VLANs now return 404.
+- Backup restore and legacy JSON migration reject invalid or conflicting network/allocation payloads before anything is wiped or written.
+- Switch management-IP sync only uses the one network of the switch's site that contains the IP; if none or several match it is skipped, and old-IP cleanup removes only that switch's own marker allocation. The dashboard duplicate-IP warning now counts repeats only within a network.
+- This is a bug-fix patch on top of 0.45.0 (main); it is not part of the 0.46 MCP work.
+
+---
+
 ## [0.45.0] — 2026-10-22
 
 ### Added

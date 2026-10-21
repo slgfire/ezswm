@@ -3,6 +3,8 @@ import { canDecryptOidcSecret } from './oidc/crypto'
 import { providerNameSchema } from '../validators/oidcSchemas'
 import { BUILTIN_DEVICE_TYPES } from '../../types/ipAllocation'
 import { isSafeManagementUrl } from '../validators/switchSchemas'
+import { canonicalizeCIDR, isValidCIDR } from './ipv4'
+import { findAllocationConflict, findNetworkConflict } from './networkConflicts'
 
 // Tables that hold a singleton row (AppSettings), or that are root parents in
 // the FK graph. Everything else cascades from these.
@@ -269,6 +271,23 @@ function normalizeSwitchManagement(rows: unknown[] | undefined): void {
   })
 }
 
+/**
+ * Scoped network uniqueness: canonicalize subnets and reject duplicate
+ * (site, VLAN scope, CIDR) networks and (network, ip) allocations before any
+ * write, so the existing data is never wiped for a payload the DB would reject.
+ */
+function normalizeNetworks(data: DataPayload): void {
+  const networks = Array.isArray(data.networks) ? data.networks as Record<string, unknown>[] : []
+  for (const n of networks) {
+    if (n && typeof n.subnet === 'string' && isValidCIDR(n.subnet)) n.subnet = canonicalizeCIDR(n.subnet)
+  }
+  const netMsg = findNetworkConflict(networks.filter(n => n && typeof n === 'object'))
+  if (netMsg) bad(`Backup rejected: ${netMsg}.`)
+  const allocs = Array.isArray(data.ipAllocations) ? data.ipAllocations as Record<string, unknown>[] : []
+  const allocMsg = findAllocationConflict(allocs.filter(a => a && typeof a === 'object'))
+  if (allocMsg) bad(`Backup rejected: ${allocMsg}.`)
+}
+
 const PATCH_PANEL_KEYS = ['patchPanels', 'patchPanelSockets', 'patchPanelTokens'] as const
 
 /**
@@ -332,6 +351,7 @@ export async function restoreAll(prisma: PrismaClient, payload: unknown, options
   data.settings = normalizeSettings(data.settings)
   data.customDeviceTypes = normalizeCustomDeviceTypes(data.customDeviceTypes)
   normalizeSwitchManagement(data.switches)
+  normalizeNetworks(data)
   const includesPatchPanels = hasPatchPanelData(data)
 
   // ID validation pass — fail fast before we touch the DB.

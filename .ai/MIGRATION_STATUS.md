@@ -2,7 +2,20 @@
 
 ## Latest Stage
 
-### VitePress brand repetition refinement (docs-only)
+### Scoped network and IP uniqueness fix (v0.45.1)
+
+Date: 2026-10-21 — implemented and verified locally; not committed or deployed.
+
+- Network uniqueness uses canonical IPv4 CIDR + site + VLAN; NULL is the shared untagged scope within a site. IP allocations are unique within their network. Different sites/VLANs may reuse subnets and IPs; non-identical overlapping CIDRs remain allowed.
+- SQLite write guards preserve existing duplicate rows without a backfill or automatic cleanup. Unchanged keys and unrelated updates remain possible; new conflicting writes return 409. Restore and legacy migration preflight reject conflicting payloads without wiping existing data or deleting source files.
+- VLAN deletion refuses conflicting SET NULL changes atomically. Management-IP synchronization is site-scoped, skips ambiguous new targets, and cleans up only exact old IP/name-marker ownership in the old site. Site changes with an unchanged IP are covered. Network undo recreation canonicalizes the subnet.
+- Independent code review findings were corrected and covered by focused tests, including live FK/trigger rollback, cross-site VLAN references, management-IP moves, and trigger error mapping. No additional independent review pass followed those corrections.
+- Final checks passed: 85 test files / 1188 tests, full ESLint, raw Nuxt typecheck, production build and whitespace validation. Evidence: `/tmp/opencode/scoped-network-final-{unit,lint,typecheck,build}.log`.
+- Isolated dev and no-cache Docker build/runtime checks passed on 0.45.1 with `database_ok: true`. All 16 migrations and four guard triggers were present; Docker used `/app/data` and UID/GID 1000. Owned runtimes were stopped and unrelated running container IDs were unchanged. Evidence: `/tmp/opencode/scoped-network-final-20261021T105120Z/` and `/tmp/opencode/scoped-network-docker-ftkows96/`.
+- EN/DE changelogs and user guides plus backend/data-model specifications were updated. No browser/UI check was run for this backend-only change. Real user databases were neither inspected nor repaired. Existing same-target management-allocation overwrite behavior is unchanged.
+- MCP work remains paused at local commit `548d463`; original worktrees and the test domain were not changed.
+
+### Previous: VitePress brand repetition refinement (docs-only)
 
 Date: 2026-10-21 — follow-up after PR #310
 

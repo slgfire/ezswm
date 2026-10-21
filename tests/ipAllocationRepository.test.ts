@@ -95,11 +95,18 @@ describe('ipAllocationRepository', () => {
         .rejects.toMatchObject({ statusCode: 404 })
     })
 
-    it('rejects duplicate IP across networks (global uniqueness)', async () => {
+    it('allows the same IP in a different (overlapping) network', async () => {
+      const { site_id } = (await prisma.network.findUniqueOrThrow({ where: { id: net1 } }))
+      const overlap = (await seedNetwork(prisma, { site_id, name: 'Overlap', subnet: '10.0.1.0/25' })).id
       await ipAllocationRepository.create(net1, { ip_address: '10.0.1.10', status: 'active' })
-      // Different subnet so IP collision is purely the global-unique check.
-      await expect(ipAllocationRepository.create(net2, { ip_address: '10.0.1.10', status: 'active' }))
-        .rejects.toMatchObject({ statusCode: 400 }) // subnet check fires first; either way the bad IP is blocked
+      const second = await ipAllocationRepository.create(overlap, { ip_address: '10.0.1.10', status: 'active' })
+      expect(second.network_id).toBe(overlap)
+    })
+
+    it('rejects duplicate IP within the same network', async () => {
+      await ipAllocationRepository.create(net1, { ip_address: '10.0.1.10', status: 'active' })
+      await expect(ipAllocationRepository.create(net1, { ip_address: '10.0.1.10', status: 'active' }))
+        .rejects.toMatchObject({ statusCode: 409 })
     })
   })
 

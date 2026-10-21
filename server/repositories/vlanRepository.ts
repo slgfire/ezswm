@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto'
 import { prisma } from '../db/client'
 import type { VLAN } from '../../types/vlan'
 import { VLAN_COLOR_POOL } from '../../types/vlan'
+import { canonicalizeCIDR, isValidCIDR } from '../utils/ipv4'
+import { hasConflictToken } from './networkRepository'
 import { resolveSiteIdToUuid } from '../utils/resolveSiteParam'
 
 interface VlanRow {
@@ -132,12 +134,44 @@ export const vlanRepository = {
     return rowToVlan(row)
   },
 
+  /** Deleting a VLAN untags its networks (FK SET NULL); refuse when that would duplicate an untagged CIDR. */
   async delete(id: string): Promise<boolean> {
+    const vlan = await prisma.vlan.findUnique({ where: { id } })
+    if (!vlan) return false
+
+    const conflict = () => createError({
+      statusCode: 409,
+      message: 'Deleting this VLAN would make network subnets duplicate within the untagged scope of the site',
+      data: { code: 'VLAN_NETWORK_SUBNET_CONFLICT', conflicts }
+    })
+    const conflicts: Array<{ id: string, name: string, subnet: string }> = []
+    const own = await prisma.network.findMany({ where: { vlan_id: id }, select: { id: true, name: true, subnet: true, site_id: true } })
+    if (own.length > 0) {
+      const untagged = await prisma.network.findMany({
+        where: { site_id: { in: [...new Set(own.map(n => n.site_id))] }, vlan_id: null },
+        select: { id: true, name: true, subnet: true, site_id: true }
+      })
+      const seen = new Map<string, string>()
+      for (const n of untagged) if (isValidCIDR(n.subnet)) seen.set(`${n.site_id}\u0000${canonicalizeCIDR(n.subnet)}`, n.id)
+      for (const n of own) {
+        if (!isValidCIDR(n.subnet)) continue
+        const key = `${n.site_id}\u0000${canonicalizeCIDR(n.subnet)}`
+        if (seen.has(key)) {
+          if (conflicts.length < 5) conflicts.push({ id: n.id, name: n.name.slice(0, 80), subnet: n.subnet })
+        } else {
+          seen.set(key, n.id)
+        }
+      }
+      if (conflicts.length > 0) throw conflict()
+    }
+
     try {
       await prisma.vlan.delete({ where: { id } })
       return true
-    } catch {
-      return false
+    } catch (err) {
+      if (hasConflictToken(err, 'NETWORK_SUBNET_CONFLICT')) throw conflict()
+      if ((err as { code?: string })?.code === 'P2025') return false
+      throw err
     }
   }
 }
