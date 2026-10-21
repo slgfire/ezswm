@@ -3,7 +3,7 @@ layout: home
 hero:
   name: ezSWM
   text: Switch & IP Management
-  tagline: Lightweight, database-free infrastructure documentation for LAN parties and homelabs
+  tagline: Lightweight infrastructure documentation for LAN parties and homelabs
   image:
     src: /logo.png
     alt: ezSWM Logo
@@ -22,8 +22,8 @@ features:
     title: VLAN & Subnet Management
     details: Document VLANs with unique colors, manage subnets with CIDR notation, and track IP allocations and ranges.
   - icon: 📦
-    title: No Database Required
-    details: All data stored as JSON files with atomic writes. Deploy with Docker in seconds, back up by copying a folder.
+    title: No External Database Server
+    details: Data lives in an embedded SQLite database (via Prisma) inside the data folder; JSON is only used for backups and import/export. Deploy with Docker in seconds.
   - icon: 🏢
     title: Multi-Site Support
     details: Organize infrastructure across multiple sites or locations, each with their own switches, VLANs, and subnets.

@@ -2,6 +2,19 @@
 
 ## Latest Stage
 
+### SQLite storage documentation correction (docs-only)
+
+Date: 2026-10-21
+
+Corrected stale "database-free / JSON files / atomic temp-rename" claims after the SQLite/Prisma migration. No application code, version or runtime changes.
+
+- Public landing pages (EN/DE) describe embedded SQLite via Prisma without an external database server; JSON remains an exchange/backup format.
+- FAQ and installation notes distinguish app-managed JSON backups from raw SQLite snapshots, which require the app to be stopped before copying the whole data directory, including any WAL/SHM files.
+- Removed the obsolete `users.json` password-recovery advice; no database-editing recovery procedure is introduced.
+- Matching EN/DE changelog entries are under `[Unreleased]`.
+
+Validation: `pnpm docs:build` and `git diff --check` passed; current storage wording reviewed against the schema, entrypoint and compose configuration. Backup commands were reviewed, not executed. App/Docker builds were not repeated for this documentation-only change.
+
 ### Issue #302 — switch management links (v0.45.0)
 
 Date: 2026-10-20

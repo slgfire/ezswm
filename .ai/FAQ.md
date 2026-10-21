@@ -3,23 +3,23 @@
 ## General
 
 **Where is the data stored?**
-All data is stored as JSON files in the `data/` directory (configurable via `DATA_DIR`). No database required.
+All data is stored in an embedded SQLite database (`db.sqlite`, plus WAL files) in the data directory (`/app/data` in Docker, configurable via `DATA_DIR`). No external database server is required. JSON is only used for backups and import/export.
 
 **Is the data safe?**
-All writes are atomic (write to temp file, then rename). This prevents corruption from crashes or power loss.
+Writes go through Prisma and SQLite. Operations wrapped in a transaction are applied together or not at all; a multi-step operation is not automatically one transaction. Pre-upgrade backups are kept in the data directory. Regular backups are still recommended (see Backup & Recovery).
 
 **Can multiple users work simultaneously?**
 Yes, but there is no real-time sync between browser sessions. If two users edit the same entity at the same time, the last save wins. For most use cases (LAN party setup, homelab documentation) this is not an issue.
 
 **How do I reset everything?**
-Stop the app, delete the `data/` directory, and restart. The setup wizard will appear again.
+Stop the app, back up the `data/` directory first, then remove its contents and restart. The setup wizard will appear again. This permanently deletes all data.
 
 ---
 
 ## Authentication
 
 **I forgot my password**
-There is no password recovery. Delete `data/users.json` and restart — the setup wizard will create a new admin account. All other data is preserved.
+There is no self-service password recovery. Ask another administrator to reset your password. Do not delete or edit the data directory or `db.sqlite`; that would destroy or corrupt your data.
 
 **How do I change the JWT secret?**
 Set the `JWT_SECRET` environment variable. After changing it, all existing sessions are invalidated and users must log in again.
@@ -85,9 +85,9 @@ Each port's background is tinted with its native VLAN's color at 20% opacity. Th
 ## Backup & Recovery
 
 **How do I back up my data?**
-Option 1: Use the built-in backup feature in Data Management → Export full backup (JSON).
-Option 2: Copy the entire `data/` directory.
+Option 1: Use the built-in backup feature in Data Management → Export full backup (JSON, `schema: "sqlite-v1"`).
+Option 2: Stop the app, then copy the entire `data/` directory (`db.sqlite` plus any `-wal`/`-shm` files). Never copy it while the app is running.
 
 **How do I restore from backup?**
 Option 1: Use Data Management → Import backup.
-Option 2: Replace the `data/` directory with your backup and restart.
+Option 2: Stop the app, replace the whole `data/` directory with your raw snapshot, and start it again.

@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Geändert
+- Dokumentation: Die öffentlichen Startseiten (EN/DE), FAQ und Installationshinweise beschreiben die Speicherung nun korrekt: Es wird kein externer Datenbankserver benötigt, die Daten liegen in einer eingebetteten SQLite-Datenbank (über Prisma) im Datenverzeichnis, und JSON dient nur für Backups sowie Import/Export (`schema: "sqlite-v1"`). Die Anleitung für manuelle Backups sagt nun, dass das gesamte Datenverzeichnis (`db.sqlite` plus ggf. WAL/SHM-Dateien) nur bei gestoppter Anwendung kopiert werden darf, und die FAQ empfiehlt nicht mehr, `users.json` zur Passwort-Wiederherstellung zu löschen.
+
 ---
 
 ## [0.45.0] — 2026-10-22
