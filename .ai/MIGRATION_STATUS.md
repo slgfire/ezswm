@@ -2,6 +2,16 @@
 
 ## Latest Stage
 
+### MCP Stage 3 (core) — stdio package and read tools
+
+Date: 2026-10-21 — implemented and verified locally on `feat/mcp-server`; uncommitted. This is the core slice only.
+
+Scope: new `mcp/` pnpm workspace package `ezswm-mcp` (Node >= 20, exact pins `@modelcontextprotocol/sdk` 1.32.1, `zod` 4.4.3, `@types/node` 26.1.1) with a stdio transport and the plan's read tools. Every tool is a thin mapping onto an existing REST GET route; authentication stays the existing API-token Bearer middleware and authorization stays the existing role + API-token policy in the app (no duplicated business logic, no new endpoints). Startup validates `EZSWM_URL` (HTTPS, loopback/LAN opt-in for HTTP, no credentials in the URL), `EZSWM_TOKEN`/`EZSWM_TOKEN_FILE` (`ezswm_` prefix), and refuses `PORT` mode because the hosted Streamable HTTP transport with its separate client auth and Origin/Host contract is a later slice. The upstream token is only read from server-side env/file and is never returned to clients; errors are mapped to readable messages (401 advises regeneration, 403/404/409/429/5xx, timeouts, non-JSON) and redirects are refused so the credential is never forwarded.
+
+Tools (read-only, viewer-capable): `list_sites`, `get_site`, `list_switches`, `get_switch`, `list_vlans`, `get_vlan`, `list_networks`, `get_network` (allocations/ranges capped at 100 with `more_available`), `list_ip_allocations`, `list_ip_ranges`, `list_lags`, `list_device_types`, `get_settings`, `subnet_info`, `search`, `export_documentation_data` (sanitized A6 export, exact entities only). `find_free_ip` is not implemented because the A4 `/api/networks/:id/free-ips` endpoint does not exist yet.
+
+Verification: `mcp` package `tsc -p tsconfig.json` build and `tsc --noEmit` typecheck exit 0; package vitest 1 file / 15 tests passed (config validation, HTTP client/auth header/error mapping, tool surface and caps, real in-memory MCP client-server call, error passthrough without token leakage). Startup smoke: missing env exits 1 with a readable stderr message, `PORT` set exits 2 with the explicit not-yet-supported message. Not verified here: Streamable HTTP, Docker image, CI/release workflow, client-config docs, `find_free_ip`, and root full-suite/lint/build (next slice/parent).
+
 ### MCP Stage 1 — API-token foundation (v0.46.0)
 
 Date: 2026-10-21
