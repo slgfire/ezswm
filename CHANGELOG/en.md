@@ -2,7 +2,7 @@
 
 ### Changed
 - Documentation: the public landing pages (EN/DE), FAQ and installation notes now describe storage accurately: no external database server is required, data lives in an embedded SQLite database (via Prisma) in the data directory, and JSON is only used for backups and import/export (`schema: "sqlite-v1"`). Manual backup guidance now says to copy the whole data directory (`db.sqlite` plus any WAL/SHM files) only while the app is stopped, and the FAQ no longer suggests deleting `users.json` to recover a password.
-- Documentation branding: the English and German VitePress navigation and home hero now use the current app logo in light and dark variants, and the documentation favicon now uses the current app icon.
+- Documentation branding: the English and German VitePress home hero now uses the base-aware light/dark app logos, and the `ezSWM` heading uses the logo's green (`#00BB50`); the documentation navigation and favicon keep the current app branding.
 
 ---
 
