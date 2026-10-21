@@ -4,6 +4,10 @@ hero:
   name: ezSWM
   text: Switch & IP Management
   tagline: Leichtgewichtige Infrastruktur-Dokumentation für LAN-Partys und Homelabs
+  image:
+    light: /logo.svg
+    dark: /logo-dark.svg
+    alt: ezSWM Logo
   actions:
     - theme: brand
       text: Erste Schritte

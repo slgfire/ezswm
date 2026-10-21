@@ -4,13 +4,13 @@
 
 ### Current app branding in VitePress docs (docs-only)
 
-Date: 2026-10-21
+Date: 2026-10-21 — follow-up to Issue #309
 
-Updated the shared English/German VitePress navigation, home hero and favicon to use the current app logo and icon. The nav and hero follow the active light/dark theme; the obsolete docs-only logo image was removed. No app code, version, dependencies or runtime changed.
+Fixed the home-hero logo rendering reported after Issue #309: the custom theme inserted root-absolute `<img>` paths, which ignored VitePress `base: '/ezswm/'` and left the image broken. Both home pages now use VitePress' native `ThemeableImage` light/dark form, whose `VPImage` applies `withBase`; the hero `ezSWM` name is solid logo green (`#00BB50`) instead of a blue-green gradient. Existing nav branding stays native and theme-aware. No app code, version, dependencies or runtime changed.
 
 - Documentation assets are exact copies of `public/logo.svg`, `public/logo-dark.svg` and `public/favicon.svg`.
-- Matching EN/DE changelog entries are under `[Unreleased]`.
-- Validation: `pnpm docs:build` and `git diff --check` passed, and the copied assets match the app files byte-for-byte. The docs build reported a missing root `.nuxt/tsconfig.json` base-config warning and a large-chunk warning; no browser visual review was run.
+- Matching EN/DE changelog entry is updated under `[Unreleased]`.
+- Validation: `pnpm docs:build`, `git diff --check`, and byte comparisons for all three copied assets passed. Generated EN/DE HTML uses `/ezswm/logo.svg` and `/ezswm/logo-dark.svg`. The locally served `/ezswm/` preview returned 200 for both pages and all logo/favicon SVGs (SVG MIME type). Headless Chromium reviewed EN/DE in light/dark: each active logo loaded at 2172px width with the accessible name, the `ezSWM` heading computed to `rgb(0, 187, 80)`, and no page/console errors occurred. Screenshots: `docs/.vitepress/dist/brand-{en,de}-{light,dark}.png`; the owned preview was stopped. Build warnings: missing root `.nuxt/tsconfig.json` base config and large chunk.
 
 ### SQLite storage documentation correction (docs-only)
 
