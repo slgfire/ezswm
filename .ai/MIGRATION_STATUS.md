@@ -2,6 +2,14 @@
 
 ## Latest Stage
 
+### MCP Stage 3 (HTTP transport) — Streamable HTTP slice
+
+Date: 2026-10-21 — implemented and verified locally on `feat/mcp-server`; uncommitted. Follows the stdio core slice below.
+
+Scope: `mcp/src/http.ts` adds a stateless Streamable HTTP transport (SDK 1.32.1, no new dependencies, `sessionIdGenerator` omitted, `enableJsonResponse: true`) on path `/mcp`, one `McpServer` + transport per request. HTTP mode is strictly opt-in via `PORT`; without `PORT` the package keeps stdio (path unchanged and still tested). Default bind is loopback `127.0.0.1`; a non-loopback `HOST` is refused unless `EZSWM_HTTP_ALLOW_REMOTE_BIND=true` plus non-empty `EZSWM_HTTP_ALLOWED_HOSTS` and `EZSWM_HTTP_ALLOWED_ORIGINS` allowlists are set. Client auth reuses the ezSWM Bearer scheme: every request needs a token from `EZSWM_MCP_AUTH_TOKEN` (comma list) or `EZSWM_MCP_AUTH_TOKEN_FILE`; no unauthenticated mode exists, tokens must use the `ezswm_` prefix and differ from the upstream `EZSWM_TOKEN`. Request gate order: Host (case-insensitive allowlist, missing → 403) → Origin (validated when present, `URL.origin` normalized, unknown → 403) → path (404) → Bearer (generic 401, token never echoed); token comparison uses SHA-256 digests plus `timingSafeEqual` over all candidates (no early exit). SIGINT/SIGTERM close the listener then per-request transports (5s force-exit timer). `config.ts` grew `HttpConfig`/`McpConfig.http`; `index.ts` now selects transport instead of refusing `PORT`.
+
+Verification: `mcp` `tsc --noEmit` exit 0; vitest 2 files / 24 tests passed (15 stdio + 9 new HTTP: unauthenticated GET/POST 401, wrong token 401, Host/Origin/path checks via raw `node:http`, loopback default binding, startup refusals for missing client token / non-loopback without opt-in / missing allowlists / malformed-duplicate tokens, real SDK StreamableHTTP client↔server round trip with Bearer returning stubbed `list_sites` data); build emitted `dist/http.js`. Process smoke on `PORT=18777`: unauth 401, wrong token 401, bad Origin 403, SIGTERM exit 0 with `shutting down`. Note for hand-testers: a valid-token curl without both `Accept` types gets SDK-spec 406, not an auth failure. Not verified: live TLS/reverse-proxy behavior (a proxy rewriting `Host` needs that name in `EZSWM_HTTP_ALLOWED_HOSTS`), Docker image, CI wiring, release workflow, client-config docs, `find_free_ip`, root full-suite/lint/build (parent runs next).
+
 ### MCP Stage 3 (core) — stdio package and read tools
 
 Date: 2026-10-21 — implemented and verified locally on `feat/mcp-server`; uncommitted. This is the core slice only.

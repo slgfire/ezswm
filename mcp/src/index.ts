@@ -2,21 +2,13 @@
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { EzswmClient } from './client.js'
 import { ConfigError, loadConfig } from './config.js'
+import { startHttpServer } from './http.js'
 import { createEzswmMcpServer } from './server.js'
 
 // stdout is reserved for the MCP protocol; all diagnostics go to stderr.
 const log = (message: string) => process.stderr.write(`[ezswm-mcp] ${message}\n`)
 
 async function main(): Promise<void> {
-  if (process.env.PORT) {
-    // Hosted Streamable HTTP (with its separate client authentication and
-    // Origin/Host contract) is a later Stage-3 slice; refuse rather than
-    // silently serving stdio when the operator asked for HTTP.
-    log('PORT is set but the Streamable HTTP transport is not included in this build yet. Unset PORT to use stdio.')
-    process.exitCode = 2
-    return
-  }
-
   let config
   try {
     config = await loadConfig()
@@ -27,11 +19,29 @@ async function main(): Promise<void> {
   }
 
   const client = new EzswmClient(config)
-  const server = createEzswmMcpServer(client, {
+  const info = {
     name: 'ezswm-mcp',
     version: process.env.npm_package_version ?? '0.0.0-dev'
-  })
+  }
 
+  if (config.http) {
+    const httpServer = await startHttpServer(client, info, config.http, log)
+    let stopping = false
+    const shutdown = async () => {
+      if (stopping) return
+      stopping = true
+      log('shutting down')
+      // Force exit if a client keeps a connection open past the grace period.
+      setTimeout(() => process.exit(0), 5_000).unref()
+      await httpServer.close().catch(() => undefined)
+      process.exit(0)
+    }
+    process.on('SIGINT', shutdown)
+    process.on('SIGTERM', shutdown)
+    return
+  }
+
+  const server = createEzswmMcpServer(client, info)
   const transport = new StdioServerTransport()
   await server.connect(transport)
   log(`connected via stdio to ${new URL(config.baseUrl).host}`)
