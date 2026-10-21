@@ -142,10 +142,12 @@ const API_TOKEN_DENY_RULES: DenyRule[] = [
   { methods: 'non-get', re: /^\/api\/settings(\/|$)/ },
   // Public access tokens (switches AND patch panels), all methods
   { methods: 'any', re: /^\/api\/(switches|patch-panels)\/[^/]+\/public-token(\/|$)/ },
-  // Deletes: category (not approved), Site/Switch (permanent), others temporary until the safe delete contract exists
+  // Deletes: category (not approved), Site/Switch (permanent), nested network children and
+  // VLAN/LAG temporary until their safe delete contracts exist. Network DELETE is unlocked by
+  // its A5 preview/impactToken contract (server/api/networks/[id].delete.ts).
   { methods: 'delete', re: /^\/api\/device-types\/[^/]+$/ },
   { methods: 'delete', re: /^\/api\/(sites|switches)\/[^/]+$/ },
-  { methods: 'delete', re: /^\/api\/networks\/[^/]+(\/(allocations|ranges)\/[^/]+)?$/ },
+  { methods: 'delete', re: /^\/api\/networks\/[^/]+\/(allocations|ranges)\/[^/]+$/ },
   { methods: 'delete', re: /^\/api\/vlans\/[^/]+$/ },
   { methods: 'delete', re: /^\/api\/switches\/[^/]+\/lag-groups\/[^/]+$/ }
 ]

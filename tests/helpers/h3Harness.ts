@@ -130,6 +130,7 @@ const ROUTES: Array<{ method: string, re: RegExp, load: () => Promise<{ default:
   { method: 'POST', re: /^\/api\/device-types$/, load: () => import('../../server/api/device-types/index.post') },
   { method: 'PUT', re: /^\/api\/device-types\/([^/]+)$/, params: ['id'], load: () => import('../../server/api/device-types/[id].put') },
   { method: 'DELETE', re: /^\/api\/device-types\/([^/]+)$/, params: ['id'], load: () => import('../../server/api/device-types/[id].delete') },
+  { method: 'DELETE', re: /^\/api\/networks\/([^/]+)$/, params: ['id'], load: () => import('../../server/api/networks/[id].delete') },
   { method: 'GET', re: /^\/api\/settings$/, load: () => import('../../server/api/settings/index.get') },
   { method: 'PUT', re: /^\/api\/settings$/, load: () => import('../../server/api/settings/index.put') },
   { method: 'GET', re: /^\/api\/sites$/, load: () => import('../../server/api/sites/index.get') },

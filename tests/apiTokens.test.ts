@@ -268,7 +268,7 @@ describe('API tokens (real Prisma + real middleware)', () => {
       ['POST', `/api/activity/${id}/undo`],
       ['DELETE', `/api/device-types/${id}`],
       ['DELETE', `/api/sites/${id}`], ['DELETE', `/api/sites/${id}/`], ['DELETE', `/api/switches/${id}`], ['DELETE', `/api/switches/${id}/`],
-      ['DELETE', `/api/networks/${id}`], ['DELETE', `/api/networks/${id}/allocations/${id}`], ['DELETE', `/api/networks/${id}/ranges/${id}`],
+      ['DELETE', `/api/networks/${id}/allocations/${id}`], ['DELETE', `/api/networks/${id}/ranges/${id}`],
       ['DELETE', `/api/vlans/${id}`], ['DELETE', `/api/switches/${id}/lag-groups/${id}`],
       // normalization bypass attempts
       ['GET', '//api//data/export'], ['GET', '/api/./data/export'], ['GET', '/api/x/../data/export'], ['GET', '/api/data%2Fexport'], ['GET', '/API/Data/Export'],
@@ -281,7 +281,7 @@ describe('API tokens (real Prisma + real middleware)', () => {
     const allowed: Array<[string, string]> = [
       ['GET', '/api/auth/me'], ['GET', '/api/settings'], ['GET', '/api/device-types'], ['POST', '/api/device-types'], ['PUT', `/api/device-types/${id}`],
       ['GET', '/api/sites'], ['GET', `/api/switches/${id}`], ['PUT', `/api/switches/${id}`], ['POST', '/api/switches'], ['PUT', `/api/switches/${id}/ports/bulk`],
-      ['GET', '/api/networks'], ['POST', `/api/networks/${id}/allocations`], ['PUT', `/api/vlans/${id}`], ['GET', '/api/import/template/vlans'],
+      ['GET', '/api/networks'], ['DELETE', `/api/networks/${id}`], ['POST', `/api/networks/${id}/allocations`], ['PUT', `/api/vlans/${id}`], ['GET', '/api/import/template/vlans'],
       ['GET', '/api/search'], ['GET', '/api/switches/sort']
     ]
     it.each(allowed)('allows %s %s for API tokens', (method, path) => {

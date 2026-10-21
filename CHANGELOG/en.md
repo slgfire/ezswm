@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Added
+- Safe network delete: `DELETE /api/networks/:id` now removes the network, its allocations and its ranges atomically in one transaction, and port links to its allocations are cleared (database `onDelete: SetNull`). API-token callers first get a non-destructive preview (network, allocations, ranges and the affected port links) with an `impactToken`; the delete then requires `confirm=true` plus that token, a stale token returns 409 with a fresh preview instead of deleting, and `confirm=true` without a token is rejected with 400. JWT/UI calls keep the previous behavior without a precondition. Nested allocation/range deletes and all other delete routes remain blocked for API tokens until their safe-delete contracts exist.
+
 ### Changed
 - Documentation: the public landing pages (EN/DE), FAQ and installation notes now describe storage accurately: no external database server is required, data lives in an embedded SQLite database (via Prisma) in the data directory, and JSON is only used for backups and import/export (`schema: "sqlite-v1"`). Manual backup guidance now says to copy the whole data directory (`db.sqlite` plus any WAL/SHM files) only while the app is stopped, and the FAQ no longer suggests deleting `users.json` to recover a password.
 - Documentation branding: the English and German VitePress header now shows the current full logo followed only by “Docs”; the hero shows only the green switch symbol beside the unchanged green `ezSWM` heading and tagline. The page titles retain the full documentation name.
