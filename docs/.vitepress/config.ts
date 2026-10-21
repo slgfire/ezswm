@@ -123,6 +123,7 @@ export default withMermaid(
     },
 
     themeConfig: {
+      siteTitle: 'Docs',
       logo: {
         light: '/logo.svg',
         dark: '/logo-dark.svg',

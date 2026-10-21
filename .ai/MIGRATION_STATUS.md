@@ -2,6 +2,15 @@
 
 ## Latest Stage
 
+### VitePress brand repetition refinement (docs-only)
+
+Date: 2026-10-21 — follow-up after PR #310
+
+Reduced repeated branding without changing the home hero copy: the header keeps the full theme-aware app logo and shows only “Docs” beside it; the hero now uses the app's existing green switch-symbol favicon instead of repeating the wordmark. Native VitePress image handling keeps the configured base path. `siteTitle` changes only visible navbar text; EN/DE document titles remain unchanged.
+
+- Matching EN/DE changelog entry updated under `[Unreleased]`.
+- Validation: `pnpm docs:build` and `git diff --check` passed (build reported the existing missing root `.nuxt/tsconfig.json` warning and large-chunk warning). Built EN/DE pages preserve their document titles, show only `Docs` beside the full theme-aware header logo, and reference the hero symbol at `/ezswm/favicon.svg`. Local preview served both pages and the hero/favicon/light-logo/dark-logo SVGs with HTTP 200 and SVG MIME types. Headless Chromium checked EN/DE in light/dark: hero shows symbol only, heading/tagline remain unchanged, logo variants match theme, no page/console errors, and 320px mobile has no horizontal overflow. Screenshots: `docs/.vitepress/dist/brandrepeat-{en,de}-{light,dark}.png` and `docs/.vitepress/dist/brandrepeat-{en,de}-mobile-{light,dark}.png`; owned preview stopped.
+
 ### Current app branding in VitePress docs (docs-only)
 
 Date: 2026-10-21 — follow-up to Issue #309
