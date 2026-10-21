@@ -5,6 +5,8 @@ import { VLAN_COLOR_POOL } from '../../types/vlan'
 import { canonicalizeCIDR, isValidCIDR } from '../utils/ipv4'
 import { hasConflictToken } from './networkRepository'
 import { resolveSiteIdToUuid } from '../utils/resolveSiteParam'
+import { deleteImpactToken, type DeleteOutcome } from '../utils/deleteImpact'
+import type { Prisma, PrismaClient } from '@prisma/client'
 
 interface VlanRow {
   id: string
@@ -34,6 +36,57 @@ function rowToVlan(row: VlanRow): VLAN {
     created_at: row.created_at,
     updated_at: row.updated_at
   }
+}
+
+
+export interface VlanDeleteConflict { id: string, name: string, subnet: string }
+
+/** What a VLAN delete changes: networks are untagged (FK SetNull); conflicts block it. */
+export interface VlanDeleteImpact {
+  vlan: { id: string, site_id: string, vlan_id: number, name: string }
+  networks: Array<{ id: string, name: string, subnet: string, site_id: string }>
+  /** Networks whose CIDR would collide in the untagged scope; non-empty means deletion is blocked. */
+  conflicts: VlanDeleteConflict[]
+}
+
+export function vlanImpactToken(impact: VlanDeleteImpact): string {
+  return deleteImpactToken(impact)
+}
+
+/**
+ * Re-derives the untagged-scope CIDR guard (mirrors the DB write guard). Kept in
+ * one place so preview and execution cannot disagree.
+ */
+async function findVlanDeleteConflicts(db: PrismaClient | Prisma.TransactionClient, id: string, own: Array<{ id: string, name: string, subnet: string, site_id: string }>) {
+  const conflicts: VlanDeleteConflict[] = []
+  if (own.length === 0) return conflicts
+  const untagged = await db.network.findMany({
+    where: { site_id: { in: [...new Set(own.map(n => n.site_id))] }, vlan_id: null },
+    select: { id: true, name: true, subnet: true, site_id: true }
+  })
+  const seen = new Map<string, string>()
+  for (const n of untagged) if (isValidCIDR(n.subnet)) seen.set(`${n.site_id}\u0000${canonicalizeCIDR(n.subnet)}`, n.id)
+  for (const n of own) {
+    if (!isValidCIDR(n.subnet)) continue
+    const key = `${n.site_id}\u0000${canonicalizeCIDR(n.subnet)}`
+    if (seen.has(key)) {
+      if (conflicts.length < 5) conflicts.push({ id: n.id, name: n.name.slice(0, 80), subnet: n.subnet })
+    } else {
+      seen.set(key, n.id)
+    }
+  }
+  return conflicts
+}
+
+async function buildVlanDeleteImpact(db: PrismaClient | Prisma.TransactionClient, id: string): Promise<VlanDeleteImpact | null> {
+  const vlan = await db.vlan.findUnique({ where: { id }, select: { id: true, site_id: true, vlan_id: true, name: true } })
+  if (!vlan) return null
+  const networks = await db.network.findMany({
+    where: { vlan_id: id },
+    select: { id: true, name: true, subnet: true, site_id: true },
+    orderBy: { name: 'asc' }
+  })
+  return { vlan, networks, conflicts: await findVlanDeleteConflicts(db, id, networks) }
 }
 
 export const vlanRepository = {
@@ -139,39 +192,62 @@ export const vlanRepository = {
     const vlan = await prisma.vlan.findUnique({ where: { id } })
     if (!vlan) return false
 
-    const conflict = () => createError({
-      statusCode: 409,
-      message: 'Deleting this VLAN would make network subnets duplicate within the untagged scope of the site',
-      data: { code: 'VLAN_NETWORK_SUBNET_CONFLICT', conflicts }
-    })
-    const conflicts: Array<{ id: string, name: string, subnet: string }> = []
-    const own = await prisma.network.findMany({ where: { vlan_id: id }, select: { id: true, name: true, subnet: true, site_id: true } })
-    if (own.length > 0) {
-      const untagged = await prisma.network.findMany({
-        where: { site_id: { in: [...new Set(own.map(n => n.site_id))] }, vlan_id: null },
-        select: { id: true, name: true, subnet: true, site_id: true }
+    const conflicts = await findVlanDeleteConflicts(prisma, id, await prisma.network.findMany({
+      where: { vlan_id: id },
+      select: { id: true, name: true, subnet: true, site_id: true }
+    }))
+    if (conflicts.length > 0) {
+      throw createError({
+        statusCode: 409,
+        message: 'Deleting this VLAN would make network subnets duplicate within the untagged scope of the site',
+        data: { code: 'VLAN_NETWORK_SUBNET_CONFLICT', conflicts }
       })
-      const seen = new Map<string, string>()
-      for (const n of untagged) if (isValidCIDR(n.subnet)) seen.set(`${n.site_id}\u0000${canonicalizeCIDR(n.subnet)}`, n.id)
-      for (const n of own) {
-        if (!isValidCIDR(n.subnet)) continue
-        const key = `${n.site_id}\u0000${canonicalizeCIDR(n.subnet)}`
-        if (seen.has(key)) {
-          if (conflicts.length < 5) conflicts.push({ id: n.id, name: n.name.slice(0, 80), subnet: n.subnet })
-        } else {
-          seen.set(key, n.id)
-        }
-      }
-      if (conflicts.length > 0) throw conflict()
     }
 
     try {
       await prisma.vlan.delete({ where: { id } })
       return true
     } catch (err) {
-      if (hasConflictToken(err, 'NETWORK_SUBNET_CONFLICT')) throw conflict()
+      if (hasConflictToken(err, 'NETWORK_SUBNET_CONFLICT')) {
+        throw createError({
+          statusCode: 409,
+          message: 'Deleting this VLAN would make network subnets duplicate within the untagged scope of the site',
+          data: { code: 'VLAN_NETWORK_SUBNET_CONFLICT', conflicts: [] }
+        })
+      }
       if ((err as { code?: string })?.code === 'P2025') return false
       throw err
     }
+  },
+
+  /** Preview of the networks a delete untags, plus blocking conflicts. */
+  async getDeleteImpact(id: string): Promise<VlanDeleteImpact | null> {
+    return buildVlanDeleteImpact(prisma, id)
+  },
+
+  /**
+   * Atomic VLAN delete sharing the untagged-scope guard with `delete()`. A blocked
+   * state throws the existing 409 and mutates nothing. Omit `expectedImpactToken`
+   * for JWT/UI.
+   */
+  async deleteGuarded(id: string, expectedImpactToken?: string): Promise<DeleteOutcome<VlanDeleteImpact>> {
+    return prisma.$transaction(async (tx) => {
+      const impact = await buildVlanDeleteImpact(tx, id)
+      if (!impact) return { kind: 'not_found' }
+      const impactToken = vlanImpactToken(impact)
+      if (expectedImpactToken !== undefined && expectedImpactToken !== impactToken) {
+        return { kind: 'conflict', impact, impactToken }
+      }
+      if (impact.conflicts.length > 0) {
+        throw createError({
+          statusCode: 409,
+          message: 'Deleting this VLAN would make network subnets duplicate within the untagged scope of the site',
+          data: { code: 'VLAN_NETWORK_SUBNET_CONFLICT', conflicts: impact.conflicts }
+        })
+      }
+      await tx.vlan.delete({ where: { id } })
+      return { kind: 'deleted', impact }
+    })
   }
+
 }
