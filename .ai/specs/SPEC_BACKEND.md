@@ -66,7 +66,7 @@ interface BaseRepository<T> {
 | `server/repositories/switchRepository.ts` | Switch + Port | Ports in a separate `Port` table, bidirectional link management |
 | `server/repositories/vlanRepository.ts` | VLAN | Color uniqueness, deletion cascade check |
 | `server/repositories/networkRepository.ts` | Network | VLAN reference validation |
-| `server/repositories/ipAllocationRepository.ts` | IPAllocation | Global IP uniqueness, subnet membership |
+| `server/repositories/ipAllocationRepository.ts` | IPAllocation | Per-network IP uniqueness, scoped network CIDR uniqueness, subnet membership |
 | `server/repositories/ipRangeRepository.ts` | IPRange | Range overlap detection, subnet membership |
 | `server/repositories/layoutTemplateRepository.ts` | LayoutTemplate | Template export/import |
 | `server/repositories/lagGroupRepository.ts` | LAGGroup | Port ownership validation |
@@ -89,8 +89,9 @@ interface BaseRepository<T> {
 
 #### IPAllocationRepository
 
-- On create/update: validate IP is within network subnet, check global IP uniqueness
-- Duplicate IP detection across all networks
+- On create/update: validate IP is within network subnet, check IP uniqueness within the target network only (409 on conflict; DB trigger errors map to 409)
+- The same IP may exist in other networks
+- Management-IP sync is site-scoped: only the single network of the switch's site containing the IP is used; none or several matches are skipped
 
 #### IPRangeRepository
 

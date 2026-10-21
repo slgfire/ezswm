@@ -375,31 +375,47 @@ async function syncManagementIpAllocation(
   switchId: string,
   switchName: string,
   newIp: string | undefined,
-  oldIp?: string
+  oldIp: string | undefined,
+  scope: { siteId: string; oldSiteId?: string; oldName?: string }
 ): Promise<void> {
   try {
-    if (oldIp && oldIp !== newIp) {
+    // Networks may overlap or repeat across VLANs, so the new target is only used when
+    // exactly one network of the switch's site contains the IP; otherwise skip.
+    const uniqueSiteNetwork = async (siteId: string, ip: string) => {
+      const nets = (await tx.network.findMany({ where: { site_id: siteId }, select: { id: true, subnet: true } }))
+        .filter(n => isIPInSubnet(ip, n.subnet))
+      if (nets.length !== 1) {
+        if (nets.length > 1) console.warn(`[ezSWM] syncManagementIpAllocation(${switchId}): ${ip} matches ${nets.length} networks in site, skipped`)
+        return null
+      }
+      return nets[0]!
+    }
+
+    const oldSiteId = scope.oldSiteId ?? scope.siteId
+    if (oldIp && (oldIp !== newIp || oldSiteId !== scope.siteId)) {
+      // No network guessing: only this switch's exact marker row for the old IP in the old site
+      // is removed; with overlapping networks any other row stays untouched.
       await tx.ipAllocation.deleteMany({
         where: {
           ip_address: oldIp,
-          description: { startsWith: 'Management IP for switch:' }
+          description: `Management IP for switch: ${scope.oldName ?? switchName}`,
+          network: { site_id: oldSiteId }
         }
       })
     }
 
     if (!newIp || !isValidIPv4(newIp)) return
 
-    const networks = await tx.network.findMany({
-      select: { id: true, subnet: true }
-    })
-    const matchingNetwork = networks.find(n => isIPInSubnet(newIp, n.subnet))
+    const matchingNetwork = await uniqueSiteNetwork(scope.siteId, newIp)
     if (!matchingNetwork) return
 
     const now = new Date().toISOString()
     const desc = `Management IP for switch: ${switchName}`
 
-    const existing = await tx.ipAllocation.findFirst({ where: { ip_address: newIp } })
+    const existing = await tx.ipAllocation.findFirst({ where: { network_id: matchingNetwork.id, ip_address: newIp } })
     if (existing) {
+      // Known risk (unchanged behavior): an ordinary allocation of the same IP in the
+      // target network is re-labelled as this switch's management IP.
       await tx.ipAllocation.update({
         where: { id: existing.id },
         data: {
@@ -566,7 +582,7 @@ export const switchRepository = {
       }
 
       if (data.management_ip) {
-        await syncManagementIpAllocation(tx, newId, data.name, data.management_ip)
+        await syncManagementIpAllocation(tx, newId, data.name, data.management_ip, undefined, { siteId: siteUuid })
       }
 
       const row = await tx.switch.findUniqueOrThrow({ where: { id: newId }, include: includePorts })
@@ -749,8 +765,8 @@ export const switchRepository = {
 
       const newManagementIp = data.management_ip !== undefined ? (data.management_ip ?? undefined) : (oldManagementIp ?? undefined)
       const newName = data.name ?? oldName
-      if (newManagementIp !== (oldManagementIp ?? undefined) || (newName !== oldName && newManagementIp)) {
-        await syncManagementIpAllocation(tx, id, newName, newManagementIp, oldManagementIp ?? undefined)
+      if (newManagementIp !== (oldManagementIp ?? undefined) || (newName !== oldName && newManagementIp) || (targetSiteId !== current.site_id && (newManagementIp || oldManagementIp))) {
+        await syncManagementIpAllocation(tx, id, newName, newManagementIp, oldManagementIp ?? undefined, { siteId: targetSiteId, oldSiteId: current.site_id, oldName })
       }
 
       const row = await tx.switch.findUniqueOrThrow({ where: { id }, include: includePorts })
@@ -1316,7 +1332,7 @@ export const switchRepository = {
 
       // Clean up management IP allocation if any.
       if (sw.management_ip) {
-        await syncManagementIpAllocation(tx, id, sw.name, undefined, sw.management_ip)
+        await syncManagementIpAllocation(tx, id, sw.name, undefined, sw.management_ip, { siteId: sw.site_id })
       }
 
       // Schema cascades to Port, LagGroup, PublicToken.

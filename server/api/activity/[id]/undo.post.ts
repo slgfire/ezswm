@@ -2,7 +2,8 @@ import { prisma } from '../../../db/client'
 import { activityRepository } from '../../../repositories/activityRepository'
 import { siteRepository } from '../../../repositories/siteRepository'
 import { vlanRepository } from '../../../repositories/vlanRepository'
-import { networkRepository } from '../../../repositories/networkRepository'
+import { canonicalizeCIDR, isValidCIDR } from '../../../utils/ipv4'
+import { networkRepository, hasConflictToken, findScopedSubnetClash, networkConflictError } from '../../../repositories/networkRepository'
 import { ipAllocationRepository } from '../../../repositories/ipAllocationRepository'
 import { ipRangeRepository } from '../../../repositories/ipRangeRepository'
 import { layoutTemplateRepository } from '../../../repositories/layoutTemplateRepository'
@@ -98,7 +99,12 @@ async function recreateEntity(entity_type: string, prev: PrevState): Promise<voi
         }
       })
       break
-    case 'network':
+    case 'network': {
+      const rawSubnet = String(prev.subnet)
+      // Canonical when valid (matches the DB trigger key); legacy invalid values are restored raw.
+      const subnet = isValidCIDR(rawSubnet) ? canonicalizeCIDR(rawSubnet) : rawSubnet
+      const clashName = await findScopedSubnetClash(String(prev.site_id), (prev.vlan_id as string | null) ?? null, subnet)
+      if (clashName) throw networkConflictError(clashName)
       await prisma.network.create({
         data: {
           id: String(prev.id),
@@ -106,7 +112,7 @@ async function recreateEntity(entity_type: string, prev: PrevState): Promise<voi
           slug: String(prev.slug ?? `restored-${String(prev.id).slice(0, 6)}`),
           name: String(prev.name),
           vlan_id: (prev.vlan_id as string | null) ?? null,
-          subnet: String(prev.subnet),
+          subnet,
           gateway: (prev.gateway as string | null) ?? null,
           dns_servers: JSON.stringify(prev.dns_servers ?? []),
           description: (prev.description as string | null) ?? null,
@@ -116,7 +122,12 @@ async function recreateEntity(entity_type: string, prev: PrevState): Promise<voi
         }
       })
       break
-    case 'ip_allocation':
+    }
+    case 'ip_allocation': {
+      const taken = await prisma.ipAllocation.findFirst({
+        where: { network_id: String(prev.network_id), ip_address: String(prev.ip_address) }
+      })
+      if (taken) throw createError({ statusCode: 409, message: `IP address ${String(prev.ip_address)} is already allocated` })
       await prisma.ipAllocation.create({
         data: {
           id: String(prev.id),
@@ -132,6 +143,7 @@ async function recreateEntity(entity_type: string, prev: PrevState): Promise<voi
         }
       })
       break
+    }
     case 'ip_range':
       await prisma.ipRange.create({
         data: {
@@ -204,6 +216,10 @@ export default defineEventHandler(async (event) => {
     return { success: true, action, entity_type, entity_id: entry.entity_id }
   } catch (err) {
     if ((err as { statusCode?: number })?.statusCode) throw err
+    if (hasConflictToken(err, 'NETWORK_SUBNET_CONFLICT')) throw networkConflictError()
+    if (hasConflictToken(err, 'IP_ALLOCATION_CONFLICT')) {
+      throw createError({ statusCode: 409, message: 'IP address is already allocated in this network' })
+    }
     const message = err instanceof Error ? err.message : String(err)
     throw createError({ statusCode: 500, message: `Undo failed: ${message}` })
   }

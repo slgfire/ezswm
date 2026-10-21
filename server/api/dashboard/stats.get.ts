@@ -81,13 +81,17 @@ export default defineEventHandler(async (event) => {
   const highUsageNetworks = networkUtilization.filter(n => n.percentage > 80)
 
   // Duplicate IPs
-  const ipCounts = new Map<string, number>()
+  // Same IP in different networks is valid; only repeats within one network count.
+  const selectedNetworkIds = new Set(networks.map(n => n.id))
+  const ipCounts = new Map<string, { ip: string, count: number }>()
   for (const a of allocations) {
-    ipCounts.set(a.ip_address, (ipCounts.get(a.ip_address) || 0) + 1)
+    if (!selectedNetworkIds.has(a.network_id)) continue
+    const key = `${a.network_id}\u0000${a.ip_address}`
+    const entry = ipCounts.get(key) ?? { ip: a.ip_address, count: 0 }
+    entry.count++
+    ipCounts.set(key, entry)
   }
-  const duplicateIps = [...ipCounts.entries()]
-    .filter(([_, count]) => count > 1)
-    .map(([ip]) => ip)
+  const duplicateIps = [...new Set([...ipCounts.values()].filter(e => e.count > 1).map(e => e.ip))]
 
   // Favorites
   const favoriteSwitches = switches.filter(s => s.is_favorite).map(({ ports: _, ...s }) => s)

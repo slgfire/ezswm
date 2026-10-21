@@ -553,6 +553,8 @@ Felder:
 - **VLAN** -- dieses Subnetz mit einem VLAN aus dem Dropdown verknüpfen
 - **Beschreibung** -- optional
 
+**Eindeutigkeit:** Ein Subnetz (verglichen über das kanonische CIDR, `10.0.0.5/24` entspricht `10.0.0.0/24`) darf pro Standort und VLAN nur einmal existieren; Subnetze ohne VLAN teilen sich pro Standort einen „ungetaggten" Bereich. Dasselbe Subnetz darf in einem anderen Standort, einem anderen VLAN oder getaggt vs. ungetaggt erneut verwendet werden, und unterschiedliche überlappende Subnetze sind erlaubt. Eine IP-Adresse ist nur innerhalb ihres eigenen Subnetzes eindeutig. Konflikte werden mit einem 409-Fehler abgelehnt; bestehende Duplikate bleiben erhalten. Das Löschen eines VLANs wird abgelehnt (nichts ändert sich), wenn das Entfernen des Tags ein solches Duplikat erzeugen würde.
+
 ### Subnetz-Detail & IP-Übersicht
 
 Die Subnetz-Detailseite zeigt Subnetz-Statistiken (Subnetz, Gateway, Maske, Hosts, Zugewiesene Anzahl, verknüpftes VLAN) in einer kompakten Info-Leiste oben. Klicke auf die Info-Leiste, um zusätzliche Details aufzuklappen (Netzwerkadresse, Broadcast, DNS-Server, Beschreibung) -- dasselbe Muster wie auf der Switch-Detailseite. Ein Auslastungsbalken darunter visualisiert zugewiesene, DHCP-, reservierte und freie Adressbereiche. Zum Bearbeiten des Subnetzes klicke auf das **Stift-Symbol** oben rechts -- dies öffnet ein Sidepanel.

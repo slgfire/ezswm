@@ -6,6 +6,17 @@
 
 ---
 
+## [0.45.1] — 2026-10-21
+
+### Behoben
+- Bereichsbezogene Netzwerk-Eindeutigkeit: Ein Subnetz und seine Host-IPs dürfen nun in einem anderen Standort, einem anderen VLAN oder getaggt vs. ungetaggt erneut verwendet werden (z. B. `10.18.111.0/24` mit `10.18.111.1`). Zuvor wurde jede wiederholte IP abgelehnt. Ein Netzwerk ist jetzt nur noch über das kanonische IPv4-CIDR (Host-Bits gelöscht, `10.0.0.5/24` entspricht `10.0.0.0/24`) innerhalb desselben Standorts und VLANs eindeutig; ungetaggte Netzwerke teilen sich pro Standort einen Bereich. Eine Host-IP ist nur innerhalb ihres eigenen Netzwerks eindeutig. Unterschiedliche, sich überlappende CIDRs sind erlaubt. Duplikate werden mit HTTP 409 abgelehnt (Anlegen, Ändern, Verschieben von Zuweisungen, Aktivitäts-Rückgängig); bestehende Duplikate bleiben unverändert (keine Bereinigung, kein Backfill, kein Startabbruch), und Änderungen ohne Schlüsseländerung funktionieren weiter.
+- Das Löschen eines VLANs liefert 409 mit Code `VLAN_NETWORK_SUBNET_CONFLICT` (VLAN und Netzwerke bleiben unverändert), wenn das Entfernen des Tags ein ungetaggtes Subnetz im selben Standort duplizieren würde. Unbekannte VLANs liefern nun 404.
+- Backup-Wiederherstellung und Legacy-JSON-Migration lehnen ungültige oder kollidierende Netzwerk-/Zuweisungsdaten ab, bevor etwas gelöscht oder geschrieben wird.
+- Die Synchronisierung der Management-IP verwendet nur das eine Netzwerk des Switch-Standorts, das die IP enthält; bei keinem oder mehreren Treffern wird sie übersprungen, und die Bereinigung der alten IP entfernt nur die eigene Markierungs-Zuweisung des Switches. Die Dashboard-Warnung für doppelte IPs zählt Wiederholungen nur noch innerhalb eines Netzwerks.
+- Dies ist ein Fehlerbehebungs-Patch auf Basis von 0.45.0 (main) und nicht Teil der 0.46-MCP-Arbeit.
+
+---
+
 ## [0.45.0] — 2026-10-22
 
 ### Hinzugefügt

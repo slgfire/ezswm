@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { prisma } from '../db/client'
 import type { Network } from '../../types/network'
-import { isValidCIDR, isValidIPv4, isIPInSubnet } from '../utils/ipv4'
+import { isValidCIDR, isValidIPv4, isIPInSubnet, canonicalizeCIDR } from '../utils/ipv4'
 import { slugify, resolveSlugCollision } from '../utils/slugify'
 import { resolveSiteIdToUuid } from '../utils/resolveSiteParam'
 
@@ -58,6 +58,46 @@ function validateNetworkInputs(data: { subnet?: string; gateway?: string | null;
         throw createError({ statusCode: 400, message: `Invalid DNS server IP: ${dns}` })
       }
     }
+  }
+}
+
+/** True when a (possibly Prisma/driver-wrapped) error carries a write-guard trigger token. */
+export function hasConflictToken(err: unknown, token: 'NETWORK_SUBNET_CONFLICT' | 'IP_ALLOCATION_CONFLICT', depth = 0): boolean {
+  if (err == null || depth > 5) return false
+  if (typeof err === 'string') return err.includes(token)
+  if (typeof err !== 'object') return false
+  const e = err as { message?: unknown, meta?: unknown, cause?: unknown }
+  if (typeof e.message === 'string' && e.message.includes(token)) return true
+  if (e.meta && JSON.stringify(e.meta).includes(token)) return true
+  return hasConflictToken(e.cause, token, depth + 1)
+}
+
+export function networkConflictError(name?: string) {
+  return createError({
+    statusCode: 409,
+    message: name
+      ? `A network with the same subnet already exists in this site and VLAN scope: ${name}`
+      : 'A network with the same subnet already exists in this site and VLAN scope'
+  })
+}
+
+/** Name of another network in the same (site, vlan-or-untagged) scope with the same canonical CIDR. */
+export async function findScopedSubnetClash(siteId: string, vlanId: string | null, subnet: string, excludeId?: string): Promise<string | null> {
+  if (!isValidCIDR(subnet)) return null
+  const canon = canonicalizeCIDR(subnet)
+  const candidates = await prisma.network.findMany({
+    where: { site_id: siteId, vlan_id: vlanId, ...(excludeId ? { NOT: { id: excludeId } } : {}) },
+    select: { name: true, subnet: true }
+  })
+  return candidates.find(n => isValidCIDR(n.subnet) && canonicalizeCIDR(n.subnet) === canon)?.name ?? null
+}
+
+async function mapNetworkConflict<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn()
+  } catch (err) {
+    if (hasConflictToken(err, 'NETWORK_SUBNET_CONFLICT')) throw networkConflictError()
+    throw err
   }
 }
 
@@ -119,18 +159,21 @@ export const networkRepository = {
     // `site_id` from the request body may arrive as a UUID *or* a slug since
     // the URL-driven create forms use slug-shaped route params.
     const siteUuid = await resolveSiteIdToUuid(data.site_id)
+    const subnet = canonicalizeCIDR(data.subnet)
+    const clashName = await findScopedSubnetClash(siteUuid, data.vlan_id ?? null, subnet)
+    if (clashName) throw networkConflictError(clashName)
     const desired = data.slug ? slugify(data.slug) : slugify(data.name)
     const slug = await uniqueNetworkSlug(siteUuid, desired)
 
     const now = new Date().toISOString()
-    const row = await prisma.network.create({
+    const row = await mapNetworkConflict(() => prisma.network.create({
       data: {
         id: randomUUID(),
         site_id: siteUuid,
         slug,
         name: data.name,
         vlan_id: data.vlan_id ?? null,
-        subnet: data.subnet,
+        subnet,
         gateway: data.gateway ?? null,
         dns_servers: JSON.stringify(data.dns_servers ?? []),
         description: data.description ?? null,
@@ -139,7 +182,7 @@ export const networkRepository = {
         created_at: now,
         updated_at: now
       }
-    })
+    }))
     return rowToNetwork(row)
   },
 
@@ -165,6 +208,15 @@ export const networkRepository = {
 
     validateNetworkInputs(data, current.subnet)
 
+    const nextSubnet = data.subnet !== undefined ? canonicalizeCIDR(data.subnet) : undefined
+    const nextVlan = data.vlan_id !== undefined ? (data.vlan_id ?? null) : current.vlan_id
+    const keyChanged = nextVlan !== current.vlan_id
+      || (nextSubnet !== undefined && (!isValidCIDR(current.subnet) || canonicalizeCIDR(current.subnet) !== nextSubnet))
+    if (keyChanged) {
+      const clashName = await findScopedSubnetClash(current.site_id, nextVlan, nextSubnet ?? current.subnet, id)
+      if (clashName) throw networkConflictError(clashName)
+    }
+
     // Slug resolution: see siteRepository.update for the full rationale.
     let slug: string | undefined
     if (data.slug !== undefined && data.slug !== current.slug) {
@@ -173,12 +225,12 @@ export const networkRepository = {
       slug = await uniqueNetworkSlug(current.site_id, slugify(data.name), id)
     }
 
-    const row = await prisma.network.update({
+    const row = await mapNetworkConflict(() => prisma.network.update({
       where: { id },
       data: {
         ...(data.name !== undefined ? { name: data.name } : {}),
         ...(data.vlan_id !== undefined ? { vlan_id: data.vlan_id ?? null } : {}),
-        ...(data.subnet !== undefined ? { subnet: data.subnet } : {}),
+        ...(nextSubnet !== undefined ? { subnet: nextSubnet } : {}),
         ...(data.gateway !== undefined ? { gateway: data.gateway ?? null } : {}),
         ...(data.dns_servers !== undefined ? { dns_servers: JSON.stringify(data.dns_servers) } : {}),
         ...(data.description !== undefined ? { description: data.description ?? null } : {}),
@@ -187,7 +239,7 @@ export const networkRepository = {
         ...(slug !== undefined ? { slug } : {}),
         updated_at: new Date().toISOString()
       }
-    })
+    }))
     return rowToNetwork(row)
   },
 

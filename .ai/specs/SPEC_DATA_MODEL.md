@@ -264,7 +264,7 @@ Represents a single IP address assignment within a Network.
 ### Validation Rules
 
 - `ip_address`: valid IPv4 address, must be within the referenced network's subnet
-- **Duplicate IP detection**: `ip_address` must be unique across ALL networks (global uniqueness)
+- **Duplicate IP detection**: `ip_address` must be unique within its `network_id` only. The same IP may exist in different networks (different site, VLAN, or tagged vs. untagged)
 - `network_id`: must reference existing Network
 - `mac_address`: valid MAC format if provided (XX:XX:XX:XX:XX:XX)
 
@@ -579,7 +579,8 @@ Earlier versions stored one JSON file per entity in `/app/data/` (`users.json`, 
 
 | Rule | Scope | Description |
 |------|-------|-------------|
-| Unique IP | Global | No two IPAllocations may have the same `ip_address` across all networks |
+| Unique IP | Per network | No two IPAllocations of the same network may have the same `ip_address`; other networks may repeat it |
+| Unique network CIDR | Per site + VLAN | Canonical IPv4 CIDR (host bits cleared) is unique per `(site_id, vlan_id)`; `vlan_id` NULL is one common untagged scope per site. Different or overlapping CIDRs are allowed. Enforced by DB write-guard triggers (`NETWORK_SUBNET_CONFLICT`, `IP_ALLOCATION_CONFLICT`) that fire only when the key actually changes, so pre-existing duplicates are preserved (no cleanup/backfill) and non-key updates still work |
 | IP in subnet | Per network | `ip_address` must fall within the network's `subnet` CIDR |
 | Range in subnet | Per network | `start_ip` and `end_ip` must fall within the network's `subnet` |
 | No range overlap | Per network | IP ranges within the same network must not overlap |

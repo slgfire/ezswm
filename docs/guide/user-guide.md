@@ -553,6 +553,8 @@ Fields:
 - **VLAN** -- associate this subnet with a VLAN from the dropdown
 - **Description** -- optional
 
+**Uniqueness:** a subnet (compared by its canonical CIDR, so `10.0.0.5/24` equals `10.0.0.0/24`) can exist only once per site and VLAN; subnets without a VLAN share one "untagged" scope per site. The same subnet may be reused in another site, in another VLAN, or tagged vs. untagged, and different overlapping subnets are allowed. An IP address is unique only within its own subnet. Conflicts are rejected with a 409 error; existing duplicates are kept. Deleting a VLAN is refused (nothing changes) if untagging its subnets would create such a duplicate.
+
 ### Subnet Detail & IP Overview
 
 The subnet detail page shows subnet statistics (subnet, gateway, mask, hosts, allocated count, associated VLAN) in a compact info bar at the top. Click the info bar to expand additional details (network address, broadcast, DNS servers, description) -- the same pattern used on the switch detail page. A utilization bar below visualizes allocated, DHCP, reserved, and free address space. To edit the subnet, click the **pencil icon** in the top-right corner -- this opens a slideover panel.

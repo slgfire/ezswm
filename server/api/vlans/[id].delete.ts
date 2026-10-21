@@ -14,7 +14,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'VLAN not found' })
   }
 
-  await vlanRepository.delete(id)
+  if (!(await vlanRepository.delete(id))) {
+    throw createError({ statusCode: 404, statusMessage: 'VLAN not found' })
+  }
 
   await activityRepository.log({
     user_id: event.context.auth.userId,

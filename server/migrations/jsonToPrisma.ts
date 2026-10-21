@@ -5,6 +5,8 @@ import type { PrismaClient } from '@prisma/client'
 
 import { buildIdMap, mergeIdMaps, remapJson } from '../utils/idMapping'
 import { slugify } from '../utils/slugify'
+import { canonicalizeCIDR, isValidCIDR } from '../utils/ipv4'
+import { findAllocationConflict, findNetworkConflict } from '../utils/networkConflicts'
 
 /**
  * Mint slugs inside the migration. Collisions are resolved by suffixing -2/-3
@@ -178,6 +180,26 @@ export async function runJsonToPrismaMigration(opts: {
     skipReasons.push(`[${category}] ${reason}`)
   }
 
+  // 2b. Preflight scoped uniqueness. Fails the whole migration (nothing written, JSON
+  //     files stay in place) instead of skipping or dropping conflicting rows.
+  const mappedNetworks = networks.flatMap((n) => {
+    const siteId = typeof n.site_id === 'string' ? siteMap.get(n.site_id) : undefined
+    if (!siteId) return []
+    const vlanId = typeof n.vlan_id === 'string' ? vlanMap.get(n.vlan_id) ?? null : null
+    return [{ id: networkMap.get(n.id)!, name: pickString(n, 'name'), site_id: siteId, vlan_id: vlanId, subnet: pickString(n, 'subnet') }]
+  })
+  const keptNetworkIds = new Set(mappedNetworks.map(n => n.id))
+  const conflict = findNetworkConflict(mappedNetworks)
+    ?? findAllocationConflict(allocations.flatMap((a) => {
+      const networkId = typeof a.network_id === 'string' ? networkMap.get(a.network_id) : undefined
+      return networkId && keptNetworkIds.has(networkId)
+        ? [{ id: allocationMap.get(a.id)!, network_id: networkId, ip_address: pickString(a, 'ip_address') }]
+        : []
+    }))
+  if (conflict) {
+    throw new Error(`Legacy JSON migration aborted, source files left untouched: ${conflict}.`)
+  }
+
   // 3. Run everything in a single transaction. SQLite rolls back atomically on
   //    any error, so a partial migration is impossible.
   await prisma.$transaction(async (tx) => {
@@ -322,7 +344,7 @@ export async function runJsonToPrismaMigration(opts: {
         slug: mintSlug(scope, pickString(n, 'name')),
         name: pickString(n, 'name'),
         vlan_id: vlanRef,
-        subnet: pickString(n, 'subnet'),
+        subnet: isValidCIDR(pickString(n, 'subnet')) ? canonicalizeCIDR(pickString(n, 'subnet')) : pickString(n, 'subnet'),
         gateway: pickStringOrNull(n, 'gateway'),
         dns_servers: stringifyOrDefault(n.dns_servers, '[]'),
         description: pickStringOrNull(n, 'description'),

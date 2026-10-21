@@ -127,3 +127,9 @@ export function doRangesOverlap(
 export function isValidMacAddress(mac: string): boolean {
   return /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.test(mac)
 }
+
+/** Canonical IPv4 CIDR: host bits cleared (`10.0.0.5/24` → `10.0.0.0/24`). Input must pass isValidCIDR. */
+export function canonicalizeCIDR(cidr: string): string {
+  const info = parseSubnet(cidr)
+  return `${info.network_address}/${info.prefix_length}`
+}
