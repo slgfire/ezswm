@@ -125,11 +125,28 @@ export function evaluateRolePolicy(input: { role: string, method: string, path: 
 
 interface DenyRule { methods: 'any' | 'non-get' | 'get' | 'delete', re: RegExp }
 
+/**
+ * Audited A6 exceptions, checked before the deny rules: sanitized documentation
+ * export (positive per-entity field allowlist in the handler; templates stay
+ * denied there) and documentation-only imports (no users/settings/credentials/
+ * backup/layout-template payloads).
+ */
+const API_TOKEN_ALLOW_RULES: DenyRule[] = [
+  { methods: 'get', re: /^\/api\/export\/(switches|vlans|networks|allocations)$/ },
+  { methods: 'non-get', re: /^\/api\/import\/(switches|vlans|networks|allocations|ranges)$/ }
+]
+
 const API_TOKEN_DENY_RULES: DenyRule[] = [
   // Credential / account / admin / backup management
   { methods: 'any', re: /^\/api\/(users|backup|admin)(\/|$)/ },
   { methods: 'any', re: /^\/api\/auth\/(oidc\/(config|check)|tokens)(\/|$)/ },
-  // Raw exports (contain plaintext public tokens / raw rows), activity (previous_state), stats (recentActivity), undo
+  // Raw exports/imports (contain plaintext public tokens / raw rows / credentials),
+  // activity (previous_state), stats (recentActivity).
+  // A7 Stage-2 audit: undo stays denied for API tokens. The existing undo handler
+  // inverts simple entities by calling repositories directly (create→delete,
+  // update→update, delete→create), bypassing the A5 preview/impactToken contract;
+  // Site/Switch inverses would also hit permanently denied deletes. Unlock only
+  // together with the Stage-4 checked server-side undo contract.
   { methods: 'any', re: /^\/api\/data\/export(\/|$)/ },
   { methods: 'any', re: /^\/api\/export(\/|$)/ },
   { methods: 'any', re: /^\/api\/activity(\/|$)/ },
@@ -153,12 +170,13 @@ export function evaluateApiTokenPolicy(input: { method: string, path: string }):
   const raw = input.method.toUpperCase()
   const method = raw === 'HEAD' ? 'GET' : raw
   const lower = normalizePolicyPath(input.path).toLowerCase()
+  const appliesTo = (rule: DenyRule) => rule.methods === 'any'
+    || (rule.methods === 'non-get' && method !== 'GET')
+    || (rule.methods === 'get' && method === 'GET')
+    || (rule.methods === 'delete' && method === 'DELETE')
+  if (API_TOKEN_ALLOW_RULES.some(rule => appliesTo(rule) && rule.re.test(lower))) return 'allow'
   for (const rule of API_TOKEN_DENY_RULES) {
-    const applies = rule.methods === 'any'
-      || (rule.methods === 'non-get' && method !== 'GET')
-      || (rule.methods === 'get' && method === 'GET')
-      || (rule.methods === 'delete' && method === 'DELETE')
-    if (applies && rule.re.test(lower)) return 'forbidden'
+    if (appliesTo(rule) && rule.re.test(lower)) return 'forbidden'
   }
   return 'allow'
 }

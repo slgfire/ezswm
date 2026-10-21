@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { PrismaClient } from '@prisma/client'
 
-import { createTestPrisma } from './testHelpers'
+import { createTestPrisma, seedNetwork, seedSite } from './testHelpers'
 import { asCookie, dispatch, installH3Globals, resetOidcRuntime, seedLocalUser, setOidcRuntime, tokenFor } from './helpers/h3Harness'
 import { apiTokenRepository, hashApiToken, API_TOKEN_LAST_USED_THROTTLE_MS } from '../server/repositories/apiTokenRepository'
 import { userRepository } from '../server/repositories/userRepository'
@@ -261,9 +261,9 @@ describe('API tokens (real Prisma + real middleware)', () => {
       ['GET', `/api/switches/${id}/public-token`], ['POST', `/api/switches/${id}/public-token`], ['DELETE', `/api/switches/${id}/public-token`],
       ['GET', `/api/patch-panels/${id}/public-token`], ['POST', `/api/patch-panels/${id}/public-token`], ['DELETE', `/api/patch-panels/${id}/public-token/`],
       ['GET', '/api/data/export'], ['HEAD', '/api/data/export'], ['POST', '/api/data/import'], ['POST', '/api/data/import/x'],
-      ['POST', '/api/import/vlans'], ['POST', '/api/import/networks/'], ['POST', '/api/import/switches'], ['POST', '/api/layout-templates/import'],
+      ['POST', '/api/import/templates'], ['POST', '/api/import/template/vlans'], ['POST', '/api/layout-templates/import'],
       ['GET', '/api/activity'], ['HEAD', '/api/activity'], ['GET', '/api/dashboard/stats'], ['HEAD', '/api/dashboard/stats'],
-      ['GET', '/api/export/vlans'], ['GET', '/api/export/vlans?format=csv'], ['GET', '/api/export/vlans?format=json'], ['HEAD', '/api/export/switches'],
+      ['GET', '/api/export/templates'],
       ['PUT', '/api/settings'], ['POST', '/api/settings'], ['PATCH', '/api/settings'], ['DELETE', '/api/settings'],
       ['POST', `/api/activity/${id}/undo`],
       ['DELETE', `/api/device-types/${id}`],
@@ -279,6 +279,8 @@ describe('API tokens (real Prisma + real middleware)', () => {
     const allowed: Array<[string, string]> = [
       ['GET', '/api/auth/me'], ['GET', '/api/settings'], ['GET', '/api/device-types'], ['POST', '/api/device-types'], ['PUT', `/api/device-types/${id}`],
       ['GET', '/api/sites'], ['GET', `/api/switches/${id}`], ['PUT', `/api/switches/${id}`], ['POST', '/api/switches'], ['PUT', `/api/switches/${id}/ports/bulk`],
+      ['GET', '/api/export/vlans'], ['GET', '/api/export/vlans?format=csv'], ['GET', '/api/export/vlans?format=json'], ['HEAD', '/api/export/switches'],
+      ['POST', '/api/import/vlans'], ['POST', '/api/import/networks/'], ['POST', '/api/import/switches'], ['POST', '/api/import/allocations'], ['POST', '/api/import/ranges'],
       ['GET', '/api/networks'], ['DELETE', `/api/networks/${id}`], ['DELETE', `/api/networks/${id}/allocations/${id}`],
       ['DELETE', `/api/networks/${id}/ranges/${id}`], ['DELETE', `/api/vlans/${id}`], ['DELETE', `/api/switches/${id}/lag-groups/${id}`],
       ['POST', `/api/networks/${id}/allocations`], ['PUT', `/api/vlans/${id}`], ['GET', '/api/import/template/vlans'],
@@ -354,4 +356,51 @@ describe('API tokens (real Prisma + real middleware)', () => {
       expect(await prisma.apiToken.count()).toBe(0)
     })
   })
+
+  describe('A6 sanitized documentation export/import', () => {
+    it('exports only allowlisted documentation fields for API tokens, keeps JWT output raw, blocks templates', async () => {
+      setOidcRuntime({})
+      const admin = await user('exp-admin')
+      const t = await mint(admin, 'exp')
+      const site = await seedSite(prisma, { slug: 'exp-site' })
+      await seedNetwork(prisma, { site_id: site.id, slug: 'exp-net', name: 'Exp Net', subnet: '10.50.0.0/24' })
+
+      const res = await dispatch({ path: '/api/export/networks?type=networks&format=json', headers: bearer(t.token) })
+      expect(res.status).toBe(200)
+      const rows = res.body as Array<Record<string, unknown>>
+      expect(rows.length).toBeGreaterThan(0)
+      expect(Object.keys(rows[0]!).sort()).toEqual(
+        ['created_at', 'description', 'dns_servers', 'gateway', 'id', 'name', 'site_id', 'subnet', 'updated_at', 'vlan_id'].sort()
+      )
+      expect(JSON.stringify(rows)).not.toMatch(/password|token_hash|token|secret/i)
+
+      // JWT export keeps its previous (raw row) shape.
+      const jwtRows = (await dispatch({ path: '/api/export/networks?type=networks&format=json', ...jwtOf(admin) })).body as Array<Record<string, unknown>>
+      expect(jwtRows[0]).toHaveProperty('slug')
+
+      expect((await dispatch({ path: '/api/export/templates?type=templates&format=json', headers: bearer(t.token) })).status).toBe(403)
+    })
+
+    it('imports documentation rows but keeps the raw import families denied', async () => {
+      setOidcRuntime({})
+      const admin = await user('imp-admin')
+      const t = await mint(admin, 'imp')
+      const site = await seedSite(prisma, { slug: 'imp-site' })
+
+      const res = await dispatch({
+        method: 'POST',
+        path: '/api/import/vlans',
+        headers: bearer(t.token),
+        body: [{ site_id: site.id, vlan_id: 77, name: 'VLAN 77' }]
+      })
+      expect(res.status).toBe(200)
+      expect((res.body as { imported: number }).imported).toBe(1)
+      expect(await prisma.vlan.count({ where: { name: 'VLAN 77' } })).toBe(1)
+
+      expect((await dispatch({ method: 'POST', path: '/api/data/import', headers: bearer(t.token), body: {} })).status).toBe(403)
+      expect((await dispatch({ method: 'POST', path: '/api/import/templates', headers: bearer(t.token), body: [] })).status).toBe(403)
+      expect((await dispatch({ method: 'POST', path: '/api/layout-templates/import', headers: bearer(t.token), body: {} })).status).toBe(403)
+    })
+  })
+
 })

@@ -142,6 +142,8 @@ const ROUTES: Array<{ method: string, re: RegExp, load: () => Promise<{ default:
   { method: 'GET', re: /^\/api\/backup\/export$/, load: () => import('../../server/api/backup/export.get') },
   { method: 'POST', re: /^\/api\/backup\/import$/, load: () => import('../../server/api/backup/import.post') },
   { method: 'GET', re: /^\/api\/data\/export$/, load: () => import('../../server/api/data/export.get') },
+  { method: 'GET', re: /^\/api\/export\/([^/]+)$/, load: () => import('../../server/api/export/[entity].get') },
+  { method: 'POST', re: /^\/api\/import\/([^/]+)$/, params: ['entity'], load: () => import('../../server/api/import/[entity].post') },
   { method: 'POST', re: /^\/api\/activity\/([^/]+)\/undo$/, params: ['id'], load: () => import('../../server/api/activity/[id]/undo.post') }
 ]
 
