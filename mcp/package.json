@@ -1,9 +1,15 @@
 {
   "name": "ezswm-mcp",
-  "version": "0.46.0",
-  "description": "MCP server exposing ezSWM documentation data over stdio",
+  "version": "0.0.0",
+  "description": "MCP server exposing ezSWM documentation data over stdio and Streamable HTTP",
   "type": "module",
   "private": false,
+  "license": "GPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/slgfire/ezswm.git",
+    "directory": "mcp"
+  },
   "bin": {
     "ezswm-mcp": "dist/index.js"
   },
@@ -14,9 +20,12 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/version.mjs stamp",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "version:check": "node scripts/version.mjs check",
+    "version:sync": "node scripts/version.mjs sync",
+    "pack:smoke": "node scripts/pack-smoke.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.1",

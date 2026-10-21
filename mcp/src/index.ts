@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { EzswmClient } from './client.js'
 import { ConfigError, loadConfig } from './config.js'
 import { startHttpServer } from './http.js'
 import { createEzswmMcpServer } from './server.js'
+import { readVersion } from './version.js'
 
 // stdout is reserved for the MCP protocol; all diagnostics go to stderr.
 const log = (message: string) => process.stderr.write(`[ezswm-mcp] ${message}\n`)
@@ -21,7 +24,7 @@ async function main(): Promise<void> {
   const client = new EzswmClient(config)
   const info = {
     name: 'ezswm-mcp',
-    version: process.env.npm_package_version ?? '0.0.0-dev'
+    version: readVersion(dirname(fileURLToPath(import.meta.url)))
   }
 
   if (config.http) {

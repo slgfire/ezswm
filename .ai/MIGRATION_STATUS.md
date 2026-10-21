@@ -2,6 +2,16 @@
 
 ## Latest Stage
 
+### MCP Stage 3 (packaging and client documentation) — in progress
+
+Date: 2026-10-22 — local work on `feat/mcp-server`; not pushed or published.
+
+Scope: standalone Docker packaging, artifact/version checks and explicit reusable release wiring are being implemented. EN/DE MCP guides now document source builds, Claude Desktop/Cursor stdio configuration, OpenCode V2 `mcp.servers`, hosted HTTP configuration and remote custom headers. User-guide links and both localized navigation sidebars point to the new guides. No installed client configuration is modified.
+
+Security boundary: hosted client credentials currently use a static MCP-side allowlist, not an ezSWM token lookup. Their app-side expiry/revocation is not enforced by that allowlist; rotation requires MCP configuration changes and restart. All clients use the one upstream principal. The guides state these limits explicitly and do not claim OAuth or per-client attribution.
+
+Verification complete: all ten EN/DE JSON examples parse; VitePress build passed (29.18 seconds; bundle-size warning only). `mcp/` typecheck and 33 tests green; `npm pack` smoke produced `ezswm-mcp-0.46.0.tgz` with a working bin (exit 1 with the expected `EZSWM_URL` error). Root eslint, Nuxt typecheck and the full suite (90 files, 1304 tests) pass. The MCP Docker image builds `--no-cache`, runs as `node`, exits 1 with a readable error without `EZSWM_URL`, and over HTTP returns 401 unauthenticated/wrong token, 403 on a bad Host header, and a valid JSON-RPC initialize result with a correct Accept header. The app dev compose image builds `--no-cache` and reports `{"status":"ok","version":"0.46.0","database_ok":true}` (host port 3000 was occupied by an unrelated local process; the check ran on port 3100 and a root-owned auto-created `data/` bind needed `chown 1000:1000` — environment only, no code change). No registry write, deployment or production access is authorized by this slice. `find_free_ip`, write tools and undo remain outside scope.
+
 ### MCP Stage 3 (HTTP transport) — Streamable HTTP slice
 
 Date: 2026-10-21 — implemented and verified locally on `feat/mcp-server`; uncommitted. Follows the stdio core slice below.
