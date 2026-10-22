@@ -35,7 +35,7 @@
     "nanoid": "5.1.16",
     "nuxt": "4.6.1",
     "openid-client": "6.8.8",
-    "prisma": "7.9.0",
+    "prisma": "7.10.1",
     "qrcode": "1.5.4",
     "tailwindcss": "4.3.3",
     "v-network-graph": "0.9.23",
