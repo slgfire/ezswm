@@ -32,19 +32,45 @@ export class EzswmClient {
   }
 
   async get(path: string, query: Record<string, QueryValue> = {}): Promise<unknown> {
+    return this.request('GET', path, query)
+  }
+
+  async post(path: string, body: unknown, query: Record<string, QueryValue> = {}): Promise<unknown> {
+    return this.request('POST', path, query, body)
+  }
+
+  async put(path: string, body: unknown, query: Record<string, QueryValue> = {}): Promise<unknown> {
+    return this.request('PUT', path, query, body)
+  }
+
+  /** DELETE carries no automatic retry: the impact token makes a repeat a no-op at best. */
+  async delete(path: string, query: Record<string, QueryValue> = {}, body?: unknown): Promise<unknown> {
+    return this.request('DELETE', path, query, body)
+  }
+
+  private async request(
+    method: string,
+    path: string,
+    query: Record<string, QueryValue> = {},
+    body?: unknown
+  ): Promise<unknown> {
     const url = new URL(`${this.baseUrl}${path}`)
     for (const [key, value] of Object.entries(query)) {
       if (value !== undefined && value !== '') url.searchParams.set(key, String(value))
     }
 
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${this.token}`,
+      Accept: 'application/json'
+    }
+    if (body !== undefined) headers['Content-Type'] = 'application/json'
+
     let response: Response
     try {
       response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-          Accept: 'application/json'
-        },
+        method,
+        headers,
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         // Do not forward the upstream credential to a redirect target.
         redirect: 'error',
         signal: AbortSignal.timeout(this.timeoutMs)

@@ -133,7 +133,11 @@ interface DenyRule { methods: 'any' | 'non-get' | 'get' | 'delete', re: RegExp }
  */
 const API_TOKEN_ALLOW_RULES: DenyRule[] = [
   { methods: 'get', re: /^\/api\/export\/(switches|vlans|networks|allocations)$/ },
-  { methods: 'non-get', re: /^\/api\/import\/(switches|vlans|networks|allocations|ranges)$/ }
+  { methods: 'non-get', re: /^\/api\/import\/(switches|vlans|networks|allocations|ranges)$/ },
+  // A7: sanitized activity DTO + checked safe undo contract (bounded, admin-only,
+  // execution-time role check in the handlers). The raw activity route stays denied.
+  { methods: 'get', re: /^\/api\/activity\/mcp$/ },
+  { methods: 'non-get', re: /^\/api\/activity\/mcp\/[^/]+\/undo$/ }
 ]
 
 const API_TOKEN_DENY_RULES: DenyRule[] = [

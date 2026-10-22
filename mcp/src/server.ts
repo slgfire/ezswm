@@ -1,18 +1,18 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { EzswmClient } from './client.js'
 import { EzswmApiError } from './client.js'
-import { READ_TOOLS } from './tools.js'
+import { READ_TOOLS, WRITE_TOOLS } from './tools.js'
 
 export interface ServerInfo {
   name: string
   version: string
 }
 
-/** Registers the plan's read tools on a stdio/HTTP-agnostic McpServer. */
+/** Registers the plan's read and write tools on a stdio/HTTP-agnostic McpServer. */
 export function createEzswmMcpServer(client: EzswmClient, info: ServerInfo): McpServer {
   const server = new McpServer(info)
 
-  for (const tool of READ_TOOLS) {
+  for (const tool of [...READ_TOOLS, ...WRITE_TOOLS]) {
     server.registerTool(
       tool.name,
       { description: tool.description, inputSchema: tool.schema.shape },

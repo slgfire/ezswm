@@ -144,7 +144,11 @@ const ROUTES: Array<{ method: string, re: RegExp, load: () => Promise<{ default:
   { method: 'GET', re: /^\/api\/data\/export$/, load: () => import('../../server/api/data/export.get') },
   { method: 'GET', re: /^\/api\/export\/([^/]+)$/, load: () => import('../../server/api/export/[entity].get') },
   { method: 'POST', re: /^\/api\/import\/([^/]+)$/, params: ['entity'], load: () => import('../../server/api/import/[entity].post') },
-  { method: 'POST', re: /^\/api\/activity\/([^/]+)\/undo$/, params: ['id'], load: () => import('../../server/api/activity/[id]/undo.post') }
+  { method: 'POST', re: /^\/api\/activity\/([^/]+)\/undo$/, params: ['id'], load: () => import('../../server/api/activity/[id]/undo.post') },
+  { method: 'GET', re: /^\/api\/networks\/([^/]+)\/free-ips$/, params: ['id'], load: () => import('../../server/api/networks/[id]/free-ips.get') },
+  { method: 'GET', re: /^\/api\/activity$/, load: () => import('../../server/api/activity/index.get') },
+  { method: 'GET', re: /^\/api\/activity\/mcp$/, load: () => import('../../server/api/activity/mcp.get') },
+  { method: 'POST', re: /^\/api\/activity\/mcp\/([^/]+)\/undo$/, params: ['id'], load: () => import('../../server/api/activity/mcp/[id]/undo.post') }
 ]
 
 /**

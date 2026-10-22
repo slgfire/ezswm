@@ -2,6 +2,14 @@
 
 ## Latest Stage
 
+### MCP Stage 4 (write tools, free IPs and limited undo) — in progress
+
+Date: 2026-10-22 — local work on `feat/mcp-server`; not pushed or published.
+
+Scope: plan slice A4/A7 plus the Part-B write allowlist. `GET /api/networks/:id/free-ips?count=n` (viewer-safe, 1–100, interval-merge over allocated/reserved, `/31`//`32` include network/broadcast, 404 unknown, advisory) is new. `GET /api/activity/mcp` returns a sanitized bounded activity DTO (actor display, action, entity, undoability with reason — no raw state) for API tokens; raw `/api/activity` and dashboard stats stay token-blocked. `POST /api/activity/mcp/:id/undo` implements the two-phase contract (preview, `confirm=true` + `expectedUndoToken`, stale 409 with fresh preview, atomic state re-check, role re-read at execution) and supports undoing recent VLAN/network/IP-allocation/IP-range create/update/delete actions plus site updates; creating is undone by a guarded delete (A5 impact preview); everything else is 422 not-undoable. The `requireAdmin.ts` API-token allowlist gains exactly `GET ^/api/activity/mcp$` and non-GET `^/api/activity/mcp/[^/]+/undo$`. The `ezswm-mcp` package registers 22 write tools (switch create/update, port single/bulk, VLAN/network/IP-allocation/IP-range/LAG CRUD incl. `delete_remote`/`reset_ports`, device-type create/update, `import_documentation_data`) plus `find_free_ip`, `list_activity` and `undo_activity`; site create/delete, switch delete, patch panels and category deletes are deliberately not exposed.
+
+Verification so far: focused suites green — free IPs + MCP activity undo 22/22 (h3 harness, real token flow; test fix: bearer secret is `.token.token` wrapper; real bug fixed: `undo.post.ts` import depth `../../../../` after a previous 500 on every undo) and `mcp/` 42 tests (config/HTTP/read/write in-memory + fetch-mock, 409 fresh-preview surfacing). Remaining parent checks: root full suite, Nuxt typecheck, root eslint, `mcp/` tsc/vitest/build after Lane C tool additions, docs VitePress build. No registry write, deployment or production access is authorized by this slice.
+
 ### MCP Stage 3 (packaging and client documentation) — in progress
 
 Date: 2026-10-22 — local work on `feat/mcp-server`; not pushed or published.
