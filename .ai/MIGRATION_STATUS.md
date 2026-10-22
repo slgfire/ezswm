@@ -2,7 +2,21 @@
 
 ## Latest Stage
 
-### Dependency security updates (v0.45.2)
+### Nuxt security update (v0.45.3)
+
+Date: 2026-10-22 — implemented and verified locally on `fix/nuxt-security-update` from `main` a237f2b (v0.45.2). Not committed, pushed or deployed; production and staging unchanged.
+
+- `nuxt` 4.4.8 → 4.6.1, `@nuxt/ui` 4.9.0 → 4.11.3, `@nuxtjs/i18n` 10.4.1 → 10.6.0; publish dates verified (2026-10-09, 2026-10-01, 2026-07-30) and all older than the unchanged 7-day `minimum-release-age=10080`. Nuxt 4.6.2 and UI 4.12.0 were deliberately not used (underage). Root version 0.45.3; Node 22.23.4 pin, Prisma 7.9.0, better-sqlite3 12.11.1, TypeScript 6.0.3 unchanged.
+- Lockfile regenerated once with pinned pnpm 11.0.9; large transitive churn expected from the Nuxt release line (261 added package keys, 4879 changed lines), including Nuxt/UI/i18n peer and tooling updates; no unrelated direct dependency bumped.
+- Additional dependencies now included: `yaml` 2.9.0 → 2.9.1 and `zod` 4.4.3 → 4.6.7, exact-pinned and verified eligible (published 2026-09-11 and 2026-10-12). The lock was refreshed with the same pinned pnpm and unchanged minimum release age. Only the existing YAML parser (`device-library/device.get.ts`) and the existing Zod request schemas are affected; no rules, payloads or lifecycle behavior changed.
+- Typed-route breakage surfaced as `TS2321 excessive stack depth` at `$fetch` calls. Fixed with explicit return generics (no `any`, `@ts-ignore` or disabled checks) in `AppHeader.vue` (global search), `LibraryImport.vue` (device search + preview, also removing an `as` cast) and `sites/[siteId]/index.vue` (dashboard stats). Runtime, i18n and layout unchanged.
+- Local evidence for the combined tree: lock regeneration plus `pnpm install --frozen-lockfile` passed with pinned pnpm 11.0.9, Prisma Client 7.9.0 generated, `nuxt prepare` exit 0 and `pnpm typecheck` exit 0; focused tests passed: validators, deviceLibrary, customDeviceTypesBackend, changelog and versionLatest (5 files / 310 tests).
+- Final combined-tree parent verification: 85 test files / 1188 tests, ESLint with zero warnings/errors and Nuxt production build all passed after the YAML/Zod additions (logs `/tmp/opencode/nuxt-combined-{tests,lint,build}.log`).
+- Final combined-tree Docker validation: Compose build with `--pull --no-cache` passed; image `nuxt-secverify:0.45.3-combined` (`5c0cacec8040bf6ac6c94af7dd633e10593eb34634970e6587c21d8fbf182dcf`) ran as UID/GID 1000 with Node 22.23.4, Prisma adapter 7.9.0 and SQLite 3.53.2. Installed direct dependencies resolved to YAML 2.9.1, Zod 4.6.7 and the selected Nuxt/UI/i18n versions; a separate transitive YAML 2.9.0 remains in the lockfile. Health reported version 0.45.3 and `database_ok: true`; separate checks confirmed 16 applied migrations, no unfinished migrations, four scoped guards and database integrity. A synthetic setup/site write survived a restart and fresh login. Own container/network were removed; parent independently checked the post-restart health artifact and absence of those resources. Logs: `/tmp/opencode/nuxt-combined-docker-*.log`.
+- Not checked: browser/UI, interactive i18n, OIDC, import/backup flows, existing staging data and GitHub CI. Docker validation covered a single amd64 image and disposable data only; no claim of complete user-flow verification.
+- Exposure specifics were not independently proven; no active exploitation is claimed.
+
+### Previous: Dependency security updates (v0.45.2)
 
 Date: 2026-10-22 — implemented and verified locally on `fix/security-dependency-updates` (base `origin/main` 9db7456 / v0.45.1); not committed, pushed, merged, PR-closed or deployed.
 
