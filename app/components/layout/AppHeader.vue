@@ -346,7 +346,7 @@ watch(searchQuery, (q) => {
       try {
         const params: Record<string, string> = { q }
         if (headerSiteId.value && headerSiteId.value !== 'all') params.site_id = headerSiteId.value
-        results.value = await $fetch('/api/search', { params })
+        results.value = await $fetch<SearchResults>('/api/search', { params })
       } catch {
         results.value = { switches: [], vlans: [], networks: [], allocations: [], ranges: [], templates: [], lagGroups: [], patchPanels: [] }
     } finally {

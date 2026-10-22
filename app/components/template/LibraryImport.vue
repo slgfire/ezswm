@@ -116,7 +116,7 @@ watch(searchQuery, (val) => {
   searching.value = true
   searchTimeout = setTimeout(async () => {
     try {
-      const data = await $fetch('/api/device-library/search', { params: { q: val } }) as { items: { manufacturer: string; slug: string; model: string }[] }
+      const data = await $fetch<{ items: { manufacturer: string; slug: string; model: string }[] }>('/api/device-library/search', { params: { q: val } })
       results.value = data.items
     } catch (e: unknown) {
       if ((e as { statusCode?: number }).statusCode === 503) {
@@ -137,9 +137,9 @@ async function selectDevice(item: { manufacturer: string; slug: string }) {
   skippedInterfaces.value = []
 
   try {
-    const data = await $fetch('/api/device-library/device', {
+    const data = await $fetch<{ template: LayoutTemplate; skippedInterfaces?: { type: string; count: number }[] }>('/api/device-library/device', {
       params: { manufacturer: item.manufacturer, slug: item.slug }
-    }) as { template: LayoutTemplate; skippedInterfaces?: { type: string; count: number }[] }
+    })
     preview.value = data.template
     skippedInterfaces.value = data.skippedInterfaces || []
 

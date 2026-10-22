@@ -6,6 +6,15 @@
 
 ---
 
+## [0.45.3] — 2026-10-22
+
+### Changed
+- Nuxt security update: `nuxt` 4.4.8 → 4.6.1, `@nuxt/ui` 4.9.0 → 4.11.3 and `@nuxtjs/i18n` 10.4.1 → 10.6.0, each older than the one-week minimum release age. This includes Nuxt's fixes for SSR request-context isolation, auth-route matching and denial-of-service issues released in 4.5.1; no exploitation of a specific issue is claimed. The lockfile was regenerated once with the pinned pnpm and frozen installs pass.
+- Type checking: explicit return types on three `$fetch` calls (global search, device-library search/preview, dashboard stats) resolve TypeScript "excessive stack depth" errors caused by the new typed route table, without changing runtime behavior.
+- Additional dependencies: `yaml` 2.9.0 → 2.9.1 (device-library YAML parsing) and `zod` 4.4.3 → 4.6.7 (request validation schemas), both exact-pinned and older than the minimum release age. No validation rules or accepted payloads were changed.
+
+---
+
 ## [0.45.2] — 2026-10-22
 
 ### Changed

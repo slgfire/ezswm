@@ -6,6 +6,15 @@
 
 ---
 
+## [0.45.3] — 2026-10-22
+
+### Geändert
+- Nuxt-Sicherheitsupdate: `nuxt` 4.4.8 → 4.6.1, `@nuxt/ui` 4.9.0 → 4.11.3 und `@nuxtjs/i18n` 10.4.1 → 10.6.0, jeweils älter als das Mindestalter von einer Woche. Enthalten sind die Nuxt-Korrekturen für SSR-Kontextisolierung, Auth-Routenabgleich und Denial-of-Service-Probleme aus 4.5.1; eine Ausnutzung eines konkreten Problems wird nicht behauptet. Die Lockdatei wurde einmalig mit dem gepinnten pnpm neu erzeugt; Frozen-Installationen laufen erfolgreich.
+- Typprüfung: Explizite Rückgabetypen an drei `$fetch`-Aufrufen (globale Suche, Gerätebibliothek-Suche/-Vorschau, Dashboard-Statistiken) beheben TypeScript-Fehler „excessive stack depth“ durch die neue typisierte Routentabelle, ohne das Laufzeitverhalten zu ändern.
+- Weitere Abhängigkeiten: `yaml` 2.9.0 → 2.9.1 (YAML-Parsing der Gerätebibliothek) und `zod` 4.4.3 → 4.6.7 (Validierungsschemata für Anfragen), beide exakt gepinnt und älter als das Mindestalter. Validierungsregeln und akzeptierte Payloads bleiben unverändert.
+
+---
+
 ## [0.45.2] — 2026-10-22
 
 ### Geändert
