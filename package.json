@@ -32,7 +32,7 @@
     "better-sqlite3": "12.11.1",
     "jsonwebtoken": "9.0.3",
     "marked": "18.0.7",
-    "nanoid": "5.1.16",
+    "nanoid": "6.0.2",
     "nuxt": "4.6.1",
     "openid-client": "6.8.8",
     "prisma": "7.9.0",
