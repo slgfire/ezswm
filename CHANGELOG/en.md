@@ -6,6 +6,14 @@
 
 ---
 
+## [0.45.2] — 2026-10-22
+
+### Changed
+- Security dependencies: Prisma (`prisma`, `@prisma/client`, `@prisma/adapter-better-sqlite3`) updated together to 7.9.0, `marked` to 18.0.7 (now pinned exactly) and `tailwindcss` to 4.3.3. `better-sqlite3` remains 12.11.1 with its bundled SQLite 3.53.2; no override was added, and this is not a SQLite version upgrade. The lockfile was regenerated once with the pinned pnpm and unchanged minimum release age; frozen installs remain reproducible.
+- Container and CI baseline: both Docker stages now use Node 22.23.4 on Alpine with a pinned digest, and the runtime asserts the Node version. Build workflows pull fresh base images, CI and docs use `setup-node` v7 with the exact Node 22.23.4 version, and Dependabot checks Docker images weekly.
+
+---
+
 ## [0.45.1] — 2026-10-21
 
 ### Fixed
