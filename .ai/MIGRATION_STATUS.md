@@ -2,7 +2,21 @@
 
 ## Latest Stage
 
-### Scoped network and IP uniqueness fix (v0.45.1)
+### Dependency security updates (v0.45.2)
+
+Date: 2026-10-22 — implemented and verified locally on `fix/security-dependency-updates` (base `origin/main` 9db7456 / v0.45.1); not committed, pushed, merged, PR-closed or deployed.
+
+- Dependencies: Prisma (`prisma`, `@prisma/client`, `@prisma/adapter-better-sqlite3`) updated together 7.8.0 → 7.9.0, `marked` 18.0.6 → 18.0.7 (now exact-pinned), `tailwindcss` 4.3.2 → 4.3.3; root version 0.45.2. `better-sqlite3` stays at 12.11.1 with its bundled SQLite 3.53.2 (adapter requires `^12.6.0`); no override was added and no SQLite upgrade is claimed. Major/Nuxt/dev updates remain deferred in separate groups; no Dependabot PR was closed.
+- Container/CI: both Docker stages use Node 22.23.4 on Alpine with a pinned digest and a runtime version assertion; build workflows pull base images; `setup-node` v7 with exact Node 22.23.4 is used in CI and docs; Dependabot checks Docker images weekly.
+- Lockfile regenerated once with pinned pnpm 11.0.9 under the unchanged `minimum-release-age=10080`. Churn is limited to the five direct bumps, Prisma 7.9.0's tooling closure (pglite/pglite-socket/pglite-tools patch bumps, `@prisma/streams-local` dependencies) and peer-suffix keys.
+- Local checks passed: `pnpm install --frozen-lockfile`, Prisma Client generation 7.9.0, `prisma validate`, `pnpm typecheck`.
+- Full validation passed: 85 test files / 1188 tests, ESLint with 0 warnings/errors and Nuxt production build exit 0 (logs `/tmp/opencode/security-deps-{tests,lint,build}.log`).
+- Isolated image `ezswm-secverify:0.45.2` built with `--pull --no-cache` (`a48576fcc56176a529b3622c32ed47a5e35079f3823115f67b22810e1a2985e5`). Runtime: Node v22.23.4, Prisma 7.9.0, adapter SQLite 3.53.2 (Node's builtin SQLite reports 3.53.4 — expected difference). `/api/health` reported version 0.45.2 and `database_ok: true`; separate migration checks confirmed 16 applied migrations, none pending. A synthetic API user/site write survived a restart, the integrity check passed, and the container ran non-root (UID 1000). Own container/network were removed; cleanup and `docker ps` were verified.
+- Not performed: GitHub CI runs and any production/staging checks. Production and staging are unchanged; no real user data was inspected.
+- EN/DE changelogs updated. User guides needed no change because there is no new user-facing workflow.
+
+
+### Previous: Scoped network and IP uniqueness fix (v0.45.1)
 
 Date: 2026-10-21 — implemented and verified locally; not committed or deployed.
 
