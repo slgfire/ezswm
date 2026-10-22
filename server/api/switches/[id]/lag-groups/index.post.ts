@@ -1,5 +1,5 @@
 import { lagGroupRepository } from '../../../../repositories/lagGroupRepository'
-import { activityRepository } from '../../../../repositories/activityRepository'
+import { logActivity } from '../../../../utils/activityLog'
 import { createLagGroupSchema } from '../../../../validators/lagGroupSchemas'
 import { resolveSwitchParam } from '../../../../utils/resolveSwitchParam'
 
@@ -22,8 +22,7 @@ export default defineEventHandler(async (event) => {
     .map(pid => sw?.ports.find(p => p.id === pid)?.label || pid)
     .slice(0, 10)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'create',
     entity_type: 'lag_group',
     entity_id: group.id,

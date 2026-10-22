@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto'
 import { prisma } from '../db/client'
 import type { LAGGroup } from '../../types/lagGroup'
 import { LAG_ELIGIBLE_PORT_TYPES } from '../../types/port'
+import { deleteImpactToken, type DeleteOutcome } from '../utils/deleteImpact'
+import type { Prisma } from '@prisma/client'
 
 interface LagRow {
   id: string
@@ -48,6 +50,112 @@ async function rowToLag(row: LagRow, remoteDeviceNames?: Map<string, string>): P
 async function rowsToLags(rows: LagRow[]): Promise<LAGGroup[]> {
   const remoteDeviceNames = await resolveRemoteDeviceNames(rows)
   return Promise.all(rows.map(row => rowToLag(row, remoteDeviceNames)))
+}
+
+export interface LagGroupDeleteImpact {
+  group: { id: string, switch_id: string, name: string, remote_device: string | null, remote_device_id: string | null }
+  members: Array<{ id: string, switch_id: string, connected_port_id: string | null, connected_device_id: string | null }>
+  /** Ports on the other end whose inter-switch links are severed. */
+  peers: Array<{ id: string, switch_id: string }>
+  options: { delete_remote: boolean, reset_ports: boolean }
+}
+
+export function lagGroupImpactToken(impact: LagGroupDeleteImpact): string {
+  return deleteImpactToken(impact)
+}
+
+async function buildLagGroupDeleteImpact(db: Prisma.TransactionClient | typeof prisma, id: string, options: { delete_remote?: boolean, reset_ports?: boolean }): Promise<LagGroupDeleteImpact | null> {
+  const group = await db.lagGroup.findUnique({
+    where: { id },
+    select: { id: true, switch_id: true, name: true, remote_device: true, remote_device_id: true }
+  })
+  if (!group) return null
+  const members = await db.port.findMany({
+    where: { lag_group_id: id },
+    select: { id: true, switch_id: true, connected_port_id: true, connected_device_id: true },
+    orderBy: [{ switch_id: 'asc' }, { index: 'asc' }]
+  })
+  const peerIds = members.map(m => m.connected_port_id).filter((p): p is string => Boolean(p))
+  const peers = peerIds.length
+    ? await db.port.findMany({ where: { id: { in: peerIds } }, select: { id: true, switch_id: true } })
+    : []
+  return {
+    group,
+    members,
+    peers,
+    options: { delete_remote: options.delete_remote ?? false, reset_ports: options.reset_ports ?? false }
+  }
+}
+
+/** Shared by `delete()` and `deleteGuarded()` so preview and execution cannot diverge. */
+async function deleteLagGroupInTx(tx: Prisma.TransactionClient, id: string, options: { delete_remote?: boolean, reset_ports?: boolean }) {
+  const local = await tx.lagGroup.findUnique({ where: { id } })
+  if (!local) throw createError({ statusCode: 404, message: 'LAG group not found' })
+  // Sever the inter-switch links of the member ports on BOTH ends, then
+  // delete the group. Without this the cross-connections survive a LAG
+  // delete (the peer keeps pointing back). Port.lag_group_id is cleared by
+  // the schema's onDelete: SetNull.
+  const members = await tx.port.findMany({
+    where: { lag_group_id: id },
+    select: { id: true, switch_id: true, connected_port_id: true, connected_device_id: true }
+  })
+  const clearLinks = async (ports: typeof members) => { for (const m of ports) {
+    if (m.connected_port_id) {
+       const peer = await tx.port.findUnique({ where: { id: m.connected_port_id }, select: { switch_id: true, connected_port_id: true, connected_device_id: true } })
+       if (peer?.connected_port_id === m.id && peer.connected_device_id === m.switch_id && m.connected_device_id === peer.switch_id) {
+         await tx.port.update({ where: { id: m.id }, data: { connected_device: null, connected_device_id: null, connected_port_id: null, connected_port: null } })
+         await tx.port.update({ where: { id: m.connected_port_id }, data: { connected_device: null, connected_device_id: null, connected_port_id: null, connected_port: null } })
+      }
+    }
+  } }
+  if (options.delete_remote) {
+     if (!local.remote_device_id) throw createError({ statusCode: 409, message: 'Remote mirror cannot be uniquely and safely identified; nothing was deleted' })
+    const candidates = await tx.lagGroup.findMany({ where: { switch_id: local.remote_device_id, remote_device_id: local.switch_id } })
+    const coupled = []
+    for (const candidate of candidates) {
+      const remoteMembers = await tx.port.findMany({ where: { lag_group_id: candidate.id }, select: { id: true, switch_id: true, connected_port_id: true, connected_device_id: true } })
+        const valid = members.length === remoteMembers.length && members.every(localMember => {
+          if (localMember.switch_id !== local.switch_id || !localMember.connected_port_id || !localMember.connected_device_id) return false
+          const remote = remoteMembers.find(peer => peer.id === localMember.connected_port_id)
+          return remote !== undefined && remote.switch_id === local.remote_device_id && localMember.connected_device_id === remote.switch_id && remote.connected_port_id === localMember.id && remote.connected_device_id === localMember.switch_id
+        })
+      if (valid) coupled.push(candidate)
+    }
+    const nameFallback = coupled.length === 0
+      ? candidates.filter(candidate => candidate.name === local.name)
+      : []
+    const mirror = coupled.length === 1
+      ? coupled[0]!
+      : nameFallback.length === 1
+        ? nameFallback[0]!
+        : null
+    if (!mirror) throw createError({ statusCode: 409, message: 'Remote mirror cannot be uniquely and safely identified; nothing was deleted' })
+    const remoteMembers = await tx.port.findMany({ where: { lag_group_id: mirror.id }, select: { id: true, switch_id: true, connected_port_id: true, connected_device_id: true } })
+    await clearLinks(remoteMembers)
+    if (options.reset_ports) {
+      const resetData = { status: 'down', speed: null, port_mode: null, access_vlan: null, native_vlan: null, tagged_vlans: '[]', description: null, mac_address: null, connected_allocation_id: null }
+      for (const m of remoteMembers) { await tx.port.update({ where: { id: m.id }, data: resetData }) }
+    }
+      await tx.lagGroup.delete({ where: { id: mirror.id } })
+    } else if (local.remote_device_id) {
+      const candidates = await tx.lagGroup.findMany({ where: { switch_id: local.remote_device_id, remote_device_id: local.switch_id } })
+      const coupled = []
+      for (const candidate of candidates) {
+        const remoteMembers = await tx.port.findMany({ where: { lag_group_id: candidate.id }, select: { id: true, switch_id: true, connected_port_id: true, connected_device_id: true } })
+         if (members.length === remoteMembers.length && members.every(member => {
+           if (!member.connected_port_id || !member.connected_device_id) return false
+           const peer = remoteMembers.find(remote => remote.id === member.connected_port_id)
+          return peer !== undefined && member.connected_device_id === peer.switch_id && peer.connected_port_id === member.id && peer.connected_device_id === member.switch_id
+        })) coupled.push(candidate)
+      }
+      if (coupled.length === 1) await tx.lagGroup.update({ where: { id: coupled[0]!.id }, data: { remote_device: null, remote_device_id: null } })
+    }
+  await clearLinks(members)
+  if (options.reset_ports) {
+    const resetData = { status: 'down', speed: null, port_mode: null, access_vlan: null, native_vlan: null, tagged_vlans: '[]', description: null, mac_address: null, connected_allocation_id: null }
+    for (const m of members) { await tx.port.update({ where: { id: m.id }, data: resetData }) }
+}
+await tx.lagGroup.delete({ where: { id } })
 }
 
 export const lagGroupRepository = {
@@ -338,76 +446,35 @@ export const lagGroupRepository = {
   },
 
   async delete(id: string, options: { delete_remote?: boolean; reset_ports?: boolean } = {}): Promise<boolean> {
-    await prisma.$transaction(async (tx) => {
-        const local = await tx.lagGroup.findUnique({ where: { id } })
-        if (!local) throw createError({ statusCode: 404, message: 'LAG group not found' })
-        // Sever the inter-switch links of the member ports on BOTH ends, then
-        // delete the group. Without this the cross-connections survive a LAG
-        // delete (the peer keeps pointing back). Port.lag_group_id is cleared by
-        // the schema's onDelete: SetNull.
-        const members = await tx.port.findMany({
-          where: { lag_group_id: id },
-          select: { id: true, switch_id: true, connected_port_id: true, connected_device_id: true }
-        })
-        const clearLinks = async (ports: typeof members) => { for (const m of ports) {
-          if (m.connected_port_id) {
-             const peer = await tx.port.findUnique({ where: { id: m.connected_port_id }, select: { switch_id: true, connected_port_id: true, connected_device_id: true } })
-             if (peer?.connected_port_id === m.id && peer.connected_device_id === m.switch_id && m.connected_device_id === peer.switch_id) {
-               await tx.port.update({ where: { id: m.id }, data: { connected_device: null, connected_device_id: null, connected_port_id: null, connected_port: null } })
-               await tx.port.update({ where: { id: m.connected_port_id }, data: { connected_device: null, connected_device_id: null, connected_port_id: null, connected_port: null } })
-            }
-          }
-        } }
-        if (options.delete_remote) {
-           if (!local.remote_device_id) throw createError({ statusCode: 409, message: 'Remote mirror cannot be uniquely and safely identified; nothing was deleted' })
-          const candidates = await tx.lagGroup.findMany({ where: { switch_id: local.remote_device_id, remote_device_id: local.switch_id } })
-          const coupled = []
-          for (const candidate of candidates) {
-            const remoteMembers = await tx.port.findMany({ where: { lag_group_id: candidate.id }, select: { id: true, switch_id: true, connected_port_id: true, connected_device_id: true } })
-              const valid = members.length === remoteMembers.length && members.every(localMember => {
-                if (localMember.switch_id !== local.switch_id || !localMember.connected_port_id || !localMember.connected_device_id) return false
-                const remote = remoteMembers.find(peer => peer.id === localMember.connected_port_id)
-                return remote !== undefined && remote.switch_id === local.remote_device_id && localMember.connected_device_id === remote.switch_id && remote.connected_port_id === localMember.id && remote.connected_device_id === localMember.switch_id
-              })
-            if (valid) coupled.push(candidate)
-          }
-          const nameFallback = coupled.length === 0
-            ? candidates.filter(candidate => candidate.name === local.name)
-            : []
-          const mirror = coupled.length === 1
-            ? coupled[0]!
-            : nameFallback.length === 1
-              ? nameFallback[0]!
-              : null
-          if (!mirror) throw createError({ statusCode: 409, message: 'Remote mirror cannot be uniquely and safely identified; nothing was deleted' })
-          const remoteMembers = await tx.port.findMany({ where: { lag_group_id: mirror.id }, select: { id: true, switch_id: true, connected_port_id: true, connected_device_id: true } })
-          await clearLinks(remoteMembers)
-          if (options.reset_ports) {
-            const resetData = { status: 'down', speed: null, port_mode: null, access_vlan: null, native_vlan: null, tagged_vlans: '[]', description: null, mac_address: null, connected_allocation_id: null }
-            for (const m of remoteMembers) { await tx.port.update({ where: { id: m.id }, data: resetData }) }
-          }
-            await tx.lagGroup.delete({ where: { id: mirror.id } })
-          } else if (local.remote_device_id) {
-            const candidates = await tx.lagGroup.findMany({ where: { switch_id: local.remote_device_id, remote_device_id: local.switch_id } })
-            const coupled = []
-            for (const candidate of candidates) {
-              const remoteMembers = await tx.port.findMany({ where: { lag_group_id: candidate.id }, select: { id: true, switch_id: true, connected_port_id: true, connected_device_id: true } })
-               if (members.length === remoteMembers.length && members.every(member => {
-                 if (!member.connected_port_id || !member.connected_device_id) return false
-                 const peer = remoteMembers.find(remote => remote.id === member.connected_port_id)
-                return peer !== undefined && member.connected_device_id === peer.switch_id && peer.connected_port_id === member.id && peer.connected_device_id === member.switch_id
-              })) coupled.push(candidate)
-            }
-            if (coupled.length === 1) await tx.lagGroup.update({ where: { id: coupled[0]!.id }, data: { remote_device: null, remote_device_id: null } })
-          }
-        await clearLinks(members)
-        if (options.reset_ports) {
-          const resetData = { status: 'down', speed: null, port_mode: null, access_vlan: null, native_vlan: null, tagged_vlans: '[]', description: null, mac_address: null, connected_allocation_id: null }
-          for (const m of members) { await tx.port.update({ where: { id: m.id }, data: resetData }) }
-        }
-        await tx.lagGroup.delete({ where: { id } })
-      })
+    await prisma.$transaction(tx => deleteLagGroupInTx(tx, id, options))
     return true
+  },
+
+  /** Preview of the ports a LAG delete resets/severs (options included in the fingerprint). */
+  async getDeleteImpact(id: string, options: { delete_remote?: boolean; reset_ports?: boolean } = {}): Promise<LagGroupDeleteImpact | null> {
+    return buildLagGroupDeleteImpact(prisma, id, options)
+  },
+
+  /**
+   * Atomic LAG delete sharing the implementation with `delete()`. Omit
+   * `expectedImpactToken` for JWT/UI.
+   *
+   * shortcut: the impact token covers local members, their peer links and the chosen
+   * options, not the remote mirror resolved during execution; a stale remote mirror
+   * still aborts non-destructively via the existing 409. Include it when the mirror
+   * preview is needed by clients.
+   */
+  async deleteGuarded(id: string, options: { delete_remote?: boolean; reset_ports?: boolean } = {}, expectedImpactToken?: string): Promise<DeleteOutcome<LagGroupDeleteImpact>> {
+    return prisma.$transaction(async (tx) => {
+      const impact = await buildLagGroupDeleteImpact(tx, id, options)
+      if (!impact) return { kind: 'not_found' }
+      const impactToken = lagGroupImpactToken(impact)
+      if (expectedImpactToken !== undefined && expectedImpactToken !== impactToken) {
+        return { kind: 'conflict', impact, impactToken }
+      }
+      await deleteLagGroupInTx(tx, id, options)
+      return { kind: 'deleted', impact }
+    })
   },
 
   async deleteBySwitchId(switchId: string): Promise<number> {

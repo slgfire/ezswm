@@ -378,7 +378,7 @@ interface ValidationError {
 
 ### Auth Middleware
 
-- All API routes (except `/api/auth/setup`, `/api/auth/login`, `/api/health`) require a valid JWT
+- Protected API routes accept a valid JWT session or a permitted local-user API token; the public-route list in `server/middleware/auth.ts` is authoritative.
 - Middleware extracts user from token and attaches to event context
 - Setup wizard is only accessible when `settings.setup_completed === false`
 
@@ -390,7 +390,18 @@ interface ValidationError {
 4. `setup_completed` is set to `true`
 5. Setup endpoint becomes inaccessible
 
-### Role-Based Access (Future)
+### API-token foundation
+
+- API tokens authenticate only via Bearer Authorization headers. An explicitly invalid/malformed header never falls back to a cookie; API-token cookies are rejected. JWT/OIDC session-freshness checks remain in place.
+- Auth context includes `authType: 'jwt' | 'api_token'` and optional `apiTokenId` / `apiTokenName`. Token authentication checks expiry, local ownership and the current DB role every request. Password changes do not revoke tokens; user deletion cascades them.
+- JWT self-service: GET/POST/DELETE `/api/auth/tokens` (DELETE revokes all); DELETE `/api/auth/tokens/[id]` revokes an owned token only, with 404 for foreign/missing IDs. POST returns metadata plus the one-time secret (201); GET returns metadata only; revoke-one returns 204, revoke-all returns `{ revoked }`. Local viewers have these own-account exceptions. OIDC creation is forbidden.
+- Admin JWT routes: GET `/api/users/[id]/tokens`, DELETE `/api/users/[id]/tokens/[tokenId]`; mismatched ownership returns 404. API-token authentication cannot access any token-management route.
+- `evaluateApiTokenPolicy` applies the normalized, anchored method/path deny contract before the normal role policy: credentials/users/admin/backups, both public-token families, settings writes, category deletion, raw activity/dashboard stats, raw data/entity exports, both import families/layout-template import, permanent Site/Switch deletion and temporary Network/VLAN/allocation/range/LAG deletion are blocked. Later audited contracts must be implemented and tested before temporary denies are lifted. This is not a complete REST allowlist.
+- Existing activity-writing API routes use `logActivity(event,input)`, preserving previous state and adding token ID/name attribution without secrets. Previously unlogged routes are not newly logged.
+- API-token rows and hashes are excluded from JSON backup/data export. Restore always revokes all existing tokens (including when restoring an old backup) and never restores token rows supplied in a payload. Raw SQLite snapshots are not sanitized exports.
+- The MCP server package, hosted transport and safe data-transfer/delete/undo contracts are later stages, not implemented here.
+
+### Role-Based Access
 
 - `admin` can read and write; `viewer` can only read (GET/HEAD) except admin-only prefixes, plus own profile (display name/language), own local password change and logout
 - The current database role is checked on every request in API middleware (`server/middleware/auth.ts`, `server/utils/requireAdmin.ts`); unknown roles are forbidden

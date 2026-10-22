@@ -1,7 +1,7 @@
 import { ipAllocationRepository } from '../../../../repositories/ipAllocationRepository'
 import { networkRepository } from '../../../../repositories/networkRepository'
 import { createIpAllocationSchema } from '../../../../validators/ipAllocationSchemas'
-import { activityRepository } from '../../../../repositories/activityRepository'
+import { logActivity } from '../../../../utils/activityLog'
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params?.id
@@ -21,8 +21,7 @@ export default defineEventHandler(async (event) => {
 
   const created = await ipAllocationRepository.create(network.id, parsed)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'create',
     entity_type: 'ip_allocation',
     entity_id: created.id,

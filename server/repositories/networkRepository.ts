@@ -1,4 +1,5 @@
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
+import type { Prisma, PrismaClient } from '@prisma/client'
 import { prisma } from '../db/client'
 import type { Network } from '../../types/network'
 import { isValidCIDR, isValidIPv4, isIPInSubnet, canonicalizeCIDR } from '../utils/ipv4'
@@ -109,6 +110,67 @@ async function uniqueNetworkSlug(siteId: string, desired: string, excludeId?: st
     if (!found) return false
     return excludeId !== found.id
   })
+}
+
+/** Everything a network delete removes, plus the port links it clears. */
+export interface NetworkDeleteImpact {
+  network: { id: string, site_id: string, slug: string, name: string, subnet: string, vlan_id: string | null }
+  allocations: Array<{ id: string, ip_address: string, hostname: string | null }>
+  ranges: Array<{ id: string, start_ip: string, end_ip: string, type: string }>
+  /** Ports whose `connected_allocation_id` points at an allocation of this network. */
+  ports: Array<{ id: string, switch_id: string, index: number, label: string | null, connected_allocation_id: string }>
+}
+
+export type NetworkDeleteOutcome =
+  | { kind: 'not_found' }
+  | { kind: 'conflict', impact: NetworkDeleteImpact, impactToken: string }
+  | { kind: 'deleted', impact: NetworkDeleteImpact }
+
+/**
+ * Fingerprint over the affected rows (IDs and fields, not counts) so a changed
+ * allocation/range/port set invalidates a previously previewed delete.
+ */
+export function networkImpactToken(impact: NetworkDeleteImpact): string {
+  return createHash('sha256').update(JSON.stringify(impact)).digest('hex')
+}
+
+async function resolveNetworkRow(db: PrismaClient | Prisma.TransactionClient, identifier: string, siteId?: string) {
+  if (siteId) {
+    const scoped = await db.network.findUnique({ where: { site_id_slug: { site_id: siteId, slug: identifier } } })
+    if (scoped) return scoped
+  }
+  const byId = await db.network.findUnique({ where: { id: identifier } })
+  if (byId) return byId
+  const matches = await db.network.findMany({ where: { slug: identifier } })
+  return matches.length === 1 ? matches[0]! : null
+}
+
+async function buildDeleteImpact(db: PrismaClient | Prisma.TransactionClient, row: NetworkRow): Promise<NetworkDeleteImpact> {
+  const [allocations, ranges] = await Promise.all([
+    db.ipAllocation.findMany({
+      where: { network_id: row.id },
+      select: { id: true, ip_address: true, hostname: true },
+      orderBy: { ip_address: 'asc' }
+    }),
+    db.ipRange.findMany({
+      where: { network_id: row.id },
+      select: { id: true, start_ip: true, end_ip: true, type: true },
+      orderBy: { start_ip: 'asc' }
+    })
+  ])
+  const ports = allocations.length
+    ? await db.port.findMany({
+      where: { connected_allocation_id: { in: allocations.map(a => a.id) } },
+      select: { id: true, switch_id: true, index: true, label: true, connected_allocation_id: true },
+      orderBy: [{ switch_id: 'asc' }, { index: 'asc' }]
+    })
+    : []
+  return {
+    network: { id: row.id, site_id: row.site_id, slug: row.slug, name: row.name, subnet: row.subnet, vlan_id: row.vlan_id },
+    allocations,
+    ranges,
+    ports: ports as NetworkDeleteImpact['ports']
+  }
 }
 
 export const networkRepository = {
@@ -243,18 +305,36 @@ export const networkRepository = {
     return rowToNetwork(row)
   },
 
+  /** Non-destructive preview of what deleting this network removes or clears. */
+  async getDeleteImpact(idOrSlug: string, siteId?: string): Promise<NetworkDeleteImpact | null> {
+    const row = await resolveNetworkRow(prisma, idOrSlug, siteId)
+    return row ? buildDeleteImpact(prisma, row) : null
+  },
+
+  /**
+   * Atomic network delete. The impact is re-read and re-fingerprinted inside the
+   * same transaction, so a state change between preview and execution yields
+   * `conflict` without mutating anything. Omit `expectedImpactToken` for the
+   * legacy JWT path (no precondition); API-token callers must pass it.
+   */
+  async deleteGuarded(idOrSlug: string, siteId?: string, expectedImpactToken?: string): Promise<NetworkDeleteOutcome> {
+    return prisma.$transaction(async (tx) => {
+      const row = await resolveNetworkRow(tx, idOrSlug, siteId)
+      if (!row) return { kind: 'not_found' }
+      const impact = await buildDeleteImpact(tx, row)
+      const impactToken = networkImpactToken(impact)
+      if (expectedImpactToken !== undefined && expectedImpactToken !== impactToken) {
+        return { kind: 'conflict', impact, impactToken }
+      }
+      await tx.ipAllocation.deleteMany({ where: { network_id: row.id } })
+      await tx.ipRange.deleteMany({ where: { network_id: row.id } })
+      await tx.network.delete({ where: { id: row.id } })
+      return { kind: 'deleted', impact }
+    })
+  },
+
   async delete(idOrSlug: string, siteId?: string): Promise<boolean> {
-    let current = null
-    if (siteId) {
-      current = await prisma.network.findUnique({
-        where: { site_id_slug: { site_id: siteId, slug: idOrSlug } }
-      })
-    }
-    if (!current) current = await prisma.network.findUnique({ where: { id: idOrSlug } })
-    if (!current) {
-      const matches = await prisma.network.findMany({ where: { slug: idOrSlug } })
-      if (matches.length === 1) current = matches[0]!
-    }
+    const current = await resolveNetworkRow(prisma, idOrSlug, siteId)
     if (!current) return false
     try {
       // Cascades to IpAllocation + IpRange via Prisma schema (onDelete: Cascade).

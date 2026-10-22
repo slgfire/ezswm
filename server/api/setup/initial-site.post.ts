@@ -1,7 +1,7 @@
 import { settingsRepository } from '../../repositories/settingsRepository'
 import { siteRepository } from '../../repositories/siteRepository'
 import { createSiteSchema } from '../../validators/siteSchemas'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 
 // First-run-only endpoint: creates the initial site (operator-chosen name).
 // Locked once settings.sites_initialized flips to true so it can't be misused
@@ -19,8 +19,7 @@ export default defineEventHandler(async (event) => {
   const site = await siteRepository.create(parsed)
   await settingsRepository.update({ sites_initialized: true })
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'create',
     entity_type: 'site',
     entity_id: site.id,

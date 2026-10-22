@@ -1,6 +1,6 @@
 import { networkRepository } from '../../repositories/networkRepository'
 import { createNetworkSchema } from '../../validators/networkSchemas'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -8,8 +8,7 @@ export default defineEventHandler(async (event) => {
 
   const created = await networkRepository.create(parsed)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'create',
     entity_type: 'network',
     entity_id: created.id,

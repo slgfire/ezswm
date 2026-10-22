@@ -70,6 +70,36 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
+  mcp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check version sync
+        run: node mcp/scripts/version.mjs check
+
+      - name: Typecheck
+        run: pnpm --filter ezswm-mcp typecheck
+
+      - name: Test
+        run: pnpm --filter ezswm-mcp test
+
+      - name: Build
+        run: pnpm --filter ezswm-mcp build
+
+      - name: Pack smoke
+        run: pnpm --filter ezswm-mcp pack:smoke
+
   e2e:
     runs-on: ubuntu-latest
     needs: [lint, typecheck, test]
@@ -116,7 +146,7 @@ jobs:
           exit 1
 
       - name: Run Playwright smoke tests
-        run: pnpm exec playwright test tests/e2e/settings.spec.ts tests/e2e/keyboard-shortcuts.spec.ts tests/e2e/subnet-calculator.spec.ts tests/e2e/route-smoke.spec.ts tests/e2e/public-switch-view.spec.ts tests/e2e/saved-edit-guard.spec.ts tests/e2e/start-site.spec.ts tests/e2e/device-types.spec.ts tests/e2e/switch-management-links.spec.ts
+        run: pnpm exec playwright test tests/e2e/settings.spec.ts tests/e2e/keyboard-shortcuts.spec.ts tests/e2e/subnet-calculator.spec.ts tests/e2e/route-smoke.spec.ts tests/e2e/public-switch-view.spec.ts tests/e2e/saved-edit-guard.spec.ts tests/e2e/start-site.spec.ts tests/e2e/device-types.spec.ts tests/e2e/switch-management-links.spec.ts tests/e2e/api-tokens.spec.ts
 
       - name: Upload Playwright artifacts
         if: failure()

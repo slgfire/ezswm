@@ -1,6 +1,6 @@
 import { siteRepository } from '../../repositories/siteRepository'
 import { updateSiteSchema } from '../../validators/siteSchemas'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 import type { Site } from '../../../types/site'
 
 export default defineEventHandler(async (event) => {
@@ -21,8 +21,7 @@ export default defineEventHandler(async (event) => {
 
   const updated = await siteRepository.update(id, parsed as Partial<Omit<Site, 'id' | 'created_at'>>)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'update',
     entity_type: 'site',
     entity_id: id,

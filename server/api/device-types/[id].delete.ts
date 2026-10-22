@@ -1,5 +1,5 @@
 import { customDeviceTypeRepository } from '../../repositories/customDeviceTypeRepository'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 import { requireAdmin } from '../../utils/requireAdmin'
 
 export default defineEventHandler(async (event) => {
@@ -11,8 +11,7 @@ export default defineEventHandler(async (event) => {
 
   const deleted = await customDeviceTypeRepository.deleteUnused(id)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'delete',
     entity_type: 'device_type',
     entity_id: id,

@@ -1,6 +1,6 @@
 import { switchGroupRepository } from '../../repositories/switchGroupRepository'
 import { createSwitchGroupSchema } from '../../validators/switchGroupSchemas'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 import { requireSwitchGroupsEnabled } from '../../utils/requireSwitchGroupsEnabled'
 
 export default defineEventHandler(async (event) => {
@@ -11,8 +11,7 @@ export default defineEventHandler(async (event) => {
 
   const created = await switchGroupRepository.create(parsed)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'create',
     entity_type: 'switch_group',
     entity_id: created.id,

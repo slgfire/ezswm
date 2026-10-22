@@ -1,5 +1,5 @@
 import { patchPanelRepository } from '../../repositories/patchPanelRepository'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
 import { requirePatchPanelsEnabled } from '../../utils/requirePatchPanelsEnabled'
 
@@ -26,8 +26,7 @@ export default defineEventHandler(async (event) => {
 
   await patchPanelRepository.delete(existing.id, siteUuid)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'delete',
     entity_type: 'patch_panel',
     entity_id: existing.id,

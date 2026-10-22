@@ -1,6 +1,6 @@
 import { siteRepository } from '../../repositories/siteRepository'
 import { createSiteSchema } from '../../validators/siteSchemas'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -8,8 +8,7 @@ export default defineEventHandler(async (event) => {
 
   const created = await siteRepository.create(parsed)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'create',
     entity_type: 'site',
     entity_id: created.id,

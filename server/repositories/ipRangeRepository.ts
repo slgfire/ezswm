@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { prisma } from '../db/client'
 import type { IPRange } from '../../types/ipRange'
 import { isValidIPv4, isIPInSubnet, ipToLong, doRangesOverlap, subnetRangeError } from '../utils/ipv4'
+import { deleteImpactToken, type DeleteOutcome } from '../utils/deleteImpact'
 
 interface RangeRow {
   id: string
@@ -25,6 +26,24 @@ function rowToRange(row: RangeRow): IPRange {
     created_at: row.created_at,
     updated_at: row.updated_at
   }
+}
+
+
+/** A range delete is row-only: no schema relation references an IpRange row. */
+export interface IpRangeDeleteImpact {
+  range: { id: string, network_id: string, start_ip: string, end_ip: string, type: string }
+}
+
+export function ipRangeImpactToken(impact: IpRangeDeleteImpact): string {
+  return deleteImpactToken(impact)
+}
+
+async function buildRangeDeleteImpact(id: string): Promise<IpRangeDeleteImpact | null> {
+  const range = await prisma.ipRange.findUnique({
+    where: { id },
+    select: { id: true, network_id: true, start_ip: true, end_ip: true, type: true }
+  })
+  return range ? { range } : null
 }
 
 export const ipRangeRepository = {
@@ -157,6 +176,25 @@ export const ipRangeRepository = {
     } catch {
       return false
     }
+  },
+
+  /** Preview of the row this delete removes (no dependents exist). */
+  async getDeleteImpact(id: string): Promise<IpRangeDeleteImpact | null> {
+    return buildRangeDeleteImpact(id)
+  },
+
+  /** Atomic row-only delete. Omit `expectedImpactToken` for JWT/UI. */
+  async deleteGuarded(id: string, expectedImpactToken?: string): Promise<DeleteOutcome<IpRangeDeleteImpact>> {
+    return prisma.$transaction(async (tx) => {
+      const impact = await buildRangeDeleteImpact(id)
+      if (!impact) return { kind: 'not_found' }
+      const impactToken = ipRangeImpactToken(impact)
+      if (expectedImpactToken !== undefined && expectedImpactToken !== impactToken) {
+        return { kind: 'conflict', impact, impactToken }
+      }
+      await tx.ipRange.delete({ where: { id } })
+      return { kind: 'deleted', impact }
+    })
   },
 
   async deleteByNetworkId(networkId: string): Promise<number> {

@@ -1,7 +1,7 @@
 import { switchRepository } from '../../../../repositories/switchRepository'
 import { vlanRepository } from '../../../../repositories/vlanRepository'
 import { updatePortSchema } from '../../../../validators/switchSchemas'
-import { activityRepository } from '../../../../repositories/activityRepository'
+import { logActivity } from '../../../../utils/activityLog'
 import { resolveSwitchParam } from '../../../../utils/resolveSwitchParam'
 import type { Port } from '../../../../../types/port'
 
@@ -137,8 +137,7 @@ export default defineEventHandler(async (event) => {
     metadata.vlans_added_to_target_switch = vlansAddedToTargetSwitch
   }
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'update_port',
     entity_type: 'switch',
     entity_id: switchId,

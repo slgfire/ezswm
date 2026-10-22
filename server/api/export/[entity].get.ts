@@ -1,4 +1,5 @@
 import { prisma } from '../../db/client'
+import { getAuthContext } from '../../utils/requireAdmin'
 
 type EntityType = 'switches' | 'vlans' | 'networks' | 'allocations' | 'templates'
 type ExportFormat = 'json' | 'csv'
@@ -72,7 +73,17 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Invalid format. Must be json or csv' })
   }
 
+  // A6: API tokens only get audited documentation entities with a positive field
+  // allowlist (the CSV header list). Templates are not part of that contract.
+  const isApiToken = getAuthContext(event)?.authType === 'api_token'
+  if (isApiToken && type === 'templates') {
+    throw createError({ statusCode: 403, message: 'Export of templates is not available for API tokens' })
+  }
+
   let data = await loadEntity(type)
+  if (isApiToken) {
+    data = data.map(row => Object.fromEntries(CSV_HEADERS[type].map(h => [h, row[h]])))
+  }
 
   // Templates: drop the nested units column from CSV (too complex).
   if (type === 'templates' && format === 'csv') {

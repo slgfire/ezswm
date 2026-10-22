@@ -1,5 +1,5 @@
 import { switchRepository } from '../../repositories/switchRepository'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 import { lagGroupRepository } from '../../repositories/lagGroupRepository'
 import { publicTokenRepository } from '../../repositories/publicTokenRepository'
 import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
@@ -27,8 +27,7 @@ export default defineEventHandler(async (event) => {
 
   await switchRepository.delete(existing.id)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'delete',
     entity_type: 'switch',
     entity_id: existing.id,

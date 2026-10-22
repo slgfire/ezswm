@@ -24,6 +24,7 @@ const REVERSE_FK_DELETE_ORDER = [
   'appSettings',
   'oidcLoginTxn', // server-only; always purged, never restored
   'oidcConfig', // re-created explicitly (revision must stay monotonic)
+  'apiToken', // always purged (even from old backups), never restored
   'user',
   'patchPanelToken',
   'patchPanelSocket',

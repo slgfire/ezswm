@@ -1,5 +1,6 @@
 packages:
   - 'docs'
+  - 'mcp'
 
 # Auto-managed by `pnpm approve-builds`. Whitelist of packages
 # allowed to run install/postinstall scripts (native binaries).

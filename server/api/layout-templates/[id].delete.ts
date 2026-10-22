@@ -1,5 +1,5 @@
 import { layoutTemplateRepository } from '../../repositories/layoutTemplateRepository'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params?.id
@@ -16,11 +16,10 @@ export default defineEventHandler(async (event) => {
 
   await layoutTemplateRepository.delete(id)
 
-  await activityRepository.log({
+  await logActivity(event, {
     entity_type: 'layout_template',
     entity_id: id,
     action: 'delete',
-    user_id: event.context.auth.userId,
     entity_name: existing.name,
     previous_state: existing as unknown as Record<string, unknown>,
   })

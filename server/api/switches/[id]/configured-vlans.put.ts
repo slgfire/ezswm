@@ -1,6 +1,6 @@
 import { switchRepository } from '../../../repositories/switchRepository'
 import { vlanRepository } from '../../../repositories/vlanRepository'
-import { activityRepository } from '../../../repositories/activityRepository'
+import { logActivity } from '../../../utils/activityLog'
 import { configuredVlansSchema } from '../../../validators/switchSchemas'
 import { resolveSwitchParam } from '../../../utils/resolveSwitchParam'
 import type { Port } from '../../../../types/port'
@@ -48,8 +48,7 @@ export default defineEventHandler(async (event) => {
     await switchRepository.update(switchId, { configured_vlans: merged } as Partial<import('~~/types').Switch>)
     const updated = (await switchRepository.getById(switchId))!
 
-    await activityRepository.log({
-      user_id: event.context.auth.userId,
+    await logActivity(event, {
       action: 'add_configured_vlans',
       entity_type: 'switch',
       entity_id: switchId,
@@ -102,8 +101,7 @@ export default defineEventHandler(async (event) => {
       expectedUpdatedAt: parsed.expected_updated_at
     })
 
-    await activityRepository.log({
-      user_id: event.context.auth.userId,
+    await logActivity(event, {
       action: 'remove_configured_vlans',
       entity_type: 'switch',
       entity_id: switchId,
@@ -162,8 +160,7 @@ export default defineEventHandler(async (event) => {
       portCleanup: parsed.port_cleanup
     })
 
-    await activityRepository.log({
-      user_id: event.context.auth.userId,
+    await logActivity(event, {
       action: 'remove_configured_vlans',
       entity_type: 'switch',
       entity_id: switchId,

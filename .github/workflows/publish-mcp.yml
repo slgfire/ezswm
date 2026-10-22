@@ -1,0 +1,271 @@
+# Publishes the standalone ezswm-mcp package. Called explicitly from
+# release-tag.yml because tags pushed with GITHUB_TOKEN do not trigger other
+# workflows. workflow_dispatch is the recovery path for npm and GHCR
+# independently (inputs.publish_npm / inputs.publish_ghcr); the two publishing
+# jobs share only the validation job, so one failing does not block the other.
+#
+# Prerequisites before enabling npm publishing (repository variable
+# MCP_NPM_PUBLISH_ENABLED=true):
+#   - the ezswm-mcp name is available on npm (or the package name is changed)
+#   - the repository is public (trusted publishing/provenance requires it)
+#   - npm trusted publishing is configured on npmjs.com for this repository and
+#     this workflow file (id-token: write is granted below; no NPM_TOKEN secret)
+#   - npm CLI >= 11.5.1 and Node >= 22.14.0; the job installs a pinned npm
+#     because the npm bundled with Node 22 can be older than trusted publishing
+#   - mcp/package.json carries a repository field matching this GitHub repo
+# The root package is private and is never published; npm runs inside mcp/.
+# Per-version existence checks make re-runs idempotent; registry errors fail
+# instead of being treated as a missing version.
+
+name: Publish MCP Package
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Root package version to publish (must match the checked-out release ref)
+        required: true
+        type: string
+      ref:
+        description: Git ref/sha of the release commit (defaults to tag v<version>)
+        required: false
+        type: string
+        default: ''
+      publish_npm:
+        description: Publish to npm (also requires repository variable MCP_NPM_PUBLISH_ENABLED=true)
+        required: false
+        type: boolean
+        default: false
+      publish_ghcr:
+        description: Publish the MCP container image to GHCR
+        required: false
+        type: boolean
+        default: true
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Root package version to publish
+        required: true
+        type: string
+      ref:
+        description: Git ref/sha of the release commit (defaults to tag v<version>)
+        required: false
+        type: string
+        default: ''
+      publish_npm:
+        description: Publish to npm (requires MCP_NPM_PUBLISH_ENABLED=true)
+        required: false
+        type: boolean
+        default: false
+      publish_ghcr:
+        description: Publish the MCP container image to GHCR
+        required: false
+        type: boolean
+        default: true
+
+# Ceiling for this reusable workflow; each job narrows it further.
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  VERSION: ${{ inputs.version }}
+  GHCR_IMAGE: ghcr.io/${{ github.repository }}-mcp
+  NPM_VERSION: 11.21.1
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout release ref
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.ref || format('v{0}', inputs.version) }}
+
+      - name: Validate release ref and version
+        run: |
+          set -euo pipefail
+          if ! printf '%s' "${VERSION}" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::Invalid version '${VERSION}'"
+            exit 1
+          fi
+          root="$(jq -r '.version' package.json)"
+          if [ "${root}" != "${VERSION}" ]; then
+            echo "::error::Checked-out package.json version ${root} does not match requested ${VERSION}"
+            exit 1
+          fi
+          if [ "$(jq -r '.private' package.json)" != "true" ]; then
+            echo "::error::Root package must stay private; refusing to publish"
+            exit 1
+          fi
+          if [ "$(jq -r '.name' mcp/package.json)" != "ezswm-mcp" ]; then
+            echo "::error::mcp/package.json is not the ezswm-mcp package"
+            exit 1
+          fi
+          if ! git tag --points-at HEAD | grep -qx "v${VERSION}"; then
+            echo "::error::HEAD is not the v${VERSION} release commit (tags: $(git tag --points-at HEAD | tr '\n' ' '))"
+            exit 1
+          fi
+          node mcp/scripts/version.mjs check
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm --filter ezswm-mcp typecheck
+
+      - name: Test
+        run: pnpm --filter ezswm-mcp test
+
+      - name: Build
+        run: pnpm --filter ezswm-mcp build
+
+      - name: Pack smoke
+        run: pnpm --filter ezswm-mcp pack:smoke
+
+  npm:
+    needs: validate
+    if: inputs.publish_npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout release ref
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.ref || format('v{0}', inputs.version) }}
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install pinned npm for trusted publishing
+        run: |
+          set -euo pipefail
+          npm install -g "npm@${NPM_VERSION}"
+          npm --version
+          node -e 'const [maj, min] = process.argv[1].split(".").map(Number); if (!(maj > 11 || (maj === 11 && min >= 5))) { console.error(`npm ${process.argv[1]} is too old for trusted publishing (need >= 11.5.1)`); process.exit(1) }' "$(npm --version)"
+
+      - name: Check npm publishing gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MCP_NPM_PUBLISH_ENABLED: ${{ vars.MCP_NPM_PUBLISH_ENABLED }}
+        run: |
+          set -euo pipefail
+          if [ "${MCP_NPM_PUBLISH_ENABLED}" != "true" ]; then
+            echo "::error::npm publishing requested but repository variable MCP_NPM_PUBLISH_ENABLED is not 'true'"
+            exit 1
+          fi
+          if [ "$(gh api "repos/${GITHUB_REPOSITORY}" --jq '.private')" = "true" ]; then
+            echo "::error::npm trusted publishing requires a public repository; this repository is private"
+            exit 1
+          fi
+
+      - name: Check npm version
+        id: npm
+        run: |
+          set +e
+          output="$(npm view "ezswm-mcp@${VERSION}" version 2>&1)"
+          status=$?
+          set -e
+          if [ "${status}" -eq 0 ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "ezswm-mcp@${VERSION} already exists on npm; skipping publish"
+          elif printf '%s' "${output}" | grep -Eq '(E404|404 Not Found|not in this registry|No matching version found)'; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::npm registry check failed; refusing to assume the version is missing: ${output}"
+            exit 1
+          fi
+
+      - name: Sync mcp version from root
+        if: steps.npm.outputs.exists == 'false'
+        run: node mcp/scripts/version.mjs sync
+
+      - name: Build package
+        if: steps.npm.outputs.exists == 'false'
+        run: pnpm --filter ezswm-mcp build
+
+      - name: Publish to npm
+        if: steps.npm.outputs.exists == 'false'
+        working-directory: mcp
+        run: npm publish --access public
+
+  ghcr:
+    needs: validate
+    if: inputs.publish_ghcr
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout release ref
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.ref || format('v{0}', inputs.version) }}
+
+      # Buildx and registry auth come first: inspecting an absent or private
+      # package without credentials returns an auth error, not "missing".
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check GHCR tag
+        id: ghcr
+        run: |
+          set +e
+          output="$(docker buildx imagetools inspect "${GHCR_IMAGE}:${VERSION}" 2>&1)"
+          status=$?
+          set -e
+          if [ "${status}" -eq 0 ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "${GHCR_IMAGE}:${VERSION} already exists; skipping push"
+          elif printf '%s' "${output}" | grep -Eiq '(manifest unknown|no such manifest)'; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::GHCR check failed; refusing to assume the tag is missing: ${output}"
+            exit 1
+          fi
+
+      - name: Build and push MCP image
+        if: steps.ghcr.outputs.exists == 'false'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: mcp/Dockerfile
+          push: true
+          tags: ${{ env.GHCR_IMAGE }}:${{ env.VERSION }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ env.VERSION }}
+          build-args: |
+            VERSION=${{ env.VERSION }}
+          provenance: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
