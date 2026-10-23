@@ -95,7 +95,7 @@ pnpm dev
 | Validation | Zod (server) + UForm (client) |
 | Auth | JWT + bcrypt |
 | Storage | SQLite via Prisma (`<DATA_DIR>/db.sqlite`) |
-| Container | Docker multi-stage (node:22-alpine) |
+| Container | Docker multi-stage (node:24-alpine) |
 | CI | GitHub Actions (auto Docker image build) |
 | i18n | Nuxt i18n (EN/DE) |
 

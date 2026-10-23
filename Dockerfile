@@ -1,9 +1,9 @@
 # Stage 1: Build
-# Base images are pinned by tag + multi-arch manifest digest (node:22.23.4-alpine),
+# Base images are pinned by tag + multi-arch manifest digest (node:24.22.1-alpine),
 # and the version assertion below fails the build if the resolved image differs.
-FROM node:22.23.4-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS builder
+FROM node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS builder
 
-RUN test "$(node --version)" = "v22.23.4"
+RUN test "$(node --version)" = "v24.22.1"
 
 WORKDIR /app
 
@@ -34,9 +34,9 @@ RUN pnpm build
 RUN pnpm prune --prod --ignore-scripts
 
 # Stage 2: Runtime
-FROM node:22.23.4-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS runtime
+FROM node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS runtime
 
-RUN test "$(node --version)" = "v22.23.4"
+RUN test "$(node --version)" = "v24.22.1"
 
 WORKDIR /app
 
