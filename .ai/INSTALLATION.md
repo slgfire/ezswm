@@ -3,7 +3,7 @@
 ## Requirements
 
 - **Docker and Docker Compose** (recommended)
-- OR **Node.js 22 LTS** + **pnpm 11** for local development
+- OR **Node.js 24 LTS** + **pnpm 11** for local development
 
 ## Docker (Recommended)
 

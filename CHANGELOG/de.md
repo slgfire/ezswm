@@ -6,6 +6,13 @@
 
 ---
 
+## [0.45.4] — 2026-10-23
+
+### Geändert
+- Node.js-Plattformupdate: Docker-Builder- und Runtime-Stufe sowie CI- und Docs-Workflows wechseln von Node 22.23.4 auf Node 24.22.1 LTS (`node:24.22.1-alpine`, gepinnter Multi-Arch-Digest, Alpine 3.24, Laufzeit-Versionsprüfungen angepasst). Die Installationsdokumentation nennt nun Node.js 24 LTS. Keine Anwendungsfunktionen und kein Abhängigkeits- oder SQLite-Upgrade; `better-sqlite3`, Prisma und Nuxt bleiben unverändert.
+
+---
+
 ## [0.45.3] — 2026-10-22
 
 ### Geändert

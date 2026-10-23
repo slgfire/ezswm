@@ -2,6 +2,19 @@
 
 ## Latest Stage
 
+### Node 24 LTS migration (v0.45.4)
+
+Date: 2026-10-23 — implemented on `fix/node24-lts` from `main` c99d839 (v0.45.3). Not committed, pushed or deployed.
+
+- Both Docker stages: `node:22.23.4-alpine` → `node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53` (multi-arch amd64/arm64/s390x, Alpine 3.24), with runtime `node --version` assertions updated to v24.22.1. CI and docs workflows: `setup-node` `node-version` 22.23.4 → 24.22.1 (action versions and pnpm 11.0.9 unchanged). Installation docs/README/infra spec name Node 24 LTS.
+- No dependency, lockfile, `minimum-release-age` or SQLite upgrade claim; `better-sqlite3` 12.11.1, Prisma 7.9.0 and Nuxt 4.6.1 unchanged.
+- Verification (local, not committed; logs in `/tmp/opencode/node24-checks/{run,run2,run3,docs-with-git}.log` and artifacts in `/tmp/opencode/node24-verify`):
+  - Docker (Compose with a private override, disposable data, own project and image `ezswm-node24-verify:0.45.4`): build with `--pull --no-cache` passed on the pinned digest. The container ran as UID/GID 1000 with Node v24.22.1 on Alpine 3.24.3; `/api/health` reported version 0.45.4 and `database_ok: true`. The native `better-sqlite3` addon loaded through the Prisma 7.9.0 adapter and reported SQLite 3.53.2 (Node's builtin SQLite reports 3.53.4 — expected difference). 16 migrations were applied, 4 scoped guards present, `quick_check` ok. First-admin setup, API login and a synthetic site write succeeded, and the site and a fresh login survived a container restart. Own container and network were removed.
+  - Node 24 toolchain (ephemeral `node:24.22.1-alpine` pinned-digest containers, pnpm 11.0.9 via corepack, no lockfile or dependency changes): `pnpm install --frozen-lockfile` exit 0; ESLint (`--max-warnings=0`) exit 0; Vitest 85 files / 1188 tests passed; `nuxt typecheck` exit 0. These were not all green on the first try: the first run had ESLint and Vitest fail because `.nuxt` had not been generated yet (typecheck created it), and the first Vitest rerun failed because `corepack enable` was missing from my script. Both were environment mistakes, corrected by reruns; no code was changed.
+  - Docs: VitePress 1.6.4 build passed in 24.04 s (chunk-size warning only). The first attempt failed with `spawn git ENOENT` because the Alpine image has no git; the passing run installed git only inside a throwaway container and mounted this worktree's git metadata read-only (the whole shared repository metadata was visible to that container; nothing was written or logged from it).
+- **Not verified:** CI on GitHub, browser/OIDC flows, and multi-arch (arm64/s390x) images; amd64 only was run locally.
+
+
 ### Nuxt security update (v0.45.3)
 
 Date: 2026-10-22 — implemented and verified locally on `fix/nuxt-security-update` from `main` a237f2b (v0.45.2). Not committed, pushed or deployed; production and staging unchanged.

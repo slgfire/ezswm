@@ -7,7 +7,7 @@ title: Installation
 ## Voraussetzungen
 
 - **Docker und Docker Compose** (empfohlen)
-- ODER **Node.js 22 LTS** + **pnpm 11** für lokale Entwicklung
+- ODER **Node.js 24 LTS** + **pnpm 11** für lokale Entwicklung
 
 ## Docker (Empfohlen)
 

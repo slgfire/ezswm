@@ -13,7 +13,7 @@ Related documents:
 
 | Technology | Version | Notes |
 |------------|---------|-------|
-| Node.js | 22 LTS | Docker base image: `node:22-alpine` |
+| Node.js | 22 LTS | Docker base image: `node:24-alpine` |
 | Nuxt | 4.x (see `package.json`) | Originally specified as 3.x with `compatibilityVersion: 4` (historical) |
 | Nuxt UI | 4.x (see `package.json`) | Originally specified as 2.x (historical) |
 | TypeScript | see `package.json` | Strict mode |
@@ -310,7 +310,7 @@ ezswm/
 
 ### Prerequisites
 
-- Node.js 22 LTS
+- Node.js 24 LTS
 - pnpm 11.x (`corepack enable` activates the version pinned in `packageManager`)
 - Docker + docker-compose (for container testing)
 
@@ -395,7 +395,7 @@ On application start:
 
 ```dockerfile
 # Stage 1: Build
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -410,11 +410,11 @@ COPY . .
 RUN pnpm build
 
 # Stage 2: Runtime
-FROM node:22-alpine AS runtime
+FROM node:24-alpine AS runtime
 
 WORKDIR /app
 
-# Use existing `node` user (uid 1000) from node:22-alpine base image
+# Use existing `node` user (uid 1000) from node:24-alpine base image
 # instead of creating a custom user — same numeric IDs, no clash.
 
 # Copy built output
