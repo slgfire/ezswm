@@ -1,5 +1,5 @@
 import { activityRepository } from '../../repositories/activityRepository'
-import { describeUndo } from '../../repositories/activityUndoRepository'
+import { describeUndo, hasValidSnapshot } from '../../repositories/activityUndoRepository'
 import { activityQuerySchema } from '../../validators/activitySchemas'
 
 /**
@@ -14,11 +14,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const { limit, offset } = parsed.data
-  const { entries, total } = await activityRepository.listSanitized(limit, offset)
+  const { entries, total } = await activityRepository.listSanitized(limit, offset, hasValidSnapshot)
 
   return {
-    data: entries.map(entry => {
-      const described = describeUndo(entry.action, entry.entity_type)
+    data: entries.map(({ has_valid_snapshot, ...entry }) => {
+      const described = describeUndo(entry.action, entry.entity_type, has_valid_snapshot)
       return {
         ...entry,
         undoable: described.undoable,

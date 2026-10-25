@@ -245,7 +245,9 @@ export const vlanRepository = {
           data: { code: 'VLAN_NETWORK_SUBNET_CONFLICT', conflicts: impact.conflicts }
         })
       }
-      await tx.vlan.delete({ where: { id } })
+      // deleteMany: a concurrently deleted target is a clean not_found, not a P2025 500.
+      const removed = await tx.vlan.deleteMany({ where: { id } })
+      if (removed.count === 0) return { kind: 'not_found' }
       return { kind: 'deleted', impact }
     })
   }

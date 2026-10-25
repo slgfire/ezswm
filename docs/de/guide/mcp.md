@@ -1,12 +1,12 @@
 # MCP-Anbindung
 
-Das eigenständige Workspace-Paket `mcp/` verbindet einen MCP-Client mit einer bestehenden ezSWM-Instanz. Es öffnet keine SQLite-Datenbank; Authentifizierung, Rollenprüfung und Fachlogik bleiben in der App. Dieser Branch bietet 16 lesende Werkzeuge über stdio oder Streamable HTTP. Schreibwerkzeuge, Undo und `find_free_ip` sind noch nicht verfügbar.
+Das eigenständige Workspace-Paket `mcp/` verbindet einen MCP-Client mit einer bestehenden ezSWM-Instanz. Es öffnet keine SQLite-Datenbank; Authentifizierung, Rollenprüfung und Fachlogik bleiben in der App. Dieser Branch bietet 18 lesende Werkzeuge (darunter `find_free_ip` und `list_activity`) und 23 schreibende Werkzeuge (darunter `undo_activity`) über stdio oder Streamable HTTP.
 
 Das npm-Paket und das GHCR-Image sind Release-Artefakte. Solange ihre Veröffentlichung nicht bestätigt ist, verwende den Quellcode-Build, statt vorhandene Registry-Pakete vorauszusetzen.
 
 ## Build und Zugangsdaten
 
-Verwende Node.js 22 und die im Repository festgelegte pnpm-Version. Im Repository-Hauptverzeichnis:
+Verwende das getestete Node.js 24.22.1 und die im Repository festgelegte pnpm-Version. Im Repository-Hauptverzeichnis:
 
 ```sh
 pnpm install --frozen-lockfile
@@ -86,6 +86,17 @@ Ergänze `opencode.json` oder `opencode.jsonc`. Native V2-Konfiguration verwende
 }
 ```
 
+### Docker-Image über stdio
+
+Das Image aus `mcp/Dockerfile` setzt standardmäßig `PORT=3000` (HTTP-Modus). Für stdio **musst** du das mit einem leeren `PORT` überschreiben, sonst startet es einen HTTP-Listener und verlangt das Client-Credential. Baue das Image lokal im Repository-Hauptverzeichnis (ein veröffentlichtes Image wird nicht vorausgesetzt) und nutze eine private Env-Datei (Modus `600`, außerhalb des Repositorys) mit `EZSWM_URL` und `EZSWM_TOKEN`:
+
+```sh
+docker build --build-arg VERSION=0.46.0 -f mcp/Dockerfile -t ezswm-mcp:local .
+docker run -i --rm --env-file /ABS/secrets/ezswm-mcp.env -e PORT= ezswm-mcp:local
+```
+
+Das Image läuft als Nicht-Root-Benutzer `node`. Umgebungsvariablen sind für jeden sichtbar, der `docker inspect` auf den Container ausführen darf; für eine Token-Datei diese schreibgeschützt an einen für UID 1000 lesbaren Pfad mounten und `EZSWM_TOKEN_FILE` setzen. `EZSWM_URL` muss aus dem Container erreichbar sein (etwa über ein gemeinsames Netzwerk oder die Host-Adresse, nicht das `localhost` des Containers). Ein ungesetztes `PORT` gilt nur für den Quellcode-Build oben.
+
 ## Gehostetes HTTP
 
 `PORT` aktiviert zustandsloses Streamable HTTP unter `/mcp`. Standardmäßig wird an `127.0.0.1` gebunden. Jede Anfrage benötigt ein Bearer-Client-Secret, auch die Initialisierung. Es gibt keinen anonymen Modus und keinen OAuth-Flow.
@@ -142,15 +153,26 @@ Cursor verwendet in `.cursor/mcp.json` eine andere Variablenersetzung:
 
 Die Formate folgen den offiziellen Client-Dokumentationen. Echte GUI-Verbindungen und ein realer TLS-Reverse-Proxy wurden hier noch nicht geprüft. Verwende für Claude Desktop das stdio-Beispiel, statt Unterstützung eigener Remote-Header vorauszusetzen.
 
+## Verifikationsstand
+
+Geprüft am 25.10.2026 gegen isolierte Wegwerf-App-Container (Version 0.46.0) und das lokal gebaute MCP-Image, gesteuert mit dem offiziellen MCP-SDK-Client (Host-Node.js 22.23.2; Container mit Node.js 24.22.1):
+
+- stdio (Docker mit `-e PORT=`) und zustandsloses HTTP melden sich als `ezswm-mcp` 0.46.0 und listen genau 41 Werkzeuge (die 18 lesenden und 23 schreibenden unten); `list_sites` lieferte den Test-Standort.
+- HTTP: fehlendes und falsches Credential ergeben 401; unbekannter `Host` oder `Origin` ergibt 403.
+- Mit einem Admin-Upstream-Token legte `create_vlan` ein VLAN an, `get_vlan`/`list_vlans` lasen dieselbe ID, denselben Namen und dieselbe VLAN-Nummer zurück. Mit einem Viewer-Upstream-Token funktionierte `get_vlan`, während `create_vlan` einen MCP-Fehler mit HTTP 403 lieferte; eine unabhängige Abfrage zeigte kein neues VLAN.
+- Nach dem Widerruf des Upstream-App-Tokens (HTTP 204) lieferten die nächsten Aufrufe derselben MCP-Verbindung einen Fehler mit HTTP 401; App und Daten blieben intakt. Das getrennte statische HTTP-Client-Credential wird dadurch nicht widerrufen, nur die Upstream-Aufrufe schlagen fehl.
+
+Nicht verifiziert: die übrigen Schreibwerkzeuge (nur ein VLAN-Create, kein Live-Update/-Delete), zustandsbehaftete Sessions (HTTP ist zustandslos), GUI-Clients wie Claude Desktop, Cursor oder OpenCode, ein TLS-Reverse-Proxy und Docker Compose (Images wurden direkt mit `docker run` gestartet). Eine Registry-Veröffentlichung wird nicht behauptet. Dies ist kein Ergebnis der vollständigen Testsuite.
+
 ## Werkzeuge und Fehlerbehebung
 
 Lesende Werkzeuge: `list_sites`, `get_site`, `list_switches`, `get_switch`, `list_vlans`, `get_vlan`, `list_networks`, `get_network`, `list_ip_allocations`, `list_ip_ranges`, `list_lags`, `list_device_types`, `get_settings`, `subnet_info`, `search`, `find_free_ip`, `export_documentation_data`, `list_activity`. Beachte das jeweilige Schema und `more_available`-Hinweise. Gekürzte Ergebnisse sind kein vollständiges Inventar; der erlaubnislistenbasierte Dokumentationsexport ist kein Datenbank-Backup. `list_activity` zeigt ein bereinigtes Aktivitätsprotokoll (Akteur, Aktion, Entität, Undo-Fähigkeit) ohne Rohzustände.
 
-Schreibende Werkzeuge: `create_switch`, `update_switch`, `update_port`, `update_ports`, `create_vlan`, `update_vlan`, `delete_vlan`, `create_network`, `update_network`, `delete_network`, `create_ip_allocation`, `update_ip_allocation`, `delete_ip_allocation`, `create_ip_range`, `update_ip_range`, `delete_ip_range`, `create_lag`, `update_lag`, `delete_lag`, `create_device_type`, `update_device_type`, `import_documentation_data`. Destruktive Werkzeuge und `undo_activity` nutzen einen zweiphasigen Vertrag: erst ohne `confirm` eine serverseitige Vorschau, dann `confirm: true` mit dem gelieferten Impact-/Undo-Token. Ein veraltetes Token liefert HTTP 409 mit frischer Vorschau, ohne etwas zu ändern. Standort-Anlegen/Löschen, Switch-Löschen und Kategorie-Löschungen sind bewusst nicht über MCP freigegeben.
+Schreibende Werkzeuge: `create_switch`, `update_switch`, `update_port`, `update_ports`, `create_vlan`, `update_vlan`, `delete_vlan`, `create_network`, `update_network`, `delete_network`, `create_ip_allocation`, `update_ip_allocation`, `delete_ip_allocation`, `create_ip_range`, `update_ip_range`, `delete_ip_range`, `create_lag`, `update_lag`, `delete_lag`, `create_device_type`, `update_device_type`, `undo_activity`, `import_documentation_data`. Destruktive Werkzeuge und `undo_activity` nutzen einen zweiphasigen Vertrag: erst ohne `confirm` eine serverseitige Vorschau, dann `confirm: true` mit dem gelieferten Impact-/Undo-Token. Ein veraltetes Token liefert HTTP 409 mit frischer Vorschau, ohne etwas zu ändern. Standort-Anlegen/Löschen, Switch-Löschen und Kategorie-Löschungen sind bewusst nicht über MCP freigegeben.
 
-`undo_activity` kann eine begrenzte Menge jüngster Änderungen zurücknehmen: VLAN-, Netzwerk-, IP-Zuweisungs- und IP-Range-Aktionen (Anlegen/Ändern/Löschen) sowie Standort-Änderungen. Das Anlegen einer Entität wird per guarded Delete rückgängig gemacht (mit Impact-Vorschau). Andere Aktionen gelten als nicht undo-fähig und werden mit HTTP 422 abgelehnt; die Rolle des Tokens wird zur Ausführungszeit erneut geprüft, und konfligierende Zustände brechen das Undo ohne Teilwrites ab.
+`undo_activity` kann eine begrenzte Menge jüngster Änderungen zurücknehmen: VLAN-, Netzwerk-, IP-Zuweisungs- und IP-Range-Aktionen (Anlegen und Ändern) sowie ausschließlich Standort-Änderungen. Das Anlegen einer Entität wird per Guarded-Delete rückgängig gemacht (mit Impact-Vorschau); Änderungen stellen den aufgezeichneten Vorzustand wieder her. Löschvorgänge beliebiger Entitäten werden absichtlich nicht wiederhergestellt. Änderungen erfordern einen vorhandenen, gültigen Vorzustands-Snapshot; ein Änderungseintrag mit fehlendem oder fehlerhaftem Snapshot wird abgelehnt (Anlegen braucht keinen). Alle anderen Aktionen (auch Löschaktionen, Standort anlegen, Switch-, LAG-, Gerätetyp-, Import-, Zugangsdaten- und Einstellungsaktionen) gelten als nicht undo-fähig und werden mit HTTP 422 abgelehnt. Undo ist zweiphasig: zuerst Vorschau, dann Bestätigung mit `expectedUndoToken`; ein veraltetes Token liefert HTTP 409 mit frischer Vorschau. Die Administratorrolle wird bei der Ausführung erneut gelesen; Prüfung der Zustandsbedingung und Schreibvorgang laufen in einer Transaktion, sodass Konflikte ohne Teilwrites abbrechen.
 
-- Startfehler: URL, Token-Datei, Leserechte und versehentlich geerbtes `PORT` prüfen.
+- Startfehler: URL, Token-Datei, Leserechte und versehentlich geerbtes `PORT` prüfen (das Docker-Image setzt `PORT=3000`; für stdio `-e PORT=` übergeben).
 - HTTP 401: separates MCP-Client-Secret prüfen. Bei einem Authentifizierungsfehler der App stattdessen das Upstream-Token ersetzen.
 - HTTP 403: Host-/Origin-Allowlisten und aktuelle Rolle des App-Kontos prüfen.
 - HTTP 406 beim manuellen Test: `Accept: application/json, text/event-stream` mitsenden; MCP-Clients erledigen das selbst.

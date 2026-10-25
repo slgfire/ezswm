@@ -2,12 +2,13 @@
 
 # Standalone ezSWM MCP image (Streamable HTTP). The app image stays separate;
 # only the mcp package and its production dependency closure are installed here.
-ARG NODE_VERSION=22
+ARG NODE_IMAGE=node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53
 
 # Dependency stages install from the root pnpm-lock.yaml with a reduced
 # workspace file: the install stays frozen (and subject to the .npmrc
 # minimum-release-age), while no app workspace/dependencies are pulled in.
-FROM node:${NODE_VERSION}-alpine AS deps
+FROM ${NODE_IMAGE} AS deps
+RUN test "$(node --version)" = "v24.22.1"
 WORKDIR /src
 ENV CI=true
 RUN corepack enable
@@ -18,7 +19,8 @@ RUN corepack prepare "$(node -p "require('/tmp/ezswm-package.json').packageManag
  && printf "packages:\n  - 'mcp'\n" > pnpm-workspace.yaml \
  && pnpm install --prod --frozen-lockfile --ignore-scripts
 
-FROM node:${NODE_VERSION}-alpine AS builder
+FROM ${NODE_IMAGE} AS builder
+RUN test "$(node --version)" = "v24.22.1"
 WORKDIR /src
 ENV CI=true
 RUN corepack enable
@@ -34,7 +36,8 @@ COPY mcp ./mcp
 RUN ./mcp/node_modules/.bin/tsc -p mcp/tsconfig.json \
  && node mcp/scripts/version.mjs stamp
 
-FROM node:${NODE_VERSION}-alpine AS runtime
+FROM ${NODE_IMAGE} AS runtime
+RUN test "$(node --version)" = "v24.22.1"
 ARG VERSION=0.0.0
 WORKDIR /app/mcp
 

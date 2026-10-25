@@ -24,6 +24,7 @@ export default defineEventHandler(async (event) => {
 
   const preview = await activityUndoRepository.getPreview(id)
   if (!preview) throw createError({ statusCode: 404, message: 'Activity entry not found' })
+  if (preview.code === 'target_missing') throw createError({ statusCode: 404, message: preview.reason, data: preview })
   if (!preview.undoable) {
     throw createError({ statusCode: 422, message: preview.reason ?? 'Activity entry is not undoable', data: preview })
   }
@@ -53,6 +54,9 @@ export default defineEventHandler(async (event) => {
     if (hasConflictToken(err, 'IP_ALLOCATION_CONFLICT')) {
       throw createError({ statusCode: 409, message: 'IP address is already allocated in this network' })
     }
+    const code = (err as { code?: string })?.code
+    if (code === 'P2002' || code === 'P2003') throw createError({ statusCode: 409, message: 'The undo conflicts with the current state; re-preview and confirm again' })
+    if (code === 'P2025') throw createError({ statusCode: 404, message: 'The undo target no longer exists' })
     const message = err instanceof Error ? err.message : String(err)
     throw createError({ statusCode: 500, message: `Undo failed: ${message}` })
   }

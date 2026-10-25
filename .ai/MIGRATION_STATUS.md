@@ -2,6 +2,66 @@
 
 ## Latest Stage
 
+### MCP integrated-build smoke verification and docs finalization (2026-10-25)
+
+Date: 2026-10-25 — local on `feat/mcp-server`; uncommitted, not pushed or published. No product code or version change (0.46.0 stays).
+
+Verified in isolated, disposable containers with locally built images (app on Node 24: health 0.46.0, 17 migrations, SQLite quick_check and data persisting across restart; MCP image non-root, version 0.46.0; `ApiToken` table and four Network/IpAllocation uniqueness triggers as documented in earlier stages), driven by the official SDK client on host Node 22.23.2 (containers run Node 24.22.1). Evidence: `/tmp/opencode/mcp-int/` (`stdio-smoke-20261025.json`, `http-smoke-20261025-attempt3.json`, `access-smoke-20261025.json`, `final-app-docker.log`, `final-mcp-build.log`, `final-ci10-e2e.log`).
+- stdio and stateless HTTP: initialize 0.46.0, exactly 41 unique tools equal to the 18 read + 23 write lists, `list_sites` returns the synthetic site. HTTP: no/bad credential 401, disallowed Host/Origin 403 (static client secret different from the upstream token).
+- Admin upstream token: `create_vlan` plus `get_vlan`/`list_vlans` readback of id/name/vlan_id. Viewer upstream token: read works, `create_vlan` returns an MCP error with HTTP 403 and an independent read shows no new VLAN. Upstream token revoked (204): the same MCP connection then gets 401; app JWT read still works. The static HTTP client secret is not revoked, only upstream calls fail.
+- Docker for stdio needs `-e PORT=` because the image defaults to `PORT=3000`. Earlier attempts failed in the test harness (HTTP selected without a separate client secret / Host header not set on the wire / classification via nonexistent tool annotations); these were corrected in the out-of-repo scripts, not a product bug.
+- CI-like e2e subset: 36/36 tests passed across 10 CI spec files (CI10). The earlier full 348-test attempt across 27 spec files timed out (152 pass, 67 fail, undiagnosed); no full-suite green claim is made.
+
+Limits: one VLAN create only (other write tools, updates and deletes not live-checked); HTTP is stateless only; GUI clients (Claude Desktop/Cursor/OpenCode), TLS proxy and Docker Compose untested (direct `docker build`/`docker run`); host SDK client Node 22 vs containers Node 24. Docs updated: `docs/guide/mcp.md` and `docs/de/guide/mcp.md` (Docker stdio, verification status), CHANGELOG EN/DE `[Unreleased]` MCP documentation entry extended.
+
+### Integration of `main` (v0.45.4) into `feat/mcp-server` — in progress
+
+Local merge of origin/main 2fa5167 (uncommitted, not pushed). Root version stays 0.46.0; lockfile regenerated once with pnpm 11.0.9 from main's lock (`pnpm install --lockfile-only --ignore-scripts`); `mcp/Dockerfile` and publish/CI workflows aligned to Node 24.22.1 (pinned digest + version assertion). Verification pending; no fresh full test pass is claimed.
+
+MCP undo scope (hardened): limited MCP undo supports only site update and create/update of VLAN, network, IP allocation and IP range; no delete restoration for any entity, and no switch/LAG/site-create/device-category/import/credential/settings undo. Update entries with missing or malformed snapshots are refused; preview + `expectedUndoToken` confirm re-reads the admin role at execution, and the state precondition plus write run in one transaction (stale → 409, invalid snapshot → 422). Focused: 47 tests, 17 of them undo (run under host Node 22 only). Independent review and full Node 24 checks are PENDING; no final completion is claimed.
+
+### Node 24 LTS migration (v0.45.4)
+
+Date: 2026-10-23 — implemented on `fix/node24-lts` from `main` c99d839 (v0.45.3). Not committed, pushed or deployed.
+
+- Both Docker stages: `node:22.23.4-alpine` → `node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53` (multi-arch amd64/arm64/s390x, Alpine 3.24), with runtime `node --version` assertions updated to v24.22.1. CI and docs workflows: `setup-node` `node-version` 22.23.4 → 24.22.1 (action versions and pnpm 11.0.9 unchanged). Installation docs/README/infra spec name Node 24 LTS.
+- No dependency, lockfile, `minimum-release-age` or SQLite upgrade claim; `better-sqlite3` 12.11.1, Prisma 7.9.0 and Nuxt 4.6.1 unchanged.
+- Verification (local, not committed; logs in `/tmp/opencode/node24-checks/{run,run2,run3,docs-with-git}.log` and artifacts in `/tmp/opencode/node24-verify`):
+  - Docker (Compose with a private override, disposable data, own project and image `ezswm-node24-verify:0.45.4`): build with `--pull --no-cache` passed on the pinned digest. The container ran as UID/GID 1000 with Node v24.22.1 on Alpine 3.24.3; `/api/health` reported version 0.45.4 and `database_ok: true`. The native `better-sqlite3` addon loaded through the Prisma 7.9.0 adapter and reported SQLite 3.53.2 (Node's builtin SQLite reports 3.53.4 — expected difference). 16 migrations were applied, 4 scoped guards present, `quick_check` ok. First-admin setup, API login and a synthetic site write succeeded, and the site and a fresh login survived a container restart. Own container and network were removed.
+  - Node 24 toolchain (ephemeral `node:24.22.1-alpine` pinned-digest containers, pnpm 11.0.9 via corepack, no lockfile or dependency changes): `pnpm install --frozen-lockfile` exit 0; ESLint (`--max-warnings=0`) exit 0; Vitest 85 files / 1188 tests passed; `nuxt typecheck` exit 0. These were not all green on the first try: the first run had ESLint and Vitest fail because `.nuxt` had not been generated yet (typecheck created it), and the first Vitest rerun failed because `corepack enable` was missing from my script. Both were environment mistakes, corrected by reruns; no code was changed.
+  - Docs: VitePress 1.6.4 build passed in 24.04 s (chunk-size warning only). The first attempt failed with `spawn git ENOENT` because the Alpine image has no git; the passing run installed git only inside a throwaway container and mounted this worktree's git metadata read-only (the whole shared repository metadata was visible to that container; nothing was written or logged from it).
+- **Not verified:** CI on GitHub, browser/OIDC flows, and multi-arch (arm64/s390x) images; amd64 only was run locally.
+
+
+### Nuxt security update (v0.45.3)
+
+Date: 2026-10-22 — implemented and verified locally on `fix/nuxt-security-update` from `main` a237f2b (v0.45.2). Not committed, pushed or deployed; production and staging unchanged.
+
+- `nuxt` 4.4.8 → 4.6.1, `@nuxt/ui` 4.9.0 → 4.11.3, `@nuxtjs/i18n` 10.4.1 → 10.6.0; publish dates verified (2026-10-09, 2026-10-01, 2026-07-30) and all older than the unchanged 7-day `minimum-release-age=10080`. Nuxt 4.6.2 and UI 4.12.0 were deliberately not used (underage). Root version 0.45.3; Node 22.23.4 pin, Prisma 7.9.0, better-sqlite3 12.11.1, TypeScript 6.0.3 unchanged.
+- Lockfile regenerated once with pinned pnpm 11.0.9; large transitive churn expected from the Nuxt release line (261 added package keys, 4879 changed lines), including Nuxt/UI/i18n peer and tooling updates; no unrelated direct dependency bumped.
+- Additional dependencies now included: `yaml` 2.9.0 → 2.9.1 and `zod` 4.4.3 → 4.6.7, exact-pinned and verified eligible (published 2026-09-11 and 2026-10-12). The lock was refreshed with the same pinned pnpm and unchanged minimum release age. Only the existing YAML parser (`device-library/device.get.ts`) and the existing Zod request schemas are affected; no rules, payloads or lifecycle behavior changed.
+- Typed-route breakage surfaced as `TS2321 excessive stack depth` at `$fetch` calls. Fixed with explicit return generics (no `any`, `@ts-ignore` or disabled checks) in `AppHeader.vue` (global search), `LibraryImport.vue` (device search + preview, also removing an `as` cast) and `sites/[siteId]/index.vue` (dashboard stats). Runtime, i18n and layout unchanged.
+- Local evidence for the combined tree: lock regeneration plus `pnpm install --frozen-lockfile` passed with pinned pnpm 11.0.9, Prisma Client 7.9.0 generated, `nuxt prepare` exit 0 and `pnpm typecheck` exit 0; focused tests passed: validators, deviceLibrary, customDeviceTypesBackend, changelog and versionLatest (5 files / 310 tests).
+- Final combined-tree parent verification: 85 test files / 1188 tests, ESLint with zero warnings/errors and Nuxt production build all passed after the YAML/Zod additions (logs `/tmp/opencode/nuxt-combined-{tests,lint,build}.log`).
+- Final combined-tree Docker validation: Compose build with `--pull --no-cache` passed; image `nuxt-secverify:0.45.3-combined` (`5c0cacec8040bf6ac6c94af7dd633e10593eb34634970e6587c21d8fbf182dcf`) ran as UID/GID 1000 with Node 22.23.4, Prisma adapter 7.9.0 and SQLite 3.53.2. Installed direct dependencies resolved to YAML 2.9.1, Zod 4.6.7 and the selected Nuxt/UI/i18n versions; a separate transitive YAML 2.9.0 remains in the lockfile. Health reported version 0.45.3 and `database_ok: true`; separate checks confirmed 16 applied migrations, no unfinished migrations, four scoped guards and database integrity. A synthetic setup/site write survived a restart and fresh login. Own container/network were removed; parent independently checked the post-restart health artifact and absence of those resources. Logs: `/tmp/opencode/nuxt-combined-docker-*.log`.
+- Not checked: browser/UI, interactive i18n, OIDC, import/backup flows, existing staging data and GitHub CI. Docker validation covered a single amd64 image and disposable data only; no claim of complete user-flow verification.
+- Exposure specifics were not independently proven; no active exploitation is claimed.
+
+### Previous: Dependency security updates (v0.45.2)
+
+Date: 2026-10-22 — implemented and verified locally on `fix/security-dependency-updates` (base `origin/main` 9db7456 / v0.45.1); not committed, pushed, merged, PR-closed or deployed.
+
+- Dependencies: Prisma (`prisma`, `@prisma/client`, `@prisma/adapter-better-sqlite3`) updated together 7.8.0 → 7.9.0, `marked` 18.0.6 → 18.0.7 (now exact-pinned), `tailwindcss` 4.3.2 → 4.3.3; root version 0.45.2. `better-sqlite3` stays at 12.11.1 with its bundled SQLite 3.53.2 (adapter requires `^12.6.0`); no override was added and no SQLite upgrade is claimed. Major/Nuxt/dev updates remain deferred in separate groups; no Dependabot PR was closed.
+- Container/CI: both Docker stages use Node 22.23.4 on Alpine with a pinned digest and a runtime version assertion; build workflows pull base images; `setup-node` v7 with exact Node 22.23.4 is used in CI and docs; Dependabot checks Docker images weekly.
+- Lockfile regenerated once with pinned pnpm 11.0.9 under the unchanged `minimum-release-age=10080`. Churn is limited to the five direct bumps, Prisma 7.9.0's tooling closure (pglite/pglite-socket/pglite-tools patch bumps, `@prisma/streams-local` dependencies) and peer-suffix keys.
+- Local checks passed: `pnpm install --frozen-lockfile`, Prisma Client generation 7.9.0, `prisma validate`, `pnpm typecheck`.
+- Full validation passed: 85 test files / 1188 tests, ESLint with 0 warnings/errors and Nuxt production build exit 0 (logs `/tmp/opencode/security-deps-{tests,lint,build}.log`).
+- Isolated image `ezswm-secverify:0.45.2` built with `--pull --no-cache` (`a48576fcc56176a529b3622c32ed47a5e35079f3823115f67b22810e1a2985e5`). Runtime: Node v22.23.4, Prisma 7.9.0, adapter SQLite 3.53.2 (Node's builtin SQLite reports 3.53.4 — expected difference). `/api/health` reported version 0.45.2 and `database_ok: true`; separate migration checks confirmed 16 applied migrations, none pending. A synthetic API user/site write survived a restart, the integrity check passed, and the container ran non-root (UID 1000). Own container/network were removed; cleanup and `docker ps` were verified.
+- Not performed: GitHub CI runs and any production/staging checks. Production and staging are unchanged; no real user data was inspected.
+- EN/DE changelogs updated. User guides needed no change because there is no new user-facing workflow.
+
+
+### Previous: Scoped network and IP uniqueness fix (v0.45.1)
 ### MCP Stage 4 (write tools, free IPs and limited undo) — in progress
 
 Date: 2026-10-22 — local work on `feat/mcp-server`; not pushed or published.

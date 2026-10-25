@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto'
+import { z } from 'zod'
 import type { Prisma } from '@prisma/client'
 import { prisma } from '../db/client'
 import type { ActivityEntry } from '../../types/activity'
 import { activityRepository } from './activityRepository'
 import {
   findScopedSubnetClash,
-  hasConflictToken,
   networkImpactToken,
   networkRepository,
   type NetworkDeleteImpact
@@ -13,24 +13,87 @@ import {
 import { vlanImpactToken, vlanRepository, type VlanDeleteImpact } from './vlanRepository'
 import { ipAllocationImpactToken, ipAllocationRepository, type IpAllocationDeleteImpact } from './ipAllocationRepository'
 import { ipRangeImpactToken, ipRangeRepository, type IpRangeDeleteImpact } from './ipRangeRepository'
-import { canonicalizeCIDR, isValidCIDR } from '../utils/ipv4'
+import { assertDeviceTypeAssignable } from './customDeviceTypeRepository'
+import {
+  canonicalizeCIDR, doRangesOverlap, ipToLong, isIPInSubnet, isUsableHostIP, isValidCIDR, isValidIPv4, isValidMacAddress
+} from '../utils/ipv4'
 
 /**
- * API-token safe undo contract (plan A7). Only actions whose inverse is either a
- * checked row update/recreate or an A5-guarded delete are exposed. Everything
- * else (switch/patch panel/site delete, layout templates, imports, categories,
- * credentials) stays unsupported: no activity snapshot or a destructive inverse
- * that is not allowed for API tokens.
+ * API-token safe undo contract (plan A7). Only create (→ A5 guarded delete) and
+ * update (→ validated snapshot restore) are exposed. Delete undo is unsupported:
+ * real delete routes do not log previous_state and a recreated row could not
+ * restore cascaded children / links. Switch/patch panel/site delete, layout
+ * templates, imports, categories and credentials stay unsupported.
  */
 const SUPPORTED: Record<string, ReadonlySet<string>> = {
   site: new Set(['update']),
-  vlan: new Set(['create', 'update', 'delete']),
-  network: new Set(['create', 'update', 'delete']),
-  ip_allocation: new Set(['create', 'update', 'delete']),
-  ip_range: new Set(['create', 'update', 'delete'])
+  vlan: new Set(['create', 'update']),
+  network: new Set(['create', 'update']),
+  ip_allocation: new Set(['create', 'update']),
+  ip_range: new Set(['create', 'update'])
 }
 
-const INVERTIBLE_ACTIONS = new Set(['create', 'update', 'delete'])
+const INVERTIBLE_ACTIONS = new Set(['create', 'update'])
+
+const optStr = z.string().nullish()
+const snapshotSchemas: Record<string, z.ZodType<Record<string, unknown>>> = {
+  site: z.object({ name: z.string().min(1), slug: z.string().min(1), description: optStr }),
+  vlan: z.object({
+    site_id: z.string().min(1),
+    vlan_id: z.number().int().min(1).max(4094),
+    name: z.string().min(1),
+    description: optStr,
+    status: z.enum(['active', 'inactive']),
+    routing_device: optStr,
+    color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+    is_favorite: z.boolean()
+  }),
+  network: z.object({
+    site_id: z.string().min(1),
+    slug: z.string().min(1),
+    name: z.string().min(1),
+    vlan_id: optStr,
+    subnet: z.string().refine(isValidCIDR, 'Invalid CIDR'),
+    gateway: optStr,
+    dns_servers: z.array(z.string()),
+    description: optStr,
+    is_favorite: z.boolean(),
+    exclude_from_utilization: z.boolean()
+  }),
+  ip_allocation: z.object({
+    network_id: z.string().min(1),
+    ip_address: z.string().refine(isValidIPv4, 'Invalid IPv4'),
+    hostname: optStr,
+    mac_address: optStr,
+    device_type: optStr,
+    description: optStr,
+    status: z.string().min(1)
+  }),
+  ip_range: z.object({
+    network_id: z.string().min(1),
+    start_ip: z.string().refine(isValidIPv4, 'Invalid IPv4'),
+    end_ip: z.string().refine(isValidIPv4, 'Invalid IPv4'),
+    type: z.string().min(1),
+    description: optStr
+  })
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- zod-validated snapshot, per-entity shape
+type Snapshot = Record<string, any>
+
+function parseSnapshot(entityType: string, prev: Record<string, unknown> | undefined): { ok: true, data: Snapshot } | { ok: false, reason: string } {
+  const schema = snapshotSchemas[entityType]
+  if (!prev || !schema) return { ok: false, reason: 'No previous_state snapshot is available for this entry' }
+  const parsed = schema.safeParse(prev)
+  return parsed.success
+    ? { ok: true, data: parsed.data }
+    : { ok: false, reason: 'The previous_state snapshot is malformed or incomplete' }
+}
+
+/** True when the entry carries a snapshot that passes per-entity validation. */
+export function hasValidSnapshot(entityType: string, prev: Record<string, unknown> | undefined): boolean {
+  return parseSnapshot(entityType, prev).ok
+}
 
 export interface UndoPreview {
   entry: {
@@ -43,6 +106,7 @@ export interface UndoPreview {
   }
   undoable: boolean
   reason?: string
+  code?: 'target_missing'
   inverse?: string
   impact?: unknown
   impactToken?: string
@@ -64,17 +128,15 @@ function sanitize(entry: ActivityEntry): UndoPreview['entry'] {
   }
 }
 
-export function describeUndo(action: string, entityType: string): { undoable: boolean, reason?: string, inverse?: string } {
+export function describeUndo(action: string, entityType: string, hasSnapshot = true): { undoable: boolean, reason?: string, inverse?: string } {
+  if (action === 'delete') {
+    return { undoable: false, reason: 'Undo of a delete is not supported: delete activity does not record a restorable snapshot of the row and its dependents' }
+  }
   if (!INVERTIBLE_ACTIONS.has(action)) {
     return { undoable: false, reason: `Action "${action}" is not invertible in the safe undo contract` }
   }
   if (entityType === 'site' && action !== 'update') {
-    return {
-      undoable: false,
-      reason: action === 'create'
-        ? 'Undoing a site create would delete the site, which is forbidden for API tokens'
-        : 'Recreating a deleted site does not restore its cascaded data'
-    }
+    return { undoable: false, reason: 'Undoing a site create would delete the site, which is forbidden for API tokens' }
   }
   if (!SUPPORTED[entityType]?.has(action)) {
     return {
@@ -82,11 +144,12 @@ export function describeUndo(action: string, entityType: string): { undoable: bo
       reason: `Undo of "${action}" on "${entityType}" is not supported by the safe contract (v1)`
     }
   }
+  if (action === 'update' && !hasSnapshot) {
+    return { undoable: false, reason: 'No valid previous_state snapshot is available for this entry' }
+  }
   const inverse = action === 'create'
     ? `delete the created ${entityType} row (A5 impact preview applies)`
-    : action === 'update'
-      ? 'restore the previous state snapshot'
-      : `recreate the deleted ${entityType} row`
+    : 'restore the previous state snapshot'
   return { undoable: true, inverse }
 }
 
@@ -153,7 +216,7 @@ async function guardedDelete(entityType: string, id: string, impactToken?: strin
 }
 
 function previewOf(entry: ActivityEntry, reason?: string): UndoPreview {
-  const described = describeUndo(entry.action, entry.entity_type)
+  const described = describeUndo(entry.action, entry.entity_type, hasValidSnapshot(entry.entity_type, entry.previous_state))
   return {
     entry: sanitize(entry),
     undoable: described.undoable,
@@ -174,14 +237,11 @@ export const activityUndoRepository = {
     if (!entry) return null
     const preview = previewOf(entry)
     if (!preview.undoable) return preview
-    if (entry.action !== 'create' && !entry.previous_state) {
-      return { ...preview, undoable: false, reason: 'No previous_state snapshot is available for this entry' }
-    }
 
     if (entry.action === 'create') {
       const impact = await currentImpact(entry.entity_type, entry.entity_id)
       if (!impact) {
-        return { ...preview, undoable: false, reason: 'The target row no longer exists; there is nothing to undo' }
+        return { ...preview, undoable: false, code: 'target_missing', reason: 'The target row no longer exists; there is nothing to undo' }
       }
       const impactToken = impactTokenFor(entry.entity_type, impact)
       return {
@@ -192,9 +252,7 @@ export const activityUndoRepository = {
       }
     }
 
-    const target = entry.action === 'update'
-      ? await readTarget(prisma, entry.entity_type, entry.entity_id)
-      : null
+    const target = await readTarget(prisma, entry.entity_type, entry.entity_id)
     return { ...preview, undoToken: stateToken(entry, target) }
   },
 
@@ -203,15 +261,12 @@ export const activityUndoRepository = {
     if (!entry) return { kind: 'not_found' }
     const preview = previewOf(entry)
     if (!preview.undoable) return { kind: 'unsupported', reason: preview.reason ?? 'Not undoable' }
-    if (entry.action !== 'create' && !entry.previous_state) {
-      return { kind: 'unsupported', reason: 'No previous_state snapshot is available for this entry' }
-    }
 
     // create → delete: reuse the A5 guarded delete, which re-reads and
     // re-fingerprints inside its own transaction.
     if (entry.action === 'create') {
       const fresh = await activityUndoRepository.getPreview(id)
-      if (!fresh?.undoable) return { kind: 'unsupported', reason: fresh?.reason ?? 'Not undoable' }
+      if (!fresh?.undoable) return { kind: 'conflict', preview: fresh ?? { ...preview, undoable: false, reason: 'Not undoable' } }
       if (fresh.undoToken !== expectedUndoToken) return { kind: 'conflict', preview: fresh }
       const outcome = await guardedDelete(entry.entity_type, entry.entity_id, fresh.impactToken)
       if (outcome.kind === 'not_found') {
@@ -223,26 +278,23 @@ export const activityUndoRepository = {
       return { kind: 'undone', entry, inverse: preview.inverse ?? 'delete' }
     }
 
+    // update → restore. Token check, invariant checks and the write share one
+    // transaction; any thrown 409 rolls back everything.
     const outcome = await prisma.$transaction(async (tx) => {
       const row = await tx.activityEntry.findUnique({ where: { id } })
       if (!row) return { kind: 'not_found' as const }
-      const previous = parseState(row.previous_state)
+      const previous = parseJson(row.previous_state)
+      const snapshot = parseSnapshot(entry.entity_type, previous)
+      if (!snapshot.ok) return { kind: 'unsupported' as const, reason: snapshot.reason }
       const target = await readTarget(tx, entry.entity_type, entry.entity_id)
-      const token = stateToken(entry, target)
+      const token = stateToken({ ...entry, previous_state: previous }, target)
       if (token !== expectedUndoToken) {
         return { kind: 'conflict' as const, preview: { ...preview, undoToken: token } }
       }
-      if (entry.action === 'update') {
-        if (!target) {
-          return { kind: 'conflict' as const, preview: { ...preview, undoable: false, reason: 'The target row no longer exists' } }
-        }
-        await updateEntity(tx, entry.entity_type, entry.entity_id, previous)
-      } else {
-        if (target) {
-          return { kind: 'conflict' as const, preview: { ...preview, undoable: false, reason: 'A row with this id already exists' } }
-        }
-        await recreateEntity(tx, entry.entity_type, previous)
+      if (!target) {
+        return { kind: 'conflict' as const, preview: { ...preview, undoable: false, reason: 'The target row no longer exists' } }
       }
+      await updateEntity(tx, entry.entity_type, entry.entity_id, snapshot.data, target as Snapshot)
       return { kind: 'undone' as const }
     })
 
@@ -251,195 +303,142 @@ export const activityUndoRepository = {
   }
 }
 
-function parseState(raw: string | null): Record<string, unknown> {
-  if (!raw) return {}
+function parseJson(raw: string | null): Record<string, unknown> | undefined {
+  if (!raw) return undefined
   try {
-    return JSON.parse(raw) as Record<string, unknown>
+    const v = JSON.parse(raw)
+    return v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : undefined
   } catch {
-    return {}
+    return undefined
   }
 }
 
-async function updateEntity(tx: Prisma.TransactionClient, entityType: string, id: string, prev: Record<string, unknown>) {
+const conflict = (message: string) => createError({ statusCode: 409, message })
+
+/** Re-applies the same invariants the regular update routes enforce, inside the caller's transaction. */
+async function updateEntity(tx: Prisma.TransactionClient, entityType: string, id: string, prev: Snapshot, cur: Snapshot) {
   const now = new Date().toISOString()
   switch (entityType) {
-    case 'site':
+    case 'site': {
+      const taken = await tx.site.findFirst({ where: { slug: prev.slug, NOT: { id } }, select: { id: true } })
+      if (taken) throw conflict(`Site slug "${prev.slug}" is already used by another site`)
       await tx.site.update({
         where: { id },
-        data: {
-          name: String(prev.name),
-          slug: String(prev.slug),
-          description: (prev.description as string | null) ?? null,
-          updated_at: now
-        }
+        data: { name: prev.name, slug: prev.slug, description: prev.description ?? null, updated_at: now }
       })
       return
-    case 'vlan':
+    }
+    case 'vlan': {
+      if (prev.site_id !== cur.site_id) throw conflict('The snapshot belongs to a different site')
+      const tag = await tx.vlan.findFirst({ where: { site_id: cur.site_id, vlan_id: prev.vlan_id, NOT: { id } }, select: { id: true } })
+      if (tag) throw conflict(`VLAN ID ${prev.vlan_id} already exists in this site`)
+      const color = await tx.vlan.findFirst({ where: { site_id: cur.site_id, color: prev.color, NOT: { id } }, select: { id: true } })
+      if (color) throw conflict(`Color ${prev.color} is already used by another VLAN in this site`)
       await tx.vlan.update({
         where: { id },
         data: {
-          site_id: String(prev.site_id),
-          vlan_id: Number(prev.vlan_id),
-          name: String(prev.name),
-          description: (prev.description as string | null) ?? null,
-          status: String(prev.status),
-          routing_device: (prev.routing_device as string | null) ?? null,
-          color: String(prev.color),
-          is_favorite: Boolean(prev.is_favorite),
+          vlan_id: prev.vlan_id,
+          name: prev.name,
+          description: prev.description ?? null,
+          status: prev.status,
+          routing_device: prev.routing_device ?? null,
+          color: prev.color,
+          is_favorite: prev.is_favorite,
           updated_at: now
         }
       })
       return
+    }
     case 'network': {
-      const rawSubnet = String(prev.subnet)
-      const subnet = isValidCIDR(rawSubnet) ? canonicalizeCIDR(rawSubnet) : rawSubnet
-      const siteId = String(prev.site_id)
-      const vlanId = (prev.vlan_id as string | null) ?? null
-      const clash = await findScopedSubnetClash(siteId, vlanId, subnet, id)
-      if (clash) throw createError({ statusCode: 409, message: `A network with this subnet already exists in the same scope: ${clash}` })
+      if (prev.site_id !== cur.site_id) throw conflict('The snapshot belongs to a different site')
+      const subnet = canonicalizeCIDR(prev.subnet)
+      const vlanId: string | null = prev.vlan_id ?? null
+      if (prev.gateway && (!isValidIPv4(prev.gateway) || !isIPInSubnet(prev.gateway, subnet))) {
+        throw conflict('The snapshot gateway is not within its subnet')
+      }
+      if (prev.dns_servers.some((d: string) => !isValidIPv4(d))) throw conflict('The snapshot contains an invalid DNS server')
+      if (vlanId) {
+        const vlan = await tx.vlan.findUnique({ where: { id: vlanId }, select: { site_id: true } })
+        if (!vlan || vlan.site_id !== cur.site_id) throw conflict('The VLAN referenced by the snapshot no longer exists in this site')
+      }
+      const clash = await findScopedSubnetClash(cur.site_id, vlanId, subnet, id, tx)
+      if (clash) throw conflict(`A network with this subnet already exists in the same scope: ${clash}`)
+      const slugTaken = await tx.network.findFirst({ where: { site_id: cur.site_id, slug: prev.slug, NOT: { id } }, select: { id: true } })
+      if (slugTaken) throw conflict(`Network slug "${prev.slug}" is already used in this site`)
       await tx.network.update({
         where: { id },
         data: {
-          site_id: siteId,
-          slug: String(prev.slug),
-          name: String(prev.name),
+          slug: prev.slug,
+          name: prev.name,
           vlan_id: vlanId,
           subnet,
-          gateway: (prev.gateway as string | null) ?? null,
-          dns_servers: JSON.stringify(prev.dns_servers ?? []),
-          description: (prev.description as string | null) ?? null,
-          is_favorite: Boolean(prev.is_favorite),
-          exclude_from_utilization: Boolean(prev.exclude_from_utilization),
+          gateway: prev.gateway ?? null,
+          dns_servers: JSON.stringify(prev.dns_servers),
+          description: prev.description ?? null,
+          is_favorite: prev.is_favorite,
+          exclude_from_utilization: prev.exclude_from_utilization,
           updated_at: now
         }
       })
       return
     }
     case 'ip_allocation': {
-      const networkId = String(prev.network_id)
-      const ip = String(prev.ip_address)
-      const taken = await tx.ipAllocation.findFirst({
-        where: { network_id: networkId, ip_address: ip, NOT: { id } }
-      })
-      if (taken) throw createError({ statusCode: 409, message: `IP address ${ip} is already allocated` })
+      const [curNet, net] = await Promise.all([
+        tx.network.findUnique({ where: { id: cur.network_id }, select: { site_id: true } }),
+        tx.network.findUnique({ where: { id: prev.network_id }, select: { id: true, site_id: true, subnet: true } })
+      ])
+      if (!net || !curNet || net.site_id !== curNet.site_id) throw conflict('The network referenced by the snapshot no longer exists in this site')
+      if (!isUsableHostIP(prev.ip_address, net.subnet)) throw conflict(`IP ${prev.ip_address} is not a usable host address of ${net.subnet}`)
+      if (prev.mac_address && !isValidMacAddress(prev.mac_address)) throw conflict('The snapshot contains an invalid MAC address')
+      const ipLong = ipToLong(prev.ip_address)
+      const dhcp = await tx.ipRange.findMany({ where: { network_id: net.id, type: 'dhcp' } })
+      if (dhcp.some(r => ipLong >= ipToLong(r.start_ip) && ipLong <= ipToLong(r.end_ip))) {
+        throw conflict(`IP ${prev.ip_address} is inside a DHCP dynamic range`)
+      }
+      const taken = await tx.ipAllocation.findFirst({ where: { network_id: net.id, ip_address: prev.ip_address, NOT: { id } }, select: { id: true } })
+      if (taken) throw conflict(`IP address ${prev.ip_address} is already allocated`)
+      if (prev.device_type && prev.device_type !== cur.device_type) {
+        await assertDeviceTypeAssignable(prev.device_type, { client: tx })
+      }
       await tx.ipAllocation.update({
         where: { id },
         data: {
-          network_id: networkId,
-          ip_address: ip,
-          hostname: (prev.hostname as string | null) ?? null,
-          mac_address: (prev.mac_address as string | null) ?? null,
-          device_type: (prev.device_type as string | null) ?? null,
-          description: (prev.description as string | null) ?? null,
-          status: String(prev.status),
+          network_id: net.id,
+          ip_address: prev.ip_address,
+          hostname: prev.hostname ?? null,
+          mac_address: prev.mac_address ?? null,
+          device_type: prev.device_type ?? null,
+          description: prev.description ?? null,
+          status: prev.status,
           updated_at: now
         }
       })
       return
     }
-    case 'ip_range':
+    case 'ip_range': {
+      if (prev.network_id !== cur.network_id) throw conflict('The snapshot belongs to a different network')
+      const net = await tx.network.findUnique({ where: { id: cur.network_id }, select: { subnet: true } })
+      if (!net) throw conflict('The network no longer exists')
+      if (ipToLong(prev.start_ip) > ipToLong(prev.end_ip)) throw conflict('Snapshot start IP is greater than end IP')
+      if (!isIPInSubnet(prev.start_ip, net.subnet) || !isIPInSubnet(prev.end_ip, net.subnet)) {
+        throw conflict(`The snapshot range is outside the network subnet ${net.subnet}`)
+      }
+      const others = await tx.ipRange.findMany({ where: { network_id: cur.network_id, NOT: { id } } })
+      const overlap = others.find(r => doRangesOverlap(prev.start_ip, prev.end_ip, r.start_ip, r.end_ip))
+      if (overlap) throw conflict(`Range ${prev.start_ip}-${prev.end_ip} overlaps with existing range ${overlap.start_ip}-${overlap.end_ip}`)
       await tx.ipRange.update({
         where: { id },
         data: {
-          network_id: String(prev.network_id),
-          start_ip: String(prev.start_ip),
-          end_ip: String(prev.end_ip),
-          type: String(prev.type),
-          description: (prev.description as string | null) ?? null,
+          start_ip: prev.start_ip,
+          end_ip: prev.end_ip,
+          type: prev.type,
+          description: prev.description ?? null,
           updated_at: now
         }
       })
       return
+    }
     default:
       throw createError({ statusCode: 422, message: `Undo update not supported for "${entityType}"` })
   }
 }
-
-async function recreateEntity(tx: Prisma.TransactionClient, entityType: string, prev: Record<string, unknown>) {
-  const now = new Date().toISOString()
-  const createdAt = prev.created_at ? String(prev.created_at) : now
-  switch (entityType) {
-    case 'vlan':
-      await tx.vlan.create({
-        data: {
-          id: String(prev.id),
-          site_id: String(prev.site_id),
-          vlan_id: Number(prev.vlan_id),
-          name: String(prev.name),
-          description: (prev.description as string | null) ?? null,
-          status: String(prev.status),
-          routing_device: (prev.routing_device as string | null) ?? null,
-          color: String(prev.color),
-          is_favorite: Boolean(prev.is_favorite),
-          created_at: createdAt,
-          updated_at: now
-        }
-      })
-      return
-    case 'network': {
-      const rawSubnet = String(prev.subnet)
-      const subnet = isValidCIDR(rawSubnet) ? canonicalizeCIDR(rawSubnet) : rawSubnet
-      const siteId = String(prev.site_id)
-      const vlanId = (prev.vlan_id as string | null) ?? null
-      const clash = await findScopedSubnetClash(siteId, vlanId, subnet)
-      if (clash) throw createError({ statusCode: 409, message: `A network with this subnet already exists in the same scope: ${clash}` })
-      await tx.network.create({
-        data: {
-          id: String(prev.id),
-          site_id: siteId,
-          slug: String(prev.slug),
-          name: String(prev.name),
-          vlan_id: vlanId,
-          subnet,
-          gateway: (prev.gateway as string | null) ?? null,
-          dns_servers: JSON.stringify(prev.dns_servers ?? []),
-          description: (prev.description as string | null) ?? null,
-          is_favorite: Boolean(prev.is_favorite),
-          exclude_from_utilization: Boolean(prev.exclude_from_utilization),
-          created_at: createdAt,
-          updated_at: now
-        }
-      })
-      return
-    }
-    case 'ip_allocation': {
-      const networkId = String(prev.network_id)
-      const ip = String(prev.ip_address)
-      const taken = await tx.ipAllocation.findFirst({ where: { network_id: networkId, ip_address: ip } })
-      if (taken) throw createError({ statusCode: 409, message: `IP address ${ip} is already allocated` })
-      await tx.ipAllocation.create({
-        data: {
-          id: String(prev.id),
-          network_id: networkId,
-          ip_address: ip,
-          hostname: (prev.hostname as string | null) ?? null,
-          mac_address: (prev.mac_address as string | null) ?? null,
-          device_type: (prev.device_type as string | null) ?? null,
-          description: (prev.description as string | null) ?? null,
-          status: String(prev.status),
-          created_at: createdAt,
-          updated_at: now
-        }
-      })
-      return
-    }
-    case 'ip_range':
-      await tx.ipRange.create({
-        data: {
-          id: String(prev.id),
-          network_id: String(prev.network_id),
-          start_ip: String(prev.start_ip),
-          end_ip: String(prev.end_ip),
-          type: String(prev.type),
-          description: (prev.description as string | null) ?? null,
-          created_at: createdAt,
-          updated_at: now
-        }
-      })
-      return
-    default:
-      throw createError({ statusCode: 422, message: `Undo delete not supported for "${entityType}"` })
-  }
-}
-
-export { hasConflictToken }

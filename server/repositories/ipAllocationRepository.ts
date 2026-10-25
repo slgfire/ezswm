@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import type { Prisma, PrismaClient } from '@prisma/client'
 import { prisma } from '../db/client'
 import type { IPAllocation } from '../../types/ipAllocation'
 import { isValidIPv4, isIPInSubnet, isUsableHostIP, isValidMacAddress, subnetRangeError, parseSubnet, ipToLong } from '../utils/ipv4'
@@ -73,13 +74,13 @@ export function ipAllocationImpactToken(impact: IpAllocationDeleteImpact): strin
   return deleteImpactToken(impact)
 }
 
-async function buildAllocationDeleteImpact(id: string): Promise<IpAllocationDeleteImpact | null> {
-  const allocation = await prisma.ipAllocation.findUnique({
+async function buildAllocationDeleteImpact(id: string, db: PrismaClient | Prisma.TransactionClient = prisma): Promise<IpAllocationDeleteImpact | null> {
+  const allocation = await db.ipAllocation.findUnique({
     where: { id },
     select: { id: true, network_id: true, ip_address: true, hostname: true, status: true }
   })
   if (!allocation) return null
-  const ports = await prisma.port.findMany({
+  const ports = await db.port.findMany({
     where: { connected_allocation_id: id },
     select: { id: true, switch_id: true, index: true, label: true },
     orderBy: [{ switch_id: 'asc' }, { index: 'asc' }]
@@ -287,13 +288,15 @@ export const ipAllocationRepository = {
    */
   async deleteGuarded(id: string, expectedImpactToken?: string): Promise<DeleteOutcome<IpAllocationDeleteImpact>> {
     return prisma.$transaction(async (tx) => {
-      const impact = await buildAllocationDeleteImpact(id)
+      const impact = await buildAllocationDeleteImpact(id, tx)
       if (!impact) return { kind: 'not_found' }
       const impactToken = ipAllocationImpactToken(impact)
       if (expectedImpactToken !== undefined && expectedImpactToken !== impactToken) {
         return { kind: 'conflict', impact, impactToken }
       }
-      await tx.ipAllocation.delete({ where: { id } })
+      // deleteMany: a concurrently deleted target is a clean not_found, not a P2025 500.
+      const removed = await tx.ipAllocation.deleteMany({ where: { id } })
+      if (removed.count === 0) return { kind: 'not_found' }
       return { kind: 'deleted', impact }
     })
   },

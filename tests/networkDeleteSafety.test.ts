@@ -125,8 +125,10 @@ describe('safe network delete (preview + impactToken + atomic execution)', () =>
     await prisma.$executeRawUnsafe(
       `CREATE TRIGGER block_network_delete BEFORE DELETE ON "Network" BEGIN SELECT RAISE(ABORT, 'blocked'); END;`
     )
+    const token = networkImpactToken((await networkRepository.getDeleteImpact(networkId))!)
     try {
-      await expect(networkRepository.deleteGuarded(networkId)).rejects.toThrow()
+      // valid expectedImpactToken: the precondition passes, so the abort happens after the child deletes
+      await expect(networkRepository.deleteGuarded(networkId, undefined, token)).rejects.toThrow()
     } finally {
       await prisma.$executeRawUnsafe('DROP TRIGGER IF EXISTS block_network_delete;')
     }

@@ -55,14 +55,18 @@ const json = (route: Route, value: unknown, status = 200) =>
 function watchErrors(page: Page, errors: string[], secrets: string[]) {
   const scrub = (value: string) => secrets.reduce((text, secret) => text.replaceAll(secret, '<secret>'), value)
   page.on('pageerror', () => errors.push('pageerror'))
-  let expectingDuplicateConflict = false
+  // Chromium reports the 409 console error after waitForResponse() resolves, so a flag reset in
+  // finally() races it. Each announced duplicate instead grants one allowance, consumed only by a
+  // "Failed to load resource ... 409" console error whose own request URL is POST /api/auth/tokens.
+  let expectedConflicts = 0
   page.on('console', message => {
     if (message.type() !== 'error') return
     const text = scrub(message.text())
-    if (expectingDuplicateConflict && EXPECTED_CONSOLE.test(text)) return
+    const isTokenCreate409 = EXPECTED_CONSOLE.test(text) && new URL(message.location().url || 'about:blank').pathname === '/api/auth/tokens'
+    if (expectedConflicts > 0 && isTokenCreate409) { expectedConflicts--; return }
     errors.push(text)
   })
-  return (expecting: boolean) => { expectingDuplicateConflict = expecting }
+  return Object.assign((expecting: boolean) => { if (expecting) expectedConflicts++ }, { pending: () => expectedConflicts })
 }
 
 async function createSyntheticUser(api: APIRequestContext, role: Profile['role'], language: Profile['language']) {
@@ -176,7 +180,7 @@ async function runOwnerFlow(
 
   // A duplicate reaches the real 409 handler and shows a localized safe message.
   expectDuplicateConflict(true)
-  const duplicateResponse = await createTokenThroughUi(page, language, name).finally(() => expectDuplicateConflict(false))
+  const duplicateResponse = await createTokenThroughUi(page, language, name)
   expect(duplicateResponse.status()).toBe(409)
   await expect(page.getByRole('alert').filter({ hasText: t.conflict })).toBeVisible()
 
@@ -284,6 +288,10 @@ test('local Admin and Viewer manage their own API tokens in English and German; 
     await runOwnerFlow(adminPage, adminApi, 'en', 'admin', secrets, expectAdminDuplicateConflict)
     await runOwnerFlow(viewerPage, viewerApi, 'de', 'viewer', secrets, expectViewerDuplicateConflict)
 
+    // Every announced duplicate must have produced its expected console error.
+    expect(expectAdminDuplicateConflict.pending()).toBe(0)
+    expect(expectViewerDuplicateConflict.pending()).toBe(0)
+
     // [MOCK] A synthetic OIDC login gets an availability message and no token-list request.
     oidcContext = await browser.newContext({ baseURL: baseURL!, storageState: { cookies: [], origins: [] } })
     const oidcPage = await oidcContext.newPage()
@@ -298,10 +306,12 @@ test('local Admin and Viewer manage their own API tokens in English and German; 
     await oidcPage.route('**/api/auth/oidc/status', route => json(route, { enabled: false }))
     await oidcPage.route('**/api/sites', route => json(route, []))
     await oidcPage.goto('/login')
+    // Nuxt still reports isHydrating after the load event; filling earlier can be lost to hydration.
+    await oidcPage.waitForFunction(() => (window as unknown as { useNuxtApp: () => { isHydrating: boolean } }).useNuxtApp().isHydrating === false)
     await oidcPage.getByLabel('Username').fill(oidcProfile.username)
     await oidcPage.getByLabel('Password').fill(PASSWORD)
     await oidcPage.getByRole('button', { name: 'Login', exact: true }).click()
-    await expect(oidcPage).toHaveURL(/\/$/)
+    await expect(oidcPage).toHaveURL(/\/sites$/)
     await oidcPage.getByRole('link', { name: 'Einstellungen', exact: true }).click()
     await waitForAccountTab(oidcPage, 'de')
     await expect(oidcPage.getByText(UI.de.localOnly, { exact: true })).toBeVisible()

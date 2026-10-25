@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import type { Prisma, PrismaClient } from '@prisma/client'
 import { prisma } from '../db/client'
 import type { IPRange } from '../../types/ipRange'
 import { isValidIPv4, isIPInSubnet, ipToLong, doRangesOverlap, subnetRangeError } from '../utils/ipv4'
@@ -38,8 +39,8 @@ export function ipRangeImpactToken(impact: IpRangeDeleteImpact): string {
   return deleteImpactToken(impact)
 }
 
-async function buildRangeDeleteImpact(id: string): Promise<IpRangeDeleteImpact | null> {
-  const range = await prisma.ipRange.findUnique({
+async function buildRangeDeleteImpact(id: string, db: PrismaClient | Prisma.TransactionClient = prisma): Promise<IpRangeDeleteImpact | null> {
+  const range = await db.ipRange.findUnique({
     where: { id },
     select: { id: true, network_id: true, start_ip: true, end_ip: true, type: true }
   })
@@ -186,13 +187,15 @@ export const ipRangeRepository = {
   /** Atomic row-only delete. Omit `expectedImpactToken` for JWT/UI. */
   async deleteGuarded(id: string, expectedImpactToken?: string): Promise<DeleteOutcome<IpRangeDeleteImpact>> {
     return prisma.$transaction(async (tx) => {
-      const impact = await buildRangeDeleteImpact(id)
+      const impact = await buildRangeDeleteImpact(id, tx)
       if (!impact) return { kind: 'not_found' }
       const impactToken = ipRangeImpactToken(impact)
       if (expectedImpactToken !== undefined && expectedImpactToken !== impactToken) {
         return { kind: 'conflict', impact, impactToken }
       }
-      await tx.ipRange.delete({ where: { id } })
+      // deleteMany: a concurrently deleted target is a clean not_found, not a P2025 500.
+      const removed = await tx.ipRange.deleteMany({ where: { id } })
+      if (removed.count === 0) return { kind: 'not_found' }
       return { kind: 'deleted', impact }
     })
   },

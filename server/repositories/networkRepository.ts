@@ -83,10 +83,16 @@ export function networkConflictError(name?: string) {
 }
 
 /** Name of another network in the same (site, vlan-or-untagged) scope with the same canonical CIDR. */
-export async function findScopedSubnetClash(siteId: string, vlanId: string | null, subnet: string, excludeId?: string): Promise<string | null> {
+export async function findScopedSubnetClash(
+  siteId: string,
+  vlanId: string | null,
+  subnet: string,
+  excludeId?: string,
+  db: PrismaClient | Prisma.TransactionClient = prisma
+): Promise<string | null> {
   if (!isValidCIDR(subnet)) return null
   const canon = canonicalizeCIDR(subnet)
-  const candidates = await prisma.network.findMany({
+  const candidates = await db.network.findMany({
     where: { site_id: siteId, vlan_id: vlanId, ...(excludeId ? { NOT: { id: excludeId } } : {}) },
     select: { name: true, subnet: true }
   })
@@ -328,7 +334,9 @@ export const networkRepository = {
       }
       await tx.ipAllocation.deleteMany({ where: { network_id: row.id } })
       await tx.ipRange.deleteMany({ where: { network_id: row.id } })
-      await tx.network.delete({ where: { id: row.id } })
+      // deleteMany: a concurrently deleted target is a clean not_found, not a P2025 500.
+      const removed = await tx.network.deleteMany({ where: { id: row.id } })
+      if (removed.count === 0) return { kind: 'not_found' }
       return { kind: 'deleted', impact }
     })
   },
