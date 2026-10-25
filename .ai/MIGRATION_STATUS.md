@@ -2,6 +2,10 @@
 
 ## Latest Stage
 
+### MCP CI test-config fix (2026-10-25)
+
+CI job `pnpm --filter ezswm-mcp test` ran 0 tests: Vite's oxc transform found no tsconfig covering `mcp/test/*.ts` (`mcp/tsconfig.json` includes only `src`) and fell back to the root `tsconfig.json`, which extends the Nuxt-generated `.nuxt/tsconfig.json` (absent in the MCP job). Fix: `mcp/test/tsconfig.json` (extends `../tsconfig.json`, `noEmit`, includes tests + src); build/typecheck use `mcp/tsconfig.json` unchanged. Verified in an isolated Node 24.22.1 copy without `.nuxt`: before the fix 3 suites failed with TSCONFIG_ERROR/no tests; after, 3 files / 46 tests pass, `tsc -p tsconfig.json --noEmit` clean. Limit: the test tsconfig is not a test typecheck (tests were never type-clean under strict settings). Test-config only; no version bump; CI for the fix not yet run.
+
 ### MCP integrated-build smoke verification and docs finalization (2026-10-25)
 
 Date: 2026-10-25 — local on `feat/mcp-server`; uncommitted, not pushed or published. No product code or version change (0.46.0 stays).
