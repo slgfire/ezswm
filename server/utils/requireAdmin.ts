@@ -153,6 +153,8 @@ const API_TOKEN_DENY_RULES: DenyRule[] = [
   // together with the Stage-4 checked server-side undo contract.
   { methods: 'any', re: /^\/api\/data\/export(\/|$)/ },
   { methods: 'any', re: /^\/api\/export(\/|$)/ },
+  // Layout-template file export: same class as /api/export/templates (templates stay denied for tokens).
+  { methods: 'get', re: /^\/api\/layout-templates\/[^/]+\/export$/ },
   { methods: 'any', re: /^\/api\/activity(\/|$)/ },
   { methods: 'any', re: /^\/api\/dashboard\/stats$/ },
   // Imports (both families + layout templates): default deny

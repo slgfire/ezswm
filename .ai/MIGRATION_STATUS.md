@@ -2,6 +2,14 @@
 
 ## Latest Stage
 
+### API-token deny for layout-template export + route inventory gate (2026-10-26)
+
+`GET`/`HEAD /api/layout-templates/:id/export` is now denied for API tokens in `server/utils/requireAdmin.ts` (one anchored `get` deny rule, same class as `/api/export/templates`); JWT sessions and other layout-template routes are unchanged. `tests/fixtures/apiRouteInventory.ts` is a static, hand-maintained inventory of all 131 `server/api` route files (81 allow, 35 deny, 2 mixed, 13 public) checked by `tests/apiTokens.test.ts` against filesystem discovery (whole-`index`-segment mapping, duplicate keys rejected) and `evaluateApiTokenPolicy`. Public entries (including `GET /api/settings`) are asserted against the real auth middleware with no credential (public routes pass, every other route and mixed sample gets 401; no handler runs) and are not policy-checked; mixed routes need allow and deny samples (unknown entity denied). Evidence: `vitest run tests/apiTokens.test.ts tests/mcpActivityUndo.test.ts` in the Node 24 image, 125/125 passed (log `/tmp/opencode/mcp-int/inventory-gate-fix.log`). The earlier log `layout-export-deny.log` records the final pass after one failed first run (JWT export 500, missing `setResponseHeader` in the harness). Test harness gained the export/list routes and `setResponseHeader`. No version, dependency or other-route changes.
+
+### MCP docs: upstream token restart clarification (2026-10-26)
+
+Docs only (`docs/guide/mcp.md`, `docs/de/guide/mcp.md`, changelogs). The credential-boundary paragraph now states that the upstream `EZSWM_TOKEN`/`EZSWM_TOKEN_FILE` is read only at MCP startup (`mcp/src/config.ts`), so replacing it requires restarting MCP. No source, version or runtime change.
+
 ### MCP CI test-config fix (2026-10-25)
 
 CI job `pnpm --filter ezswm-mcp test` ran 0 tests: Vite's oxc transform found no tsconfig covering `mcp/test/*.ts` (`mcp/tsconfig.json` includes only `src`) and fell back to the root `tsconfig.json`, which extends the Nuxt-generated `.nuxt/tsconfig.json` (absent in the MCP job). Fix: `mcp/test/tsconfig.json` (extends `../tsconfig.json`, `noEmit`, includes tests + src); build/typecheck use `mcp/tsconfig.json` unchanged. Verified in an isolated Node 24.22.1 copy without `.nuxt`: before the fix 3 suites failed with TSCONFIG_ERROR/no tests; after, 3 files / 46 tests pass, `tsc -p tsconfig.json --noEmit` clean. Limit: the test tsconfig is not a test typecheck (tests were never type-clean under strict settings). Test-config only; no version bump; CI for the fix not yet run.

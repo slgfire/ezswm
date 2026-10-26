@@ -68,6 +68,7 @@ export function installH3Globals(): void {
     return location
   }
   g.setHeader = (e: unknown, name: string, value: string) => { ev(e).responseHeaders[name.toLowerCase()] = value }
+  g.setResponseHeader = g.setHeader
   g.setResponseStatus = (e: unknown, status: number) => { ev(e).responseStatus = status }
   g.getQuery = (e: unknown) => {
     const q = new URL(ev(e).path, 'http://q.invalid').searchParams
@@ -146,6 +147,8 @@ const ROUTES: Array<{ method: string, re: RegExp, load: () => Promise<{ default:
   { method: 'POST', re: /^\/api\/import\/([^/]+)$/, params: ['entity'], load: () => import('../../server/api/import/[entity].post') },
   { method: 'POST', re: /^\/api\/activity\/([^/]+)\/undo$/, params: ['id'], load: () => import('../../server/api/activity/[id]/undo.post') },
   { method: 'GET', re: /^\/api\/networks\/([^/]+)\/free-ips$/, params: ['id'], load: () => import('../../server/api/networks/[id]/free-ips.get') },
+  { method: 'GET', re: /^\/api\/layout-templates$/, load: () => import('../../server/api/layout-templates/index.get') },
+  { method: 'GET', re: /^\/api\/layout-templates\/([^/]+)\/export$/, params: ['id'], load: () => import('../../server/api/layout-templates/[id]/export.get') },
   { method: 'GET', re: /^\/api\/activity$/, load: () => import('../../server/api/activity/index.get') },
   { method: 'GET', re: /^\/api\/activity\/mcp$/, load: () => import('../../server/api/activity/mcp.get') },
   { method: 'POST', re: /^\/api\/activity\/mcp\/([^/]+)\/undo$/, params: ['id'], load: () => import('../../server/api/activity/mcp/[id]/undo.post') }

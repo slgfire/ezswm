@@ -1,12 +1,15 @@
+import { readdirSync, statSync } from 'node:fs'
+import { join } from 'node:path'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { PrismaClient } from '@prisma/client'
 
 import { createTestPrisma, seedNetwork, seedSite } from './testHelpers'
-import { asCookie, dispatch, installH3Globals, resetOidcRuntime, seedLocalUser, setOidcRuntime, tokenFor } from './helpers/h3Harness'
+import { asCookie, dispatch, installH3Globals, makeEvent, resetOidcRuntime, seedLocalUser, setOidcRuntime, tokenFor } from './helpers/h3Harness'
 import { apiTokenRepository, hashApiToken, API_TOKEN_LAST_USED_THROTTLE_MS } from '../server/repositories/apiTokenRepository'
 import { userRepository } from '../server/repositories/userRepository'
 import { evaluateApiTokenPolicy } from '../server/utils/requireAdmin'
 import { restoreAll } from '../server/utils/dataRestore'
+import { API_ROUTE_INVENTORY, MIXED_SAMPLES } from './fixtures/apiRouteInventory'
 
 type Role = 'admin' | 'viewer'
 const bearer = (t: string) => ({ authorization: `Bearer ${t}` })
@@ -264,6 +267,7 @@ describe('API tokens (real Prisma + real middleware)', () => {
       ['POST', '/api/import/templates'], ['POST', '/api/import/template/vlans'], ['POST', '/api/layout-templates/import'],
       ['GET', '/api/activity'], ['HEAD', '/api/activity'], ['GET', '/api/dashboard/stats'], ['HEAD', '/api/dashboard/stats'],
       ['GET', '/api/export/templates'],
+      ['GET', `/api/layout-templates/${id}/export`], ['HEAD', `/api/layout-templates/${id}/export`], ['GET', `/API/Layout-Templates/${id}/export/`],
       ['PUT', '/api/settings'], ['POST', '/api/settings'], ['PATCH', '/api/settings'], ['DELETE', '/api/settings'],
       ['POST', `/api/activity/${id}/undo`],
       ['DELETE', `/api/device-types/${id}`],
@@ -284,7 +288,9 @@ describe('API tokens (real Prisma + real middleware)', () => {
       ['GET', '/api/networks'], ['DELETE', `/api/networks/${id}`], ['DELETE', `/api/networks/${id}/allocations/${id}`],
       ['DELETE', `/api/networks/${id}/ranges/${id}`], ['DELETE', `/api/vlans/${id}`], ['DELETE', `/api/switches/${id}/lag-groups/${id}`],
       ['POST', `/api/networks/${id}/allocations`], ['PUT', `/api/vlans/${id}`], ['GET', '/api/import/template/vlans'],
-      ['GET', '/api/search'], ['GET', '/api/switches/sort']
+      ['GET', '/api/search'], ['GET', '/api/switches/sort'],
+      ['GET', '/api/layout-templates'], ['GET', `/api/layout-templates/${id}`], ['PUT', `/api/layout-templates/${id}`], ['DELETE', `/api/layout-templates/${id}`],
+      ['POST', `/api/layout-templates/${id}/duplicate`]
     ]
     it.each(allowed)('allows %s %s for API tokens', (method, path) => {
       expect(evaluateApiTokenPolicy({ method, path })).toBe('allow')
@@ -401,6 +407,101 @@ describe('API tokens (real Prisma + real middleware)', () => {
       expect((await dispatch({ method: 'POST', path: '/api/import/templates', headers: bearer(t.token), body: [] })).status).toBe(403)
       expect((await dispatch({ method: 'POST', path: '/api/layout-templates/import', headers: bearer(t.token), body: {} })).status).toBe(403)
     })
+
+    it('layout-template export is denied (403) for admin and viewer API tokens, GET and HEAD; JWT and template listing stay allowed', async () => {
+      setOidcRuntime({})
+      const admin = await user('boss')
+      const viewer = await user('v', 'viewer')
+      const tpl = await prisma.layoutTemplate.create({ data: { id: crypto.randomUUID(), name: 'Export Me', units: '[]', created_at: new Date().toISOString(), updated_at: new Date().toISOString() } })
+      const path = `/api/layout-templates/${tpl.id}/export`
+      for (const u of [admin, viewer]) {
+        const t = await mint(u, `t-${u.username}`)
+        for (const method of ['GET', 'HEAD']) {
+          expect((await dispatch({ method, path, headers: bearer(t.token) })).status, `${u.username} ${method}`).toBe(403)
+        }
+        expect((await dispatch({ path: '/api/layout-templates', headers: bearer(t.token) })).status).toBe(200)
+      }
+      for (const u of [admin, viewer]) {
+        const r = await dispatch({ path, ...jwtOf(u) })
+        expect(r.status, `JWT ${u.username}`).toBe(200)
+      }
+    })
   })
 
+})
+
+describe('API route inventory vs token policy (static gate, not runtime coverage)', () => {
+  const walk = (d: string): string[] => readdirSync(d).flatMap(f => statSync(join(d, f)).isDirectory() ? walk(join(d, f)) : [join(d, f)])
+  // server/api/<path>/[param]/index.<method>.ts -> "METHOD /api/<path>/:param"
+  // Only a whole `index` path segment is dropped (users/index.get.ts -> /api/users, usersindex.get.ts -> /api/usersindex).
+  const routeKey = (rel: string) => {
+    const m = /^(.*)\.(get|post|put|patch|delete)\.ts$/.exec(rel)
+    if (!m) throw new Error(`Unrecognized route file ${rel}`)
+    const segs = m[1]!.split('/').map(s => s.replace(/\[(\w+)\]/g, ':$1'))
+    if (segs[segs.length - 1] === 'index') segs.pop()
+    return `${m[2]!.toUpperCase()} ${['/api', ...segs].join('/')}`
+  }
+  const keysOf = (rels: string[]) => {
+    const keys = rels.map(routeKey)
+    const dup = keys.filter((k, i) => keys.indexOf(k) !== i)
+    if (dup.length) throw new Error(`Duplicate route keys: ${dup.join(', ')}`)
+    return keys.sort()
+  }
+  const discover = (dir = join(__dirname, '../server/api')) => keysOf(walk(dir).map(f => f.slice(dir.length + 1).split('\\').join('/')))
+  const unclassified = (found: string[]) => found.filter(r => !(r in API_ROUTE_INVENTORY))
+
+  it('every server/api route file is classified and no stale entries remain', () => {
+    const found = discover()
+    expect(unclassified(found), 'route(s) missing from tests/fixtures/apiRouteInventory.ts').toEqual([])
+    expect(Object.keys(API_ROUTE_INVENTORY).filter(r => !found.includes(r)), 'stale inventory entries').toEqual([])
+  })
+
+  it('route key mapping drops only a whole index segment and rejects duplicates', () => {
+    expect(keysOf(['users/index.get.ts', 'usersindex.get.ts', 'a/index/index.get.ts', 'index.get.ts', 'x/[id]/index.put.ts']))
+      .toEqual(['GET /api', 'GET /api/a/index', 'GET /api/users', 'GET /api/usersindex', 'PUT /api/x/:id'].sort())
+    expect(() => keysOf(['users/index.get.ts', 'users.get.ts'])).toThrow(/Duplicate/)
+  })
+
+  it('a new route fails classification until the inventory is updated (self-check)', () => {
+    expect(unclassified([...discover(), 'GET /api/brand-new-route'])).toEqual(['GET /api/brand-new-route'])
+  })
+
+  it('real auth middleware: inventory public routes need no credential, every other route returns 401 without one', async () => {
+    installH3Globals()
+    const { default: middleware } = await import('../server/middleware/auth')
+    const concrete = (p: string) => p.replace(/:(\w+)/g, '$1-x')
+    for (const [route, access] of Object.entries(API_ROUTE_INVENTORY)) {
+      const [method, path] = route.split(' ') as [string, string]
+      const run = () => (middleware as (e: unknown) => Promise<unknown>)(makeEvent({ method, path: concrete(path) }))
+      if (access === 'public') await expect(run(), route).resolves.toBeUndefined()
+      else await expect(run(), route).rejects.toMatchObject({ statusCode: 401 })
+    }
+    // mixed routes must be protected for every sample too (unknown entity included)
+    for (const [method, path] of MIXED_SAMPLES) {
+      await expect((middleware as (e: unknown) => Promise<unknown>)(makeEvent({ method, path })), `${method} ${path}`).rejects.toMatchObject({ statusCode: 401 })
+    }
+  })
+
+  it('every mixed route has both an allow and a deny sample', () => {
+    for (const [route, access] of Object.entries(API_ROUTE_INVENTORY)) {
+      if (access !== 'mixed') continue
+      const [method, path] = route.split(' ') as [string, string]
+      const prefix = path.slice(0, path.indexOf(':'))
+      for (const want of ['allow', 'deny']) {
+        expect(MIXED_SAMPLES.some(([m, p, a]) => m === method && p.startsWith(prefix) && a === want), `${route} needs a ${want} sample`).toBe(true)
+      }
+    }
+  })
+
+  it('inventory expectations match evaluateApiTokenPolicy (public routes are not policy-checked)', () => {
+    for (const [route, access] of Object.entries(API_ROUTE_INVENTORY)) {
+      if (access === 'public' || access === 'mixed') continue
+      const [method, path] = route.split(' ') as [string, string]
+      expect(evaluateApiTokenPolicy({ method, path: path.replace(/:(\w+)/g, '$1-x') }), route)
+        .toBe(access === 'allow' ? 'allow' : 'forbidden')
+    }
+    for (const [method, path, access] of MIXED_SAMPLES) {
+      expect(evaluateApiTokenPolicy({ method, path }), `${method} ${path}`).toBe(access === 'allow' ? 'allow' : 'forbidden')
+    }
+  })
 })
