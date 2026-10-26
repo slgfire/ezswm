@@ -21,6 +21,9 @@
 - Dokumentation: Die öffentlichen Startseiten (EN/DE), FAQ und Installationshinweise beschreiben die Speicherung nun korrekt: Es wird kein externer Datenbankserver benötigt, die Daten liegen in einer eingebetteten SQLite-Datenbank (über Prisma) im Datenverzeichnis, und JSON dient nur für Backups sowie Import/Export (`schema: "sqlite-v1"`). Die Anleitung für manuelle Backups sagt nun, dass das gesamte Datenverzeichnis (`db.sqlite` plus ggf. WAL/SHM-Dateien) nur bei gestoppter Anwendung kopiert werden darf, und die FAQ empfiehlt nicht mehr, `users.json` zur Passwort-Wiederherstellung zu löschen.
 - Dokumentations-Branding: Der Header der englischen und deutschen VitePress-Seiten zeigt nun das vollständige aktuelle Logo, gefolgt nur von „Docs“; das Titelbild zeigt neben der unveränderten grünen Überschrift `ezSWM` und dem Beschreibungstext nur noch das grüne Switch-Symbol. Die Seitentitel behalten den vollständigen Dokumentationsnamen.
 
+### Behoben
+- API-Token-Formular: Name- und Ablauf-Feld zeigen nicht mehr einen roten Fehlerzustand, bevor eine Eingabe ungültig ist. Ein leerer Fehlertext wurde vom Vue-Boolean/String-Prop des Nuxt-UI-Formularfelds zu `true` umgewandelt und setzte `aria-invalid` sowie den Fehlerrahmen; ohne Meldung wird nun kein Fehlerwert übergeben. Der End-to-End-Test prüft, dass `aria-invalid` anfangs `false`, nur beim ungültigen Feld `true` und nach der Korrektur wieder `false` ist.
+
 ---
 
 ## [0.45.4] — 2026-10-23

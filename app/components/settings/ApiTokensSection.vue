@@ -60,7 +60,7 @@
 
       <form class="space-y-3" novalidate @submit.prevent="createToken">
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,0.8fr)_auto] sm:items-end">
-          <UFormField :label="$t('settings.account.apiTokens.name')" name="api-token-name" required :error="nameError">
+          <UFormField :label="$t('settings.account.apiTokens.name')" name="api-token-name" required :error="nameError || undefined">
             <UInput
               id="api-token-name"
               v-model="tokenName"
@@ -73,7 +73,7 @@
               @input="clearFormErrors"
             />
           </UFormField>
-          <UFormField :label="$t('settings.account.apiTokens.expiresAt')" name="api-token-expires" :hint="$t('settings.account.apiTokens.expiryHint')" :error="expiryError">
+          <UFormField :label="$t('settings.account.apiTokens.expiresAt')" name="api-token-expires" :hint="$t('settings.account.apiTokens.expiryHint')" :error="expiryError || undefined">
             <UInput
               id="api-token-expires"
               v-model="expiryInput"

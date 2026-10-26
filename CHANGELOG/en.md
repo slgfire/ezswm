@@ -21,6 +21,9 @@
 - Documentation: the public landing pages (EN/DE), FAQ and installation notes now describe storage accurately: no external database server is required, data lives in an embedded SQLite database (via Prisma) in the data directory, and JSON is only used for backups and import/export (`schema: "sqlite-v1"`). Manual backup guidance now says to copy the whole data directory (`db.sqlite` plus any WAL/SHM files) only while the app is stopped, and the FAQ no longer suggests deleting `users.json` to recover a password.
 - Documentation branding: the English and German VitePress header now shows the current full logo followed only by “Docs”; the hero shows only the green switch symbol beside the unchanged green `ezSWM` heading and tagline. The page titles retain the full documentation name.
 
+### Fixed
+- API token form: the name and expiry fields no longer show a red error state before any input is invalid. An empty error string was cast to `true` by the Vue Boolean/String prop of the Nuxt UI form field, which set `aria-invalid` and the error ring; the fields now pass no error value when there is no message. The end-to-end test now checks that `aria-invalid` is `false` initially, `true` only for the invalid field, and `false` again after correction.
+
 ---
 
 ## [0.45.4] — 2026-10-23
