@@ -11,7 +11,7 @@
     </div>
 
     <UAlert
-      v-if="isLocalAccount"
+      v-if="user"
       class="mb-4"
       color="neutral"
       variant="subtle"
@@ -19,14 +19,7 @@
       :description="$t('settings.account.apiTokens.accountRules')"
     />
 
-    <div v-if="!isLocalAccount" class="rounded-lg border border-primary-500/20 bg-primary-500/5 p-4" role="note">
-      <div class="flex items-start gap-3">
-        <UIcon name="i-lucide-shield-check" class="mt-0.5 size-5 shrink-0 text-primary-500" aria-hidden="true" />
-        <p class="text-sm text-toned">{{ $t('settings.account.apiTokens.localOnly') }}</p>
-      </div>
-    </div>
-
-    <template v-else>
+    <template v-if="user">
       <div
         v-if="issuedToken"
         ref="secretNotice"
@@ -199,7 +192,6 @@ const toast = useToast()
 const { confirm } = useConfirm()
 const { tokens, loading, loadFailed, fetch: fetchTokens, create, revoke, revokeAll, reset } = useApiTokens()
 
-const isLocalAccount = computed(() => user.value?.auth_provider === 'local')
 const tokenName = ref('')
 const expiryInput = ref('')
 const nameError = ref('')
@@ -267,7 +259,7 @@ function showActionError(error: unknown) {
 }
 
 async function createToken() {
-  if (!isLocalAccount.value || pendingMutation.value || issuedToken.value) return
+  if (!user.value || pendingMutation.value || issuedToken.value) return
   clearFormErrors()
   const name = tokenName.value.trim()
   if (!name) {
@@ -288,7 +280,7 @@ async function createToken() {
   pendingMutation.value = 'create'
   try {
     const token = await create({ name, ...(parsedExpiry.expiresAt ? { expires_at: parsedExpiry.expiresAt } : {}) })
-    if (!componentActive || !props.active || !isLocalAccount.value) return
+    if (!componentActive || !props.active || !user.value) return
     tokenName.value = ''
     expiryInput.value = ''
     issuedToken.value = token
@@ -302,13 +294,13 @@ async function createToken() {
 }
 
 async function confirmRevoke(token: { id: string, name: string }) {
-  if (pendingMutation.value || !isLocalAccount.value) return
+  if (pendingMutation.value || !user.value) return
   const approved = await confirm({
     title: t('settings.account.apiTokens.revokeTitle'),
     message: t('settings.account.apiTokens.confirmRevoke', { name: token.name }),
     confirmLabel: t('settings.account.apiTokens.revoke')
   })
-  if (!approved || !isLocalAccount.value || pendingMutation.value) return
+  if (!approved || !user.value || pendingMutation.value) return
   pendingMutation.value = token.id
   actionError.value = ''
   try {
@@ -322,13 +314,13 @@ async function confirmRevoke(token: { id: string, name: string }) {
 }
 
 async function confirmRevokeAll() {
-  if (pendingMutation.value || !isLocalAccount.value || !tokens.value.length) return
+  if (pendingMutation.value || !user.value || !tokens.value.length) return
   const approved = await confirm({
     title: t('settings.account.apiTokens.revokeAllTitle'),
     message: t('settings.account.apiTokens.confirmRevokeAll'),
     confirmLabel: t('settings.account.apiTokens.revokeAll')
   })
-  if (!approved || !isLocalAccount.value || pendingMutation.value) return
+  if (!approved || !user.value || pendingMutation.value) return
   pendingMutation.value = 'all'
   actionError.value = ''
   try {
@@ -346,8 +338,8 @@ watch(() => props.active, (active) => {
   if (!active) clearIssuedToken()
 })
 
-watch(isLocalAccount, (local) => {
-  if (local) void fetchTokens()
+watch(user, (currentUser) => {
+  if (currentUser) void fetchTokens()
   else {
     reset()
     clearIssuedToken()
@@ -355,7 +347,7 @@ watch(isLocalAccount, (local) => {
 })
 
 onMounted(() => {
-  if (isLocalAccount.value) void fetchTokens()
+  if (user.value) void fetchTokens()
 })
 
 onBeforeUnmount(() => {

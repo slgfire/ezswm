@@ -7,6 +7,7 @@ import { createTestPrisma, seedNetwork, seedSite } from './testHelpers'
 import { asCookie, dispatch, installH3Globals, makeEvent, resetOidcRuntime, seedLocalUser, setOidcRuntime, tokenFor } from './helpers/h3Harness'
 import { apiTokenRepository, hashApiToken, API_TOKEN_LAST_USED_THROTTLE_MS } from '../server/repositories/apiTokenRepository'
 import { userRepository } from '../server/repositories/userRepository'
+import { oidcConfigRepository } from '../server/repositories/oidcConfigRepository'
 import { evaluateApiTokenPolicy } from '../server/utils/requireAdmin'
 import { restoreAll } from '../server/utils/dataRestore'
 import { API_ROUTE_INVENTORY, MIXED_SAMPLES } from './fixtures/apiRouteInventory'
@@ -102,12 +103,130 @@ describe('API tokens (real Prisma + real middleware)', () => {
       expect(rs.filter(r => r.ok)).toHaveLength(1)
     })
 
-    it('local accounts only: OIDC owner cannot create, and an existing OIDC-owned token is rejected', async () => {
+    it('OIDC owner cannot create without an issuing session snapshot, and an OIDC token is rejected while SSO is not ready', async () => {
       const { user: oidc } = await userRepository.provisionOrSyncOidcUser({ issuer: 'https://idp.example.com', subject: 's1', role: 'admin', displayName: 'O' })
       expect(await apiTokenRepository.create(oidc.id, { name: 'x' })).toMatchObject({ ok: false, reason: 'forbidden_owner' })
-      // defensively inserted row for an OIDC owner never authenticates
+      // SSO disabled (default): even a defensively inserted row never authenticates
       await prisma.apiToken.create({ data: { id: crypto.randomUUID(), name: 'x', token_hash: hashApiToken('ezswm_oidcowner'), user_id: oidc.id, created_at: new Date().toISOString() } })
       expect((await dispatch({ path: '/api/sites', headers: bearer('ezswm_oidcowner') })).status).toBe(401)
+    })
+  })
+
+  describe('OIDC-owned API tokens', () => {
+    const IDP = 'https://idp.example.com'
+    const enable = (patch: Parameters<typeof oidcConfigRepository.update>[0] = {}) =>
+      oidcConfigRepository.update({ enabled: true, issuer: IDP, client_id: 'cid', ...patch })
+    const oidcUser = async (sub: string, role: Role = 'viewer') =>
+      (await userRepository.provisionOrSyncOidcUser({ issuer: IDP, subject: sub, role, displayName: sub })).user
+    const oidcJwt = async (u: { id: string, username: string, role: string }) => {
+      const cfg = await oidcConfigRepository.get()
+      const fresh = (await userRepository.getById(u.id))!
+      return { cookies: asCookie(tokenFor(u, { ap: 'oidc', osv: fresh.oidc_session_version, orev: cfg.config_revision })) }
+    }
+    const issue = async (u: { id: string, username: string, role: string }, name = 'mcp') => {
+      const r = await dispatch({ method: 'POST', path: '/api/auth/tokens', body: { name }, ...(await oidcJwt(u)) })
+      return r
+    }
+    const count = (where = {}) => prisma.apiToken.count({ where })
+
+    it('admin and viewer OIDC users issue self tokens via a valid OIDC JWT; role comes from the DB per call', async () => {
+      await enable()
+      const admin = await oidcUser('a', 'admin')
+      const viewer = await oidcUser('v', 'viewer')
+      const at = (await issue(admin)).body as { token: string, id: string }
+      const vt = (await issue(viewer)).body as { token: string }
+      expect(at.token.startsWith('ezswm_')).toBe(true)
+      expect((await dispatch({ path: '/api/sites', headers: bearer(at.token) })).status).not.toBe(401)
+      expect((await dispatch({ method: 'POST', path: '/api/device-types', headers: bearer(vt.token), body: {} })).status).toBe(403)
+      // API credentials can never manage tokens
+      expect((await dispatch({ method: 'POST', path: '/api/auth/tokens', headers: bearer(at.token), body: { name: 'n' } })).status).toBe(403)
+      // immediate DB demotion
+      await prisma.user.update({ where: { id: admin.id }, data: { role: 'viewer' } })
+      expect((await dispatch({ method: 'POST', path: '/api/device-types', headers: bearer(at.token), body: {} })).status).toBe(403)
+      // optional never-expiry and ownership limits are unchanged
+      const never = await dispatch({ method: 'POST', path: '/api/auth/tokens', body: { name: 'forever', expires_at: null }, ...(await oidcJwt(viewer)) })
+      expect(never.status).toBe(201)
+      expect((never.body as { expires_at: string | null }).expires_at).toBeNull()
+      expect(await count({ user_id: viewer.id })).toBe(2)
+    })
+
+    it('a held pre-change JWT request cannot mint after a config change or a denial (both orders)', async () => {
+      await enable()
+      const u = await oidcUser('held')
+      const held = { orev: (await oidcConfigRepository.get()).config_revision, osv: u.oidc_session_version }
+      // order 1: issue first, then change -> token deleted
+      expect(await apiTokenRepository.create(u.id, { name: 'a' }, held)).toMatchObject({ ok: true })
+      await enable({ client_id: 'other' })
+      expect(await count({ user_id: u.id })).toBe(0)
+      // order 2: change first, then the held request tries to insert -> refused
+      expect(await apiTokenRepository.create(u.id, { name: 'b' }, held)).toMatchObject({ ok: false, reason: 'forbidden_owner' })
+      // same for denial: fresh snapshot ok, then denial deletes, held snapshot refused afterwards
+      const cur = { orev: (await oidcConfigRepository.get()).config_revision, osv: (await userRepository.getById(u.id))!.oidc_session_version }
+      expect(await apiTokenRepository.create(u.id, { name: 'c' }, cur)).toMatchObject({ ok: true })
+      await userRepository.invalidateOidcSessions(IDP, 'held')
+      expect(await count({ user_id: u.id })).toBe(0)
+      expect(await apiTokenRepository.create(u.id, { name: 'd' }, cur)).toMatchObject({ ok: false, reason: 'forbidden_owner' })
+      // through the handler with a stale server-side context
+      const { default: h } = await import('../server/api/auth/tokens/index.post')
+      ;(globalThis as Record<string, unknown>).readBody = async () => ({ name: 'e' })
+      const ev = { context: { auth: { userId: u.id, authType: 'jwt', role: 'viewer', authProvider: 'oidc', username: 'o', oidcSession: cur } } }
+      await expect((h as (e: unknown) => Promise<unknown>)(ev)).rejects.toMatchObject({ statusCode: 403 })
+    })
+
+    it('validated denial deletes only the matching identity\'s tokens and invalidates its JWT; unknown identity is a no-op', async () => {
+      await enable()
+      const a = await oidcUser('da'); const b = await oidcUser('db'); const local = await user('loc')
+      const jwtA = await oidcJwt(a)
+      await issue(a); await issue(b); await mint(local)
+      expect(await userRepository.invalidateOidcSessions(IDP, 'nobody')).toBe(false)
+      expect(await count()).toBe(3)
+      expect(await userRepository.invalidateOidcSessions(IDP, 'da')).toBe(true)
+      expect(await count({ user_id: a.id })).toBe(0)
+      expect(await count({ user_id: b.id })).toBe(1)
+      expect(await count({ user_id: local.id })).toBe(1)
+      expect((await dispatch({ path: '/api/auth/me', ...jwtA })).status).toBe(401)
+    })
+
+    it('ordinary logout and an invalid callback do not revoke tokens', async () => {
+      await enable()
+      const u = await oidcUser('keep')
+      await issue(u)
+      expect((await dispatch({ method: 'POST', path: '/api/auth/logout', ...(await oidcJwt(u)) })).status).toBeLessThan(500)
+      await dispatch({ path: '/api/auth/oidc/callback?state=bogus&code=x' })
+      expect(await count({ user_id: u.id })).toBe(1)
+    })
+
+    it('security config changes delete OIDC tokens only; cosmetic and no-op updates preserve them; no resurrection', async () => {
+      await enable()
+      const u = await oidcUser('cfg'); const local = await user('loc2')
+      const t = (await issue(u)).body as { token: string }
+      await mint(local)
+      await oidcConfigRepository.update({ provider_name: 'Cosmetic' })
+      await oidcConfigRepository.update({ enabled: true })
+      expect(await count({ user_id: u.id })).toBe(1)
+      for (const patch of [{ enabled: false }, { issuer: 'https://other.example.com' }, { groups_claim: 'roles' }, { admin_groups: ['x'] }, { allow_unmatched_viewer: true }]) {
+        await enable()
+        const before = (await oidcConfigRepository.get()).config_revision
+        await issue(u)
+        await oidcConfigRepository.update(patch)
+        expect((await oidcConfigRepository.get()).config_revision, JSON.stringify(patch)).toBe(before + 1)
+        expect(await count({ user_id: u.id }), JSON.stringify(patch)).toBe(0)
+        expect(await count({ user_id: local.id })).toBe(1)
+      }
+      // reverting/re-enabling does not resurrect the deleted token
+      await oidcConfigRepository.update({ enabled: true, issuer: IDP })
+      expect((await dispatch({ path: '/api/sites', headers: bearer(t.token) })).status).toBe(401)
+    })
+
+    it('temporary SSO unavailability suspends (does not delete) OIDC tokens', async () => {
+      await enable()
+      const u = await oidcUser('susp')
+      const t = (await issue(u)).body as { token: string }
+      await prisma.oidcConfig.update({ where: { id: 'singleton' }, data: { enabled: false } })
+      expect((await dispatch({ path: '/api/sites', headers: bearer(t.token) })).status).toBe(401)
+      expect(await count({ user_id: u.id })).toBe(1)
+      await prisma.oidcConfig.update({ where: { id: 'singleton' }, data: { enabled: true } })
+      expect((await dispatch({ path: '/api/sites', headers: bearer(t.token) })).status).not.toBe(401)
     })
   })
 
@@ -225,7 +344,7 @@ describe('API tokens (real Prisma + real middleware)', () => {
       expect((await dispatch({ method: 'DELETE', path: `/api/users/${other.id}/tokens/${ot.id}`, ...jwtOf(admin) })).status).toBe(204)
     })
 
-    it('OIDC accounts cannot create tokens via the route (403)', async () => {
+    it('OIDC accounts without a current issuing session cannot create tokens via the route (403)', async () => {
       const { user: oidc } = await userRepository.provisionOrSyncOidcUser({ issuer: 'https://idp.example.com', subject: 's2', role: 'viewer', displayName: 'O' })
       const r = await dispatch({ method: 'POST', path: '/api/auth/tokens', body: { name: 'x' }, skipMiddleware: true, headers: {}, cookies: {} })
       expect(r.status).toBe(401) // no auth context at all

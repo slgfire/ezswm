@@ -13,7 +13,7 @@ pnpm install --frozen-lockfile
 pnpm --filter ezswm-mcp build
 ```
 
-Erstelle unter **Einstellungen → Konto → API-Tokens** ein Token für ein lokales Konto. Für die lesenden Werkzeuge genügt ein Viewer. Speichere das Token außerhalb des Repositorys in einer Datei, die nur das ausführende Konto lesen kann. Keine Secrets in eingecheckte Client-Konfigurationen schreiben. `EZSWM_TOKEN_FILE` enthält den absoluten Dateipfad; alternativ kann `EZSWM_TOKEN` über die Prozessumgebung gesetzt werden. Das Token muss mit `ezswm_` beginnen.
+Erstelle unter **Einstellungen → Konto → API-Tokens** ein Token für ein lokales oder SSO-Konto (SSO-Tokens werden bei sicherheitsrelevanten SSO-Konfigurationsänderungen oder einem validierten SSO-Login, den das Gruppen-Mapping ablehnt, dauerhaft widerrufen; Provider-, Signatur- oder Netzwerkfehler widerrufen nichts; siehe Benutzerhandbuch). Für die lesenden Werkzeuge genügt ein Viewer. Speichere das Token außerhalb des Repositorys in einer Datei, die nur das ausführende Konto lesen kann. Keine Secrets in eingecheckte Client-Konfigurationen schreiben. `EZSWM_TOKEN_FILE` enthält den absoluten Dateipfad; alternativ kann `EZSWM_TOKEN` über die Prozessumgebung gesetzt werden. Das Token muss mit `ezswm_` beginnen.
 
 `EZSWM_URL` ist die Basis-URL der App, etwa `https://ezswm.example.com`. HTTPS ist erforderlich, außer bei Loopback-HTTP. `EZSWM_ALLOW_INSECURE_HTTP=true` erlaubt einen vertrauenswürdigen HTTP-Upstream außerhalb von Loopback, legt das Bearer-Secret aber im betreffenden Netz offen; bevorzuge HTTPS. `EZSWM_TIMEOUT_MS` beträgt standardmäßig 15000.
 

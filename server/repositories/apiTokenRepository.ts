@@ -1,6 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { nanoid } from 'nanoid'
 import { prisma } from '../db/client'
+import { readOidcConfigInTx } from './oidcConfigRepository'
+import { readOidcRuntimeSettings, resolveOidcRuntime } from '../utils/oidc/session'
 import { API_TOKEN_PREFIX, type ApiTokenCreated, type ApiTokenDto } from '../../types/apiToken'
 
 /** Best-effort last-used writes happen at most once per token per this window. */
@@ -23,27 +25,45 @@ export const apiTokenRepository = {
   },
 
   /**
-   * Local accounts only. Name uniqueness (unique index) and the 10-token limit
+   * Local accounts, or OIDC accounts whose issuing JWT snapshot (`orev`/`osv`) still equals the
+   * CURRENT config revision and session version, re-read inside the insert transaction together
+   * with SSO readiness and issuer. Name uniqueness (unique index) and the 10-token limit
    * (DB trigger) are enforced by SQLite itself, so concurrent creates cannot violate them.
    */
-  async create(userId: string, input: { name: string, expires_at?: string | null }): Promise<CreateApiTokenResult> {
-    const owner = await prisma.user.findUnique({ where: { id: userId }, select: { auth_provider: true } })
-    if (!owner) return { ok: false, reason: 'no_user' }
-    if (owner.auth_provider !== 'local') return { ok: false, reason: 'forbidden_owner' }
-
+  async create(
+    userId: string,
+    input: { name: string, expires_at?: string | null },
+    issuing?: { orev: number, osv: number }
+  ): Promise<CreateApiTokenResult> {
     const plaintext = `${API_TOKEN_PREFIX}${nanoid(32)}`
     try {
-      const row = await prisma.apiToken.create({
-        data: {
-          id: randomUUID(),
-          name: input.name,
-          token_hash: hashApiToken(plaintext),
-          user_id: userId,
-          created_at: new Date().toISOString(),
-          expires_at: input.expires_at ? new Date(input.expires_at).toISOString() : null
+      return await prisma.$transaction(async (tx): Promise<CreateApiTokenResult> => {
+        const owner = await tx.user.findUnique({ where: { id: userId }, select: { auth_provider: true, oidc_issuer: true, oidc_session_version: true } })
+        if (!owner) return { ok: false, reason: 'no_user' }
+        if (owner.auth_provider === 'oidc') {
+          const config = await readOidcConfigInTx(tx)
+          const ready = resolveOidcRuntime(config, readOidcRuntimeSettings()).ready
+          if (
+            !ready || !issuing
+            || owner.oidc_issuer !== config.issuer
+            || issuing.orev !== config.config_revision
+            || issuing.osv !== owner.oidc_session_version
+          ) return { ok: false, reason: 'forbidden_owner' }
+        } else if (owner.auth_provider !== 'local') {
+          return { ok: false, reason: 'forbidden_owner' }
         }
+        const row = await tx.apiToken.create({
+          data: {
+            id: randomUUID(),
+            name: input.name,
+            token_hash: hashApiToken(plaintext),
+            user_id: userId,
+            created_at: new Date().toISOString(),
+            expires_at: input.expires_at ? new Date(input.expires_at).toISOString() : null
+          }
+        })
+        return { ok: true, token: { ...toDto(row), token: plaintext } }
       })
-      return { ok: true, token: { ...toDto(row), token: plaintext } }
     } catch (err) {
       const e = err as { code?: string, message?: string, meta?: unknown }
       // The adapter surfaces the trigger's RAISE text inside `meta` (as a P2003 constraint error).

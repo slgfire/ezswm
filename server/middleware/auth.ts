@@ -56,8 +56,15 @@ export default defineEventHandler(async (event) => {
     const apiToken = await apiTokenRepository.authenticate(credential.token)
     // Role + owner existence come from the DB per request; local accounts only (defensive).
     const owner = apiToken ? await userRepository.getById(apiToken.user_id) : null
-    if (!apiToken || !owner || owner.auth_provider !== 'local') {
+    if (!apiToken || !owner || (owner.auth_provider !== 'local' && owner.auth_provider !== 'oidc')) {
       throw createError({ statusCode: 401, message: 'Invalid or expired token' })
+    }
+    if (owner.auth_provider === 'oidc') {
+      // Temporarily unavailable SSO suspends (not deletes) OIDC-owned tokens; the issuer must still match.
+      const config = await oidcConfigRepository.get()
+      if (!isOidcEffectivelyEnabled(config, readOidcRuntimeSettings()) || owner.oidc_issuer !== config.issuer) {
+        throw createError({ statusCode: 401, message: 'Invalid or expired token' })
+      }
     }
     if (
       evaluateApiTokenPolicy({ method, path }) !== 'allow'
@@ -116,6 +123,9 @@ export default defineEventHandler(async (event) => {
     username: user.username,
     role: user.role,
     authProvider: user.auth_provider,
-    authType: 'jwt'
+    authType: 'jwt',
+    ...(user.auth_provider === 'oidc'
+      ? { oidcSession: { orev: Number(payload.orev), osv: Number(payload.osv) } }
+      : {})
   }
 })

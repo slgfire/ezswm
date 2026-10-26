@@ -878,7 +878,6 @@
         "title": "API-Tokens",
         "description": "Erstellen und widerrufen Sie Zugangsdaten für Werkzeuge, die sich mit ezSWM verbinden. Admins und Viewer können nur ihre eigenen Tokens verwalten.",
         "accountRules": "Tokens übernehmen Ihre aktuelle Rolle; Rollenänderungen gelten sofort. Eine Passwortänderung widerruft keine Tokens. Beim Wiederherstellen eines Backups werden alle Tokens entfernt; erstellen Sie danach neue.",
-        "localOnly": "API-Tokens sind nur für lokale Konten verfügbar. Melden Sie sich mit einem lokalen Konto an, um Tokens zu erstellen oder zu verwalten.",
         "name": "Tokenname",
         "nameRequired": "Geben Sie einen Token-Namen ein.",
         "nameTooLong": "Token-Namen dürfen höchstens 100 Zeichen lang sein.",

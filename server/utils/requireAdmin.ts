@@ -11,6 +11,8 @@ export interface AuthContext {
   /** Only set when authType === 'api_token'. Never the secret. */
   apiTokenId?: string
   apiTokenName?: string
+  /** Server-only: validated OIDC JWT claims the session was issued under (jwt + oidc only). Never exposed. */
+  oidcSession?: { orev: number, osv: number }
 }
 
 export function getAuthContext(event: H3Event): AuthContext | undefined {

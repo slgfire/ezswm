@@ -13,7 +13,7 @@ pnpm install --frozen-lockfile
 pnpm --filter ezswm-mcp build
 ```
 
-In **Settings → Account → API tokens**, create a token for a local account. A Viewer account is sufficient for the read tools. Store the token in a file outside the repository, readable only by the account running MCP; never paste it into a committed client configuration. Set `EZSWM_TOKEN_FILE` to its absolute path, or provide `EZSWM_TOKEN` through the process environment. The token must start with `ezswm_`.
+In **Settings → Account → API tokens**, create a token for a local or SSO account (SSO tokens are permanently revoked on security-relevant SSO configuration changes or a validated SSO login denied by the group mapping; provider, signature or network errors do not revoke; see the user guide). A Viewer account is sufficient for the read tools. Store the token in a file outside the repository, readable only by the account running MCP; never paste it into a committed client configuration. Set `EZSWM_TOKEN_FILE` to its absolute path, or provide `EZSWM_TOKEN` through the process environment. The token must start with `ezswm_`.
 
 `EZSWM_URL` is the app's base URL, for example `https://ezswm.example.com`. HTTPS is required except for loopback HTTP. `EZSWM_ALLOW_INSECURE_HTTP=true` permits a trusted non-loopback HTTP upstream, but exposes the Bearer credential to that network; prefer HTTPS. `EZSWM_TIMEOUT_MS` defaults to 15000.
 

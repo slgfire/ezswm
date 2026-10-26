@@ -878,12 +878,11 @@
         "title": "API tokens",
         "description": "Create and revoke credentials for tools that connect to ezSWM. Admins and Viewers can manage only their own tokens.",
         "accountRules": "Tokens inherit your current role, and role changes take effect immediately. Changing your password does not revoke tokens. Restoring a backup removes all tokens; create new ones after restore.",
-        "localOnly": "API tokens are available only for local accounts. Sign in with a local account to create or manage tokens.",
         "name": "Token name",
         "nameRequired": "Enter a token name.",
         "nameTooLong": "Token names must be 100 characters or fewer.",
         "expiresAt": "Expires (optional)",
-        "expiryHint": "Uses your local time and is sent as UTC. Leave blank for no expiry; maximum five years.",
+        "expiryHint": "Uses your local time and is sent as UTC. Leave blank for no expiration; maximum five years.",
         "expiryErrors": {
           "invalid": "Enter a valid expiration date and time.",
           "past": "Expiration must be in the future.",

@@ -28,16 +28,14 @@ const UI = {
     nameRequired: 'Enter a token name.', past: 'Expiration must be in the future.', conflict: 'A token with this name already exists or your account has reached the 10-token limit. Choose another name or revoke a token.',
     empty: 'You have not created any API tokens.', revoke: 'Revoke', revokeAll: 'Revoke all', revokeTitle: 'Revoke API token?', allTitle: 'Revoke all API tokens?',
     revokeNamed: (name: string) => `Revoke token ${name}`,
-    confirm: 'Revoke', confirmAll: 'Revoke all', secretTitle: 'Copy this token now', copy: 'Copy token', copied: 'Token copied', dismiss: 'Dismiss secret',
-    localOnly: 'API tokens are available only for local accounts. Sign in with a local account to create or manage tokens.'
+    confirm: 'Revoke', confirmAll: 'Revoke all', secretTitle: 'Copy this token now', copy: 'Copy token', copied: 'Token copied', dismiss: 'Dismiss secret'
   },
   de: {
     account: 'Konto', title: 'API-Tokens', name: 'Tokenname', expiry: 'Läuft ab (optional)', create: 'Token erstellen',
     nameRequired: 'Geben Sie einen Token-Namen ein.', past: 'Das Ablaufdatum muss in der Zukunft liegen.', conflict: 'Ein Token mit diesem Namen existiert bereits oder Ihr Konto hat das Limit von 10 Tokens erreicht. Wählen Sie einen anderen Namen oder widerrufen Sie ein Token.',
     empty: 'Sie haben noch keine API-Tokens erstellt.', revoke: 'Widerrufen', revokeAll: 'Alle widerrufen', revokeTitle: 'API-Token widerrufen?', allTitle: 'Alle API-Tokens widerrufen?',
     revokeNamed: (name: string) => `Token ${name} widerrufen`,
-    confirm: 'Widerrufen', confirmAll: 'Alle widerrufen', secretTitle: 'Token jetzt kopieren', copy: 'Token kopieren', copied: 'Token kopiert', dismiss: 'Secret ausblenden',
-    localOnly: 'API-Tokens sind nur für lokale Konten verfügbar. Melden Sie sich mit einem lokalen Konto an, um Tokens zu erstellen oder zu verwalten.'
+    confirm: 'Widerrufen', confirmAll: 'Alle widerrufen', secretTitle: 'Token jetzt kopieren', copy: 'Token kopieren', copied: 'Token kopiert', dismiss: 'Secret ausblenden'
   }
 } as const
 
@@ -255,7 +253,7 @@ async function runOwnerFlow(
 test.use({ screenshot: 'off', trace: 'off' })
 test.describe.configure({ mode: 'serial', timeout: 120_000 })
 
-test('local Admin and Viewer manage their own API tokens in English and German; OIDC cannot create them', async ({ page, request, browser, playwright, baseURL }) => {
+test('local Admin and Viewer manage their own API tokens in English and German; a mocked SSO profile uses the same token UI', async ({ page, request, browser, playwright, baseURL }) => {
   const origin = localOrigin()
   const meResponse = await request.get('/api/auth/me')
   expect(meResponse.ok(), 'isolated app has an authenticated admin fixture').toBe(true)
@@ -292,19 +290,39 @@ test('local Admin and Viewer manage their own API tokens in English and German; 
     expect(expectAdminDuplicateConflict.pending()).toBe(0)
     expect(expectViewerDuplicateConflict.pending()).toBe(0)
 
-    // [MOCK] A synthetic OIDC login gets an availability message and no token-list request.
+    // [MOCK] Synthetic SSO (OIDC) profile: auth, profile and token endpoints are all mocked in the browser
+    // (no real IdP, no real OIDC JWT, no real protected API call). Backend issuance/lifecycle is covered by root tests.
     oidcContext = await browser.newContext({ baseURL: baseURL!, storageState: { cookies: [], origins: [] } })
     const oidcPage = await oidcContext.newPage()
     await oidcPage.setViewportSize({ width: 1440, height: 900 })
-    const tokenRequests: string[] = []
-    oidcPage.on('request', req => {
-      if (new URL(req.url()).pathname === '/api/auth/tokens') tokenRequests.push(req.method())
-    })
     const oidcProfile = { ...adminProfile, role: 'viewer', auth_provider: 'oidc', language: 'de' }
+    const mockSecret = `ezswm_${randomUUID().replaceAll('-', '').slice(0, 32)}`
+    secrets.push(mockSecret)
+    const mockName = `${PREFIX}_oidc_mock`
+    const mockTokens: TokenMetadata[] = []
+    const seen: string[] = []
+    let createBody: unknown
     await oidcPage.route('**/api/auth/login', route => json(route, { user: oidcProfile, token: 'synthetic-ui-session' }))
     await oidcPage.route('**/api/auth/me', route => json(route, oidcProfile))
     await oidcPage.route('**/api/auth/oidc/status', route => json(route, { enabled: false }))
     await oidcPage.route('**/api/sites', route => json(route, []))
+    await oidcPage.route('**/api/auth/tokens', (route) => {
+      const method = route.request().method()
+      seen.push(method)
+      if (method === 'GET') return json(route, mockTokens)
+      if (method === 'POST') {
+        createBody = route.request().postDataJSON()
+        const row = { id: randomUUID(), name: (createBody as { name: string }).name, created_at: new Date().toISOString(), last_used_at: null, expires_at: null }
+        mockTokens.push(row)
+        return json(route, { ...row, token: mockSecret }, 201)
+      }
+      return route.fallback()
+    })
+    await oidcPage.route('**/api/auth/tokens/*', (route) => {
+      seen.push(`${route.request().method()} ${new URL(route.request().url()).pathname}`)
+      mockTokens.length = 0
+      return route.fulfill({ status: 204 })
+    })
     await oidcPage.goto('/login')
     // Nuxt still reports isHydrating after the load event; filling earlier can be lost to hydration.
     await oidcPage.waitForFunction(() => (window as unknown as { useNuxtApp: () => { isHydrating: boolean } }).useNuxtApp().isHydrating === false)
@@ -312,11 +330,29 @@ test('local Admin and Viewer manage their own API tokens in English and German; 
     await oidcPage.getByLabel('Password').fill(PASSWORD)
     await oidcPage.getByRole('button', { name: 'Login', exact: true }).click()
     await expect(oidcPage).toHaveURL(/\/sites$/)
+    const oidcList = oidcPage.waitForResponse(res => res.request().method() === 'GET' && new URL(res.url()).pathname === '/api/auth/tokens')
     await oidcPage.getByRole('link', { name: 'Einstellungen', exact: true }).click()
     await waitForAccountTab(oidcPage, 'de')
-    await expect(oidcPage.getByText(UI.de.localOnly, { exact: true })).toBeVisible()
-    await expect(oidcPage.getByRole('button', { name: UI.de.create, exact: true })).toHaveCount(0)
-    expect(tokenRequests).toEqual([])
+    expect((await oidcList).status(), 'SSO profile lists its tokens').toBe(200)
+    await expect(oidcPage.getByTestId('api-token-empty')).toContainText(UI.de.empty)
+    // Create form is present for SSO accounts; blank expiry sends only the name.
+    const oidcCreate = await createTokenThroughUi(oidcPage, 'de', mockName)
+    expect(oidcCreate.status()).toBe(201)
+    expect(createBody).toEqual({ name: mockName })
+    await expect(oidcPage.getByRole('alert').filter({ hasText: UI.de.secretTitle })).toBeVisible()
+    expect((await oidcPage.getByTestId('api-token-secret').innerText()) === mockSecret).toBe(true)
+    const oidcRow = oidcPage.getByTestId('api-token-row').filter({ hasText: mockName })
+    await expect(oidcRow).toBeVisible()
+    expect((await oidcRow.evaluate(element => element.outerHTML)).includes(mockSecret)).toBe(false)
+    await oidcPage.getByRole('button', { name: UI.de.dismiss, exact: true }).click()
+    await expect(oidcPage.getByTestId('api-token-secret')).toHaveCount(0)
+    expect((await oidcPage.content()).includes(mockSecret)).toBe(false)
+    // Revoke the mocked token through the UI.
+    await oidcRow.getByRole('button', { name: UI.de.revokeNamed(mockName) }).click()
+    await oidcPage.getByRole('dialog').getByRole('button', { name: UI.de.confirm, exact: true }).click()
+    await expect(oidcRow).toHaveCount(0)
+    expect(seen).toContain('POST')
+    expect(seen.some(entry => /^DELETE \/api\/auth\/tokens\/[^/]+$/.test(entry))).toBe(true)
   } finally {
     await oidcContext?.close()
     await adminContext?.close()
