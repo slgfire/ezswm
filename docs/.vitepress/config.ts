@@ -3,6 +3,44 @@ import { withMermaid } from 'vitepress-plugin-mermaid'
 
 const GITHUB_REPO = 'https://github.com/slgfire/ezswm'
 
+const englishSidebar = [
+  {
+    text: 'Start here',
+    items: [
+      { text: 'Installation', link: '/guide/installation' },
+      { text: 'User Guide', link: '/guide/user-guide' },
+    ],
+  },
+  { text: 'Integration', items: [{ text: 'MCP Integration', link: '/guide/mcp' }] },
+  { text: 'Help', items: [{ text: 'FAQ & Troubleshooting', link: '/guide/faq' }] },
+  {
+    text: 'Reference',
+    items: [
+      { text: 'API Reference', link: '/api/reference' },
+      { text: 'Release Notes', link: '/release-notes' },
+    ],
+  },
+]
+
+const germanSidebar = [
+  {
+    text: 'Einstieg',
+    items: [
+      { text: 'Installation', link: '/de/guide/installation' },
+      { text: 'Benutzerhandbuch', link: '/de/guide/user-guide' },
+    ],
+  },
+  { text: 'Integrationen', items: [{ text: 'MCP-Anbindung', link: '/de/guide/mcp' }] },
+  { text: 'Hilfe', items: [{ text: 'FAQ & Problemlösung', link: '/de/guide/faq' }] },
+  {
+    text: 'Referenz',
+    items: [
+      { text: 'API-Referenz', link: '/de/api/reference' },
+      { text: 'Release Notes', link: '/de/release-notes' },
+    ],
+  },
+]
+
 export default withMermaid(
   defineConfig({
     title: 'ezSWM Docs',
@@ -22,45 +60,25 @@ export default withMermaid(
         lang: 'en-US',
         themeConfig: {
           nav: [
-            { text: 'Guide', link: '/guide/installation' },
-            { text: 'API Reference', link: '/api/reference' },
-            { text: 'Release Notes', link: '/release-notes' },
+            {
+              text: 'Start here',
+              items: [
+                { text: 'Installation', link: '/guide/installation' },
+                { text: 'User Guide', link: '/guide/user-guide' },
+              ],
+            },
+            { text: 'Integration', link: '/guide/mcp' },
+            { text: 'Help', link: '/guide/faq' },
+            {
+              text: 'Reference',
+              items: [
+                { text: 'API Reference', link: '/api/reference' },
+                { text: 'Release Notes', link: '/release-notes' },
+              ],
+            },
             { text: 'GitHub', link: GITHUB_REPO },
           ],
-          sidebar: {
-            '/guide/': [
-              {
-                text: 'Guide',
-                items: [
-                  { text: 'Installation', link: '/guide/installation' },
-                  { text: 'User Guide', link: '/guide/user-guide' },
-                  { text: 'MCP Integration', link: '/guide/mcp' },
-                  { text: 'FAQ & Troubleshooting', link: '/guide/faq' },
-                  { text: 'Release Notes', link: '/release-notes' },
-                ],
-              },
-            ],
-            '/api/': [
-              {
-                text: 'API',
-                items: [
-                  { text: 'API Reference', link: '/api/reference' },
-                ],
-              },
-            ],
-            '/release-notes': [
-              {
-                text: 'Guide',
-                items: [
-                  { text: 'Installation', link: '/guide/installation' },
-                  { text: 'User Guide', link: '/guide/user-guide' },
-                  { text: 'MCP Integration', link: '/guide/mcp' },
-                  { text: 'FAQ & Troubleshooting', link: '/guide/faq' },
-                  { text: 'Release Notes', link: '/release-notes' },
-                ],
-              },
-            ],
-          },
+          sidebar: englishSidebar,
         },
       },
       de: {
@@ -71,45 +89,25 @@ export default withMermaid(
         description: 'Dokumentation für ezSWM — Switch & IP Management',
         themeConfig: {
           nav: [
-            { text: 'Handbuch', link: '/de/guide/installation' },
-            { text: 'API-Referenz', link: '/de/api/reference' },
-            { text: 'Release Notes', link: '/de/release-notes' },
+            {
+              text: 'Einstieg',
+              items: [
+                { text: 'Installation', link: '/de/guide/installation' },
+                { text: 'Benutzerhandbuch', link: '/de/guide/user-guide' },
+              ],
+            },
+            { text: 'Integrationen', link: '/de/guide/mcp' },
+            { text: 'Hilfe', link: '/de/guide/faq' },
+            {
+              text: 'Referenz',
+              items: [
+                { text: 'API-Referenz', link: '/de/api/reference' },
+                { text: 'Release Notes', link: '/de/release-notes' },
+              ],
+            },
             { text: 'GitHub', link: GITHUB_REPO },
           ],
-          sidebar: {
-            '/de/guide/': [
-              {
-                text: 'Handbuch',
-                items: [
-                  { text: 'Installation', link: '/de/guide/installation' },
-                  { text: 'Benutzerhandbuch', link: '/de/guide/user-guide' },
-                  { text: 'MCP-Anbindung', link: '/de/guide/mcp' },
-                  { text: 'FAQ & Problemlösung', link: '/de/guide/faq' },
-                  { text: 'Release Notes', link: '/de/release-notes' },
-                ],
-              },
-            ],
-            '/de/api/': [
-              {
-                text: 'API',
-                items: [
-                  { text: 'API-Referenz', link: '/de/api/reference' },
-                ],
-              },
-            ],
-            '/de/release-notes': [
-              {
-                text: 'Handbuch',
-                items: [
-                  { text: 'Installation', link: '/de/guide/installation' },
-                  { text: 'Benutzerhandbuch', link: '/de/guide/user-guide' },
-                  { text: 'MCP-Anbindung', link: '/de/guide/mcp' },
-                  { text: 'FAQ & Problemlösung', link: '/de/guide/faq' },
-                  { text: 'Release Notes', link: '/de/release-notes' },
-                ],
-              },
-            ],
-          },
+          sidebar: germanSidebar,
           docFooter: {
             prev: 'Vorherige Seite',
             next: 'Nächste Seite',

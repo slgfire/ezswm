@@ -14,6 +14,28 @@
   --vp-c-brand-soft: rgba(34, 197, 94, 0.16);
 }
 
+.VPHero .actions .action:first-child .VPButton.brand {
+  --vp-button-brand-bg: #22c55e;
+  --vp-button-brand-border: #22c55e;
+  --vp-button-brand-text: #0a0a0a;
+  --vp-button-brand-hover-bg: #16a34a;
+  --vp-button-brand-hover-border: #16a34a;
+  --vp-button-brand-hover-text: #0a0a0a;
+  --vp-button-brand-active-bg: #16a34a;
+  --vp-button-brand-active-border: #16a34a;
+  --vp-button-brand-active-text: #0a0a0a;
+}
+
+.VPHero .actions .action:first-child .VPButton.brand:focus-visible {
+  outline: 3px solid var(--vp-c-text-1);
+  outline-offset: 3px;
+}
+
+.VPHero .actions .action:first-child .VPButton.brand:active {
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 18%);
+  transform: translateY(1px);
+}
+
 .VPHero.has-image .image-container .image-src {
   display: block;
   width: 100%;
@@ -22,7 +44,11 @@
   border: 1px solid rgb(148 163 184 / 24%);
   border-radius: 14px;
   box-shadow: 0 30px 70px -35px rgb(0 0 0 / 82%), 0 8px 24px rgb(0 0 0 / 22%);
-  transform: translate(-50%, -50%) perspective(1400px) rotateY(-7deg) rotateX(2deg);
+  --hero-pointer-x: 0deg;
+  --hero-pointer-y: 0deg;
+  --hero-pointer-shift-x: 0px;
+  --hero-pointer-shift-y: 0px;
+  transform: translate(-50%, -50%) perspective(1400px) rotateY(calc(-7deg + var(--hero-pointer-y))) rotateX(calc(2deg + var(--hero-pointer-x)));
   transform-origin: center;
   transition: transform 380ms ease, box-shadow 380ms ease;
 }
@@ -33,9 +59,13 @@
 }
 
 @media (min-width: 960px) and (hover: hover) and (pointer: fine) {
+  .VPHero.has-image .image-container .image-src {
+    transition: transform 160ms cubic-bezier(.2, .8, .2, 1), box-shadow 380ms ease;
+  }
+
   .VPHero.has-image .image-container .image-src:hover {
-    box-shadow: 0 38px 88px -38px rgb(0 0 0 / 84%), 0 10px 32px rgb(34 197 94 / 13%);
-    transform: translate(-50%, calc(-50% - 5px)) perspective(1400px) rotateY(-3deg) rotateX(1deg);
+    box-shadow: 0 48px 108px -30px rgb(0 0 0 / 90%), 0 14px 40px rgb(34 197 94 / 18%);
+    transform: translate3d(calc(-50% + var(--hero-pointer-shift-x)), calc(-50% - 5px + var(--hero-pointer-shift-y)), 0) perspective(1000px) rotateY(calc(-7deg + var(--hero-pointer-y))) rotateX(calc(2deg + var(--hero-pointer-x))) translateZ(32px) scale(1.025);
   }
 }
 
