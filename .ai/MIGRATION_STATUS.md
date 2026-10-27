@@ -4,7 +4,7 @@
 
 ### MCP publish workflow: GHCR tag check fix (2026-10-27)
 
-Release 0.46.0 `publish-mcp` failed at "Check GHCR tag" with `ERROR: ghcr.io/slgfire/ezswm-mcp:0.46.0: not found` (Buildx wording; the old `manifest unknown|no such manifest` regex missed it). The inline Bash now treats only a whole-output, image/version-specific missing message (case-insensitive, literal ref) as `exists=false`; auth, network, 404/5xx, other-ref and mixed outputs still fail closed. No app version bump. Test: `tests/publishMcpGhcrCheck.test.ts` extracts the real step script and runs it with a stubbed `docker` (23 cases, 0 failed, run on host Node 22 via a minimal vitest shim because the repo's musl vitest cannot start on the glibc host).
+Release 0.46.0 `publish-mcp` failed at "Check GHCR tag" with `ERROR: ghcr.io/slgfire/ezswm-mcp:0.46.0: not found` (Buildx wording; the old `manifest unknown|no such manifest` regex missed it). The inline Bash now treats only a whole-output, image/version-specific missing message (case-insensitive, literal ref) as `exists=false`; auth, network, 404/5xx, other-ref and mixed outputs still fail closed. No app version bump. Test: `tests/publishMcpGhcrCheck.test.ts` extracts the real step script and runs it with a stubbed `docker` (23 cases). Locally it only ran through a minimal vitest shim; in PR #329 CI (run 40473716781) the unit job passed with real Vitest including the 23 new tests, and MCP/typecheck and Docker (40473716929) passed. The first CI run was blocked only by a lint failure (`no-regex-spaces` in the test), fixed in a follow-up commit; E2E/build were skipped, so this is not a full-green claim and nothing is published yet.
 
 ### MCP allocation/range list response fix (v0.46.0, same unreleased PR #313 release, 2026-10-26)
 

@@ -7,7 +7,7 @@ import { afterAll, describe, expect, it } from 'vitest'
 const lines = readFileSync('.github/workflows/publish-mcp.yml', 'utf8').split('\n')
 const start = lines.findIndex(l => l === '      - name: Check GHCR tag')
 const runAt = lines.findIndex((l, i) => i > start && l === '        run: |')
-let end = lines.findIndex((l, i) => i > runAt && /^      - name: /.test(l))
+let end = lines.findIndex((l, i) => i > runAt && /^ {6}- name: /.test(l))
 if (end < 0) end = lines.length
 const script = lines.slice(runAt + 1, end).map(l => l.slice(10)).join('\n')
 
