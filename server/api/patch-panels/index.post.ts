@@ -1,6 +1,6 @@
 import { patchPanelRepository } from '../../repositories/patchPanelRepository'
 import { createPatchPanelSchema } from '../../validators/patchPanelSchemas'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 import { requirePatchPanelsEnabled } from '../../utils/requirePatchPanelsEnabled'
 
 export default defineEventHandler(async (event) => {
@@ -10,8 +10,7 @@ export default defineEventHandler(async (event) => {
   const parsed = createPatchPanelSchema.parse(body)
   const created = await patchPanelRepository.create(parsed)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'create',
     entity_type: 'patch_panel',
     entity_id: created.id,

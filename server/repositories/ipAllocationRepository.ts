@@ -1,9 +1,11 @@
 import { randomUUID } from 'node:crypto'
+import type { Prisma, PrismaClient } from '@prisma/client'
 import { prisma } from '../db/client'
 import type { IPAllocation } from '../../types/ipAllocation'
 import { isValidIPv4, isIPInSubnet, isUsableHostIP, isValidMacAddress, subnetRangeError, parseSubnet, ipToLong } from '../utils/ipv4'
 import { hasConflictToken } from './networkRepository'
 import { assertDeviceTypeAssignable } from './customDeviceTypeRepository'
+import { deleteImpactToken, type DeleteOutcome } from '../utils/deleteImpact'
 
 interface AllocationRow {
   id: string
@@ -59,6 +61,31 @@ async function mapAllocationConflict<T>(ip: string, fn: () => Promise<T>): Promi
     if (hasConflictToken(err, 'IP_ALLOCATION_CONFLICT')) throw allocationConflictError(ip)
     throw err
   }
+}
+
+
+/** Rows a single allocation delete touches: itself plus the port links the FK clears. */
+export interface IpAllocationDeleteImpact {
+  allocation: { id: string, network_id: string, ip_address: string, hostname: string | null, status: string }
+  ports: Array<{ id: string, switch_id: string, index: number, label: string | null }>
+}
+
+export function ipAllocationImpactToken(impact: IpAllocationDeleteImpact): string {
+  return deleteImpactToken(impact)
+}
+
+async function buildAllocationDeleteImpact(id: string, db: PrismaClient | Prisma.TransactionClient = prisma): Promise<IpAllocationDeleteImpact | null> {
+  const allocation = await db.ipAllocation.findUnique({
+    where: { id },
+    select: { id: true, network_id: true, ip_address: true, hostname: true, status: true }
+  })
+  if (!allocation) return null
+  const ports = await db.port.findMany({
+    where: { connected_allocation_id: id },
+    select: { id: true, switch_id: true, index: true, label: true },
+    orderBy: [{ switch_id: 'asc' }, { index: 'asc' }]
+  })
+  return { allocation, ports }
 }
 
 export const ipAllocationRepository = {
@@ -248,6 +275,30 @@ export const ipAllocationRepository = {
     } catch {
       return false
     }
+  },
+
+  /** Preview of what deleting this allocation removes or clears. */
+  async getDeleteImpact(id: string): Promise<IpAllocationDeleteImpact | null> {
+    return buildAllocationDeleteImpact(id)
+  },
+
+  /**
+   * Atomic allocation delete. `Port.connected_allocation_id` is cleared by the FK
+   * (SetNull); peer links are untouched. Omit `expectedImpactToken` for JWT/UI.
+   */
+  async deleteGuarded(id: string, expectedImpactToken?: string): Promise<DeleteOutcome<IpAllocationDeleteImpact>> {
+    return prisma.$transaction(async (tx) => {
+      const impact = await buildAllocationDeleteImpact(id, tx)
+      if (!impact) return { kind: 'not_found' }
+      const impactToken = ipAllocationImpactToken(impact)
+      if (expectedImpactToken !== undefined && expectedImpactToken !== impactToken) {
+        return { kind: 'conflict', impact, impactToken }
+      }
+      // deleteMany: a concurrently deleted target is a clean not_found, not a P2025 500.
+      const removed = await tx.ipAllocation.deleteMany({ where: { id } })
+      if (removed.count === 0) return { kind: 'not_found' }
+      return { kind: 'deleted', impact }
+    })
   },
 
   async deleteByNetworkId(networkId: string): Promise<number> {

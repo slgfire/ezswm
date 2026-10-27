@@ -41,7 +41,59 @@ function rowToActivity(row: ActivityRow): ActivityEntry {
   }
 }
 
+export interface ActivityListEntry {
+  id: string
+  timestamp: string
+  actor_display: string
+  action: ActivityAction
+  entity_type: string
+  entity_id: string
+  entity_name: string
+  /** Internal undo hint only: whether a usable snapshot exists. Never the snapshot itself. */
+  has_valid_snapshot: boolean
+}
+
 export const activityRepository = {
+  /**
+   * Sanitized list for API-token consumers (plan A7): identity, actor display and
+   * entity reference only. Never exposes previous_state/metadata/changes.
+   */
+  async listSanitized(
+    limit: number,
+    offset: number,
+    snapshotCheck: (entityType: string, previousState: Record<string, unknown> | undefined) => boolean = () => false
+  ): Promise<{ entries: ActivityListEntry[], total: number }> {
+    const total = await prisma.activityEntry.count()
+    const rows = await prisma.activityEntry.findMany({
+      orderBy: { timestamp: 'desc' },
+      skip: offset,
+      take: limit,
+      select: {
+        id: true,
+        timestamp: true,
+        action: true,
+        entity_type: true,
+        entity_id: true,
+        entity_name: true,
+        previous_state: true,
+        user: { select: { display_name: true, username: true } }
+      }
+    })
+    return {
+      total,
+      entries: rows.map(row => ({
+        id: row.id,
+        timestamp: row.timestamp,
+        actor_display: row.user?.display_name || row.user?.username || 'System',
+        action: row.action as ActivityAction,
+        entity_type: row.entity_type,
+        entity_id: row.entity_id,
+        entity_name: row.entity_name,
+        has_valid_snapshot: snapshotCheck(row.entity_type, parseJsonOrUndefined(row.previous_state))
+      }))
+    }
+  },
+
   async list(limit?: number, offset?: number): Promise<{ entries: ActivityEntry[]; total: number }> {
     const total = await prisma.activityEntry.count()
     const rows = await prisma.activityEntry.findMany({

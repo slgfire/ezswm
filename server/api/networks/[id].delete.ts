@@ -1,9 +1,15 @@
-import { networkRepository } from '../../repositories/networkRepository'
-import { ipAllocationRepository } from '../../repositories/ipAllocationRepository'
-import { ipRangeRepository } from '../../repositories/ipRangeRepository'
-import { activityRepository } from '../../repositories/activityRepository'
+import { networkImpactToken, networkRepository } from '../../repositories/networkRepository'
+import { logActivity } from '../../utils/activityLog'
+import { getAuthContext } from '../../utils/requireAdmin'
 import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
 
+/**
+ * Safe network delete (plan A5):
+ * - API tokens: no `confirm=true` → non-destructive preview with `impactToken`;
+ *   `confirm=true` without `expectedImpactToken` → 400; stale token → 409 with a
+ *   fresh preview; matching token → atomic delete.
+ * - JWT/UI: unchanged, deletes without a precondition (same atomic implementation).
+ */
 export default defineEventHandler(async (event) => {
   const id = event.context.params?.id
 
@@ -14,25 +20,54 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const siteIdParam = typeof query.siteId === 'string' ? query.siteId : undefined
   const siteUuid = await resolveSiteIdQuery(siteIdParam) ?? undefined
+  const isApiToken = getAuthContext(event)?.authType === 'api_token'
+  const confirmed = query.confirm === 'true' || query.confirm === '1'
 
-  const existing = await networkRepository.getByIdOrSlug(id, siteUuid)
+  if (isApiToken && !confirmed) {
+    const impact = await networkRepository.getDeleteImpact(id, siteUuid)
+    if (!impact) {
+      throw createError({ statusCode: 404, statusMessage: 'Network not found' })
+    }
+    return {
+      preview: true,
+      requiresConfirmation: true,
+      message: 'Re-call with confirm=true and the returned impactToken to delete.',
+      impactToken: networkImpactToken(impact),
+      impact
+    }
+  }
 
-  if (!existing) {
+  const expectedImpactToken = typeof query.expectedImpactToken === 'string' ? query.expectedImpactToken : undefined
+  if (isApiToken && !expectedImpactToken) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'expectedImpactToken is required: preview first, then pass its impactToken with confirm=true'
+    })
+  }
+
+  const outcome = await networkRepository.deleteGuarded(id, siteUuid, isApiToken ? expectedImpactToken : undefined)
+
+  if (outcome.kind === 'not_found') {
     throw createError({ statusCode: 404, statusMessage: 'Network not found' })
   }
 
-  // Cascade delete related allocations and ranges
-  await ipAllocationRepository.deleteByNetworkId(existing.id)
-  await ipRangeRepository.deleteByNetworkId(existing.id)
+  if (outcome.kind === 'conflict') {
+    throw createError({
+      statusCode: 409,
+      statusMessage: 'Network state changed since the preview; re-fetch the impact and confirm again',
+      data: {
+        requiresConfirmation: true,
+        impactToken: outcome.impactToken,
+        impact: outcome.impact
+      }
+    })
+  }
 
-  await networkRepository.delete(existing.id)
-
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'delete',
     entity_type: 'network',
-    entity_id: existing.id,
-    entity_name: existing.name,
+    entity_id: outcome.impact.network.id,
+    entity_name: outcome.impact.network.name,
   })
 
   setResponseStatus(event, 204)

@@ -4,13 +4,20 @@ on:
   push:
     branches: [main]
 
-permissions:
-  contents: write
-  packages: write
+# Permissions are declared per job rather than at workflow level: a reusable
+# workflow call cannot be granted permissions the caller job does not have, so
+# id-token: write must live on the publishing job itself.
 
 jobs:
   tag:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    outputs:
+      should_tag: ${{ steps.detect.outputs.should_tag }}
+      version: ${{ steps.detect.outputs.version }}
+      tag: ${{ steps.detect.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -123,3 +130,19 @@ jobs:
           provenance: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # Explicit reusable call: tags made with GITHUB_TOKEN do not trigger other
+  # workflows, so npm/GHCR publication runs inside this release pipeline.
+  publish-mcp:
+    needs: tag
+    if: needs.tag.outputs.should_tag == 'true'
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    uses: ./.github/workflows/publish-mcp.yml
+    with:
+      version: ${{ needs.tag.outputs.version }}
+      ref: ${{ github.sha }}
+      publish_npm: ${{ vars.MCP_NPM_PUBLISH_ENABLED == 'true' }}
+      publish_ghcr: true

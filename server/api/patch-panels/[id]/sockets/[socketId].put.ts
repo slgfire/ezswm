@@ -1,6 +1,6 @@
 import { patchPanelRepository } from '../../../../repositories/patchPanelRepository'
 import { updatePatchPanelSocketSchema } from '../../../../validators/patchPanelSchemas'
-import { activityRepository } from '../../../../repositories/activityRepository'
+import { logActivity } from '../../../../utils/activityLog'
 import { resolveSiteIdQuery } from '../../../../utils/resolveSiteParam'
 import { requirePatchPanelsEnabled } from '../../../../utils/requirePatchPanelsEnabled'
 
@@ -30,8 +30,7 @@ export default defineEventHandler(async (event) => {
   const parsed = updatePatchPanelSocketSchema.parse(body)
   const updated = await patchPanelRepository.updateSocket(panel.id, socketId, parsed)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'update',
     entity_type: 'patch_panel_socket',
     entity_id: updated.id,

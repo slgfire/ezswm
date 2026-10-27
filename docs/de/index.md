@@ -2,11 +2,11 @@
 layout: home
 hero:
   name: ezSWM
-  text: Switch & IP Management
-  tagline: Leichtgewichtige Infrastruktur-Dokumentation für LAN-Partys und Homelabs
+  text: Switch- und IP-Verwaltung
+  tagline: Switches, VLANs und IP-Adressen an einem Ort dokumentieren.
   image:
-    src: /favicon.svg
-    alt: Switch-Symbol von ezSWM
+    src: /images/screenshot-dashboard-synthetic-current.png
+    alt: ezSWM-Dashboard mit Beispiel-Netzwerkinventar und IP-Auslastung
   actions:
     - theme: brand
       text: Erste Schritte

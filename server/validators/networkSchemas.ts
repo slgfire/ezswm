@@ -11,6 +11,10 @@ export const createNetworkSchema = z.object({
   exclude_from_utilization: z.boolean().default(false)
 })
 
+export const freeIpQuerySchema = z.object({
+  count: z.coerce.number().int().min(1).max(100).default(1)
+})
+
 export const updateNetworkSchema = z.object({
   site_id: z.string().min(1).optional(),
   name: z.string().min(1).max(100).optional(),

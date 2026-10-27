@@ -271,15 +271,18 @@ export const userRepository = {
 
   /**
    * Call ONLY after the ID token was fully validated (issuer/sub trusted) and the
-   * group mapping denied access: bumps `oidc_session_version` so previously issued
-   * OIDC JWTs for this identity stop working. Returns false if the identity has no
+   * group mapping denied access: bumps `oidc_session_version` (older OIDC JWTs stop working)
+   * and permanently deletes the identity's API tokens in the same transaction. Returns false if the identity has no
    * account (nothing is created, nothing changes). Never call for unvalidated input.
    */
   async invalidateOidcSessions(issuer: string, subject: string): Promise<boolean> {
-    const res = await prisma.user.updateMany({
-      where: { oidc_issuer: issuer, oidc_subject: subject, auth_provider: 'oidc' },
-      data: { oidc_session_version: { increment: 1 } }
+    // One transaction: session invalidation and permanent API-token deletion cannot be split.
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.findFirst({ where: { oidc_issuer: issuer, oidc_subject: subject, auth_provider: 'oidc' }, select: { id: true } })
+      if (!user) return false
+      await tx.user.update({ where: { id: user.id }, data: { oidc_session_version: { increment: 1 } } })
+      await tx.apiToken.deleteMany({ where: { user_id: user.id } })
+      return true
     })
-    return res.count > 0
   }
 }

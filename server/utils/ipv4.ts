@@ -133,3 +133,70 @@ export function canonicalizeCIDR(cidr: string): string {
   const info = parseSubnet(cidr)
   return `${info.network_address}/${info.prefix_length}`
 }
+
+/**
+ * First `count` usable host addresses in `cidr` not allocated and not covered by
+ * any reserved interval. Reserved intervals are sorted and merged first and the
+ * walk skips a whole interval at a time, so the scan cost depends on the number
+ * of intervals, not on the network size. Results are advisory only — callers
+ * must still re-check at allocation time.
+ */
+export function findFreeIPs(
+  cidr: string,
+  allocated: string[],
+  reserved: Array<{ start_ip: string, end_ip: string }>,
+  count: number
+): string[] {
+  const info = parseSubnet(cidr)
+  let start = ipToLong(info.network_address)
+  let end = ipToLong(info.broadcast_address)
+  // /31 and /32 have no reserved network/broadcast addresses (RFC 3021).
+  if (info.prefix_length < 31) {
+    start += 1
+    end -= 1
+  }
+  if (end < start || count <= 0) return []
+
+  const intervals: Array<[number, number]> = []
+  for (const ip of allocated) {
+    if (!isValidIPv4(ip) || !isUsableHostIP(ip, cidr)) continue
+    const value = ipToLong(ip)
+    intervals.push([value, value])
+  }
+  for (const range of reserved) {
+    if (!isValidIPv4(range.start_ip) || !isValidIPv4(range.end_ip)) continue
+    const from = ipToLong(range.start_ip)
+    const to = ipToLong(range.end_ip)
+    if (to < start || from > end) continue
+    intervals.push([Math.max(from, start), Math.min(to, end)])
+  }
+
+  intervals.sort((a, b) => a[0] - b[0])
+  const merged: Array<[number, number]> = []
+  for (const interval of intervals) {
+    const last = merged[merged.length - 1]
+    if (last && interval[0] <= last[1] + 1) {
+      last[1] = Math.max(last[1], interval[1])
+    } else {
+      merged.push([interval[0], interval[1]])
+    }
+  }
+
+  const free: string[] = []
+  let cursor = start
+  for (const [from, to] of merged) {
+    if (free.length >= count || cursor > end) break
+    // Skip the whole reserved interval after emitting the gap before it.
+    const gapEnd = Math.min(from - 1, end)
+    while (cursor <= gapEnd && free.length < count) {
+      free.push(longToIp(cursor))
+      cursor++
+    }
+    if (to >= cursor) cursor = to + 1
+  }
+  while (cursor <= end && free.length < count) {
+    free.push(longToIp(cursor))
+    cursor++
+  }
+  return free
+}

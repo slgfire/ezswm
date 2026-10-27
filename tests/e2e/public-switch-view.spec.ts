@@ -1,8 +1,13 @@
 import { test, expect } from '@playwright/test'
 
-const BASE = 'http://localhost:3000'
+// Falls back to the CI app; the configured Playwright baseURL wins so runs hit only the intended app.
+let BASE = 'http://localhost:3000'
 
 test.describe('Public Switch View', () => {
+  test.beforeAll(({ baseURL }) => {
+    BASE = (baseURL ?? BASE).replace(/\/$/, '')
+  })
+
   let validToken: string
   let authCookie: string
   let lagLabelForAssertion: string | null = null

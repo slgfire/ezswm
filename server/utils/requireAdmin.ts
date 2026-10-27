@@ -6,6 +6,13 @@ export interface AuthContext {
   /** Role as stored in the DB at request time (never taken from the JWT). */
   role: 'admin' | 'viewer'
   authProvider: 'local' | 'oidc'
+  /** How the request authenticated. API tokens are denied on credential/account routes. */
+  authType: 'jwt' | 'api_token'
+  /** Only set when authType === 'api_token'. Never the secret. */
+  apiTokenId?: string
+  apiTokenName?: string
+  /** Server-only: validated OIDC JWT claims the session was issued under (jwt + oidc only). Never exposed. */
+  oidcSession?: { orev: number, osv: number }
 }
 
 export function getAuthContext(event: H3Event): AuthContext | undefined {
@@ -17,6 +24,14 @@ export function requireAdmin(event: H3Event): AuthContext {
   const auth = getAuthContext(event)
   if (!auth) throw createError({ statusCode: 401, message: 'Authentication required' })
   if (auth.role !== 'admin') throw createError({ statusCode: 403, message: 'Administrator access required' })
+  return auth
+}
+
+/** Throws unless the request authenticated with a session JWT (cookie/OIDC/header), never an API token. */
+export function requireJwtAuth(event: H3Event): AuthContext {
+  const auth = getAuthContext(event)
+  if (!auth) throw createError({ statusCode: 401, message: 'Authentication required' })
+  if (auth.authType !== 'jwt') throw createError({ statusCode: 403, message: 'Not available for API tokens' })
   return auth
 }
 
@@ -87,6 +102,10 @@ export function evaluateRolePolicy(input: { role: string, method: string, path: 
 
   if (method === 'POST' && lower === '/api/auth/logout') return 'allow'
 
+  // Self-service API tokens (handlers additionally bind every operation to the caller).
+  if (lower === '/api/auth/tokens' && ['GET', 'HEAD', 'POST', 'DELETE'].includes(method)) return 'allow'
+  if (/^\/api\/auth\/tokens\/[^/]+$/.test(lower) && (method === 'DELETE' || method === 'GET' || method === 'HEAD')) return 'allow'
+
   const selfMatch = /^\/api\/users\/([^/]+)(\/password)?$/i.exec(path)
   if (selfMatch && selfMatch[1] === input.userId) {
     if (!selfMatch[2]) {
@@ -98,4 +117,74 @@ export function evaluateRolePolicy(input: { role: string, method: string, path: 
 
   if (ADMIN_ONLY_PREFIXES.some(p => matchesPrefix(lower, p))) return 'forbidden'
   return SAFE_METHODS.has(method) ? 'allow' : 'forbidden'
+}
+
+// ---------------------------------------------------------------------------
+// API-token deny contract (D6). Pure; applied in addition to the role policy.
+// Method-aware on the normalized path; HEAD is treated as GET so safe-method
+// aliases cannot bypass a GET rule. Anchored, case-insensitive patterns.
+// ---------------------------------------------------------------------------
+
+interface DenyRule { methods: 'any' | 'non-get' | 'get' | 'delete', re: RegExp }
+
+/**
+ * Audited A6 exceptions, checked before the deny rules: sanitized documentation
+ * export (positive per-entity field allowlist in the handler; templates stay
+ * denied there) and documentation-only imports (no users/settings/credentials/
+ * backup/layout-template payloads).
+ */
+const API_TOKEN_ALLOW_RULES: DenyRule[] = [
+  { methods: 'get', re: /^\/api\/export\/(switches|vlans|networks|allocations)$/ },
+  { methods: 'non-get', re: /^\/api\/import\/(switches|vlans|networks|allocations|ranges)$/ },
+  // A7: sanitized activity DTO + checked safe undo contract (bounded, admin-only,
+  // execution-time role check in the handlers). The raw activity route stays denied.
+  { methods: 'get', re: /^\/api\/activity\/mcp$/ },
+  { methods: 'non-get', re: /^\/api\/activity\/mcp\/[^/]+\/undo$/ }
+]
+
+const API_TOKEN_DENY_RULES: DenyRule[] = [
+  // Credential / account / admin / backup management
+  { methods: 'any', re: /^\/api\/(users|backup|admin)(\/|$)/ },
+  { methods: 'any', re: /^\/api\/auth\/(oidc\/(config|check)|tokens)(\/|$)/ },
+  // Raw exports/imports (contain plaintext public tokens / raw rows / credentials),
+  // activity (previous_state), stats (recentActivity).
+  // A7 Stage-2 audit: undo stays denied for API tokens. The existing undo handler
+  // inverts simple entities by calling repositories directly (create→delete,
+  // update→update, delete→create), bypassing the A5 preview/impactToken contract;
+  // Site/Switch inverses would also hit permanently denied deletes. Unlock only
+  // together with the Stage-4 checked server-side undo contract.
+  { methods: 'any', re: /^\/api\/data\/export(\/|$)/ },
+  { methods: 'any', re: /^\/api\/export(\/|$)/ },
+  // Layout-template file export: same class as /api/export/templates (templates stay denied for tokens).
+  { methods: 'get', re: /^\/api\/layout-templates\/[^/]+\/export$/ },
+  { methods: 'any', re: /^\/api\/activity(\/|$)/ },
+  { methods: 'any', re: /^\/api\/dashboard\/stats$/ },
+  // Imports (both families + layout templates): default deny
+  { methods: 'any', re: /^\/api\/data\/import(\/|$)/ },
+  { methods: 'non-get', re: /^\/api\/import(\/|$)/ },
+  { methods: 'any', re: /^\/api\/layout-templates\/import$/ },
+  // Settings: reads allowed, writes denied
+  { methods: 'non-get', re: /^\/api\/settings(\/|$)/ },
+  // Public access tokens (switches AND patch panels), all methods
+  { methods: 'any', re: /^\/api\/(switches|patch-panels)\/[^/]+\/public-token(\/|$)/ },
+  // Deletes: category (not approved) and Site/Switch (permanent) stay denied. Network,
+  // nested allocation/range, VLAN and LAG deletes are unlocked by their A5
+  // preview/impactToken contracts (server/api/**).
+  { methods: 'delete', re: /^\/api\/device-types\/[^/]+$/ },
+  { methods: 'delete', re: /^\/api\/(sites|switches)\/[^/]+$/ },
+]
+
+export function evaluateApiTokenPolicy(input: { method: string, path: string }): PolicyDecision {
+  const raw = input.method.toUpperCase()
+  const method = raw === 'HEAD' ? 'GET' : raw
+  const lower = normalizePolicyPath(input.path).toLowerCase()
+  const appliesTo = (rule: DenyRule) => rule.methods === 'any'
+    || (rule.methods === 'non-get' && method !== 'GET')
+    || (rule.methods === 'get' && method === 'GET')
+    || (rule.methods === 'delete' && method === 'DELETE')
+  if (API_TOKEN_ALLOW_RULES.some(rule => appliesTo(rule) && rule.re.test(lower))) return 'allow'
+  for (const rule of API_TOKEN_DENY_RULES) {
+    if (appliesTo(rule) && rule.re.test(lower)) return 'forbidden'
+  }
+  return 'allow'
 }

@@ -18,6 +18,9 @@ RUN corepack enable
 # workspace shape (otherwise subsequent commands trigger a re-resolution).
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY docs/package.json ./docs/
+# mcp/ is a workspace member too; only its manifest is needed for frozen install.
+# The MCP server itself is not part of this image's runtime.
+COPY mcp/package.json ./mcp/
 # The pnpm postinstall hook runs `prisma generate`, which needs the schema.
 COPY prisma ./prisma
 

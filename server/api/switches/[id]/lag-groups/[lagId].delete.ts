@@ -1,8 +1,15 @@
-import { lagGroupRepository } from '../../../../repositories/lagGroupRepository'
-import { activityRepository } from '../../../../repositories/activityRepository'
+import { lagGroupImpactToken, lagGroupRepository } from '../../../../repositories/lagGroupRepository'
+import { logActivity } from '../../../../utils/activityLog'
+import { runSafeDelete } from '../../../../utils/deleteImpact'
+import { getAuthContext } from '../../../../utils/requireAdmin'
 import { deleteLagGroupSchema } from '../../../../validators/lagGroupSchemas'
 import { resolveSwitchParam } from '../../../../utils/resolveSwitchParam'
 
+/**
+ * Safe LAG delete (plan A5): the preview/reset/remote options are part of the
+ * impact token. API tokens confirm with the impactToken; JWT/UI deletes without
+ * a precondition.
+ */
 export default defineEventHandler(async (event) => {
   const sw = await resolveSwitchParam(event)
 
@@ -12,18 +19,23 @@ export default defineEventHandler(async (event) => {
   const parsed = deleteLagGroupSchema.safeParse((await readBody(event).catch(() => null)) ?? {})
   if (!parsed.success) throw createError({ statusCode: 400, message: 'Invalid delete request' })
 
-  // Get before delete for logging
   const group = await lagGroupRepository.getById(lagId)
   if (!group || group.switch_id !== sw.id) throw createError({ statusCode: 404, message: 'LAG group not found' })
+
+  const result = await runSafeDelete(event, {
+    isApiToken: getAuthContext(event)?.authType === 'api_token',
+    notFoundMessage: 'LAG group not found',
+    preview: () => lagGroupRepository.getDeleteImpact(lagId, parsed.data),
+    impactToken: lagGroupImpactToken,
+    deleteGuarded: expected => lagGroupRepository.deleteGuarded(lagId, parsed.data, expected)
+  })
+
+  if (result.kind === 'preview') return result.body
 
   const portLabels = group.port_ids
     .map(pid => sw?.ports.find(p => p.id === pid)?.label || pid)
 
-  const deleted = await lagGroupRepository.delete(lagId, parsed.data)
-  if (!deleted) throw createError({ statusCode: 404, message: 'LAG group not found' })
-
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'delete',
     entity_type: 'lag_group',
     entity_id: group.id,

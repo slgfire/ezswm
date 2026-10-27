@@ -1,6 +1,6 @@
 import { switchRepository } from '../../repositories/switchRepository'
 import { updateSwitchSchema } from '../../validators/switchSchemas'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
 import { settingsRepository } from '../../repositories/settingsRepository'
 import type { Switch } from '../../../types/switch'
@@ -33,8 +33,7 @@ export default defineEventHandler(async (event) => {
     siteUuid
   )
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'update',
     entity_type: 'switch',
     entity_id: existing.id,

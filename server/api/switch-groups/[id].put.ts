@@ -1,6 +1,6 @@
 import { switchGroupRepository } from '../../repositories/switchGroupRepository'
 import { updateSwitchGroupSchema } from '../../validators/switchGroupSchemas'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
 import { requireSwitchGroupsEnabled } from '../../utils/requireSwitchGroupsEnabled'
 import type { SwitchGroup } from '../../../types/switchGroup'
@@ -33,8 +33,7 @@ export default defineEventHandler(async (event) => {
     siteUuid
   )
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'update',
     entity_type: 'switch_group',
     entity_id: existing.id,

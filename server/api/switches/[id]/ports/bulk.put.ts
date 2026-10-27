@@ -1,7 +1,7 @@
 import { switchRepository } from '../../../../repositories/switchRepository'
 import { vlanRepository } from '../../../../repositories/vlanRepository'
 import { bulkUpdatePortsSchema } from '../../../../validators/switchSchemas'
-import { activityRepository } from '../../../../repositories/activityRepository'
+import { logActivity } from '../../../../utils/activityLog'
 import { resolveSwitchParam } from '../../../../utils/resolveSwitchParam'
 import type { Port } from '../../../../../types/port'
 
@@ -84,8 +84,7 @@ export default defineEventHandler(async (event) => {
 
   const updatedSw = (await switchRepository.getById(switchId))!
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'bulk_update_ports',
     entity_type: 'switch',
     entity_id: switchId,

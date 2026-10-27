@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client'
 import { prisma } from '../db/client'
 import type { OidcConfigRecord } from '../../types/oidc'
 import { mergeObservedGroups, sanitizeObservedGroups } from '../utils/oidc/claims'
@@ -139,6 +140,12 @@ function computeNext(current: OidcConfigRecord, patch: OidcConfigPatch): { next:
   return { next, changed, securityChanged }
 }
 
+/** Read the effective config inside a caller's transaction (same snapshot as the caller's writes). */
+export async function readOidcConfigInTx(tx: Prisma.TransactionClient): Promise<OidcConfigRecord> {
+  const row = await tx.oidcConfig.findUnique({ where: { id: SINGLETON_ID } })
+  return row ? rowToRecord(row) : { ...DEFAULTS, scopes: [...DEFAULTS.scopes] }
+}
+
 export const oidcConfigRepository = {
   /** Returns defaults (disabled) when nothing has been saved yet; does not write. */
   async get(): Promise<OidcConfigRecord> {
@@ -180,7 +187,11 @@ export const oidcConfigRepository = {
         create: { id: SINGLETON_ID, observed_groups: JSON.stringify(current.observed_groups), ...data },
         update: data
       })
-      if (securityChanged) await tx.oidcLoginTxn.deleteMany({})
+      if (securityChanged) {
+        await tx.oidcLoginTxn.deleteMany({})
+        // Permanent: any persisted security change revokes every OIDC-owned API token (local tokens untouched).
+        await tx.apiToken.deleteMany({ where: { user: { auth_provider: 'oidc' } } })
+      }
       return { config: rowToRecord(saved), changed: true }
     })
   },

@@ -1,6 +1,6 @@
 import { switchRepository } from '../../repositories/switchRepository'
 import { createSwitchSchema } from '../../validators/switchSchemas'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 import { settingsRepository } from '../../repositories/settingsRepository'
 
 export default defineEventHandler(async (event) => {
@@ -11,8 +11,7 @@ export default defineEventHandler(async (event) => {
 
   const created = await switchRepository.create(parsed)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'create',
     entity_type: 'switch',
     entity_id: created.id,

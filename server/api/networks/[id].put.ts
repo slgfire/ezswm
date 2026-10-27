@@ -1,6 +1,6 @@
 import { networkRepository } from '../../repositories/networkRepository'
 import { updateNetworkSchema } from '../../validators/networkSchemas'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
 import type { Network } from '../../../types/network'
 
@@ -26,8 +26,7 @@ export default defineEventHandler(async (event) => {
 
   const updated = await networkRepository.update(existing.id, parsed as Partial<Omit<Network, 'id' | 'created_at'>>)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'update',
     entity_type: 'network',
     entity_id: existing.id,

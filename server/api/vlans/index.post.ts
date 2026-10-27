@@ -1,6 +1,6 @@
 import { vlanRepository } from '../../repositories/vlanRepository'
 import { createVlanSchema } from '../../validators/vlanSchemas'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -21,8 +21,7 @@ export default defineEventHandler(async (event) => {
 
   const created = await vlanRepository.create(parsed as Required<Pick<typeof parsed, 'color'>> & typeof parsed)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'create',
     entity_type: 'vlan',
     entity_id: created.id,

@@ -32,16 +32,24 @@ export function verifyToken(token: string): SignTokenPayload & { iat: number, ex
   return jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] }) as SignTokenPayload & { iat: number, exp: number }
 }
 
-export function getTokenFromEvent(event: H3Event): string | null {
-  // Check Authorization header
-  const authHeader = getHeader(event, 'authorization')
-  if (authHeader?.startsWith('Bearer ')) {
-    return authHeader.slice(7)
-  }
+export type RequestCredential =
+  | { kind: 'none' }
+  /** An Authorization header was sent but is not a usable Bearer credential. */
+  | { kind: 'invalid' }
+  | { kind: 'header' | 'cookie', token: string }
 
-  // Check cookie
-  const token = getCookie(event, 'ezswm_token')
-  return token || null
+/**
+ * Credential with provenance. An explicit Authorization header NEVER falls back to the
+ * cookie: a malformed/non-Bearer header is `invalid` even when a valid cookie exists.
+ */
+export function getCredentialFromEvent(event: H3Event): RequestCredential {
+  const authHeader = getHeader(event, 'authorization')
+  if (authHeader !== undefined) {
+    const m = /^Bearer ([^\s]+)$/i.exec(authHeader)
+    return m ? { kind: 'header', token: m[1]! } : { kind: 'invalid' }
+  }
+  const cookie = getCookie(event, 'ezswm_token')
+  return cookie ? { kind: 'cookie', token: cookie } : { kind: 'none' }
 }
 
 export function setAuthCookie(event: H3Event, token: string, rememberMe: boolean = false, secure?: boolean): void {

@@ -34,6 +34,7 @@ export default withMermaid(
                 items: [
                   { text: 'Installation', link: '/guide/installation' },
                   { text: 'User Guide', link: '/guide/user-guide' },
+                  { text: 'MCP Integration', link: '/guide/mcp' },
                   { text: 'FAQ & Troubleshooting', link: '/guide/faq' },
                   { text: 'Release Notes', link: '/release-notes' },
                 ],
@@ -53,6 +54,7 @@ export default withMermaid(
                 items: [
                   { text: 'Installation', link: '/guide/installation' },
                   { text: 'User Guide', link: '/guide/user-guide' },
+                  { text: 'MCP Integration', link: '/guide/mcp' },
                   { text: 'FAQ & Troubleshooting', link: '/guide/faq' },
                   { text: 'Release Notes', link: '/release-notes' },
                 ],
@@ -81,6 +83,7 @@ export default withMermaid(
                 items: [
                   { text: 'Installation', link: '/de/guide/installation' },
                   { text: 'Benutzerhandbuch', link: '/de/guide/user-guide' },
+                  { text: 'MCP-Anbindung', link: '/de/guide/mcp' },
                   { text: 'FAQ & Problemlösung', link: '/de/guide/faq' },
                   { text: 'Release Notes', link: '/de/release-notes' },
                 ],
@@ -100,6 +103,7 @@ export default withMermaid(
                 items: [
                   { text: 'Installation', link: '/de/guide/installation' },
                   { text: 'Benutzerhandbuch', link: '/de/guide/user-guide' },
+                  { text: 'MCP-Anbindung', link: '/de/guide/mcp' },
                   { text: 'FAQ & Problemlösung', link: '/de/guide/faq' },
                   { text: 'Release Notes', link: '/de/release-notes' },
                 ],

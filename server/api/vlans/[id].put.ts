@@ -1,6 +1,6 @@
 import { vlanRepository } from '../../repositories/vlanRepository'
 import { updateVlanSchema } from '../../validators/vlanSchemas'
-import { activityRepository } from '../../repositories/activityRepository'
+import { logActivity } from '../../utils/activityLog'
 import type { VLAN } from '../../../types/vlan'
 
 export default defineEventHandler(async (event) => {
@@ -21,8 +21,7 @@ export default defineEventHandler(async (event) => {
 
   const updated = await vlanRepository.update(id, parsed as Partial<Omit<VLAN, 'id' | 'created_at'>>)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'update',
     entity_type: 'vlan',
     entity_id: id,

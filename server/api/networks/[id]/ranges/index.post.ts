@@ -1,7 +1,7 @@
 import { ipRangeRepository } from '../../../../repositories/ipRangeRepository'
 import { networkRepository } from '../../../../repositories/networkRepository'
 import { createIpRangeSchema } from '../../../../validators/ipRangeSchemas'
-import { activityRepository } from '../../../../repositories/activityRepository'
+import { logActivity } from '../../../../utils/activityLog'
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params?.id
@@ -21,8 +21,7 @@ export default defineEventHandler(async (event) => {
 
   const created = await ipRangeRepository.create(network.id, parsed)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'create',
     entity_type: 'ip_range',
     entity_id: created.id,

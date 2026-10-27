@@ -330,6 +330,8 @@
               </div>
             </UForm>
           </div>
+
+          <SettingsApiTokensSection :active="activeTab === 'account'" />
         </div>
       </template>
 

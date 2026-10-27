@@ -1,7 +1,7 @@
 import { ipAllocationRepository } from '../../../../repositories/ipAllocationRepository'
 import { networkRepository } from '../../../../repositories/networkRepository'
 import { updateIpAllocationSchema } from '../../../../validators/ipAllocationSchemas'
-import { activityRepository } from '../../../../repositories/activityRepository'
+import { logActivity } from '../../../../utils/activityLog'
 import type { IPAllocation } from '../../../../../types/ipAllocation'
 
 export default defineEventHandler(async (event) => {
@@ -32,8 +32,7 @@ export default defineEventHandler(async (event) => {
 
   const updated = await ipAllocationRepository.update(allocId, parsed as Partial<Omit<IPAllocation, 'id' | 'created_at'>>)
 
-  await activityRepository.log({
-    user_id: event.context.auth.userId,
+  await logActivity(event, {
     action: 'update',
     entity_type: 'ip_allocation',
     entity_id: allocId,

@@ -16,6 +16,7 @@ Related documents:
 | Entity | Description | Prisma model / legacy JSON file |
 |--------|-------------|-----------|
 | User | Application user account | `User` (legacy `users.json`) |
+| ApiToken | Revocable local-user API credential; secret never stored | `ApiToken` (no legacy file; excluded from JSON exports) |
 | Switch | Physical or logical switch | `Switch` (legacy `switches.json`) |
 | Port | Individual port on a switch | `Port` table (legacy: embedded in `switches.json`) |
 | VLAN | Virtual LAN definition | `Vlan` (legacy `vlans.json`) |
@@ -32,6 +33,12 @@ Related documents:
 ---
 
 ## 2. ID Format
+
+### API-token storage
+
+`ApiToken` has UUID `id`, trimmed `name`, unique SHA-256 `token_hash`, `user_id` referencing `User` with `ON DELETE CASCADE`, UTC `created_at`, and nullable UTC `last_used_at` / `expires_at`. `(user_id, name)` is unique with case-sensitive names. A SQLite insert trigger enforces at most ten rows per user, including concurrent creation. The plaintext `ezswm_` + 32-character nanoid secret is returned once on creation only. Metadata responses contain exactly id, name and the three timestamps, never the digest. Names are 1–100 characters; optional expiry must be a future UTC timestamp within five years. Last-use updates are conditional and best-effort, at most once per approximately 60 seconds per token.
+
+Full JSON backup/data exports explicitly omit this table. Restore deletes all existing tokens before deleting users, never inserts token rows from any payload, and therefore requires token re-creation afterwards. Raw SQLite snapshots still contain the table and must be treated as sensitive.
 
 Entity IDs are **UUIDs** (v4, string) generated server-side with `randomUUID()` from `node:crypto` in the repositories (for example `siteRepository.ts`, `switchRepository.ts`, `userRepository.ts`).
 
