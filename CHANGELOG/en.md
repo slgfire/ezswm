@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Fixed
+- MCP image publish workflow: the GHCR tag check now treats the exact Buildx "`<image>:<version>`: not found" error (and the classic manifest-unknown messages for that exact image) as a missing tag, so a new version can be pushed. Existing tags are still skipped; authentication, network and any other or mixed errors still fail the run. A successful login does not prove package write permission.
+
 ## [0.46.0] — 2026-10-26
 
 ### Added
