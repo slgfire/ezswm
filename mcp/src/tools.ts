@@ -22,8 +22,20 @@ function capped<T>(items: T[], cap = CAP): { items: T[], total: number, more_ava
   return { items: items.slice(0, cap), total: items.length, more_available: items.length > cap }
 }
 
-function asArray(value: unknown): unknown[] {
-  return Array.isArray(value) ? value : []
+/**
+ * Cap a list response. The allocation/range routes return `{ data, meta: { total } }`
+ * (unpaginated: meta.total equals data.length); a bare array is also accepted. A
+ * reported total above the returned rows keeps more_available true. Anything else is an
+ * error, never an empty list.
+ */
+function cappedList(value: unknown): { items: unknown[], total: number, more_available: boolean } {
+  const wrapper = value as { data?: unknown, meta?: { total?: unknown } } | null
+  const rows = Array.isArray(value) ? value : wrapper && Array.isArray(wrapper.data) ? wrapper.data : null
+  if (!rows) throw new Error('Unexpected list response from ezSWM (expected an array or { data: [] })')
+  const apiTotal = !Array.isArray(value) && typeof wrapper?.meta?.total === 'number' ? wrapper.meta.total : rows.length
+  const items = rows.slice(0, CAP)
+  const total = Math.max(apiTotal, rows.length)
+  return { items, total, more_available: total > items.length }
 }
 
 export const READ_TOOLS: ToolDefinition[] = [
@@ -82,8 +94,8 @@ export const READ_TOOLS: ToolDefinition[] = [
       ])
       return {
         network,
-        allocations: capped(asArray(allocations)),
-        ranges: capped(asArray(ranges))
+        allocations: cappedList(allocations),
+        ranges: cappedList(ranges)
       }
     }
   },
@@ -91,7 +103,7 @@ export const READ_TOOLS: ToolDefinition[] = [
     name: 'list_ip_allocations',
     description: 'List IP allocations of one network (capped at 100, with a more_available hint).',
     schema: z.object({ network_id: z.string().min(1) }),
-    handler: async (client, args) => capped(asArray(await client.get(`/api/networks/${encodeURIComponent(String(args.network_id))}/allocations`)))
+    handler: async (client, args) => cappedList(await client.get(`/api/networks/${encodeURIComponent(String(args.network_id))}/allocations`))
   },
   {
     name: 'list_ip_ranges',

@@ -22,6 +22,7 @@
 - Documentation branding: the English and German VitePress header now shows the current full logo followed only by “Docs”; the hero shows only the green switch symbol beside the unchanged green `ezSWM` heading and tagline. The page titles retain the full documentation name.
 
 ### Fixed
+- MCP `list_ip_allocations` and the allocations/ranges sections of `get_network` returned empty lists: they expected a bare array, but the REST routes return `{ data, meta: { total } }`. They now read the wrapped rows (cap 100, `more_available` and the reported total preserved) and report an error for an unexpected response instead of an empty list. The unit tests now use the real response shape. Verified live with the fixed MCP image: on the test domain, Viewer reads of all 18 read tools and canonical 403 gates for all 23 write tools; Admin success paths for the 23 write tools (one representative case per tool, including non-empty range readback) across the test domain and a disposable isolated app.
 - API token form: the name and expiry fields no longer show a red error state before any input is invalid. An empty error string was cast to `true` by the Vue Boolean/String prop of the Nuxt UI form field, which set `aria-invalid` and the error ring; the fields now pass no error value when there is no message. The end-to-end test now checks that `aria-invalid` is `false` initially, `true` only for the invalid field, and `false` again after correction.
 
 ---

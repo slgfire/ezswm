@@ -118,6 +118,68 @@ describe('read tools', () => {
     expect(result.allocations.more_available).toBe(true)
   })
 
+  describe('allocation/range list responses use the real { data, meta } API shape', () => {
+    const wrapped = (items: unknown[], total = items.length) => ({ data: items, meta: { total } })
+    const mockApi = (allocations: unknown, ranges: unknown) => {
+      vi.stubGlobal('fetch', vi.fn(async (input: URL | string) => {
+        const path = new URL(String(input)).pathname
+        if (path.endsWith('/allocations')) return json(allocations)
+        if (path.endsWith('/ranges')) return json(ranges)
+        return json({ id: 'n1', name: 'Net' })
+      }))
+      return new EzswmClient({ baseUrl: 'https://ezswm.example.com', token: 'ezswm_t' })
+    }
+    const tool = (name: string) => READ_TOOLS.find(t => t.name === name)!
+    type Page = { items: Array<{ id: string }>, total: number, more_available: boolean }
+
+    it('list_ip_allocations returns the wrapped rows, not an empty list', async () => {
+      const client = mockApi(wrapped([{ id: 'a1' }, { id: 'a2' }, { id: 'a3' }]), wrapped([]))
+      const result = await tool('list_ip_allocations').handler(client, { network_id: 'n1' }) as Page
+      expect(result.items.map(i => i.id)).toEqual(['a1', 'a2', 'a3'])
+      expect(result.total).toBe(3)
+      expect(result.more_available).toBe(false)
+    })
+
+    it('get_network returns wrapped allocations and ranges', async () => {
+      const client = mockApi(wrapped([{ id: 'a1' }]), wrapped([{ id: 'r1' }, { id: 'r2' }]))
+      const result = await tool('get_network').handler(client, { id: 'n1' }) as { allocations: Page, ranges: Page }
+      expect(result.allocations.items.map(i => i.id)).toEqual(['a1'])
+      expect(result.ranges.items.map(i => i.id)).toEqual(['r1', 'r2'])
+      expect(result.ranges.total).toBe(2)
+    })
+
+    it('caps wrapped lists at 100 and reports more_available with the full total', async () => {
+      const rows = Array.from({ length: 150 }, (_, i) => ({ id: `a${i}` }))
+      const client = mockApi(wrapped(rows), wrapped([]))
+      const result = await tool('list_ip_allocations').handler(client, { network_id: 'n1' }) as Page
+      expect(result.items).toHaveLength(100)
+      expect(result.total).toBe(150)
+      expect(result.more_available).toBe(true)
+    })
+
+    it('keeps meta.total when it exceeds the returned rows', async () => {
+      const client = mockApi(wrapped([{ id: 'a1' }], 5), wrapped([]))
+      const result = await tool('list_ip_allocations').handler(client, { network_id: 'n1' }) as Page
+      expect(result.items).toHaveLength(1)
+      expect(result.total).toBe(5)
+      expect(result.more_available).toBe(true)
+    })
+
+    it('handles empty wrapped lists and still accepts bare arrays', async () => {
+      const empty = mockApi(wrapped([]), wrapped([]))
+      expect(await tool('list_ip_allocations').handler(empty, { network_id: 'n1' })).toEqual({ items: [], total: 0, more_available: false })
+      const bare = mockApi([{ id: 'a1' }], [{ id: 'r1' }])
+      const result = await tool('get_network').handler(bare, { id: 'n1' }) as { allocations: Page, ranges: Page }
+      expect(result.allocations.items).toHaveLength(1)
+      expect(result.ranges.items).toHaveLength(1)
+    })
+
+    it('rejects a malformed response instead of reporting an empty list', async () => {
+      const client = mockApi({ unexpected: true }, wrapped([]))
+      await expect(tool('list_ip_allocations').handler(client, { network_id: 'n1' })).rejects.toThrow(/Unexpected list response/)
+    })
+  })
+
   it('maps export_documentation_data onto the sanitized export route and caps JSON rows', async () => {
     const fetchMock = vi.fn().mockResolvedValue(json(Array.from({ length: 5 }, (_, i) => ({ id: `x${i}` }))))
     vi.stubGlobal('fetch', fetchMock)
