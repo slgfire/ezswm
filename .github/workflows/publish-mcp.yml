@@ -246,7 +246,14 @@ jobs:
           if [ "${status}" -eq 0 ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
             echo "${GHCR_IMAGE}:${VERSION} already exists; skipping push"
-          elif printf '%s' "${output}" | grep -Eiq '(manifest unknown|no such manifest)'; then
+          elif ref="${GHCR_IMAGE,,}:${VERSION,,}"; out="${output,,}"; out="${out//$'\r'/}";
+            # Only a whole-output, image-specific "missing" message counts as missing; auth/network/other errors fail closed.
+            # shortcut: a 404 hidden behind an auth-masked registry response is indistinguishable, so login does not prove package permission.
+            [ "${out}" = "error: ${ref}: not found" ] ||
+            [ "${out}" = "error: ${ref}: manifest unknown" ] ||
+            [ "${out}" = "error: ${ref}: no such manifest" ] ||
+            [ "${out}" = "${ref}: manifest unknown" ] ||
+            [ "${out}" = "${ref}: no such manifest" ]; then
             echo "exists=false" >> "$GITHUB_OUTPUT"
           else
             echo "::error::GHCR check failed; refusing to assume the tag is missing: ${output}"

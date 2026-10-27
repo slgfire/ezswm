@@ -3,6 +3,9 @@
 ### Changed
 - Documentation site (EN/DE): the home hero image now has a stronger, bounded mouse-follow 3D effect on desktop with a fine pointer (up to about 7°/9° tilt, a small shift, lift and 1.025 scale). It stays off on touch/mobile and respects `prefers-reduced-motion`, keyboard focus is unchanged, and the grouped navigation/sidebar sections remain in both languages. The Get Started button now uses dark text on the green background (contrast 8.69 normal, 6.01 hover/pressed) with a visible focus ring, and the dashboard screenshot was replaced by a richer synthetic example (orphan VLAN warnings, a high-usage network). Docs only; no app change.
 
+### Fixed
+- MCP image publish workflow: the GHCR tag check now treats the exact Buildx "`<image>:<version>`: not found" error (and the classic manifest-unknown messages for that exact image) as a missing tag, so a new version can be pushed. Existing tags are still skipped; authentication, network and any other or mixed errors still fail the run. A successful login does not prove package write permission.
+
 ## [0.46.0] — 2026-10-26
 
 ### Added

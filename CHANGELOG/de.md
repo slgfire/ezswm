@@ -3,6 +3,9 @@
 ### Geändert
 - Dokumentationsseite (EN/DE): Das Hero-Bild der Startseite hat jetzt auf Desktop mit feinem Zeiger einen stärkeren, begrenzten 3D-Effekt, der der Maus folgt (bis etwa 7°/9° Neigung, leichte Verschiebung, Anhebung und Skalierung 1,025). Auf Touch/Mobilgeräten bleibt er aus und `prefers-reduced-motion` wird respektiert; der Tastaturfokus bleibt unverändert, die gruppierte Navigation/Seitenleiste bleibt in beiden Sprachen erhalten. Der Button „Get Started“ nutzt jetzt dunklen Text auf grünem Hintergrund (Kontrast 8,69 normal, 6,01 Hover/gedrückt) mit sichtbarem Fokusrahmen, und der Dashboard-Screenshot wurde durch ein reichhaltigeres synthetisches Beispiel (Warnungen zu verwaisten VLANs, ein stark ausgelastetes Netz) ersetzt. Nur Dokumentation, keine App-Änderung.
 
+### Behoben
+- MCP-Image-Publish-Workflow: Die GHCR-Tag-Prüfung erkennt jetzt die exakte Buildx-Meldung „`<Image>:<Version>`: not found“ (sowie die klassischen „manifest unknown“-Meldungen für genau dieses Image) als fehlenden Tag, sodass eine neue Version gepusht werden kann. Vorhandene Tags werden weiterhin übersprungen; Authentifizierungs-, Netzwerk- und alle anderen oder gemischten Fehler lassen den Lauf weiterhin fehlschlagen. Ein erfolgreicher Login beweist keine Schreibberechtigung für das Paket.
+
 ## [0.46.0] — 2026-10-26
 
 ### Hinzugefügt
