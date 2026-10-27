@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Behoben
+- MCP-Image-Publish-Workflow: Die GHCR-Tag-Prüfung erkennt jetzt die exakte Buildx-Meldung „`<Image>:<Version>`: not found“ (sowie die klassischen „manifest unknown“-Meldungen für genau dieses Image) als fehlenden Tag, sodass eine neue Version gepusht werden kann. Vorhandene Tags werden weiterhin übersprungen; Authentifizierungs-, Netzwerk- und alle anderen oder gemischten Fehler lassen den Lauf weiterhin fehlschlagen. Ein erfolgreicher Login beweist keine Schreibberechtigung für das Paket.
+
 ## [0.46.0] — 2026-10-26
 
 ### Hinzugefügt

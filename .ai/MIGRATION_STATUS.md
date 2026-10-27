@@ -2,6 +2,10 @@
 
 ## Latest Stage
 
+### MCP publish workflow: GHCR tag check fix (2026-10-27)
+
+Release 0.46.0 `publish-mcp` failed at "Check GHCR tag" with `ERROR: ghcr.io/slgfire/ezswm-mcp:0.46.0: not found` (Buildx wording; the old `manifest unknown|no such manifest` regex missed it). The inline Bash now treats only a whole-output, image/version-specific missing message (case-insensitive, literal ref) as `exists=false`; auth, network, 404/5xx, other-ref and mixed outputs still fail closed. No app version bump. Test: `tests/publishMcpGhcrCheck.test.ts` extracts the real step script and runs it with a stubbed `docker` (23 cases, 0 failed, run on host Node 22 via a minimal vitest shim because the repo's musl vitest cannot start on the glibc host).
+
 ### MCP allocation/range list response fix (v0.46.0, same unreleased PR #313 release, 2026-10-26)
 
 Found during the Viewer all-tools verification on the test domain: with the same Viewer token, REST `GET /api/networks/<id>/allocations` returned 6 allocations over 5 networks (as `{ data, meta: { total } }`), while MCP `list_ip_allocations` and `get_network.allocations/ranges` returned 0. Cause: `mcp/src/tools.ts` `asArray()` turned any non-array into `[]`; the old unit test stubbed bare arrays, so it never saw the real shape. Fix: `cappedList()` accepts `{ data, meta }` or a bare array, caps at 100, keeps `more_available` and the larger of `meta.total` and the row count (the routes are unpaginated, so meta.total equals data.length), and throws on an unexpected response. `list_ip_ranges` and `export_documentation_data` are unchanged. Six regression tests in `mcp/test/mcp.test.ts` use the production shape; run against the old code, 5 failed (red), then all passed after the fix (`/tmp/opencode/mcp-int/mcp-response-fix-red.log`, `mcp-response-fix-green.log`).
