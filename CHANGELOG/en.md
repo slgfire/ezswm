@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Added
+- Root `TODO.md`: a short central checklist of the open queue (port miniature in Switch Overview; three reported iPhone UI defects awaiting reproduction and fix), with links to the long-term strategy. Documentation only; no app change.
+
 ### Changed
 - Documentation site (EN/DE): the home hero image now has a stronger, bounded mouse-follow 3D effect on desktop with a fine pointer (up to about 7°/9° tilt, a small shift, lift and 1.025 scale). It stays off on touch/mobile and respects `prefers-reduced-motion`, keyboard focus is unchanged, and the grouped navigation/sidebar sections remain in both languages. The Get Started button now uses dark text on the green background (contrast 8.69 normal, 6.01 hover/pressed) with a visible focus ring, and the dashboard screenshot was replaced by a richer synthetic example (orphan VLAN warnings, a high-usage network). Docs only; no app change.
 

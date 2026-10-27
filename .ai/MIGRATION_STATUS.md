@@ -2,6 +2,10 @@
 
 ## Latest Stage
 
+### Central root TODO.md (2026-10-27, docs only)
+
+Added `TODO.md` at the repo root as a short human checklist: open port miniature feature for Switch Overview (investigation pending), three reported iPhone UI defects awaiting reproduction and fix, nothing in progress, long-term items linked to `.ai/STRATEGY.md` and issue #272, completed MCP/PR #329/#330 in brief. Changelog entries added (EN/DE). No app, schema, version or dependency change; no build or tests run (Markdown only). Not committed or pushed.
+
 ### Docs hero 3D motion, green CTA and synthetic dashboard screenshot (2026-10-27, docs only, no app version bump)
 
 Branch `feat/docs-hero-motion` (based on main `5d4d662`, then merged with main `97c408c`, which contains the registry-fix PR #329 squash; MCP 0.46.0 was published independently). Files: `docs/.vitepress/config.ts`, `theme/index.ts`, `theme/custom.css`, new `theme/heroTilt.ts`, `docs/public/images/screenshot-dashboard-synthetic-current.png`, `tests/docsHeroTilt.test.ts`. Behavior: desktop fine-pointer mouse-follow motion (tilt up to 7deg X / 9deg Y, shift 12px X / 9px Y, Z 32px, scale 1.025), requestAnimationFrame-throttled, no idle animation, resets on pointer-out/blur/route change/destroy (SSR-safe); off for touch/mobile and `prefers-reduced-motion`; EN/DE nav grouping kept. Get Started button: background #22c55e (hover/active #16a34a), text #0a0a0a, contrast 8.69 normal / 6.01 hover-active, 3px focus ring (10.94 light / 12.81 dark vs page), pressed translateY 1px; secondary button unchanged. The screenshot is a 1920x1200 PNG of a synthetic "Demo Campus" seeded through the real API (8 switches/192 ports 112 up/48 down/32 disabled, 8 VLANs with orphan Guest Staging 90 / Legacy Lab 99, 6 networks, 31 allocations, Cameras 86% utilization); the demo app and data were deleted afterwards.
