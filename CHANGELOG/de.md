@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Geändert
+- Dokumentationsseite (EN/DE): Das Hero-Bild der Startseite hat jetzt auf Desktop mit feinem Zeiger einen stärkeren, begrenzten 3D-Effekt, der der Maus folgt (bis etwa 7°/9° Neigung, leichte Verschiebung, Anhebung und Skalierung 1,025). Auf Touch/Mobilgeräten bleibt er aus und `prefers-reduced-motion` wird respektiert; der Tastaturfokus bleibt unverändert, die gruppierte Navigation/Seitenleiste bleibt in beiden Sprachen erhalten. Der Button „Get Started“ nutzt jetzt dunklen Text auf grünem Hintergrund (Kontrast 8,69 normal, 6,01 Hover/gedrückt) mit sichtbarem Fokusrahmen, und der Dashboard-Screenshot wurde durch ein reichhaltigeres synthetisches Beispiel (Warnungen zu verwaisten VLANs, ein stark ausgelastetes Netz) ersetzt. Nur Dokumentation, keine App-Änderung.
+
 ## [0.46.0] — 2026-10-26
 
 ### Hinzugefügt
