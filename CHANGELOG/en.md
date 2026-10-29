@@ -9,6 +9,12 @@
 ### Fixed
 - MCP image publish workflow: the GHCR tag check now treats the exact Buildx "`<image>:<version>`: not found" error (and the classic manifest-unknown messages for that exact image) as a missing tag, so a new version can be pushed. Existing tags are still skipped; authentication, network and any other or mixed errors still fail the run. A successful login does not prove package write permission.
 
+## [0.46.1] — 2026-10-28
+
+### Fixed
+- Phone layouts (iPhone-reported defects; checked in Chromium at 390 and 320 px and confirmed by the user on an iPhone against the deployed 0.46.1 test domain on 2026-10-29): on the Switches overview the search and filter dropdowns now stack full width above the wrapping view/action controls instead of overlapping them. On touch devices the switch-card action buttons sit in the normal card layout (grid and list) instead of covering the card heading; desktop hover/focus behavior is unchanged. On the IP-address overview the search and filters are full width on phones. The decorative dark fade overlay at the right edge of the horizontally scrolling port visualization was removed, so no dark band remains while scrolling it (switch details, layout templates, public view). The reported IP-table header partly covering the first row could not be reproduced in Chromium and no sticky-header code change was made; the user's iPhone check found no remaining problem.
+- Repository and build-context hygiene: the Playwright auth state (`tests/e2e/.auth/`) and the local `admin-token`/`viewer-token` files are now ignored by Git and excluded from the Docker build context, and `tests/e2e/.auth/user.json` is no longer tracked (the setup project regenerates it; Git history is not rewritten and no credentials were rotated). A regression test checks the ignore patterns and the Docker context exclusion with dummy files only.
+
 ## [0.46.0] — 2026-10-26
 
 ### Added

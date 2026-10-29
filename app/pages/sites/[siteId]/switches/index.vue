@@ -16,15 +16,16 @@
          internally; the right zone (display/organization/actions) keeps its own
          boundary and, when the parent wraps, drops to its own full line pinned
          right by ml-auto — the zones never interleave on the same line. -->
-    <div v-if="!loading && allItems.length > 0" class="mb-4 flex flex-wrap items-center gap-3">
+    <div v-if="!loading && allItems.length > 0" data-testid="switch-list-toolbar" class="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
       <!-- Left zone: filters -->
-      <div class="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+      <div data-testid="switch-list-filters" class="flex w-full min-w-0 flex-col items-stretch gap-3 sm:flex-1 sm:flex-row sm:flex-wrap sm:items-center">
         <UInput
           v-model="search"
           :placeholder="$t('common.search')"
           icon="i-heroicons-magnifying-glass"
           size="sm"
-          class="w-64"
+          data-testid="switch-filter-control"
+          class="switch-filter-control w-full sm:w-64"
         />
         <USelect
           v-if="locationOptions.length > 1"
@@ -33,7 +34,8 @@
           value-key="value"
           icon="i-heroicons-map-pin"
           size="sm"
-          class="w-48"
+          data-testid="switch-filter-control"
+          class="switch-filter-control w-full sm:w-48"
         />
         <USelect
           v-model="roleFilter"
@@ -41,7 +43,8 @@
           value-key="value"
           icon="i-heroicons-rectangle-stack"
           size="sm"
-          class="w-44"
+          data-testid="switch-filter-control"
+          class="switch-filter-control w-full sm:w-44"
         />
         <USelect
           v-if="tagOptions.length > 1"
@@ -50,14 +53,15 @@
           value-key="value"
           icon="i-heroicons-tag"
           size="sm"
-          class="w-44"
+          data-testid="switch-filter-control"
+          class="switch-filter-control w-full sm:w-44"
         />
       </div>
       <!-- Right cluster: display (Cards/List), organization (Grouped/Flat,
            Manage Groups) and actions (print/QR). ml-auto is unconditional so
            the cluster always anchors right and wraps under the filters as a
            single unit, in all-sites and single-site mode alike. -->
-      <div class="ml-auto flex flex-wrap items-center gap-2">
+      <div data-testid="switch-list-controls" class="flex w-full flex-wrap items-center justify-end gap-2 sm:ml-auto sm:w-auto">
         <!-- Cards/List segmented control (icon-only; names via tooltip/aria) -->
         <div class="flex items-center rounded-md border border-default p-0.5" role="group" :aria-label="`${$t('switches.viewGrid')} / ${$t('switches.viewList')}`">
           <UTooltip :text="$t('switches.viewGrid')">

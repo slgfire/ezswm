@@ -227,6 +227,8 @@ Switch-Bearbeitung, einzelne Port-Bearbeitung, Massen-Port-Bearbeitung sowie LAG
 
 Die Toolbar der Switch-Liste bietet drei Filter-Dropdowns (Standort, Rolle, Tags). Jedes Dropdown zeigt nur Werte, die in den aktuell sichtbaren Switches vorhanden sind (site-gescopt bei einer einzelnen Site, global bei **Alle Standorte**). Wähle **Alle …** am Anfang eines Dropdowns, um diesen Filter zurückzusetzen. Jedes Dropdown hat ein führendes Icon zur schnellen visuellen Orientierung.
 
+Auf Smartphones stehen Suchfeld und Filter-Dropdowns in voller Breite über den Ansichts- und Aktionssteuerelementen, und auf Touch-Geräten liegen die Aktionsschaltflächen der Karten im normalen Kartenlayout, statt die Überschrift zu überdecken. Auch die Filter der IP-Adressen sind auf Smartphones in voller Breite. Desktop-Layouts und Hover-/Fokusverhalten bleiben unverändert.
+
 ### Switch-Gruppen (pro Site)
 
 Switch-Gruppen sind **standardmäßig aktiviert** und werden pro Site verwaltet. In einer site-spezifischen Switch-Liste kannst du Gruppen anlegen und Switches einer Gruppe zuweisen.

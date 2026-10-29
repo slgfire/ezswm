@@ -13,3 +13,9 @@ data
 **/.env.*
 !.env.example
 !**/.env.example
+
+# Local credentials and Playwright auth state must never enter the build context
+/admin-token
+/viewer-token
+tests/e2e/.auth
+playwright/.auth

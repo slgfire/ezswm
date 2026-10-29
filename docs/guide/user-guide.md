@@ -227,6 +227,8 @@ Switch edits, single-port edits, bulk port edits, and LAG create/update operatio
 
 The switch list toolbar provides three filter dropdowns (location, role, tags). Each dropdown shows only values present in the currently visible switches (site-scoped when viewing a specific site, global when viewing **All Sites**). Select **All …** at the top of any dropdown to clear that filter. Each dropdown displays a leading icon for quick visual identification.
 
+On phones, the search box and filter dropdowns stack at full width above the view and action controls, and on touch devices the card action buttons sit in the normal card layout instead of overlaying the heading. The IP address filters are also full width on phones. Desktop layouts and hover/focus behavior are unchanged.
+
 ### Switch Groups (per site)
 
 Switch Groups are **enabled by default** and managed per site. In a site-scoped switch list, you can create groups and assign switches to a group.

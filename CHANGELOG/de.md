@@ -9,6 +9,12 @@
 ### Behoben
 - MCP-Image-Publish-Workflow: Die GHCR-Tag-Prüfung erkennt jetzt die exakte Buildx-Meldung „`<Image>:<Version>`: not found“ (sowie die klassischen „manifest unknown“-Meldungen für genau dieses Image) als fehlenden Tag, sodass eine neue Version gepusht werden kann. Vorhandene Tags werden weiterhin übersprungen; Authentifizierungs-, Netzwerk- und alle anderen oder gemischten Fehler lassen den Lauf weiterhin fehlschlagen. Ein erfolgreicher Login beweist keine Schreibberechtigung für das Paket.
 
+## [0.46.1] — 2026-10-28
+
+### Behoben
+- Smartphone-Layouts (gemeldete iPhone-Fehler; in Chromium bei 390 und 320 px geprüft und am 2026-10-29 vom Benutzer auf einem iPhone gegen die bereitgestellte 0.46.1-Testdomain bestätigt): In der Switch-Übersicht stehen Suche und Filter-Dropdowns jetzt in voller Breite über den umbrechenden Ansichts-/Aktionsschaltflächen, statt sie zu überlappen. Auf Touch-Geräten liegen die Aktionsschaltflächen der Switch-Karten (Karten- und Listenansicht) im normalen Kartenlayout, statt die Kartenüberschrift zu verdecken; das Hover-/Fokusverhalten auf dem Desktop bleibt unverändert. In der IP-Adress-Übersicht sind Suche und Filter auf Smartphones in voller Breite. Das dekorative dunkle Ausblend-Overlay am rechten Rand der horizontal scrollenden Portdarstellung wurde entfernt, sodass beim Scrollen kein dunkles Band mehr bleibt (Switch-Details, Layout-Vorlagen, öffentliche Ansicht). Dass der Kopf der IP-Tabelle die erste Zeile teilweise verdeckt, ließ sich in Chromium nicht reproduzieren; es wurde keine Codeänderung am Sticky-Header vorgenommen, die iPhone-Prüfung des Benutzers ergab kein verbleibendes Problem.
+- Repository- und Build-Kontext-Hygiene: Der Playwright-Auth-Zustand (`tests/e2e/.auth/`) und die lokalen Dateien `admin-token`/`viewer-token` werden jetzt von Git ignoriert und aus dem Docker-Build-Kontext ausgeschlossen; `tests/e2e/.auth/user.json` wird nicht mehr versioniert (das Setup-Projekt erzeugt sie neu; die Git-Historie wird nicht umgeschrieben und es wurden keine Zugangsdaten rotiert). Ein Regressionstest prüft die Ignore-Muster und den Ausschluss aus dem Docker-Kontext ausschließlich mit Dummy-Dateien.
+
 ## [0.46.0] — 2026-10-26
 
 ### Hinzugefügt

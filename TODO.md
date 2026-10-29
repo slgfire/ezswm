@@ -8,12 +8,16 @@ Short human checklist of the actionable queue. Long-term direction lives in [.ai
    - Single switch: show a port miniature. Stack: compact member/port summary with an accessible click-to-expand view of member-labelled miniatures.
    - Must be usable on mobile (no hover-only interaction). Reuse the existing renderer where possible.
    - Starting-point hints: `app/components/switch/SwitchCard.vue`, `app/components/template/TemplateMiniPreview.vue`. Architecture not yet investigated; no effort or data structure is promised.
-2. **iPhone UI defects** (reported with three screenshots; reproduction and root causes pending).
-   - [ ] Switch overview: search, role filter and view/action controls overlap at phone widths. Review the card action strip, which occupies much of the card heading on touch devices.
-   - [ ] IP-address overview: filters have inconsistent widths. The screenshot also shows the first table row partly obscured by the table header; verify scrolling and header positioning.
-   - [ ] Port visualization: a dark vertical band remains near the middle while swiping horizontally. Reported in switch details, layout-template previews and the public viewer; investigate shared rendering before applying page-specific fixes.
-   - Device family and affected screens are known; capture the iPhone model, iOS/browser versions, viewport and repeatable steps during reproduction. No matching GitHub issue found in the initial search.
-   - Do not assume the historical iPad `USelect` empty-string issue (see `AGENTS.md`, closed PoE issue #217) is the same defect. No UI fix has been implemented.
+2. **iPhone UI defects** (reported with three screenshots; mobile fixes in 0.46.1; **accepted** by the user after an iPhone check on the deployed 0.46.1 test domain, 2026-10-29).
+   - [x] Switch overview: filters now stack full width above the wrapping view/action controls on phones, and touch switch-card actions sit in the normal card layout (grid and list; desktop hover/focus kept). Checked with focused Playwright in Chromium at 390/320 px (no page overflow or filter-control overlap); confirmed by the user on an iPhone.
+   - [x] IP-address overview: filters are now full width on phones (Chromium-checked). The first table row partly obscured by the table header was **not reproduced** in Chromium (table owns the scroll, first row starts below the header) and no sticky-header code change was made; the user's iPhone check found no remaining problem (acceptance, not a root-cause proof).
+   - [x] Port visualization: the shared dark scroll-fade `::after` overlay (`.port-grid-unit`) was removed from global CSS; scroll behavior was tested in switch details, layout-template previews and the public viewer in Chromium; confirmed by the user on an iPhone.
+   - Status: complete/accepted. The iPhone model, iOS/browser versions and viewport were not supplied (not needed for acceptance). Release 0.46.1 is deployed to the test domain `https://ezswm-test.saar-lan.de` (2026-10-29).
+   - Do not assume the historical iPad `USelect` empty-string issue (see `AGENTS.md`, closed PoE issue #217) is the same defect.
+
+3. **Build-context / auth-state security cleanup**: implementation complete (2026-10-29, uncommitted): ignore rules in `.gitignore`/`.dockerignore`, `tests/e2e/.auth/user.json` untracked (file kept locally), regression test `tests/securityIgnore.test.ts`.
+   - [x] Credential-risk assessment (2026-10-29): the previously tracked auth JWT expired 2026-03-25T19:55:12Z (issued 2026-03-18), so the server rejects it; no JWT revocation or rotation is needed for this finding. The signature was not tested and no live probe was made. The current public `main` still includes the file until the user approves commit/push/merge; historical copies remain public even afterward. The local staged removal is not remote history erasure and no history rewrite was done.
+   - [x] Test-domain default-password check (completed 2026-10-29): a read-only check of the live test-domain container compared the 3 local-password accounts (1 admin) against the one known public E2E default password: 0 matched, 0 errors; no login attempts or changes. It says nothing about password strength or OIDC credentials.
 
 ## In progress
 
