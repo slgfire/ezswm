@@ -13,6 +13,7 @@ dist/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+/tests/e2e/.auth/
 app/public/
 screenshots/
 .playwright-mcp/
@@ -38,3 +39,7 @@ docs/superpowers/
 graphify-out/
 session-*.md
 .slim/deepwork/
+
+# Local API tokens (never commit)
+/admin-token
+/viewer-token

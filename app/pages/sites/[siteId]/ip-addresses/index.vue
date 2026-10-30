@@ -17,23 +17,25 @@
 
     <template v-else>
       <!-- Filters -->
-      <div class="mb-4 flex flex-wrap items-center gap-3">
+      <div data-testid="ip-address-filters" class="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <UInput
           v-model="search"
           icon="i-heroicons-magnifying-glass"
           :placeholder="$t('common.search')"
           size="sm"
-          class="w-64"
+          data-testid="ip-address-filter"
+          class="ip-address-filter w-full sm:w-64"
         />
-        <USelect v-model="vlanFilter" :items="vlanFilterOptions" icon="i-heroicons-tag" size="sm" class="w-48" />
-        <USelect v-model="statusFilter" :items="statusFilterOptions" icon="i-heroicons-signal" size="sm" class="w-44" />
-        <USelect v-model="deviceTypeFilter" :items="deviceTypeFilterOptions" icon="i-heroicons-cpu-chip" size="sm" class="w-48" />
+        <USelect v-model="vlanFilter" :items="vlanFilterOptions" icon="i-heroicons-tag" size="sm" data-testid="ip-address-filter" class="ip-address-filter w-full sm:w-48" />
+        <USelect v-model="statusFilter" :items="statusFilterOptions" icon="i-heroicons-signal" size="sm" data-testid="ip-address-filter" class="ip-address-filter w-full sm:w-44" />
+        <USelect v-model="deviceTypeFilter" :items="deviceTypeFilterOptions" icon="i-heroicons-cpu-chip" size="sm" data-testid="ip-address-filter" class="ip-address-filter w-full sm:w-48" />
       </div>
 
       <!-- Table (fills remaining height, scrolls internally with a sticky header) -->
       <UTable
         v-if="items.length > 0"
         v-model:sorting="sorting"
+        data-testid="ip-address-table"
         sticky
         :data="filteredData"
         :columns="columns"

@@ -121,7 +121,7 @@
   <!-- List variant -->
   <div
     v-else
-    class="stagger-item card-glow group relative flex items-center gap-4 rounded-lg bg-default px-5 py-3"
+    class="switch-card-list stagger-item card-glow group relative flex items-center gap-4 rounded-lg bg-default px-5 py-3"
   >
     <NuxtLink
       :to="detailPath"
@@ -300,6 +300,28 @@ const portStats = computed(() => {
 @media (hover: none) {
   .switch-card-actions {
     opacity: 1;
+    position: static;
+    inset: auto;
+    align-self: flex-end;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 100%;
+  }
+
+  .switch-card-grid .switch-card-actions {
+    margin: 0.5rem 0.5rem 0;
+  }
+
+  .switch-card-list {
+    flex-wrap: wrap;
+  }
+
+  .switch-card-list .switch-card-actions {
+    margin-left: auto;
+  }
+
+  .switch-card-list > .relative.z-20.min-w-0.flex-1 {
+    flex-basis: 100%;
   }
 }
 </style>
