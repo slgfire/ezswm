@@ -11,11 +11,13 @@ data
 .env.*
 **/.env
 **/.env.*
-!.env.example
-!**/.env.example
 
 # Local credentials and Playwright auth state must never enter the build context
 /admin-token
 /viewer-token
 tests/e2e/.auth
 playwright/.auth
+
+# Exceptions come last so no later exclusion can override them
+!.env.example
+!**/.env.example

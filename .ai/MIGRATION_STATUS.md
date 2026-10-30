@@ -2638,3 +2638,6 @@ Goal: Safer VLAN assignment to switch ports with explicit switch-VLAN configurat
 ### Phase 0 — Documentation & Planning (2026-03-16)
 - Created all SPEC documents
 - Updated CLAUDE.md, STRATEGY.md, ARCHITECTURE.md
+
+### Security hygiene CI regression fix (2026-10-30)
+- CI failed `tests/dockerBuildContext.test.ts` because the `!.env.example` exceptions preceded the new credential exclusions in `.dockerignore`. The two exception lines were moved to the end; pattern set unchanged. Validated with the Docker context tests, `tests/securityIgnore.test.ts` and the full unit suite.
