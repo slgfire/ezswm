@@ -9,6 +9,17 @@
 ### Fixed
 - MCP image publish workflow: the GHCR tag check now treats the exact Buildx "`<image>:<version>`: not found" error (and the classic manifest-unknown messages for that exact image) as a missing tag, so a new version can be pushed. Existing tags are still skipped; authentication, network and any other or mixed errors still fail the run. A successful login does not prove package write permission.
 
+## [0.47.0] — 2026-11-02
+
+### Added
+- Switch Overview: switch cards in grid and list view now show a compact, read-only port preview. Stacks show a visible member/port summary that expands and collapses by touch or keyboard. Port editing stays on the switch detail page.
+
+### Changed
+- Switch cards (grid view): model, location/IP and tags now sit directly below the name and role, without reserved empty space. Tags wrap across lines; long text is truncated. Footers stay aligned. List view is unchanged.
+
+### Fixed
+- Dashboard: readable light/dark port totals, status counts and warning text; translated IP-allocation, port-status, warning and subnet-hint labels in English and German. The IP-allocation tile now opens the IP-address overview and counts only allocations in the selected site's subnets. Recent activity remains global.
+
 ## [0.46.1] — 2026-10-28
 
 ### Fixed

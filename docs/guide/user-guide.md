@@ -25,6 +25,8 @@ After logging in, the dashboard provides a summary of your infrastructure: total
 
 On phones, the four KPI cards at the top of the dashboard appear in two columns (2×2). Larger panels retain their full width on phones; tablet and desktop layouts are unchanged.
 
+The IP-allocation tile counts allocations in the selected site's subnets and opens the IP-address overview. Port-status labels and warning messages follow the selected English/German interface language; totals, status counts and warning text support light and dark themes. Recent activity still includes events from all sites.
+
 The interface uses neutral surfaces for layout and decoration. Color remains where it carries information: VLANs keep their assigned colors, while port states and warnings retain their status cues, such as green for up, amber for warnings, and red for down or errors.
 
 ![Dashboard — synthetic example, demo data](/images/screenshot-dashboard-synthetic-current.png)
@@ -228,6 +230,8 @@ Switch edits, single-port edits, bulk port edits, and LAG create/update operatio
 The switch list toolbar provides three filter dropdowns (location, role, tags). Each dropdown shows only values present in the currently visible switches (site-scoped when viewing a specific site, global when viewing **All Sites**). Select **All …** at the top of any dropdown to clear that filter. Each dropdown displays a leading icon for quick visual identification.
 
 On phones, the search box and filter dropdowns stack at full width above the view and action controls, and on touch devices the card action buttons sit in the normal card layout instead of overlaying the heading. The IP address filters are also full width on phones. Desktop layouts and hover/focus behavior are unchanged.
+
+Each switch card in the Switches overview (grid and list) shows a compact, read-only port miniature. For a stack, the card shows a compact member/port summary with a button that expands or collapses miniatures labelled per member; it works by touch and keyboard and does not depend on hover. The miniature is for overview only -- open the switch details to edit ports. In grid view, model, location/IP and tags follow directly under the name without empty reserved space. Tags wrap across lines; long text is truncated.
 
 ### Switch Groups (per site)
 

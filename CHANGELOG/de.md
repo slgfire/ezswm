@@ -9,6 +9,17 @@
 ### Behoben
 - MCP-Image-Publish-Workflow: Die GHCR-Tag-Prüfung erkennt jetzt die exakte Buildx-Meldung „`<Image>:<Version>`: not found“ (sowie die klassischen „manifest unknown“-Meldungen für genau dieses Image) als fehlenden Tag, sodass eine neue Version gepusht werden kann. Vorhandene Tags werden weiterhin übersprungen; Authentifizierungs-, Netzwerk- und alle anderen oder gemischten Fehler lassen den Lauf weiterhin fehlschlagen. Ein erfolgreicher Login beweist keine Schreibberechtigung für das Paket.
 
+## [0.47.0] — 2026-11-02
+
+### Hinzugefügt
+- Switch-Übersicht: Switch-Karten zeigen in Karten- und Listenansicht jetzt eine kompakte, schreibgeschützte Port-Vorschau. Stacks zeigen eine sichtbare Zusammenfassung der Stack-Mitglieder und Ports, die sich per Touch oder Tastatur auf- und zuklappen lässt. Die Port-Bearbeitung bleibt auf der Switch-Detailseite.
+
+### Geändert
+- Switch-Karten (Kartenansicht): Modell, Standort/IP und Tags stehen jetzt direkt unter Name und Rolle, ohne reservierte Leerflächen. Tags verteilen sich auf mehrere Zeilen; lange Texte werden gekürzt. Kartenfüße bleiben ausgerichtet. Die Listenansicht bleibt unverändert.
+
+### Behoben
+- Dashboard: lesbare Port-Gesamtzahl, Statuszahlen und Warntexte im Hell- und Dunkelmodus; übersetzte Beschriftungen für IP-Zuweisungen, Portstatus, Warnungen und Subnetz-Hinweis auf Deutsch und Englisch. Die IP-Kachel öffnet jetzt die IP-Adressübersicht und zählt nur Zuweisungen in Subnetzen des gewählten Standorts. Letzte Aktivitäten bleiben standortübergreifend.
+
 ## [0.46.1] — 2026-10-28
 
 ### Behoben

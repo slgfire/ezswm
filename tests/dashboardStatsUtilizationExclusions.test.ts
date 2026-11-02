@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { randomUUID } from 'node:crypto'
 import type { PrismaClient } from '@prisma/client'
 
-import { createTestPrisma, seedSite } from './testHelpers'
+import { createTestPrisma, seedNetwork, seedSite } from './testHelpers'
 import dashboardStats from '../server/api/dashboard/stats.get'
 import networkUtilization from '../server/api/networks/[id]/utilization.get'
 
@@ -97,5 +97,21 @@ describe('dashboard utilization exclusions', () => {
   it('keeps per-network utilization endpoint unchanged for excluded networks', async () => {
     const result = await networkUtilization({ context: { params: { id: excludedNetworkId } } } as never) as { utilization_percent: number }
     expect(result.utilization_percent).toBeGreaterThan(80)
+  })
+
+  it('counts allocations only for the selected site; all sites sum, unknown site is empty', async () => {
+    const otherSiteId = (await seedSite(prisma, { slug: 'branch' })).id
+    const otherNetworkId = (await seedNetwork(prisma, { site_id: otherSiteId, subnet: '10.9.0.0/24' })).id
+    const now = new Date().toISOString()
+    await prisma.ipAllocation.createMany({
+      data: ['10.9.0.2', '10.9.0.3'].map(ip => ({ id: randomUUID(), network_id: otherNetworkId, ip_address: ip, hostname: null, mac_address: null, device_type: null, description: null, status: 'active', created_at: now, updated_at: now }))
+    })
+    const count = async (query: Record<string, string>) =>
+      (await dashboardStats({ query } as never) as { counts: { allocations: number } }).counts.allocations
+
+    expect(await count({ site_id: siteId })).toBe(6)
+    expect(await count({ site_id: otherSiteId })).toBe(2)
+    expect(await count({})).toBe(8)
+    expect(await count({ site_id: 'does-not-exist' })).toBe(0)
   })
 })

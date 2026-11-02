@@ -4,24 +4,28 @@ Short human checklist of the actionable queue. Long-term direction lives in [.ai
 
 ## Open
 
-1. **Switch port miniature in Switch Overview** (user feature, investigation pending).
+1. **Switch port miniature in Switch Overview** (user feature, IN PROGRESS: 0.47.0 on branch `feat/port-miniatures`, 2026-11-02).
    - Single switch: show a port miniature. Stack: compact member/port summary with an accessible click-to-expand view of member-labelled miniatures.
-   - Must be usable on mobile (no hover-only interaction). Reuse the existing renderer where possible.
-   - Starting-point hints: `app/components/switch/SwitchCard.vue`, `app/components/template/TemplateMiniPreview.vue`. Architecture not yet investigated; no effort or data structure is promised.
+   - Must be usable on mobile (no hover-only interaction). Reuses the existing port-block mapping (`getBlockPorts`/`getBlockRows`, `buildTemplateUnits`) with one central layout-template fetch; no API/schema change.
+   - Status: implementation and automated verification done (see `.ai/MIGRATION_STATUS.md`); **deployed to the test domain 2026-11-02**, including the card-layout follow-up (image `ezswm:verify-0470-cards-ready`, health 0.47.0), for acceptance. Uncommitted, unpushed, unmerged, not released, not accepted. Remaining: manual iPhone acceptance and user git/release approval.
 2. **iPhone UI defects** (reported with three screenshots; mobile fixes in 0.46.1; **accepted** by the user after an iPhone check on the deployed 0.46.1 test domain, 2026-10-29).
    - [x] Switch overview: filters now stack full width above the wrapping view/action controls on phones, and touch switch-card actions sit in the normal card layout (grid and list; desktop hover/focus kept). Checked with focused Playwright in Chromium at 390/320 px (no page overflow or filter-control overlap); confirmed by the user on an iPhone.
    - [x] IP-address overview: filters are now full width on phones (Chromium-checked). The first table row partly obscured by the table header was **not reproduced** in Chromium (table owns the scroll, first row starts below the header) and no sticky-header code change was made; the user's iPhone check found no remaining problem (acceptance, not a root-cause proof).
    - [x] Port visualization: the shared dark scroll-fade `::after` overlay (`.port-grid-unit`) was removed from global CSS; scroll behavior was tested in switch details, layout-template previews and the public viewer in Chromium; confirmed by the user on an iPhone.
-   - Status: complete/accepted. The iPhone model, iOS/browser versions and viewport were not supplied (not needed for acceptance). Release 0.46.1 is deployed to the test domain `https://ezswm-test.saar-lan.de` (2026-10-29).
+   - Status: complete/accepted. The iPhone model, iOS/browser versions and viewport were not supplied (not needed for acceptance). Release 0.46.1 is deployed to the test domain `https://ezswm-test.saar-lan.de` (2026-10-29). (The test domain has run 0.47.0 since 2026-11-02, see item 1.)
    - Do not assume the historical iPad `USelect` empty-string issue (see `AGENTS.md`, closed PoE issue #217) is the same defect.
 
-3. **Build-context / auth-state security cleanup**: implementation complete (2026-10-29, uncommitted): ignore rules in `.gitignore`/`.dockerignore`, `tests/e2e/.auth/user.json` untracked (file kept locally), regression test `tests/securityIgnore.test.ts`.
-   - [x] Credential-risk assessment (2026-10-29): the previously tracked auth JWT expired 2026-03-25T19:55:12Z (issued 2026-03-18), so the server rejects it; no JWT revocation or rotation is needed for this finding. The signature was not tested and no live probe was made. The current public `main` still includes the file until the user approves commit/push/merge; historical copies remain public even afterward. The local staged removal is not remote history erasure and no history rewrite was done.
+3. **Build-context / auth-state security cleanup**: released in 0.46.1 ([PR #332](https://github.com/slgfire/ezswm/pull/332) merged 2026-10-30): ignore rules in `.gitignore`/`.dockerignore`, `tests/e2e/.auth/user.json` untracked (file kept locally), regression test `tests/securityIgnore.test.ts`.
+   - [x] Credential-risk assessment (2026-10-29): the previously tracked auth JWT expired 2026-03-25T19:55:12Z (issued 2026-03-18), so the server rejects it; no JWT revocation or rotation is needed for this finding. The signature was not tested and no live probe was made. The token file is removed from current `main` since PR #332; historical copies remain public. The file is untracked on `main`, but Git history stays public and no history rewrite was done.
    - [x] Test-domain default-password check (completed 2026-10-29): a read-only check of the live test-domain container compared the 3 local-password accounts (1 admin) against the one known public E2E default password: 0 matched, 0 errors; no login attempts or changes. It says nothing about password strength or OIDC credentials.
 
 ## In progress
 
-- None (no port-miniature implementation started).
+- Port miniature (item 1): 0.47.0 on `feat/port-miniatures`, deployed to the test domain for acceptance; iPhone acceptance and git/release approval pending.
+- Switch-card layout follow-up (2026-11-02): Opus 5.5 implementation and automated checks DONE; deployed on the test domain (image `ezswm:verify-0470-cards-ready`), independent public-health check passed, and layout ACCEPTED by the user. Device/iOS/browser details were not supplied; no specific iPhone/Safari verification is claimed. Uncommitted and unreleased; git/release approval remains pending. Port miniature (item 1) retains its separate verification status.
+- Dashboard review (2026-11-02): Opus 5.5 source review DONE; no populated-browser review or implementation. Proposals: fix light-mode text/i18n, the IP-allocation tile link and its unscoped count; then improve warning links/empty states and favorite-device metadata. Dashboard implementation requires separate approval.
+- Dashboard bug package (user-approved, 2026-11-02): implementation and integration VERIFIED for light/dark readability, EN/DE labels, the IP-address tile destination and site-scoped allocation counts. Full suite 1398 tests, whole lint, typecheck, root build, sanitized no-cache Docker/SQLite runtime and native production EN/DE × light/dark browser matrix pass (1280/390/320 px). DEPLOYED with explicit approval and a fresh backup to the test domain; exact image `8a3d96…`, healthy/database ok, all 23 table counts unchanged, independent public health check passed. ACCEPTED by the user ("ja passt"); Commit/push/PR approved 2026-11-02; merge/release require separate approval. Warning navigation, favorite metadata and global recent-activity scoping remain outside this task.
+- Dashboard small redesign: queued after the baseline PR, Opus 5.5 design lane; hierarchy/KPI spacing only, preserve the Nuxt UI shell and existing features, no implementation yet.
 
 ## Longer term (not scheduled)
 
@@ -31,4 +35,5 @@ Short human checklist of the actionable queue. Long-term direction lives in [.ai
 
 ## Completed (brief)
 
+- 0.46.1 (iPhone fixes, build-context/auth-state hygiene) released via [PR #332](https://github.com/slgfire/ezswm/pull/332), merged 2026-10-30. This does not claim a production deployment.
 - MCP/OIDC tokens (0.46.0) and the published image; registry fix [PR #329](https://github.com/slgfire/ezswm/pull/329) and docs [PR #330](https://github.com/slgfire/ezswm/pull/330), both merged to `main` (CI 40514021341 success). This does not claim a production deployment.

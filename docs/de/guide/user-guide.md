@@ -25,6 +25,8 @@ Nach der Anmeldung bietet das Dashboard eine Zusammenfassung deiner Infrastruktu
 
 Auf Smartphones werden die vier Kennzahlen-Karten oben im Dashboard in zwei Spalten (2×2) angezeigt. Größere Panels behalten auf Smartphones die volle Breite; Tablet- und Desktop-Layout bleiben unverändert.
 
+Die IP-Kachel zählt Zuweisungen in Subnetzen des gewählten Standorts und öffnet die IP-Adressübersicht. Portstatus und Warnmeldungen folgen der gewählten deutschen/englischen Oberflächensprache; Gesamtzahlen, Statuszahlen und Warntexte unterstützen den Hell- und Dunkelmodus. Letzte Aktivitäten enthalten weiterhin Ereignisse aller Standorte.
+
 Die Oberfläche verwendet neutrale Flächen für Layout und Gestaltung. Farbe bleibt dort erhalten, wo sie Informationen vermittelt: VLANs behalten ihre zugewiesenen Farben, während Port-Status und Warnungen ihre Statusfarben behalten, etwa Grün für Up, Gelb/Orange für Warnungen und Rot für Down oder Fehler.
 
 ![Dashboard — synthetisches Beispiel, Demo-Daten, englischsprachige Oberfläche](/images/screenshot-dashboard-synthetic-current.png)
@@ -228,6 +230,8 @@ Switch-Bearbeitung, einzelne Port-Bearbeitung, Massen-Port-Bearbeitung sowie LAG
 Die Toolbar der Switch-Liste bietet drei Filter-Dropdowns (Standort, Rolle, Tags). Jedes Dropdown zeigt nur Werte, die in den aktuell sichtbaren Switches vorhanden sind (site-gescopt bei einer einzelnen Site, global bei **Alle Standorte**). Wähle **Alle …** am Anfang eines Dropdowns, um diesen Filter zurückzusetzen. Jedes Dropdown hat ein führendes Icon zur schnellen visuellen Orientierung.
 
 Auf Smartphones stehen Suchfeld und Filter-Dropdowns in voller Breite über den Ansichts- und Aktionssteuerelementen, und auf Touch-Geräten liegen die Aktionsschaltflächen der Karten im normalen Kartenlayout, statt die Überschrift zu überdecken. Auch die Filter der IP-Adressen sind auf Smartphones in voller Breite. Desktop-Layouts und Hover-/Fokusverhalten bleiben unverändert.
+
+Jede Switch-Karte in der Switch-Übersicht (Karten- und Listenansicht) zeigt eine kompakte, schreibgeschützte Port-Miniatur. Bei einem Stack zeigt die Karte eine kompakte Mitglieder-/Port-Zusammenfassung mit einer Schaltfläche, die nach Mitgliedern beschriftete Miniaturen auf- und zuklappt; das funktioniert per Touch und Tastatur und hängt nicht von Hover ab. Die Miniatur dient nur der Übersicht -- zum Bearbeiten der Ports öffne die Switch-Details. In der Kartenansicht stehen Modell, Standort/IP und Tags direkt unter dem Namen ohne leeren reservierten Platz. Tags verteilen sich auf mehrere Zeilen; lange Texte werden gekürzt.
 
 ### Switch-Gruppen (pro Site)
 
