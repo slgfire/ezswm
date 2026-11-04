@@ -23,7 +23,7 @@ After setup, you are redirected to the login screen.
 
 After logging in, the dashboard provides a summary of your infrastructure: total switches, VLANs, subnets, and IP utilization. The sidebar on the left gives access to all sections. The header bar contains global search, a theme toggle (dark/light), language selector, and user menu.
 
-On phones, the four KPI cards at the top of the dashboard appear in two columns (2×2). Larger panels retain their full width on phones; tablet and desktop layouts are unchanged.
+The four KPI cards come first (2×2 on phones, four across on desktop), followed by your favorite switches when you have any. On desktop the port-status ring with legend sits beside the IP utilization. Warnings appear only when there is something to report; on desktop they sit beside recent activity (or span the full width if there is no activity), and on phones the panels stack. The IP-allocation tile opens the IP-address overview and counts allocations in the selected site's subnets. Recent activity is global, not per site. Labels and warnings follow the selected English/German language and both themes.
 
 The interface uses neutral surfaces for layout and decoration. Color remains where it carries information: VLANs keep their assigned colors, while port states and warnings retain their status cues, such as green for up, amber for warnings, and red for down or errors.
 
@@ -43,7 +43,7 @@ Short introductions on the main pages are available in English and German and fo
 
 ### Screenshot freshness
 
-Four screenshots in this guide — Dashboard, Layout Templates, Switch list, and Sites — are synthetic examples with demo data, captured before the final sidebar-logo spacing fix (so the logo position may differ slightly from the current interface). Icon requests were mocked using local icon-package and build-cache SVG data, without forwarding them to a backend or external icon API. Visual review still found missing sidebar and toolbar icons; the missing icons are a capture limitation, not a known application defect, and the examples do not fully represent real icon rendering. The remaining screenshots in this guide are legacy assets and have not been reverified for this release.
+The Dashboard and Switch list screenshots are synthetic examples with demo data (English dark interface), captured from the current production image with native icons and fonts; no icon requests were mocked. The Layout Templates and Sites screenshots are older synthetic examples captured before the final sidebar-logo spacing fix, with icon requests mocked from local icon-package and build-cache SVG data; they are missing some sidebar and toolbar icons (a capture limitation, not an application defect) and the logo position may differ slightly. The remaining screenshots in this guide are legacy assets and have not been reverified for this release.
 
 ## Layout Templates
 
@@ -228,6 +228,10 @@ Switch edits, single-port edits, bulk port edits, and LAG create/update operatio
 The switch list toolbar provides three filter dropdowns (location, role, tags). Each dropdown shows only values present in the currently visible switches (site-scoped when viewing a specific site, global when viewing **All Sites**). Select **All …** at the top of any dropdown to clear that filter. Each dropdown displays a leading icon for quick visual identification.
 
 On phones, the search box and filter dropdowns stack at full width above the view and action controls, and on touch devices the card action buttons sit in the normal card layout instead of overlaying the heading. The IP address filters are also full width on phones. Desktop layouts and hover/focus behavior are unchanged.
+
+Each switch card in the Switches overview (grid and list) shows a compact, read-only port miniature. A stack previews its members as described below; the expand button works by touch and keyboard and does not depend on hover. The miniature is for overview only -- open the switch details to edit ports. In grid view, model, location/IP and tags follow directly under the name without empty reserved space. Tags wrap across lines; long text is truncated.
+
+A collapsed stack card previews its first two members with the same port squares as a single switch, with the member label (M1, M2) inside each frame. Further members are named in a short line above the frames, such as "+1 further member (M3)" or "+2 further members (M3–M4)", next to the expand button, which opens the faceplates of all members and collapses them again. A stack whose members are all visible (two members) shows no expand button. A stack without a matching layout template shows no preview until expanded.
 
 ### Switch Groups (per site)
 

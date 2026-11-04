@@ -275,6 +275,7 @@
               :key="sw.id"
               :sw="sw"
               :site-id="siteId"
+              :template-units="templateUnitsFor(sw)"
               variant="grid"
               :groups="cardGroups"
               :editable="canEditInfrastructure"
@@ -346,6 +347,7 @@
                       <SwitchCard
                         :sw="sw"
                         :site-id="siteId"
+                        :template-units="templateUnitsFor(sw)"
                         variant="grid"
                         :draggable="true"
                         :uniform="true"
@@ -371,6 +373,7 @@
                     :key="sw.id"
                     :sw="sw"
                     :site-id="siteId"
+                    :template-units="templateUnitsFor(sw)"
                     variant="list"
                     :groups="cardGroups"
                     :editable="canEditInfrastructure"
@@ -425,6 +428,7 @@
                   <SwitchCard
                     :sw="sw"
                     :site-id="siteId"
+                    :template-units="templateUnitsFor(sw)"
                     variant="grid"
                     :draggable="true"
                     :uniform="true"
@@ -450,6 +454,7 @@
                 :key="sw.id"
                 :sw="sw"
                 :site-id="siteId"
+                :template-units="templateUnitsFor(sw)"
                 variant="list"
                   :groups="cardGroups"
                   :editable="canEditInfrastructure"
@@ -485,6 +490,7 @@
             <SwitchCard
               :sw="sw"
               :site-id="siteId"
+              :template-units="templateUnitsFor(sw)"
               variant="grid"
               :draggable="true"
               :groups="cardGroups"
@@ -518,6 +524,7 @@
               :key="sw.id"
               :sw="sw"
               :site-id="siteId"
+              :template-units="templateUnitsFor(sw)"
               variant="list"
               :groups="cardGroups"
               :editable="canEditInfrastructure"
@@ -564,6 +571,7 @@
 <script setup lang="ts">
 import type { Switch } from '~~/types/switch'
 import type { SwitchGroup } from '~~/types/switchGroup'
+import type { LayoutUnit } from '~~/types/layoutTemplate'
 import draggable from 'vuedraggable'
 import { FILTER_ALL } from '~~/app/composables/useSwitchListFilters'
 
@@ -981,11 +989,25 @@ function openQrPrintPage() {
 
 const siteParams = computed(() => siteId.value && siteId.value !== 'all' ? { site_id: siteId.value } : {})
 
+// Port previews: one template fetch for all cards. Until it settles, cards with
+// a template show no preview (never a fake empty one); a failed fetch falls
+// back to the plain per-unit port preview.
+const { items: layoutTemplates, fetch: fetchLayoutTemplates } = useLayoutTemplates()
+const layoutTemplatesReady = ref(false)
+const templateUnitsById = computed(() => new Map(layoutTemplates.value.map(tpl => [tpl.id, tpl.units])))
+
+function templateUnitsFor(sw: Switch): LayoutUnit[] | null | undefined {
+  if (!sw.layout_template_id) return null
+  if (!layoutTemplatesReady.value) return undefined
+  return templateUnitsById.value.get(sw.layout_template_id) ?? null
+}
+
 async function loadData() {
   await fetchSwitches(siteParams.value)
 }
 
 onMounted(async () => {
+  void fetchLayoutTemplates().finally(() => { layoutTemplatesReady.value = true })
   const fetches: Promise<void>[] = [loadData(), fetchAppSettings()]
   if (siteId.value === 'all') fetches.push(fetchAllSites())
   await Promise.all(fetches)

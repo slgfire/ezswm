@@ -102,7 +102,7 @@ export default defineEventHandler(async (event) => {
       switches: switches.length,
       vlans: vlans.length,
       networks: networks.length,
-      allocations: allocations.length
+      allocations: allocations.filter(a => selectedNetworkIds.has(a.network_id)).length
     },
     portStatus: { up: portsUp, down: portsDown, disabled: portsDisabled },
     networkUtilization,

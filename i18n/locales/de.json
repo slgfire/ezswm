@@ -218,7 +218,14 @@
     "warnings": "Warnungen",
     "orphanVlans": "Verwaiste VLANs",
     "duplicateIps": "Doppelte IPs",
-    "highUsage": "Stark genutzte Subnetze"
+    "highUsage": "Stark genutzte Subnetze",
+    "ipAllocations": "IP-Zuweisungen",
+    "ports": "Ports",
+    "highUsageItem": "{name}: {percent} % belegt",
+    "duplicateIp": "Doppelte IP",
+    "orphanVlan": "Verwaistes VLAN: {name} ({id})",
+    "addSubnetsHint": "Weitere Subnetze anlegen, um die Auslastung zu verfolgen",
+    "subnetCount": "{n} Subnetz | {n} Subnetze"
   },
   "switches": {
     "title": "Switches",
@@ -264,6 +271,15 @@
     },
     "stackSize": "Stack-Größe",
     "stackMember": "Member {n}",
+    "miniature": {
+      "summary": "Portvorschau: {up} aktiv, {down} inaktiv, {disabled} deaktiviert",
+      "showPorts": "Ports anzeigen ({n} Member)",
+      "hidePorts": "Ports ausblenden",
+      "unit": "Einheit {n}",
+      "memberShort": "M{n}",
+      "moreMembers": "+{n} weiterer Member ({members}) | +{n} weitere Member ({members})",
+      "stackMembers": "Stack aus {n}"
+    },
     "fields": {
       "name": "Name",
       "model": "Modell",

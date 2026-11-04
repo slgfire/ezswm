@@ -215,6 +215,7 @@ import type { Port } from '~~/types/port'
 import type { VlanDisplayInfo } from '~~/types/vlan'
 import type { LAGGroup } from '~~/types/lagGroup'
 import type { LayoutUnit, LayoutBlock } from '~~/types/layoutTemplate'
+import { getBlockPorts, getBlockRows } from '~~/app/utils/portMiniature'
 
 const props = defineProps<{
   ports: Port[]
@@ -285,42 +286,11 @@ function onPortClick(event: MouseEvent, portId: string) {
 }
 
 function getPortsForBlock(unitNumber: number, block: LayoutBlock) {
-  return props.ports
-    .filter(p =>
-      p.unit === unitNumber &&
-      p.type === block.type &&
-      p.index >= block.start_index &&
-      p.index < block.start_index + block.count
-    )
-    .sort((a, b) => a.index - b.index)
+  return getBlockPorts(props.ports, unitNumber, block)
 }
 
 function getRowsForBlock(unitNumber: number, block: LayoutBlock): Port[][] {
-  const ports = getPortsForBlock(unitNumber, block)
-  if (ports.length === 0) return []
-
-  const rows = block.rows || 2
-  const mode = block.row_layout || 'sequential'
-  if (mode === 'odd-even') {
-    // Use relative position in block: first port = position 0
-    const topRow = ports.filter((_, i) => i % 2 === 0)
-    const bottomRow = ports.filter((_, i) => i % 2 === 1)
-    return [topRow, bottomRow]
-  }
-
-  if (mode === 'even-odd') {
-    const topRow = ports.filter((_, i) => i % 2 === 1)
-    const bottomRow = ports.filter((_, i) => i % 2 === 0)
-    return [topRow, bottomRow]
-  }
-
-  // Sequential: split into N rows of equal size
-  const perRow = Math.ceil(ports.length / rows)
-  const result: Port[][] = []
-  for (let r = 0; r < rows; r++) {
-    result.push(ports.slice(r * perRow, (r + 1) * perRow))
-  }
-  return result
+  return getBlockRows(props.ports, unitNumber, block)
 }
 
 function needsExtraBottomSpace(_block: LayoutBlock): boolean {

@@ -2,7 +2,7 @@
   <!-- Grid variant -->
   <div
     v-if="variant === 'grid'"
-    class="stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
+    class="switch-card-grid stagger-item card-glow group relative flex flex-col rounded-lg bg-default"
     :class="{ 'h-full': uniform }"
   >
     <NuxtLink
@@ -59,60 +59,70 @@
       <UButton v-if="editable" icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click.prevent="emit('delete', sw)" />
     </div>
 
-    <!-- Header: fixed-height zone so grouped rows align (name, subtitle, role, tags) -->
-    <div class="relative z-20 flex h-full flex-col pointer-events-none">
-    <div class="h-[6.5rem] px-5 pt-4 pb-2">
+    <!-- Identity → details → tags stay together at the top; only the gap above the
+         preview/footer grows when uniform rows stretch, so footers still align. -->
+    <div class="relative z-20 flex flex-1 flex-col pointer-events-none">
+    <div class="px-5 pt-4 pb-3">
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
           <h3 class="truncate font-semibold text-highlighted group-hover:text-primary-500" :title="sw.name">
             {{ sw.name }}
           </h3>
-          <!-- Reserve the subtitle line even when empty -->
-          <p class="mt-0.5 truncate text-sm text-toned">
-            <template v-if="sw.manufacturer || sw.model">{{ [sw.manufacturer, sw.model].filter(Boolean).join(' · ') }}</template>
-            <template v-else>&nbsp;</template>
+          <p v-if="sw.manufacturer || sw.model" class="mt-0.5 truncate text-sm text-toned" :title="[sw.manufacturer, sw.model].filter(Boolean).join(' · ')">
+            {{ [sw.manufacturer, sw.model].filter(Boolean).join(' · ') }}
           </p>
         </div>
         <UBadge v-if="sw.role" :color="roleColor(sw.role)" variant="subtle" size="sm" class="shrink-0">
           {{ $t(`switches.roles.${sw.role}`) }}
         </UBadge>
       </div>
-      <!-- Tags: clamped to a single line so the header zone stays stable -->
-      <div class="mt-1.5 flex h-6 flex-wrap items-center gap-1 overflow-hidden">
-        <UBadge v-for="tg in (sw.tags || [])" :key="tg" color="neutral" variant="soft" size="sm">
-          {{ tg }}
+
+      <div v-if="sw.location || sw.management_ip" class="mt-2.5 space-y-1 text-sm" data-testid="switch-card-details">
+        <div v-if="sw.location" class="flex min-w-0 items-center gap-2">
+          <UIcon name="i-heroicons-map-pin" class="h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
+          <span class="truncate text-toned" :title="sw.location">{{ sw.location }}</span>
+        </div>
+        <div v-if="sw.management_ip" class="flex min-w-0 items-center gap-2">
+          <UIcon name="i-heroicons-globe-alt" class="h-3.5 w-3.5 flex-shrink-0 text-teal-400" />
+          <span class="truncate font-mono text-xs text-toned" :title="sw.management_ip">{{ sw.management_ip }}</span>
+        </div>
+      </div>
+
+      <div v-if="sw.tags?.length" class="mt-2.5 flex flex-wrap items-center gap-1">
+        <UBadge v-for="tg in sw.tags" :key="tg" color="neutral" variant="soft" size="sm" class="max-w-full">
+          <span class="min-w-0 truncate" :title="tg">{{ tg }}</span>
         </UBadge>
       </div>
     </div>
 
-    <!-- Info rows: fixed-height zone keeps the ports footer aligned across cards -->
-    <div class="h-[3rem] space-y-1.5 px-5 pb-3 text-sm">
-      <div v-if="sw.location" class="flex items-center gap-2">
-        <UIcon name="i-heroicons-map-pin" class="h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
-        <span class="text-toned">{{ sw.location }}</span>
-      </div>
-      <div v-if="sw.management_ip" class="flex items-center gap-2">
-        <UIcon v-if="sw.management_ip" name="i-heroicons-globe-alt" class="h-3.5 w-3.5 flex-shrink-0 text-teal-400" />
-        <span v-if="sw.management_ip" class="font-mono text-xs text-toned">{{ sw.management_ip }}</span>
-      </div>
-    </div>
+    <!-- Port preview + ports footer stay bottom-aligned across cards -->
+    <div class="mt-auto">
+      <SwitchPortMiniature
+        v-if="templateUnits !== undefined"
+        :ports="sw.ports || []"
+        :units="templateUnits"
+        :stack-size="sw.stack_size"
+        :switch-name="sw.name"
+        class="px-5 pb-3"
+      />
 
-    <!-- Ports footer -->
-    <div class="mt-auto flex items-center justify-between border-t border-default px-5 py-2.5 font-mono">
-      <span class="text-xs font-medium uppercase tracking-wider text-muted">{{ sw.ports?.length || 0 }} ports</span>
-      <div class="flex items-center gap-3 text-xs">
-        <span v-if="portStats.up" class="flex items-center gap-1 text-green-500">
-          <span class="inline-block h-2 w-2 rounded-full bg-green-500" />
-          {{ portStats.up }}
-        </span>
-        <span v-if="portStats.down" class="flex items-center gap-1 text-gray-400">
-          <span class="inline-block h-2 w-2 rounded-full bg-gray-400" />
-          {{ portStats.down }}
-        </span>
-        <span v-if="portStats.disabled" class="flex items-center gap-1 text-red-500">
-          <span class="inline-block h-2 w-2 rounded-full bg-red-500" />
-          {{ portStats.disabled }}
-        </span>
+      <!-- Ports footer -->
+      <div class="flex items-center justify-between border-t border-default px-5 py-2.5 font-mono">
+        <span class="text-xs font-medium uppercase tracking-wider text-muted">{{ sw.ports?.length || 0 }} ports</span>
+        <div class="flex items-center gap-3 text-xs">
+          <span v-if="portStats.up" class="flex items-center gap-1 text-green-500">
+            <span class="inline-block h-2 w-2 rounded-full bg-green-500" />
+            {{ portStats.up }}
+          </span>
+          <span v-if="portStats.down" class="flex items-center gap-1 text-gray-400">
+            <span class="inline-block h-2 w-2 rounded-full bg-gray-400" />
+            {{ portStats.down }}
+          </span>
+          <span v-if="portStats.disabled" class="flex items-center gap-1 text-red-500">
+            <span class="inline-block h-2 w-2 rounded-full bg-red-500" />
+            {{ portStats.disabled }}
+          </span>
+        </div>
       </div>
     </div>
     </div>
@@ -200,6 +210,14 @@
           {{ tg }}
         </UBadge>
       </div>
+      <SwitchPortMiniature
+        v-if="templateUnits !== undefined"
+        :ports="sw.ports || []"
+        :units="templateUnits"
+        :stack-size="sw.stack_size"
+        :switch-name="sw.name"
+        class="mt-2"
+      />
     </div>
 
     <!-- Port Stats (right-aligned) -->
@@ -226,6 +244,7 @@
 <script setup lang="ts">
 import type { Switch } from '~~/types/switch'
 import type { SwitchGroup } from '~~/types/switchGroup'
+import type { LayoutUnit } from '~~/types/layoutTemplate'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { getSwitchManagementHref } from '~~/app/utils/switchManagement'
 
@@ -240,11 +259,15 @@ const props = withDefaults(defineProps<{
       action is hidden (all-sites overview and contexts without group data). */
   groups?: SwitchGroup[]
   editable?: boolean
+  /** Base layout-template units for the port preview: undefined hides the
+      preview (template data not loaded / not provided), null = no template. */
+  templateUnits?: LayoutUnit[] | null
 }>(), {
   draggable: false,
   uniform: false,
   groups: undefined,
-  editable: true
+  editable: true,
+  templateUnits: undefined
 })
 
 const emit = defineEmits<{
