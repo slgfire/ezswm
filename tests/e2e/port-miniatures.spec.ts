@@ -1,8 +1,8 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test'
 import { randomUUID } from 'node:crypto'
 
-// Overview port miniatures: single preview, collapsed stack summary with
-// keyboard/touch expand, missing template fallback, grid/list, phone widths.
+// Overview port miniatures: single preview, collapsed stack preview (first two
+// members, the rest named) with keyboard/touch expand, missing template fallback, grid/list, phone widths.
 
 interface Created { id: string }
 
@@ -59,7 +59,16 @@ test('switch overview shows compact port miniatures and expandable stack members
     }
     const single = await createSwitch(`Mini single ${suffix}`, { layout_template_id: templateId })
     const stack = await createSwitch(`Mini stack ${suffix}`, { layout_template_id: templateId, stack_size: 3 })
+    await createSwitch(`Mini duo ${suffix}`, { layout_template_id: templateId, stack_size: 2 })
+    await createSwitch(`Mini quad ${suffix}`, { layout_template_id: templateId, stack_size: 4 })
     await createSwitch(`Mini none ${suffix}`, {})
+    // Unmapped stack: ports kept, template removed, so members cannot be told apart.
+    const flat = await createSwitch(`Mini flat ${suffix}`, { layout_template_id: templateId, stack_size: 2 })
+    const unlinked = await request.put(`/api/switches/${flat.id}`, { data: { layout_template_id: null } })
+    expect(unlinked.ok(), 'unlink template').toBe(true)
+    const flatBody = await unlinked.json() as { layout_template_id?: string | null, ports: unknown[] }
+    expect(flatBody.layout_template_id ?? null).toBeNull()
+    expect(flatBody.ports).toHaveLength(56)
 
     // Real status: one port up on the single switch and on stack member 2.
     for (const [sw, unit] of [[single, 1], [stack, 2]] as const) {
@@ -71,9 +80,11 @@ test('switch overview shows compact port miniatures and expandable stack members
     const language = (await (await request.get('/api/auth/me')).json() as { language?: string }).language
     const de = language === 'de'
     const showLabel = de ? 'Ports anzeigen (3 Member)' : 'Show ports (3 members)'
+    const showFlatLabel = de ? 'Ports anzeigen (2 Member)' : 'Show ports (2 members)'
     const hideLabel = de ? 'Ports ausblenden' : 'Hide ports'
     const member2 = de ? 'Member 2: Portvorschau: 1 aktiv, 27 inaktiv, 0 deaktiviert' : 'Member 2: Port preview: 1 up, 27 down, 0 disabled'
-    const portCount = de ? '28 Ports' : '28 ports'
+    const moreOne = de ? '+1 weiterer Member (M3)' : '+1 further member (M3)'
+    const moreTwo = de ? '+2 weitere Member (M3–M4)' : '+2 further members (M3–M4)'
     const listLabel = de ? 'Listenansicht' : 'List View'
 
     page.on('pageerror', e => errors.push(e.message))
@@ -95,12 +106,64 @@ test('switch overview shows compact port miniatures and expandable stack members
       // No template: real ports still shown, page keeps working.
       await expect(card(`Mini none ${suffix}`)).toBeVisible()
 
-      // Stack: collapsed summary with visible port counts, no port cells rendered.
+      // Stacks: collapsed preview shows the first two members with the single-card faceplate
+      // (M1/M2 inside the frame); further members are named above it with the disclosure; a fully
+      // shown two-member stack has no disclosure. The footer always counts the whole stack.
+      const members = (name: string) => card(name).getByTestId('switch-port-miniature-members').locator('[data-member]')
+      for (const [name, size, more] of [[`Mini duo ${suffix}`, 2, null], [`Mini stack ${suffix}`, 3, moreOne], [`Mini quad ${suffix}`, 4, moreTwo]] as const) {
+        const mini = card(name).getByTestId('switch-port-miniature')
+        await expect(members(name)).toHaveCount(2)
+        await expect(members(name).first().locator('[role="img"]')).toContainText('M1')
+        await expect(members(name).nth(1).locator('[role="img"]')).toContainText('M2')
+        await expect(mini.locator('[data-status]')).toHaveCount(56)
+        await expect(card(name).getByText(new RegExp(`^${size * 28} ports$`, 'i'))).toBeVisible()
+        if (!more) {
+          await expect(mini.getByTestId('switch-port-miniature-more')).toHaveCount(0)
+          await expect(mini.locator('button')).toHaveCount(0)
+          continue
+        }
+        await expect(mini.getByTestId('switch-port-miniature-more')).toContainText(more)
+        const firstFrame = (await members(name).first().boundingBox())!
+        for (const above of [mini.getByTestId('switch-port-miniature-more'), mini.locator('button[aria-controls]')]) {
+          const b = (await above.boundingBox())!
+          expect(b.y + b.height, `${name}: row above the faceplates`).toBeLessThanOrEqual(firstFrame.y)
+        }
+      }
+
+      // Unmapped two-member stack: ports are not all visible, so the disclosure stays.
+      const flatMini = card(`Mini flat ${suffix}`).getByTestId('switch-port-miniature')
+      const flatToggle = flatMini.getByRole('button', { name: showFlatLabel })
+      await expect(flatToggle).toHaveAttribute('aria-expanded', 'false')
+      await expect(flatMini.locator('[data-status]')).toHaveCount(0)
+      // Read aria-controls before clicking: the accessible name changes once expanded.
+      const flatPanel = page.locator(`#${await flatToggle.getAttribute('aria-controls')}`)
+      await flatToggle.click()
+      await expect(flatPanel.locator('[data-status]')).toHaveCount(56)
+      await expect(flatMini.locator('[data-member]')).toHaveCount(0)
+      await flatMini.locator('button[aria-controls]').click()
+      await expect(flatMini.locator('[data-status]')).toHaveCount(0)
+
+      if (view === 'grid') {
+        // Faceplates line up with a single switch's: same left edge and same gap above the footer.
+        const frameToFooter = async (name: string) => {
+          const c = card(name)
+          const cardBox = (await c.boundingBox())!
+          const frame = (await c.getByTestId('switch-port-miniature-members').locator('[role="img"]').last().boundingBox())!
+          const footer = (await c.getByText(/^\d+ ports$/i).boundingBox())!
+          return { left: Math.round(frame.x - cardBox.x), gap: Math.round(footer.y - (frame.y + frame.height)) }
+        }
+        const reference = await frameToFooter(`Mini single ${suffix}`)
+        for (const name of [`Mini duo ${suffix}`, `Mini stack ${suffix}`, `Mini quad ${suffix}`]) {
+          expect(await frameToFooter(name), `${name}: faceplate alignment`).toEqual(reference)
+        }
+      }
+      // Single faceplate cells and stack member cells use the same size.
+      const cellSize = async (name: string) => (await card(name).locator('[data-status]').first().boundingBox())!
+      expect(await cellSize(`Mini stack ${suffix}`)).toMatchObject({ width: (await cellSize(`Mini single ${suffix}`)).width, height: (await cellSize(`Mini single ${suffix}`)).height })
+      await page.screenshot({ path: `${test.info().outputDir}/port-miniatures-1280-${view}.png`, fullPage: true })
+
       const stackCard = card(`Mini stack ${suffix}`)
       const stackMini = stackCard.getByTestId('switch-port-miniature')
-      await expect(stackMini.getByTestId('switch-port-miniature-summary').locator('li')).toHaveCount(3)
-      await expect(stackMini.getByText(portCount).first()).toBeVisible()
-      await expect(stackMini.locator('[data-status]')).toHaveCount(0)
 
       await expect(stackMini.getByRole('button', { name: showLabel })).toHaveAttribute('aria-expanded', 'false')
       const toggle = stackMini.locator('button[aria-controls]')
@@ -110,14 +173,18 @@ test('switch overview shows compact port miniatures and expandable stack members
       await expect(stackMini.getByRole('button', { name: hideLabel })).toHaveAttribute('aria-expanded', 'true')
       const panel = page.locator(`#${await toggle.getAttribute('aria-controls')}`)
       await expect(panel.getByRole('img', { name: member2 })).toBeVisible()
+      await expect(panel.locator('[data-member]')).toHaveCount(3)
       await expect(panel.locator('[data-status]')).toHaveCount(84)
       await expect(panel.locator('[data-status="up"]')).toHaveCount(1)
+      await expect(stackMini.getByTestId('switch-port-miniature-more')).toHaveCount(0)
+      await expect(stackCard.getByText(/^84 ports$/i)).toBeVisible()
+      await page.screenshot({ path: `${test.info().outputDir}/port-miniatures-1280-${view}-expanded.png`, fullPage: true })
 
       // Keyboard collapse/expand.
       await toggle.focus()
       await page.keyboard.press('Enter')
       await expect(toggle).toHaveAttribute('aria-expanded', 'false')
-      await expect(stackMini.locator('[data-status]')).toHaveCount(0)
+      await expect(stackMini.locator('[data-status]')).toHaveCount(56)
       await page.keyboard.press('Space')
       await expect(toggle).toHaveAttribute('aria-expanded', 'true')
       expect(page.url()).toBe(url)
@@ -142,12 +209,14 @@ test('switch overview shows compact port miniatures and expandable stack members
         await noHorizontalOverflow(touchPage)
         const box = (await toggle.boundingBox())!
         expect(box.height).toBeGreaterThanOrEqual(36)
-        // Summary pills and the (longer, expanded) toggle label must not overlap on narrow cards.
-        for (const pill of await stackMini.locator('li').all()) {
-          const b = (await pill.boundingBox())!
-          const overlaps = b.x < box.x + box.width && box.x < b.x + b.width && b.y < box.y + box.height && box.y < b.y + b.height
-          expect(overlaps, `pill overlaps toggle at ${width}px`).toBe(false)
-        }
+        // Collapsed: the "+N more members" line and the toggle must not overlap on narrow cards.
+        await toggle.tap()
+        await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+        const more = (await stackMini.getByTestId('switch-port-miniature-more').boundingBox())!
+        const closed = (await toggle.boundingBox())!
+        const overlaps = more.x < closed.x + closed.width && closed.x < more.x + more.width && more.y < closed.y + closed.height && closed.y < more.y + more.height
+        expect(overlaps, `more line overlaps toggle at ${width}px`).toBe(false)
+        await noHorizontalOverflow(touchPage)
         await touchPage.screenshot({ path: `${test.info().outputDir}/port-miniatures-${width}.png`, fullPage: true })
       }
     } finally {

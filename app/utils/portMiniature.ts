@@ -119,6 +119,26 @@ export function buildPortMiniature(ports: Port[], baseUnits: LayoutUnit[] | null
   return result
 }
 
+/** Collapsed overview cards preview at most this many stack members. */
+export const STACK_PREVIEW_MEMBERS = 2
+
+/**
+ * Splits miniature members into the faceplates shown on a card and the stack
+ * members that are only named. Singles and expanded stacks show everything;
+ * collapsed stacks show the first members; an unmapped stack (one flat group)
+ * shows no faceplate until expanded, as before. `expandable` is true only when
+ * the collapsed card leaves ports out, so a fully shown stack gets no disclosure.
+ */
+export function splitStackPreview(members: MiniatureMember[], stackSize: number, expanded: boolean) {
+  const none: MiniatureMember[] = []
+  if (stackSize <= 1) return { shown: members, hidden: none, expandable: false }
+  const unmapped = members.length <= 1
+  const expandable = unmapped || members.length > STACK_PREVIEW_MEMBERS
+  if (expanded && expandable) return { shown: members, hidden: none, expandable }
+  if (unmapped) return { shown: none, hidden: none, expandable }
+  return { shown: members.slice(0, STACK_PREVIEW_MEMBERS), hidden: members.slice(STACK_PREVIEW_MEMBERS), expandable }
+}
+
 function flatMiniature(ports: Port[]): MiniatureMember[] {
   const unitNumbers = [...new Set(ports.map(p => p.unit))].sort((a, b) => a - b)
   const units = unitNumbers.map(unitNumber => ({

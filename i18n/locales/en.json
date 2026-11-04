@@ -224,7 +224,8 @@
     "highUsageItem": "{name}: {percent}% used",
     "duplicateIp": "Duplicate IP",
     "orphanVlan": "Orphan VLAN: {name} ({id})",
-    "addSubnetsHint": "Add more subnets to track utilization"
+    "addSubnetsHint": "Add more subnets to track utilization",
+    "subnetCount": "{n} subnet | {n} subnets"
   },
   "switches": {
     "title": "Switches",
@@ -275,7 +276,8 @@
       "showPorts": "Show ports ({n} members)",
       "hidePorts": "Hide ports",
       "unit": "Unit {n}",
-      "portCount": "{n} ports",
+      "memberShort": "M{n}",
+      "moreMembers": "+{n} further member ({members}) | +{n} further members ({members})",
       "stackMembers": "Stack of {n}"
     },
     "fields": {

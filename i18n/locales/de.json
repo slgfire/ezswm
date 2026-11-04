@@ -224,7 +224,8 @@
     "highUsageItem": "{name}: {percent} % belegt",
     "duplicateIp": "Doppelte IP",
     "orphanVlan": "Verwaistes VLAN: {name} ({id})",
-    "addSubnetsHint": "Weitere Subnetze anlegen, um die Auslastung zu verfolgen"
+    "addSubnetsHint": "Weitere Subnetze anlegen, um die Auslastung zu verfolgen",
+    "subnetCount": "{n} Subnetz | {n} Subnetze"
   },
   "switches": {
     "title": "Switches",
@@ -275,7 +276,8 @@
       "showPorts": "Ports anzeigen ({n} Member)",
       "hidePorts": "Ports ausblenden",
       "unit": "Einheit {n}",
-      "portCount": "{n} Ports",
+      "memberShort": "M{n}",
+      "moreMembers": "+{n} weiterer Member ({members}) | +{n} weitere Member ({members})",
       "stackMembers": "Stack aus {n}"
     },
     "fields": {

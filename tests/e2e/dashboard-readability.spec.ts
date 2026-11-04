@@ -26,23 +26,24 @@ async function noHorizontalOverflow(page: Page) {
   expect(widths.doc).toBeLessThanOrEqual(widths.view)
 }
 
-/** WCAG contrast of the element's text color against its composited background. */
-async function contrast(el: Locator) {
-  return el.evaluate((node) => {
+/** WCAG contrast of the element's text (or outline) color against its composited background. */
+async function contrast(el: Locator, prop: 'color' | 'outlineColor' = 'color') {
+  return el.evaluate((node, prop) => {
     const cv = document.createElement('canvas'); cv.width = cv.height = 1
     const ctx = cv.getContext('2d', { willReadFrequently: true })!
     const px = () => Array.from(ctx.getImageData(0, 0, 1, 1).data.slice(0, 3))
     const chain: Element[] = []
-    for (let e: Element | null = node; e; e = e.parentElement) chain.unshift(e)
+    // An offset outline sits on the parent's background, not on the element's own.
+    for (let e: Element | null = prop === 'color' ? node : node.parentElement; e; e = e.parentElement) chain.unshift(e)
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 1, 1)
     for (const e of chain) { ctx.fillStyle = getComputedStyle(e).backgroundColor; ctx.fillRect(0, 0, 1, 1) }
     const bg = px()
-    ctx.fillStyle = getComputedStyle(node).color; ctx.fillRect(0, 0, 1, 1)
+    ctx.fillStyle = getComputedStyle(node)[prop]; ctx.fillRect(0, 0, 1, 1)
     const fg = px()
     const lum = (c: number[]) => { const [r, g, b] = c.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }); return 0.2126 * r! + 0.7152 * g! + 0.0722 * b! }
     const [hi, lo] = [lum(fg), lum(bg)].sort((a, b) => b - a)
     return +((hi! + 0.05) / (lo! + 0.05)).toFixed(2)
-  })
+  }, prop)
 }
 
 test('site dashboard is translated and readable in the current theme', async ({ browser, page, request }) => {
@@ -60,6 +61,16 @@ test('site dashboard is translated and readable in the current theme', async ({ 
     const site = await request.post('/api/sites', { data: { name: `Dash ${suffix}` } })
     expect(site.status()).toBe(201)
     siteId = (await site.json() as Created).id
+
+    page.on('pageerror', e => errors.push(e.message))
+    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()) })
+
+    // Empty site first: welcome state with the create action for editors, no KPI tiles.
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await gotoSettled(page, `/sites/${siteId}`)
+    await expect(page.getByText(/^(Welcome to ezSWM!|Willkommen bei ezSWM!)$/)).toBeVisible({ timeout: 30000 })
+    await expect(page.locator(`a[href$="/switches/create"]`).last()).toBeVisible()
+    await expect(page.getByTestId('dashboard-kpis')).toHaveCount(0)
 
     const tpl = await request.post('/api/layout-templates', {
       data: { name: `Dash ${suffix}`, units: [{ unit_number: 1, label: 'Front', blocks: [{ type: 'rj45', count: 24, start_index: 1, rows: 2 }] }] }
@@ -104,17 +115,14 @@ test('site dashboard is translated and readable in the current theme', async ({ 
       await route.fulfill({ response, json: { ...json, duplicateIps: ['192.0.2.99'] } })
     })
 
-    page.on('pageerror', e => errors.push(e.message))
-    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()) })
-
-    await page.setViewportSize({ width: 1280, height: 900 })
     await gotoSettled(page, `/sites/${siteId}`)
     const total = page.getByTestId('dashboard-port-total')
     await expect(total).toHaveText('24', { timeout: 30000 })
     const dark = await page.evaluate(() => document.documentElement.classList.contains('dark'))
     test.info().annotations.push({ type: 'theme', description: dark ? 'dark' : 'light' }, { type: 'language', description: de ? 'de' : 'en' })
 
-    const ipTile = page.locator('a').filter({ hasText: T.ip })
+    const ipTile = page.getByTestId('dashboard-kpi-ip-allocations')
+    await expect(ipTile).toContainText(T.ip)
     await expect(ipTile).toHaveAttribute('href', new RegExp(`/sites/[^/]+/ip-addresses$`))
     for (const text of [T.up, T.down, T.disabled, T.high, T.dup, T.orphan, T.hint]) await expect(page.getByText(text, { exact: true })).toBeVisible()
     await expect(page.getByText('Core', { exact: true })).toBeVisible()
@@ -123,7 +131,7 @@ test('site dashboard is translated and readable in the current theme', async ({ 
     const legend = (label: string) => page.getByText(label, { exact: true }).locator('xpath=following-sibling::span[1]')
     const readable: Array<[string, Locator]> = [
       ['port total', total],
-      ['IP tile number', ipTile.locator('.font-display')],
+      ['IP tile number', ipTile.getByTestId('dashboard-kpi-value')],
       ['up count', legend(T.up)], ['down count', legend(T.down)], ['disabled count', legend(T.disabled)],
       ['up label', page.getByText(T.up, { exact: true })],
       ['high usage warning', page.getByText(T.high, { exact: true })],
@@ -131,14 +139,36 @@ test('site dashboard is translated and readable in the current theme', async ({ 
       ['orphan warning', page.getByText(T.orphan, { exact: true })],
       ['usage percent', page.getByText('100%', { exact: true }).first()]
     ]
-    // Dark mode switch count is a gradient text fill; its color is not measurable this way.
-    if (!dark) readable.push(['switch count', page.locator('.kpi-number')])
+    readable.push(['switch count', page.getByTestId('dashboard-kpi-switches').getByTestId('dashboard-kpi-value')])
     const ratios: Record<string, number> = {}
     for (const [name, el] of readable) {
       ratios[name] = await contrast(el)
       expect(ratios[name], `${name} contrast (${dark ? 'dark' : 'light'})`).toBeGreaterThanOrEqual(4.5)
     }
     console.log(`Dashboard contrast ${de ? 'de' : 'en'}/${dark ? 'dark' : 'light'}: ${JSON.stringify(ratios)}`)
+
+    // Desktop hierarchy: four KPI tiles in one row; port health beside the wider IP utilization.
+    const tiles = page.getByTestId('dashboard-kpis').locator('a')
+    await expect(tiles).toHaveCount(4)
+    const tileTops = await Promise.all((await tiles.all()).map(async tile => Math.round((await tile.boundingBox())!.y)))
+    expect(new Set(tileTops).size, 'KPI tiles share one row').toBe(1)
+    const portCard = (await page.getByTestId('dashboard-port-status').boundingBox())!
+    const utilCard = (await page.getByTestId('dashboard-ip-utilization').boundingBox())!
+    expect(Math.abs(portCard.y - utilCard.y), 'port status beside IP utilization').toBeLessThanOrEqual(1)
+    expect(utilCard.width).toBeGreaterThan(portCard.width)
+    await expect(page.getByTestId('dashboard-warnings')).toBeVisible()
+    await expect(page.getByTestId('dashboard-activity')).toBeVisible()
+
+    // Keyboard focus on a KPI tile draws a visible outline (>= 3:1 against the page).
+    await page.getByTestId('dashboard-kpi-vlans').focus()
+    await page.keyboard.press('Tab')
+    await expect(ipTile).toBeFocused()
+    expect(await ipTile.evaluate(el => getComputedStyle(el).outlineStyle)).toBe('solid')
+    const focusRatio = await contrast(ipTile, 'outlineColor')
+    console.log(`Dashboard KPI focus outline ${dark ? 'dark' : 'light'}: ${focusRatio}`)
+    expect(focusRatio, 'KPI focus outline contrast').toBeGreaterThanOrEqual(3)
+    await page.screenshot({ path: `${test.info().outputDir}/dashboard-1280-focus.png` })
+    await page.keyboard.press('Shift+Tab')
 
     await noHorizontalOverflow(page)
     await page.screenshot({ path: `${test.info().outputDir}/dashboard-1280.png`, fullPage: true })
@@ -154,6 +184,27 @@ test('site dashboard is translated and readable in the current theme', async ({ 
         await expect(touchPage.getByTestId('dashboard-port-total')).toHaveText('24', { timeout: 30000 })
         expect(await touchPage.evaluate(() => document.documentElement.classList.contains('dark'))).toBe(dark)
         await expect(touchPage.getByText(T.high, { exact: true })).toBeVisible()
+        // Phones: KPI tiles form a 2-column grid inside the viewport.
+        const phoneTiles = await touchPage.getByTestId('dashboard-kpis').locator('a').all()
+        expect(phoneTiles).toHaveLength(4)
+        const lefts = new Set<number>()
+        for (const tile of phoneTiles) {
+          const b = (await tile.boundingBox())!
+          lefts.add(Math.round(b.x))
+          expect(b.x + b.width, `KPI tile inside ${width}px`).toBeLessThanOrEqual(width)
+          expect(b.height, 'KPI tile touch height').toBeGreaterThanOrEqual(44)
+          // Long German labels wrap instead of being cut off (touch has no hover title).
+          const label = tile.getByTestId('dashboard-kpi-label')
+          const fit = await label.evaluate(el => ({ scroll: el.scrollWidth, client: el.clientWidth, overflow: getComputedStyle(el).textOverflow, height: el.getBoundingClientRect().height, line: parseFloat(getComputedStyle(el).lineHeight) }))
+          // At most two whole-word lines (no orphaned letters such as "Zuweisunge" / "n").
+          expect(fit.height, `KPI label lines at ${width}px`).toBeLessThanOrEqual(2 * fit.line + 1)
+          expect(fit.scroll, `KPI label fits at ${width}px`).toBeLessThanOrEqual(fit.client + 1)
+          expect(fit.overflow).not.toBe('ellipsis')
+          const lb = (await label.boundingBox())!
+          expect(lb.x + lb.width, 'KPI label inside tile').toBeLessThanOrEqual(b.x + b.width + 1)
+        }
+        expect(lefts.size, `KPI columns at ${width}px`).toBe(2)
+        await expect(touchPage.getByTestId('dashboard-kpi-ip-allocations').getByTestId('dashboard-kpi-label')).toHaveText(T.ip)
         await noHorizontalOverflow(touchPage)
         await touchPage.screenshot({ path: `${test.info().outputDir}/dashboard-${width}.png`, fullPage: true })
       }

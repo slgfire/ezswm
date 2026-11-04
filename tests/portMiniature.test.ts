@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Port } from '../types/port'
 import type { LayoutUnit } from '../types/layoutTemplate'
-import { buildPortMiniature, buildTemplateUnits, getBlockRows } from '../app/utils/portMiniature'
+import { buildPortMiniature, buildTemplateUnits, getBlockRows, splitStackPreview } from '../app/utils/portMiniature'
 
 function port(unit: number, index: number, status: Port['status'] = 'down', type: Port['type'] = 'rj45'): Port {
   return { id: `${unit}-${type}-${index}`, unit, index, type, status, label: `${unit}/${index}`, tagged_vlans: [] } as Port
@@ -125,5 +125,39 @@ describe('buildPortMiniature', () => {
       expect(m!.units[0]!.blocks[0]![0]!.map(p => p.index)).toEqual([1, 2])
       expect(m!.counts).toEqual({ up: 1, down: 1, disabled: 1 })
     }
+  })
+})
+
+describe('splitStackPreview', () => {
+  const ids = (list: { member: number }[]) => list.map(m => m.member)
+
+  it('shows a single switch unchanged', () => {
+    const members = buildPortMiniature(portsFor(single), single, 1)
+    expect(splitStackPreview(members, 1, false)).toEqual({ shown: members, hidden: [], expandable: false })
+  })
+
+  it.each([[2, [1, 2], [], false], [3, [1, 2], [3], true], [4, [1, 2], [3, 4], true]])('previews at most two members of a %i-member stack and names the rest', (stackSize, shown, hidden, expandable) => {
+    const ports = portsFor(single, stackSize)
+    ports.find(p => p.unit === stackSize && p.index === 1)!.status = 'up'
+    const members = buildPortMiniature(ports, single, stackSize)
+    const collapsed = splitStackPreview(members, stackSize, false)
+    expect(ids(collapsed.shown)).toEqual(shown)
+    expect(ids(collapsed.hidden)).toEqual(hidden)
+    // A disclosure only when the collapsed card leaves members out.
+    expect(collapsed.expandable).toBe(expandable)
+    // Shown + named members always cover the whole stack, so card totals stay whole-stack.
+    const counted = [...collapsed.shown, ...collapsed.hidden].reduce((sum, m) => sum + m.counts.up + m.counts.down + m.counts.disabled, 0)
+    expect(counted).toBe(ports.length)
+    expect([...collapsed.shown, ...collapsed.hidden].reduce((sum, m) => sum + m.counts.up, 0)).toBe(1)
+
+    const open = splitStackPreview(members, stackSize, true)
+    expect(ids(open.shown)).toEqual(Array.from({ length: stackSize }, (_, i) => i + 1))
+    expect(open.hidden).toEqual([])
+  })
+
+  it.each([2, 3])('keeps an unmapped %i-member stack collapsed with a disclosure until expanded', (stackSize) => {
+    const members = buildPortMiniature(portsFor(single, stackSize), null, stackSize)
+    expect(splitStackPreview(members, stackSize, false)).toEqual({ shown: [], hidden: [], expandable: true })
+    expect(splitStackPreview(members, stackSize, true).shown).toBe(members)
   })
 })

@@ -23,9 +23,7 @@ Nach der Einrichtung wirst du zum Anmeldebildschirm weitergeleitet.
 
 Nach der Anmeldung bietet das Dashboard eine Zusammenfassung deiner Infrastruktur: Gesamtzahl der Switches, VLANs, Subnetze und IP-Auslastung. Die Seitenleiste links ermöglicht den Zugriff auf alle Bereiche. Die Kopfleiste enthält die globale Suche, einen Theme-Umschalter (Dunkel/Hell), Sprachauswahl und Benutzermenü.
 
-Auf Smartphones werden die vier Kennzahlen-Karten oben im Dashboard in zwei Spalten (2×2) angezeigt. Größere Panels behalten auf Smartphones die volle Breite; Tablet- und Desktop-Layout bleiben unverändert.
-
-Die IP-Kachel zählt Zuweisungen in Subnetzen des gewählten Standorts und öffnet die IP-Adressübersicht. Portstatus und Warnmeldungen folgen der gewählten deutschen/englischen Oberflächensprache; Gesamtzahlen, Statuszahlen und Warntexte unterstützen den Hell- und Dunkelmodus. Letzte Aktivitäten enthalten weiterhin Ereignisse aller Standorte.
+Zuerst stehen die vier Kennzahlen-Karten (2×2 auf Smartphones, vier nebeneinander auf dem Desktop), danach deine favorisierten Switches, sofern vorhanden. Auf dem Desktop steht der Port-Status-Ring mit Legende neben der IP-Auslastung. Warnungen erscheinen nur, wenn es etwas zu melden gibt; auf dem Desktop stehen sie neben der letzten Aktivität (oder über die volle Breite, wenn keine Aktivität vorliegt), auf Smartphones werden die Panels untereinander angeordnet. Die IP-Kachel öffnet die IP-Adressübersicht und zählt Zuweisungen in Subnetzen des gewählten Standorts. Die letzte Aktivität ist global, nicht pro Standort. Beschriftungen und Warnungen folgen der gewählten Sprache (Deutsch/Englisch) und beiden Themes.
 
 Die Oberfläche verwendet neutrale Flächen für Layout und Gestaltung. Farbe bleibt dort erhalten, wo sie Informationen vermittelt: VLANs behalten ihre zugewiesenen Farben, während Port-Status und Warnungen ihre Statusfarben behalten, etwa Grün für Up, Gelb/Orange für Warnungen und Rot für Down oder Fehler.
 
@@ -45,7 +43,7 @@ Kurze Einführungen auf den Hauptseiten sind auf Englisch und Deutsch verfügbar
 
 ### Aktualität der Screenshots
 
-Vier Screenshots in dieser Anleitung — Dashboard, Layout-Templates, Switch-Liste und Standorte — sind synthetische Beispiele mit Demo-Daten (englischsprachige Oberfläche), aufgenommen vor der letzten Korrektur des Logo-Abstands in der Seitenleiste (die Logo-Position kann daher leicht von der aktuellen Oberfläche abweichen). Icon-Anfragen wurden mit lokalen SVG-Daten aus Icon-Paketen und dem Build-Cache beantwortet, ohne sie an ein Backend oder eine externe Icon-API weiterzuleiten. Bei der visuellen Prüfung fehlten weiterhin Icons in Seitenleiste und Toolbar; die fehlenden Icons sind eine Einschränkung der Aufnahme, kein bekannter Anwendungsfehler; die Beispiele bilden die Icon-Darstellung nicht vollständig ab. Die übrigen Screenshots in dieser Anleitung sind ältere Assets und wurden für dieses Release nicht erneut geprüft.
+Die Screenshots von Dashboard und Switch-Liste sind synthetische Beispiele mit Demo-Daten (englischsprachige, dunkle Oberfläche), aufgenommen mit dem aktuellen Produktions-Image mit nativen Icons und Schriften; es wurden keine Icon-Anfragen gemockt. Die Screenshots von Layout-Templates und Standorten sind ältere synthetische Beispiele, aufgenommen vor der letzten Korrektur des Logo-Abstands in der Seitenleiste, mit aus lokalen Icon-Paketen und dem Build-Cache gemockten Icon-Anfragen; dort fehlen einzelne Icons in Seitenleiste und Toolbar (Einschränkung der Aufnahme, kein Anwendungsfehler), und die Logo-Position kann leicht abweichen. Die übrigen Screenshots in dieser Anleitung sind ältere Assets und wurden für dieses Release nicht erneut geprüft.
 
 ## Layout-Templates
 
@@ -231,7 +229,9 @@ Die Toolbar der Switch-Liste bietet drei Filter-Dropdowns (Standort, Rolle, Tags
 
 Auf Smartphones stehen Suchfeld und Filter-Dropdowns in voller Breite über den Ansichts- und Aktionssteuerelementen, und auf Touch-Geräten liegen die Aktionsschaltflächen der Karten im normalen Kartenlayout, statt die Überschrift zu überdecken. Auch die Filter der IP-Adressen sind auf Smartphones in voller Breite. Desktop-Layouts und Hover-/Fokusverhalten bleiben unverändert.
 
-Jede Switch-Karte in der Switch-Übersicht (Karten- und Listenansicht) zeigt eine kompakte, schreibgeschützte Port-Miniatur. Bei einem Stack zeigt die Karte eine kompakte Mitglieder-/Port-Zusammenfassung mit einer Schaltfläche, die nach Mitgliedern beschriftete Miniaturen auf- und zuklappt; das funktioniert per Touch und Tastatur und hängt nicht von Hover ab. Die Miniatur dient nur der Übersicht -- zum Bearbeiten der Ports öffne die Switch-Details. In der Kartenansicht stehen Modell, Standort/IP und Tags direkt unter dem Namen ohne leeren reservierten Platz. Tags verteilen sich auf mehrere Zeilen; lange Texte werden gekürzt.
+Jede Switch-Karte in der Switch-Übersicht (Karten- und Listenansicht) zeigt eine kompakte, schreibgeschützte Port-Miniatur. Ein Stack zeigt seine Member wie unten beschrieben; die Schaltfläche zum Aufklappen funktioniert per Touch und Tastatur und hängt nicht von Hover ab. Die Miniatur dient nur der Übersicht -- zum Bearbeiten der Ports öffne die Switch-Details. In der Kartenansicht stehen Modell, Standort/IP und Tags direkt unter dem Namen ohne leeren reservierten Platz. Tags verteilen sich auf mehrere Zeilen; lange Texte werden gekürzt.
+
+Eine eingeklappte Stack-Karte zeigt die ersten zwei Member mit denselben Port-Quadraten wie ein einzelner Switch, die Member-Bezeichnung (M1, M2) steht innerhalb des Rahmens. Weitere Member werden in einer kurzen Zeile oberhalb der Rahmen genannt, etwa „+1 weiterer Member (M3)“ oder „+2 weitere Member (M3–M4)“, neben der Schaltfläche, die die Frontplatten aller Member auf- und wieder zuklappt. Ein Stack, dessen Member alle sichtbar sind, zeigt keine Schaltfläche (zwei Member). Ein Stack ohne passendes Layout-Template zeigt bis zum Aufklappen keine Vorschau.
 
 ### Switch-Gruppen (pro Site)
 
