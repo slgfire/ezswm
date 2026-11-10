@@ -13,7 +13,7 @@ Related documents:
 
 | Technology | Version | Notes |
 |------------|---------|-------|
-| Node.js | 22 LTS | Docker base image: `node:24-alpine` |
+| Node.js | 26.13.0 | Docker base image pinned by tag and digest |
 | Nuxt | 4.x (see `package.json`) | Originally specified as 3.x with `compatibilityVersion: 4` (historical) |
 | Nuxt UI | 4.x (see `package.json`) | Originally specified as 2.x (historical) |
 | TypeScript | see `package.json` | Strict mode |
@@ -310,8 +310,8 @@ ezswm/
 
 ### Prerequisites
 
-- Node.js 24 LTS
-- pnpm 11.x (`corepack enable` activates the version pinned in `packageManager`)
+- Node.js 26.13.0
+- pnpm 11.28.10 (`npm install --global pnpm@11.28.10`; version pinned in `packageManager`)
 - Docker + docker-compose (for container testing)
 
 ### Local Development
@@ -395,26 +395,27 @@ On application start:
 
 ```dockerfile
 # Stage 1: Build
-FROM node:24-alpine AS builder
+FROM node:26.13.0-alpine AS builder
 
 WORKDIR /app
 
 ENV CI=true
-RUN corepack enable
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY docs/package.json ./docs/
-RUN pnpm install --frozen-lockfile
+COPY mcp/package.json ./mcp/
+RUN npm install --global "$(node -p "require('./package.json').packageManager")" \
+ && pnpm install --frozen-lockfile
 
 COPY . .
 RUN pnpm build
 
 # Stage 2: Runtime
-FROM node:24-alpine AS runtime
+FROM node:26.13.0-alpine AS runtime
 
 WORKDIR /app
 
-# Use existing `node` user (uid 1000) from node:24-alpine base image
+# Use existing `node` user (uid 1000) from node:26.13.0-alpine base image
 # instead of creating a custom user — same numeric IDs, no clash.
 
 # Copy built output

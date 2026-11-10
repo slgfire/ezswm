@@ -6,7 +6,7 @@ The npm package and GHCR image are release artifacts, not prerequisites for tryi
 
 ## Build and credentials
 
-Use the tested Node.js 24.22.1 and the repository's pinned pnpm version. From the repository root:
+Use the tested Node.js 26.13.0 and the repository's pinned pnpm version. From the repository root:
 
 ```sh
 pnpm install --frozen-lockfile

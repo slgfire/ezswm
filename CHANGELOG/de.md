@@ -9,6 +9,11 @@
 ### Behoben
 - MCP-Image-Publish-Workflow: Die GHCR-Tag-Prüfung erkennt jetzt die exakte Buildx-Meldung „`<Image>:<Version>`: not found“ (sowie die klassischen „manifest unknown“-Meldungen für genau dieses Image) als fehlenden Tag, sodass eine neue Version gepusht werden kann. Vorhandene Tags werden weiterhin übersprungen; Authentifizierungs-, Netzwerk- und alle anderen oder gemischten Fehler lassen den Lauf weiterhin fehlschlagen. Ein erfolgreicher Login beweist keine Schreibberechtigung für das Paket.
 
+## [0.47.1] — 2026-11-10
+
+### Changed
+- Abhängigkeiten von App, Docs und MCP aktualisiert, darunter Nuxt 4.6.4, Nuxt UI 4.12.0, Prisma 7.10.1, nanoid 6 und v-network-graph 0.10.2. App-/MCP-Container und CI verwenden Node.js 26.13.0 und pnpm 11.28.10; GitHub Actions und Workspace-Versionen sind exakt festgelegt. Die npm-Mindestwartezeit von sieben Tagen bleibt aktiv, mit einer ausdrücklichen Ausnahme nur für Playwright 1.65.0.
+
 ## [0.47.0] — 2026-11-02
 
 ### Hinzugefügt

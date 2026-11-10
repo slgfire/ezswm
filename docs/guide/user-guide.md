@@ -2,6 +2,8 @@
 title: User Guide
 ---
 
+Version 0.47.1 refreshes the application dependencies. Source builds use Node.js 26.13.0 and the pinned pnpm 11.28.10; Docker includes the runtime. Existing SQLite data and user workflows remain compatible.
+
 # User Guide
 
 ## Getting Started
