@@ -6,7 +6,7 @@ Das npm-Paket und das GHCR-Image sind Release-Artefakte. Solange ihre Veröffent
 
 ## Build und Zugangsdaten
 
-Verwende das getestete Node.js 24.22.1 und die im Repository festgelegte pnpm-Version. Im Repository-Hauptverzeichnis:
+Verwende das getestete Node.js 26.13.0 und die im Repository festgelegte pnpm-Version. Im Repository-Hauptverzeichnis:
 
 ```sh
 pnpm install --frozen-lockfile

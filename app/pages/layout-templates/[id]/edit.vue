@@ -38,10 +38,10 @@
                 <UInput v-model="form.description" :placeholder="$t('templates.fields.description')" class="w-full" />
               </UFormField>
               <UFormField :label="$t('templates.datasheetUrl')">
-                <UInput v-model="form.datasheet_url" placeholder="https://..." class="w-full" />
+                <UInput v-if="form" v-model="form.datasheet_url" placeholder="https://..." class="w-full" />
               </UFormField>
               <UFormField :label="$t('templates.airflow')">
-                <USelect v-model="form.airflow" :items="airflowOptions" placeholder="—" class="w-full" />
+                <USelect v-if="form" v-model="form.airflow" :items="airflowOptions" placeholder="—" class="w-full" />
               </UFormField>
             </div>
           </div>
@@ -56,11 +56,11 @@
             </div>
             <p v-if="errors.units" class="mb-2 text-sm text-red-500">{{ errors.units }}</p>
 
-            <div v-for="(unit, unitIndex) in form.units" :key="unitIndex" class="list-container mb-4 rounded-lg bg-default p-5">
+            <div v-for="(unit, unitIndex) in form?.units ?? []" :key="unitIndex" class="list-container mb-4 rounded-lg bg-default p-5">
               <div class="mb-4 flex items-center justify-between">
                 <h3 class="font-mono text-sm font-semibold text-primary-500">UNIT {{ unit.unit_number }}</h3>
                 <UButton
-                  v-if="form.units.length > 1"
+                  v-if="(form?.units.length ?? 0) > 1"
                   icon="i-heroicons-trash"
                   size="xs"
                   color="error"
@@ -182,7 +182,7 @@
             <div v-if="previewPorts.length" class="rounded-lg border border-default bg-elevated p-4">
               <SwitchPortGrid
                 :ports="(previewPorts as any[])"
-                :units="(form.units as any[])"
+                :units="((form?.units ?? []) as any[])"
                 :selected-ports="[]"
               />
             </div>
