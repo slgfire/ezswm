@@ -2,6 +2,8 @@
 title: Benutzerhandbuch
 ---
 
+Version 0.47.1 aktualisiert die Anwendungsabhängigkeiten. Builds aus dem Quellcode verwenden Node.js 26.13.0 und das festgelegte pnpm 11.28.10; Docker enthält die Laufzeitumgebung. Vorhandene SQLite-Daten und Benutzerabläufe bleiben kompatibel.
+
 # Benutzerhandbuch
 
 ## Erste Schritte

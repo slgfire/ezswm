@@ -2,53 +2,34 @@
 
 # Standalone ezSWM MCP image (Streamable HTTP). The app image stays separate;
 # only the mcp package and its production dependency closure are installed here.
-ARG NODE_IMAGE=node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53
+ARG NODE_IMAGE=node:26.13.0-alpine@sha256:8996bb5821d62a8fd9bb27c1cb07462f3fdce6e47d640c6a881ead0b064ce216
 
-# Dependency stages install from the root pnpm-lock.yaml with a reduced
-# workspace file: the install stays frozen (and subject to the .npmrc
-# minimum-release-age), while no app workspace/dependencies are pulled in.
-FROM ${NODE_IMAGE} AS deps
-RUN test "$(node --version)" = "v24.22.1"
-WORKDIR /src
-ENV CI=true
-RUN corepack enable
-COPY pnpm-lock.yaml .npmrc ./
-COPY package.json /tmp/ezswm-package.json
-COPY mcp/package.json ./mcp/
-RUN corepack prepare "$(node -p "require('/tmp/ezswm-package.json').packageManager")" --activate \
- && printf "packages:\n  - 'mcp'\n" > pnpm-workspace.yaml \
- && pnpm install --prod --frozen-lockfile --ignore-scripts
-
+# pnpm 11 validates all workspace importers even for a filtered install.
+# Install build dependencies without scripts, then deploy only the MCP closure.
 FROM ${NODE_IMAGE} AS builder
-RUN test "$(node --version)" = "v24.22.1"
+RUN test "$(node --version)" = "v26.13.0"
 WORKDIR /src
 ENV CI=true
-RUN corepack enable
-COPY pnpm-lock.yaml .npmrc ./
-COPY package.json /tmp/ezswm-package.json
+COPY pnpm-lock.yaml pnpm-workspace.yaml .npmrc package.json ./
+COPY docs/package.json ./docs/
 COPY mcp/package.json ./mcp/
-RUN corepack prepare "$(node -p "require('/tmp/ezswm-package.json').packageManager")" --activate \
- && printf "packages:\n  - 'mcp'\n" > pnpm-workspace.yaml \
+RUN npm install --global "$(node -p "require('./package.json').packageManager")" \
  && pnpm install --frozen-lockfile --ignore-scripts
-# The root manifest supplies the release version; it is never installed here.
-COPY package.json ./
 COPY mcp ./mcp
 RUN ./mcp/node_modules/.bin/tsc -p mcp/tsconfig.json \
- && node mcp/scripts/version.mjs stamp
+ && node mcp/scripts/version.mjs stamp \
+ && pnpm --filter ezswm-mcp deploy --legacy --prod /out/mcp
 
 FROM ${NODE_IMAGE} AS runtime
-RUN test "$(node --version)" = "v24.22.1"
+RUN test "$(node --version)" = "v26.13.0"
 ARG VERSION=0.0.0
 WORKDIR /app/mcp
 
 ENV NODE_ENV=production \
     PORT=3000
 
-# Production closure only, copied from the frozen install above.
-COPY --from=deps --chown=node:node /src/node_modules /app/node_modules
-COPY --from=deps --chown=node:node /src/mcp/node_modules ./node_modules
-COPY --from=builder --chown=node:node /src/mcp/dist ./dist
-COPY --chown=node:node mcp/package.json ./
+# Deployment contains only the MCP package and its production dependencies.
+COPY --from=builder --chown=node:node /out/mcp ./
 
 USER node
 EXPOSE 3000

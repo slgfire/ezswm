@@ -71,6 +71,10 @@ function registerTemplateCleanup(): void {
   })
 }
 
+/**
+ * Returns the shared migrated SQLite template, creating a disposable database when needed.
+ * @returns {Promise<string>} Path to the migrated template database.
+ */
 async function getMigratedTemplateDbFile(): Promise<string> {
   if (migratedTemplateDbFile) {
     return migratedTemplateDbFile
@@ -86,6 +90,8 @@ async function getMigratedTemplateDbFile(): Promise<string> {
     migratedTemplateInit = (async () => {
       const templateDir = mkdtempSync(join(tmpdir(), 'ezswm-test-template-db-'))
       const templateDbFile = join(templateDir, 'template.sqlite')
+      // Prisma's SQLite migration engine requires an existing file on macOS.
+      writeFileSync(templateDbFile, '')
 
       execSync('pnpm prisma migrate deploy', {
         env: { ...process.env, DATABASE_URL: `file:${templateDbFile}` },

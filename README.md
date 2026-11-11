@@ -8,7 +8,7 @@
 
   [![Version](https://img.shields.io/github/v/release/slgfire/ezswm?label=Version&color=22c55e)](https://github.com/slgfire/ezswm/releases)
   [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-  [![Node](https://img.shields.io/badge/Node-22_LTS-green.svg)](https://nodejs.org)
+  [![Node](https://img.shields.io/badge/Node-26-green.svg)](https://nodejs.org)
   [![Nuxt](https://img.shields.io/badge/Nuxt-4.x-00DC82.svg)](https://nuxt.com)
   [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](compose.yaml)
   [![AI Assisted](https://img.shields.io/badge/AI_Assisted-6B5CE7.svg)](#about)
@@ -72,7 +72,8 @@ docker compose -f compose.dev.yaml up --build -d
 ```bash
 git clone https://github.com/slgfire/ezswm.git
 cd ezswm
-pnpm install
+npm install --global pnpm@11.28.10
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
@@ -95,7 +96,7 @@ pnpm dev
 | Validation | Zod (server) + UForm (client) |
 | Auth | JWT + bcrypt |
 | Storage | SQLite via Prisma (`<DATA_DIR>/db.sqlite`) |
-| Container | Docker multi-stage (node:24-alpine) |
+| Container | Docker multi-stage (node:26.13.0-alpine) |
 | CI | GitHub Actions (auto Docker image build) |
 | i18n | Nuxt i18n (EN/DE) |
 

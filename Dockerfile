@@ -1,17 +1,14 @@
 # Stage 1: Build
-# Base images are pinned by tag + multi-arch manifest digest (node:24.22.1-alpine),
+# Base images are pinned by tag + multi-arch manifest digest (node:26.13.0-alpine),
 # and the version assertion below fails the build if the resolved image differs.
-FROM node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS builder
+FROM node:26.13.0-alpine@sha256:8996bb5821d62a8fd9bb27c1cb07462f3fdce6e47d640c6a881ead0b064ce216 AS builder
 
-RUN test "$(node --version)" = "v24.22.1"
+RUN test "$(node --version)" = "v26.13.0"
 
 WORKDIR /app
 
 # Skips pnpm's interactive modules-dir purge confirmation in non-TTY contexts.
 ENV CI=true
-
-# pnpm via corepack — version pinned by packageManager field in package.json.
-RUN corepack enable
 
 # Copy manifests first so install layer is cached when only source changes.
 # docs/ is a workspace member, so pnpm needs its package.json to satisfy the
@@ -24,7 +21,8 @@ COPY mcp/package.json ./mcp/
 # The pnpm postinstall hook runs `prisma generate`, which needs the schema.
 COPY prisma ./prisma
 
-RUN pnpm install --frozen-lockfile
+RUN npm install --global "$(node -p "require('./package.json').packageManager")" \
+ && pnpm install --frozen-lockfile
 
 COPY . .
 # Generate Prisma Client (runs again here even though postinstall ran during
@@ -37,9 +35,9 @@ RUN pnpm build
 RUN pnpm prune --prod --ignore-scripts
 
 # Stage 2: Runtime
-FROM node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS runtime
+FROM node:26.13.0-alpine@sha256:8996bb5821d62a8fd9bb27c1cb07462f3fdce6e47d640c6a881ead0b064ce216 AS runtime
 
-RUN test "$(node --version)" = "v24.22.1"
+RUN test "$(node --version)" = "v26.13.0"
 
 WORKDIR /app
 

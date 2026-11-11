@@ -19,6 +19,7 @@ Short human checklist of the actionable queue. Long-term direction lives in [.ai
 
 ## In progress
 
+- 0.47.2 (branch `fix/dashboard-follow-ups`, 2026-11-11): dashboard follow-ups plus the unified E2E harness are validated on the merged 0.47.1 dependency base (unit 1404, typecheck, lint, docs, MCP 52, full E2E 357/357, Docker health). PR opened; waiting for CI and merge. Details in `.ai/MIGRATION_STATUS.md`. Security audit remains a separate chat.
 - Dashboard follow-ups (0.47.1, branch `fix/dashboard-follow-ups`, 2026-11-05): unit 1404/1404, typecheck, lint, root build, docs build, no-cache Docker build + own runtime health/migrations/SQLite and dev smoke pass. Earlier FULL E2E (default config, historical, superseded by the green central run 2026-11-10) FAILED/INCOMPLETE: 203 passed, 71 failed, 80 skipped; 48 failures are tests pinned to baseURL 127.0.0.1:3105/3106 (environment mismatch), 2 are stale selectors (crud-switches, edit-behavior), about 21 are unresolved (language/state interference, selector drift or timing). No app regression proven; CI runs only a 10-spec smoke list. Details in `.ai/MIGRATION_STATUS.md`. Next: parent decision (run the CI smoke list, or triage the unresolved group). Uncommitted; no commit/push/deploy.
 
 ## Remaining (not scheduled)

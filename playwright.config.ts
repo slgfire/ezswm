@@ -27,7 +27,9 @@ export default defineConfig({
       name: 'setup-wizard',
       testMatch: /logo\.spec\.ts/,
       grep: /\[setup\]/,
-      use: { baseURL: E2E_SETUP_URL }
+      use: { baseURL: E2E_SETUP_URL },
+      // logo.spec's file-level beforeAll needs the auth state, so it must exist before this project runs
+      dependencies: ['auth']
     },
     {
       name: 'auth',

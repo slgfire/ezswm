@@ -13,3 +13,9 @@ allowBuilds:
   prisma: true
   unrs-resolver: true
   vue-demi: true
+
+# Approved exception for the consolidated Dependabot Playwright update only.
+minimumReleaseAgeExclude:
+  - '@playwright/test@1.65.0'
+  - 'playwright@1.65.0'
+  - 'playwright-core@1.65.0'
