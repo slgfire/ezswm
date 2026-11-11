@@ -1,6 +1,6 @@
 {
   "name": "ezswm",
-  "version": "0.47.0",
+  "version": "0.47.1",
   "type": "module",
   "private": true,
   "packageManager": "pnpm@11.0.9",
@@ -17,6 +17,8 @@
     "docs:preview": "pnpm --filter ezswm-docs preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "node scripts/e2e.mjs",
+    "test:e2e:selfcheck": "node scripts/e2e.selfcheck.mjs",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",

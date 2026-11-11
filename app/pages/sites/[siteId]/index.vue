@@ -7,6 +7,20 @@
 
     <div v-if="loading" class="text-muted">{{ $t('common.loading') }}</div>
 
+    <div v-else-if="loadError" class="mt-6" role="alert" data-testid="dashboard-load-error">
+      <SharedEmptyState
+        icon="i-heroicons-exclamation-triangle"
+        :title="$t('dashboard.loadErrorTitle')"
+        :description="$t('dashboard.loadErrorDescription')"
+      >
+        <template #action>
+          <UButton icon="i-heroicons-arrow-path" color="neutral" variant="outline" :loading="loading" @click="loadStats">
+            {{ $t('common.retry') }}
+          </UButton>
+        </template>
+      </SharedEmptyState>
+    </div>
+
     <div v-else-if="stats && hasSomeData" class="space-y-4 sm:space-y-5">
       <!-- KPI tiles: label row on top, one large neutral number; icons carry the accent color -->
       <div class="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4" data-testid="dashboard-kpis">
@@ -29,8 +43,8 @@
         </NuxtLink>
       </div>
 
-      <!-- Favorite Switches -->
-      <section v-if="stats.favorites?.switches?.length" class="stagger-item">
+      <!-- Favorite switches and subnets -->
+      <section v-if="stats.favorites?.switches?.length || stats.favorites?.networks?.length" class="stagger-item" data-testid="dashboard-favorites">
         <h2 class="mb-2 flex items-center gap-1.5 text-sm font-semibold text-toned">
           <UIcon name="i-heroicons-star-solid" class="h-3.5 w-3.5 text-amber-400" aria-hidden="true" />
           {{ $t('dashboard.favorites') }}
@@ -38,15 +52,27 @@
         <div class="flex flex-wrap gap-2">
           <NuxtLink
             v-for="fav in stats.favorites.switches"
-            :key="(fav as any).id"
-            :to="`/sites/${siteId}/switches/${(fav as any).id}`"
-            class="card-glow flex min-h-11 items-center gap-2 rounded-lg bg-default px-3 text-sm transition-colors hover:text-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-700 dark:hover:text-primary-400 dark:focus-visible:outline-primary"
+            :key="fav.id"
+            :to="`/sites/${siteId}/switches/${fav.id}`"
+            class="card-glow flex min-h-11 max-w-full flex-wrap items-center gap-x-2 gap-y-0.5 rounded-lg bg-default px-3 py-1.5 text-sm transition-colors hover:text-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-700 dark:hover:text-primary-400 dark:focus-visible:outline-primary"
           >
-            <UIcon name="i-heroicons-server-stack" class="h-3.5 w-3.5 text-muted" aria-hidden="true" />
-            <span class="font-medium">{{ (fav as any).name }}</span>
-            <UBadge v-if="(fav as any).role" :color="roleColor((fav as any).role)" variant="subtle" size="xs">
-              {{ $t(`switches.roles.${(fav as any).role}`) }}
+            <UIcon name="i-heroicons-server-stack" class="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden="true" />
+            <span class="min-w-0 break-words font-medium">{{ fav.name }}</span>
+            <UBadge v-if="fav.role" :color="roleColor(fav.role)" variant="subtle" size="xs">
+              {{ $t(`switches.roles.${fav.role}`) }}
             </UBadge>
+            <span v-if="fav.location" class="min-w-0 break-words text-xs text-muted">{{ fav.location }}</span>
+            <code v-if="fav.management_ip" class="shrink-0 font-mono text-[11px] text-toned">{{ fav.management_ip }}</code>
+          </NuxtLink>
+          <NuxtLink
+            v-for="net in stats.favorites.networks"
+            :key="net.id"
+            :to="`/sites/${siteId}/subnets/${net.slug || net.id}`"
+            class="card-glow flex min-h-11 max-w-full flex-wrap items-center gap-x-2 gap-y-0.5 rounded-lg bg-default px-3 py-1.5 text-sm transition-colors hover:text-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-700 dark:hover:text-primary-400 dark:focus-visible:outline-primary"
+          >
+            <UIcon name="i-heroicons-globe-alt" class="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden="true" />
+            <span class="min-w-0 break-words font-medium">{{ net.name }}</span>
+            <code class="shrink-0 font-mono text-[11px] text-toned">{{ net.subnet }}</code>
           </NuxtLink>
         </div>
       </section>
@@ -163,18 +189,28 @@
             </h2>
           </template>
           <div class="space-y-2">
-            <div v-for="net in stats.highUsageNetworks" :key="net.id" class="flex items-center gap-2 rounded-md border-l-2 border-yellow-500 bg-yellow-500/5 px-3 py-2 text-sm text-yellow-800 dark:text-yellow-400">
+            <NuxtLink
+              v-for="net in stats.highUsageNetworks"
+              :key="net.id"
+              :to="`/sites/${siteId}/subnets/${net.id}`"
+              class="flex items-center gap-2 rounded-md border-l-2 border-yellow-500 bg-yellow-500/5 px-3 py-2 text-sm text-yellow-800 transition-colors hover:bg-yellow-500/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-700 dark:text-yellow-400 dark:focus-visible:outline-primary"
+            >
               <UIcon name="i-heroicons-exclamation-triangle" class="h-4 w-4 shrink-0" />
               {{ $t('dashboard.highUsageItem', { name: net.name, percent: net.percentage }) }}
-            </div>
+            </NuxtLink>
             <div v-for="ip in stats.duplicateIps" :key="ip" class="flex items-center gap-2 rounded-md border-l-2 border-red-500 bg-red-500/5 px-3 py-2 text-sm text-red-700 dark:text-red-400">
               <UIcon name="i-heroicons-exclamation-circle" class="h-4 w-4 shrink-0" />
               {{ $t('dashboard.duplicateIp') }}: <span class="font-mono">{{ ip }}</span>
             </div>
-            <div v-for="vlan in stats.orphanVlans" :key="vlan.id" class="flex items-center gap-2 rounded-md border-l-2 border-gray-500 bg-gray-500/5 px-3 py-2 text-sm text-toned">
+            <NuxtLink
+              v-for="vlan in stats.orphanVlans"
+              :key="vlan.id"
+              :to="`/sites/${siteId}/vlans/${vlan.id}`"
+              class="flex items-center gap-2 rounded-md border-l-2 border-gray-500 bg-gray-500/5 px-3 py-2 text-sm text-toned transition-colors hover:bg-gray-500/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-700 dark:focus-visible:outline-primary"
+            >
               <UIcon name="i-heroicons-information-circle" class="h-4 w-4 shrink-0" />
               {{ $t('dashboard.orphanVlan', { name: vlan.name, id: vlan.vlan_id }) }}
-            </div>
+            </NuxtLink>
           </div>
         </UCard>
 
@@ -230,6 +266,8 @@
 import { formatActivitySummary as _formatActivitySummary } from '~/utils/activityFormat'
 import { relativeTime as _relativeTime } from '~/utils/timeFormat'
 import type { ActivityEntry } from '~~/types/activity'
+import type { Network } from '~~/types/network'
+import type { Switch } from '~~/types/switch'
 
 const { t } = useI18n()
 
@@ -240,7 +278,7 @@ interface DashboardStats {
   orphanVlans: { id: string; vlan_id: number; name: string }[]
   highUsageNetworks: { id: string; name: string; subnet: string; percentage: number }[]
   duplicateIps: string[]
-  favorites: { switches: Record<string, unknown>[]; networks: Record<string, unknown>[] }
+  favorites: { switches: Omit<Switch, 'ports'>[]; networks: Network[] }
   recentActivity: ActivityEntry[]
 }
 
@@ -253,6 +291,7 @@ useHead({ title: 'Dashboard' })
 
 const stats = ref<DashboardStats | null>(null)
 const loading = ref(true)
+const loadError = ref(false)
 
 const hasSomeData = computed(() =>
   stats.value && (stats.value.counts.switches > 0 || stats.value.counts.vlans > 0 || stats.value.counts.networks > 0)
@@ -315,14 +354,27 @@ function activityLink(entry: ActivityEntry): string | undefined {
   }
 }
 
-onMounted(async () => {
-  try {
-    const params: Record<string, string> = {}
-    if (siteId.value && siteId.value !== 'all') params.site_id = siteId.value
-    stats.value = await $fetch<DashboardStats>('/api/dashboard/stats', { params })
-  } catch { /* ignore */
-  } finally {
-    loading.value = false
-  }
-})
+let inFlight: Promise<void> | null = null
+
+// Retry reuses the in-flight request instead of firing a second one.
+function loadStats() {
+  inFlight ??= (async () => {
+    loading.value = true
+    loadError.value = false
+    try {
+      const params: Record<string, string> = {}
+      if (siteId.value && siteId.value !== 'all') params.site_id = siteId.value
+      stats.value = await $fetch<DashboardStats>('/api/dashboard/stats', { params })
+    } catch {
+      // Generic translated message only; backend error text is not shown.
+      loadError.value = true
+    } finally {
+      loading.value = false
+      inFlight = null
+    }
+  })()
+  return inFlight
+}
+
+onMounted(loadStats)
 </script>

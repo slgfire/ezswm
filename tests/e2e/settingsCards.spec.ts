@@ -1,6 +1,7 @@
 import { test as base, expect, type Browser, type APIRequestContext, type Page, type Route } from '@playwright/test'
 import { mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { assertOwnedOrigin, shotsDir, resetAdminLanguage } from './helpers/ownedRun'
 import type { OidcConfigDto } from '../../types/oidc'
 
 /**
@@ -12,12 +13,12 @@ import type { OidcConfigDto } from '../../types/oidc'
  *   profile and password forms are separate forms/handlers.
  *
  * Backend semantics are NOT proven by the mocked tests (they prove UI wiring + the exact PUT payload the UI sends).
- * Backend proof is the single REAL-gated test (OIDC_E2E_REAL_BRANDING=1, isolated candidate 127.0.0.1:3105 only),
+ * Backend proof is the single REAL-gated test (owned runner origin only),
  * which saves the four General settings through the UI, reloads, and restores the original values.
  * Persona tests (OIDC admin, local viewer) log in through the real login form against a MOCKED /api/auth/login
  * response in a cookie-less context; every other /api GET is proxied read-only through the authenticated request
  * fixture and every non-GET is blocked. UI-only evidence (role gating is enforced by the server elsewhere).
- * Labels come from the real i18n files. Screenshots are only written when OIDC_E2E_SHOTS_DIR is set.
+ * Labels come from the real i18n files. Screenshots go to OIDC_E2E_SHOTS_DIR or the run artifact dir.
  */
 
 const redact = (text: string) => text.replace(/\?[^\s'")]*/g, '?<redacted>').replace(/[A-Za-z0-9_-]{32,}/g, '<token>').slice(0, 300)
@@ -78,9 +79,7 @@ const test = base.extend<{ consoleGuard: undefined }>({
   }, { auto: true }]
 })
 
-const REAL = !!process.env.OIDC_E2E_REAL_BRANDING
-const SHOTS = process.env.OIDC_E2E_SHOTS_DIR
-const CANDIDATE = 'http://127.0.0.1:3105'
+const SHOTS = shotsDir('OIDC_E2E_SHOTS_DIR', 'settings-cards')
 
 type Lang = 'en' | 'de'
 const LOCALES: Record<Lang, unknown> = {
@@ -194,16 +193,26 @@ async function openSettings(page: Page, lang: Lang, vp: VpName, tabKey: 'common.
   await mockOidc(page)
   // The header persists the language with PUT /api/users/:id; keep it local so the real admin profile is never touched.
   if (lang === 'de') await page.route('**/api/users/*', route => route.request().method() === 'PUT' ? json(route, {}) : route.fallback())
-  await page.goto('/settings')
-  await expect(page.locator('main h1').first()).toBeVisible()
-  await switchLang(page, lang)
-  await expect(page.locator('main h1').first()).toHaveText(tr(lang, 'settings.title'))
   if (lang === 'de') {
-    // Mount-time accessible names (USwitch) follow the locale at mount: remount through a normal reload in the selected
-    // (cookie-persisted) header language. This does not claim that already-mounted switch names update dynamically.
-    await page.reload()
-    await expect(page.locator('main h1').first()).toHaveText(tr(lang, 'settings.title'))
+    // Client-side profile reads report the German language (the PUT is mocked, so the stored profile stays English and the
+    // settings page would otherwise re-apply it on mount). Only the browser's own GET /api/auth/me is patched.
+    await page.route('**/api/auth/me', async (route) => {
+      const res = await route.fetch()
+      return route.fulfill({ response: res, json: { ...(await res.json() as Record<string, unknown>), language: 'de' } })
+    })
   }
+  if (lang === 'de') {
+    // Never reload in German: the server middleware re-applies the stored (English) admin language. Switch on a page, then
+    // CLIENT-navigate to /settings so the page (and its mount-time USwitch accessible names) mounts in the selected locale.
+    await page.goto('/')
+    await expect(page.locator('main h1').first()).toBeVisible()
+    await switchLang(page, lang)
+    await page.locator('button:has([class*="user-circle"])').first().click()
+    await page.getByRole('menuitem', { name: tr(lang, 'nav.settings'), exact: true }).click()
+  } else {
+    await page.goto('/settings')
+  }
+  await expect(page.locator('main h1').first()).toHaveText(tr(lang, 'settings.title'))
   await page.getByRole('tab', { name: tr(lang, tabKey), exact: true }).click()
   await expect(page.getByRole('tabpanel')).toHaveCount(1)
 }
@@ -344,7 +353,7 @@ const measure = (page: Page): Promise<Measured> => page.evaluate(() => {
 type Kind = 'general' | 'account-local' | 'account-oidc'
 const expectedHeadings = (lang: Lang, kind: Kind): [number, string][] => kind === 'general'
   ? [[2, tr(lang, 'common.general')], [3, tr(lang, 'settings.general.basicTitle')], [3, tr(lang, 'settings.general.featuresTitle')]]
-  : [[2, tr(lang, 'common.account')], [3, tr(lang, 'settings.account.profileTitle')], [3, tr(lang, kind === 'account-local' ? 'settings.account.changePassword' : 'settings.account.oidcManagedTitle')]]
+  : [[2, tr(lang, 'common.account')], [3, tr(lang, 'settings.account.profileTitle')], [3, tr(lang, kind === 'account-local' ? 'settings.account.changePassword' : 'settings.account.oidcManagedTitle')], [3, tr(lang, 'settings.account.apiTokens.title')]]
 
 /** Shared structural + typography + geometry contract for one tab panel. */
 function expectCards(m: Measured, lang: Lang, kind: Kind, vp: VpName, label: string) {
@@ -353,7 +362,7 @@ function expectCards(m: Measured, lang: Lang, kind: Kind, vp: VpName, label: str
   expect(m.root.paddingLeft, `${label}: p-6 root left`).toBe('24px')
   expect(m.root.paddingRight, `${label}: p-6 root right`).toBe('24px')
 
-  // Headings: exactly one h2 section heading followed by two h3 card titles (no skipped levels, translated text).
+  // Headings: exactly one h2 section heading followed by the h3 card titles (General: two; Account: profile, password/managed, API tokens) (no skipped levels, translated text).
   expect(m.headings.map(h => [h.level, h.text]), `${label}: heading outline`).toEqual(expectedHeadings(lang, kind))
   const [h2, ...h3s] = m.headings
   expect(h2!.fontSize, `${label}: section heading 14px`).toBe('14px')
@@ -369,8 +378,9 @@ function expectCards(m: Measured, lang: Lang, kind: Kind, vp: VpName, label: str
   expect(h2!.b, `${label}: section heading above the first card`).toBeLessThanOrEqual(m.cards[0]!.t + 1)
 
   // Cards: two, stacked, each fullwidth within the root content box, with icon + hint under a normal title.
-  expect(m.cards.length, `${label}: two cards`).toBe(2)
-  expect(m.listContainers, `${label}: .list-container cards`).toBe(kind === 'account-oidc' ? 1 : 2)
+  const cardCount = kind === 'general' ? 2 : 3
+  expect(m.cards.length, `${label}: card count`).toBe(cardCount)
+  expect(m.listContainers, `${label}: .list-container cards`).toBe(kind === 'account-oidc' ? 2 : cardCount)
   const contentL = m.root.x + 24
   const contentR = m.root.x + m.root.w - 24
   for (const c of m.cards) {
@@ -383,12 +393,13 @@ function expectCards(m: Measured, lang: Lang, kind: Kind, vp: VpName, label: str
     expect(c.hintGap!, `${label}: hint gap`).toBeGreaterThanOrEqual(-1)
     expect(c.hintGap!, `${label}: hint gap`).toBeLessThanOrEqual(40)
   }
-  expect(m.cards[1]!.t, `${label}: second card is below the first`).toBeGreaterThanOrEqual(m.cards[0]!.b - 1)
+  for (let i = 1; i < m.cards.length; i++) expect(m.cards[i]!.t, `${label}: card ${i} is below card ${i - 1}`).toBeGreaterThanOrEqual(m.cards[i - 1]!.b - 1)
 
   // Fields: compact (<= 512px column) and fully inside their card and the viewport; labels readable (never clipped).
   expect(m.fields.length, `${label}: fields found`).toBeGreaterThan(0)
   for (const f of m.fields) {
-    expect(f.w, `${label}: ${f.role} stays compact (max-w-lg)`).toBeLessThanOrEqual(513)
+    // The API tokens card (Account card index 2) has its own grid; the compact contract covers the original profile/password cards.
+    if (!(kind !== 'general' && f.cardIndex === 2)) expect(f.w, `${label}: ${f.role} stays compact (max-w-lg)`).toBeLessThanOrEqual(513)
     expect(f.cardIndex, `${label}: ${f.role} belongs to a card`).toBeGreaterThanOrEqual(0)
     const c = m.cards[f.cardIndex]!
     expect(f.l, `${label}: ${f.role} inside card (left)`).toBeGreaterThanOrEqual(c.l - 1)
@@ -414,12 +425,12 @@ function expectCards(m: Measured, lang: Lang, kind: Kind, vp: VpName, label: str
     expect(m.fields.map(f => f.formIndex), `${label}: all four fields belong to the one form`).toEqual([0, 0, 0, 0])
     expect(m.fields.map(f => f.cardIndex), `${label}: one text + one select in card 1, two switches in card 2`).toEqual([0, 0, 1, 1])
   } else if (kind === 'account-local') {
-    expect(m.forms, `${label}: separate profile and password forms`).toBe(2)
-    expect(m.submits.map(s => s.formIndex).sort(), `${label}: one submit per form`).toEqual([0, 1])
+    expect(m.forms, `${label}: separate profile, password and API token forms`).toBe(3)
+    expect(m.submits.map(s => s.formIndex).sort(), `${label}: one submit per form`).toEqual([0, 1, 2])
     expect(m.passwords.length, `${label}: three password fields`).toBe(3)
   } else {
-    expect(m.forms, `${label}: only the profile form (managed banner has no form)`).toBe(1)
-    expect(m.submits.length, `${label}: only the profile submit`).toBe(1)
+    expect(m.forms, `${label}: profile + API token forms (managed banner has no form)`).toBe(2)
+    expect(m.submits.length, `${label}: profile + API token submits`).toBe(2)
     expect(m.passwords.length, `${label}: no password fields for OIDC users`).toBe(0)
   }
 }
@@ -434,6 +445,8 @@ function expectPasswordsStacked(m: Measured, label: string) {
 }
 
 const COMBOS: [Lang, VpName][] = [['en', 'desktop'], ['en', 'mobile320'], ['de', 'desktop'], ['de', 'mobile320']]
+
+test.beforeAll(async ({ playwright }) => { await resetAdminLanguage(playwright) })
 
 // ---------------------------------------------------------------------------------------------
 // Guard matcher contract (pure, no browser)
@@ -586,10 +599,14 @@ test.describe('Settings Account (local user): profile card + password card', () 
     })
   }
 
-  test('the profile form saves only display name + language through its own handler (no password call)', async ({ page }) => {
+  test('the profile form saves only display name + language + start site through its own handler (no password call)', async ({ page, request }) => {
     await mockSettings(page, MOCK_GENERAL)
     const users = await mockUserWrites(page)
+    const me = await (await request.get('/api/auth/me')).json() as { start_site_id?: string | null }
     await openSettings(page, 'en', 'desktop', 'common.account')
+    // Start-site options finished loading (select enabled, no load-failed notice) => the save deterministically carries start_site_id.
+    await expect(page.getByRole('combobox', { name: tr('en', 'settings.account.startSite'), exact: true })).toBeEnabled()
+    await expect(page.getByText(tr('en', 'settings.account.startSiteLoadFailed'))).toHaveCount(0)
     const display = page.getByRole('textbox', { name: tr('en', 'settings.account.displayName'), exact: true })
     await expect(display).not.toHaveValue('')
     await display.fill('Mock Display Name')
@@ -598,7 +615,8 @@ test.describe('Settings Account (local user): profile card + password card', () 
     await page.waitForTimeout(400)
     expect(users.calls).toHaveLength(1)
     expect(users.calls[0]!.path).toMatch(/^\/api\/users\/[^/]+$/)
-    expect(Object.keys(users.calls[0]!.body).sort()).toEqual(['display_name', 'language'])
+    expect(Object.keys(users.calls[0]!.body).sort()).toEqual(['display_name', 'language', 'start_site_id'])
+    expect(users.calls[0]!.body.start_site_id).toBe(me.start_site_id ?? null)
     expect(users.calls[0]!.body.display_name).toBe('Mock Display Name')
     await expect(page.getByText(tr('en', 'settings.messages.profileUpdated')).first()).toBeVisible()
   })
@@ -711,11 +729,9 @@ test.describe('Settings personas (mocked login, UI-only)', () => {
 // REAL candidate: General save/reload with restore of ALL four original values (isolated 3105 only)
 // ---------------------------------------------------------------------------------------------
 test.describe('Settings General against the real candidate (save, reload, restore)', () => {
-  test.skip(!REAL, 'OIDC_E2E_REAL_BRANDING not set (isolated candidate with synthetic data only)')
-
   test('saving the two General cards persists all four values through the real API and the originals are restored', async ({ page, request, baseURL }) => {
     // Never mutate anything but the isolated candidate (checked BEFORE the first write).
-    expect(baseURL, 'REAL test only runs against the isolated candidate origin').toBe(CANDIDATE)
+    assertOwnedOrigin(baseURL, 'base')
     const readFour = async (): Promise<GeneralValues> => {
       const res = await request.get('/api/settings')
       expect(res.ok(), 'settings readable').toBe(true)

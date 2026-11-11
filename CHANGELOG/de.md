@@ -4,10 +4,17 @@
 - Neue `TODO.md` im Projektroot: kurze zentrale Checkliste der offenen Aufgaben (Port-Miniatur in der Switch-Übersicht; drei gemeldete iPhone-UI-Fehler, deren Reproduktion und Behebung ausstehen) mit Links zur langfristigen Strategie. Nur Dokumentation, keine App-Änderung.
 
 ### Geändert
+- E2E-Specs (nur Tests, keine App-Änderung): Ursprünge sind nicht mehr auf 3105/3106 festverdrahtet; ein gemeinsamer Helfer `tests/e2e/helpers/ownedRun.ts` akzeptiert nur die exakten `E2E_BASE_URL`/`E2E_SETUP_URL` eines eigenen Laufs (Marker `owned-run.json` in `E2E_RUN_DIR`) und schlägt sonst fehl. Specs mit echtem Backend und Screenshots werden bei fehlenden `OIDC_E2E_*`-Flags nicht mehr übersprungen (Screenshots landen im Artefaktverzeichnis des Laufs), die Public-Switch-View-Spec legt ihren eigenen Switch/LAG/Token an und räumt auf (Fehler beim Anlegen lassen sie fehlschlagen), und Spec-Dateien setzen die Sprache des Wegwerf-Admins zuerst auf Englisch. Veraltete Verträge in den Specs zu Einstellungs-Karten, Typografie, Switch/Template, Benutzern und Login-Theme korrigiert. Fokussierte Läufe: 134 bestanden / 0 fehlgeschlagen für diese Dateien; die Logo-Sidebar und mehrere OIDC-Specs schlagen noch fehl, die vollständige Suite ist noch nicht grün.
 - Dokumentationsseite (EN/DE): Das Hero-Bild der Startseite hat jetzt auf Desktop mit feinem Zeiger einen stärkeren, begrenzten 3D-Effekt, der der Maus folgt (bis etwa 7°/9° Neigung, leichte Verschiebung, Anhebung und Skalierung 1,025). Auf Touch/Mobilgeräten bleibt er aus und `prefers-reduced-motion` wird respektiert; der Tastaturfokus bleibt unverändert, die gruppierte Navigation/Seitenleiste bleibt in beiden Sprachen erhalten. Der Button „Get Started“ nutzt jetzt dunklen Text auf grünem Hintergrund (Kontrast 8,69 normal, 6,01 Hover/gedrückt) mit sichtbarem Fokusrahmen, und der Dashboard-Screenshot wurde durch ein reichhaltigeres synthetisches Beispiel (Warnungen zu verwaisten VLANs, ein stark ausgelastetes Netz) ersetzt. Die Dashboard- und Switch-Listen-Screenshots der Anleitung wurden mit dem aktuellen Stand neu aufgenommen (synthetische Daten, englisch, dunkel). Nur Dokumentation, keine App-Änderung.
 
 ### Behoben
 - MCP-Image-Publish-Workflow: Die GHCR-Tag-Prüfung erkennt jetzt die exakte Buildx-Meldung „`<Image>:<Version>`: not found“ (sowie die klassischen „manifest unknown“-Meldungen für genau dieses Image) als fehlenden Tag, sodass eine neue Version gepusht werden kann. Vorhandene Tags werden weiterhin übersprungen; Authentifizierungs-, Netzwerk- und alle anderen oder gemischten Fehler lassen den Lauf weiterhin fehlschlagen. Ein erfolgreicher Login beweist keine Schreibberechtigung für das Paket.
+
+## [0.47.1] — 2026-11-05
+
+### Behoben
+- Dashboard: Ein fehlgeschlagenes Laden der Daten zeigt jetzt einen Fehler mit Wiederholen-Aktion statt wie ein leerer Standort auszusehen. Wiederholen lädt die Daten ohne Seiten-Neuladen neu.
+- Dashboard: Warnungen zu hoher Auslastung und verwaisten VLANs verlinken jetzt auf die betroffenen Netzwerke/VLANs, und favorisierte Switches zeigen ihre vorhandenen Subnetz- und Standort-/IP-Angaben, sofern gepflegt (optional; bei leeren Feldern nichts). Keine Daten- oder API-Änderung. Standortbezogene letzte Aktivität ist nicht umgesetzt; die Aktivität bleibt global.
 
 ## [0.47.0] — 2026-11-02
 

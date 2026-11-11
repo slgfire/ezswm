@@ -16,13 +16,13 @@
         </div>
         <div v-if="authResolved && canEditInfrastructure" class="flex items-center gap-1">
           <UTooltip :text="$t('common.edit')">
-            <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" @click="navigateToEditor" />
+            <UButton icon="i-heroicons-pencil-square" variant="ghost" color="primary" size="xs" :aria-label="$t('common.edit')" @click="navigateToEditor" />
           </UTooltip>
           <UTooltip :text="$t('common.duplicate')">
-            <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" @click="onDuplicate" />
+            <UButton icon="i-heroicons-document-duplicate" variant="ghost" color="neutral" size="xs" :aria-label="$t('common.duplicate')" @click="onDuplicate" />
           </UTooltip>
           <UTooltip :text="$t('common.delete')">
-            <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="openDeleteDialog" />
+            <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" :aria-label="$t('common.delete')" @click="openDeleteDialog" />
           </UTooltip>
         </div>
       </div>

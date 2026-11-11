@@ -207,6 +207,8 @@
     "description": "Prüfen Sie Infrastruktur-Zahlen, IP-Auslastung und aktuelle Aktivitäten.",
     "emptyTitle": "Willkommen bei ezSWM!",
     "emptyDescription": "Erstellen Sie Ihren ersten Switch, um zu beginnen.",
+    "loadErrorTitle": "Dashboard konnte nicht geladen werden",
+    "loadErrorDescription": "Die Dashboard-Daten konnten nicht geladen werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.",
     "switchCount": "Switches",
     "networkCount": "Subnetze",
     "vlanCount": "VLANs",

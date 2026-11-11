@@ -123,10 +123,14 @@ test('switch overview shows compact port miniatures and expandable stack members
           continue
         }
         await expect(mini.getByTestId('switch-port-miniature-more')).toContainText(more)
-        const firstFrame = (await members(name).first().boundingBox())!
-        for (const above of [mini.getByTestId('switch-port-miniature-more'), mini.locator('button[aria-controls]')]) {
-          const b = (await above.boundingBox())!
-          expect(b.y + b.height, `${name}: row above the faceplates`).toBeLessThanOrEqual(firstFrame.y)
+        // The card's staggered slide-up moves it between separate bbox reads: let it finish, then compare in one frame.
+        await card(name).evaluate(el => Promise.all(el.getAnimations().map(a => a.finished)))
+        const rowBottoms = await mini.evaluate(el => ({
+          frameTop: el.querySelector('[data-member]')!.getBoundingClientRect().top,
+          bottoms: [el.querySelector('[data-testid="switch-port-miniature-more"]'), el.querySelector('button[aria-controls]')].map(n => n!.getBoundingClientRect().bottom),
+        }))
+        for (const bottom of rowBottoms.bottoms) {
+          expect(bottom, `${name}: row above the faceplates`).toBeLessThanOrEqual(rowBottoms.frameTop)
         }
       }
 

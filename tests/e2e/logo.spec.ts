@@ -2,6 +2,7 @@ import { test, expect, type Browser, type Locator, type Page, type Route } from 
 import { createHash } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { assertOwnedOrigin, resetAdminLanguage } from './helpers/ownedRun'
 
 /**
  * Logo integration (PR #285 assets). 28 cases:
@@ -19,10 +20,10 @@ const redact = (text: string) => text.replace(/\?[^\s'")]*/g, '?<redacted>').rep
 const json = (route: Route, body: unknown, status = 200) =>
   route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
 const SHOTS = process.env.LOGO_SHOTS_DIR
-/** Exact servers: the candidate (login/sidebar/assets) and a fresh OWNED dev instance (setup). Checked BEFORE any navigation. */
-const CANDIDATE_BASE = 'http://127.0.0.1:3105'
-const SETUP_BASE = 'http://127.0.0.1:3106'
-const expectBase = (actual: string | undefined, expected: string) => expect(actual, `baseURL must be exactly ${expected}`).toBe(expected)
+/** Exact owned servers (E2E_BASE_URL main / E2E_SETUP_URL empty wizard + run marker). Checked BEFORE any navigation. */
+const CANDIDATE_BASE = 'base' as const
+const SETUP_BASE = 'setup' as const
+const expectBase = (actual: string | undefined, kind: 'base' | 'setup') => assertOwnedOrigin(actual, kind)
 const shot = async (page: Page, name: string) => {
   if (!SHOTS) return
   mkdirSync(SHOTS, { recursive: true })
@@ -163,20 +164,32 @@ async function expectBrandClearOfThemeButton(page: Page, h2: Locator) {
 /** Sidebar header link + image. `scope` = the sidebar (desktop) or the open drawer dialog (mobile). */
 const brandLink = (scope: Locator) => scope.getByRole('link', { name: 'ezSWM' })
 
-/** The image box stays centered on both axes within the actual Nuxt UI sidebar header. */
+/**
+ * The image box is centered on both axes within the brand link's content box (the real alignment container:
+ * the link is `flex-1` beside the drawer's Close button on mobile and carries an intentional `pt-2` when expanded),
+ * and stays fully inside the actual Nuxt UI sidebar header.
+ */
 async function expectSidebarBrandCentered(link: Locator) {
   const image = link.locator('img').filter({ visible: true })
   await expect(image).toHaveCount(1)
   const geometry = await image.evaluate((img) => {
     const header = img.closest('[data-slot="header"]')
-    if (!header) return null
+    const anchor = img.closest('a')
+    if (!header || !anchor) return null
     const imageBox = img.getBoundingClientRect()
     const headerBox = header.getBoundingClientRect()
+    const a = anchor.getBoundingClientRect()
+    const cs = getComputedStyle(anchor)
+    const px = (v: string) => Number.parseFloat(v) || 0
+    const left = a.left + px(cs.paddingLeft)
+    const right = a.right - px(cs.paddingRight)
+    const top = a.top + px(cs.paddingTop)
+    const bottom = a.bottom - px(cs.paddingBottom)
     return {
       imageCenterX: imageBox.left + imageBox.width / 2,
       imageCenterY: imageBox.top + imageBox.height / 2,
-      headerCenterX: headerBox.left + headerBox.width / 2,
-      headerCenterY: headerBox.top + headerBox.height / 2,
+      linkCenterX: (left + right) / 2,
+      linkCenterY: (top + bottom) / 2,
       imageLeft: imageBox.left,
       imageRight: imageBox.right,
       imageTop: imageBox.top,
@@ -188,8 +201,8 @@ async function expectSidebarBrandCentered(link: Locator) {
     }
   })
   expect(geometry, 'visible logo belongs to a rendered sidebar header').not.toBeNull()
-  expect(Math.abs(geometry!.imageCenterX - geometry!.headerCenterX), 'logo is horizontally centered').toBeLessThanOrEqual(1)
-  expect(Math.abs(geometry!.imageCenterY - geometry!.headerCenterY), 'logo is vertically centered').toBeLessThanOrEqual(1)
+  expect(Math.abs(geometry!.imageCenterX - geometry!.linkCenterX), 'logo is horizontally centered in the brand link').toBeLessThanOrEqual(1)
+  expect(Math.abs(geometry!.imageCenterY - geometry!.linkCenterY), 'logo is vertically centered in the brand link').toBeLessThanOrEqual(1)
   expect(geometry!.imageLeft).toBeGreaterThanOrEqual(geometry!.headerLeft - 1)
   expect(geometry!.imageRight).toBeLessThanOrEqual(geometry!.headerRight + 1)
   expect(geometry!.imageTop).toBeGreaterThanOrEqual(geometry!.headerTop - 1)
@@ -207,6 +220,8 @@ async function restoreEnglish(page: Page, request: import('@playwright/test').AP
   }
   await expect.poll(async () => ((await (await request.get('/api/auth/me')).json()) as { language: string }).language, { message: 'disposable admin language restored' }).toBe('en')
 }
+
+test.beforeAll(async ({ playwright }) => { await resetAdminLanguage(playwright) })
 
 test.describe('Logo on the login page (mocked public status, UI only)', () => {
   test.use({ storageState: { cookies: [], origins: [] } })

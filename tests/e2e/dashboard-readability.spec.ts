@@ -46,12 +46,38 @@ async function contrast(el: Locator, prop: 'color' | 'outlineColor' = 'color') {
   }, prop)
 }
 
+// The header language menu also saves the choice to the profile; callers answer that PUT so nothing is stored.
+async function switchLanguage(page: Page, lang: 'en' | 'de') {
+  await page.getByRole('button', { name: /^(Language|Sprache)$/ }).click()
+  await page.getByRole('menuitem', { name: lang === 'de' ? 'Deutsch' : 'English' }).click()
+}
+
+async function checkFavoritesAndWarnings(page: Page, ids: { switchId: string, networkId: string, vlanId: string, suffix: string }) {
+  const favorites = page.getByTestId('dashboard-favorites')
+  const sw = favorites.locator(`a[href$="/switches/${ids.switchId}"]`)
+  await expect(sw).toContainText(`Dash core ${ids.suffix}`)
+  await expect(sw).toContainText(`Rack ${ids.suffix}`)
+  await expect(sw.locator('code')).toHaveCount(0) // no management IP set
+  const net = favorites.locator(`a[href*="/subnets/"]`)
+  await expect(net).toHaveCount(1)
+  await expect(net).toContainText(`Dash net ${ids.suffix}`)
+  await expect(net.locator('code')).toHaveText('203.0.113.0/29')
+  await expect(favorites).not.toContainText(/undefined|null/)
+  // Links stay in the current site route (the app shows the site slug in the URL).
+  const base = new URL(page.url()).pathname.replace(/\/$/, '')
+  const warnings = page.getByTestId('dashboard-warnings')
+  await expect(warnings.locator(`a[href="${base}/subnets/${ids.networkId}"]`)).toBeVisible()
+  await expect(warnings.locator(`a[href="${base}/vlans/${ids.vlanId}"]`)).toBeVisible()
+}
+
 test('site dashboard is translated and readable in the current theme', async ({ browser, page, request }) => {
+  test.setTimeout(180000) // populated checks plus 2 languages x 2 viewports for favorites/warnings
   const suffix = randomUUID().slice(0, 8)
   const vlanNumber = 3000 + Math.floor(Math.random() * 900)
   let siteId = ''
   let templateId = ''
   let switchId = ''
+  let ipSwitchId = ''
   let networkId = ''
   let vlanId = ''
   const allocationIds: string[] = []
@@ -82,7 +108,8 @@ test('site dashboard is translated and readable in the current theme', async ({ 
     expect(sw.status()).toBe(201)
     const created = await sw.json() as Created & { ports: Array<{ id: string, index: number }> }
     switchId = created.id
-    expect((await request.put(`/api/switches/${switchId}`, { data: { is_favorite: true } })).ok()).toBe(true)
+    // Location set, management IP left empty: only present metadata may show.
+    expect((await request.put(`/api/switches/${switchId}`, { data: { is_favorite: true, location: `Rack ${suffix}` } })).ok()).toBe(true)
     // 3 up, 2 disabled, 19 down
     for (const p of created.ports.filter(port => port.index <= 5)) {
       const res = await request.put(`/api/switches/${switchId}/ports/${p.id}`, { data: { status: p.index <= 3 ? 'up' : 'disabled' } })
@@ -93,6 +120,7 @@ test('site dashboard is translated and readable in the current theme', async ({ 
     const net = await request.post('/api/networks', { data: { site_id: siteId, name: `Dash net ${suffix}`, subnet: '203.0.113.0/29' } })
     expect(net.status()).toBe(201)
     networkId = (await net.json() as Created).id
+    expect((await request.put(`/api/networks/${networkId}`, { data: { is_favorite: true } })).ok()).toBe(true)
     for (let i = 1; i <= 6; i++) {
       const res = await request.post(`/api/networks/${networkId}/allocations`, { data: { ip_address: `203.0.113.${i}`, hostname: `dash-${i}`, device_type: 'server' } })
       expect(res.status()).toBe(201)
@@ -126,6 +154,9 @@ test('site dashboard is translated and readable in the current theme', async ({ 
     await expect(ipTile).toHaveAttribute('href', new RegExp(`/sites/[^/]+/ip-addresses$`))
     for (const text of [T.up, T.down, T.disabled, T.high, T.dup, T.orphan, T.hint]) await expect(page.getByText(text, { exact: true })).toBeVisible()
     await expect(page.getByText('Core', { exact: true })).toBeVisible()
+    await checkFavoritesAndWarnings(page, { switchId, networkId, vlanId, suffix })
+    // A duplicate IP has no single owning entity, so it stays plain text.
+    await expect(page.locator('a', { hasText: '192.0.2.99' })).toHaveCount(0)
     if (de) for (const english of ['IP Allocations', 'utilization', 'Duplicate IP', 'Orphan VLAN']) await expect(page.getByText(english)).toHaveCount(0)
 
     const legend = (label: string) => page.getByText(label, { exact: true }).locator('xpath=following-sibling::span[1]')
@@ -212,7 +243,88 @@ test('site dashboard is translated and readable in the current theme', async ({ 
       await touch.close()
     }
 
+    // Second favorite with every optional field and long text, to check chip wrapping on phones.
+    const longName = `Dash distribution aggregation ${suffix}`
+    const longLocation = `Building North, Floor 3, Server Room B, Rack 14 ${suffix}`
+    const ipSw = await request.post('/api/switches', { data: { site_id: siteId, name: longName, role: 'access', location: longLocation, management_ip: '198.51.100.10' } })
+    expect(ipSw.status()).toBe(201)
+    ipSwitchId = (await ipSw.json() as Created).id
+    expect((await request.put(`/api/switches/${ipSwitchId}`, { data: { is_favorite: true } })).ok()).toBe(true)
+
+    // Favorites and warning links: both languages, both themes, desktop and phones.
+    const matrix = [
+      { lang: 'en', width: 1280, theme: 'dark' }, { lang: 'de', width: 1280, theme: 'light' },
+      { lang: 'en', width: 390, theme: 'light' }, { lang: 'de', width: 390, theme: 'dark' },
+      { lang: 'en', width: 320, theme: 'light' }, { lang: 'de', width: 320, theme: 'dark' }
+    ] as const
+    for (const { lang, width, theme } of matrix) {
+      const ctx = await browser.newContext({ storageState: await page.context().storageState(), viewport: { width, height: 900 }, hasTouch: width < 400 })
+      try {
+        await ctx.route('**/api/users/*', route => route.request().method() === 'PUT' ? route.fulfill({ json: {} }) : route.fallback())
+        await ctx.addInitScript(mode => localStorage.setItem('nuxt-color-mode', mode), theme)
+        const tab = await ctx.newPage()
+        tab.on('pageerror', e => errors.push(e.message))
+        tab.on('console', m => { if (m.type() === 'error') errors.push(m.text()) })
+        await gotoSettled(tab, `/sites/${siteId}`)
+        await expect(tab.getByTestId('dashboard-port-total')).toHaveText('24', { timeout: 30000 })
+        expect(await tab.evaluate(() => document.documentElement.classList.contains('dark')), 'theme').toBe(theme === 'dark')
+        if (lang !== (de ? 'de' : 'en')) await switchLanguage(tab, lang)
+        const W = lang === 'de'
+          ? { high: `Dash net ${suffix}: 100 % belegt`, orphan: `Verwaistes VLAN: Dash orphan ${suffix} (${vlanNumber})` }
+          : { high: `Dash net ${suffix}: 100% used`, orphan: `Orphan VLAN: Dash orphan ${suffix} (${vlanNumber})` }
+        const high = tab.getByRole('link', { name: W.high })
+        const orphan = tab.getByRole('link', { name: W.orphan })
+        await expect(high).toBeVisible()
+        await expect(orphan).toBeVisible()
+        await checkFavoritesAndWarnings(tab, { switchId, networkId, vlanId, suffix })
+
+        const ipChip = tab.getByTestId('dashboard-favorites').locator(`a[href$="/switches/${ipSwitchId}"]`)
+        await expect(ipChip.locator('code')).toHaveText('198.51.100.10')
+        const chipParts = [ipChip.getByText(longName, { exact: true }), ipChip.getByText(longLocation, { exact: true }), ipChip.locator('code')]
+        const chip = (await ipChip.boundingBox())!
+        expect(chip.x + chip.width, `IP favorite inside ${width}px`).toBeLessThanOrEqual(width)
+        for (const part of chipParts) {
+          // Whole text shown (wrapped, not cut off) and inside the chip.
+          const fit = await part.evaluate(el => ({ scroll: el.scrollWidth, client: el.clientWidth }))
+          expect(fit.scroll, `favorite text fits at ${width}px`).toBeLessThanOrEqual(fit.client + 1)
+          const b = (await part.boundingBox())!
+          expect(b.x + b.width, 'favorite text inside chip').toBeLessThanOrEqual(chip.x + chip.width + 1)
+        }
+        for (const [name, el] of [['favorite name', chipParts[0]], ['favorite location', chipParts[1]], ['favorite IP', chipParts[2]], ['high usage link', high], ['orphan link', orphan]] as const) {
+          expect(await contrast(el), `${name} contrast (${theme})`).toBeGreaterThanOrEqual(4.5)
+        }
+        await noHorizontalOverflow(tab)
+        const shot = `${test.info().outputDir}/dashboard-links-${lang}-${theme}-${width}`
+        await tab.getByTestId('dashboard-favorites').scrollIntoViewIfNeeded()
+        await tab.screenshot({ path: `${shot}-favorites.png` })
+        // The dashboard scrolls inside #main-content, so bring the warnings card into the viewport first.
+        await tab.getByTestId('dashboard-warnings').scrollIntoViewIfNeeded()
+        await tab.screenshot({ path: `${shot}-warnings.png` })
+      } finally {
+        await ctx.close()
+      }
+    }
+
+    // Clicking each link opens the right entity, from this site's dashboard and from "All sites".
+    for (const dashboard of [`/sites/${siteId}`, '/sites/all']) {
+      const targets = [
+        { link: () => page.getByTestId('dashboard-warnings').locator(`a[href$="/subnets/${networkId}"]`), url: /\/subnets\/[^/]+$/, heading: `Dash net ${suffix}` },
+        { link: () => page.getByTestId('dashboard-warnings').locator(`a[href$="/vlans/${vlanId}"]`), url: /\/vlans\/[^/]+$/, heading: `Dash orphan ${suffix}` },
+        { link: () => page.getByTestId('dashboard-favorites').getByRole('link', { name: new RegExp(`Dash net ${suffix}`) }), url: /\/subnets\/[^/]+$/, heading: `Dash net ${suffix}` },
+        { link: () => page.getByTestId('dashboard-favorites').locator(`a[href$="/switches/${ipSwitchId}"]`), url: /\/switches\/[^/]+$/, heading: longName }
+      ]
+      for (const target of targets) {
+        await gotoSettled(page, dashboard)
+        await target.link().click()
+        await expect(page).toHaveURL(target.url)
+        // Detail pages may swap the id in the URL for the slug; the heading proves the right entity loaded.
+        await expect(page.locator('#main-content h1').first()).toContainText(target.heading, { timeout: 30000 })
+        console.log(`Dashboard link ${dashboard} -> ${new URL(page.url()).pathname}`)
+      }
+    }
+
     // The IP tile opens the IP address page.
+    await gotoSettled(page, `/sites/${siteId}`)
     await ipTile.click()
     await expect(page).toHaveURL(/\/ip-addresses$/)
 
@@ -224,7 +336,78 @@ test('site dashboard is translated and readable in the current theme', async ({ 
     }
     if (vlanId) await removeOwned(request, `/api/vlans/${vlanId}`)
     if (switchId) await removeOwned(request, `/api/switches/${switchId}`)
+    if (ipSwitchId) await removeOwned(request, `/api/switches/${ipSwitchId}`)
     if (templateId) await removeOwned(request, `/api/layout-templates/${templateId}`)
     if (siteId) await removeOwned(request, `/api/sites/${siteId}`)
+  }
+})
+
+test('site dashboard shows a retryable error when stats fail to load', async ({ browser, page, request }) => {
+  test.setTimeout(180000) // 2 languages x 2 viewports, each with a fresh context
+  const site = await request.post('/api/sites', { data: { name: `Dash err ${randomUUID().slice(0, 8)}` } })
+  expect(site.status()).toBe(201)
+  const siteId = (await site.json() as Created).id
+  const storageState = await page.context().storageState()
+  const T = {
+    en: { title: 'Dashboard could not be loaded', retry: 'Try again', welcome: 'Welcome to ezSWM!' },
+    de: { title: 'Dashboard konnte nicht geladen werden', retry: 'Erneut versuchen', welcome: 'Willkommen bei ezSWM!' }
+  }
+
+  try {
+    for (const lang of ['en', 'de'] as const) {
+      for (const width of [1280, 390]) {
+        const ctx = await browser.newContext({ storageState, viewport: { width, height: 900 }, hasTouch: width < 400 })
+        try {
+          // The header language menu also saves the choice to the profile; answer that save here so nothing is stored.
+          await ctx.route('**/api/users/*', route => route.request().method() === 'PUT' ? route.fulfill({ json: {} }) : route.fallback())
+          const tab = await ctx.newPage()
+          const errors: string[] = []
+          let intentional = 0
+          tab.on('pageerror', e => errors.push(e.message))
+          tab.on('console', (m) => {
+            if (m.type() !== 'error') return
+            // Only the injected stats 500s are expected; anything else fails the test.
+            if (m.text().includes('status of 500') && m.location().url.includes('/api/dashboard/stats')) intentional++
+            else errors.push(m.text())
+          })
+          // Fail every stats request (ofetch retries a GET 500 once on its own) until Retry is clicked.
+          let failing = true
+          let retryCalls = 0
+          await tab.route('**/api/dashboard/stats**', async (route) => {
+            if (failing) return route.fulfill({ status: 500, json: { statusCode: 500, message: 'SECRET backend detail' } })
+            retryCalls++
+            return route.continue()
+          })
+
+          await gotoSettled(tab, `/sites/${siteId}`)
+          if (lang === 'de') await switchLanguage(tab, 'de')
+          const alert = tab.getByRole('alert').filter({ hasText: T[lang].title })
+          await expect(alert).toBeVisible({ timeout: 30000 })
+          const retry = alert.getByRole('button', { name: T[lang].retry })
+          await expect(retry).toBeVisible()
+          await expect(tab.getByText(T[lang].welcome, { exact: true })).toHaveCount(0)
+          await expect(tab.locator('#main-content a[href$="/switches/create"]')).toHaveCount(0)
+          await expect(tab.getByText('SECRET backend detail')).toHaveCount(0)
+          await noHorizontalOverflow(tab)
+          await tab.screenshot({ path: `${test.info().outputDir}/dashboard-error-${lang}-${width}.png`, fullPage: true })
+
+          // A fast double click still sends only one retry request.
+          failing = false
+          await retry.dblclick()
+          await expect(tab.getByText(T[lang].welcome, { exact: true })).toBeVisible({ timeout: 30000 })
+          await expect(tab.getByTestId('dashboard-load-error')).toHaveCount(0)
+          expect(retryCalls, 'one stats request per retry').toBe(1)
+          await noHorizontalOverflow(tab)
+          await tab.screenshot({ path: `${test.info().outputDir}/dashboard-retried-${lang}-${width}.png`, fullPage: true })
+
+          test.info().annotations.push({ type: 'expected-500-console', description: `${lang}/${width}: ${intentional}` })
+          expect(errors).toEqual([])
+        } finally {
+          await ctx.close()
+        }
+      }
+    }
+  } finally {
+    await removeOwned(request, `/api/sites/${siteId}`)
   }
 })

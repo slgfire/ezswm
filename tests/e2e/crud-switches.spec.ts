@@ -140,7 +140,7 @@ test.describe.serial('Switch CRUD', () => {
     await page.goto(`/sites/${site.route}/switches`)
     await page.waitForTimeout(1000)
     // The switch card is wrapped in a link to the detail page
-    await page.locator('main a').filter({ has: page.getByText('Core-Switch-01', { exact: true }) }).first().click()
+    await page.getByRole('link', { name: 'Open switch details: Core-Switch-01', exact: true }).first().click()
     await page.waitForURL(detailUrl(site.route, 'switches'))
     await expect(page.locator('body')).toContainText('Cisco')
     await expect(page.locator('body')).toContainText('Hall A')

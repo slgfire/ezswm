@@ -1,4 +1,5 @@
 import { test as base, expect, type APIRequestContext, type Locator, type Page } from '@playwright/test'
+import { assertOwnedOrigin } from './helpers/ownedRun'
 
 /**
  * #287 — 40G QSFP in the compiled UI (8 cases). Everything runs against OWN synthetic fixtures (a site, templates and a
@@ -7,7 +8,6 @@ import { test as base, expect, type APIRequestContext, type Locator, type Page }
  * The only language is English (the DE header-menu intermittence is out of scope here).
  * Strict console/page-error accounting: every console error and page error fails the test (no allowances).
  */
-const CANDIDATE_BASE = 'http://127.0.0.1:3105'
 const redact = (text: string) => text.replace(/\?[^\s'")]*/g, '?<redacted>').replace(/[A-Za-z0-9_-]{32,}/g, '<token>').slice(0, 300)
 
 const test = base.extend<{ consoleGuard: undefined }>({
@@ -161,7 +161,7 @@ function expectFortyGigOrder(names: string[]) {
 
 test.describe('40G QSFP (own synthetic fixtures, compiled UI)', () => {
   // Exact candidate before ANY write or readback.
-  test.beforeEach(({ baseURL }) => { expect(baseURL, `baseURL must be exactly ${CANDIDATE_BASE}`).toBe(CANDIDATE_BASE) })
+  test.beforeEach(({ baseURL }) => { assertOwnedOrigin(baseURL, 'base') })
 
   test('[panel] the port side panel offers 40G between 10G and 100G', async ({ page, request }) => {
     await withFixture(request, { blocks: BLOCKS('100G'), withSwitch: true }, async (fx) => {

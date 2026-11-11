@@ -2,9 +2,9 @@ import { test, expect, type Page, type Route } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import type { OidcCheckResultDto, OidcConfigDto } from '../../types/oidc'
+import { assertOwnedOrigin, shotsDir, resetAdminLanguage } from './helpers/ownedRun'
 
-const CANDIDATE_BASE = 'http://127.0.0.1:3105'
-const SHOTS = process.env.OIDC_REVIEW_SHOTS_DIR
+const SHOTS = shotsDir('OIDC_REVIEW_SHOTS_DIR', 'oidc-review')
 const VIEWPORTS = {
   desktop: { width: 1440, height: 900 },
   mobile320: { width: 320, height: 640 }
@@ -158,16 +158,17 @@ async function expectAlertInsideViewport(page: Page, alertRoot: ReturnType<Page[
 }
 
 async function captureResult(page: Page, filename: string) {
-  if (!SHOTS) throw new Error('OIDC_REVIEW_SHOTS_DIR must point to the private screenshot directory')
   mkdirSync(SHOTS, { recursive: true, mode: 0o700 })
   await page.screenshot({ path: join(SHOTS, filename) })
 }
+
+test.beforeAll(async ({ playwright }) => { await resetAdminLanguage(playwright) })
 
 test.describe('OIDC review: saved check result', () => {
   for (const testCase of CASES) {
     const { lang, result, viewport, theme } = testCase
     test(`${lang}-${result}-${viewport}: saved provider check shows the localized result without config writes`, async ({ page, request, baseURL }) => {
-      expect(baseURL, 'review evidence must use only the owned isolated candidate').toBe(CANDIDATE_BASE)
+      assertOwnedOrigin(baseURL, 'base')
 
       // Read the own fixture identity before browser watchers; retain only its ID in memory for the write allowlist.
       const identityResponse = await request.get('/api/auth/me')
@@ -248,6 +249,7 @@ test.describe('OIDC review: saved check result', () => {
 
         await page.goto('/settings')
         await expect(page.locator('main h1').first()).toHaveText(COPY[lang].settings)
+        await page.waitForFunction(() => (window as unknown as { useNuxtApp?: () => { isHydrating: boolean } }).useNuxtApp?.().isHydrating === false)
         await page.getByRole('tab', { name: COPY[lang].authTab, exact: true }).click()
         await expect(page.getByRole('heading', { name: COPY[lang].connectionSection, exact: true })).toBeVisible()
         await expect(page.getByText(COPY[lang].savedEnabled, { exact: true })).toBeVisible()

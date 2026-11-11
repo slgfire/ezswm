@@ -1,6 +1,7 @@
 import { test as base, expect, type Page, type Route } from '@playwright/test'
 import { mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { assertOwnedOrigin, shotsDir, resetAdminLanguage } from './helpers/ownedRun'
 
 /**
  * Bounded OIDC/SSO e2e checks. Run ONLY against an isolated dev server (never real data).
@@ -58,6 +59,8 @@ const CONFIG = {
   secret_decryptable: true
 }
 
+test.beforeAll(async ({ playwright }) => { await resetAdminLanguage(playwright) })
+
 test.describe('Login page SSO visibility', () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
@@ -106,6 +109,7 @@ test.describe('Admin settings: Authentication tab (mocked endpoints)', () => {
       return json(route, CONFIG)
     })
     await page.goto('/settings')
+    await page.waitForLoadState('networkidle') // hydrated: a pre-hydration tab click is lost (tab focused, General stays selected)
     await page.getByRole('tab', { name: /Authentication|Authentifizierung/ }).click()
 
     await expect(page.locator('input[readonly]').first()).toHaveValue(/\/api\/auth\/oidc\/callback$/)
@@ -131,6 +135,7 @@ test.describe('Admin settings: Authentication tab (mocked endpoints)', () => {
       return json(route, { ok: true, issuer: 'https://idp.example.com', token_endpoint_auth_method: 'client_secret_basic', id_token_alg: 'RS256', endpoints: { authorization: true, token: true, jwks: true, userinfo: true } })
     })
     await page.goto('/settings')
+    await page.waitForLoadState('networkidle') // hydrated: a pre-hydration tab click is lost (tab focused, General stays selected)
     await page.getByRole('tab', { name: /Authentication|Authentifizierung/ }).click()
     await page.getByRole('button', { name: /Check connection|Verbindung prüfen/ }).click()
     await expect.poll(() => checks).toBe(1)
@@ -461,6 +466,7 @@ test.describe('Admin settings provider name field (mocked endpoints)', () => {
       return json(route, config)
     })
     await page.goto('/settings')
+    await page.waitForLoadState('networkidle') // hydrated: a pre-hydration tab click is lost (tab focused, General stays selected)
     await page.getByRole('tab', { name: /Authentication|Authentifizierung/ }).click()
   }
   const save = (page: Page) => page.getByRole('button', { name: /Save configuration|Konfiguration speichern/ })
@@ -617,6 +623,7 @@ test.describe('OIDC group suggestions + stacked layout (mocked endpoints)', () =
       return json(route, config)
     })
     await page.goto('/settings')
+    await page.waitForLoadState('networkidle') // hydrated: a pre-hydration tab click is lost (tab focused, General stays selected)
     if (lang === 'de') await switchLang(page, 'de')
     await page.getByRole('tab', { name: GROUP_TEXT[lang].authTab }).click()
   }
@@ -837,14 +844,13 @@ test.describe('OIDC group suggestions + stacked layout (mocked endpoints)', () =
 })
 
 /**
- * REAL-backend CRUD against the candidate (no mocks). Requires OIDC_E2E_REAL_BRANDING=1 and an
+ * REAL-backend CRUD against the candidate (no mocks). Requires the owned runner (marker-checked origin) and an
  * isolated synthetic server with an authenticated disposable admin (default storage state).
  * Name-only PUTs are cosmetic; the test restores the original name afterwards.
  */
 test.describe('Provider name against the real candidate backend', () => {
-  test.skip(!process.env.OIDC_E2E_REAL_BRANDING, 'OIDC_E2E_REAL_BRANDING not set (isolated candidate only)')
-
-  test('PUT trims/clears/rejects, public status exposes only the allow-listed name, revision unchanged', async ({ request }) => {
+  test('PUT trims/clears/rejects, public status exposes only the allow-listed name, revision unchanged', async ({ request, baseURL }) => {
+    assertOwnedOrigin(baseURL, 'base') // real app backend writes: owned main origin only
     const original = await (await request.get('/api/auth/oidc/config')).json() as { provider_name: string | null, config_revision: number, enabled: boolean }
     try {
       const a = await request.put('/api/auth/oidc/config', { data: { provider_name: '  SaarAuth  ' } })
@@ -873,15 +879,13 @@ test.describe('Provider name against the real candidate backend', () => {
 
 /**
  * Screenshot artifacts for read-only design review (mocked SSO status/config only; no real
- * credentials are typed). Enabled by setting OIDC_E2E_SHOTS_DIR; otherwise skipped because it
- * only produces artifacts and asserts nothing new.
+ * credentials are typed). Written to OIDC_E2E_SHOTS_DIR or the run artifact dir.
  */
-const SHOTS = process.env.OIDC_E2E_SHOTS_DIR
+const SHOTS = shotsDir('OIDC_E2E_SHOTS_DIR', 'oidc')
 test.describe('Visual artifacts', () => {
-  test.skip(!SHOTS, 'OIDC_E2E_SHOTS_DIR not set')
   const sizes = { desktop: { width: 1440, height: 900 }, mobile: { width: 390, height: 844 } }
   // fullPage misses content below the dashboard's inner vertical scroller; pass false for viewport shots.
-  const shot = (page: Page, name: string, fullPage = true) => { mkdirSync(SHOTS!, { recursive: true }); return page.screenshot({ path: join(SHOTS!, `${name}.png`), fullPage }) }
+  const shot = (page: Page, name: string, fullPage = true) => { mkdirSync(SHOTS, { recursive: true }); return page.screenshot({ path: join(SHOTS, `${name}.png`), fullPage }) }
 
   type Lang = 'en' | 'de'
   const TEXT = {
@@ -1284,6 +1288,8 @@ test.describe('Settings page polish (mocked endpoints)', () => {
           const rows: [string, string][] = [['openid', T.removeScope], ['profile', T.removeScope], ['ops-alpha', T.removeGroup], ['ops-beta', T.removeGroup]]
           for (const [value, aria] of rows) {
             await page.locator('input').evaluateAll((els, v) => (els.find(i => (i as HTMLInputElement).value === v) as HTMLElement | undefined)?.scrollIntoView({ block: 'center' }), value)
+            // Wait (retrying) until the populated row exists: the config load fills the scopes after the heading shows.
+            await expect.poll(async () => (await rowOf(value, aria)) !== null, { message: `${value}: row with delete button rendered` }).toBe(true)
             const m = await rowOf(value, aria)
             expect(m, `${value}: row with delete button found`).not.toBeNull()
             expect(m!.aria, `${value}: delete button label`).toBe(aria)
@@ -1408,7 +1414,7 @@ test.describe('Settings page polish (mocked endpoints)', () => {
             expect(d.width, `mobile: description keeps a normal column (${Math.round(d.width)} of ${panelWidth})`).toBeGreaterThanOrEqual(panelWidth / 2)
           }
           expect(await noPageOverflow(page), 'page scrolls horizontally').toBe(true)
-          const shots = process.env.OIDC_E2E_SHOTS_DIR
+          const shots = SHOTS
           if (shots) {
             mkdirSync(shots, { recursive: true })
             await heading.scrollIntoViewIfNeeded()
@@ -1463,8 +1469,7 @@ test.describe('Settings page polish (mocked endpoints)', () => {
  * Names: settings-polish-{en,de}-{desktop,mobile320}-{provider,groups}.png
  */
 test.describe('Settings polish screenshots (mocked endpoints)', () => {
-  test.skip(!process.env.OIDC_E2E_SHOTS_DIR, 'OIDC_E2E_SHOTS_DIR not set')
-  const dir = process.env.OIDC_E2E_SHOTS_DIR!
+  const dir = SHOTS
   const SIZES = { desktop: { width: 1440, height: 900 }, mobile320: { width: 320, height: 640 } } as const
   const HEAD = {
     en: { provider: 'Provider', groups: 'Scopes and group access', menu: 'English', authTab: /^Authentication$/, settings: 'Settings' },
@@ -1483,6 +1488,7 @@ test.describe('Settings polish screenshots (mocked endpoints)', () => {
         try {
           await page.goto('/settings')
           await expect(page.locator('h1')).toBeVisible()
+          await page.waitForFunction(() => (window as unknown as { useNuxtApp?: () => { isHydrating: boolean } }).useNuxtApp?.().isHydrating === false)
           if (lang === 'de') {
             await page.getByRole('button', { name: /^(Language|Sprache)$/ }).click()
             await page.getByRole('menuitem', { name: H.menu }).click()

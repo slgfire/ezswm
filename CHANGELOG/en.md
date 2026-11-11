@@ -4,10 +4,17 @@
 - Root `TODO.md`: a short central checklist of the open queue (port miniature in Switch Overview; three reported iPhone UI defects awaiting reproduction and fix), with links to the long-term strategy. Documentation only; no app change.
 
 ### Changed
+- E2E specs (tests only, no app change): origins are no longer hard-coded to 3105/3106; a shared helper `tests/e2e/helpers/ownedRun.ts` accepts only the exact `E2E_BASE_URL`/`E2E_SETUP_URL` of an owned run (marker `owned-run.json` in `E2E_RUN_DIR`) and fails closed otherwise. Real-backend and screenshot specs no longer skip on missing `OIDC_E2E_*` flags (screenshots go to the run artifact dir), the Public Switch View spec now provisions and cleans up its own switch/LAG/token and fails on provisioning errors, and spec files reset the disposable admin language to English first. Stale-contract fixes for settings cards, typography, switch/template, users and login-theme specs. Focused runs: 134 passed / 0 failed for those files; the logo sidebar and several OIDC specs still fail and the full suite is not yet green.
 - Documentation site (EN/DE): the home hero image now has a stronger, bounded mouse-follow 3D effect on desktop with a fine pointer (up to about 7°/9° tilt, a small shift, lift and 1.025 scale). It stays off on touch/mobile and respects `prefers-reduced-motion`, keyboard focus is unchanged, and the grouped navigation/sidebar sections remain in both languages. The Get Started button now uses dark text on the green background (contrast 8.69 normal, 6.01 hover/pressed) with a visible focus ring, and the dashboard screenshot was replaced by a richer synthetic example (orphan VLAN warnings, a high-usage network). Docs only; no app change. The Dashboard and Switch list guide screenshots were refreshed from the current build (synthetic data, English dark).
 
 ### Fixed
 - MCP image publish workflow: the GHCR tag check now treats the exact Buildx "`<image>:<version>`: not found" error (and the classic manifest-unknown messages for that exact image) as a missing tag, so a new version can be pushed. Existing tags are still skipped; authentication, network and any other or mixed errors still fail the run. A successful login does not prove package write permission.
+
+## [0.47.1] — 2026-11-05
+
+### Fixed
+- Dashboard: a failed data load now shows an error with a retry action instead of looking like an empty site. Retrying reloads the data without a page refresh.
+- Dashboard: high-usage and orphan-VLAN warnings now link to the relevant networks/VLANs, and favorite switches show their existing subnet and location/IP metadata when set (optional; nothing is shown if empty). No data or API change. Site-scoped recent activity is not implemented; activity stays global.
 
 ## [0.47.0] — 2026-11-02
 
