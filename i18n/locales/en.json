@@ -207,6 +207,8 @@
     "description": "Review infrastructure totals, IP usage, and recent activity.",
     "emptyTitle": "Welcome to ezSWM!",
     "emptyDescription": "Start by creating your first switch.",
+    "loadErrorTitle": "Dashboard could not be loaded",
+    "loadErrorDescription": "The dashboard data could not be loaded. Check your connection and try again.",
     "switchCount": "Switches",
     "networkCount": "Subnets",
     "vlanCount": "VLANs",

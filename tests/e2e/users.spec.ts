@@ -1,16 +1,17 @@
 import { test as base, expect, type Page, type Route } from '@playwright/test'
 import { mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { assertOwnedOrigin, shotsDir, resetAdminLanguage } from './helpers/ownedRun'
 
 /**
  * Admin Users overview (/users). Contract: admin-only page + nav entry, six columns (username, display name,
  * role, sign-in method, created, actions), no identity/secret fields rendered. Account MANAGEMENT flows
  * (create/edit/delete) live in users-management.spec.ts; here the overview must stay idle (no spontaneous non-GET).
  *
- * Cases that mock `GET /api/users` prove CLIENT UI behaviour only. Cases gated by
- * OIDC_E2E_REAL_BRANDING=1 talk to the real isolated candidate with SYNTHETIC users they create and
+ * Cases that mock `GET /api/users` prove CLIENT UI behaviour only. Cases checked
+ * against the owned-runner origin talk to the real isolated candidate with SYNTHETIC users they create and
  * remove. Nothing here proves a real external SSO login (OIDC rows are mocked data).
- * Screenshots are written only when OIDC_E2E_SHOTS_DIR is set.
+ * Screenshots go to OIDC_E2E_SHOTS_DIR or the run artifact dir.
  */
 
 const redact = (text: string) => text.replace(/\?[^\s'")]*/g, '?<redacted>').replace(/[A-Za-z0-9_-]{32,}/g, '<token>').slice(0, 300)
@@ -35,8 +36,7 @@ const test = base.extend<{ consoleGuard: undefined }>({
 const json = (route: Route, body: unknown, status = 200) =>
   route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
 
-const REAL = !!process.env.OIDC_E2E_REAL_BRANDING
-const SHOTS = process.env.OIDC_E2E_SHOTS_DIR
+const SHOTS = shotsDir('OIDC_E2E_SHOTS_DIR', 'users')
 
 // Identity/secret-looking values that must NEVER appear in the rendered page.
 const SECRET_ISSUER = 'https://idp.hidden.example'
@@ -102,6 +102,8 @@ const rowOf = (page: Page, username: string) => page.locator('tbody tr').filter(
 const cell = (page: Page, text: string) => page.getByText(text, { exact: true }).filter({ visible: true }).first()
 /** Labelled, keyboard-focusable horizontal scroller around the table. */
 const scroller = (page: Page) => page.locator('main [role="region"][tabindex="0"]')
+
+test.beforeAll(async ({ playwright }) => { await resetAdminLanguage(playwright) })
 
 test.describe('Users overview (admin, mocked GET /api/users)', () => {
   async function open(page: Page, users: unknown = USERS, lang: Lang = 'en') {
@@ -311,7 +313,7 @@ test.describe('Users overview (admin, mocked GET /api/users)', () => {
 const REF = {
   title: 'text-xl font-bold',
   card: 'list-container rounded-lg bg-default',
-  header: 'px-5 py-1.5 text-[10px] uppercase tracking-wider text-gray-500',
+  header: 'px-5 py-1.5 text-[10px] uppercase tracking-wider text-muted',
   rowHover: 'row-hover',
   root: 'p-6'
 }
@@ -328,7 +330,7 @@ test.describe('Users overview visual consistency with Switches/Subnets (referenc
     // The list card + hover pattern is defined by the Subnets list (Switches uses grouped panels).
     expect(subnets, 'subnets: list card').toContain(REF.card)
     expect(subnets, 'subnets: row hover').toContain(REF.rowHover)
-    expect(subnets, 'subnets: compact uppercase header').toContain(`text-[10px] uppercase tracking-wider text-gray-500`)
+    expect(subnets, 'subnets: compact uppercase header').toContain(`text-[10px] uppercase tracking-wider text-muted`)
     expect(subnets, 'subnets: header padding').toContain('px-5 py-1.5')
     const css = src('app/assets/css/main.css')
     expect(css).toContain('.list-container')
@@ -358,7 +360,7 @@ test.describe('Users overview visual consistency with Switches/Subnets (referenc
               const probes = { title: mk('h1', ref.title), card: mk('div', ref.card), header: mk('div', ref.header), root: mk('div', ref.root) }
               const text = ['font-size', 'font-weight', 'line-height', 'letter-spacing', 'color']
               const box = ['border-top-width', 'border-top-style', 'border-top-color', 'border-top-left-radius', 'background-color']
-              // `color` is intentionally not compared: the Users header uses the semantic `text-muted` token, the reference list `text-gray-500`.
+              // `color` is intentionally not compared: the Users header uses the semantic `text-muted` token, the reference list now uses it too.
               const head = ['font-size', 'text-transform', 'letter-spacing', 'padding-left', 'padding-right', 'padding-top', 'padding-bottom']
               const rootEl = root as HTMLElement | null
               const rb = rootEl?.getBoundingClientRect()
@@ -407,13 +409,12 @@ test.describe('Users overview visual consistency with Switches/Subnets (referenc
 })
 
 test.describe('Users overview access control (real candidate)', () => {
-  test.skip(!REAL, 'OIDC_E2E_REAL_BRANDING not set (isolated candidate with synthetic users only)')
-
   const viewerName = `e2e_users_viewer_${Date.now().toString(36)}`
   const viewerPassword = 'viewer-users-pass-123'
   let viewerId = ''
 
-  test.beforeAll(async ({ request }) => {
+  test.beforeAll(async ({ request, baseURL }) => {
+    assertOwnedOrigin(baseURL, 'base')
     const created = await request.post('/api/users', { data: { username: viewerName, display_name: 'E2E Users Viewer', password: viewerPassword, role: 'viewer', language: 'en' } })
     expect(created.ok()).toBe(true)
     viewerId = ((await created.json()) as { id: string }).id
@@ -494,9 +495,8 @@ test.describe('Users overview access control (real candidate)', () => {
 })
 
 test.describe('Users overview screenshots (mocked rows)', () => {
-  test.skip(!SHOTS, 'OIDC_E2E_SHOTS_DIR not set')
   const sizes = { desktop: { width: 1440, height: 900 }, mobile320: { width: 320, height: 640 } }
-  const shot = (page: Page, name: string, fullPage = false) => { mkdirSync(SHOTS!, { recursive: true }); return page.screenshot({ path: join(SHOTS!, `${name}.png`), fullPage }) }
+  const shot = (page: Page, name: string, fullPage = false) => { mkdirSync(SHOTS, { recursive: true }); return page.screenshot({ path: join(SHOTS, `${name}.png`), fullPage }) }
 
   for (const lang of ['en', 'de'] as const) {
     for (const [sizeName, viewport] of Object.entries(sizes)) {

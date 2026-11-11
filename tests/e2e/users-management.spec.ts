@@ -1,4 +1,5 @@
 import { test as base, expect, type Page, type Route, type APIRequestContext } from '@playwright/test'
+import { resetAdminLanguage } from './helpers/ownedRun'
 
 /**
  * Admin Users MANAGEMENT flows (/users): create / edit / delete, OIDC rows, access loss.
@@ -95,6 +96,8 @@ async function choose(page: Page, label: string, option: string) {
 }
 
 test.afterEach(async ({ request }) => { await cleanup(request) })
+
+test.beforeAll(async ({ playwright }) => { await resetAdminLanguage(playwright) })
 
 test.describe('Users management', () => {
   test('[REAL] create a Viewer (defaults), validation + duplicate guard, edit role/name/language, survives reload', async ({ page, request }) => {

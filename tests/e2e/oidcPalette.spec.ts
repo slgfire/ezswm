@@ -2,9 +2,9 @@ import { test, expect, type Locator, type Page, type Route } from '@playwright/t
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import type { OidcConfigDto } from '../../types/oidc'
+import { assertOwnedOrigin, shotsDir, resetAdminLanguage } from './helpers/ownedRun'
 
-const CANDIDATE_BASE = 'http://127.0.0.1:3105'
-const SHOTS = process.env.AUTH_NEUTRAL_SHOTS_DIR
+const SHOTS = shotsDir('AUTH_NEUTRAL_SHOTS_DIR', 'auth-neutral')
 const VIEWPORTS = {
   desktop: { width: 1440, height: 900 },
   mobile320: { width: 320, height: 640 }
@@ -276,17 +276,18 @@ async function expectHorizontalFit(page: Page, locator: Locator, label: string) 
 }
 
 async function capture(locator: Locator, filename: string) {
-  if (!SHOTS) throw new Error('AUTH_NEUTRAL_SHOTS_DIR must point to the private capture directory')
   mkdirSync(SHOTS, { recursive: true, mode: 0o700 })
   await locator.scrollIntoViewIfNeeded()
   await expect(locator).toBeVisible()
   await locator.screenshot({ path: join(SHOTS, filename) })
 }
 
+test.beforeAll(async ({ playwright }) => { await resetAdminLanguage(playwright) })
+
 test.describe('OIDC authentication palette', () => {
   for (const { lang, theme, viewport } of MATRIX) {
     test(`${lang}-${theme}-${viewport}: semantic neutral information surfaces and preserved primary action`, async ({ page, request, baseURL }) => {
-      expect(baseURL, 'palette evidence must use only the owned isolated candidate').toBe(CANDIDATE_BASE)
+      assertOwnedOrigin(baseURL, 'base')
       const identityResponse = await request.get('/api/auth/me')
       expect(identityResponse.status(), 'fresh fixture self identity is available').toBe(200)
       const identity = await identityResponse.json() as { id?: unknown, language?: unknown }
@@ -344,6 +345,7 @@ test.describe('OIDC authentication palette', () => {
         await expect(page.locator('main h1').first()).toHaveText(COPY[lang].settings)
         const authTab = page.getByRole('tab', { name: COPY[lang].authTab, exact: true })
         await expect(authTab).toBeVisible()
+        await page.waitForFunction(() => (window as unknown as { useNuxtApp?: () => { isHydrating: boolean } }).useNuxtApp?.().isHydrating === false)
         await authTab.click()
         await expect(page.getByRole('heading', { level: 2, name: COPY[lang].authTab, exact: true })).toBeVisible()
         await expect(page.getByText(COPY[lang].savedEnabled, { exact: true })).toBeVisible()

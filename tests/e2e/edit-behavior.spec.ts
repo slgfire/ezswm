@@ -447,7 +447,7 @@ test.describe('Edit Behavior — Inline Edit', () => {
       await page.waitForLoadState('networkidle')
 
       // Click edit — this navigates to a separate edit page
-      await page.getByRole('link', { name: /edit|bearbeiten/i }).first().click()
+      await page.getByRole('button', { name: /^(Edit|Bearbeiten)$/ }).click()
       await page.waitForURL(`/layout-templates/${tpl.id}/edit`, { timeout: 5000 })
 
       // Still same tab, just a different route — this is acceptable behavior

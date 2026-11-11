@@ -9,6 +9,15 @@
 ### Fixed
 - MCP image publish workflow: the GHCR tag check now treats the exact Buildx "`<image>:<version>`: not found" error (and the classic manifest-unknown messages for that exact image) as a missing tag, so a new version can be pushed. Existing tags are still skipped; authentication, network and any other or mixed errors still fail the run. A successful login does not prove package write permission.
 
+## [0.47.2] — 2026-11-11
+
+### Changed
+- E2E specs (tests only, no app change): origins are no longer hard-coded to 3105/3106; a shared helper `tests/e2e/helpers/ownedRun.ts` accepts only the exact `E2E_BASE_URL`/`E2E_SETUP_URL` of an owned run (marker `owned-run.json` in `E2E_RUN_DIR`) and fails closed otherwise. Real-backend and screenshot specs no longer skip on missing `OIDC_E2E_*` flags (screenshots go to the run artifact dir), the Public Switch View spec now provisions and cleans up its own switch/LAG/token and fails on provisioning errors, and spec files reset the disposable admin language to English first. Stale-contract fixes for settings cards, typography, switch/template, users and login-theme specs. Validated on the merged 0.47.1 dependency base (Node 26.13.0, pnpm 11.28.10): full central E2E run 357 passed, 0 failed, 0 skipped, 0 flaky. Also fixed: the credential-ignore test now asserts the run-specific private auth-state contract, the setup-wizard project depends on the auth project, and the persona login waits for hydration before filling the form. The runner passes the generated JWT/OIDC secrets and public base URL to the built servers as `NUXT_*` runtime overrides (a clean CI build has no `JWT_SECRET`, so the baked default was empty and `/api/auth/setup` returned 500). Chromium only; Safari, a real identity provider and a security audit were not part of this check.
+
+### Fixed
+- Dashboard: a failed data load now shows an error with a retry action instead of looking like an empty site. Retrying reloads the data without a page refresh.
+- Dashboard: high-usage and orphan-VLAN warnings now link to the relevant networks/VLANs, and favorite switches show their existing subnet and location/IP metadata when set (optional; nothing is shown if empty). No data or API change. Site-scoped recent activity is not implemented; activity stays global.
+
 ## [0.47.1] — 2026-11-10
 
 ### Changed

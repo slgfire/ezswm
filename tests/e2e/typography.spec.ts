@@ -1,6 +1,7 @@
 import { test as base, expect, type Page, type Route, type APIRequestContext } from '@playwright/test'
 import { mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { assertOwnedOrigin, shotsDir, resetAdminLanguage } from './helpers/ownedRun'
 import type { OidcConfigDto } from '../../types/oidc'
 
 /**
@@ -10,9 +11,9 @@ import type { OidcConfigDto } from '../../types/oidc'
  * display font), the Settings root (full main width, no centred max-w-6xl box) and the global
  * `/sites` + `/sites/create` breadcrumbs (leading Dashboard crumb -> '/').
  *
- * Runs against the isolated candidate with a SYNTHETIC admin. Read-only except the REAL-gated
- * fixture (OIDC_E2E_REAL_BRANDING=1): it creates ONE synthetic site and ONE VLAN through the admin API
- * and removes both again. Screenshots are only written when OIDC_E2E_SHOTS_DIR is set.
+ * Runs against the isolated candidate with a SYNTHETIC admin. Read-only except the owned-origin
+ * fixture: it creates ONE synthetic site and ONE VLAN through the admin API
+ * and removes both again. Screenshots go to OIDC_E2E_SHOTS_DIR or the run artifact dir.
  * Labels come from the real i18n files (never hard-coded English).
  */
 
@@ -38,8 +39,7 @@ const test = base.extend<{ consoleGuard: undefined }>({
   }, { auto: true }]
 })
 
-const REAL = !!process.env.OIDC_E2E_REAL_BRANDING
-const SHOTS = process.env.OIDC_E2E_SHOTS_DIR
+const SHOTS = shotsDir('OIDC_E2E_SHOTS_DIR', 'typography')
 
 type Lang = 'en' | 'de'
 const LANGS = ['en', 'de'] as const
@@ -149,6 +149,8 @@ async function referenceGeo(page: Page, lang: Lang): Promise<Geo> {
   await expect(page.locator('main h1').first()).toHaveText(tr(lang, 'sites.title'))
   return geo(page)
 }
+
+test.beforeAll(async ({ playwright }) => { await resetAdminLanguage(playwright) })
 
 test.describe('Page title typography and page-root padding', () => {
   for (const p of PAGES) {
@@ -338,20 +340,22 @@ test.describe('Global Sites breadcrumbs', () => {
 // REAL candidate fixture: one synthetic site + one VLAN (created through the admin API, removed afterwards)
 // ---------------------------------------------------------------------------------------------
 test.describe('Typography checks with a synthetic site and VLAN (real candidate)', () => {
-  test.skip(!REAL, 'OIDC_E2E_REAL_BRANDING not set (isolated candidate with synthetic data only)')
-
   const vlanNumber = 2000 + Math.floor(Math.random() * 1900)
   const siteName = `Typography check site ${Date.now().toString(36)}`
   let siteId = ''
+  let siteSlug = '' // UI paths/hrefs use the canonical slug (global middleware rewrites UUID segments); the API uses the UUID
   let vlanId = ''
 
   test.beforeAll(async ({ request, baseURL }) => {
     // Never mutate anything but the isolated candidate.
-    expect(baseURL, 'REAL fixture only runs against the isolated candidate origin').toBe('http://127.0.0.1:3105')
+    assertOwnedOrigin(baseURL, 'base')
     try {
       const site = await request.post('/api/sites', { data: { name: siteName } })
       expect(site.ok(), 'synthetic site created').toBe(true)
-      siteId = ((await site.json()) as { id: string }).id
+      const created = (await site.json()) as { id: string, slug: string }
+      siteId = created.id
+      siteSlug = created.slug
+      expect(siteSlug, 'created site has a slug').toBeTruthy()
       // Explicit palette colour (hex) so the create never depends on the auto-assign pool.
       const vlan = await request.post('/api/vlans', { data: { site_id: siteId, vlan_id: vlanNumber, name: 'Typography check', status: 'active', color: '#2563EB' } })
       expect(vlan.ok(), 'synthetic VLAN created').toBe(true)
@@ -382,13 +386,14 @@ test.describe('Typography checks with a synthetic site and VLAN (real candidate)
     }
     vlanId = ''
     siteId = ''
+    siteSlug = ''
     expect(failures, 'synthetic fixture removed').toEqual([])
   }
   test.afterAll(async ({ request }) => {
     await cleanup(request)
   })
 
-  const vlanPath = () => `/sites/${siteId}/vlans/${vlanId}`
+  const vlanPath = () => `/sites/${siteSlug}/vlans/${vlanId}`
 
   for (const lang of LANGS) {
     for (const vpName of ['desktop', 'mobile320'] as const) {
@@ -406,7 +411,7 @@ test.describe('Typography checks with a synthetic site and VLAN (real candidate)
           expect(g.root.paddingRight, 'page root right padding').toBe('24px')
           expect(Math.abs(g.root.x - g.main.left), 'page root starts at the main left edge').toBeLessThanOrEqual(1)
           // The title is preceded by the back arrow (and a swatch inside the h1): only the font is compared, not x.
-          const back = page.locator(`main a[href="/sites/${siteId}/vlans"]`).first()
+          const back = page.locator(`main a[href="/sites/${siteSlug}/vlans"]`).first()
           await expect(back).toBeVisible()
           const bb = await back.boundingBox()
           expect(Math.abs(bb!.x - (g.root.x + 24)), 'back button at the root content edge').toBeLessThanOrEqual(1)
@@ -445,26 +450,25 @@ test.describe('Typography checks with a synthetic site and VLAN (real candidate)
   }
 
   test('site-scoped routes keep their breadcrumbs: dashboard hidden, Switches path override unchanged', async ({ page }) => {
-    await page.goto(`/sites/${siteId}`)
+    await page.goto(`/sites/${siteSlug}`)
     await expect(page.locator('main h1').first()).toHaveText(tr('en', 'nav.dashboard'))
     await expect(crumbNav(page), 'one crumb => hidden').toHaveCount(0)
-    await page.goto(`/sites/${siteId}/switches`)
+    await page.goto(`/sites/${siteSlug}/switches`)
     await expect(page.locator('main h1').first()).toHaveText(tr('en', 'switches.title'))
     await expect(crumbNav(page)).toBeVisible()
     expect(await crumbLabels(page)).toEqual([tr('en', 'nav.dashboard'), tr('en', 'nav.switches')])
-    expect(await crumbHrefs(page), 'Dashboard links to the site dashboard (siteId branch unchanged)').toEqual([`/sites/${siteId}`])
+    expect(await crumbHrefs(page), 'Dashboard links to the site dashboard (siteId branch unchanged)').toEqual([`/sites/${siteSlug}`])
   })
 
   // ---- screenshots (VLAN detail reference) ----
   test.describe('VLAN detail screenshots', () => {
-    test.skip(!SHOTS, 'OIDC_E2E_SHOTS_DIR not set')
     for (const vpName of ['desktop', 'mobile320'] as const) {
       test(`vlan detail screenshot (${vpName})`, async ({ page }) => {
         await page.setViewportSize(VP[vpName])
         await page.goto(vlanPath())
         await expect(page.locator('main h1').first()).toContainText(`VLAN ${vlanNumber}`)
-        mkdirSync(SHOTS!, { recursive: true })
-        await page.screenshot({ path: join(SHOTS!, `typography-vlan-detail-en-${vpName}.png`) })
+        mkdirSync(SHOTS, { recursive: true })
+        await page.screenshot({ path: join(SHOTS, `typography-vlan-detail-en-${vpName}.png`) })
       })
     }
   })
@@ -474,8 +478,7 @@ test.describe('Typography checks with a synthetic site and VLAN (real candidate)
 // Screenshots (no real data mutated). Data Management, Calculator, Settings General/Account/SSO at wide + 320, EN/DE; Sites roots.
 // ---------------------------------------------------------------------------------------------
 test.describe('Typography screenshots', () => {
-  test.skip(!SHOTS, 'OIDC_E2E_SHOTS_DIR not set')
-  const shot = (page: Page, name: string) => { mkdirSync(SHOTS!, { recursive: true }); return page.screenshot({ path: join(SHOTS!, `typography-${name}.png`) }) }
+  const shot = (page: Page, name: string) => { mkdirSync(SHOTS, { recursive: true }); return page.screenshot({ path: join(SHOTS, `typography-${name}.png`) }) }
 
   for (const lang of LANGS) {
     for (const vpName of ['wide1920', 'mobile320'] as const) {

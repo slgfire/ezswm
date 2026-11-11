@@ -39,9 +39,19 @@ describe('credential ignore coverage', () => {
     expect(tracked.trim()).toBe('')
   })
 
-  it('keeps the Playwright auth setup wired to the ignored state file', () => {
-    expect(readFileSync(join(root, 'tests/e2e/auth.setup.ts'), 'utf8')).toContain('./tests/e2e/.auth/user.json')
-    expect(readFileSync(join(root, 'playwright.config.ts'), 'utf8')).toContain('./tests/e2e/.auth/user.json')
+  it('keeps the Playwright auth state in the private, run-specific directory outside the repo', () => {
+    const read = (f: string) => readFileSync(join(root, f), 'utf8')
+    // setup writes the session only to the runner-provided file; project config reads it back
+    expect(read('tests/e2e/auth.setup.ts')).toContain('process.env.E2E_AUTH_FILE')
+    expect(read('tests/e2e/auth.setup.ts')).not.toContain('tests/e2e/.auth')
+    expect(read('playwright.config.ts')).toContain('storageState: E2E_AUTH_FILE')
+    expect(read('playwright.config.ts')).not.toContain('tests/e2e/.auth')
+    // the runner owns the file: private (0700) per-run dir, removed on cleanup
+    const runner = read('scripts/e2e.mjs')
+    expect(runner).toContain("authDir = join(runDir, 'auth')")
+    expect(runner).toContain("E2E_AUTH_FILE: authFile")
+    expect(runner).toContain('mode: 0o700')
+    expect(runner).toContain("rmSync(join(state.runDir, 'auth')")
   })
 
   const dockerOk = spawnSync('docker', ['version'], { stdio: 'ignore' }).status === 0
