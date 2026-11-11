@@ -35,6 +35,11 @@ const freePort = (p) => new Promise((ok, no) => {
   s.listen(p, '127.0.0.1', () => s.close(() => ok()))
 })
 
+// Nuxt bakes runtimeConfig defaults at BUILD time from process.env; the built server only honours NUXT_* overrides at runtime.
+export const runtimeOverrides = (secrets, origin) => ({
+  NUXT_JWT_SECRET: secrets.JWT_SECRET, NUXT_OIDC_ENCRYPTION_KEY: secrets.OIDC_ENCRYPTION_KEY, NUXT_PUBLIC_BASE_URL: origin
+})
+
 const pass = ['PATH', 'HOME', 'LANG', 'CI', 'TERM', 'npm_package_version', 'PLAYWRIGHT_BROWSERS_PATH', 'XDG_CACHE_HOME']
 const baseEnv = () => Object.fromEntries(pass.filter((k) => process.env[k] !== undefined).map((k) => [k, process.env[k]]))
 
@@ -134,7 +139,7 @@ async function main() {
   const origin = { main: `http://127.0.0.1:${MAIN_PORT}`, setup: `http://127.0.0.1:${SETUP_PORT}` }
   writeFileSync(join(runDir, 'owned-run.json'), JSON.stringify({ baseUrl: origin.main, setupUrl: origin.setup }), { mode: 0o600 })
   const serverEnv = (name, p) => ({
-    ...baseEnv(), ...secrets, NODE_ENV: 'production', HOST: '127.0.0.1', PORT: String(p),
+    ...baseEnv(), ...secrets, ...runtimeOverrides(secrets, origin[name]), NODE_ENV: 'production', HOST: '127.0.0.1', PORT: String(p),
     DATABASE_URL: `file:${join(dirs[name], 'db.sqlite')}`, DATA_DIR: dirs[name], NUXT_DATA_DIR: dirs[name],
     PUBLIC_BASE_URL: origin[name]
   })
