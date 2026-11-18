@@ -1,4 +1,4 @@
-import { test as base, expect, type Page, type Route } from '@playwright/test'
+import { test as base, expect, type APIRequestContext, type Page, type Route } from '@playwright/test'
 import { mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { assertOwnedOrigin, shotsDir, resetAdminLanguage } from './helpers/ownedRun'
@@ -35,6 +35,13 @@ const test = base.extend<{ consoleGuard: undefined }>({
     expect(unexpected, 'unexpected browser console/page errors').toEqual([])
   }, { auto: true }]
 })
+
+async function expectStoredEnglish(request: APIRequestContext) {
+  await expect.poll(async () => {
+    const me = await (await request.get('/api/auth/me')).json() as { language: string }
+    return me.language
+  }, { message: 'disposable admin language restored' }).toBe('en')
+}
 
 const json = (route: Route, body: unknown, status = 200) =>
   route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
@@ -535,8 +542,7 @@ test.describe('Admin settings provider name field (mocked endpoints)', () => {
       await page.getByRole('button', { name: /^(Language|Sprache)$/ }).click()
       await page.getByRole('menuitem', { name: 'English' }).click()
       await expect(page.locator('h1')).toHaveText('Settings')
-      const me = await (await request.get('/api/auth/me')).json() as { language: string }
-      expect(me.language, 'disposable admin language restored').toBe('en')
+      await expectStoredEnglish(request)
     }
   })
 
@@ -563,8 +569,7 @@ test.describe('Admin settings provider name field (mocked endpoints)', () => {
       await page.getByRole('button', { name: /^(Language|Sprache)$/ }).click()
       await page.getByRole('menuitem', { name: 'English' }).click()
       await expect(page.locator('h1')).toHaveText('Settings')
-      const me = await (await request.get('/api/auth/me')).json() as { language: string }
-      expect(me.language, 'disposable admin language restored').toBe('en')
+      await expectStoredEnglish(request)
     }
   })
 })
@@ -638,8 +643,7 @@ test.describe('OIDC group suggestions + stacked layout (mocked endpoints)', () =
   }
   async function restoreEnglish(page: Page, request: import('@playwright/test').APIRequestContext, was: GLang) {
     if (was === 'de') await switchLang(page, 'en')
-    const me = await (await request.get('/api/auth/me')).json() as { language: string }
-    expect(me.language, 'disposable admin language restored').toBe('en')
+    await expectStoredEnglish(request)
   }
 
   const T = GROUP_TEXT.en
@@ -977,8 +981,7 @@ test.describe('Visual artifacts', () => {
           await shot(page, `admin-provider-name-${lang}-${sizeName}`, false)
         } finally {
           if (lang === 'de') await setUiLanguage(page, 'en')
-          const me = await (await request.get('/api/auth/me')).json() as { language: string }
-          expect(me.language, 'disposable admin language restored').toBe('en')
+          await expectStoredEnglish(request)
         }
       })
     }
@@ -1013,8 +1016,7 @@ test.describe('Visual artifacts', () => {
           await shot(page, `groups-${lang}-${sizeName}-all-assigned`, false)
         } finally {
           if (lang === 'de') await setUiLanguage(page, 'en')
-          const me = await (await request.get('/api/auth/me')).json() as { language: string }
-          expect(me.language, 'disposable admin language restored').toBe('en')
+          await expectStoredEnglish(request)
         }
       })
     }
@@ -1091,8 +1093,7 @@ test.describe('Visual artifacts', () => {
         } finally {
           // Leave the disposable admin on English (UI switch persists the profile language).
           if (lang === 'de') await setUiLanguage(page, 'en')
-          const me = await (await request.get('/api/auth/me')).json() as { language: string }
-          expect(me.language, 'disposable admin language restored').toBe('en')
+          await expectStoredEnglish(request)
         }
       })
     }
@@ -1137,8 +1138,7 @@ test.describe('Settings page polish (mocked endpoints)', () => {
   }
   async function restoreEnglish(page: Page, request: import('@playwright/test').APIRequestContext, was: PLang) {
     if (was === 'de') await setLang(page, 'en')
-    const me = await (await request.get('/api/auth/me')).json() as { language: string }
-    expect(me.language, 'disposable admin language restored').toBe('en')
+    await expectStoredEnglish(request)
   }
   async function openSettings(page: Page, lang: PLang, vp: { width: number, height: number }) {
     await page.setViewportSize(vp)
@@ -1512,10 +1512,7 @@ test.describe('Settings polish screenshots (mocked endpoints)', () => {
             await page.getByRole('menuitem', { name: 'English' }).click()
             await expect(page.locator('h1')).toHaveText('Settings')
           }
-          await expect.poll(async () => {
-            const me = await (await request.get('/api/auth/me')).json() as { language: string }
-            return me.language
-          }, { message: 'disposable admin language restored' }).toBe('en')
+          await expectStoredEnglish(request)
         }
       })
     }
