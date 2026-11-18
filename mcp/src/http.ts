@@ -9,6 +9,7 @@ import type { HttpConfig } from './config.js'
 import { createEzswmMcpServer, type ServerInfo } from './server.js'
 
 export const MCP_PATH = '/mcp'
+const MAX_ACTIVE_REQUESTS = 32
 
 export interface HttpServerHandle {
   host: string
@@ -55,6 +56,12 @@ export async function startHttpServer(
     if (!isAuthorized(req.headers.authorization, config.authTokens)) {
       // Generic message: never echo the credential or reveal which token was given.
       sendJson(res, 401, { error: 'Unauthorized' })
+      return
+    }
+
+    if (active.size >= MAX_ACTIVE_REQUESTS) {
+      res.setHeader('Retry-After', '1')
+      sendJson(res, 429, { error: 'Too many active MCP requests' })
       return
     }
 

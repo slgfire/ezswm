@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { PrismaClient } from '@prisma/client'
 import { randomUUID } from 'node:crypto'
@@ -8,6 +9,8 @@ import { customDeviceTypeRepository, assertDeviceTypeAssignable } from '../serve
 import { ipAllocationRepository } from '../server/repositories/ipAllocationRepository'
 import { restoreAll } from '../server/utils/dataRestore'
 import { IMPORTERS } from '../server/utils/entityImport'
+
+const RESTORE_HASH = bcrypt.hashSync('restore-fixture-password', 4)
 
 describe('custom device types (Issue #301)', () => {
   let prisma: PrismaClient
@@ -257,7 +260,7 @@ describe('custom device types (Issue #301)', () => {
     schema: 'sqlite-v1',
     data: {
       users: [{
-        id: randomUUID(), username: 'admin', display_name: 'Admin', password_hash: 'x',
+        id: randomUUID(), username: 'admin', display_name: 'Admin', password_hash: RESTORE_HASH,
         role: 'admin', language: 'en', is_setup_user: true,
         created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z'
       }],

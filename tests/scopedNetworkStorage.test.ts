@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs'
 import { describe, it, expect, afterEach } from 'vitest'
 import { mkdtempSync, rmSync, readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -33,6 +34,8 @@ const net = (db: Database.Database, id: string, siteId: string, vlanId: string |
 const alloc = (db: Database.Database, id: string, netId: string, ip: string) =>
   db.prepare('INSERT INTO IpAllocation (id,network_id,ip_address,status,created_at,updated_at) VALUES (?,?,?,?,?,?)')
     .run(id, netId, ip, 'active', T, T)
+
+const RESTORE_HASH = bcrypt.hashSync('restore-fixture-password', 4)
 
 describe('scoped network uniqueness triggers', () => {
   it('deploys on dirty legacy duplicates, leaves rows unchanged, allows unrelated updates', () => {
@@ -154,7 +157,7 @@ describe('restore + legacy import conflicts', () => {
   const cleanups: Array<() => Promise<void> | void> = []
   afterEach(async () => { for (const c of cleanups.splice(0)) await c() })
 
-  const admin = () => ({ id: randomUUID(), username: 'admin', display_name: 'A', password_hash: 'x', role: 'admin', language: 'en', is_setup_user: true, created_at: T, updated_at: T })
+  const admin = () => ({ id: randomUUID(), username: 'admin', display_name: 'A', password_hash: RESTORE_HASH, role: 'admin', language: 'en', is_setup_user: true, created_at: T, updated_at: T })
   const settings = () => ({ id: 'singleton', app_name: 'ezSWM', app_logo_url: null, default_vlan: null, default_port_status: 'down', port_speeds: '["1G"]', setup_completed: true, sites_initialized: true })
   const mkNet = (o: Record<string, unknown>) => ({ id: randomUUID(), slug: randomUUID(), name: 'n', vlan_id: null, subnet: '10.0.0.0/24', gateway: null, dns_servers: '[]', description: null, is_favorite: false, exclude_from_utilization: false, created_at: T, updated_at: T, ...o })
 

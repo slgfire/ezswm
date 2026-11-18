@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { PrismaClient } from '@prisma/client'
 import { randomBytes, randomUUID } from 'node:crypto'
@@ -15,7 +16,7 @@ import { oidcConfigUpdateSchema, providerNameSchema } from '../server/validators
 const KEY_B64 = randomBytes(32).toString('base64')
 const ISSUER = 'https://idp.example.com'
 const TS = '2026-01-01T00:00:00Z'
-const HASH = '$2a$10$fixturehashfixturehashfixturehashfixturehashfixtureha'
+const HASH = bcrypt.hashSync('restore-fixture-password', 4)
 const SECRET = 'branding-test-client-secret'
 
 describe('providerNameSchema', () => {

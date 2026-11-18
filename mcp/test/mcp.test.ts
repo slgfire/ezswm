@@ -100,6 +100,27 @@ describe('read tools', () => {
     expect(names.some(n => /delete|update|create|undo|backup|user/i.test(n))).toBe(false)
   })
 
+  it.each(['switches', 'vlans', 'networks'])('maps the optional site selector to the %s REST query', async (resource) => {
+    const baseUrl = 'https://ezswm.example.com'
+    const fetchMock = vi.fn<(url: URL) => Promise<Response>>()
+      .mockImplementation(async () => json({ data: [], meta: { total: 0 } }))
+    vi.stubGlobal('fetch', fetchMock)
+    const client = new EzswmClient({ baseUrl, token: 'ezswm_t' })
+    const tool = READ_TOOLS.find(t => t.name === `list_${resource}`)!
+    const siteUuid = '12345678-1234-1234-1234-123456789abc'
+
+    await tool.handler(client, tool.schema.parse({ site_id: 'central-office' }))
+    await tool.handler(client, tool.schema.parse({ site_id: siteUuid }))
+    await tool.handler(client, tool.schema.parse({}))
+
+    const endpoint = `${baseUrl}/api/${resource}`
+    expect(fetchMock.mock.calls.map(([url]) => url.href)).toEqual([
+      `${endpoint}?site_id=central-office`,
+      `${endpoint}?site_id=${siteUuid}`,
+      endpoint
+    ])
+  })
+
   it('caps get_network allocations/ranges and reports more_available', async () => {
     const allocations = Array.from({ length: 150 }, (_, i) => ({ id: `a${i}` }))
     vi.stubGlobal('fetch', vi.fn(async (input: URL | string) => {

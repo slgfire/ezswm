@@ -1,10 +1,14 @@
 import { getCredentialFromEvent, verifyToken } from '../utils/auth'
+import { assertBrowserMutationOrigin } from '../utils/browserMutation'
 import { evaluateApiTokenPolicy, evaluateRolePolicy, normalizePolicyPath } from '../utils/requireAdmin'
 import { userRepository } from '../repositories/userRepository'
 import { apiTokenRepository } from '../repositories/apiTokenRepository'
 import { API_TOKEN_PREFIX } from '../../types/apiToken'
 import { oidcConfigRepository } from '../repositories/oidcConfigRepository'
 import { isOidcEffectivelyEnabled, isOidcSessionCurrent, readOidcRuntimeSettings } from '../utils/oidc/session'
+
+const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+const PUBLIC_SESSION_WRITES = new Set(['/api/auth/setup', '/api/auth/login', '/api/auth/logout'])
 
 const PUBLIC_PATHS = [
   '/api/auth/setup',
@@ -34,7 +38,11 @@ export default defineEventHandler(async (event) => {
   if (path.startsWith('/api/_')) return
 
   // Skip public paths (exact match)
-  if (PUBLIC_PATHS.includes(path)) return
+  const writes = WRITE_METHODS.has(method)
+  if (PUBLIC_PATHS.includes(path)) {
+    if (writes && PUBLIC_SESSION_WRITES.has(path)) assertBrowserMutationOrigin(event)
+    return
+  }
 
   // Allow GET /api/settings (for setup check; contains no secrets)
   if (path === '/api/settings' && method === 'GET') return
@@ -83,6 +91,8 @@ export default defineEventHandler(async (event) => {
     }
     return
   }
+
+  if (writes && credential.kind === 'cookie') assertBrowserMutationOrigin(event)
 
   const token = credential.token
 

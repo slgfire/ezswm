@@ -15,6 +15,7 @@ export function useApiTokens() {
   const loading = ref(false)
   const loadFailed = ref(false)
   const { apiFetch } = useApiFetch()
+  const { user } = useAuth()
   let generation = 0
 
   async function fetch() {
@@ -36,9 +37,12 @@ export function useApiTokens() {
 
   async function create(body: { name: string, expires_at?: string }) {
     const current = generation
+    const requestingUserId = user.value?.id
+    if (!requestingUserId) return null
     const created = await apiFetch<ApiTokenCreated>('/api/auth/tokens', { method: 'POST', body })
+    if (current !== generation || user.value?.id !== requestingUserId) return null
     const { token, ...metadata } = created
-    if (current === generation) tokens.value = [metadata, ...tokens.value.filter(item => item.id !== metadata.id)]
+    tokens.value = [metadata, ...tokens.value.filter(item => item.id !== metadata.id)]
     return token
   }
 

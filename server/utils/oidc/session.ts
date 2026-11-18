@@ -8,7 +8,7 @@ import type {
 import type { User } from '../../../types/user'
 import { oidcConfigRepository } from '../../repositories/oidcConfigRepository'
 import { oidcLoginTxnRepository } from '../../repositories/oidcLoginTxnRepository'
-import { userRepository } from '../../repositories/userRepository'
+import { StaleOidcConfigurationError, userRepository } from '../../repositories/userRepository'
 import { sanitizeReturnTo } from '../../validators/oidcSchemas'
 import { decideOidcAccess, deriveDisplayName, needsUserInfoForGroups, resolveGroups } from './claims'
 import {
@@ -260,21 +260,31 @@ export async function completeOidcLogin(input: {
     viewerGroups: record.viewer_groups,
     allowUnmatchedViewer: record.allow_unmatched_viewer
   })
-  if (!decision.ok) {
-    await userRepository.invalidateOidcSessions(login.issuer, login.subject)
-    return { ok: false, code: 'oidc_access_denied', detail: decision.reason }
+  try {
+    if (!decision.ok) {
+      await userRepository.invalidateOidcSessions(login.issuer, login.subject, record.config_revision)
+      return { ok: false, code: 'oidc_access_denied', detail: decision.reason }
+    }
+
+    const { user } = await userRepository.provisionOrSyncOidcUser({
+      issuer: login.issuer,
+      subject: login.subject,
+      role: decision.role,
+      configRevision: record.config_revision,
+      displayName: deriveDisplayName({ ...(userInfo ?? {}), ...login.idTokenClaims }, login.subject)
+    })
+    if (decision.groups.length > 0) {
+      await oidcConfigRepository.recordObservedGroups(decision.groups, {
+        issuer: login.issuer,
+        revision: record.config_revision
+      })
+    }
+
+    return { ok: true, user, returnTo: txn.return_to ?? '/', configRevision: record.config_revision }
+  } catch (err) {
+    if (!(err instanceof StaleOidcConfigurationError)) throw err
+    return { ok: false, code: 'oidc_transaction_invalid', detail: 'configuration_changed' }
   }
-
-  const fallbackName = login.subject
-  const { user } = await userRepository.provisionOrSyncOidcUser({
-    issuer: login.issuer,
-    subject: login.subject,
-    role: decision.role,
-    displayName: deriveDisplayName({ ...(userInfo ?? {}), ...login.idTokenClaims }, fallbackName)
-  })
-  if (decision.groups.length > 0) await oidcConfigRepository.recordObservedGroups(decision.groups)
-
-  return { ok: true, user, returnTo: txn.return_to ?? '/', configRevision: record.config_revision }
 }
 
 // ---------------------------------------------------------------------------

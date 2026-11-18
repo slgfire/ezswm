@@ -29,6 +29,8 @@ export JWT_SECRET=$(openssl rand -hex 32)
 docker compose pull && docker compose up -d
 ```
 
+Die Standard-Compose-Datei veröffentlicht die Anwendung auf der Loopback-Adresse. Für einen beabsichtigten Fernzugriff setze `EZSWM_BIND_ADDRESS` auf die vorgesehene Schnittstellenadresse und terminiere HTTPS am Proxy. Setze `EZSWM_IMAGE` auf einen verifizierten Registry-Digest, um das Deployment festzuschreiben.
+
 Die offizielle `compose.yaml` liest die Shell-Variable `JWT_SECRET` und gibt sie im Container als `NUXT_JWT_SECRET` weiter. Wenn du eine eigene Compose-Datei schreibst, setze `NUXT_JWT_SECRET` direkt:
 
 ```yaml
@@ -36,7 +38,7 @@ services:
   ezswm:
     image: ghcr.io/slgfire/ezswm:latest
     environment:
-      NUXT_JWT_SECRET: change-me-to-a-long-random-secret
+      NUXT_JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET with openssl rand -hex 32}
     volumes:
       - ./data:/app/data
 ```
@@ -58,7 +60,7 @@ docker compose -f compose.dev.yaml up --build -d
 
 | Variable | Erforderlich | Standard | Beschreibung |
 |---|---|---|---|
-| `NUXT_JWT_SECRET` | Ja | (leer) | Geheimer Schlüssel für die JWT-Token-Signierung. Verwende eine lange, zufällige Zeichenkette. |
+| `NUXT_JWT_SECRET` | Ja | (leer) | Geheimer Schlüssel für die JWT-Token-Signierung. Im Produktivbetrieb sind mindestens 32 Byte erforderlich. Erzeuge das Secret mit `openssl rand -hex 32`. |
 | `PORT` | Nein | `3000` | Port, auf dem die Anwendung lauscht. |
 | `DATA_DIR` | Nein | `/app/data` | Verzeichnis für Anwendungsdaten (SQLite-Datei, WAL und das JSON-Migrations-Archiv von älteren Installs). |
 | `DATABASE_URL` | Nein | `file:/app/data/db.sqlite` | SQLite-Pfad. Nur überschreiben, wenn du die DB außerhalb von `DATA_DIR` ablegen willst. |
@@ -76,6 +78,8 @@ Single Sign-On wird in der Oberfläche konfiguriert (**Einstellungen → Authent
 - **`PUBLIC_BASE_URL`** (auch `NUXT_PUBLIC_BASE_URL`): kanonischer Origin wie `https://ezswm.example.com` — nur Origin, kein Pfad, keine Zugangsdaten, keine Query, kein Fragment. Die Callback-URL lautet `<PUBLIC_BASE_URL>/api/auth/oidc/callback`. Hinter einem Reverse Proxy explizit setzen; ezSWM vertraut niemals ungeprüften `X-Forwarded-*`-Host-Headern.
 
 **Provider über unverschlüsseltes HTTP:** HTTPS ist die empfohlene Vorgabe für jeden Provider, auch für interne/RFC-1918-Provider. Das Kontrollkästchen *HTTP-Issuer erlauben* in der Oberfläche (keine Umgebungsvariable) ist nur eine bewusste Ausnahme für einen vertrauenswürdigen, isolierten internen oder Lab-Provider, nie für den Produktivbetrieb im öffentlichen Internet. Es umfasst auch die vom Provider angekündigten Token-/JWKS-/UserInfo-Endpunkte; HTTP kann Autorisierungscodes, Client-Zugangsdaten und Claims offenlegen und erlaubt es, Discovery-/JWKS-Antworten zu manipulieren. Das JWKS enthält öffentliche Prüfschlüssel, nicht den privaten Signaturschlüssel des Providers. TLS bleibt auch im LAN empfohlen.
+
+Behalte beim Aktualisieren einer bestehenden Installation das gleiche JWT-Secret bei. Beim Wechsel des Secrets werden aktive JWT-Sitzungen ungültig.
 
 Die offiziellen Compose-Dateien leiten `OIDC_ENCRYPTION_KEY` und `PUBLIC_BASE_URL` aus der Host-Umgebung als `NUXT_`-Variablen weiter (standardmäßig leer).
 
@@ -155,7 +159,7 @@ cp .env.example .env
 Entwicklungsserver starten:
 
 ```bash
-export JWT_SECRET=dev-secret-change-me
+export JWT_SECRET=$(openssl rand -hex 32)
 pnpm dev
 ```
 

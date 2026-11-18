@@ -2,6 +2,34 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import type { H3Event } from 'h3'
 import type { OidcSessionClaims } from '../../types/oidc'
+import { loginSchema } from '../validators/userSchemas'
+
+// Match the bcrypt variants accepted by compare(), including canonical base64 padding.
+const PASSWORD_HASH_RE = /^\$2[aby]\$(?:0[4-9]|[12][0-9]|3[01])\$[./A-Za-z0-9]{21}[.Oeu][./A-Za-z0-9]{30}[.CGKOSWaeimquy26]$/
+
+export function hasLocalLoginCredentials(username: unknown, passwordHash: unknown): boolean {
+  return loginSchema.shape.username.safeParse(username).success &&
+    typeof passwordHash === 'string' && passwordHash.length === 60 && PASSWORD_HASH_RE.test(passwordHash)
+}
+
+const JWT_SECRET_MIN_BYTES = 32
+const JWT_SECRET_PLACEHOLDERS = new Set([
+  'change-me-to-a-random-secret-in-production',
+  'change-me-to-a-long-random-secret'
+])
+
+export function hasJwtSigningKey(secret: string): boolean {
+  return Buffer.byteLength(secret.trim(), 'utf8') >= JWT_SECRET_MIN_BYTES &&
+    !JWT_SECRET_PLACEHOLDERS.has(secret.trim())
+}
+
+function getJwtSigningKey(): string {
+  const secret = useRuntimeConfig().jwtSecret
+  if (process.env.NODE_ENV === 'production' && !hasJwtSigningKey(secret)) {
+    throw new Error('Set NUXT_JWT_SECRET to a random value of at least 32 bytes')
+  }
+  return secret
+}
 
 export interface JwtPayload {
   sub: string
@@ -22,14 +50,12 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 export function signToken(payload: SignTokenPayload, rememberMe: boolean = false): string {
-  const config = useRuntimeConfig()
   const expiresIn = rememberMe ? '30d' : '7d'
-  return jwt.sign(payload, config.jwtSecret, { expiresIn, algorithm: 'HS256' })
+  return jwt.sign(payload, getJwtSigningKey(), { expiresIn, algorithm: 'HS256' })
 }
 
 export function verifyToken(token: string): SignTokenPayload & { iat: number, exp: number } {
-  const config = useRuntimeConfig()
-  return jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] }) as SignTokenPayload & { iat: number, exp: number }
+  return jwt.verify(token, getJwtSigningKey(), { algorithms: ['HS256'] }) as SignTokenPayload & { iat: number, exp: number }
 }
 
 export type RequestCredential =

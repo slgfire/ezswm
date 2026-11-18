@@ -1,7 +1,9 @@
 import type { PrismaClient } from '@prisma/client'
 import { canDecryptOidcSecret } from './oidc/crypto'
+import { hasLocalLoginCredentials } from './auth'
 import { providerNameSchema } from '../validators/oidcSchemas'
 import { BUILTIN_DEVICE_TYPES } from '../../types/ipAllocation'
+import { DEFAULT_SETTINGS } from '../../types/settings'
 import { isSafeManagementUrl } from '../validators/switchSchemas'
 import { canonicalizeCIDR, isValidCIDR } from './ipv4'
 import { findAllocationConflict, findNetworkConflict } from './networkConflicts'
@@ -113,9 +115,9 @@ function normalizeUsers(rows: unknown[] | undefined): Record<string, unknown>[] 
     }
 
     if (provider === 'local') {
-      if (!nonEmptyString(hash)) bad(`Row ${i} of user: local users require a password_hash.`)
+      if (!nonEmptyString(hash) || hash.trim().length === 0) bad(`Row ${i} of user: local users require a password_hash.`)
       if (issuer !== null || subject !== null) bad(`Row ${i} of user: local users must not have an OIDC identity.`)
-      if (r.role === 'admin') localAdmins++
+      if (r.role === 'admin' && hasLocalLoginCredentials(r.username, hash)) localAdmins++
     } else {
       if (!nonEmptyString(issuer) || !nonEmptyString(subject)) bad(`Row ${i} of user: OIDC users require oidc_issuer and oidc_subject.`)
       if (hash !== null) bad(`Row ${i} of user: OIDC users must not have a password_hash.`)
@@ -135,7 +137,7 @@ function normalizeUsers(rows: unknown[] | undefined): Record<string, unknown>[] 
     out.push(row)
   })
   if (localAdmins === 0) {
-    bad('Backup contains no local administrator with a password; restoring it could lock you out.')
+    bad('Backup requires a local administrator with a valid username and password hash.')
   }
   return out
 }
@@ -153,17 +155,30 @@ const BUILTIN_DEVICE_TYPE_SET = new Set<string>(BUILTIN_DEVICE_TYPES)
  * builtin list. Older backups without the field restore as "nothing disabled";
  * malformed or duplicate/unknown keys reject the whole restore before any write.
  */
-function normalizeSettings(rows: unknown[] | undefined): Record<string, unknown>[] | undefined {
-  if (rows === undefined) return undefined
+function normalizeSettings(rows: unknown[] | undefined): Record<string, unknown>[] {
+  if (rows === undefined || (Array.isArray(rows) && rows.length === 0)) {
+    return [{
+      ...DEFAULT_SETTINGS,
+      id: 'singleton',
+      port_speeds: JSON.stringify(DEFAULT_SETTINGS.port_speeds),
+      disabled_builtin_device_types: JSON.stringify(DEFAULT_SETTINGS.disabled_builtin_device_types),
+      setup_completed: true
+    }]
+  }
   if (!Array.isArray(rows)) bad('Backup settings must be an array.')
   if (rows.length > 1) bad('Backup contains more than one settings row.')
-  if (rows.length === 0) return []
 
   const raw = rows[0]
   if (!raw || typeof raw !== 'object') bad('Invalid settings row.')
   const src = raw as Record<string, unknown>
   const out: Record<string, unknown> = {}
   for (const col of SETTINGS_COLUMNS) if (src[col] !== undefined) out[col] = src[col]
+  if (src.setup_completed !== undefined && typeof src.setup_completed !== 'boolean') {
+    bad('Settings: setup_completed must be a boolean.')
+  }
+  // Legacy settings IDs were unrestricted; restore their fields into the canonical singleton.
+  out.id = 'singleton'
+  out.setup_completed = true
 
   if (out.disabled_builtin_device_types === undefined) {
     out.disabled_builtin_device_types = '[]'

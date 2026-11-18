@@ -277,10 +277,12 @@ async function createToken() {
     return
   }
 
+  const requestingUserId = user.value?.id
+  if (!requestingUserId) return
   pendingMutation.value = 'create'
   try {
     const token = await create({ name, ...(parsedExpiry.expiresAt ? { expires_at: parsedExpiry.expiresAt } : {}) })
-    if (!componentActive || !props.active || !user.value) return
+    if (!token || !componentActive || !props.active || user.value?.id !== requestingUserId) return
     tokenName.value = ''
     expiryInput.value = ''
     issuedToken.value = token
@@ -338,13 +340,11 @@ watch(() => props.active, (active) => {
   if (!active) clearIssuedToken()
 })
 
-watch(user, (currentUser) => {
-  if (currentUser) void fetchTokens()
-  else {
-    reset()
-    clearIssuedToken()
-  }
-})
+watch(() => user.value?.id, (currentUserId) => {
+  reset()
+  clearIssuedToken()
+  if (currentUserId) void fetchTokens()
+}, { flush: 'sync' })
 
 onMounted(() => {
   if (user.value) void fetchTokens()

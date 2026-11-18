@@ -1,3 +1,5 @@
+const MAX_RESPONSE_BYTES = 16 * 1024 * 1024
+
 /** Thin HTTP client for the ezSWM REST API. All business logic stays in the app. */
 export interface ClientOptions {
   baseUrl: string
@@ -91,8 +93,38 @@ function mapNetworkError(err: unknown): EzswmApiError {
   return new EzswmApiError(0, `Cannot reach ezSWM: ${(err as Error)?.message ?? 'network error'}`)
 }
 
+async function readResponseText(response: Response): Promise<string> {
+  if (!response.body) return ''
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  const chunks: string[] = []
+  let bytes = 0
+  try {
+    if (Number(response.headers.get('content-length')) > MAX_RESPONSE_BYTES) {
+      throw new EzswmApiError(response.status, 'ezSWM response exceeds the MCP size limit')
+    }
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      bytes += value.byteLength
+      if (bytes > MAX_RESPONSE_BYTES) {
+        throw new EzswmApiError(response.status, 'ezSWM response exceeds the MCP size limit')
+      }
+      chunks.push(decoder.decode(value, { stream: true }))
+    }
+    chunks.push(decoder.decode())
+    return chunks.join('')
+  } catch (error) {
+    await reader.cancel().catch(() => undefined)
+    if (error instanceof EzswmApiError) throw error
+    throw mapNetworkError(error)
+  } finally {
+    reader.releaseLock()
+  }
+}
+
 async function parseResponse(response: Response): Promise<unknown> {
-  const text = await response.text()
+  const text = await readResponseText(response)
   let body: unknown = undefined
   if (text) {
     try {

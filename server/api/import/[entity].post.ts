@@ -1,3 +1,4 @@
+import { readBoundedJson, ENTITY_IMPORT_MAX_BYTES } from '../../utils/boundedJson'
 import { IMPORTERS, isEntityType } from '../../utils/entityImport'
 
 // Per-entity bulk import. Body is either an array of rows or { data: rows[] }.
@@ -14,7 +15,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const body = await readBody(event)
+  const body = await readBoundedJson(event, ENTITY_IMPORT_MAX_BYTES)
   let rows: Record<string, unknown>[]
 
   if (Array.isArray(body)) {

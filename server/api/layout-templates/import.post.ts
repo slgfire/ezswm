@@ -1,10 +1,11 @@
+import { readBoundedJson, ENTITY_IMPORT_MAX_BYTES } from '../../utils/boundedJson'
 import { layoutTemplateRepository } from '../../repositories/layoutTemplateRepository'
 import { createLayoutTemplateSchema } from '../../validators/layoutTemplateSchemas'
 import { logActivity } from '../../utils/activityLog'
 import type { LayoutTemplate } from '../../../types/layoutTemplate'
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
+  const body = await readBoundedJson(event, ENTITY_IMPORT_MAX_BYTES)
   const validated = createLayoutTemplateSchema.parse(body)
 
   const template = await layoutTemplateRepository.create(validated as Omit<LayoutTemplate, 'id' | 'created_at' | 'updated_at'>)

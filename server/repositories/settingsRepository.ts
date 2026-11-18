@@ -38,36 +38,28 @@ export const settingsRepository = {
     return rowToSettings(row)
   },
 
-  async update(data: Partial<AppSettings>): Promise<AppSettings> {
-    const current = await this.get()
-    const merged = { ...current, ...data }
+  async update(data: Partial<Omit<AppSettings, 'setup_completed'>>): Promise<AppSettings> {
+    const patch = {
+      ...(data.app_name !== undefined ? { app_name: data.app_name } : {}),
+      ...(data.app_logo_url !== undefined ? { app_logo_url: data.app_logo_url } : {}),
+      ...(data.default_vlan !== undefined ? { default_vlan: data.default_vlan } : {}),
+      ...(data.default_port_status !== undefined ? { default_port_status: data.default_port_status } : {}),
+      ...(data.port_speeds !== undefined ? { port_speeds: JSON.stringify(data.port_speeds) } : {}),
+      ...(data.sites_initialized !== undefined ? { sites_initialized: data.sites_initialized } : {}),
+      ...(data.patch_panels_enabled !== undefined ? { patch_panels_enabled: data.patch_panels_enabled } : {}),
+      ...(data.switch_groups_enabled !== undefined ? { switch_groups_enabled: data.switch_groups_enabled } : {}),
+      ...(data.disabled_builtin_device_types !== undefined ? { disabled_builtin_device_types: JSON.stringify(data.disabled_builtin_device_types) } : {})
+    }
     const row = await prisma.appSettings.upsert({
       where: { id: SINGLETON_ID },
       create: {
         id: SINGLETON_ID,
-        app_name: merged.app_name,
-        app_logo_url: merged.app_logo_url,
-        default_vlan: merged.default_vlan,
-        default_port_status: merged.default_port_status,
-        port_speeds: JSON.stringify(merged.port_speeds),
-        setup_completed: merged.setup_completed,
-        sites_initialized: merged.sites_initialized,
-        patch_panels_enabled: merged.patch_panels_enabled,
-        switch_groups_enabled: merged.switch_groups_enabled,
-        disabled_builtin_device_types: JSON.stringify(merged.disabled_builtin_device_types)
+        ...DEFAULT_SETTINGS,
+        port_speeds: JSON.stringify(DEFAULT_SETTINGS.port_speeds),
+        disabled_builtin_device_types: JSON.stringify(DEFAULT_SETTINGS.disabled_builtin_device_types),
+        ...patch
       },
-      update: {
-        app_name: merged.app_name,
-        app_logo_url: merged.app_logo_url,
-        default_vlan: merged.default_vlan,
-        default_port_status: merged.default_port_status,
-        port_speeds: JSON.stringify(merged.port_speeds),
-        setup_completed: merged.setup_completed,
-        sites_initialized: merged.sites_initialized,
-        patch_panels_enabled: merged.patch_panels_enabled,
-        switch_groups_enabled: merged.switch_groups_enabled,
-        disabled_builtin_device_types: JSON.stringify(merged.disabled_builtin_device_types)
-      }
+      update: patch
     })
     return rowToSettings(row)
   }

@@ -1,3 +1,4 @@
+import { readBoundedJson, ENTITY_IMPORT_MAX_BYTES } from '../../utils/boundedJson'
 import { IMPORTERS, isEntityType } from '../../utils/entityImport'
 
 // Legacy per-entity import endpoint. Body shape: { type, data: rows[] }.
@@ -5,7 +6,7 @@ import { IMPORTERS, isEntityType } from '../../utils/entityImport'
 // implementation routes through the same per-entity importer as
 // /api/import/{entity}.
 export default defineEventHandler(async (event) => {
-  const body = await readBody<{ type?: string; data?: unknown }>(event)
+  const body = await readBoundedJson<{ type?: string; data?: unknown }>(event, ENTITY_IMPORT_MAX_BYTES)
 
   if (!body || !body.type || !Array.isArray(body.data)) {
     throw createError({ statusCode: 400, message: 'Request body must include "type" and "data" array.' })

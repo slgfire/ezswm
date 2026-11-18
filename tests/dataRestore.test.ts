@@ -1,9 +1,13 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
+import bcrypt from 'bcryptjs'
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest'
 import { randomUUID } from 'node:crypto'
 import type { PrismaClient } from '@prisma/client'
 
 import { createTestPrisma } from './testHelpers'
 import { restoreAll } from '../server/utils/dataRestore'
+import { userRepository } from '../server/repositories/userRepository'
+
+const RESTORE_HASH = bcrypt.hashSync('restore-fixture-password', 4)
 
 describe('restoreAll', () => {
   let prisma: PrismaClient
@@ -29,7 +33,7 @@ describe('restoreAll', () => {
 
   /** A local emergency administrator (restore rejects payloads without one). */
   const localAdmin = () => ({
-    id: randomUUID(), username: 'admin', display_name: 'Admin', password_hash: '$2a$10$fixturehashfixturehashfixturehashfixturehashfixtureha',
+    id: randomUUID(), username: 'admin', display_name: 'Admin', password_hash: RESTORE_HASH,
     role: 'admin', language: 'en', is_setup_user: true,
     created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z'
   })
@@ -41,7 +45,7 @@ describe('restoreAll', () => {
       schema: 'sqlite-v1',
       data: {
         users: [{
-          id: userId, username: 'admin', display_name: 'Admin', password_hash: 'x',
+          id: userId, username: 'admin', display_name: 'Admin', password_hash: RESTORE_HASH,
           role: 'admin', language: 'en', is_setup_user: true,
           created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z'
         }],
@@ -72,6 +76,52 @@ describe('restoreAll', () => {
     const sites = await prisma.site.findMany()
     expect(sites.length).toBe(1)
     expect(sites[0]!.name).toBe('Restored')
+  })
+
+  it('restores legacy settings under the canonical ID and preserves their values', async () => {
+    const payload = mkPayload()
+    Object.assign(payload.data.settings[0]!, { id: 'legacy-id', app_name: 'Legacy', setup_completed: false })
+
+    await restoreAll(prisma, payload)
+
+    expect(await prisma.appSettings.findMany()).toMatchObject([
+      { id: 'singleton', app_name: 'Legacy', setup_completed: true, sites_initialized: true }
+    ])
+  })
+
+  it('reconciles a legacy settings row on startup without losing its values', async () => {
+    const admin = localAdmin()
+    await prisma.user.create({ data: admin })
+    await prisma.appSettings.create({
+      data: { id: 'legacy-id', app_name: 'Legacy', default_port_status: 'down', sites_initialized: true }
+    })
+
+    vi.stubGlobal('defineNitroPlugin', (plugin: unknown) => plugin)
+    try {
+      const { default: initData } = await import('../server/plugins/initData')
+      await initData({} as Parameters<typeof initData>[0])
+    } finally {
+      vi.unstubAllGlobals()
+    }
+
+    expect(await prisma.appSettings.findMany()).toMatchObject([
+      { id: 'singleton', app_name: 'Legacy', setup_completed: true, sites_initialized: true }
+    ])
+  })
+
+  it('keeps the setup flag unchanged when bootstrap rejects an existing account', async () => {
+    await prisma.user.create({ data: localAdmin() })
+    await prisma.appSettings.create({
+      data: { id: 'singleton', app_name: 'Existing', default_port_status: 'down' }
+    })
+
+    await expect(userRepository.bootstrap({
+      username: 'other', display_name: 'Other', password_hash: RESTORE_HASH, language: 'en'
+    })).rejects.toMatchObject({ statusCode: 409 })
+
+    expect(await prisma.user.count()).toBe(1)
+    expect(await prisma.appSettings.findUniqueOrThrow({ where: { id: 'singleton' } }))
+      .toMatchObject({ setup_completed: false })
   })
 
   it('rejects payload without schema marker if invalid', async () => {

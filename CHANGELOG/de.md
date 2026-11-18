@@ -9,6 +9,18 @@
 ### Behoben
 - MCP-Image-Publish-Workflow: Die GHCR-Tag-Prüfung erkennt jetzt die exakte Buildx-Meldung „`<Image>:<Version>`: not found“ (sowie die klassischen „manifest unknown“-Meldungen für genau dieses Image) als fehlenden Tag, sodass eine neue Version gepusht werden kann. Vorhandene Tags werden weiterhin übersprungen; Authentifizierungs-, Netzwerk- und alle anderen oder gemischten Fehler lassen den Lauf weiterhin fehlschlagen. Ein erfolgreicher Login beweist keine Schreibberechtigung für das Paket.
 
+## [0.47.3] — 2026-11-18
+
+### Behoben
+- Standard-Compose an Loopback binden und die Image-Auswahl per Digest ermöglichen.
+- Für JWT im Produktivbetrieb mindestens 32 Byte verlangen und bekannte Platzhalter ablehnen. Einen Zufallswert mit `openssl rand -hex 32` erzeugen.
+- Ersten Admin atomar einrichten. Beim Restore einen anmeldbaren lokalen Admin prüfen und kanonische Einstellungen wiederherstellen.
+- Veraltete OIDC-Anmeldeentscheidungen verwerfen und parallele Discovery derselben Konfiguration zusammenfassen.
+- MCP-Standortfilter für Switches, VLANs und Netzwerke anwenden sowie Antwortgröße und aktive HTTP-Verbindungen begrenzen.
+- Browser-Schreibzugriffe anderer Origins blockieren, fehlgeschlagene Passwortversuche drosseln und JSON-Uploads für Import und Restore begrenzen.
+- Einmalige API-Token-Antworten vor Caching schützen und in der Oberfläche bei einem Kontowechsel verwerfen.
+- Explizite Switch-Standortauswahl strikt behandeln, Bereichssuche nach Standort filtern und Tabellenformel-Präfixe im CSV-Export neutralisieren. JSON bewahrt die Originalwerte.
+
 ## [0.47.2] — 2026-11-11
 
 ### Geändert

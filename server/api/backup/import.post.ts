@@ -1,3 +1,4 @@
+import { readBoundedJson, RESTORE_MAX_BYTES } from '../../utils/boundedJson'
 import { prisma } from '../../db/client'
 import { restoreAll } from '../../utils/dataRestore'
 import { clearOidcClientCache } from '../../utils/oidc/client'
@@ -11,7 +12,7 @@ import { getKeyState, readOidcRuntimeSettings } from '../../utils/oidc/session'
 // only moves forward (invalidating prior SSO sessions); a secret this instance's
 // OIDC_ENCRYPTION_KEY cannot decrypt disables SSO (local login keeps working).
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
+  const body = await readBoundedJson(event, RESTORE_MAX_BYTES)
   try {
     const keyState = getKeyState(readOidcRuntimeSettings())
     const result = await restoreAll(prisma, body, { oidcKey: keyState.key ?? null })
