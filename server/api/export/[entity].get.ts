@@ -14,8 +14,11 @@ const CSV_HEADERS: Record<EntityType, string[]> = {
 
 function escapeCsvValue(value: unknown): string {
   if (value === null || value === undefined) return ''
-  const str = Array.isArray(value) ? value.join(';') : String(value)
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+  const text = Array.isArray(value) ? value.join(';') : String(value)
+  // Text prepended with an apostrophe is treated as literal data by spreadsheets.
+  const formulaLike = typeof value !== 'number' && (/^[\t\r\n]/u.test(text) || /^\s*[=+\-@＝＋－＠]/u.test(text))
+  const str = formulaLike ? "'" + text : text
+  if (formulaLike || /[,"\r\n]/u.test(str)) {
     return `"${str.replace(/"/g, '""')}"`
   }
   return str

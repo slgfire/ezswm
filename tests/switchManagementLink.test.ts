@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { PrismaClient } from '@prisma/client'
 import { randomUUID } from 'node:crypto'
@@ -12,6 +13,8 @@ import publicSwitchHandler from '../server/api/p/[token].get'
 
 const base = { site_id: 's', name: 'sw' }
 const BAD_URLS = ['javascript:alert(1)', 'data:text/html,x', 'ftp://h/', 'https://user:pw@h/', 'https://u@h/', '//h/x', 'not a url', 'https://h/ x', `https://h/${'a'.repeat(2050)}`, '']
+
+const RESTORE_HASH = bcrypt.hashSync('restore-fixture-password', 4)
 
 describe('switch management link validation', () => {
   it('accepts http(s) URLs (trimmed), protocols and explicit null on update', () => {
@@ -105,7 +108,7 @@ describe('switch management link persistence', () => {
     return {
       schema: 'sqlite-v1',
       data: {
-        users: [{ id: randomUUID(), username: 'admin', display_name: 'Admin', password_hash: 'x', role: 'admin', language: 'en', is_setup_user: true, created_at: now, updated_at: now }],
+        users: [{ id: randomUUID(), username: 'admin', display_name: 'Admin', password_hash: RESTORE_HASH, role: 'admin', language: 'en', is_setup_user: true, created_at: now, updated_at: now }],
         sites: [{ id: siteId, slug: 'r', name: 'R', description: null, created_at: now, updated_at: now }],
         switches: [{ id: randomUUID(), site_id: siteId, slug: 'sw', name: 'sw', tags: '[]', configured_vlans: '[]', is_favorite: false, created_at: now, updated_at: now, ...sw }]
       }

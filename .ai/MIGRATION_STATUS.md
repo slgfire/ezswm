@@ -2,6 +2,16 @@
 
 ## Latest Stage
 
+### Security audit hardening (v0.47.3, 2026-11-18)
+
+The release candidate combines atomic first-admin setup, canonical and login-safe
+restores, OIDC revision checks, and MCP site filter fixes. It also adds bounded
+OIDC discovery, request and response limits, browser Origin validation, password
+attempt throttling, API-token response protection, consistent site selectors,
+and spreadsheet-safe CSV prefixes. See the release changelog for user-facing
+details. Production validation must verify the versioned image, SQLite recovery
+and role access through the configured TLS proxy.
+
 Integration 0.47.2 (2026-11-11, branch `fix/dashboard-follow-ups`; VALIDATED, PR pending CI): `origin/main` 16d49b6 (released v0.47.1, dependency consolidation #342) was merged into the branch; the dashboard follow-ups and unified E2E harness ship as 0.47.2 because 0.47.1 is already released. Fresh validation on the merged base with isolated Node 26.13.0 / pnpm 11.28.10 (official tarball, SHA-256 checked): unit 1404, typecheck, lint, docs build and the E2E runner self-check passed; MCP typecheck, 52 tests, build and pack smoke passed; the full central E2E run passed 357/357 (0 skipped, 0 failed, 0 flaky, Chromium only); the no-cache Docker build (image sha256:75b648bf…e88bc) reported version 0.47.2, database_ok true, healthy, 17 migrations, quick_check ok, foreign_key_check 0, and a fixture admin token survived a restart; a nuxt dev smoke on a fresh scratch DB reported health ok/database_ok true and anonymous /api/sites 401 (`pnpm exec` shows version 0.0.0 because npm_package_version is only set by `pnpm dev`). Integration fixes: the credential-ignore test now asserts the run-specific private E2E auth contract; the setup-wizard Playwright project depends on `auth`; the persona login waits for `isHydrating === false` before filling. Not tested: Safari/real devices, a real identity provider, a security audit (separate chat), production deployment.
 
 Dependency refresh (2026-11-10, DONE locally; implementation commit 2519866; upstream delivery tracked by the consolidated PR, no merge): App, Docs and MCP dependencies were updated for release 0.47.1, covering Dependabot PRs #279, #316, #318, #323, #327, #328, #335, #336, #339, #340 and #341. Nuxt 4.6.4, Nuxt UI 4.12.0, Tailwind 4.3.4, Prisma CLI/client/SQLite adapter 7.10.1, marked 18.1.3, nanoid 6.0.2, v-network-graph 0.10.2, OpenID client 6.8.9, MCP SDK 1.32.2, MCP Zod 4.6.7, Mermaid 11.17.2 and development tools were updated. TypeScript 6, Vitest 4, better-sqlite3 12 and Mermaid 11 remain on the approved major lines. All workspace dependency pins are exact. pnpm is 11.28.10; the seven-day npm release-age restriction remains, with exact-version exceptions only for @playwright/test, playwright and playwright-core 1.65.0. Tiptap's transitive packages were aligned within version 3. App/MCP Docker stages and CI use Node 26.13.0; the Alpine image is pinned to multi-platform digest sha256:8996bb5821d62a8fd9bb27c1cb07462f3fdce6e47d640c6a881ead0b064ce216. Docker installs the manifest-pinned pnpm through npm because Node 26 no longer bundles Corepack. GitHub Actions use exact stable release tags meeting the age rule; the pinned publishing npm remains 11.21.1 (already current under that rule).

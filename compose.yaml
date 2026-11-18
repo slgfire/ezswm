@@ -16,12 +16,12 @@
 
 services:
   ezswm:
-    image: ghcr.io/slgfire/ezswm:latest
+    image: ${EZSWM_IMAGE:-ghcr.io/slgfire/ezswm:latest}
     container_name: ezswm
     restart: unless-stopped
     user: "${PUID:-1000}:${PGID:-1000}"
     ports:
-      - "${PORT:-3000}:3000"
+      - "${EZSWM_BIND_ADDRESS:-127.0.0.1}:${PORT:-3000}:3000"
     volumes:
       - ./data:/app/data
     environment:

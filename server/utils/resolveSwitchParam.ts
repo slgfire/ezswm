@@ -20,11 +20,14 @@ export async function resolveSwitchParam(event: H3Event): Promise<Switch> {
   }
 
   const query = getQuery(event)
-  const siteIdParam = typeof query.siteId === 'string' ? query.siteId : undefined
-  const siteUuid = (await resolveSiteIdQuery(siteIdParam)) ?? undefined
+  if (query.siteId !== undefined && (typeof query.siteId !== 'string' || !query.siteId)) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid switch site selector' })
+  }
+  const siteUuid = await resolveSiteIdQuery(query.siteId)
+  if (siteUuid === null) throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
 
   const sw = await switchRepository.getByIdOrSlug(id, siteUuid)
-  if (!sw) {
+  if (!sw || (siteUuid !== undefined && sw.site_id !== siteUuid)) {
     throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
   }
   return sw

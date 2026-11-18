@@ -2,7 +2,7 @@
 # Use this when iterating on the Dockerfile or testing unreleased changes.
 #
 # Usage:
-#   export JWT_SECRET=dev-secret-change-me
+#   export JWT_SECRET=$(openssl rand -hex 32)
 #   docker compose -f compose.dev.yaml up --build
 #
 # See compose.yaml for PUID/PGID and bind-mount notes.

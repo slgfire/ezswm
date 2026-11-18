@@ -1,26 +1,12 @@
 import { switchRepository } from '../../repositories/switchRepository'
 import { updateSwitchSchema } from '../../validators/switchSchemas'
 import { logActivity } from '../../utils/activityLog'
-import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
+import { resolveSwitchParam } from '../../utils/resolveSwitchParam'
 import { settingsRepository } from '../../repositories/settingsRepository'
 import type { Switch } from '../../../types/switch'
 
 export default defineEventHandler(async (event) => {
-  const id = event.context.params?.id
-
-  if (!id) {
-    throw createError({ statusCode: 400, statusMessage: 'Missing switch ID' })
-  }
-
-  const query = getQuery(event)
-  const siteIdParam = typeof query.siteId === 'string' ? query.siteId : undefined
-  const siteUuid = await resolveSiteIdQuery(siteIdParam) ?? undefined
-
-  const existing = await switchRepository.getByIdOrSlug(id, siteUuid)
-
-  if (!existing) {
-    throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
-  }
+  const existing = await resolveSwitchParam(event)
 
   const body = await readBody(event)
   const parsed = updateSwitchSchema.parse(body)
@@ -30,7 +16,7 @@ export default defineEventHandler(async (event) => {
   const updated = await switchRepository.update(
     existing.id,
     parsed as Partial<Omit<Switch, 'id' | 'ports' | 'created_at'>>,
-    siteUuid
+    existing.site_id
   )
 
   await logActivity(event, {

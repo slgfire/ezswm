@@ -24,6 +24,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  setHeader(event, 'Cache-Control', 'no-store')
   setResponseStatus(event, 201)
   return result.token
 })

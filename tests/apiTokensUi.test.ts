@@ -71,6 +71,7 @@ describe('API token UI helpers', () => {
     })
     vi.stubGlobal('ref', ref)
     vi.stubGlobal('useApiFetch', () => ({ apiFetch }))
+    vi.stubGlobal('useAuth', () => ({ user: ref({ id: 'fixture-user' }) }))
 
     const { useApiTokens } = await import('../app/composables/useApiTokens')
     const apiTokens = useApiTokens()

@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { PrismaClient } from '@prisma/client'
 import { randomBytes, randomUUID } from 'node:crypto'
@@ -8,13 +9,13 @@ import { encryptOidcSecret, parseOidcEncryptionKey } from '../server/utils/oidc/
 import { buildOidcSessionClaims } from '../server/utils/oidc/session'
 import { restoreAll } from '../server/utils/dataRestore'
 import { oidcConfigRepository } from '../server/repositories/oidcConfigRepository'
-import { userRepository } from '../server/repositories/userRepository'
+import { StaleOidcConfigurationError, userRepository } from '../server/repositories/userRepository'
 
 const KEY_B64 = randomBytes(32).toString('base64')
 const OTHER_KEY_B64 = randomBytes(32).toString('base64')
 const ISSUER = 'https://idp.example.com'
 const TS = '2026-01-01T00:00:00Z'
-const HASH = '$2a$10$fixturehashfixturehashfixturehashfixturehashfixtureha'
+const HASH = bcrypt.hashSync('restore-fixture-password', 4)
 
 const settingsRow = () => ({
   id: 'singleton', app_name: 'ezSWM', app_logo_url: null, default_vlan: null,
@@ -75,6 +76,52 @@ describe('backup/restore with OIDC (restoreAll + real import/export routes)', ()
     })
   }
 
+  it('allows initial setup once and the restored local administrator to sign in', async () => {
+    await prisma.appSettings.create({
+      data: { id: 'singleton', app_name: 'ezSWM', default_port_status: 'down' }
+    })
+    const setup = {
+      method: 'POST',
+      path: '/api/auth/setup',
+      body: { username: 'initial', display_name: 'Initial', password: 'setup-fixture-password' }
+    }
+
+    expect((await dispatch(setup)).status).toBe(200)
+    expect((await dispatch(setup)).status).toBe(403)
+    expect(await prisma.user.count()).toBe(1)
+
+    await restoreAll(prisma, payload({ users: [localAdminRow()] }))
+    const login = await dispatch({
+      method: 'POST',
+      path: '/api/auth/login',
+      body: { username: 'admin', password: 'restore-fixture-password' }
+    })
+
+    expect(login.status).toBe(200)
+    expect(login.body).toMatchObject({ user: { username: 'admin', role: 'admin' } })
+    expect(login.setCookies).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'ezswm_token' })]))
+  })
+
+  it('allows the current OIDC configuration to write and rejects mismatched repository writes', async () => {
+    const cfg = await prisma.oidcConfig.create({ data: oidcCfgRow() })
+    const input = { issuer: ISSUER, subject: 'sub-1', role: 'viewer', displayName: 'Viewer' } as const
+    const { user } = await userRepository.provisionOrSyncOidcUser({
+      ...input, configRevision: cfg.config_revision
+    })
+
+    await expect(userRepository.provisionOrSyncOidcUser({ ...input, configRevision: cfg.config_revision - 1 }))
+      .rejects.toBeInstanceOf(StaleOidcConfigurationError)
+    await expect(userRepository.invalidateOidcSessions(ISSUER, input.subject, cfg.config_revision - 1))
+      .rejects.toBeInstanceOf(StaleOidcConfigurationError)
+    await expect(oidcConfigRepository.recordObservedGroups(['old-group'], {
+      issuer: ISSUER, revision: cfg.config_revision - 1
+    })).resolves.toEqual([])
+
+    expect(await prisma.user.findUniqueOrThrow({ where: { id: user.id } }))
+      .toMatchObject({ role: 'viewer', oidc_session_version: 0 })
+    expect((await oidcConfigRepository.get()).observed_groups).toEqual([])
+  })
+
   describe('user integrity', () => {
     it('legacy backups (no OIDC columns) restore as local users with defaults', async () => {
       const legacy = localAdminRow()
@@ -100,7 +147,9 @@ describe('backup/restore with OIDC (restoreAll + real import/export routes)', ()
         ['viewer only', { users: [localAdminRow({ role: 'viewer' })] }],
         ['OIDC admin only', { users: [oidcUserRow({ role: 'admin' })] }],
         ['local admin with empty hash', { users: [localAdminRow({ password_hash: '' })] }],
-        ['local admin with null hash', { users: [localAdminRow({ password_hash: null })] }]
+        ['local admin with null hash', { users: [localAdminRow({ password_hash: null })] }],
+        ['local admin with a malformed hash', { users: [localAdminRow({ password_hash: 'invalid' })] }],
+        ['local admin with an empty username', { users: [localAdminRow({ username: '' })] }]
       ]
       for (const [label, data] of bads) {
         await expect(restoreAll(prisma, payload(data)), label).rejects.toMatchObject({ statusCode: 400 })

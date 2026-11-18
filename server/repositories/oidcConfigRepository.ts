@@ -200,10 +200,10 @@ export const oidcConfigRepository = {
    * Record groups seen on a SUCCESSFUL login (suggestions only, bounded, sanitized).
    * Does not change the revision and never grants anything.
    */
-  async recordObservedGroups(groups: readonly string[]): Promise<string[]> {
+  async recordObservedGroups(groups: readonly string[], policy?: { issuer: string, revision: number }): Promise<string[]> {
     return prisma.$transaction(async (tx) => {
       const row = await tx.oidcConfig.findUnique({ where: { id: SINGLETON_ID } })
-      if (!row) return []
+      if (!row || (policy && (!row.enabled || row.issuer !== policy.issuer || row.config_revision !== policy.revision))) return []
       const merged = mergeObservedGroups(parseStringArray(row.observed_groups, []), groups)
       await tx.oidcConfig.update({ where: { id: SINGLETON_ID }, data: { observed_groups: JSON.stringify(merged) } })
       return merged

@@ -108,6 +108,7 @@ export default defineEventHandler(async (event) => {
   const ranges = (await ipRangeRepository.list())
     .filter(r => {
       const net = allNetworks.find(n => n.id === r.network_id)
+      if (siteId && net?.site_id !== siteId) return false
       return (
         r.start_ip.includes(q) ||
         r.end_ip.includes(q) ||

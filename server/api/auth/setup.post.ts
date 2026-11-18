@@ -4,8 +4,7 @@ import { setupSchema } from '../../validators/userSchemas'
 import { hashPassword, signToken, setAuthCookie } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const settings = await settingsRepository.get()
-  if (settings.setup_completed) {
+  if ((await settingsRepository.get()).setup_completed) {
     throw createError({ statusCode: 403, message: 'Setup has already been completed' })
   }
 
@@ -14,16 +13,12 @@ export default defineEventHandler(async (event) => {
 
   const passwordHash = await hashPassword(validated.password)
 
-  const user = await userRepository.create({
+  const user = await userRepository.bootstrap({
     username: validated.username,
     display_name: validated.display_name,
     password_hash: passwordHash,
-    role: 'admin',
-    language: validated.language,
-    is_setup_user: true
+    language: validated.language
   })
-
-  await settingsRepository.update({ setup_completed: true })
 
   const token = signToken({
     sub: user.id,

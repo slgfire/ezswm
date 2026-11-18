@@ -84,7 +84,18 @@ async function assertStartSiteExists(tx: Tx, startSiteId: string | null | undefi
   }
 }
 
+export class StaleOidcConfigurationError extends Error {}
+
+async function assertOidcConfiguration(tx: Tx, issuer: string, revision: number): Promise<void> {
+  const config = await tx.oidcConfig.findUnique({
+    where: { id: 'singleton', enabled: true, issuer, config_revision: revision },
+    select: { id: true }
+  })
+  if (!config) throw new StaleOidcConfigurationError('OIDC configuration changed during login')
+}
+
 export interface ProvisionOidcUserInput {
+  configRevision?: number
   issuer: string
   subject: string
   role: UserRole
@@ -93,6 +104,38 @@ export interface ProvisionOidcUserInput {
 }
 
 export const userRepository = {
+  async bootstrap(data: Pick<CreateLocalUserInput, 'username' | 'display_name' | 'password_hash' | 'language'>): Promise<User> {
+    return prisma.$transaction(async (tx) => {
+      const claim = await tx.appSettings.updateMany({
+        where: { id: 'singleton', setup_completed: false },
+        data: { setup_completed: true }
+      })
+      if (claim.count !== 1) {
+        throw createError({ statusCode: 403, message: 'Setup has already been completed' })
+      }
+      if (await tx.user.count() !== 0) {
+        throw createError({ statusCode: 409, message: 'Cannot complete setup while users already exist' })
+      }
+
+      const now = new Date().toISOString()
+      const row = await tx.user.create({
+        data: {
+          id: randomUUID(),
+          username: data.username,
+          display_name: data.display_name,
+          password_hash: data.password_hash,
+          role: 'admin',
+          language: data.language,
+          is_setup_user: true,
+          auth_provider: 'local',
+          created_at: now,
+          updated_at: now
+        }
+      })
+      return rowToUser(row)
+    })
+  },
+
   async list(): Promise<User[]> {
     const rows = await prisma.user.findMany({ orderBy: { username: 'asc' } })
     return rows.map(rowToUser)
@@ -222,48 +265,51 @@ export const userRepository = {
    * Safe under concurrent first logins: identity unique constraint + retry.
    */
   async provisionOrSyncOidcUser(input: ProvisionOidcUserInput): Promise<{ user: User, created: boolean }> {
-    const sync = async (existing: UserRow): Promise<User> => {
-      const row = await prisma.user.update({
-        where: { id: existing.id },
-        data: {
-          role: input.role,
-          display_name: input.displayName,
-          updated_at: new Date().toISOString()
-        }
-      })
-      return rowToUser(row)
-    }
-
     for (let attempt = 0; attempt < 4; attempt++) {
-      const existing = await prisma.user.findUnique({
-        where: { oidc_issuer_oidc_subject: { oidc_issuer: input.issuer, oidc_subject: input.subject } }
-      })
-      if (existing) return { user: await sync(existing), created: false }
-
-      const now = new Date().toISOString()
       try {
-        const row = await prisma.user.create({
-          data: {
-            id: randomUUID(),
-            username: deriveOidcUsername(input.issuer, input.subject, attempt),
-            display_name: input.displayName,
-            password_hash: null,
-            role: input.role,
-            language: input.language ?? 'en',
-            is_setup_user: false,
-            auth_provider: 'oidc',
-            oidc_issuer: input.issuer,
-            oidc_subject: input.subject,
-            oidc_session_version: 0,
-            created_at: now,
-            updated_at: now
+        return await prisma.$transaction(async (tx) => {
+          if (input.configRevision !== undefined) {
+            await assertOidcConfiguration(tx, input.issuer, input.configRevision)
           }
+
+          const existing = await tx.user.findUnique({
+            where: { oidc_issuer_oidc_subject: { oidc_issuer: input.issuer, oidc_subject: input.subject } }
+          })
+          if (existing) {
+            const row = await tx.user.update({
+              where: { id: existing.id },
+              data: {
+                role: input.role,
+                display_name: input.displayName,
+                updated_at: new Date().toISOString()
+              }
+            })
+            return { user: rowToUser(row), created: false }
+          }
+
+          const now = new Date().toISOString()
+          const row = await tx.user.create({
+            data: {
+              id: randomUUID(),
+              username: deriveOidcUsername(input.issuer, input.subject, attempt),
+              display_name: input.displayName,
+              password_hash: null,
+              role: input.role,
+              language: input.language ?? 'en',
+              is_setup_user: false,
+              auth_provider: 'oidc',
+              oidc_issuer: input.issuer,
+              oidc_subject: input.subject,
+              oidc_session_version: 0,
+              created_at: now,
+              updated_at: now
+            }
+          })
+          return { user: rowToUser(row), created: true }
         })
-        return { user: rowToUser(row), created: true }
       } catch (err) {
         if (!isPrismaUniqueError(err)) throw err
-        // Either a concurrent first login (identity now exists → next loop syncs)
-        // or a username collision (next attempt derives a longer username).
+        // An identity or username collision gets a new transaction and policy check.
       }
     }
     throw createError({ statusCode: 500, message: 'Could not provision OIDC user' })
@@ -275,9 +321,10 @@ export const userRepository = {
    * and permanently deletes the identity's API tokens in the same transaction. Returns false if the identity has no
    * account (nothing is created, nothing changes). Never call for unvalidated input.
    */
-  async invalidateOidcSessions(issuer: string, subject: string): Promise<boolean> {
+  async invalidateOidcSessions(issuer: string, subject: string, configRevision?: number): Promise<boolean> {
     // One transaction: session invalidation and permanent API-token deletion cannot be split.
     return prisma.$transaction(async (tx) => {
+      if (configRevision !== undefined) await assertOidcConfiguration(tx, issuer, configRevision)
       const user = await tx.user.findFirst({ where: { oidc_issuer: issuer, oidc_subject: subject, auth_provider: 'oidc' }, select: { id: true } })
       if (!user) return false
       await tx.user.update({ where: { id: user.id }, data: { oidc_session_version: { increment: 1 } } })

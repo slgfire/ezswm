@@ -8,6 +8,8 @@ import { oidcConfigRepository } from '../repositories/oidcConfigRepository'
 import { oidcLoginTxnRepository } from '../repositories/oidcLoginTxnRepository'
 import { canDecryptOidcSecret } from '../utils/oidc/crypto'
 import { getKeyState, readOidcRuntimeSettings } from '../utils/oidc/session'
+import { hasJwtSigningKey, hasLocalLoginCredentials } from '../utils/auth'
+import { DEFAULT_SETTINGS } from '../../types/settings'
 
 // Legacy JSON files the migration looks for. If any of these are present in
 // dataDir AND the database is empty, we trigger the one-shot import.
@@ -45,8 +47,10 @@ async function isDatabaseEmpty(): Promise<boolean> {
 export default defineNitroPlugin(async () => {
   const config = useRuntimeConfig()
 
-  if (!config.jwtSecret || config.jwtSecret === 'change-me-to-a-random-secret-in-production') {
-    console.warn('[ezSWM] WARNING: JWT_SECRET is not set or using default value. Set a secure secret in production!')
+  if (!hasJwtSigningKey(config.jwtSecret)) {
+    const message = '[ezSWM] Set NUXT_JWT_SECRET to a random value of at least 32 bytes'
+    if (process.env.NODE_ENV === 'production') throw new Error(message)
+    console.warn(message)
   }
 
   try {
@@ -87,25 +91,42 @@ export default defineNitroPlugin(async () => {
     }
   }
 
-  // Ensure a singleton AppSettings row exists. The migration writes one if a
-  // settings.json was present; on a fresh install we create defaults here.
-  const settingsCount = await prisma.appSettings.count()
-  if (settingsCount === 0) {
-    await prisma.appSettings.create({
-      data: {
-        id: 'singleton',
-        app_name: 'ezSWM',
-        app_logo_url: null,
-        default_vlan: null,
-        default_port_status: 'down',
-        port_speeds: JSON.stringify(['100M', '1G', '2.5G', '10G', '40G', '100G']),
-        setup_completed: false,
-        sites_initialized: false,
-        patch_panels_enabled: false,
-        switch_groups_enabled: true
+  await prisma.$transaction(async (tx) => {
+    let settings = await tx.appSettings.findUnique({ where: { id: 'singleton' } })
+    if (!settings) {
+      const legacy = await tx.appSettings.findMany({ take: 2 })
+      if (legacy.length > 1) {
+        console.error('[ezSWM] Multiple legacy settings rows require manual reconciliation.')
+        return
       }
+      const [soleLegacyRow] = legacy
+      settings = soleLegacyRow
+        ? await tx.appSettings.update({
+            where: { id: soleLegacyRow.id },
+            data: { id: 'singleton' }
+          })
+        : await tx.appSettings.create({
+            data: {
+              ...DEFAULT_SETTINGS,
+              id: 'singleton',
+              port_speeds: JSON.stringify(DEFAULT_SETTINGS.port_speeds),
+              disabled_builtin_device_types: JSON.stringify(DEFAULT_SETTINGS.disabled_builtin_device_types)
+            }
+          })
+    }
+
+    // Keep imported installations with a local administrator on the login path.
+    if (settings.setup_completed) return
+    const admins = await tx.user.findMany({
+      where: { role: 'admin', auth_provider: 'local', oidc_issuer: null, oidc_subject: null },
+      select: { username: true, password_hash: true }
     })
-  }
+    if (!admins.some(admin => hasLocalLoginCredentials(admin.username, admin.password_hash))) return
+    await tx.appSettings.updateMany({
+      where: { id: 'singleton', setup_completed: false },
+      data: { setup_completed: true }
+    })
+  })
 
   // Legacy backfill: if older installs had sites but settings.sites_initialized
   // never got set, treat the install as initialized so returning users don't

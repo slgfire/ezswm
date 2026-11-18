@@ -29,6 +29,8 @@ export JWT_SECRET=$(openssl rand -hex 32)
 docker compose pull && docker compose up -d
 ```
 
+The default Compose file publishes the application on loopback. For an intentional remote connection, set `EZSWM_BIND_ADDRESS` to the intended interface address and terminate HTTPS at your proxy. Set `EZSWM_IMAGE` to a verified registry digest to pin the deployment.
+
 The official `compose.yaml` reads the shell variable `JWT_SECRET` and passes it into the container as `NUXT_JWT_SECRET`. If you write your own compose file, set `NUXT_JWT_SECRET` directly:
 
 ```yaml
@@ -36,7 +38,7 @@ services:
   ezswm:
     image: ghcr.io/slgfire/ezswm:latest
     environment:
-      NUXT_JWT_SECRET: change-me-to-a-long-random-secret
+      NUXT_JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET with openssl rand -hex 32}
     volumes:
       - ./data:/app/data
 ```
@@ -58,7 +60,7 @@ docker compose -f compose.dev.yaml up --build -d
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `NUXT_JWT_SECRET` | Yes | (empty) | Secret key for JWT token signing. Use a long random string. |
+| `NUXT_JWT_SECRET` | Yes | (empty) | Secret key for JWT token signing. Production requires at least 32 bytes. Generate the secret with `openssl rand -hex 32`. |
 | `PORT` | No | `3000` | Port the application listens on. |
 | `DATA_DIR` | No | `/app/data` | Directory for application data (SQLite file, WAL, and the JSON migration archive from older installs). |
 | `DATABASE_URL` | No | `file:/app/data/db.sqlite` | SQLite location. Override only if you want the DB somewhere other than next to the data directory. |
@@ -76,6 +78,8 @@ Single sign-on is configured in the UI (**Settings → Authentication**); no pro
 - **`PUBLIC_BASE_URL`** (`NUXT_PUBLIC_BASE_URL` is also accepted): canonical origin such as `https://ezswm.example.com` — origin only, no path, credentials, query or fragment. The callback URL is `<PUBLIC_BASE_URL>/api/auth/oidc/callback`. Behind a reverse proxy, set this explicitly; ezSWM never trusts unvalidated `X-Forwarded-*` host headers.
 
 **Plain-HTTP providers:** HTTPS is the recommended default for every provider, including internal/RFC 1918 ones. The *Allow HTTP issuer* checkbox in the GUI (not an environment variable) is only a deliberate exception for a trusted, isolated internal or lab provider, never for public-Internet production. It also covers the provider's advertised token/JWKS/UserInfo endpoints; HTTP can expose authorization codes, client credentials and claims, and allows discovery/JWKS responses to be tampered with. JWKS contains public verification keys, not the provider's private signing key. TLS remains recommended on a LAN.
+
+Keep the same JWT secret when upgrading an existing installation. Rotating it invalidates active JWT sessions.
 
 The official compose files forward `OIDC_ENCRYPTION_KEY` and `PUBLIC_BASE_URL` from the host environment as the `NUXT_` variables (blank by default).
 
@@ -155,7 +159,7 @@ cp .env.example .env
 Start the dev server:
 
 ```bash
-export JWT_SECRET=dev-secret-change-me
+export JWT_SECRET=$(openssl rand -hex 32)
 pnpm dev
 ```
 

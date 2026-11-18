@@ -55,7 +55,7 @@ export const READ_TOOLS: ToolDefinition[] = [
     name: 'list_switches',
     description: 'List switches, optionally scoped to a site.',
     schema: z.object(siteFilter),
-    handler: (client, args) => client.get('/api/switches', { siteId: args.site_id as string | undefined })
+    handler: (client, args) => client.get('/api/switches', { site_id: args.site_id as string | undefined })
   },
   {
     name: 'get_switch',
@@ -67,7 +67,7 @@ export const READ_TOOLS: ToolDefinition[] = [
     name: 'list_vlans',
     description: 'List VLANs, optionally scoped to a site.',
     schema: z.object(siteFilter),
-    handler: (client, args) => client.get('/api/vlans', { siteId: args.site_id as string | undefined })
+    handler: (client, args) => client.get('/api/vlans', { site_id: args.site_id as string | undefined })
   },
   {
     name: 'get_vlan',
@@ -79,7 +79,7 @@ export const READ_TOOLS: ToolDefinition[] = [
     name: 'list_networks',
     description: 'List networks, optionally scoped to a site.',
     schema: z.object(siteFilter),
-    handler: (client, args) => client.get('/api/networks', { siteId: args.site_id as string | undefined })
+    handler: (client, args) => client.get('/api/networks', { site_id: args.site_id as string | undefined })
   },
   {
     name: 'get_network',

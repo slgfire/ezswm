@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client'
+import { Readable } from 'node:stream'
 import { signToken, type SignTokenPayload } from '../../server/utils/auth'
 import { setTestRuntimeConfig, resetTestRuntimeConfig } from '../testHelpers'
 
@@ -15,6 +16,7 @@ export interface FakeEvent {
   headers: Record<string, string>
   cookies: Record<string, string>
   body?: unknown
+  node: { req: Readable }
   context: { params?: Record<string, string>, auth?: unknown }
   https: boolean
   // outputs
@@ -95,6 +97,7 @@ export function makeEvent(input: DispatchInput): FakeEvent {
     headers,
     cookies: { ...(input.cookies ?? {}) },
     body: input.body,
+    node: { req: Readable.from(input.body === undefined ? [] : [Buffer.from(JSON.stringify(input.body))]) },
     context: {},
     https: input.https ?? false,
     setCookies: [],
@@ -113,6 +116,8 @@ const ROUTES: Array<{ method: string, re: RegExp, load: () => Promise<{ default:
   { method: 'GET', re: /^\/api\/auth\/oidc\/config$/, load: () => import('../../server/api/auth/oidc/config.get') },
   { method: 'PUT', re: /^\/api\/auth\/oidc\/config$/, load: () => import('../../server/api/auth/oidc/config.put') },
   { method: 'POST', re: /^\/api\/auth\/oidc\/check$/, load: () => import('../../server/api/auth/oidc/check.post') },
+  { method: 'POST', re: /^\/api\/auth\/setup$/, load: () => import('../../server/api/auth/setup.post') },
+  { method: 'POST', re: /^\/api\/auth\/login$/, load: () => import('../../server/api/auth/login.post') },
   { method: 'POST', re: /^\/api\/auth\/logout$/, load: () => import('../../server/api/auth/logout.post') },
   { method: 'GET', re: /^\/api\/auth\/me$/, load: () => import('../../server/api/auth/me.get') },
   { method: 'GET', re: /^\/api\/auth\/tokens$/, load: () => import('../../server/api/auth/tokens/index.get') },

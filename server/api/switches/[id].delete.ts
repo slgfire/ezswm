@@ -2,24 +2,10 @@ import { switchRepository } from '../../repositories/switchRepository'
 import { logActivity } from '../../utils/activityLog'
 import { lagGroupRepository } from '../../repositories/lagGroupRepository'
 import { publicTokenRepository } from '../../repositories/publicTokenRepository'
-import { resolveSiteIdQuery } from '../../utils/resolveSiteParam'
+import { resolveSwitchParam } from '../../utils/resolveSwitchParam'
 
 export default defineEventHandler(async (event) => {
-  const id = event.context.params?.id
-
-  if (!id) {
-    throw createError({ statusCode: 400, statusMessage: 'Missing switch ID' })
-  }
-
-  const query = getQuery(event)
-  const siteIdParam = typeof query.siteId === 'string' ? query.siteId : undefined
-  const siteUuid = await resolveSiteIdQuery(siteIdParam) ?? undefined
-
-  const existing = await switchRepository.getByIdOrSlug(id, siteUuid)
-
-  if (!existing) {
-    throw createError({ statusCode: 404, statusMessage: 'Switch not found' })
-  }
+  const existing = await resolveSwitchParam(event)
 
   // Clean up LAG groups before deleting switch
   await lagGroupRepository.deleteBySwitchId(existing.id)

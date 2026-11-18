@@ -1,10 +1,12 @@
 import { userRepository } from '../../repositories/userRepository'
 import { loginSchema } from '../../validators/userSchemas'
 import { verifyPassword, signToken, setAuthCookie } from '../../utils/auth'
+import { reservePasswordAttempt } from '../../utils/passwordAttempts'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const validated = loginSchema.parse(body)
+  const releaseAttempt = reservePasswordAttempt(event, validated.username)
 
   const user = await userRepository.getByUsername(validated.username)
   if (!user) {
@@ -22,6 +24,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: 'Invalid username or password' })
   }
 
+  releaseAttempt()
   const token = signToken(
     { sub: user.id, username: user.username, role: user.role },
     validated.remember_me

@@ -29,6 +29,7 @@ const CLIENT_CACHE_TTL_MS = 15 * 60 * 1000
 const CLIENT_CACHE_MAX = 8
 
 export type OidcClientErrorCode =
+  | 'discovery_busy'
   | 'issuer_invalid'
   | 'issuer_mismatch'
   | 'endpoint_invalid'
@@ -295,6 +296,7 @@ export async function buildOidcClient(settings: OidcClientSettings): Promise<Oid
 
 interface CacheEntry { handle: OidcClientHandle, expiresAt: number }
 const clientCache = new Map<string, CacheEntry>()
+const pendingClients = new Map<string, Promise<OidcClientHandle>>()
 
 export function oidcClientCacheKey(record: Pick<OidcConfigRecord, 'issuer' | 'client_id' | 'config_revision' | 'allow_http_issuer'>, clientSecret: string | null): string {
   return sha256Hex([
@@ -308,6 +310,7 @@ export function oidcClientCacheKey(record: Pick<OidcConfigRecord, 'issuer' | 'cl
 
 export function clearOidcClientCache(): void {
   clientCache.clear()
+  pendingClients.clear()
 }
 
 export async function getOidcClient(record: OidcConfigRecord, clientSecret: string | null, now: number = Date.now()): Promise<OidcClientHandle> {
@@ -316,18 +319,30 @@ export async function getOidcClient(record: OidcConfigRecord, clientSecret: stri
   const hit = clientCache.get(key)
   if (hit && hit.expiresAt > now) return hit.handle
 
-  const handle = await buildOidcClient({
+  const pending = pendingClients.get(key)
+  if (pending) return pending
+  if (pendingClients.size >= CLIENT_CACHE_MAX) throw new OidcClientError('discovery_busy')
+
+  const build = buildOidcClient({
     issuer: record.issuer,
     clientId: record.client_id,
     clientSecret,
     allowHttpIssuer: record.allow_http_issuer
   })
-  if (clientCache.size >= CLIENT_CACHE_MAX) {
-    const oldest = clientCache.keys().next().value
-    if (oldest !== undefined) clientCache.delete(oldest)
+  pendingClients.set(key, build)
+  try {
+    const handle = await build
+    // A configuration update may have cleared this pending entry.
+    if (pendingClients.get(key) !== build) return handle
+    if (clientCache.size >= CLIENT_CACHE_MAX) {
+      const oldest = clientCache.keys().next().value
+      if (oldest !== undefined) clientCache.delete(oldest)
+    }
+    clientCache.set(key, { handle, expiresAt: now + CLIENT_CACHE_TTL_MS })
+    return handle
+  } finally {
+    if (pendingClients.get(key) === build) pendingClients.delete(key)
   }
-  clientCache.set(key, { handle, expiresAt: now + CLIENT_CACHE_TTL_MS })
-  return handle
 }
 
 // ---------------------------------------------------------------------------

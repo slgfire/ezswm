@@ -9,6 +9,18 @@
 ### Fixed
 - MCP image publish workflow: the GHCR tag check now treats the exact Buildx "`<image>:<version>`: not found" error (and the classic manifest-unknown messages for that exact image) as a missing tag, so a new version can be pushed. Existing tags are still skipped; authentication, network and any other or mixed errors still fail the run. A successful login does not prove package write permission.
 
+## [0.47.3] — 2026-11-18
+
+### Fixed
+- Bind the default Compose deployment to loopback and expose an image override for digest pinning.
+- Require a production JWT signing secret of at least 32 bytes and reject known placeholders. Generate a fresh value with `openssl rand -hex 32`.
+- Make first-admin setup atomic. Keep restored instances on the login path by validating a local administrator and restoring canonical settings.
+- Reject stale OIDC login decisions and share concurrent discovery for the same configuration.
+- Apply MCP site filters to switches, VLANs and networks. Limit upstream response bytes and active HTTP transports.
+- Reject cross-origin browser writes, throttle failed password attempts, and bound JSON upload sizes for import and restore.
+- Prevent caching one-time API token responses and discard them in the UI when the account changes.
+- Enforce explicit switch site selectors, apply the site filter to range search, and neutralize spreadsheet formula prefixes in CSV exports. JSON export preserves original values.
+
 ## [0.47.2] — 2026-11-11
 
 ### Changed
