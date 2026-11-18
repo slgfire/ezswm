@@ -104,7 +104,7 @@ async function populate(request: APIRequestContext, fx: Fixture, o: FixtureOptio
  * Fixture lifecycle: setup failures clean up whatever was already created before rethrowing; the body's own failure and a
  * cleanup failure are BOTH reported (AggregateError) - neither hides the other.
  */
-async function withFixture(request: APIRequestContext, o: FixtureOptions, body: (fx: Fixture) => Promise<void>): Promise<void> {
+async function withFixture(page: Page | undefined, request: APIRequestContext, o: FixtureOptions, body: (fx: Fixture) => Promise<void>): Promise<void> {
   const fx: Fixture = { siteId: null, siteSlug: null, templateId: null, switchId: null, switchSlug: null, extraTemplateIds: [], tag: uniq() }
   let failure: unknown
   try {
@@ -112,7 +112,13 @@ async function withFixture(request: APIRequestContext, o: FixtureOptions, body: 
     await body(fx)
   } catch (e) { failure = e }
   try {
-    await cleanup(request, fx)
+    try {
+      // Mutations can trigger readback after DB assertions finish. Unload the
+      // fixture page so it no longer issues requests while its records disappear.
+      if (page) await page.goto('about:blank')
+    } finally {
+      await cleanup(request, fx)
+    }
   } catch (c) {
     if (failure) throw new AggregateError([failure, c], 'test failed AND fixture cleanup failed', { cause: c })
     throw c
@@ -164,7 +170,7 @@ test.describe('40G QSFP (own synthetic fixtures, compiled UI)', () => {
   test.beforeEach(({ baseURL }) => { assertOwnedOrigin(baseURL, 'base') })
 
   test('[panel] the port side panel offers 40G between 10G and 100G', async ({ page, request }) => {
-    await withFixture(request, { blocks: BLOCKS('100G'), withSwitch: true }, async (fx) => {
+    await withFixture(page, request, { blocks: BLOCKS('100G'), withSwitch: true }, async (fx) => {
       await openSwitch(page, fx)
       await qsfpPort(page, 0).click()
       const panel = page.getByRole('dialog')
@@ -174,7 +180,7 @@ test.describe('40G QSFP (own synthetic fixtures, compiled UI)', () => {
   })
 
   test('[panel] saving 40G on one QSFP port persists it and leaves the other ports unchanged', async ({ page, request }) => {
-    await withFixture(request, { blocks: BLOCKS('100G'), withSwitch: true }, async (fx) => {
+    await withFixture(page, request, { blocks: BLOCKS('100G'), withSwitch: true }, async (fx) => {
       await openSwitch(page, fx)
       await qsfpPort(page, 0).click()
       const panel = page.getByRole('dialog')
@@ -186,7 +192,7 @@ test.describe('40G QSFP (own synthetic fixtures, compiled UI)', () => {
   })
 
   test('[bulk] the bulk editor offers 40G in order and applies it to the selected QSFP ports only', async ({ page, request }) => {
-    await withFixture(request, { blocks: BLOCKS('100G'), withSwitch: true }, async (fx) => {
+    await withFixture(page, request, { blocks: BLOCKS('100G'), withSwitch: true }, async (fx) => {
       await openSwitch(page, fx)
       await qsfpPort(page, 0).click({ modifiers: ['Control'] })
       await qsfpPort(page, 1).click({ modifiers: ['Control'] })
@@ -203,7 +209,7 @@ test.describe('40G QSFP (own synthetic fixtures, compiled UI)', () => {
   })
 
   test('[bulk] a mixed RJ45 + QSFP selection applies 40G to exactly those ports', async ({ page, request }) => {
-    await withFixture(request, { blocks: BLOCKS('100G'), withSwitch: true }, async (fx) => {
+    await withFixture(page, request, { blocks: BLOCKS('100G'), withSwitch: true }, async (fx) => {
       await openSwitch(page, fx)
       await rjPort(page, 0).click({ modifiers: ['Control'] })
       await qsfpPort(page, 1).click({ modifiers: ['Control'] })
@@ -217,7 +223,7 @@ test.describe('40G QSFP (own synthetic fixtures, compiled UI)', () => {
   })
 
   test('[generated] ports generated from a 40G QSFP template show 40G in the side panel', async ({ page, request }) => {
-    await withFixture(request, { blocks: BLOCKS('40G'), withSwitch: true }, async (fx) => {
+    await withFixture(page, request, { blocks: BLOCKS('40G'), withSwitch: true }, async (fx) => {
       expect(speedsOf(await ports(request, fx), 'qsfp')).toEqual(['40G', '40G'])
       await openSwitch(page, fx)
       await qsfpPort(page, 1).click()
@@ -226,7 +232,7 @@ test.describe('40G QSFP (own synthetic fixtures, compiled UI)', () => {
   })
 
   test('[template-create] the create form offers 40G in order and saves a QSFP block with 40G', async ({ page, request }) => {
-    await withFixture(request, {}, async (fx) => {
+    await withFixture(page, request, {}, async (fx) => {
       const name = `tpl-create ${fx.tag}` // unique per run: the ONLY record this test may delete
       const baselineTemplateIds = new Set(listOf(await ok(await request.get('/api/layout-templates')), 'layout-templates').map(t => String(t.id)))
       const findCreated = async () => {
@@ -264,7 +270,7 @@ test.describe('40G QSFP (own synthetic fixtures, compiled UI)', () => {
   })
 
   test('[template-edit] the edit form offers 40G in order and saves it on an existing 100G QSFP block', async ({ page, request }) => {
-    await withFixture(request, { blocks: [{ type: 'qsfp', count: 2, start_index: 1, rows: 1, label: 'QSFP', default_speed: '100G' }] }, async (fx) => {
+    await withFixture(page, request, { blocks: [{ type: 'qsfp', count: 2, start_index: 1, rows: 1, label: 'QSFP', default_speed: '100G' }] }, async (fx) => {
       await page.goto(`/layout-templates/${fx.templateId}/edit`)
       const speed = page.getByLabel('Default Speed', { exact: true })
       await expect(speed).toBeVisible()
@@ -279,7 +285,7 @@ test.describe('40G QSFP (own synthetic fixtures, compiled UI)', () => {
   })
 
   test('[api] the compiled API accepts 40G and still rejects lowercase, unknown speeds and XFP (generic 400, no write on rejection)', async ({ request }) => {
-    await withFixture(request, { blocks: BLOCKS('100G'), withSwitch: true }, async (fx) => {
+    await withFixture(undefined, request, { blocks: BLOCKS('100G'), withSwitch: true }, async (fx) => {
       const q = (await ports(request, fx)).filter(p => p.type === 'qsfp').sort((a, b) => a.index - b.index)
       const tplUrl = `/api/layout-templates/${fx.templateId}`
       const tplBefore = await ok<Record<string, unknown>>(await request.get(tplUrl))
