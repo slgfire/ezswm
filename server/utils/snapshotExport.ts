@@ -1,21 +1,13 @@
 import { mkdtemp, rm } from 'node:fs/promises'
-import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Readable } from 'node:stream'
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import { PrismaClient } from '@prisma/client'
+import Database from 'better-sqlite3'
 import type { H3Event } from 'h3'
 import { prisma } from '../db/client'
 
-interface BackupSource {
-  backup(filename: string, options: { progress: () => number }): Promise<unknown>
-  close(): void
-}
-
-const Database = createRequire(import.meta.url)('better-sqlite3') as new (
-  filename: string, options: { readonly: boolean, fileMustExist: boolean }
-) => BackupSource
 const PAGE_SIZE = 128
 const MAX_ACTIVE_EXPORTS = 2
 const SNAPSHOT_TIMEOUT_MS = 60_000
