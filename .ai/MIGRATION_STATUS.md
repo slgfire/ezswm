@@ -2,6 +2,13 @@
 
 ## Latest Stage
 
+### Bounded export snapshots and Compose digests (v0.47.4, 2026-11-18)
+
+Backup, inventory and entity export use private SQLite online snapshots,
+bounded pages and streamed encoding. The Docker quickstart uses a verified
+digest, and each release publishes a Compose file for its own image digest.
+
+
 ### Security audit hardening (v0.47.3, 2026-11-18)
 
 The release candidate combines atomic first-admin setup, canonical and login-safe

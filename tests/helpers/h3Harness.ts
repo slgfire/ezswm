@@ -71,6 +71,12 @@ export function installH3Globals(): void {
   }
   g.setHeader = (e: unknown, name: string, value: string) => { ev(e).responseHeaders[name.toLowerCase()] = value }
   g.setResponseHeader = g.setHeader
+  g.sendStream = async (e: unknown, stream: AsyncIterable<Buffer | string>) => {
+    const chunks: Buffer[] = []
+    for await (const chunk of stream) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+    const body = Buffer.concat(chunks).toString('utf8')
+    return ev(e).responseHeaders['content-type'] === 'application/json' ? JSON.parse(body) : body
+  }
   g.setResponseStatus = (e: unknown, status: number) => { ev(e).responseStatus = status }
   g.getQuery = (e: unknown) => {
     const q = new URL(ev(e).path, 'http://q.invalid').searchParams

@@ -46,7 +46,7 @@ docker run -d -p 3000:3000 \
 Or with `docker compose` (one file, no source clone needed):
 
 ```bash
-curl -O https://raw.githubusercontent.com/slgfire/ezswm/main/compose.yaml
+curl -fLO https://github.com/slgfire/ezswm/releases/latest/download/compose.yaml
 export JWT_SECRET=$(openssl rand -hex 32)
 docker compose pull && docker compose up -d
 ```

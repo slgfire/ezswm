@@ -10,6 +10,12 @@
 - Synchronize the browser tests with sidebar image loading, completed OIDC form saves, persisted language selection, and fixture cleanup.
 - MCP image publish workflow: the GHCR tag check now treats the exact Buildx "`<image>:<version>`: not found" error (and the classic manifest-unknown messages for that exact image) as a missing tag, so a new version can be pushed. Existing tags are still skipped; authentication, network and any other or mixed errors still fail the run. A successful login does not prove package write permission.
 
+## [0.47.4] — 2026-11-18
+
+### Fixed
+- Stream backup and inventory exports from a temporary SQLite snapshot with bounded pages, and stream entity JSON and CSV with their existing schemas.
+- Pin default Compose to a verified digest and attach a matching digest-pinned Compose file to each release.
+
 ## [0.47.3] — 2026-11-18
 
 ### Fixed

@@ -15,7 +15,7 @@ The repository ships two compose files:
 
 | File | Purpose |
 |---|---|
-| `compose.yaml` | Pulls the pre-built image from GHCR (`ghcr.io/slgfire/ezswm:latest`). Default for end users. |
+| `compose.yaml` | Pulls the pre-built image from GHCR by its release digest. Default for end users. |
 | `compose.dev.yaml` | Builds the image from the local source tree. For development or testing unreleased changes. |
 
 ### Quick deploy (no source checkout needed)
@@ -23,11 +23,13 @@ The repository ships two compose files:
 Just grab the compose file and provide a secret:
 
 ```bash
-curl -O https://raw.githubusercontent.com/slgfire/ezswm/main/compose.yaml
+curl -fLO https://github.com/slgfire/ezswm/releases/latest/download/compose.yaml
 mkdir -p data && sudo chown -R 1000:1000 data
 export JWT_SECRET=$(openssl rand -hex 32)
 docker compose pull && docker compose up -d
 ```
+
+For upgrades, download the Compose file from the intended release or set `EZSWM_IMAGE` to its published digest.
 
 The default Compose file publishes the application on loopback. For an intentional remote connection, set `EZSWM_BIND_ADDRESS` to the intended interface address and terminate HTTPS at your proxy. Set `EZSWM_IMAGE` to a verified registry digest to pin the deployment.
 
@@ -36,7 +38,7 @@ The official `compose.yaml` reads the shell variable `JWT_SECRET` and passes it 
 ```yaml
 services:
   ezswm:
-    image: ghcr.io/slgfire/ezswm:latest
+    image: ghcr.io/slgfire/ezswm@sha256:f4327a43950d1d0ae825d9000274042e95cbaf291f10924fbd931bdd79b934aa
     environment:
       NUXT_JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET with openssl rand -hex 32}
     volumes:
@@ -86,6 +88,8 @@ The official compose files forward `OIDC_ENCRYPTION_KEY` and `PUBLIC_BASE_URL` f
 **Backups:** backups contain the client secret only as ciphertext, and the key is not part of them — store it separately. Restoring with the exact same key restores the secret; with a different key SSO is switched off (the enabled flag is cleared); the local admin must re-enter the client secret **and** re-enable SSO. Pending login transactions are never part of a backup.
 
 The container's `ENTRYPOINT` runs `prisma migrate deploy` before starting the server, so schema upgrades apply themselves on each container start — no separate migration step.
+
+Downloads of backups and inventory create private temporary SQLite snapshots. Allow free space in the container temporary directory for up to two database copies per instance. The snapshots are removed after the export completes or the client disconnects.
 
 ### Automatic pre-upgrade database backup
 

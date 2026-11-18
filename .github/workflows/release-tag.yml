@@ -119,6 +119,7 @@ jobs:
             org.opencontainers.image.version=${{ steps.detect.outputs.version }}
 
       - name: Build and push release images (latest + version)
+        id: release-image
         if: steps.detect.outputs.should_tag == 'true'
         uses: docker/build-push-action@v7.4.0
         with:
@@ -130,6 +131,21 @@ jobs:
           provenance: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Attach digest-pinned Compose file
+        if: steps.detect.outputs.should_tag == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMAGE_DIGEST: ${{ steps.release-image.outputs.digest }}
+          RELEASE_VERSION: ${{ steps.detect.outputs.version }}
+        run: |
+          set -euo pipefail
+          [[ "$IMAGE_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
+          [[ "$(grep -c '^    image:' compose.yaml)" == 1 ]]
+          mkdir -p "$RUNNER_TEMP/ezswm-release"
+          sed "s|^    image:.*|    image: \${EZSWM_IMAGE:-ghcr.io/${GITHUB_REPOSITORY,,}@${IMAGE_DIGEST}}|" compose.yaml \
+            > "$RUNNER_TEMP/ezswm-release/compose.yaml"
+          gh release upload "v$RELEASE_VERSION" "$RUNNER_TEMP/ezswm-release/compose.yaml"
 
   # Explicit reusable call: tags made with GITHUB_TOKEN do not trigger other
   # workflows, so npm/GHCR publication runs inside this release pipeline.
