@@ -482,9 +482,12 @@ test.describe('Admin settings provider name field (mocked endpoints)', () => {
     await save(page).click()
     await expect.poll(() => puts.length).toBe(1)
     expect(puts[0]!.provider_name).toBe('SaarAuth')
+    // Wait until the save response has applied its normalized value to the form.
+    await expect(input).toHaveValue('SaarAuth')
 
     // The browser itself enforces the limit on typed input.
-    await input.fill('x'.repeat(80))
+    await input.fill('')
+    await input.pressSequentially('x'.repeat(80))
     await expect(input).toHaveValue('x'.repeat(64))
   })
 
@@ -1509,8 +1512,10 @@ test.describe('Settings polish screenshots (mocked endpoints)', () => {
             await page.getByRole('menuitem', { name: 'English' }).click()
             await expect(page.locator('h1')).toHaveText('Settings')
           }
-          const me = await (await request.get('/api/auth/me')).json() as { language: string }
-          expect(me.language, 'disposable admin language restored').toBe('en')
+          await expect.poll(async () => {
+            const me = await (await request.get('/api/auth/me')).json() as { language: string }
+            return me.language
+          }, { message: 'disposable admin language restored' }).toBe('en')
         }
       })
     }

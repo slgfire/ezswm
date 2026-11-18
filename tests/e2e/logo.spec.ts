@@ -299,6 +299,10 @@ test.describe('Logo in the sidebar header (authenticated admin fixture)', () => 
           await scope.getByRole('button', { name: /^(Collapse sidebar|Seitenleiste einklappen)$/ }).click()
           await expect(scope.locator('a[href="/users"]')).toContainText(/^$/)
           await expect(brandLink(scope)).toHaveCount(1)
+          await expect.poll(async () => {
+            const image = await visibleImage(brandLink(scope))
+            return image.src === FAVICON && image.complete && image.nw > 0
+          }, { message: 'collapsed sidebar emblem has loaded' }).toBe(true)
           expectImage(await visibleImage(brandLink(scope)), { src: FAVICON, natural: FAVICON_NATURAL, box: [32, 32] })
           await expectSidebarBrandCentered(brandLink(scope))
           if (key === 'en-dark-desktop') await shot(page, 'logo-sidebar-collapsed-en-dark-desktop')
