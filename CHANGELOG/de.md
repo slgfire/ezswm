@@ -10,6 +10,12 @@
 - Browsertests warten auf das geladene Seitenleistenlogo, die Rückmeldung des OIDC-Formulars und die gespeicherte Sprache. Testdaten werden nach dem Verlassen der Testseite entfernt.
 - MCP-Image-Publish-Workflow: Die GHCR-Tag-Prüfung erkennt jetzt die exakte Buildx-Meldung „`<Image>:<Version>`: not found“ (sowie die klassischen „manifest unknown“-Meldungen für genau dieses Image) als fehlenden Tag, sodass eine neue Version gepusht werden kann. Vorhandene Tags werden weiterhin übersprungen; Authentifizierungs-, Netzwerk- und alle anderen oder gemischten Fehler lassen den Lauf weiterhin fehlschlagen. Ein erfolgreicher Login beweist keine Schreibberechtigung für das Paket.
 
+## [0.47.4] — 2026-11-18
+
+### Behoben
+- Backups und Inventare seitenweise aus einer temporären SQLite-Kopie ausgeben. JSON- und CSV-Exporte einzelner Entitäten behalten ihr bisheriges Format.
+- Standard-Compose per Digest festschreiben und zu jedem Release eine passende Compose-Datei veröffentlichen.
+
 ## [0.47.3] — 2026-11-18
 
 ### Behoben

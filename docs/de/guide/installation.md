@@ -15,7 +15,7 @@ Das Repository liefert zwei Compose-Dateien:
 
 | Datei | Zweck |
 |---|---|
-| `compose.yaml` | Zieht das vorgebaute Image aus GHCR (`ghcr.io/slgfire/ezswm:latest`). Standard für Endbenutzer. |
+| `compose.yaml` | Lädt das vorgebaute Image anhand seines Release-Digests aus GHCR. Standard für Endbenutzer. |
 | `compose.dev.yaml` | Baut das Image aus dem lokalen Quellcode. Für Entwicklung oder zum Testen unveröffentlichter Änderungen. |
 
 ### Schnelles Deployment (ohne Source-Checkout)
@@ -23,11 +23,13 @@ Das Repository liefert zwei Compose-Dateien:
 Einfach die Compose-Datei holen und ein Secret bereitstellen:
 
 ```bash
-curl -O https://raw.githubusercontent.com/slgfire/ezswm/main/compose.yaml
+curl -fLO https://github.com/slgfire/ezswm/releases/latest/download/compose.yaml
 mkdir -p data && sudo chown -R 1000:1000 data
 export JWT_SECRET=$(openssl rand -hex 32)
 docker compose pull && docker compose up -d
 ```
+
+Lade bei einem Update die Compose-Datei des gewünschten Releases herunter oder setze `EZSWM_IMAGE` auf dessen veröffentlichten Digest.
 
 Die Standard-Compose-Datei veröffentlicht die Anwendung auf der Loopback-Adresse. Für einen beabsichtigten Fernzugriff setze `EZSWM_BIND_ADDRESS` auf die vorgesehene Schnittstellenadresse und terminiere HTTPS am Proxy. Setze `EZSWM_IMAGE` auf einen verifizierten Registry-Digest, um das Deployment festzuschreiben.
 
@@ -36,7 +38,7 @@ Die offizielle `compose.yaml` liest die Shell-Variable `JWT_SECRET` und gibt sie
 ```yaml
 services:
   ezswm:
-    image: ghcr.io/slgfire/ezswm:latest
+    image: ghcr.io/slgfire/ezswm@sha256:f4327a43950d1d0ae825d9000274042e95cbaf291f10924fbd931bdd79b934aa
     environment:
       NUXT_JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET with openssl rand -hex 32}
     volumes:
@@ -86,6 +88,8 @@ Die offiziellen Compose-Dateien leiten `OIDC_ENCRYPTION_KEY` und `PUBLIC_BASE_UR
 **Backups:** Backups enthalten das Client-Secret nur als Chiffrat, der Schlüssel gehört nicht dazu — separat aufbewahren. Mit exakt demselben Schlüssel wird das Secret wiederhergestellt; mit einem anderen wird SSO abgeschaltet (das Aktiviert-Flag wird zurückgesetzt); der lokale Admin muss das Client-Secret neu eingeben **und** SSO wieder aktivieren. Laufende Login-Transaktionen sind nie Teil eines Backups.
 
 Der ENTRYPOINT des Containers ruft beim Start `prisma migrate deploy` auf, bevor der Server hochfährt. Schema-Upgrades werden also automatisch beim Container-Start angewandt — kein separater Migrations-Schritt nötig.
+
+Beim Download von Backups und Inventardaten entstehen private temporäre SQLite-Kopien. Halte im temporären Verzeichnis des Containers pro Instanz Platz für bis zu zwei Datenbankkopien frei. Die Kopien werden nach dem Export oder bei einem Verbindungsabbruch entfernt.
 
 ### Automatisches Pre-Upgrade-Backup der Datenbank
 

@@ -1,4 +1,5 @@
-import { prisma } from '../../db/client'
+import type { PrismaClient } from '@prisma/client'
+import { exportRows, jsonExportArray, sendSnapshotExport } from '../../utils/snapshotExport'
 import { getAuthContext } from '../../utils/requireAdmin'
 
 type EntityType = 'switches' | 'vlans' | 'networks' | 'allocations' | 'templates'
@@ -24,43 +25,34 @@ function escapeCsvValue(value: unknown): string {
   return str
 }
 
-function toCsv(data: Record<string, unknown>[], headers: string[]): string {
-  const lines = [headers.join(',')]
-  for (const row of data) {
-    const values = headers.map(h => escapeCsvValue(row[h]))
-    lines.push(values.join(','))
-  }
-  return lines.join('\n')
+async function* csvExport(rows: AsyncIterable<Record<string, unknown>>, headers: string[]): AsyncGenerator<string> {
+  yield headers.join(',')
+  for await (const row of rows) yield '\n' + headers.map(key => escapeCsvValue(row[key])).join(',')
 }
 
-async function loadEntity(type: EntityType): Promise<Record<string, unknown>[]> {
+const byId = { id: 'asc' } as const
+async function* loadEntity(db: PrismaClient, type: EntityType): AsyncGenerator<Record<string, unknown>> {
   switch (type) {
-    case 'switches': {
-      const rows = await prisma.switch.findMany()
-      return rows.map(({ tags, configured_vlans, is_favorite: _f, sort_order: _s, ...rest }) => ({
-        ...rest,
-        // Hide internal JSON columns from the export; they're awkward in CSV.
-        tags: JSON.parse(tags) as string[],
-        configured_vlans: JSON.parse(configured_vlans) as number[]
-      }))
-    }
-    case 'vlans': {
-      const rows = await prisma.vlan.findMany()
-      return rows.map(({ is_favorite: _f, ...rest }) => rest)
-    }
-    case 'networks': {
-      const rows = await prisma.network.findMany()
-      return rows.map(({ dns_servers, is_favorite: _f, ...rest }) => ({
-        ...rest,
-        dns_servers: JSON.parse(dns_servers) as string[]
-      }))
-    }
+    case 'switches':
+      for await (const { tags, configured_vlans, is_favorite: _f, sort_order: _s, ...row } of exportRows(page => db.switch.findMany({ ...page, orderBy: byId }))) {
+        yield { ...row, tags: JSON.parse(tags), configured_vlans: JSON.parse(configured_vlans) }
+      }
+      return
+    case 'vlans':
+      for await (const { is_favorite: _f, ...row } of exportRows(page => db.vlan.findMany({ ...page, orderBy: byId }))) yield row
+      return
+    case 'networks':
+      for await (const { dns_servers, is_favorite: _f, ...row } of exportRows(page => db.network.findMany({ ...page, orderBy: byId }))) {
+        yield { ...row, dns_servers: JSON.parse(dns_servers) }
+      }
+      return
     case 'allocations':
-      return prisma.ipAllocation.findMany() as unknown as Promise<Record<string, unknown>[]>
-    case 'templates': {
-      const rows = await prisma.layoutTemplate.findMany()
-      return rows.map(({ units, ...rest }) => ({ ...rest, units: JSON.parse(units) }))
-    }
+      yield* exportRows(page => db.ipAllocation.findMany({ ...page, orderBy: byId }))
+      return
+    case 'templates':
+      for await (const { units, ...row } of exportRows(page => db.layoutTemplate.findMany({ ...page, orderBy: byId }))) {
+        yield { ...row, units: JSON.parse(units) }
+      }
   }
 }
 
@@ -69,7 +61,7 @@ export default defineEventHandler(async (event) => {
   const type = query.type as EntityType
   const format = (query.format as ExportFormat) || 'json'
 
-  if (!type || !(type in CSV_HEADERS)) {
+  if (!type || !Object.hasOwn(CSV_HEADERS, type)) {
     throw createError({ statusCode: 400, message: 'Invalid entity type. Must be one of: switches, vlans, networks, allocations, templates' })
   }
   if (format !== 'json' && format !== 'csv') {
@@ -83,27 +75,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, message: 'Export of templates is not available for API tokens' })
   }
 
-  let data = await loadEntity(type)
-  if (isApiToken) {
-    data = data.map(row => Object.fromEntries(CSV_HEADERS[type].map(h => [h, row[h]])))
-  }
-
-  // Templates: drop the nested units column from CSV (too complex).
-  if (type === 'templates' && format === 'csv') {
-    data = data.map(({ units: _u, ...rest }) => rest)
-  }
-
   const headers = CSV_HEADERS[type]
   const timestamp = new Date().toISOString().slice(0, 10)
+  const contentType = format === 'csv' ? 'text/csv; charset=utf-8' : 'application/json'
 
-  if (format === 'csv') {
-    const csv = toCsv(data, headers)
-    setHeader(event, 'Content-Type', 'text/csv; charset=utf-8')
-    setHeader(event, 'Content-Disposition', `attachment; filename="ezswm-${type}-${timestamp}.csv"`)
-    return csv
-  }
-
-  setHeader(event, 'Content-Type', 'application/json')
-  setHeader(event, 'Content-Disposition', `attachment; filename="ezswm-${type}-${timestamp}.json"`)
-  return data
+  return sendSnapshotExport(event, contentType, `ezswm-${type}-${timestamp}.${format}`, (db) => {
+    const rows = (async function* () {
+      for await (const row of loadEntity(db, type)) {
+        yield isApiToken ? Object.fromEntries(headers.map(key => [key, row[key]])) : row
+      }
+    })()
+    return format === 'csv' ? csvExport(rows, headers) : jsonExportArray(rows)
+  })
 })

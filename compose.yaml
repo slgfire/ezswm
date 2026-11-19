@@ -1,5 +1,6 @@
 # Default compose file — pulls the pre-built image from GHCR.
 # No source checkout required, just this file and a JWT_SECRET.
+# For an upgrade, download the updated file or set EZSWM_IMAGE to the reviewed digest.
 #
 # Usage:
 #   export JWT_SECRET=$(openssl rand -hex 32)
@@ -16,7 +17,7 @@
 
 services:
   ezswm:
-    image: ${EZSWM_IMAGE:-ghcr.io/slgfire/ezswm:latest}
+    image: ${EZSWM_IMAGE:-ghcr.io/slgfire/ezswm@sha256:f4327a43950d1d0ae825d9000274042e95cbaf291f10924fbd931bdd79b934aa}
     container_name: ezswm
     restart: unless-stopped
     user: "${PUID:-1000}:${PGID:-1000}"
